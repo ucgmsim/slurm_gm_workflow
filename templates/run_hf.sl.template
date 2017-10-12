@@ -1,0 +1,8 @@
+
+source machine_env.sh
+
+export BINPROCESS=/projects/nesi00213/workflow/$VERSION
+date
+srun python /projects/nesi00213/workflow/$VERSION/hfsims-stats-mpi.py {{hf_sim_dir}} {{hf_option}}
+date
+

@@ -1,0 +1,222 @@
+#!/usr/bin/env python2
+
+import os.path
+import sys
+sys.path.append(os.path.abspath(os.path.curdir))
+from params_base import *
+
+old_params = False
+#from params import hf_sdrop_list, hf_kappa_list, hf_sim_bin, hf_rvfac
+try:
+    from params import hf_sdrop_list, hf_kappa_list
+except ImportError:
+    print "Info: Old version of params.py supporting singular kappa and sdrop"
+    from params import hf_sdrop, hf_kappa
+    old_params = True
+finally:
+    from params import hf_sim_bin, hf_rvfac
+
+import glob
+from shared import *
+from version import *
+
+params_bb_uncertain = 'params_bb_uncertain.py'
+params_uncertain='params_uncertain.py'
+
+def q0():
+    show_horizontal_line()
+    print "Do you want site-specific computation? (To use a universal 1D profile, Select 'No')"
+    show_horizontal_line()
+    return show_yes_no_question()
+
+
+def q1_generic(v_mod_1d_dir): 
+    show_horizontal_line()
+    print "Select one of 1D Velocity models (from %s)" %v_mod_1d_dir
+    show_horizontal_line()
+ 
+    v_mod_1d_options = glob.glob(os.path.join(v_mod_1d_dir,'*.1d'))
+    v_mod_1d_options.sort()
+
+    v_mod_1d_selected = show_multiple_choice(v_mod_1d_options)
+    print v_mod_1d_selected #full path
+    v_mod_1d_name = os.path.basename(v_mod_1d_selected).replace('.1d','')
+#    print v_mod_1d_name
+
+    return v_mod_1d_name,v_mod_1d_selected
+
+def q1_site_specific(stat_file_path):
+    show_horizontal_line()
+    print "Auto-detecting site-specific info"
+    show_horizontal_line()
+    print "- Station file path: %s" %stat_file_path
+    
+    v_mod_1d_path=os.path.join(os.path.dirname(stat_file),"1D")
+    if os.path.exists(v_mod_1d_path):
+        print "- 1D profiles found at %s" %v_mod_1d_path
+    else:
+        print "Error: No such path exists: %s" %v_mod_1d_path
+        sys.exit()
+    
+    hf_stat_vs_ref_options =glob.glob(os.path.join(stat_file_path,'*.hfvs30ref'))
+    if len(hf_stat_vs_ref_options)==0:
+        print "Error: No HF Vsref file was found at %s" %stat_file_path
+        sys.exit()
+    hf_stat_vs_ref_options.sort()
+
+    show_horizontal_line()
+    print "Select one of HF Vsref files"
+    show_horizontal_line()
+    hf_stat_vs_ref_selected=show_multiple_choice(hf_stat_vs_ref_options)
+    print " - HF Vsref tp be used: %s" %hf_stat_vs_ref_selected
+    return v_mod_1d_path, hf_stat_vs_ref_selected
+
+     
+
+def q2(v_mod_1d_name,srf,kappa,sdrop):
+
+    hfVString='hf'+os.path.basename(hf_sim_bin).split('_')[-1]
+    hf_run_name=v_mod_1d_name+'_'+hfVString+'_rvf'+hf_rvfac+'_sd'+sdrop+'_k'+kappa
+    hf_run_name=hf_run_name.replace('.','p')
+    show_horizontal_line()
+    print "- Vel. Model 1D: %s" %v_mod_1d_name
+    print "- hf_sim_bin: %s" %os.path.basename(hf_sim_bin)
+    print "- hf_rvfac: %s" %hf_rvfac
+    print "- hf_sdrop: %s" %sdrop
+    print "- hf_kappa: %s" %kappa
+    print "- srf file: %s" %srf
+#    yes = confirm_name(hf_run_name)
+    yes=True
+    return yes, hf_run_name
+    
+def action(params_base_bb_dict):
+    f=open(os.path.join(sim_dir,"params_base_bb.py"),"w")
+    keys = params_base_bb_dict.keys()
+    for k in keys:
+        val = params_base_bb_dict[k]
+        if type(val) != bool:
+            val="'%s'"%val
+        f.write("%s=%s\n"%(k,val))
+    f.close()
+    return hf_dir, bb_dir
+
+
+def action_for_uncertainties(hf_sim_basedir,bb_sim_basedir,srf,slip,kappa,sdrop):
+    dirs = []
+    srf_basename = os.path.splitext(os.path.basename(srf))[0] #take the filename only
+    hf_sim_dir = os.path.join(hf_sim_basedir,srf_basename)
+    bb_sim_dir = os.path.join(bb_sim_basedir,srf_basename)
+    dirs.append(hf_sim_dir)
+    dirs.append(bb_sim_dir)
+    params_uncertain_path=os.path.join(lf_sim_root_dir,srf_basename,params_uncertain)
+    print params_uncertain_path
+    execfile(params_uncertain_path,globals())
+
+    verify_user_dirs(dirs)
+    params_bb_uncertain_file = os.path.join(bb_sim_dir,params_bb_uncertain) 
+    with open(params_bb_uncertain_file,'w') as f:
+        f.write("hf_accdir='%s'\n"%os.path.join(hf_sim_dir,"Acc"))
+        f.write("hf_veldir='%s'\n"%os.path.join(hf_sim_dir,"Vel"))
+        f.write("bb_accdir='%s'\n"%os.path.join(bb_sim_dir,"Acc"))
+        f.write("bb_veldir='%s'\n"%os.path.join(bb_sim_dir,"Vel"))
+        f.write("hf_resume=True\n")
+        f.write("bb_resume=True\n")
+        f.write("hf_slip='%s'\n"%slip)
+        f.write("vel_dir='%s'\n"%vel_dir)
+        f.write("hf_kappa='%s'\n"%kappa)
+        f.write("hf_sdrop='%s'\n"%sdrop)
+    
+    params_hf_uncertain_file = os.path.join(hf_sim_dir,params_bb_uncertain)
+    print params_hf_uncertain_file 
+    try:
+        os.symlink(params_bb_uncertain_file, params_hf_uncertain_file)
+    except OSError as e:
+        print e
+        
+
+    try: 
+        set_permission(hf_sim_basedir)
+    except OSError as e:
+        print e
+    try:
+        set_permission(bb_sim_basedir)
+    except OSError as e:
+        print e
+
+
+
+    #creating symbolic link between matching HF and BB directories
+#    try: 
+#        os.symlink(bb_sim_dir,os.path.join(hf_sim_dir,"BB"))
+#    except OSError:
+#        print "Directory already exists: %s" %os.path.join(hf_sim_dir,"BB")
+#    try: 
+#        os.symlink(hf_sim_dir,os.path.join(bb_sim_dir,"HF"))
+#    except OSError:
+#        print "Directory already exists: %s" %os.path.join(bb_sim_dir,"HF")
+
+
+
+def main():
+    global hf_kappa_list #no idea why hf_kappa_list is imported, but not usable in this function without this.
+    global hf_sdrop_list
+
+    show_horizontal_line(c="*")
+    print " "*37+"EMOD3D HF/BB Preparationi Ver."+bin_process_ver
+    show_horizontal_line(c="*")
+
+    params_base_bb_dict = {}
+
+#    params_base_bb_dict['rand_reset']=False #by default. But it may give less deterministic
+    is_site_specific_id= q0()
+    if is_site_specific_id:
+        v_mod_1d_path,hf_stat_vs_ref=q1_site_specific(os.path.dirname(stat_file))
+        v_mod_1d_name = "Site_Specific"
+        params_base_bb_dict['site_specific']=True
+        params_base_bb_dict['hf_v_model_path']=v_mod_1d_path
+        params_base_bb_dict['hf_stat_vs_ref']=hf_stat_vs_ref
+        params_base_bb_dict['rand_reset']=True  
+
+    else:
+        v_mod_1d_name, v_mod_1d_selected = q1_generic(v_mod_1d_dir)
+        params_base_bb_dict['site_specific']=False
+        params_base_bb_dict['hf_v_model']=v_mod_1d_selected
+
+    params_base_bb_dict['v_mod_1d_name']=v_mod_1d_name
+
+
+    #globals_dict = globals()
+
+    if old_params:
+        hf_kappa_list = [hf_kappa]*len(srf_files)
+        hf_sdrop_list = [hf_sdrop]*len(srf_files)
+        if len(srf_files) > 1:
+            print "Info: You have specified multiple SRF files."
+            print "      A single hf_kappa(=%s) and hf_sdrop(=%s) specified in params.py will be used for all SRF files." %(hf_kappa, hf_sdrop)
+            print"       If you need to specific hf_kappa and hf_sdrop value for each SRF, add hf_kappa_list and hf_sdrop_list to params_base.py"
+
+    else:
+        print "hf_kappa_list: ", hf_kappa_list
+        print "hf_sdrop_list: ", hf_sdrop_list
+        print "srf_files:", srf_files
+        if len(hf_kappa_list) != len(hf_sdrop_list) or len(hf_kappa_list) != len(srf_files):
+            print "Error: hf_kappa_list (len=%d), hf_sdrop_list (len=%d) and srf_files (len=%d) should be of the same length."%(len(hf_kappa_list),len(hf_sdrop_list), len(srf_files))
+            sys.exit()
+
+    hf_dir,bb_dir = action(params_base_bb_dict)
+
+    for i in range(len(hf_kappa_list)):
+        kappa = hf_kappa_list[i]
+        sdrop = hf_sdrop_list[i]
+        srf = srf_files[i]
+        slip = hf_slips[i]
+        yes, hf_run_name = q2(v_mod_1d_name,srf, kappa,sdrop)
+        hf_run_name = add_name_suffix(hf_run_name,yes)
+
+        hf_sim_basedir, bb_sim_basedir = os.path.join(hf_dir,hf_run_name), os.path.join(bb_dir,hf_run_name)
+        action_for_uncertainties(hf_sim_basedir,bb_sim_basedir, srf, slip, kappa, sdrop)
+    
+    
+
+if __name__ == "__main__":
+    main() 

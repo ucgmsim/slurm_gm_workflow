@@ -1,0 +1,10 @@
+
+source machine_env.sh
+
+filelist=flist_`basename {{lf_sim_dir}}`
+exe={{tools_dir}}/merge_tsP3_par
+ls -X {{lf_sim_dir}}/OutBin/*xyts-?????.e3d >$filelist
+NFILES=`cat $filelist |wc -l|sed -e 's/ //g'`
+OUTFILE=`head -1 $filelist  |sed -e 's/-[0-9]*.e3d/.e3d/g'`
+echo "NFILES=$NFILES OUTFILE=$OUTFILE"
+time srun $exe filelist=$filelist outfile=$OUTFILE nfiles=$NFILES

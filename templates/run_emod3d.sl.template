@@ -1,0 +1,12 @@
+
+source machine_env.sh
+
+export start=`date +%H:%M:%S_%d/%m/%Y`
+echo $start
+srun {{tools_dir}}/emod3d-mpi -args "par={{lf_sim_dir}}/e3d.par"
+export end=`date +%H:%M:%S_%d/%m/%Y`
+echo $end
+source ./version
+echo "Saving execution time"
+python /projects/nesi00213/workflow/$VERSION/wct.py -a $start $end
+
