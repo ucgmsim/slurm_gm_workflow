@@ -1,0 +1,12 @@
+{
+  "gm_sim_workflow_root" : "/projects/nesi00213/workflow",
+  "emod3d_version" : "3.0.4",
+  "global_root" : "/projects/nesi00213/",
+  "bin_process_path" : "/projects/nesi00213/workflow/",
+  "qcore_lib_path" : "/projects/nesi00213/qcore",
+  "install_bb_name" : "install_bb.py",
+  "params_vel" : "params_vel.py"
+}
+
+
+

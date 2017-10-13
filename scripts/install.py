@@ -1,12 +1,5 @@
 #!/usr/bin/env python2
 
-# TODO: Horrible example of a global config file, remove and improve
-try:
-    from CONFIG import *
-except ImportError:
-    print "Impossible to read the config file"
-    exit(1)
-
 import os
 import os.path
 import sys
@@ -16,19 +9,14 @@ import shutil
 import getpass
 import importlib
 import datetime
-from version import *
+from shared_workflow.load_config import load
+# TODO: namespacing
+from shared import *
 
-
+workflow_config = load()
+global_root = workflow_config["global_root"]
 tools_dir = os.path.join(global_root,'EMOD3D/tools')
 
-
-
-
-
-bin_process_dir = os.path.join(bin_process_path,bin_process_ver)
-sys.path.append(bin_process_dir)  #unnecessary if this file is a symbolic link
-sys.path.append(qcore_lib_path)
-from shared import *
 
 import ConfigParser
 
@@ -40,10 +28,10 @@ srf_default_dir = os.path.join(global_root, 'RupModel')
 vel_mod_dir = os.path.join(global_root, 'VelocityModels')
 # TODO: this is hardcoded, maybe let the parser discover the VMs we have
 # vel_mod_subdirs = ['Cant','SI','NI']
-vel_mod_subdirs = ['SI']
+vel_mod_subdirs = ['SI','Cant']
 
 # TODO: this will copy stuff from slurm now
-recipe_dir = os.path.join(bin_process_dir,"recipes/slurm")
+recipe_dir = os.path.join(global_root,"workflow/templates")
 v_mod_1d_dir = os.path.join(global_root,'VelocityModel','Mod-1D')
 gmsa_dir = os.path.join(global_root,'groundMotionStationAnalysis')
 stat_dir = os.path.join(global_root,'StationInfo')
@@ -135,7 +123,8 @@ def q_select_vel_model(vel_mod_dir):
     show_horizontal_line()
     print "Select one of available VelocityModels (from %s)" %vel_mod_dir
     show_horizontal_line()
-    v_mod_ver_options = [] 
+    v_mod_ver_options = []
+    vel_mod_subdirs = os.listdir(vel_mod_dir)
     for subdir in vel_mod_subdirs:
         vmodels=os.listdir(os.path.join(vel_mod_dir,subdir))
         v_mod_ver_options.extend([os.path.join(subdir,x) for x in vmodels]) 
