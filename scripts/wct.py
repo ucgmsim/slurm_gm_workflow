@@ -77,7 +77,7 @@ def usage():
 
 # TODO: convert this to use argsparse
 if __name__ == '__main__':
-    db = WallClockDB('/projects/nesi00213/share/wallclock.sqlite')
+    db = WallClockDB('wallclock.sqlite')
 
     if len(sys.argv) == 1 or sys.argv[1] == '-h':
         usage()

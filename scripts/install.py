@@ -450,7 +450,7 @@ def wallclock(sim_dir):
     else:
         # retrive data from DB. same lines as in wct.py
         # TODO: fix this hardcoded value
-        db = wct.WallClockDB("/projects/nesi00213/share/wallclock.sqlite")
+        db = wct.WallClockDB("wallclock.sqlite")
         print db.est
         nx = int(params.nx)
         ny = int(params.ny)
