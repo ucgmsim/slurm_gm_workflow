@@ -1,12 +1,10 @@
 # TODO: import the CONFIG here
-bin_process_path='/projects/nesi00213/workflow'
+
 import glob
 import os.path
 import sys
-from version import *
 import os
-bin_process_dir = os.path.join(bin_process_path, bin_process_ver)
-sys.path.append(bin_process_dir)
+
 # TODO: this needs to append the path to qcore as well
 qcore_path = '/projects/nesi00213/qcore'
 sys.path.append(qcore_path)
