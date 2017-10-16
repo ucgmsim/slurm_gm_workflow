@@ -17,8 +17,8 @@ finally:
     from params import hf_sim_bin, hf_rvfac
 
 import glob
+# TODO: make sure that qcore is in the PYTHONPATH
 from shared import *
-from version import *
 
 params_bb_uncertain = 'params_bb_uncertain.py'
 params_uncertain='params_uncertain.py'

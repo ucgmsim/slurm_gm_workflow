@@ -18,13 +18,17 @@ import os.path
 sys.path.append(os.path.abspath(os.path.curdir))
 from shutil import copyfile
 import shared
-from params_base import *
 
 params_uncertain = 'params_uncertain.py'
 
 def create_run_parameters():
+    try:
+        from params_base import *
+    except:
+        print(sys.path)
+        exit(1)
+
     # attempt to append template file before importing params
-    print(sys.path)
     try:
         # throws NameError if var not set, AssertionError if blank
         assert (params_override != '')
