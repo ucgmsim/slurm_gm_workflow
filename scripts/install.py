@@ -1,15 +1,14 @@
 #!/usr/bin/env python2
 
-import os
 import os.path
-import sys
-import datetime
 import glob
 import shutil
 import getpass
-import importlib
+
 import datetime
 from shared_workflow.load_config import load
+import ConfigParser
+
 # TODO: namespacing
 from shared import *
 
@@ -19,19 +18,13 @@ tools_dir = os.path.join(global_root, 'EMOD3D/tools')
 bin_process_dir = os.path.join(global_root, 'workflow/scripts')
 emod3d_version = workflow_config["emod3d_version"]
 params_vel = workflow_config['params_vel']
-import ConfigParser
 
-# directories - main. change global_root with user_root as required
+
 run_dir = os.path.join(global_root, 'RunFolder')
 user = getpass.getuser()
 user_root = os.path.join(run_dir, user)  # global_root
 srf_default_dir = os.path.join(global_root, 'RupModel')
 vel_mod_dir = os.path.join(global_root, 'VelocityModels')
-# TODO: this is hardcoded, maybe let the parser discover the VMs we have
-# vel_mod_subdirs = ['Cant','SI','NI']
-vel_mod_subdirs = ['SI', 'Cant']
-
-# TODO: this will copy stuff from slurm now
 recipe_dir = os.path.join(global_root, "workflow/templates")
 v_mod_1d_dir = os.path.join(global_root, 'VelocityModel', 'Mod-1D')
 gmsa_dir = os.path.join(global_root, 'groundMotionStationAnalysis')
@@ -234,6 +227,8 @@ def action(sim_dir, event_name, run_name, run_dir, vel_mod_dir, srf_dir, srf_sto
     verify_user_dirs(dir_list)
 
     for filename in glob.glob(os.path.join(recipe_dir, '*.*')):
+        if filename == "README.md":
+            continue
         shutil.copy(filename, sim_dir)
 
         # TODO: the next two lines are two files for old post-processing
@@ -393,16 +388,24 @@ def action(sim_dir, event_name, run_name, run_dir, vel_mod_dir, srf_dir, srf_sto
 
 
 def show_instruction(sim_dir):
+    try:
+        print "Removing probably incomplete "+os.path.join(sim_dir, "params_base.pyc")
+        os.remove(os.path.join(sim_dir, "params_base.pyc"))
+    except Exception, e:
+        print e.args
+        print "Could not remove params_base.pyc"
+
     show_horizontal_line()
     print "Instructions"
     show_horizontal_line()
-    print "   For Simulation (Fitzroy)"
+    print "   For Simulation (Slurm based system)"
     print "    1.   cd %s" % sim_dir
-    print "    2.   Edit params.py and run_emod3d.ll.template"
-    print "    3.   ./submit_emod3d.sh"
-    print "    4.   ./submit_post_emod3d.sh or ./submit_post_emod3d_mpi.sh (parallel)"
-    print "    5.   ./install_bb.sh"
-    print "    6.   ./submit_hf.sh and ./submit_bb.sh"
+    print "    2.   Edit params.py and run_emod3d.sl.template as needed"
+    print "    3.   python $gmsim/workflow/scripts/submit_emod3d.py"
+    print "    4.   python $gmsim/workflow/scripts/submit_post_emod3d.py"
+    print "    5.   python $gmsim/workflow/scripts/install_bb.py"
+    print "    6.   python $gmsim/workflow/scripts/submit_hf.py and python $gmsim/workflow/scripts/submit_bb.py"
+    print "    Note: If you did not submit one or more .sl scripts, just do 'sbatch slurm_script.sl"
     print "   For Plotting (hypocentre)"
     print "    1.   Plotting station based data (IMs, Vs30, Obs PGA, pSA): plot_stations.py {datafile}.ll"
     print "    2.   Plotting timeslice-based data (PGV,MMI,animation): plot_transfer.py auto %s" % sim_dir
