@@ -126,7 +126,7 @@ def q_select_vel_model(vel_mod_dir):
     print vel_mod_dir, params_vel
     params_vel_path = os.path.join(vel_mod_dir, params_vel)
     if not os.path.exists(params_vel_path):
-        print "Error: %s doesn't exist" % (params_vel_path)
+        print "Error: %s doesn't exist" % params_vel_path
         sys.exit()
 
     return v_mod_ver, vel_mod_dir, params_vel_path
@@ -251,7 +251,7 @@ def action(sim_dir, event_name, run_name, run_dir, vel_mod_dir, srf_dir, srf_sto
     # Rename params.py.template to params.py
     shutil.move(os.path.join(sim_dir, "params.py.template"), os.path.join(sim_dir, "params.py"))
 
-    if not (yes_model_params):
+    if not yes_model_params:
         print "Generation of model params has been skipped."
         print "Re-directing related params to files under %s" % vel_mod_dir
         vel_mod_params_dir = vel_mod_dir
@@ -440,12 +440,12 @@ def wallclock(sim_dir):
     show_horizontal_line()
     try:
         import params
-    except:
+    except ImportError:
         print "import params failed. check sys.path"
     # print "--testing params var:",params.nx
     try:
         import wct
-    except:
+    except ImportError:
         print "cannnot import wct.py. please check sys.path"
     else:
         # retrive data from DB. same lines as in wct.py

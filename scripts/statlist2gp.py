@@ -25,8 +25,8 @@ def main(stat_file = 'default.ll', \
     # arbitrary longlat station input
     ll_in = stat_file
     # where to save gridpoint and longlat station files
-    gp_out = path.join(outpath, '%s.statcords' % (filename))
-    ll_out = path.join(outpath, '%s.ll' % (filename))
+    gp_out = path.join(outpath, '%s.statcords' % filename)
+    ll_out = path.join(outpath, '%s.ll' % filename)
 
 
     print "From: %s" %stat_file
@@ -55,7 +55,7 @@ def main(stat_file = 'default.ll', \
     sxy = []
     suname = []
     for i in xrange(len(xy)):
-        if xy[i] == None:
+        if xy[i] is None:
             if debug:
                 print('Station outside domain: %s' % (sname[i]))
         elif xy[i] not in sxy:

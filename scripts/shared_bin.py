@@ -29,12 +29,13 @@ SIZE_SEISHEAD = SIZE_INT * 5 + SIZE_FLT * 5 + STAT_CHAR
 N_COMPS = 9
 # values of interest in components, index in N_COMPS, description
 # changing these requires changing logic
-MY_COMPS = {0:'090', 1:'000', 2:'ver'}
+MY_COMPS = {0: '090', 1: '000', 2: 'ver'}
 N_MY_COMPS = len(MY_COMPS)
 # ASCII properties - values per line
 VPL = 6
 
 NATIVE_ENDIAN = byteorder
+
 
 # return order to read bytes in, either '>' or '<'
 # assumes you want to read in the non-native order
@@ -45,6 +46,7 @@ def get_byteswap_char():
     else:
         # process as little endian
         return '<'
+
 
 # automatic endianness detection for seis files
 # first assume that endianness is native, check if filesize matches
@@ -62,6 +64,7 @@ def get_seis_swap(file_path):
     if fs == stat(fp.name).st_size:
         return False
     return True
+
 
 def get_seis_common(file_path, INT_S, FLT_S):
     """
@@ -83,10 +86,11 @@ def get_seis_common(file_path, INT_S, FLT_S):
 
     return nt, dt, hh, rot
 
+
 # write data to ASCII seis file
-def write_seis_ascii(out_dir, data, stat, comp, nt, dt, \
-        t_hr = 0, t_min = 0, t_sec = -1.0, \
-        edist = 0.0, az = 0.0, baz = 0.0, title = ''):
+def write_seis_ascii(out_dir, data, stat, comp, nt, dt,
+                     t_hr=0, t_min=0, t_sec=-1.0,
+                     edist=0.0, az=0.0, baz=0.0, title=''):
     # no trailing 0s in ASCII header (as in wcc_rotate behaviour)
     try:
         comp_header = str(int(comp))
@@ -97,15 +101,14 @@ def write_seis_ascii(out_dir, data, stat, comp, nt, dt, \
     # same format strings as fdbin2wcc
     op.write('%-10s %3s %s\n' % (stat, comp_header, title))
     op.write('%d %12.5e %d %d %12.5e %12.5e %12.5e %12.5e\n' % \
-            (nt, dt, t_hr, t_min, t_sec, edist, az, baz))
+             (nt, dt, t_hr, t_min, t_sec, edist, az, baz))
     # values below header lines
     for full_line_i in xrange(nt // VPL):
         op.write('%13.5e%13.5e%13.5e%13.5e%13.5e%13.5e\n' % \
-                tuple(data[full_line_i * VPL:full_line_i * VPL + VPL]))
+                 tuple(data[full_line_i * VPL:full_line_i * VPL + VPL]))
     # partial last line
     if nt % VPL != 0:
         for t in xrange(nt - nt % VPL, nt):
             op.write('%13.5e' % (data[t]))
         op.write('\n')
     op.close()
-

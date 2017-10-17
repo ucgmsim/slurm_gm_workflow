@@ -15,19 +15,20 @@ ISSUES: remove default values in e3d_default.par where not needed.
 from __future__ import print_function
 import sys
 import os.path
+
 sys.path.append(os.path.abspath(os.path.curdir))
 from shutil import copyfile
 import shared
 
 params_uncertain = 'params_uncertain.py'
+try:
+    from params_base import *
+except ImportError:
+    print(sys.path)
+    exit(1)
+
 
 def create_run_parameters():
-    try:
-        from params_base import *
-    except:
-        print(sys.path)
-        exit(1)
-
     # attempt to append template file before importing params
     try:
         # throws NameError if var not set, AssertionError if blank
@@ -185,8 +186,5 @@ def create_run_parameters():
         shared.write_to_py(os.path.join(p1['lf_sim_dir'], parfile), p2)
 
 
-
-if __name__ == '__main__' :
+if __name__ == '__main__':
     create_run_parameters()
-
-

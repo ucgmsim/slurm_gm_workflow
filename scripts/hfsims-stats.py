@@ -85,7 +85,6 @@ verify_strings([hf_prefix, hf_t_len, hf_dt, hf_vs_moho, hf_fa_sig_1, hf_rv_sig_1
         hf_sdrop, hf_kappa, hf_qfexp, hf_rayset, hf_rvfac, hf_shal_rvfac, hf_deep_rvfac, \
         hf_czero, hf_site_amp, hf_mom, hf_rupv, hf_seed, hf_fmax, hf_calpha, hf_path_dur])
 verify_user_dirs([hf_sim_dir])
-#verify_logfiles([local_statfile])
 
 try:
     verify_strings([hf_resume])

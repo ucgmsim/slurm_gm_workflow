@@ -11,8 +11,10 @@ from temp_shared import resolve_header
 from shared import *
 
 
+# noinspection PyStatementEffect
 def confirm(q):
-    show_horizontal_line
+    # noinspection PyStatementEffect
+    show_horizontal_line()
     print q
     return show_yes_no_question()
 
@@ -26,7 +28,6 @@ def create_sl(bb_sim_dirs, sl_template_prefix, submit_yes):
     pass
     f_template = open('%s.sl.template' % sl_template_prefix)
     template = f_template.readlines()
-    template
     str_template = ''.join(template)
 
     for bb_sim_dir in bb_sim_dirs:
@@ -57,16 +58,14 @@ def create_sl(bb_sim_dirs, sl_template_prefix, submit_yes):
 
 
 version = 'SERIAL'
+sl_name_prefix = 'run_bb'
 if len(sys.argv) == 2:
     version = sys.argv[1]
     if version == 'MPI':
-        ll_name_prefix = 'run_bb_mpi'
+        sl_name_prefix = 'run_bb_mpi'
     else:
-        print '%s is an invalid option' % version
-        version = 'SERIAL'
         print 'Set to default %s' % version
-if version == 'SERIAL':
-    ll_name_prefix = 'run_bb'
+
 
 print version
 
@@ -87,11 +86,6 @@ if len(bb_sim_dirs_to_skip) > 0:
     print "BB subdirectories to skip: ", bb_sim_dirs_to_skip
     print "Note: Run install_bb.py again to process these"
 
-# f_template=open('%s.ll.template'%ll_name_prefix)
-# template=f_template.readlines()
-# template
-# str_template=''.join(template)
-
 submit_yes = confirm("Also submit the job for you?")
 
-create_sl(bb_sim_dirs, ll_name_prefix, submit_yes)
+create_sl(bb_sim_dirs, sl_name_prefix, submit_yes)

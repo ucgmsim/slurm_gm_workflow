@@ -7,6 +7,9 @@ import os.path
 sys.path.append(os.path.abspath(os.path.curdir))
 from shared import *
 
+# TODO: this is hardcoded
+gen_model_cords_bin = '/nesi/projects/nesi00213/tools/gen_model_cords'
+
 try:
     from params import *
 except ImportError:
@@ -22,9 +25,6 @@ except ImportError:
         except ImportError:
             print "Error: params_vel.py is missing"
             sys.exit()
-        else:
-            gen_model_cords_bin = '/nesi/projects/nesi00213/tools/gen_model_cords'
-
 
 #variables that cannot be found in params_base.py
 CENTER_ORIGIN = '1'
@@ -117,12 +117,12 @@ def main(outdir=None, debug=False):
             try:
                 file_coordfile = open(MODEL_COORDS, "r")
             except IOError:
-                print "IO Eorror, cannot open files %s"%(MODEL_COORDS)
+                print "IO Eorror, cannot open files %s" % MODEL_COORDS
                 sys.exit()
             try:
                 file_boundfile = open(MODEL_BOUNDS, "w")
             except IOError:
-                print "IO Eorror, cannot open files %s"%(MODEL_BOUNDS)
+                print "IO Eorror, cannot open files %s" % MODEL_BOUNDS
                 sys.exit()
 
             #read lines from coordfiles

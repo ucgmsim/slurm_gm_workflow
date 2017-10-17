@@ -1,20 +1,11 @@
-# TODO: change this to come from a config
-# bin_process_path='/nesi/projects/nesi00213/workflow'
-bin_process_path = '/projects/nesi00213/workflow'
+
 import glob
 import os.path
 import sys
-from version import *
 import math
 
 # TODO: remove this once temp_shared is gone
 from temp_shared import resolve_header
-
-bin_process_dir = os.path.join(bin_process_path, bin_process_ver)
-sys.path.append(bin_process_dir)
-
-# TODO: add qcore to the python path
-sys.path.append('/projects/nesi00213/qcore')
 
 from shared import *
 
@@ -29,9 +20,6 @@ def confirm(q):
     show_horizontal_line
     print q
     return show_yes_no_question()
-
-#print version
-#print VERSION
 
 merge_ts_name_prefix = "post_emod3d_merge_ts"
 winbin_aio_name_prefix = "post_emod3d_winbin_aio"
@@ -70,7 +58,7 @@ for lf_sim_dir in lf_sim_dirs:
     run_time = "00:30:00"
     job_name = "post_emod3d_merge_ts_%s" % rup_mod
     memory = "16G"
-    header = resolve_header("nesi00213", nb_cpus, run_time, job_name, bin_process_ver, memory,
+    header = resolve_header("nesi00213", nb_cpus, run_time, job_name, "Slurm", memory,
                             job_description="post emod3d: merge_ts", additional_lines="#SBATCH -C avx")
 
     fname_merge_ts_script = '%s_%s.sl' % (merge_ts_name_prefix, rup_mod)
@@ -87,7 +75,7 @@ for lf_sim_dir in lf_sim_dirs:
     run_time = "00:30:00"
     job_name = "post_emod3d_winbin_aio_%s" % rup_mod
     memory = "16G"
-    header = resolve_header("nesi00213", nb_cpus, run_time, job_name, bin_process_ver, memory,
+    header = resolve_header("nesi00213", nb_cpus, run_time, job_name, "slurm", memory,
                             job_description="post emod3d: winbin_aio", additional_lines="#SBATCH -C avx")
 
     fname_winbin_aio_script = '%s_%s.sl' % (winbin_aio_name_prefix, rup_mod)

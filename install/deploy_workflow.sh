@@ -16,37 +16,37 @@ function print_message {
 }
 
 # check for directories that are needed on $ROOT
-test_dir ${ROOT}/EMOD3D $ROOT
-test_dir ${ROOT}/qcore $ROOT
+test_dir ${ROOT}/EMOD3D ${ROOT}
+test_dir ${ROOT}/qcore ${ROOT}
 
 echo "Preparing the necessary directories to run GM"
-mkdir -p -v $ROOT/{VelocityModel,VelocityModels,StationInfo,workflow,RunFolder,RupModel,share}
-chmod g+w $ROOT/{VelocityModel,VelocityModels,StationInfo,workflow,RunFolder,RupModel,share}
+mkdir -p -v ${ROOT}/{VelocityModel,VelocityModels,StationInfo,workflow,RunFolder,RupModel,share}
+chmod g+w ${ROOT}/{VelocityModel,VelocityModels,StationInfo,workflow,RunFolder,RupModel,share}
 
 # preparing the file bashrc.uceq
-rm -f $ROOT/share/bashrc.uceq
-touch $ROOT/share/bashrc.uceq
-echo "export gmsim='$ROOT'" >> $ROOT/share/bashrc.uceq
-echo 'export PATH=$PATH:'$ROOT/workflow >> $ROOT/share/bashrc.uceq
-echo "export PYTHONPATH=$ROOT/qcore:$ROOT/workflow:"'$PYTHONPATH' >> $ROOT/share/bashrc.uceq
+rm -f ${ROOT}/share/bashrc.uceq
+touch ${ROOT}/share/bashrc.uceq
+echo "export gmsim='$ROOT'" >> ${ROOT}/share/bashrc.uceq
+echo 'export PATH=$PATH:'${ROOT}/workflow >> ${ROOT}/share/bashrc.uceq
+echo "export PYTHONPATH=$ROOT/qcore:$ROOT/workflow:"'$PYTHONPATH' >> ${ROOT}/share/bashrc.uceq
 
 print_message "Add source $ROOT/share/bashrc.uceq to your .bashrc"
 
 # copying the files to the workflow
-cp -r ../scripts $ROOT/workflow/
-cp -r ../templates $ROOT/workflow/
-cp -r ../shared_workflow $ROOT/workflow/
+cp -r ../scripts ${ROOT}/workflow/
+cp -r ../templates ${ROOT}/workflow/
+cp -r ../shared_workflow ${ROOT}/workflow/
 
-touch ../scripts $ROOT/workflow/{scripts,templates,shared_workflow}/__init__.py
+touch ../scripts ${ROOT}/workflow/{scripts,templates,shared_workflow}/__init__.py
 
 # Adding legacy install.sh
 echo '#!/usr/bin/env bash
 
-python '$ROOT/workflow/scripts'/install.py
-' > $ROOT/RunFolder/install.sh
-chmod +x $ROOT/RunFolder/install.sh
+python '${ROOT}/workflow/scripts'/install.py
+' > ${ROOT}/RunFolder/install.sh
+chmod +x ${ROOT}/RunFolder/install.sh
 
 # Create a JSON config file for python
-python create_config_file.py $ROOT
+python create_config_file.py ${ROOT}
 
 

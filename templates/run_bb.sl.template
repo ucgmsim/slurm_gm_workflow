@@ -1,0 +1,12 @@
+source machine_env.sh
+ 
+date
+echo "Computing BB"
+srun python /projects/nesi00213/workflow/$VERSION/match_seismo.py $bb_sim_dir
+date
+echo "Making .tar out of Vel and Acc files"
+here=`pwd`
+cd $bb_sim_dir
+tar cf BB_$rup_mod.tar Vel Acc
+mv BB_$rup_mod.tar $here
+date

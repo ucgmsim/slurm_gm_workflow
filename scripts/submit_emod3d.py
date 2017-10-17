@@ -29,7 +29,7 @@ args = parser.parse_args()
 
 
 def confirm(q):
-    show_horizontal_line
+    show_horizontal_line()
     print q
     return show_yes_no_question()
 

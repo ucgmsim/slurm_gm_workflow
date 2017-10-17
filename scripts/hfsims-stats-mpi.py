@@ -230,7 +230,7 @@ if rand_reset:
     executor.process_function_with_result(run_hf,stat_data)
 else:
     statfile, nss = comm.scatter(stat_data, root=0)
-    print "rank %d" %(rank)
+    print "rank %d" % rank
     run_hf((statfile,nss))
 
     
