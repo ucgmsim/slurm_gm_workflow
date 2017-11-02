@@ -20,7 +20,7 @@ config_dictionary = {
   "params_vel" : "params_vel.py"
 }
 
-with open(os.path.join(shared_workflow_dir, "workflow_config.json"), "w") as f:
+with open(os.path.join(bin_process_path, "workflow_config.json"), "w") as f:
     json.dump(config_dictionary, f)
 
 print "DONE"
