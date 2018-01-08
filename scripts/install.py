@@ -1,6 +1,6 @@
 #!/usr/bin/env python2
 
-import os.path
+import os
 import glob
 import shutil
 import getpass
@@ -9,10 +9,11 @@ import datetime
 from shared_workflow.load_config import load
 import ConfigParser
 
+import load_config as ldcfg
 # TODO: namespacing
 from shared import *
 
-workflow_config = load()
+workflow_config = ldcfg.load(os.path.join(os.path.dirname(os.path.realpath(__file__)),"workflow_config.json"))
 global_root = workflow_config["global_root"]
 tools_dir = os.path.join(global_root, 'EMOD3D/tools')
 bin_process_dir = os.path.join(global_root, 'workflow/scripts')
