@@ -2,7 +2,7 @@ source machine_env.sh
  
 date
 echo "Computing BB"
-srun python /projects/nesi00213/workflow/$VERSION/match_seismo-mpi.py $bb_sim_dir 
+srun python  $BINPROCESS/match_seismo-mpi.py $bb_sim_dir
 date
 echo "Making .tar out of Vel and Acc files"
 here=`pwd`

@@ -8,5 +8,5 @@ export end=`date +%H:%M:%S_%d/%m/%Y`
 echo $end
 source ./version
 echo "Saving execution time"
-python /projects/nesi00213/workflow/$VERSION/wct.py -a $start $end
+python $BINPROCESS/wct.py -a $start $end
 
