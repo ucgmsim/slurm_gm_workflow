@@ -11,9 +11,7 @@ from temp_shared import resolve_header
 from shared import *
 
 
-# noinspection PyStatementEffect
 def confirm(q):
-    # noinspection PyStatementEffect
     show_horizontal_line()
     print q
     return show_yes_no_question()

@@ -66,6 +66,7 @@ def create_sl(submit_yes):
         f_sl_script.close()
         print "Slurm script %s written" % fname_slurm_script
         if submit_yes:
+            # TODO: implement submit_sl_script function and use it here
             print "Submitting %s" % fname_slurm_script
             res = exe("sbatch %s" % fname_slurm_script, debug=False)
             # print res

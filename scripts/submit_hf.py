@@ -17,6 +17,7 @@ def confirm(q):
     return show_yes_no_question()
 
 
+# TODO: implement submit_sl_script
 def submit_sl_script(script_name):
     print "Submitting is not implemented yet!"
 

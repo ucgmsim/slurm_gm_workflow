@@ -86,6 +86,7 @@ for lf_sim_dir in lf_sim_dirs:
     print "Slurm script %s written" % fname_winbin_aio_script
 
     if submit_yes:
+        # TODO: implement submit_sl_script and use here
         print "Submitting not implemented yet!"
         #res = exe("llsubmit %s" % fname_llscript, debug=False)
     #        print res
