@@ -63,3 +63,5 @@ echo "source $ROOT/share/bashrc.uceq" >> ${ROOT}/workflow/templates/machine_env.
 echo "export BINPROCESS=$ROOT/workflow/scripts" >> ${ROOT}/workflow/templates/machine_env.sh
 echo "" >> ${ROOT}/workflow/templates/machine_env.sh
 
+print_message "Remember to edit the $ROOT/workflow/templates/slurm_header.cfg with the data needed on your system"
+
