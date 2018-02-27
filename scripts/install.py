@@ -340,8 +340,8 @@ def action(sim_dir, event_name, run_name, run_dir, vel_mod_dir, srf_dir, srf_sto
             f.write("STAT_FILES=[stat_file]\n")
 
     print dir_list[0]
-    set_permission(dir_list[
-                       0])  # if user_root is first time created, recursively set permission from there. otherwise, set permission from sim_dir
+    #set_permission(dir_list[
+    #                   0])  # if user_root is first time created, recursively set permission from there. otherwise, set permission from sim_dir
 
     sys.path.append(sim_dir)
 
