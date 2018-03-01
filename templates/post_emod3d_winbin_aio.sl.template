@@ -2,8 +2,8 @@
 source machine_env.sh
 
 echo "WINBIN aio"
-#srun python $BINPROCESS/winbin-aio-mpi.py LF/Kelly_HYP01-03_S1244
-srun python $BINPROCESS/winbin-aio.py {{lf_sim_dir}}
+srun python $BINPROCESS/winbin-aio-mpi.py {{lf_sim_dir}}
+#srun python $BINPROCESS/winbin-aio.py {{lf_sim_dir}}
 
 
 

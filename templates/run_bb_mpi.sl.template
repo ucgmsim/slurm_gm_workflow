@@ -4,9 +4,9 @@ date
 echo "Computing BB"
 srun python  $BINPROCESS/match_seismo-mpi.py $bb_sim_dir
 date
-echo "Making .tar out of Vel and Acc files"
-here=`pwd`
-cd $bb_sim_dir
-tar cf BB_$rup_mod.tar Vel Acc
-mv BB_$rup_mod.tar $here
-date
+##echo "Making .tar out of Vel and Acc files"
+##here=`pwd`
+##cd $bb_sim_dir
+##tar cf BB_$rup_mod.tar Vel Acc
+##mv BB_$rup_mod.tar $here
+##date

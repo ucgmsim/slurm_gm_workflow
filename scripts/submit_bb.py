@@ -6,9 +6,16 @@ import sys
 sys.path.append(os.path.abspath(os.path.curdir))
 from params import *
 from params_base_bb import *
+
+#datetime related
+import datetime as dtl 
+exetime_pattern = "%Y%m%d_%H%M%S"
+exe_time = dtl.datetime.now().strftime(exetime_pattern)
+
+
 # TODO: move this to qcore library
 from temp_shared import resolve_header
-from shared import *
+from qcore.shared import *
 
 
 def confirm(q):
@@ -38,12 +45,12 @@ def create_sl(bb_sim_dirs, sl_template_prefix, submit_yes):
         fname_slscript = '%s_%s.sl' % (sl_template_prefix, variation)
         f_slscript = open(fname_slscript, 'w')
         # TODO: change this values to values that make more sense or come from somewhere
-        nb_cpus = "24"
+        nb_cpus = "80"
         run_time = "00:30:00"
         job_name = "sim_bb_%s" % variation
         memory = "16G"
-        header = resolve_header("nesi00213", nb_cpus, run_time, job_name, version="slurm", memory=memory,
-                                job_description="BB calculation", additional_lines="#SBATCH -C avx")
+        header = resolve_header("nesi00213", nb_cpus, run_time, job_name, version="slurm", memory=memory, exe_time,
+                                job_description="BB calculation", additional_lines="##SBATCH -C avx")
         f_slscript.write(header)
         f_slscript.write(txt)
         f_slscript.close()

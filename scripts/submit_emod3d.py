@@ -9,7 +9,14 @@ import set_runparams
 # TODO: this needs to append the path to qcore as well
 qcore_path = '/projects/nesi00213/qcore'
 sys.path.append(qcore_path)
-from shared import *
+from qcore.shared import *
+
+
+#datetime related
+import datetime as dtl
+exetime_pattern = "%Y%m%d_%H%M%S"
+exe_time = dtl.datetime.now().strftime(exetime_pattern)
+
 
 # TODO: remove this once temp_shared is gone
 from temp_shared import resolve_header
@@ -34,7 +41,7 @@ def confirm(q):
     return show_yes_no_question()
 
 
-def create_sl(submit_yes):
+def create_sl(submit_yes,wall_clock_limit):
     from params_base import tools_dir
 
     # execfile(os.path.join(bin_process_dir, "set_runparams.py"))
@@ -54,12 +61,13 @@ def create_sl(submit_yes):
 
         # slurm header
         # TODO: change this values to values that make more sense
-        nb_cpus = "128"
-        run_time = "1:00:00"
+        nb_cpus = "40"
+        #run_time = "1:00:00"
+        run_time = wall_clock_limit
         job_name = "emod3d_%s" % rup_mod
-        memory = "16G"
-        header = resolve_header("nesi00213", nb_cpus, run_time, job_name, "slurm", memory,
-                                job_description="emod3d slurm script", additional_lines="#SBATCH -C avx")
+        memory="16G"
+        header = resolve_header("nesi00213", nb_cpus, run_time, job_name, "slurm", memory, exe_time,
+                                job_description="emod3d slurm script", additional_lines="#SBATCH --hint=nomultithread")
 
         f_sl_script.write(header)
         f_sl_script.write(txt)
@@ -75,6 +83,7 @@ def create_sl(submit_yes):
 
 
 if args.auto == 'auto':
+    #enable this feature after wct is properly implemented
     print "This feature is disabled for slurm scripts"
     exit(1)
 
@@ -105,4 +114,4 @@ else:
 
     submit_yes = confirm("Also submit the job for you?")
 
-    create_sl(submit_yes)
+    create_sl(submit_yes,wall_clock_limit)

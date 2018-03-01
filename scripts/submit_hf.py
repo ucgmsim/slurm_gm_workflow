@@ -7,9 +7,17 @@ sys.path.append(os.path.abspath(os.path.curdir))
 from params import *
 from params_base_bb import *
 import fnmatch
+
+#datetime related
+import datetime as dtl 
+exetime_pattern = "%Y%m%d_%H%M%S"
+exe_time = dtl.datetime.now().strftime(exetime_pattern)
+
+
+
 # TODO: move this to qcore library
 from temp_shared import resolve_header
-from shared import *
+from qcore.shared import *
 
 def confirm(q):
     show_horizontal_line()
@@ -43,12 +51,12 @@ def write_sl_script(hf_dir, sl_template_prefix, hf_option):
         fname_sl_script = '%s_%s.sl' % (sl_template_prefix, variation)
         f_llscript = open(fname_sl_script, 'w')
         # TODO: change this values to values that make more sense or come from somewhere
-        nb_cpus = "24"
+        nb_cpus = "80"
         run_time = "00:30:00"
         job_name = "sim_hf_%s" % variation
         memory = "16G"
-        header = resolve_header("nesi00213", nb_cpus, run_time, job_name, "slurm", memory,
-                                job_description="HF calculation", additional_lines="#SBATCH -C avx")
+        header = resolve_header("nesi00213", nb_cpus, run_time, job_name, "slurm", memory, exe_time,
+                                job_description="HF calculation", additional_lines="###SBATCH -C avx")
         f_llscript.write(header)
         f_llscript.write(txt)
         f_llscript.close()

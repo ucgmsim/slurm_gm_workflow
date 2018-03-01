@@ -7,13 +7,19 @@ import math
 # TODO: remove this once temp_shared is gone
 from temp_shared import resolve_header
 
-from shared import *
+from qcore.shared import *
 
 sys.path.append(os.getcwd())
 from params_base import tools_dir
 
+#datetime related
+import datetime as dtl
+exetime_pattern = "%Y%m%d_%H%M%S"
+exe_time = dtl.datetime.now().strftime(exetime_pattern)
+
+
 # TODO: hardcoding is bad!
-max_tasks_per_node = "12"
+max_tasks_per_node = "80"
 
 
 def confirm(q):
@@ -58,8 +64,8 @@ for lf_sim_dir in lf_sim_dirs:
     run_time = "00:30:00"
     job_name = "post_emod3d_merge_ts_%s" % rup_mod
     memory = "16G"
-    header = resolve_header("nesi00213", nb_cpus, run_time, job_name, "Slurm", memory,
-                            job_description="post emod3d: merge_ts", additional_lines="#SBATCH -C avx")
+    header = resolve_header("nesi00213", nb_cpus, run_time, job_name, "Slurm", memory,exe_time,
+                            job_description="post emod3d: merge_ts", additional_lines="###SBATCH -C avx")
 
     fname_merge_ts_script = '%s_%s.sl' % (merge_ts_name_prefix, rup_mod)
     final_merge_ts = open(fname_merge_ts_script, 'w')
@@ -71,12 +77,12 @@ for lf_sim_dir in lf_sim_dirs:
     # preparing winbin_aio
     txt = winbin_aio_str_template.replace("{{lf_sim_dir}}", lf_sim_dir)
     # TODO: change this values to values that make more sense
-    nb_cpus = "1"
+    nb_cpus = max_tasks_per_node 
     run_time = "00:30:00"
     job_name = "post_emod3d_winbin_aio_%s" % rup_mod
     memory = "16G"
-    header = resolve_header("nesi00213", nb_cpus, run_time, job_name, "slurm", memory,
-                            job_description="post emod3d: winbin_aio", additional_lines="#SBATCH -C avx")
+    header = resolve_header("nesi00213", nb_cpus, run_time, job_name, "slurm", memory,exe_time,
+                            job_description="post emod3d: winbin_aio", additional_lines="###SBATCH -C avx")
 
     fname_winbin_aio_script = '%s_%s.sl' % (winbin_aio_name_prefix, rup_mod)
     final_winbin_aio = open(fname_winbin_aio_script, 'w')
