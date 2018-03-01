@@ -19,7 +19,7 @@ import os
 sys.path.append(os.path.abspath(os.path.curdir))
 from shutil import copyfile
 from subprocess import call, Popen, PIPE
-from shared import *
+from qcore.shared import *
 from params import *
 from params_base_bb import *
 import glob

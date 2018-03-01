@@ -18,7 +18,7 @@ finally:
 
 import glob
 # TODO: make sure that qcore is in the PYTHONPATH
-from shared import *
+from qcore.shared import *
 
 params_bb_uncertain = 'params_bb_uncertain.py'
 params_uncertain='params_uncertain.py'

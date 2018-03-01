@@ -2,8 +2,8 @@
 
 from os import path
 
-from geo import *
-from shared import *
+from qcore.geo import *
+from qcore.shared import *
 import sys
 import os
 

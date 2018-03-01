@@ -32,11 +32,11 @@ sys.path.append(os.path.abspath(os.path.curdir))
 
 import numpy as np
 
-from shared import *
+from qcore.shared import *
 from shared_bin import *
 
 from params_base import *
-import remaining_stations
+from shared_workflow import remaining_stations
 
 if len(sys.argv) > 1:
     if os.path.exists(sys.argv[1]) and os.path.isdir(sys.argv[1]):

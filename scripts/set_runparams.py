@@ -18,7 +18,7 @@ import os.path
 
 sys.path.append(os.path.abspath(os.path.curdir))
 from shutil import copyfile
-import shared
+from qcore import shared
 
 params_uncertain = 'params_uncertain.py'
 try:
