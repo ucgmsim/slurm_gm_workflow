@@ -9,6 +9,7 @@ import datetime
 #from shared_workflow.load_config import load
 from shared_workflow import load_config as ldcfg
 import ConfigParser
+import argparse
 
 # TODO: namespacing
 from qcore.shared import *
@@ -610,12 +611,40 @@ def main_remote(cfg):
 
 
 if __name__ == '__main__':
-    if len(sys.argv) == 1:
-        main_local()
-    else:
-        cfg = sys.argv[1]
+    
+    parser = argparse.ArgumentParser()
+    
+    parser.add_argument('--user_root',type=str)
+    parser.add_argument('--sim_cfg',type=str)
+    
+    args = parser.parse_args()
+
+    if args.user_root != None:
+        user_root = args.user_root 
+        if not os.path.exists(user_root):
+            print "path no exsits: %s"%user_root
+            sys.exit()
+        else:
+            print "user_root changed:",args.user_root
+
+    #if sim_cfg parsed, run main_remote(which has no selection)
+    if args.sim_cfg != None:
+        cfg = args.sim_cfg
+        #check if the cfg exist, to prevent break
         if not os.path.exists(cfg):
             print "Error: No such file exists: %s" % cfg
             sys.exit()
         else:
             main_remote(cfg)
+    else:
+        main_local()
+    
+    #if len(sys.argv) == 1:
+    #    main_local()
+    #else:
+    #    cfg = sys.argv[1]
+    #    if not os.path.exists(cfg):
+    #        print "Error: No such file exists: %s" % cfg
+    #        sys.exit()
+    #    else:
+    #        main_remote(cfg)
