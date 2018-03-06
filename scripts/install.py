@@ -614,8 +614,8 @@ if __name__ == '__main__':
     
     parser = argparse.ArgumentParser()
     
-    parser.add_argument('--user_root',type=str)
-    parser.add_argument('--sim_cfg',type=str)
+    parser.add_argument('--user_root',type=str,nargs='?',default=None,const=None)
+    parser.add_argument('--sim_cfg',type=str,nargs='?',default=None,const=None)
     
     args = parser.parse_args()
 
