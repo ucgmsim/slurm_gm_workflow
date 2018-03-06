@@ -1,0 +1,7 @@
+
+source machine_env.sh
+
+date
+srun python  $BINPROCESS/hfsims-stats-mpi.py {{hf_sim_dir}} {{hf_option}}
+date
+
