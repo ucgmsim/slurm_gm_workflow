@@ -59,7 +59,8 @@ rm -f ${ROOT}/workflow/templates/machine_env.sh
 touch ${ROOT}/workflow/templates/machine_env.sh
 
 echo "# Replace with the actual Python module" >> ${ROOT}/workflow/templates/machine_env.sh
-echo "{{LOAD_PYTHON_MODULE}}" >> ${ROOT}/workflow/templates/machine_env.sh
+#loads the mpi4py module if the user happen to have not sourced bashrc.uceq
+echo "module load mpi4py" >> ${ROOT}/workflow/templates/machine_env.sh
 echo "" >> ${ROOT}/workflow/templates/machine_env.sh
 echo "source $ROOT/share/bashrc.uceq" >> ${ROOT}/workflow/templates/machine_env.sh
 echo "export BINPROCESS=$ROOT/workflow/scripts" >> ${ROOT}/workflow/templates/machine_env.sh
