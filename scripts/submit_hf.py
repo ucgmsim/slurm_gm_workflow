@@ -108,12 +108,18 @@ if __name__ == '__main__':
     parser.add_argument('--site_specific',type=int,nargs='?',default=None,const=True)
     args = parser.parse_args()
    
+    #check if parsed ncore
+    if args.ncore != default_core:
+        ncore = args.ncore
+    else:
+        ncore = default_core
 
     #check if the args is none, if not, change the version
     if args.version != None:
         version = args.version
         if version == 'serial' or version == 'run_hf':
             ll_name_prefix = 'run_hf'
+            ncore="1"
         elif version == 'mp' or version == 'run_hf_mp':
             ll_name_prefix = 'run_hf_mp'
         elif version == 'mpi' or version == 'run_hf_mpi':
@@ -141,11 +147,6 @@ if __name__ == '__main__':
                 hf_option = 0
                 print "Note: rand_reset is not defined in params_base_bb.py. We assume rand_reset=%s"%bool(hf_option)
         
-    #check if parsed ncore
-    if args.ncore != default_core:
-        ncore = args.ncore
-    else:
-        ncore = default_core
 
     #TODO: add in wct estimation
     run_time=default_run_time
