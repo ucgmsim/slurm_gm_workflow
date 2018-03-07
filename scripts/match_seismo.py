@@ -220,5 +220,5 @@ logger.close()
 os.remove(tmp_filelist)
 os.remove(hf_copy)
 os.remove(lf_copy)
-set_permission(bb_sim_dir)
+#set_permission(bb_sim_dir)
 

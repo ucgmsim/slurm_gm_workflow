@@ -236,4 +236,4 @@ if rank == 0:
     #    for temp_statfile in statfiles:
     #        os.remove(temp_statfile)
 
-    set_permission(hf_sim_dir)
+    #set_permission(hf_sim_dir)

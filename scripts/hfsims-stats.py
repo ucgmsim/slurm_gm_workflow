@@ -156,4 +156,4 @@ for i,local_statfile in enumerate(local_statfiles):
     hf_pipe.communicate(args)
     sink.close()
 
-set_permission(hf_sim_dir)
+#set_permission(hf_sim_dir)

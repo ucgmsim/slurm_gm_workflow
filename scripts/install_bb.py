@@ -134,14 +134,14 @@ def action_for_uncertainties(hf_sim_basedir,bb_sim_basedir,srf,slip,kappa,sdrop)
         print e
         
 
-    try: 
-        set_permission(hf_sim_basedir)
-    except OSError as e:
-        print e
-    try:
-        set_permission(bb_sim_basedir)
-    except OSError as e:
-        print e
+#    try: 
+#        set_permission(hf_sim_basedir)
+#    except OSError as e:
+#        print e
+#    try:
+#        set_permission(bb_sim_basedir)
+#    except OSError as e:
+#        print e
 
 
 
