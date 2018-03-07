@@ -11,11 +11,16 @@ import fnmatch
 
 import argparse
 
+from qcore.srf import get_nsub_stoch
+from qcore.shared import get_stations
 #default values
 default_version='run_hf_mpi'
 default_core="80"
 default_run_time="00:30:00"
 default_memory="16G"
+#TODO:this number needs to find a way to update more frequently, based on stored WCT.
+default_hf_coef=1741000000
+default_scaling=1.2
 #datetime related
 from datetime import datetime 
 timestamp_format = "%Y%m%d_%H%M%S"
@@ -33,7 +38,6 @@ def confirm(q):
     return show_yes_no_question()
 
 
-# TODO: implement submit_sl_script
 def submit_sl_script(script_names):
     #print "Submitting is not implemented yet!"
     submit_yes = confirm("Also submit the job for you?")
@@ -44,8 +48,17 @@ def submit_sl_script(script_names):
     else:
         print "User chose to submit the job manually"
     
+#TODO, probably move this to qcore lib
+def est_core_hours_hf(timestep,station_count,sub_fault_count, hf_coef):
+    total_size = timestep * station_count *sub_fault_count
+    core_hours= round( total_size / hf_coef, 2)
+    return core_hours
 
-
+def est_wct(est_core_hours, ncore, scale):
+    scaled_est = est_core_hours * scale
+    time_per_cpu = scaled_est/ncore
+    estimated_wct = '{0:02.0f}:{1:02.0f}:00'.format(*divmod(scaled_est * 60, 60))
+    return estimated_wct
 
 def write_sl_script(hf_dir, sl_template_prefix, hf_option, nb_cpus=default_core, run_time=default_run_time,memory=default_memory):
     hf_sim_dirs = []
@@ -139,6 +152,18 @@ if __name__ == '__main__':
 
     #--auto used, automatically assign run_time using estimation 
 
+    if args.auto != None:
+        timesteps= float(params.sim_duration)/float(params.hf_dt)
+        #get station count
+        station_count = len(get_stations(params.FD_STATLIST))
+        print station_count
+        #get the number of sub faults for estimation
+        #TODO:make it read through the whole list instead of assuming every stoch has same size
+        sub_fault_count,sub_fault_area=get_nsub_stoch(params.hf_slips[0],get_area=True)
+        print "sb:",sub_fault_area
+        est_chours=est_core_hours_hf(timesteps,station_count,sub_fault_area,default_hf_coef)
+        print est_chours
+        print "auto not functional, estimation is way off"
     #run the standard process(asking user), if --auto not used
     created_scripts = write_sl_script(params.hf_dir, ll_name_prefix, hf_option,ncore,run_time)
     submit_sl_script(created_scripts)
