@@ -49,7 +49,7 @@ def create_sl(bb_sim_dirs, sl_template_prefix, submit_yes):
         run_time = "00:30:00"
         job_name = "sim_bb_%s" % variation
         memory = "16G"
-        header = resolve_header("nesi00213", nb_cpus, run_time, job_name, version="slurm", memory=memory, exe_time,
+        header = resolve_header("nesi00213", nb_cpus, run_time, job_name, "slurm", memory, exe_time,
                                 job_description="BB calculation", additional_lines="##SBATCH -C avx")
         f_slscript.write(header)
         f_slscript.write(txt)
