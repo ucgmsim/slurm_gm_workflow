@@ -27,7 +27,7 @@ def est_cour_hours_emod3d(nx, ny, nz,dt, sim_duration, emod3d_coef=default_emod3
     return estimated_hours
 
 #TODO:move shared funciton to a shared lib file
-def est_WCT(core_hours, ncore, scale=default_wct_scale):
+def est_wct(core_hours, ncore, scale=default_wct_scale):
     if scale < 1:
         print "Warning!! scale is under 1, may cause under estimating WCT."
     scaled_estimation = core_hours*scale
