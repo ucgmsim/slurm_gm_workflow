@@ -1,12 +1,12 @@
 import argparse
-
+from math import ceil
 
 
 #TODO: this value should be auto updated with the correct implementation of WCT
 #default_emod3d_coef=6860795
 default_emod3d_coef=3.00097
 default_ncore=120
-default_scale=1.2
+default_wct_scale=1.5
 default_round_len=2
 #hyperthread
 default_hyperthread=False
@@ -27,14 +27,16 @@ def est_cour_hours_emod3d(nx, ny, nz,dt, sim_duration, emod3d_coef=default_emod3
     return estimated_hours
 
 #TODO:move shared funciton to a shared lib file
-def est_WCT(core_hours, ncore, scale=default_scale):
+def est_WCT(core_hours, ncore, scale=default_wct_scale):
     if scale < 1:
         print "Warning!! scale is under 1, may cause under estimating WCT."
     scaled_estimation = core_hours*scale
-    time_per_cpu = (scaled_estimation/ncore)
-    #TODO: need better implementation of this, if somehow estimated_wct is less than a minute, it will crash (result in 00:00:00)
+    #using ceil to round up the wct, so it will use at least one hour
+    time_per_cpu = ceil(float(scaled_estimation/ncore))
     estimated_wct = '{0:02.0f}:{1:02.0f}:00'.format(*divmod(time_per_cpu * 60, 60))
 
+    #please keep note that the value may exceed the limit of one job, which is typically 23:59:59
+    #its the script that called this function to be responsible of doing thise check
     return estimated_wct
 
 if __name__ == '__main__':
