@@ -1,4 +1,4 @@
-bin_process_path = '/nesi/projects/nesi00213/workflow'
+bin_process_path = '/nesi/transit/nesi00213/workflow'
 import glob
 import os.path
 import sys
@@ -25,8 +25,10 @@ def confirm(q):
 
 
 def submit_sl_script(script_name):
-    print "Submitting %s is not yet implemented" % script_name
-    pass
+    #print "Submitting %s is not yet implemented" % script_name
+    #pass
+    res=exe("sbatch %s"%script_name,debug=False)
+    
 
 
 def create_sl(bb_sim_dirs, sl_template_prefix, submit_yes):
@@ -62,8 +64,8 @@ def create_sl(bb_sim_dirs, sl_template_prefix, submit_yes):
             print "User chose to submit the job manually"
 
 
-version = 'SERIAL'
-sl_name_prefix = 'run_bb'
+version = 'MPI'
+sl_name_prefix = 'run_bb_mpi'
 if len(sys.argv) == 2:
     version = sys.argv[1]
     if version == 'MPI':
