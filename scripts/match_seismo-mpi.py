@@ -25,6 +25,10 @@ from params_base_bb import *
 import glob
 from mpi4py import MPI
 
+def split_share(total_size, num_procs):
+    f_div = float(total_size)/float(num_procs)
+    return int(f_div)+1 if int(f_div)<f_div else int(f_div) #return 5 for 10/2 and 4 for 10/3, 3 for 10/4, 2 for 10/5
+
 comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
 size = comm.Get_size()
@@ -45,8 +49,18 @@ tmp_filelist = os.path.join(bb_sim_dir,'temp.filter_list%d'%rank)
 lf_copy = os.path.join(bb_sim_dir,'temp.lf%d'%rank)
 hf_copy = os.path.join(bb_sim_dir,'temp.hf%d'%rank)
 match_log_full = os.path.join(bb_sim_dir,'%s%d'%(match_log,rank))
+# file list is passed to binaries but will only ever contain one item
+def set_filelist(filename):
+    try:
+        os.remove(tmp_filelist)
+    except:
+        pass
+    with open(tmp_filelist, 'w') as fp:
+        fp.write(filename)
+
 
 if rank == 0:
+    print "============================================="
     # verify input incl. params.py
     verify_binaries([int_bin, siteamp_bin, tfilter_bin, match_bin, getpeak_bin])
     verify_files([stat_file, stat_vs_ref, stat_vs_est])
@@ -116,32 +130,50 @@ if match_powersb:
         match_lf_flo = '%.16f' % (float(match_lf_flo) * \
                 exp(-1.0 / (2.0 * int(match_lf_ord)) * -0.8813735870195428))
 
-# file list is passed to binaries but will only ever contain one item
-def set_filelist(filename):
-    with open(tmp_filelist, 'w') as fp:
-        fp.write(filename)
 
-if bb_resume:
-    size = 1 #number of processors.
-    ext='.000'
-    old_vel_files = glob.glob(os.path.join(bb_veldir,'*%s'%ext))
-    old_vel_samples = old_vel_files[:size+1]
-    old_acc_files = glob.glob(os.path.join(bb_accdir,'*%s'%ext))
-    old_acc_samples = old_acc_files[:size+1]
-    acc_file_sizes = [os.stat(v).st_size for v in old_acc_samples]
-    vel_file_sizes = [os.stat(v).st_size for v in old_vel_samples]
-    if len(acc_file_sizes) == 0 or len(vel_file_sizes) == 0:
-        bb_resume = False
-    else:
-        normal_acc_size = max(acc_file_sizes)
-        normal_vel_size = max(vel_file_sizes)
-        if rank  == 0:
-            print "Normal Acc file size: %d bytes Normal Vel file size: %d bytes" %(normal_acc_size, normal_vel_size)
+new_stations = []
+if rank == 0:
+    if bb_resume:
+        #size = 1 #number of processors.
+        ext='.000'
+        old_vel_files = glob.glob(os.path.join(bb_veldir,'*%s'%ext))
+        old_vel_samples = old_vel_files[:size+1]
+        old_acc_files = glob.glob(os.path.join(bb_accdir,'*%s'%ext))
+        old_acc_samples = old_acc_files[:size+1]
+        acc_file_sizes = [os.stat(v).st_size for v in old_acc_samples]
+        vel_file_sizes = [os.stat(v).st_size for v in old_vel_samples]
+        if len(acc_file_sizes) == 0 or len(vel_file_sizes) == 0:
+            bb_resume = False
+        else:
+            normal_acc_size = max(acc_file_sizes)
+            normal_vel_size = max(vel_file_sizes)
+            if rank  == 0:
+                print "Normal Acc file size: %d bytes Normal Vel file size: %d bytes" %(normal_acc_size, normal_vel_size)
 
-for s_index, stat in enumerate(stations):
-    if s_index % size != rank: #eg. size = 4, rank 1 only processes s_index 1, 5, 9...
-        continue
-        
+    for s_index, stat in enumerate(stations):
+        if bb_resume:
+            exists = True
+            for comp in match_lf_comps:
+                vel_file = os.path.join(bb_veldir,'%s.%s'%(stat,comp))
+                acc_file = os.path.join(bb_accdir,'%s.%s'%(stat,comp))
+                exists = exists and os.path.exists(vel_file) and os.path.exists(acc_file) and os.stat(vel_file).st_size == normal_vel_size and os.stat(acc_file).st_size == normal_acc_size
+            if exists:
+                print "Station %s has been already processed: Skipping" %stat
+            else:
+                new_stations.append(stat)
+        else:
+            new_stations.append(stat)
+    print "Total stations: %d New stations: %d" %(len(stations), len(new_stations))
+
+new_stations = comm.bcast(new_stations,root=0)
+num_stats = len(new_stations)
+my_size = split_share(num_stats,size)
+my_stations = new_stations[rank*my_size:(rank+1)*my_size]
+print('===========================')
+print('rank=%d to process :%d stations (my_size:%d len of new_stations: %d)'%(rank,len(my_stations),my_size,len(new_stations)))
+print('===========================')
+
+for s_index, stat in enumerate(my_stations):
     # assuming vrefs are whole numbers, seems to hold
     vref = str(min(site_vref_max, int(vrefs[stat])))
     vsite = vsites[stat]
@@ -151,23 +183,13 @@ for s_index, stat in enumerate(stations):
 #        hf_vref = str(min(site_vref_max, int(hf_vrefs[stat]))) # keep hf_vref under 1100 (site_vref_max)
         hf_vref = hf_vrefs[stat]
 
-    if bb_resume:
-        exists=True
-        for comp in match_lf_comps:
-            vel_file = os.path.join(bb_veldir,'%s.%s'%(stat,comp))
-            acc_file = os.path.join(bb_accdir,'%s.%s'%(stat,comp))
-
-            exists = exists and os.path.exists(vel_file) and os.path.exists(acc_file) and os.stat(vel_file).st_size == normal_vel_size and os.stat(acc_file).st_size == normal_acc_size
-        if exists:
-            print "Station %s has been already processed: Skipping" %stat
-            continue #skip
         
     # set everything to same Vs30, i.e., no site amp - need to change this. remove?
     #vref = GEN_ROCK_VS
     #vsite = GEN_ROCK_VS
     print('===========================')
-    print('rank=%d %s %s %s %s %s' % \
-            (rank, stations[s_index], station_lons[s_index], station_lats[s_index], vref, vsite))
+    print('rank=%d %s %s %s' % \
+            (rank, my_stations[s_index], vref, vsite))
     print('===========================')
     for c_index, comp in enumerate(match_lf_comps):
         # working copy of HF file
@@ -182,7 +204,7 @@ for s_index, stat in enumerate(stations):
         pga = float(peak_output.split()[1])
         pga = '%.6f' % (pga / 981.0)
         # debug
-        logger.write('%s %s %s %s %s\n' % (stat, comp, pga, vref, vsite))
+        logger.write('stat:%s comp:%s pga:%s vref:%s hf_vref:%s vsite:%s\n' % (stat, comp, pga, vref, hf_vref, vsite))
         print('   -> %s %s' % (comp, pga))
         # apply site amplification to HF record
         exe([siteamp_bin, 'pga=%s' % pga, 'vref=%s' % hf_vref, 'vsite=%s' % vsite, \
@@ -230,8 +252,15 @@ for s_index, stat in enumerate(stations):
 
 logger.close()
 # remove temp files
-os.remove(tmp_filelist)
-os.remove(hf_copy)
-os.remove(lf_copy)
+#os.remove(tmp_filelist)
+if rank == 0:
+    try:
+        os.remove(hf_copy)
+    except OSError:
+        pass
+    try:
+        os.remove(lf_copy)
+    except OSError:
+        pass
 #set_permission(bb_sim_dir)
 
