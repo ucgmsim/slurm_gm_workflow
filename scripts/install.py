@@ -351,8 +351,8 @@ def action(sim_dir, event_name, run_name, run_dir, vel_mod_dir, srf_dir, srf_sto
     # create model_params
     if yes_model_params:
         print "Producing model params. It may take a minute or two"
-        import gen_cords
-        gen_cords.main()
+        from gen_coords import gen_coords
+        gen_coords()
         print "Done"
         # else:
         # print "Generation of model params is skipped. You need to fix params_base.py manually"
