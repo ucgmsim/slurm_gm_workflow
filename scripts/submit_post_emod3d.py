@@ -19,7 +19,9 @@ exe_time = dtl.datetime.now().strftime(exetime_pattern)
 
 
 # TODO: hardcoding is bad!
-max_tasks_per_node = "80"
+# TODO: this number has to be extactly the same with EMOD3D(because of how we manage mpi in winbin-aio currently
+# may no longer be so after an proper update on winbin-aio-mpi
+max_tasks_per_node = "160"
 
 
 def confirm(q):
