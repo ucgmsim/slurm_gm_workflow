@@ -93,8 +93,10 @@ for lf_sim_dir in lf_sim_dirs:
 
     if submit_yes:
         # TODO: implement submit_sl_script and use here
-        print "Submitting not implemented yet!"
-        #res = exe("llsubmit %s" % fname_llscript, debug=False)
-    #        print res
+        # print "Submitting not implemented yet!"
+        res = exe("sbatch %s" % fname_merge_ts_script, debug=False)
+        res = exe("sbatch %s" % fname_winbin_aio_script, debug=False)
+    
+        print res
     else:
         print "User chose to submit the job manually"
