@@ -233,7 +233,9 @@ else:
     run_hf((statfile, nss))
 
 if rank == 0:
-    #    for temp_statfile in statfiles:
-    #        os.remove(temp_statfile)
-
+    #for temp_statfile in statfiles:
+    #    os.remove(temp_statfile)
+    #TODO:the remove funciton is disabled, since some log files are used for seisfinderWEB.
+    #find a better way to manage the temporary files.
+    pass
     #set_permission(hf_sim_dir)
