@@ -73,7 +73,7 @@ def create_sl(submit_yes,wall_clock_limit):
         nb_cpus = default_core
         #run_time = "1:00:00"
         run_time = wall_clock_limit
-        job_name = "emod3d_%s" % rup_mod
+        job_name = "run_emod3d.%s" % rup_mod
         memory=default_memory
         header = resolve_header("nesi00213", nb_cpus, run_time, job_name, "slurm", memory, exe_time,
                                 job_description="emod3d slurm script", additional_lines="#SBATCH --hint=nomultithread")

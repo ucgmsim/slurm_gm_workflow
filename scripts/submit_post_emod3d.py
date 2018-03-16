@@ -64,7 +64,7 @@ for lf_sim_dir in lf_sim_dirs:
     # TODO: change this values to values that make more sense
     nb_cpus = max_tasks_per_node
     run_time = "00:30:00"
-    job_name = "post_emod3d_merge_ts_%s" % rup_mod
+    job_name = "post_emod3d.merge_ts.%s" % rup_mod
     memory = "16G"
     header = resolve_header("nesi00213", nb_cpus, run_time, job_name, "Slurm", memory,exe_time,
                             job_description="post emod3d: merge_ts", additional_lines="###SBATCH -C avx")
@@ -81,7 +81,7 @@ for lf_sim_dir in lf_sim_dirs:
     # TODO: change this values to values that make more sense
     nb_cpus = max_tasks_per_node 
     run_time = "00:30:00"
-    job_name = "post_emod3d_winbin_aio_%s" % rup_mod
+    job_name = "post_emod3d.winbin_aio.%s" % rup_mod
     memory = "16G"
     header = resolve_header("nesi00213", nb_cpus, run_time, job_name, "slurm", memory,exe_time,
                             job_description="post emod3d: winbin_aio", additional_lines="###SBATCH -C avx")

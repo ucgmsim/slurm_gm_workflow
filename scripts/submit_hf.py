@@ -79,7 +79,7 @@ def write_sl_script(hf_dir, sl_template_prefix, hf_option, nb_cpus=default_core,
 
         fname_sl_script = '%s_%s_%s.sl' % (sl_template_prefix, variation,timestamp)
         f_llscript = open(fname_sl_script, 'w')
-        job_name = "sim_hf_%s" % variation
+        job_name = "sim_hf.%s" % variation
 
         header = resolve_header("nesi00213", nb_cpus, run_time, job_name, "slurm", memory, timestamp,
                                 job_description="HF calculation", additional_lines="###SBATCH -C avx")
