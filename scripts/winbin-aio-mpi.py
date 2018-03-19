@@ -50,7 +50,7 @@ if len(sys.argv) > 1:
        print('Running under test mode.')
        from postprocess_test.test_params import *
 
-
+i
 comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
 size = comm.Get_size()
@@ -101,7 +101,8 @@ my_seis_file_list = seis_file_list[rank*my_sfl_len:(rank+1)*my_sfl_len] #distrib
 
 
 if sfl_len < size:
-    print "Error: Only needed %d or less, but allocated %d cores. Try again." %(sfl_len, size)
+    print >> sys.stderr, "Error: Only needed %d or less, but allocated %d cores. Try again." %(sfl_len, size)
+    comm.Barrier()
     comm.Abort()
     
 
