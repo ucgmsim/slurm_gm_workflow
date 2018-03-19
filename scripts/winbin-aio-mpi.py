@@ -50,7 +50,6 @@ if len(sys.argv) > 1:
        print('Running under test mode.')
        from postprocess_test.test_params import *
 
-i
 comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
 size = comm.Get_size()
