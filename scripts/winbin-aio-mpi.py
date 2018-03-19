@@ -90,14 +90,20 @@ if rank == 0:
     filepattern = os.path.join(bin_output, '*_seis*.e3d')
     seis_file_list = sorted(glob(filepattern))
     print "Total of %d seis files" %len(seis_file_list)
-#    seis_file_list.extend([None]*(size-len(seis_file_list))) #fill seis_file_list with None. Not needed now.
+#    seis_file_list.extend([None]*(size-len(seis_file_list))) #fill seis_file_list with None. If we have more cores allocated than the number of seis files..
 
 seis_file_list = comm.bcast(seis_file_list, root=0)
 
 #seis_file = comm.scatter(seis_file_list,root=0) #as we will be using the same number of cores for winbin-aio (=size), seis_file_list is always at most 'size'
-sfl_len=len(seif_file_list)
+sfl_len=len(seis_file_list)
 my_sfl_len = int(ceil(sfl_len/float(size))) #decide how many seis files each rank will process
 my_seis_file_list = seis_file_list[rank*my_sfl_len:(rank+1)*my_sfl_len] #distribute seis files to each rank
+
+
+if sfl_len < size:
+    print "Error: Only needed %d or less, but allocated %d cores. Try again." %(sfl_len, size)
+    comm.Abort()
+    
 
 #print "rank=%d %s" %(rank,seis_file)
 stats = comm.bcast(stats, root=0)
