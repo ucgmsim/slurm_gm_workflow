@@ -25,7 +25,7 @@ Use updated workflow params, not e3d.par.
 """
 
 from glob import glob
-from math import sin, cos, radians
+from math import sin, cos, radians, ceil
 import os
 import sys
 from mpi4py import MPI
@@ -49,7 +49,6 @@ if len(sys.argv) > 1:
     if sys.argv[1] == 'test_mode':
        print('Running under test mode.')
        from postprocess_test.test_params import *
-
 
 comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
@@ -90,45 +89,55 @@ if rank == 0:
     filepattern = os.path.join(bin_output, '*_seis*.e3d')
     seis_file_list = sorted(glob(filepattern))
     print "Total of %d seis files" %len(seis_file_list)
-    seis_file_list.extend([None]*(size-len(seis_file_list)))
+#    seis_file_list.extend([None]*(size-len(seis_file_list))) #fill seis_file_list with None. If we have more cores allocated than the number of seis files..
 
-seis_file = comm.scatter(seis_file_list,root=0) #as we will be using the same number of cores for winbin-aio (=size), seis_file_list is always at most 'size'
+seis_file_list = comm.bcast(seis_file_list, root=0)
+
+#seis_file = comm.scatter(seis_file_list,root=0) #as we will be using the same number of cores for winbin-aio (=size), seis_file_list is always at most 'size'
+sfl_len=len(seis_file_list)
+my_sfl_len = int(ceil(sfl_len/float(size))) #decide how many seis files each rank will process
+my_seis_file_list = seis_file_list[rank*my_sfl_len:(rank+1)*my_sfl_len] #distribute seis files to each rank
+
+
+if sfl_len < size:
+    print >> sys.stderr, "Error: Only needed %d or less, but allocated %d cores. Try again." %(sfl_len, size)
+    comm.Barrier()
+    comm.Abort()
+    
 
 #print "rank=%d %s" %(rank,seis_file)
 stats = comm.bcast(stats, root=0)
 
+seis_file= my_seis_file_list[0]
+# read common data only from first file
+# python data-type format string
+INT_S = 'i'
+FLT_S = 'f'
+# if non-native input, prepend '>' big source, or '<' little source
+if get_seis_swap(seis_file):
+    swapping_char = get_byteswap_char()
+    INT_S = swapping_char + INT_S
+    FLT_S = swapping_char + FLT_S
+
+
+fp = open(seis_file, 'rb')
+read_flt = lambda : unpack(FLT_S, fp.read(SIZE_FLT))[0]
+fp.seek(SIZE_INT * 5)
+nt = unpack(INT_S, fp.read(SIZE_INT))[0]
+dt = read_flt()
+hh = read_flt()
+rot = read_flt()
+fp.close()
+# rotation matrix for converting to 090, 000
+# ver is inverted (* -1)
+theta = radians(rot)
+rot_matrix = np.array([[ cos(theta), -sin(theta),  0], \
+                   [-sin(theta), -cos(theta),  0], \
+                   [          0,           0, -1]])
 
 processed_stats=[]
-
-# read common data only from first file
-if seis_file is not None:
-    # python data-type format string
-    INT_S = 'i'
-    FLT_S = 'f'
-    # if non-native input, prepend '>' big source, or '<' little source
-    if get_seis_swap(seis_file):
-        swapping_char = get_byteswap_char()
-        INT_S = swapping_char + INT_S
-        FLT_S = swapping_char + FLT_S
-
-
-    fp = open(seis_file, 'rb')
-    read_flt = lambda : unpack(FLT_S, fp.read(SIZE_FLT))[0]
-    fp.seek(SIZE_INT * 5)
-    nt = unpack(INT_S, fp.read(SIZE_INT))[0]
-    dt = read_flt()
-    hh = read_flt()
-    rot = read_flt()
-    fp.close()
-    # rotation matrix for converting to 090, 000
-    # ver is inverted (* -1)
-    theta = radians(rot)
-    rot_matrix = np.array([[ cos(theta), -sin(theta),  0], \
-                       [-sin(theta), -cos(theta),  0], \
-                       [          0,           0, -1]])
-
 # each seis_file has a subset of stations
-#for si, seis_file in enumerate(seis_file_list):
+for si, seis_file in enumerate(my_seis_file_list):
 #    print('processing input file %d of %d...' \
 #            % (si + 1, len(seis_file_list)))
     print "Rank %d processing %s" %(rank,seis_file)
@@ -162,9 +171,7 @@ if seis_file is not None:
             for i, comp in enumerate(MY_COMPS.values()):
                 write_seis_ascii(vel_dir, comps[:, i], stat, comp, nt, dt)
     fp.close()
-else:
-    print "Rank %d has no seisfile" %rank    
-    
+        
 processed_stats_all_container = comm.gather(processed_stats, root=0)
 
 if rank == 0:
