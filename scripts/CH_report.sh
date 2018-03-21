@@ -48,5 +48,6 @@ if (( $start_day <  1)); then
     fi
 fi
 start_date=$start_year-$start_month-$start_day
-echo $start_date
-sreport cluster AccountUtilizationByUser start=$start_date | grep nesi00213
+end_date=$year-$month-$day
+echo $start_date - $end_date
+sreport -t Hours cluster AccountUtilizationByUser Accounts=nesi00213 start=$start_date 
