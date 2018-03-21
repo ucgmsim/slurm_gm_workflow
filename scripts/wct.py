@@ -4,6 +4,8 @@ import datetime
 import os
 
 # TODO: make this class read from main config file to get the desired location of db file
+from shared_workflow import load_config
+wct_config=load_config.load(os.path.dirname(os.path.abspath(__file__)))
 
 class WallClockDB:
     def __init__(self, filename):
@@ -77,7 +79,8 @@ def usage():
 
 # TODO: convert this to use argsparse
 if __name__ == '__main__':
-    db = WallClockDB('wallclock.sqlite')
+    path_db=os.path.join(wct_config['gm_sim_workflow_root'],'wallclock.sqlite') 
+    db = WallClockDB(path_db)
 
     if len(sys.argv) == 1 or sys.argv[1] == '-h':
         usage()
