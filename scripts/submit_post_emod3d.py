@@ -21,8 +21,12 @@ exe_time = dtl.datetime.now().strftime(exetime_pattern)
 # TODO: hardcoding is bad!
 # TODO: this number has to be extactly the same with EMOD3D(because of how we manage mpi in winbin-aio currently
 # may no longer be so after an proper update on winbin-aio-mpi
-max_tasks_per_node = "160"
+max_tasks_per_node = "80"
 
+def get_seis_len(seis_path):
+    filepattern = os.path.join(seis_path, '*_seis*.e3d')
+    seis_file_list = sorted(glob(filepattern))
+    return len(seis_file_list)
 
 def confirm(q):
     show_horizontal_line
@@ -62,7 +66,7 @@ for lf_sim_dir in lf_sim_dirs:
     rup_mod = lf_sim_dir.split('/')[1]
 
     # TODO: change this values to values that make more sense
-    nb_cpus = max_tasks_per_node
+    nb_cpus = "4"
     run_time = "00:30:00"
     job_name = "post_emod3d.merge_ts.%s" % rup_mod
     memory = "16G"
@@ -78,8 +82,20 @@ for lf_sim_dir in lf_sim_dirs:
 
     # preparing winbin_aio
     txt = winbin_aio_str_template.replace("{{lf_sim_dir}}", lf_sim_dir)
+
+    #get the file count of seis files
+    path_outbin=os.path.join(lf_sim_dir,"OutBin")
+    sfl_len=get_seis_len(path_outbin)
+    #round down to the max cpu per node
+    nodes = int(round( (sfl_len/max_tasks_per_node) - 0.5 ) )
+    if nodes <= 0:
+        nodes = 1
+    nb_cpus = nodes*max_tasks_per_node
+            
+
+
     # TODO: change this values to values that make more sense
-    nb_cpus = max_tasks_per_node 
+    #nb_cpus = max_tasks_per_node 
     run_time = "00:30:00"
     job_name = "post_emod3d.winbin_aio.%s" % rup_mod
     memory = "16G"
