@@ -89,51 +89,58 @@ if rank == 0:
     filepattern = os.path.join(bin_output, '*_seis*.e3d')
     seis_file_list = sorted(glob(filepattern))
     print "Total of %d seis files" %len(seis_file_list)
-#    seis_file_list.extend([None]*(size-len(seis_file_list))) #fill seis_file_list with None. If we have more cores allocated than the number of seis files..
+    seis_file_list.extend([None]*(size-len(seis_file_list))) #fill seis_file_list with None. If we have more cores allocated than the number of seis files..
 
 seis_file_list = comm.bcast(seis_file_list, root=0)
 
 #seis_file = comm.scatter(seis_file_list,root=0) #as we will be using the same number of cores for winbin-aio (=size), seis_file_list is always at most 'size'
 sfl_len=len(seis_file_list)
 my_sfl_len = int(ceil(sfl_len/float(size))) #decide how many seis files each rank will process
-my_seis_file_list = seis_file_list[rank*my_sfl_len:(rank+1)*my_sfl_len] #distribute seis files to each rank
+#my_seis_file_list = seis_file_list[rank*my_sfl_len:(rank+1)*my_sfl_len] #distribute seis files to each rank
 
 
-if sfl_len < size:
-    print >> sys.stderr, "Error: Only needed %d or less, but allocated %d cores. Try again." %(sfl_len, size)
-    comm.Barrier()
-    comm.Abort()
+#if sfl_len < size:
+#    print >> sys.stderr, "Error: Only needed %d or less, but allocated %d cores. Try again." %(sfl_len, size)
+#    comm.Barrier()
+#    comm.Abort()
     
 
 #print "rank=%d %s" %(rank,seis_file)
 stats = comm.bcast(stats, root=0)
 
-seis_file= my_seis_file_list[0]
-# read common data only from first file
-# python data-type format string
-INT_S = 'i'
-FLT_S = 'f'
-# if non-native input, prepend '>' big source, or '<' little source
-if get_seis_swap(seis_file):
-    swapping_char = get_byteswap_char()
-    INT_S = swapping_char + INT_S
-    FLT_S = swapping_char + FLT_S
+try:
+    seis_file= my_seis_file_list[0]
+except IndexError:
+    print >> sys.stderr, "Rank %d has no seis file to process" %rank
+
+else:
+    # There are at least one seis file to process. Good to go
+
+    # read common data only from first file
+    # python data-type format string
+    INT_S = 'i'
+    FLT_S = 'f'
+    # if non-native input, prepend '>' big source, or '<' little source
+    if get_seis_swap(seis_file):
+        swapping_char = get_byteswap_char()
+        INT_S = swapping_char + INT_S
+        FLT_S = swapping_char + FLT_S
 
 
-fp = open(seis_file, 'rb')
-read_flt = lambda : unpack(FLT_S, fp.read(SIZE_FLT))[0]
-fp.seek(SIZE_INT * 5)
-nt = unpack(INT_S, fp.read(SIZE_INT))[0]
-dt = read_flt()
-hh = read_flt()
-rot = read_flt()
-fp.close()
-# rotation matrix for converting to 090, 000
-# ver is inverted (* -1)
-theta = radians(rot)
-rot_matrix = np.array([[ cos(theta), -sin(theta),  0], \
-                   [-sin(theta), -cos(theta),  0], \
-                   [          0,           0, -1]])
+    fp = open(seis_file, 'rb')
+    read_flt = lambda : unpack(FLT_S, fp.read(SIZE_FLT))[0]
+    fp.seek(SIZE_INT * 5)
+    nt = unpack(INT_S, fp.read(SIZE_INT))[0]
+    dt = read_flt()
+    hh = read_flt()
+    rot = read_flt()
+    fp.close()
+    # rotation matrix for converting to 090, 000
+    # ver is inverted (* -1)
+    theta = radians(rot)
+    rot_matrix = np.array([[ cos(theta), -sin(theta),  0], \
+                       [-sin(theta), -cos(theta),  0], \
+                       [          0,           0, -1]])
 
 processed_stats=[]
 # each seis_file has a subset of stations
