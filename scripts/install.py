@@ -15,6 +15,7 @@ import argparse
 from qcore.shared import *
 print 
 workflow_config = ldcfg.load(os.path.dirname(os.path.realpath(__file__)),"workflow_config.json")
+workflow_root=workflow_config['gm_sim_workflow_root']
 global_root = workflow_config["global_root"]
 tools_dir = os.path.join(global_root, 'EMOD3D/tools')
 bin_process_dir = os.path.join(global_root, 'workflow/scripts')
@@ -237,7 +238,9 @@ def action(sim_dir, event_name, run_name, run_dir, vel_mod_dir, srf_dir, srf_sto
         # shutil.copy(os.path.join(gmsa_dir,"parametersStation.py"),sim_dir)
         # shutil.copy(os.path.join(gmsa_dir,"runPostProcessStation.ll"),sim_dir)
     #    exe('ln -s %s/submit_emod3d.py %s'%(bin_process_dir,sim_dir))
-    # shutil.copy(os.path.join(bin_process_dir, "version"), sim_dir)
+    shutil.copy(os.path.join(workflow_root, "version"), sim_dir)
+    shutil.copy(os.path.join(bin_process_dir, "submit.sh"), sim_dir)
+    
     # shutil.copy(os.path.join(bin_process_dir, "submit_emod3d.sh"), sim_dir)
     # shutil.copy(os.path.join(bin_process_dir, "submit_post_emod3d.sh"), sim_dir)
     # shutil.copy(os.path.join(bin_process_dir, "submit_hf.sh"), sim_dir)
