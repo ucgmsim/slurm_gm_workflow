@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
-if [ $# -eq 0 ]; then
-  echo "Please provide a ROOT installation directory"
+if [ $# -lt 2 ]; then
+  echo "Please provide a ROOT installation directory, and the version code"
   exit 1
 fi
 ROOT=$1
-
+version=$2
 function test_dir {
     [ -d $1 ] && echo "$1 is available" || echo "Please get a version of the $1 library later on $2"
 }
@@ -39,6 +39,9 @@ print_message "Add source $ROOT/share/bashrc.uceq to your .bashrc"
 cp -r ../scripts ${ROOT}/workflow/
 cp -r ../templates ${ROOT}/workflow/
 cp -r ../shared_workflow ${ROOT}/workflow/
+
+#create a file that contains version code for tracking
+echo $version >> ${ROOT}/workflow/version
 
 touch ../scripts ${ROOT}/workflow/{scripts,templates,shared_workflow}/__init__.py
 
