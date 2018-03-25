@@ -89,8 +89,10 @@ for lf_sim_dir in lf_sim_dirs:
     #round down to the max cpu per node
     nodes = int(round( (sfl_len/max_tasks_per_node) - 0.5 ) )
     if nodes <= 0:
-        nodes = 1
-    nb_cpus = nodes*max_tasks_per_node
+        #use the same cpu count as the seis files
+        nb_cpus=sfl_len
+    else:
+        nb_cpus = nodes*max_tasks_per_node
             
 
 
