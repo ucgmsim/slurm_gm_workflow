@@ -11,7 +11,7 @@ from qcore.shared import *
 
 sys.path.append(os.getcwd())
 from params_base import tools_dir
-
+from params_base import sim_dir
 #datetime related
 import datetime as dtl
 exetime_pattern = "%Y%m%d_%H%M%S"
@@ -25,7 +25,7 @@ max_tasks_per_node = "80"
 
 def get_seis_len(seis_path):
     filepattern = os.path.join(seis_path, '*_seis*.e3d')
-    seis_file_list = sorted(glob(filepattern))
+    seis_file_list = sorted(glob.glob(filepattern))
     return len(seis_file_list)
 
 def confirm(q):
@@ -59,10 +59,6 @@ for lf_sim_dir in lf_sim_dirs:
     except:
         print "**error while replacing tools_dir**"
 
-    outbin = os.path.join(lf_sim_dir, 'OutBin')
-    seis_files = glob.glob(os.path.join(outbin, '*seis*.e3d'))
-    n_seis = len(seis_files)
-
     rup_mod = lf_sim_dir.split('/')[1]
 
     # TODO: change this values to values that make more sense
@@ -84,17 +80,16 @@ for lf_sim_dir in lf_sim_dirs:
     txt = winbin_aio_str_template.replace("{{lf_sim_dir}}", lf_sim_dir)
 
     #get the file count of seis files
-    path_outbin=os.path.join(lf_sim_dir,"OutBin")
-    sfl_len=get_seis_len(path_outbin)
+    path_outbin=os.path.join(os.path.join(sim_dir,lf_sim_dir),"OutBin")
+    sfl_len=int(get_seis_len(path_outbin))
     #round down to the max cpu per node
-    nodes = int(round( (sfl_len/max_tasks_per_node) - 0.5 ) )
+    nodes = int(round( (sfl_len/int(max_tasks_per_node)) - 0.5 ) )
     if nodes <= 0:
         #use the same cpu count as the seis files
-        nb_cpus=sfl_len
+        nb_cpus=str(sfl_len)
     else:
-        nb_cpus = nodes*max_tasks_per_node
+        nb_cpus = str(nodes*int(max_tasks_per_node))
             
-
 
     # TODO: change this values to values that make more sense
     #nb_cpus = max_tasks_per_node 
