@@ -162,9 +162,10 @@ if __name__ == '__main__':
         #TODO:make it read through the whole list instead of assuming every stoch has same size
         sub_fault_count,sub_fault_area=get_nsub_stoch(params.hf_slips[0],get_area=True)
         print "sb:",sub_fault_area
-        est_chours=est_core_hours_hf(timesteps,station_count,sub_fault_area,default_hf_coef)
+        est_chours = est_core_hours_hf(timesteps,station_count,sub_fault_area,default_hf_coef)
         print est_chours
-        print "auto not functional, estimation is way off"
+        print "Warning, the estimated time is over estimating a lot."
+        run_time = est_wct(est_chours,ncore,default_scale)
     #run the standard process(asking user), if --auto not used
     created_scripts = write_sl_script(params.hf_dir, ll_name_prefix, hf_option,ncore,run_time)
     submit_sl_script(created_scripts)
