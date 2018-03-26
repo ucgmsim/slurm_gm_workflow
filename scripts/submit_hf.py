@@ -136,7 +136,7 @@ if __name__ == '__main__':
     #if auto flag is set to true, auto estimate the WCT and use default cores(or get from --ncore)
     
     #check rand_reset
-    if args.site_specific != None:
+    if args.site_specific != None or params_base_bb.site_specific:
         print "Note: site_specific = True, rand_reset = True"
         hf_option = 2
     else:
