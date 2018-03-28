@@ -8,7 +8,7 @@ import params
 import params_base_bb 
 
 import fnmatch
-
+from math import ceil
 import argparse
 
 from qcore.srf import get_nsub_stoch
@@ -20,7 +20,7 @@ default_run_time="00:30:00"
 default_memory="16G"
 #TODO:this number needs to find a way to update more frequently, based on stored WCT.
 default_hf_coef=1741000000
-default_scaling=1.2
+default_scale=1.2
 #datetime related
 from datetime import datetime 
 timestamp_format = "%Y%m%d_%H%M%S"
@@ -56,7 +56,7 @@ def est_core_hours_hf(timestep,station_count,sub_fault_count, hf_coef):
 
 def est_wct(est_core_hours, ncore, scale):
     scaled_est = est_core_hours * scale
-    time_per_cpu = scaled_est/ncore
+    time_per_cpu = ceil(float(scaled_est)/float(ncore))
     estimated_wct = '{0:02.0f}:{1:02.0f}:00'.format(*divmod(time_per_cpu * 60, 60))
     return estimated_wct
 
