@@ -14,7 +14,8 @@ n_proc = '512'
 
 ######## Global CONSTANTS ########
 # dt should be 0.005 (or smaller), small increments required in simulation
-dt = 0.005
+#this value is not located in params_base.py
+#dt = 0.005
 
 #############################################################################
 # works on Windows and POSIX paths
