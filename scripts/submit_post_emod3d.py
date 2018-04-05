@@ -22,6 +22,14 @@ exe_time = dtl.datetime.now().strftime(exetime_pattern)
 # TODO: this number has to be extactly the same with EMOD3D(because of how we manage mpi in winbin-aio currently
 # may no longer be so after an proper update on winbin-aio-mpi
 max_tasks_per_node = "80"
+default_account='nesi00213'
+
+import argparse
+parser = argparse.ArgumentParser()
+parser.add_argument("--auto", nargs="?", type=str,const=True)
+parser.add_argument('--account', type=str, default=default_account)
+args = parser.parse_args()
+
 
 def get_seis_len(seis_path):
     filepattern = os.path.join(seis_path, '*_seis*.e3d')
@@ -66,7 +74,7 @@ for lf_sim_dir in lf_sim_dirs:
     run_time = "00:30:00"
     job_name = "post_emod3d.merge_ts.%s" % rup_mod
     memory = "16G"
-    header = resolve_header("nesi00213", nb_cpus, run_time, job_name, "Slurm", memory,exe_time,
+    header = resolve_header(args.account, nb_cpus, run_time, job_name, "Slurm", memory,exe_time,
                             job_description="post emod3d: merge_ts", additional_lines="###SBATCH -C avx")
 
     fname_merge_ts_script = '%s_%s.sl' % (merge_ts_name_prefix, rup_mod)
@@ -96,7 +104,7 @@ for lf_sim_dir in lf_sim_dirs:
     run_time = "00:30:00"
     job_name = "post_emod3d.winbin_aio.%s" % rup_mod
     memory = "16G"
-    header = resolve_header("nesi00213", nb_cpus, run_time, job_name, "slurm", memory,exe_time,
+    header = resolve_header(args.account, nb_cpus, run_time, job_name, "slurm", memory,exe_time,
                             job_description="post emod3d: winbin_aio", additional_lines="###SBATCH -C avx")
 
     fname_winbin_aio_script = '%s_%s.sl' % (winbin_aio_name_prefix, rup_mod)

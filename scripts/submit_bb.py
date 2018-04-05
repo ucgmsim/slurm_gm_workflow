@@ -12,6 +12,14 @@ import datetime as dtl
 exetime_pattern = "%Y%m%d_%H%M%S"
 exe_time = dtl.datetime.now().strftime(exetime_pattern)
 
+default_account='nesi00213'
+default_version='run_bb_mpi'
+import argparse
+parser = argparse.ArgumentParser()
+parser.add_argument("--auto", nargs="?", type=str,const=True)
+parser.add_argument('--version',type=str,default=default_version)
+parser.add_argument('--account', type=str, default=default_account)
+args = parser.parse_args()
 
 # TODO: move this to qcore library
 from temp_shared import resolve_header
@@ -64,16 +72,32 @@ def create_sl(bb_sim_dirs, sl_template_prefix, submit_yes):
             print "User chose to submit the job manually"
 
 
-version = 'MPI'
-sl_name_prefix = 'run_bb_mpi'
-if len(sys.argv) == 2:
-    version = sys.argv[1]
-    if version == 'MPI':
+#version = 'MPI'
+#sl_name_prefix = 'run_bb_mpi'
+#if len(sys.argv) == 2:
+#    version = sys.argv[1]
+#    if version == 'MPI':
+#        sl_name_prefix = 'run_bb_mpi'
+#    else:
+#        print 'Set to default %s' % version
+if args.version != None:
+    version = args.version
+    if version == 'serial' or version == 'run_bb':
+        sl_name_prefix = 'run_bb'
+        ncore="1"
+    elif version == 'mp' or version == 'run_bb_mp':
+        sl_name_prefix = 'run_bb_mp'
+    elif version == 'mpi' or version == 'run_bb_mpi':
         sl_name_prefix = 'run_bb_mpi'
     else:
-        print 'Set to default %s' % version
-
-
+        print '% cannot be recognize as a valide option'%version
+        print 'version is set to default: %',default_version
+        version = default_version
+        sl_name_prefix = default_version
+else:
+    version = default_version
+    sl_name_prefix = default_version
+    
 print version
 
 import fnmatch

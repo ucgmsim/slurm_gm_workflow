@@ -36,6 +36,6 @@ elif [[ $job = post_emod3d ]]; then
 elif [[ $job = hf ]]; then
     echo submit_hf
     python $BINPROCESS/submit_hf.py $additional_args
-elif [[ $jon = bb ]]; then
+elif [[ $job = bb ]]; then
     python $BINPROCESS/submit_bb.py $additional_args
 fi

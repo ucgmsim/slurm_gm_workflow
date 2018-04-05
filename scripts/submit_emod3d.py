@@ -21,6 +21,7 @@ exe_time = dtl.datetime.now().strftime(exetime_pattern)
 default_core="160"
 default_run_time="02:00:00"
 default_memory="16G"
+default_account='nesi00213'
 #default_emod3d_coef=3.00097
 #coef should be predefined in est_emod3d.py
 default_ch_scale=1.1
@@ -40,6 +41,7 @@ import argparse
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--auto", nargs="?", type=str,const=True)
+parser.add_argument('--account', type=str, default=default_account)
 args = parser.parse_args()
 
 
@@ -75,7 +77,7 @@ def create_sl(submit_yes,wall_clock_limit):
         run_time = wall_clock_limit
         job_name = "run_emod3d.%s" % rup_mod
         memory=default_memory
-        header = resolve_header("nesi00213", nb_cpus, run_time, job_name, "slurm", memory, exe_time,
+        header = resolve_header(args.account, nb_cpus, run_time, job_name, "slurm", memory, exe_time,
                                 job_description="emod3d slurm script", additional_lines="#SBATCH --hint=nomultithread")
 
         f_sl_script.write(header)

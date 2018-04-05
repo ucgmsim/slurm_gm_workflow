@@ -18,6 +18,7 @@ default_version='run_hf_mpi'
 default_core="80"
 default_run_time="00:30:00"
 default_memory="16G"
+default_account='nesi00213'
 #TODO:this number needs to find a way to update more frequently, based on stored WCT.
 default_hf_coef=1741000000
 default_scale=1.2
@@ -60,7 +61,7 @@ def est_wct(est_core_hours, ncore, scale):
     estimated_wct = '{0:02.0f}:{1:02.0f}:00'.format(*divmod(time_per_cpu * 60, 60))
     return estimated_wct
 
-def write_sl_script(hf_dir, sl_template_prefix, hf_option, nb_cpus=default_core, run_time=default_run_time,memory=default_memory):
+def write_sl_script(hf_dir, sl_template_prefix, hf_option, nb_cpus=default_core, run_time=default_run_time,memory=default_memory,account=default_account):
     hf_sim_dirs = []
     file_to_find = 'params_bb_uncertain.py'
     for root, dirnames, filenames in os.walk(hf_dir):
@@ -81,7 +82,7 @@ def write_sl_script(hf_dir, sl_template_prefix, hf_option, nb_cpus=default_core,
         f_llscript = open(fname_sl_script, 'w')
         job_name = "sim_hf.%s" % variation
 
-        header = resolve_header("nesi00213", nb_cpus, run_time, job_name, "slurm", memory, timestamp,
+        header = resolve_header(account, nb_cpus, run_time, job_name, "slurm", memory, timestamp,
                                 job_description="HF calculation", additional_lines="###SBATCH -C avx")
         f_llscript.write(header)
         f_llscript.write(txt)
@@ -106,6 +107,7 @@ if __name__ == '__main__':
     #the const is set to True, so that as long as --rand_reset is used, no more value needs to be provided
     parser.add_argument('--rand_reset',type=int,nargs='?',default=None,const=True)
     parser.add_argument('--site_specific',type=int,nargs='?',default=None,const=True)
+    parser.add_argument('--account',type=str,default=default_account)
     args = parser.parse_args()
    
     #check if parsed ncore
@@ -167,5 +169,6 @@ if __name__ == '__main__':
         print "Warning, the estimated time is over estimating a lot."
         run_time = est_wct(est_chours,ncore,default_scale)
     #run the standard process(asking user), if --auto not used
-    created_scripts = write_sl_script(params.hf_dir, ll_name_prefix, hf_option,ncore,run_time)
+    print "account:",args.account
+    created_scripts = write_sl_script(params.hf_dir, ll_name_prefix, hf_option,ncore,run_time,account=args.account)
     submit_sl_script(created_scripts)
