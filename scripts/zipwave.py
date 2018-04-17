@@ -26,6 +26,13 @@ def get_basenames(acc_vel_folder):
 def zip_stations(station_paths):
     for basename in station_paths:
         try:
+            # test if zip is just an empty file
+            if not os.stat('%s.zip' % (basename)).st_size:
+                continue
+        except OSError:
+            # no zip
+            pass
+        try:
             with zipfile.ZipFile('%s.zip' % (basename), mode = 'w', \
                                         compression = zipfile.ZIP_DEFLATED, \
                                         allowZip64 = True) as station_zip:
