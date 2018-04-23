@@ -8,8 +8,6 @@ For parameter documentation, see params.py or the simulator source code.
 Original file from Rob (Jan 2015).
 Converted to python.
 @date 05 May 2016
-@author Viktor Polak
-@contact viktor.polak@canterbury.ac.nz
 """
 import sys
 import os
