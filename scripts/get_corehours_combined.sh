@@ -36,13 +36,13 @@ scan_o_file_hf_bb(){
     
     counter_ll_num=`echo 0 | bc`
     if [[ $o_file_name == *"run_hf_mpi"*  ]];then
-        for ll_file in `ls $runs_path/$sim/run_hf_mpi*$hypo_name*.ll`;
+        for ll_file in `ls $runs_path/$sim/run_hf_mpi*$hypo_name*.sl`;
         do
             ll_file_array[$counter_ll_num]=$ll_file
             counter_ll_num=`echo $counter_ll_num +1 | bc`
         done
     else
-        for ll_file in `ls $runs_path/$sim/run_bb_mpi*$hypo_name*.ll`;
+        for ll_file in `ls $runs_path/$sim/run_bb_mpi*$hypo_name*.sl`;
         do
             ll_file_array[$counter_ll_num]=$ll_file
             counter_ll_num=`echo $counter_ll_num +1 | bc`
@@ -125,7 +125,7 @@ scan_o_file_emod3d(){
 
     #store the list of ll files in a array
     counter=`echo 0 | bc`
-    for ll_file in `ls $runs_path/$sim/run_emod3d_$sim\_$hypo_name*.ll`;
+    for ll_file in `ls $runs_path/$sim/run_emod3d_$sim\_$hypo_name*.sl`;
     do
         ll_file_array[$counter]=$ll_file
         counter=`echo $counter+1 | bc`
@@ -150,7 +150,7 @@ scan_o_file_post_emod3d(){
     hypo_name=$3 
     counter=`echo 0 | bc`
     
-    for ll_file in `ls $runs_path/$sim/post_emod3d_mpi*$hypo_name*.ll`;
+    for ll_file in `ls $runs_path/$sim/post_emod3d_mpi*$hypo_name*.sl`;
     do
         ll_file_array[$counter]=$ll_file
         counter=`echo $counter+1 | bc` 
@@ -234,13 +234,15 @@ get_corehours_used(){
     wall_clock_limit_txt=$2
     echo "wct: $wall_clock_limit_txt" >> $logs_path/$sim.log
 #    echo $1 $2
-    node_used_txt=`grep '@ node =' $ll_file | awk '{print $5}'`
+    #node_used_txt=`grep '@ node =' $ll_file | awk '{print $5}'`
+    #this not used in slurm script anymore
+    node_used_txt=1
     echo "nodes: $node_used_txt " >> $logs_path/$sim.log
-    tasks_per_node_txt=`grep 'tasks_per_node' $ll_file | awk '{print $5}'`    
+    #old
+    #tasks_per_node_txt=`grep 'tasks_per_node' $ll_file | awk '{print $5}'`    
+    tasks_per_node_txt=`grep 'ntasks' $ll_file | cut -d= -f2`    
     echo "task_per_node: $tasks_per_node_txt" >> $logs_path/$sim.log
     
-    
-
     #store the data in a array easier
     counter=`echo 0 | bc`
     for i in $wall_clock_limit_txt;
@@ -248,6 +250,7 @@ get_corehours_used(){
         time_used_array[$counter]=$i
         counter=`echo $counter+1 | bc`
     done
+    
     counter=`echo 0 | bc`
     for i in $node_used_txt;
     do
@@ -263,7 +266,6 @@ get_corehours_used(){
     done
 
     
-
     counter=$3
 #    echo $counter
     for time_used in ${time_used_array[@]};
@@ -367,15 +369,15 @@ do
     realization_count=0
     #get vm_size
     cd $runs_path/$sim
-    vm_size=`python -c "import params_vel as vm; print vm.nx+'*'+vm.ny+'*'+vm.nz"`
-    sim_duration=`python -c "import params_vel as vm; print vm.sim_duration" `
+    vm_size=`python -c "import params_base as vm; print vm.nx+'*'+vm.ny+'*'+vm.nz"`
+    sim_duration=`python -c "import params_base as vm; print vm.sim_duration" `
     dt=`echo 0.005`
     nt=`echo $sim_duration / $dt | bc`
 
     #get ll related to emod3d
     sequence=`echo 0| bc`
     echo "************EMOD3D************* " >> $logs_path/$sim.log
-    for o_file in `ls $runs_path/$sim/run_emod3d.$sim*.o`;
+    for o_file in `ls $runs_path/$sim/emod3d_$sim*.out`;
     do
         #save the o_file to the log
         echo "scanning $o_file " >> $logs_path/$sim.log
@@ -384,6 +386,7 @@ do
         hypo_name_pre=` echo $o_file | cut -d_ -f3`
         hypo_name_suf=` echo $o_file | cut -d_ -f4 | cut -d. -f1`
         hypo_name=$hypo_name_pre\_$hypo_name_suf
+        echo $hypo_name
         scan_o_file_emod3d $o_file $sequence $hypo_name
         realization_count=`echo $realization_count+1 | bc`
         sequence=`echo sequence + 1| bc`
@@ -391,14 +394,20 @@ do
     #get ll related to post-emod3d
     echo "*********post_emod3d************ " >> $logs_path/$sim.log
     sequence=`echo 0| bc`
-    for o_file in `ls $runs_path/$sim/postprocess*$sim*.o`;
+    for o_file in `ls $runs_path/$sim/post_emod3d*$sim*.out`;
     do
         #log
         echo "scanning $o_file " >> $logs_path/$sim.log
         #get the line that contains wall_clock_limit
         #hypo_name=$hypo_name_pre\_$hypo_name_suf
-        hypo_name=`echo $o_file | cut -d. -f3`
+        #
+        #hypo_name=`echo $o_file | cut -d. -f3`
+
+        hypo_name_pre=`echo $o_file | cut -d_ -f6`
+        hypo_name_suf=`echo $o_file | cut -d_ -f7 | cut -d. -f1`
+        hypo_name=$hypo_name_pre\_$hypo_name_suf
         scan_o_file_post_emod3d $o_file $sequence $hypo_name
+        exit
     done
     LF_time=$sim_total_time
     LF_time_display_m=`echo $LF_time | cut -d: -f2 ` 
@@ -411,7 +420,7 @@ do
     sim_total_time='00:00:00'
     echo "***************HF**************** " >> $logs_path/$sim.log
     #get HF
-    for o_file in `ls $runs_path/$sim/run_hf_mpi*Cant1D_v2-midQ_leer_hfnp2mm+_rvf0p8_sd50_k0p045__$sim_*.o`;
+    for o_file in `ls $runs_path/$sim/sim_hf_mpi*Cant1D_v2-midQ_leer_hfnp2mm+_rvf0p8_sd50_k0p045__$sim_*.out`;
     do
         #log
         echo "scanning $o_file " >> $logs_path/$sim.log 
@@ -426,7 +435,7 @@ do
     HF_time_display=`echo $HF_time_display_h + \($HF_time_display_m / 60\) + \($HF_time_display_s/3600\) | bc -l`
     sim_total_time='00:00:00'
     echo "***************BB**************** " >> $logs_path/$sim.log
-    for o_file in `ls $runs_path/$sim/run_bb_mpi*Cant1D_v2-midQ_leer_hfnp2mm+_rvf0p8_sd50_k0p045__$sim_*.o`;
+    for o_file in `ls $runs_path/$sim/sim_bb_mpi*Cant1D_v2-midQ_leer_hfnp2mm+_rvf0p8_sd50_k0p045__$sim_*.out`;
     do
         #log
         echo "scanning $o_file " >> $logs_path/$sim.log
