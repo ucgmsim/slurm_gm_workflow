@@ -2,8 +2,9 @@
 source machine_env.sh
 
 echo "WINBIN aio"
+date
 srun python $BINPROCESS/winbin-aio-mpi.py {{lf_sim_dir}}
 #srun python $BINPROCESS/winbin-aio.py {{lf_sim_dir}}
-
+date
 
 

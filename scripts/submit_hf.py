@@ -57,6 +57,8 @@ def est_core_hours_hf(timestep,station_count,sub_fault_count, hf_coef):
 
 def est_wct(est_core_hours, ncore, scale):
     scaled_est = est_core_hours * scale
+    if scaled_est <= 0 :
+        scaled_est = 1
     time_per_cpu = ceil(float(scaled_est)/float(ncore))
     estimated_wct = '{0:02.0f}:{1:02.0f}:00'.format(*divmod(time_per_cpu * 60, 60))
     return estimated_wct

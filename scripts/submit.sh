@@ -20,7 +20,7 @@ for args in $@
 do
     #ignore the first arg
     if [[ $count == 0 ]];then
-        count=$count+1
+        count=`echo $count+1 | bc`
         continue
     fi
     additional_args="$additional_args $args"
