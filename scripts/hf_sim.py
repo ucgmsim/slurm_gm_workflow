@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 """
 Simulates high frequency seismograms for stations.
 """
@@ -7,8 +7,10 @@ import math
 import os
 from subprocess import call, Popen, PIPE
 import sys
+from tempfile import mkstemp
 
 from mpi4py import MPI
+import numpy as np
 
 from qcore.config import qconfig
 
@@ -17,142 +19,186 @@ rank = comm.Get_rank()
 size = comm.Get_size()
 master = 0
 is_master = not rank
+HEAD_SIZE = 0x0200
+MAX_STATLIST = 1000
+
+# never changed / unknown function (line 6)
+nbu = 4
+ift = 0
+flo = 0.02
+fhi = 19.9
+# for line 15
+nl_skip = -99
+vp_sig = 0.0
+vsh_sig = 0.0
+rho_sig = 0.0
+qs_sig = 0.0
+ic_flag = True
+# seems to store details in {velocity_name}_{station_name}.1d if not '-1'
+velocity_name = '-1'
 
 args = None
 if is_master:
     parser = ArgumentParser()
-    parser.add_argument('in_file', help = 'station file (lon, lat, name)')
-    parser.add_argument('out_file', help = 'file path for HF output')
-    parser.add_argument('-i', '--independent', action = 'store_true', \
-            help = 'run stations independently (with same random seed)')
-    parser.add_argument('-m', '--velocity-model', \
-            help = 'path to velocity model (1D)', \
-            default = os.path.join(qconfig['VEL_MOD'], \
-                                   'Mod-1D/Cant1D_v2-midQ_leer.1d'))
-    parser.add_argument('-s', '--site-vm-dir', \
-            help = 'dir containing site specific velocity models (1D)')
+    arg = parser.add_argument
+    # HF IN, line 12
+    arg('stoch_file', help = 'rupture model')
+    # HF IN, line 2
+    arg('station_file', help = 'station file (lon, lat, name)')
+    # HF IN, line 3
+    arg('out_file', help = 'file path for HF output')
+    # ARG 0
+    arg('--sim-bin', help = 'high frequency binary (modified for binary out)', \
+        default = os.path.join(qconfig['tools_dir'], 'hb_high_v5.4.5_binmod'))
+    arg('--t-sec', help = 'high frequency output start time', \
+        type = float, default = 0.0)
+    # HF IN, line 1
+    arg('--sdrop', help = 'stress drop average (bars)', \
+        type = float, default = 50.0)
+    # HF IN, line 4
+    arg('--rayset', help = 'ray types 1:direct 2:moho', nargs = '+', \
+        type = int, default = [1, 2])
+    # HF IN, line 5
+    arg('--no-siteamp', help = 'disable BJ97 site amplification factors', \
+        action = 'store_true')
+    # HF IN, line 7
+    arg('--seed', help = 'random seed', type = int, default = 5481190)
+    arg('-i', '--independent', action = 'store_true', \
+        help = 'run stations independently (with same random seed)')
+    # HF IN, line 9
+    arg('--duration', help = 'output length (seconds)', \
+        type = float, default = 100.0)
+    arg('--dt', help = 'timestep (seconds)', type = float, default = 0.005)
+    arg('--fmax', help = 'max sim frequency (Hz)', type = int, default = 10)
+    arg('--kappa', help = '', type = float, default = 0.045)
+    arg('--qfexp', help = 'Q frequency exponent', type = float, default = 0.6)
+    # HF IN, line 10
+    arg('--rvfac', help = 'rupture velocity factor (rupture : Vs)', \
+        type = float, default = 0.8)
+    arg('--rvfac_shal', help = 'rvfac shallow fault multiplier', \
+        type = float, default = 0.7)
+    arg('--rvfac_deep', help = 'rvfac deep fault multiplier', \
+        type = float, default = 0.7)
+    arg('--czero', help = 'C0 coefficient, < -1 for binary default', \
+        type = float, default = 2.1)
+    arg('--calpha', help = 'Ca coefficient, < -1 for binary default', \
+        type = float, default = -99)
+    # HF IN, line 11
+    arg('--mom', help = 'seismic moment, -1: use rupture model', \
+        type = float, default = -1.0)
+    arg('--rupv', help = 'rupture velocity, -1: use rupture model', \
+        type = float, default = -1.0)
+    # HF IN, line 13
+    arg('-m', '--velocity-model', \
+        help = 'path to velocity model (1D)', \
+        default = os.path.join(qconfig['VEL_MOD'], \
+                               'Mod-1D/Cant1D_v2-midQ_leer.1d'))
+    arg('-s', '--site-vm-dir', \
+        help = 'dir containing site specific velocity models (1D)')
+    # HF IN, line 14
+    arg('--vs-moho', help = 'depth to moho, < 0 for 999.9', \
+        type = float, default = 999.9)
+    # HF IN, line 17
+    arg('--fa_sig1', help = 'fourier amplitute uncertainty (1)', \
+        type = float, default = 0.0)
+    arg('--fa_sig2', help = 'fourier amplitude uncertainty (2)', \
+        type = float, default = 0.0)
+    arg('--rv_sig1', help = 'rupture velocity uncertainty', \
+        type = float, default = 0.1)
+    # HF IN, line 18
+    arg('--path-dur', help = '''path duration model
+        0:GP2010 formulation
+        1:[DEFAULT] WUS modification trial/error
+        2:ENA modification trial/error
+        11:WUS formulation of BT2014, overpredicts for multiple rays
+        12:ENA formulation of BT2015, overpredicts for multiple rays''', \
+        type = int, default = 1)
     try:
         args = parser.parse_args()
     except SystemExit:
         # invalid arguments or -h
         comm.Abort()
 args = comm.bcast(args, root = master)
+nt = int(args.duration / args.dt)
 
-print args
-sys.exit()
-rand_reset = False
-site_specific = False
+stat_txt = np.loadtxt(args.station_file, \
+                      dtype = [('lon', 'f4'), ('lat', 'f4'), ('name', '|S8')])
+#stations = np.zeros(stat_txt.shape, dtype = \
+#        np.dtype(stat_txt.dtype.descr + [('e_dist', 'f4'), ('seed_inc', 'i4')]))
+#stations['lon'] = stat_txt['lon']
+#stations['lat'] = stat_txt['lat']
+#stations['name'] = stat_txt['name']
+#print stations
 
-hf_sim_dir = sys.argv[1]
-
-local_statfile = os.path.join(hf_sim_dir, 'local.statfile')
-
-sys.path.append(hf_sim_dir)
-
-verify_strings([hf_prefix, hf_t_len, hf_dt, hf_vs_moho, hf_fa_sig_1, hf_rv_sig_1, \
-                hf_sdrop, hf_kappa, hf_qfexp, hf_rayset, hf_rvfac, hf_shal_rvfac, hf_deep_rvfac, \
-                hf_czero, hf_site_amp, hf_mom, hf_rupv, hf_seed, hf_fmax, hf_calpha, hf_path_dur])
-stat_estimate = len(all_stations)
-
-
-    statfile_base = os.path.join(hf_sim_dir, 'local.tmp.sf_')
-    if rand_reset:
-        jobs = stat_estimate  # we have as many jobs as the number of stations ie. each station name will be kept in one job file (ie. statfile)
-    else:
-        jobs = size  # each job will be taking care of stat_estimate / jobs.
-    statfiles = ['%s%d' % (statfile_base, p) for p in xrange(jobs)]
-
-out_prefix = os.path.join(hf_accdir, hf_prefix)
-
-if rank == 0:
-
-    # copy line not starting with '#' into a local FD_STATLIST copy
-    # file pointers for each processes' FD_STATLIST portion
-    # number of stations for each process
-    nss = [0] * jobs
-    stats_per_job = int(
-        math.ceil(stat_estimate / float(jobs)))  # this will be 1 if rand_reset is True as job=stat_estimate above
-    # ceiling may cause stats_per_job* jobs >= stat_estimate. (eg. 13/4 yielding 4). This may cause IndexError (handled below), but ensures all stations are correctly processed.
-
-    for i, f in enumerate(statfiles):
-        with open(f, 'w') as fp:
-            for j in range(stats_per_job):
-                try:
-                    fp.write(all_stations[i * stats_per_job + j])
-                except IndexError:
-                    break  # i*stats_per_job+j may exceed "stat_estimate". Break for-j here and let for-i continue
-                else:
-                    nss[i] += 1
-            fp.write('\n')
-
-    # some info echoed in original script, might be useful for some
-    if not site_specific:
-        print("%d %s" % (sum(nss), hf_v_model))
-
-
-# def run_hf(rank,local_statfile, n_stat):
-def run_hf((local_statfile, n_stat)):
-    global hf_v_model
-    print "Rank %d Processing %s containing %d stations" % (rank, local_statfile, n_stat)
-
-    # just in case more processes than stations
-    if n_stat == 0:
-        return
-
-    # if site_specific=True, hf_v_model needs to be worked out
-    if site_specific:
-        #        if rank == 0 :
-        #            print "Site specific 1D profile"
-        if n_stat > 1:
-            print "Error: For site specific, n_stat = 1 must be met. Check %s" % local_statfile
-            comm.Abort()
-        with open(local_statfile, 'r') as fr:
-            lines = fr.readlines()  # this must be non-empty. n_stat > 0 as handled above
-
-        stat = lines[0]
-        statname = stat.split(' ')[-1].strip('\n')
-        hf_v_model = os.path.join(hf_v_model_path, '%s.1d' % statname)
-
-    #    else:
-    #        if rank == 0:
-    #            print "Universal 1D profile"
-
-    cmd = hf_sim_bin
-    args = '\n%s\n%s\n%s\n%s\n%s\n4   0  0.02  19.9\n%s\n%s\n%s %s %s %s %s\n%s %s %s %s %s\n%s %s\n%s\n%s\n%s\n-99 0.0 0.0 0.0 0.0 1\n-1\n%s 0.0 %s\n%s\n' % (
-    hf_sdrop, local_statfile, out_prefix, hf_rayset, hf_site_amp, hf_seed, n_stat, hf_t_len, hf_dt, hf_fmax, hf_kappa,
-    hf_qfexp, hf_rvfac, hf_shal_rvfac, hf_deep_rvfac, hf_czero, hf_calpha, hf_mom, hf_rupv, hf_slip, hf_v_model,
-    hf_vs_moho, hf_fa_sig_1, hf_rv_sig_1, hf_path_dur)
-
-    # prevent terminal echo slow down, not useful with many processes anyway
-    #    sink = open('/dev/null', 'w')
-    # sink = sys.stdout
-    sink = open(os.path.join(hf_sim_dir, '%s.out' % local_statfile), 'w')
-    sink.write("%s %s\n" % (cmd, args))
-    sink.write("1D profile used: %s\n" % hf_v_model)
-
-    # execute calculation, stdin from pipe
-    hf_pipe = Popen([cmd], stdin=PIPE, stdout=sink)
-    # pipe input data into binary stdin
-    # look at hf_sim_bin source code (same dir) for more info on parameters
-    hf_pipe.communicate(args)
-    sink.close()
-
-
-# p = Pool(size)
-# p.map(run_hf, zip(statfiles, nss))
-if rank == 0:
-    stat_data = zip(statfiles, nss)
-else:
-    stat_data = [None, 0]
-
-# statfile, nss = comm.scatter(stat_data, root=0) #all processes will be waiting for rank 0 to scatter data. No barrier needed
-
+if is_master:
+    with open(args.out_file, mode = 'w+b') as out:
+        # save int parameters, rayset must be fixed to length = 4
+        fwrs = args.rayset + [0] * (4 - len(args.rayset))
+        np.array([stations.shape[0], nt, args.seed, not args.no_siteamp, \
+                  args.path_dur, len(args.rayset), \
+                  fwrs[0], fwrs[1], fwrs[2], fwrs[3], \
+                  nbu, ift, nl_skip, ic_flag], dtype = 'i4').tofile(out)
+        # save float parameters
+        np.array([args.duration, args.dt, args.t_sec, args.sdrop, flo, fhi, \
+                  args.rvfac, args.rvfac_shal, args.rvfac_deep, \
+                  args.czero, args.calpha, args.mom, args.rupv, args.vs_moho, \
+                  vp_sig, vsh_sig, rho_sig, qs_sig, \
+                  args.fa_sig1, args.fa_sig2, args.rv_sig1], \
+                 dtype = 'f4').tofile(out)
+        # save string parameters
+        np.array(map(os.path.basename, [args.stoch_file, args.velocity_model]), \
+                dtype = '|S64').tofile(out)
+        # save station info after leaving space for future metadata
+        out.seek(HEAD_SIZE)
+        stations.tofile(out)
 comm.Barrier()
 
-if rand_reset:
-    executor = parallel_executor.ParallelExecutor()
-    executor.process_function_with_result(run_hf, stat_data)
+def run_hf(local_statfile, n_stat, idx_0):
+    stdin = '\n'.join(['', str(args.sdrop), local_statfile, args.out_file, \
+        '%d %s' % (len(args.rayset), ' '.join(map(str, args.rayset))), \
+        str(int(not args.no_siteamp)), \
+        '%d %d %s %s' % (nbu, ift, flo, fhi), \
+        str(args.seed), str(n_stat), \
+        '%s %s %s %s %s' \
+            % (args.duration, args.dt, args.fmax, args.kappa, args.qfexp), \
+        '%s %s %s %s %s' % (args.rvfac, args.rvfac_shal, args.rvfac_deep, \
+                            args.czero, args.calpha), \
+        '%s %s' % (args.mom, args.rupv), \
+        args.stoch_file, args.velocity_model, str(args.vs_moho), \
+        '%d %s %s %s %s %d' \
+            % (nl_skip, vp_sig, vsh_sig, rho_sig, qs_sig, ic_flag), \
+        velocity_name, \
+        '%s %s %s' % (args.fa_sig1, args.fa_sig2, args.rv_sig1), \
+        str(args.path_dur), str(HEAD_SIZE + idx_0 * (nt * 3 * 4)), ''])
+
+    # run HF binary
+    p = Popen([args.sim_bin], stdin = PIPE, stderr = PIPE)
+    i = p.communicate(stdin)[1]
+    p.wait()
+    edist = np.fromstring(i, dtype = 'f4', sep = '\n')
+    assert(edist.size == n_stat)
+    return edist
+
+
+d = stations.shape[0] // size
+try:
+    r = stations.shape[0] % d
+except ZeroDivisionError:
+    r = stations.shape[0]
+start = rank * d + min(r, rank)
+work = stations[start:start + d + (rank < r)]
+
+in_stats = mkstemp()[1]
+if args.independent:
+    for s in xrange(work.shape[0]):
+        np.savetxt(in_stats, work[s:s + 1], fmt = '%f %f %s')
+        edist = run_hf(in_stats, 1, start + s)
 else:
-    statfile, nss = comm.scatter(stat_data, root=0)
-    print "rank %d" % rank
-    run_hf((statfile, nss))
+    for s in xrange(0, work.shape[0], MAX_STATLIST):
+        np.savetxt(in_stats, work[s:s + MAX_STATLIST], fmt = '%f %f %s')
+        edist = run_hf(in_stats, min(MAX_STATLIST, work.shape[0] - s), start + s)
+os.remove(in_stats)
+
+#if site_specific:
+#    velocity_model = os.path.join(hf_v_model_path, '%s.1d' % statname)
+
