@@ -20,6 +20,7 @@ size = comm.Get_size()
 master = 0
 is_master = not rank
 HEAD_SIZE = 0x0200
+HEAD_STAT = 0x18
 MAX_STATLIST = 1000
 
 # never changed / unknown function (line 6)
@@ -120,24 +121,20 @@ if is_master:
         comm.Abort()
 args = comm.bcast(args, root = master)
 nt = int(args.duration / args.dt)
-
-stat_txt = np.loadtxt(args.station_file, \
+stations = np.loadtxt(args.station_file, \
                       dtype = [('lon', 'f4'), ('lat', 'f4'), ('name', '|S8')])
-#stations = np.zeros(stat_txt.shape, dtype = \
-#        np.dtype(stat_txt.dtype.descr + [('e_dist', 'f4'), ('seed_inc', 'i4')]))
-#stations['lon'] = stat_txt['lon']
-#stations['lat'] = stat_txt['lat']
-#stations['name'] = stat_txt['name']
-#print stations
+head_total = HEAD_SIZE + HEAD_STAT * stations.shape[0]
 
+# initialise output with general metadata
 if is_master:
     with open(args.out_file, mode = 'w+b') as out:
-        # save int parameters, rayset must be fixed to length = 4
+        # save int/bool parameters, rayset must be fixed to length = 4
         fwrs = args.rayset + [0] * (4 - len(args.rayset))
         np.array([stations.shape[0], nt, args.seed, not args.no_siteamp, \
                   args.path_dur, len(args.rayset), \
                   fwrs[0], fwrs[1], fwrs[2], fwrs[3], \
-                  nbu, ift, nl_skip, ic_flag], dtype = 'i4').tofile(out)
+                  nbu, ift, nl_skip, ic_flag, args.independent, \
+                  args.site_vm_dir != None], dtype = 'i4').tofile(out)
         # save float parameters
         np.array([args.duration, args.dt, args.t_sec, args.sdrop, flo, fhi, \
                   args.rvfac, args.rvfac_shal, args.rvfac_deep, \
@@ -146,14 +143,18 @@ if is_master:
                   args.fa_sig1, args.fa_sig2, args.rv_sig1], \
                  dtype = 'f4').tofile(out)
         # save string parameters
-        np.array(map(os.path.basename, [args.stoch_file, args.velocity_model]), \
+        if args.site_vm_dir != None:
+            vm = args.site_vm_dir
+        else:
+            vm = args.velocity_model
+        np.array(map(os.path.basename, [args.stoch_file, vm]), \
                 dtype = '|S64').tofile(out)
-        # save station info after leaving space for future metadata
-        out.seek(HEAD_SIZE)
-        stations.tofile(out)
 comm.Barrier()
 
-def run_hf(local_statfile, n_stat, idx_0):
+def run_hf(local_statfile, n_stat, idx_0, velocity_model = args.velocity_model):
+    """
+    Runs HF Fortran code.
+    """
     stdin = '\n'.join(['', str(args.sdrop), local_statfile, args.out_file, \
         '%d %s' % (len(args.rayset), ' '.join(map(str, args.rayset))), \
         str(int(not args.no_siteamp)), \
@@ -169,36 +170,64 @@ def run_hf(local_statfile, n_stat, idx_0):
             % (nl_skip, vp_sig, vsh_sig, rho_sig, qs_sig, ic_flag), \
         velocity_name, \
         '%s %s %s' % (args.fa_sig1, args.fa_sig2, args.rv_sig1), \
-        str(args.path_dur), str(HEAD_SIZE + idx_0 * (nt * 3 * 4)), ''])
+        str(args.path_dur), str(head_total + idx_0 * (nt * 3 * 4)), ''])
 
     # run HF binary
-    p = Popen([args.sim_bin], stdin = PIPE, stderr = PIPE)
+    p = Popen([args.sim_bin], stdin = PIPE, stderr = PIPE, stdout = PIPE)
     i = p.communicate(stdin)[1]
     p.wait()
-    edist = np.fromstring(i, dtype = 'f4', sep = '\n')
-    assert(edist.size == n_stat)
-    return edist
+    # edist is the only other variable that HF calculates
+    e_dist = np.fromstring(i, dtype = 'f4', sep = '\n')
+    assert(e_dist.size == n_stat)
+    return e_dist
 
-
+# distribute work, must be sequential segments for processes
 d = stations.shape[0] // size
-try:
-    r = stations.shape[0] % d
-except ZeroDivisionError:
-    r = stations.shape[0]
+r = stations.shape[0] % size
 start = rank * d + min(r, rank)
 work = stations[start:start + d + (rank < r)]
+max_nstat = int(math.ceil(stations.shape[0] / float(size)))
 
+# process data to give Fortran code
+e_dist = np.empty(max_nstat, dtype = 'f4') * np.nan
+seed_inc = np.zeros(max_nstat, dtype = 'i4') - 1
 in_stats = mkstemp()[1]
 if args.independent:
+    vm = args.velocity_model
     for s in xrange(work.shape[0]):
+        if args.site_vm_dir != None:
+            vm = os.path.join(args.site_vm_dir, '%s.1d' % (stations[s]['name']))
         np.savetxt(in_stats, work[s:s + 1], fmt = '%f %f %s')
-        edist = run_hf(in_stats, 1, start + s)
+        e_dist[s] = run_hf(in_stats, 1, start + s, velocity_model = vm)
+    seed_inc[:s + 1] = 0
 else:
     for s in xrange(0, work.shape[0], MAX_STATLIST):
-        np.savetxt(in_stats, work[s:s + MAX_STATLIST], fmt = '%f %f %s')
-        edist = run_hf(in_stats, min(MAX_STATLIST, work.shape[0] - s), start + s)
+        n_stat = min(MAX_STATLIST, work.shape[0] - s)
+        np.savetxt(in_stats, work[s:s + n_stat], fmt = '%f %f %s')
+        e_dist[s:s + n_stat] = run_hf(in_stats, n_stat, start + s)
+        seed_inc[s:s + n_stat] = np.arange(n_stat)
 os.remove(in_stats)
 
-#if site_specific:
-#    velocity_model = os.path.join(hf_v_model_path, '%s.1d' % statname)
-
+# gather station metadata
+recvbuf = None
+if is_master:
+    recvbuf = np.empty([size, max_nstat], dtype='f4')
+comm.Gather(e_dist, recvbuf, root = master)
+if is_master:
+    e_dist = recvbuf[np.isfinite(recvbuf)]
+    recvbuf = np.empty([size, max_nstat], dtype = 'i4')
+comm.Gather(seed_inc, recvbuf, root = master)
+if is_master:
+    seed_inc = recvbuf[recvbuf != -1]
+    # add station metadata to output
+    stat_head = np.zeros(stations.shape, dtype = np.dtype(stations.dtype.descr \
+            + [('e_dist', 'f4'), ('seed_inc', 'i4')]))
+    stat_head['lon'] = stations['lon']
+    stat_head['lat'] = stations['lat']
+    stat_head['name'] = stations['name']
+    stat_head['e_dist'] = e_dist
+    stat_head['seed_inc'] = seed_inc
+    # save station info after general header
+    with open(args.out_file, mode = 'r+b') as out:
+        out.seek(HEAD_SIZE)
+        stat_head.tofile(out)
