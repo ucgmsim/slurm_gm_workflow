@@ -40,6 +40,7 @@ import install
 import argparse
 
 parser = argparse.ArgumentParser()
+parser.add_argument("--ncore",type=str,default=default_core)
 parser.add_argument("--auto", nargs="?", type=str,const=True)
 parser.add_argument('--account', type=str, default=default_account)
 args = parser.parse_args()
@@ -91,7 +92,11 @@ def create_sl(submit_yes,wall_clock_limit):
             # print res
         else:
             print "User chose to submit the job manually"
-
+#Start of main function
+#TODO: make this a __main__ function so its more modulized.
+if args.ncore != default_core:
+    #replace the default_core with ncore provided by user
+    default_core = args.ncore
 
 if args.auto == True:
     #enable this feature after wct is properly implemented
