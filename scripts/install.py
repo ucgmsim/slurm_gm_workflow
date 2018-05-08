@@ -37,6 +37,7 @@ latest_ll_dir = os.path.join(global_root, 'StationInfo/grid')
 latest_ll = 'non_uniform_with_real_stations_latest'
 
 #default values
+#TODO: after enabling different dt for LF and HF, this might need to change
 default_dt = 0.005
 
 def q_accept_custom_rupmodel():
@@ -623,16 +624,48 @@ if __name__ == '__main__':
     parser.add_argument('--user_root',type=str,default=None)
     parser.add_argument('--sim_cfg',type=str,default=None)
     
+    parser.add_argument('--srf_dir',type=str,default=None)
+    parser.add_argument('--vm_dir',type=str,default=None)
+    parser.add_argument('--v1d_dir',type=str,default=None)
+    parser.add_argument('--station_dir',type=str,default=None)
+
+#if user desire using specific files, they should call the action function directly instead
+#    parser.add_argument('--srf',type=str,default=None)
+#    parser.add_argument('--stoch',type=str,default=None)
+#    parser.add_argument('--vm',type=str,default=None)
+#    parser.add_argument('--station',type=str,default=None)
+    
     args = parser.parse_args()
 
-    if args.user_root != None:
-        user_root = args.user_root 
-        if not os.path.exists(user_root):
-            print "path no exsits: %s"%user_root
-            sys.exit()
+    # If the additional options provided, check if the folder exist
+    for arg in vars(args):
+        path_to_check = getattr(args, arg)
+        if path_to_check is not None:
+            if not os.path.exists(path_to_check):
+                print "Error: path not exsist: %s"%path_to_check
+                sys.exit()
+            else:
+                print "%s is set to %s"%(arg,path_to_check)
         else:
-            print "user_root changed:",args.user_root
+            continue
 
+    #change corresponding variables to the args provided
+    
+    if args.user_root != None:
+        user_root = args.user_root
+
+    if args.srf_dir != None:
+        srf_default_dir = args.srf_dir
+
+    if args.vm_dir != None:
+        vel_mod_dir = args.vm_dir
+    
+    if args.v1d_dir != None:
+        v_mod_1d_dir = args.v1d_dir 
+
+    if args.station_dir != None:
+        stat_dir = args.station_dir
+ 
     #if sim_cfg parsed, run main_remote(which has no selection)
     if args.sim_cfg != None:
         cfg = args.sim_cfg
