@@ -48,7 +48,7 @@ touch ../scripts ${ROOT}/workflow/{scripts,templates,shared_workflow}/__init__.p
 # Adding legacy install.sh
 echo '#!/usr/bin/env bash
 
-python '${ROOT}/workflow/scripts'/install.py
+python '${ROOT}/workflow/scripts'/install.py $@
 ' > ${ROOT}/RunFolder/install.sh
 chmod +x ${ROOT}/RunFolder/install.sh
 
