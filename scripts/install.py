@@ -10,6 +10,7 @@ import datetime
 from shared_workflow import load_config as ldcfg
 import ConfigParser
 import argparse
+from management import create_mgmt_db
 
 # TODO: namespacing
 from qcore.shared import *
@@ -561,6 +562,9 @@ def main_local():
     #        print "PATH was updated"
     # new workflow no longer ask for wct at install phase, it is asked at submit_*.py
     # wallclock(sim_dir)
+
+    srf_files, ___ = zip(*srf_stoch_pairs)
+    create_mgmt_db.create_mgmt_db([], sim_dir, srf_files=srf_files)
 
     print "Installation completed"
     show_instruction(sim_dir)
