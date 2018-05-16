@@ -9,7 +9,6 @@ INSERT OR IGNORE  INTO `status_enum` (id,state) VALUES (2,'in-queue');
 INSERT OR IGNORE  INTO `status_enum` (id,state) VALUES (3,'running');
 INSERT OR IGNORE  INTO `status_enum` (id,state) VALUES (4,'completed');
 INSERT OR IGNORE  INTO `status_enum` (id,state) VALUES (5,'failed');
-INSERT OR IGNORE  INTO `status_enum` (id,state) VALUES (6,'wct_limit');
 CREATE TABLE IF NOT EXISTS`state` (
 	`id`	INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
 	`run_name`	TEXT NOT NULL,
@@ -17,6 +16,7 @@ CREATE TABLE IF NOT EXISTS`state` (
 	`status`	INTEGER,
 	`job_id`	INTEGER UNIQUE,
 	`error`		TEXT,
+	`last_modified`	INTEGER,
 	UNIQUE(`run_name`, `proc_type`)
 );
 CREATE TABLE IF NOT EXISTS "proc_type_enum" (
