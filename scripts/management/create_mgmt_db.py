@@ -14,15 +14,15 @@ def connect_db(path):
     db_location = os.path.join(path, 'slurm_mgmt.db')
     conn = sqlite3.connect(db_location)
     db = conn.cursor()
-    return db, conn
+    return db
     
 
 def initilize_db(path):
-    db, conn = connect_db(path)
+    db = connect_db(path)
     sql_template_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../../templates/slurm_mgmt.db.sql')
     initilize_query = open(sql_template_file).read()
     db.executescript(initilize_query)
-    return db, conn
+    return db
 
 
 def get_procs(db):
@@ -37,16 +37,19 @@ def create_mgmt_db(realisations, f, srf_files=[]):
     if len(realisations) == 0:
         print "No realisations found - no entries inserted into db"
 
-    db,conn = initilize_db(f)    
+    db = initilize_db(f)    
     procs_to_be_done = get_procs(db)
 
     for run_name in realisations:
         for proc in procs_to_be_done:
-            db.execute('''INSERT OR IGNORE INTO
-                          `state`(run_name, proc_type, status)
-                          VALUES(?,?,1)''', (run_name, proc[0]))
+            insert_task(db, run_name, proc[0])
 
-    conn.commit()
+    db.connection.commit()
+
+def insert_task(db, run_name, proc):
+    db.execute('''INSERT OR IGNORE INTO
+                  `state`(run_name, proc_type, status, last_modified)
+                  VALUES(?, ?, 1, strftime('%s','now'))''', (run_name, proc))
 
 def main():
     parser = argparse.ArgumentParser()
