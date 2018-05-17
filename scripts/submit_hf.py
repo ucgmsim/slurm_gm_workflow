@@ -1,6 +1,7 @@
 
 import glob
 import os.path
+from os.path import basename
 import sys
 
 sys.path.append(os.path.abspath(os.path.curdir))
@@ -63,34 +64,28 @@ def est_wct(est_core_hours, ncore, scale):
     estimated_wct = '{0:02.0f}:{1:02.0f}:00'.format(*divmod(time_per_cpu * 60, 60))
     return estimated_wct
 
-def write_sl_script(hf_dir, sl_template_prefix, hf_option, nb_cpus=default_core, run_time=default_run_time,memory=default_memory,account=default_account):
-    hf_sim_dirs = []
-    file_to_find = 'params_bb_uncertain.py'
-    for root, dirnames, filenames in os.walk(hf_dir):
-        for filename in fnmatch.filter(filenames, file_to_find):
-            hf_sim_dirs.append(root)
-    print hf_sim_dirs
+def write_sl_script(hf_sim_dir, stoch_name, sl_template_prefix, hf_option, nb_cpus=default_core, run_time=default_run_time,memory=default_memory,account=default_account):
     f_template = open('%s.sl.template' % sl_template_prefix)
     template = f_template.readlines()
     str_template = ''.join(template)
     generated_scripts = []
-    for hf_sim_dir in hf_sim_dirs:
-        txt = str_template.replace("{{hf_sim_dir}}", hf_sim_dir)
-        txt = txt.replace("{{hf_option}}",str(hf_option))
-        variation = hf_sim_dir.replace(hf_dir + '/', '').replace('/', '__')
-        print variation
+   
+    txt = str_template.replace("{{hf_sim_dir}}", hf_sim_dir)
+    txt = txt.replace("{{hf_option}}",str(hf_option))
+    variation = stoch_name.replace('/', '__')
+    print variation
 
-        fname_sl_script = '%s_%s_%s.sl' % (sl_template_prefix, variation,timestamp)
-        f_llscript = open(fname_sl_script, 'w')
-        job_name = "sim_hf.%s" % variation
+    fname_sl_script = '%s_%s_%s.sl' % (sl_template_prefix, variation,timestamp)
+    f_llscript = open(fname_sl_script, 'w')
+    job_name = "sim_hf.%s" % variation
 
-        header = resolve_header(account, nb_cpus, run_time, job_name, "slurm", memory, timestamp,
-                                job_description="HF calculation", additional_lines="###SBATCH -C avx")
-        f_llscript.write(header)
-        f_llscript.write(txt)
-        f_llscript.close()
-        print "Slurm script %s written" % fname_sl_script
-        generated_scripts.append(fname_sl_script)
+    header = resolve_header(account, nb_cpus, run_time, job_name, "slurm", memory, timestamp,
+                            job_description="HF calculation", additional_lines="###SBATCH -C avx")
+    f_llscript.write(header)
+    f_llscript.write(txt)
+    f_llscript.close()
+    print "Slurm script %s written" % fname_sl_script
+    generated_scripts.append(fname_sl_script)
 
     return generated_scripts
 
@@ -124,8 +119,8 @@ if __name__ == '__main__':
         if version == 'serial' or version == 'run_hf':
             ll_name_prefix = 'run_hf'
             ncore="1"
-        elif version == 'mp' or version == 'run_hf_mp':
-            ll_name_prefix = 'run_hf_mp'
+        if version == 'mp' or version == 'run_hf_mp':
+            wl_name_prefix = 'run_hf_mp'
         elif version == 'mpi' or version == 'run_hf_mpi':
             ll_name_prefix = 'run_hf_mpi'
         else:
@@ -171,6 +166,24 @@ if __name__ == '__main__':
         print "Warning, the estimated time is over estimating a lot."
         run_time = est_wct(est_chours,ncore,default_scale)
     #run the standard process(asking user), if --auto not used
-    print "account:",args.account
-    created_scripts = write_sl_script(params.hf_dir, ll_name_prefix, hf_option,ncore,run_time,account=args.account)
+
+    #modify the logic to use the same as in install_bb:
+    #sniff through params_base to get the names of srf, instead of running throught file directories.
+
+    # loop through all srf file to generate related slurm scripts
+    for srf in params.srf_files:
+        srf_name = os.path.splitext(basename(srf))[0]
+        #TODO: if for some reason the hf_run_names is not limited to one per simulation anymore, modify the logic here
+        if len(params_base_bb.hf_run_names) == 1:
+            #get hf_sim_dir
+            hf_sim_dir = os.path.join(os.path.join(params.hf_dir,params_base_bb.hf_run_names[0]), srf_name)
+            print "account:",args.account
+            created_scripts = write_sl_script(hf_sim_dir, srf_name , ll_name_prefix, hf_option,ncore,run_time,account=args.account)
+        #else:
+            
+            
+        
+
+
+
     submit_sl_script(created_scripts)
