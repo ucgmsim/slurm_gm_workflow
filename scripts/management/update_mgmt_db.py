@@ -24,7 +24,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('run_folder', type=str, 
                         help="folder to the collection of runs on Kupe")
-    parser.add_argument('process', choices=['EMOD3D', 'post_EMOD3D', 'HF', 'BB', 'IM_calculation'])
+    parser.add_argument('process', choices=['EMOD3D', 'merge_ts', 'winbin_aio', 'HF', 'BB', 'IM_calculation'])
     parser.add_argument('status', type=str, choices=['created','in-queue','running','completed','failed'])
     parser.add_argument('-r', '--run_name', type=str,
                         help='name of run to be updated')
