@@ -20,7 +20,7 @@ size = comm.Get_size()
 master = 0
 is_master = not rank
 HEAD_SIZE = 0x0200
-HEAD_STAT = 0x14
+HEAD_STAT = 0x18
 MAX_STATLIST = 1000
 
 # never changed / unknown function (line 6)
@@ -174,12 +174,16 @@ def run_hf(local_statfile, n_stat, idx_0, velocity_model = args.velocity_model):
 
     # run HF binary
     p = Popen([args.sim_bin], stdin = PIPE, stderr = PIPE)
-    i = p.communicate(stdin)[1]
+    stderr = p.communicate(stdin)[1]
+    # load vs
+    with open(velocity_model, 'r') as vm:
+        vm.readline()
+        vs = float(vm.readline().split()[2])
     p.wait()
     # edist is the only other variable that HF calculates
-    e_dist = np.fromstring(i, dtype = 'f4', sep = '\n')
+    e_dist = np.fromstring(stderr, dtype = 'f4', sep = '\n')
     assert(e_dist.size == n_stat)
-    return e_dist
+    return e_dist, vs
 
 # distribute work, must be sequential segments for processes
 d = stations.shape[0] // size
@@ -190,6 +194,7 @@ max_nstat = int(math.ceil(stations.shape[0] / float(size)))
 
 # process data to give Fortran code
 e_dist = np.empty(max_nstat, dtype = 'f4') * np.nan
+vs = np.empty(max_nstat, dtype = 'f4') * np.nan
 in_stats = mkstemp()[1]
 if args.independent:
     vm = args.velocity_model
@@ -197,12 +202,13 @@ if args.independent:
         if args.site_vm_dir != None:
             vm = os.path.join(args.site_vm_dir, '%s.1d' % (stations[s]['name']))
         np.savetxt(in_stats, work[s:s + 1], fmt = '%f %f %s')
-        e_dist[s] = run_hf(in_stats, 1, start + s, velocity_model = vm)
+        e_dist[s], vs[s] = run_hf(in_stats, 1, start + s, velocity_model = vm)
 else:
     for s in xrange(0, work.shape[0], MAX_STATLIST):
         n_stat = min(MAX_STATLIST, work.shape[0] - s)
-        np.savetxt(in_stats, work[s:s + n_stat], fmt = '%f %f %s')
-        e_dist[s:s + n_stat] = run_hf(in_stats, n_stat, start + s)
+        sidx = slice(s, s + n_stat)
+        np.savetxt(in_stats, work[sidx], fmt = '%f %f %s')
+        e_dist[sidx], vs[sidx] = run_hf(in_stats, n_stat, start + s)
 os.remove(in_stats)
 
 # gather station metadata
@@ -212,13 +218,17 @@ if is_master:
 comm.Gather(e_dist, recvbuf, root = master)
 if is_master:
     e_dist = recvbuf[np.isfinite(recvbuf)]
+comm.Gather(vs, recvbuf, root = master)
+if is_master:
+    vs = recvbuf[np.isfinite(recvbuf)]
     # add station metadata to output
     stat_head = np.zeros(stations.shape, dtype = np.dtype(stations.dtype.descr \
-            + [('e_dist', 'f4')]))
+            + [('e_dist', 'f4'), ('vs', 'f4')]))
     stat_head['lon'] = stations['lon']
     stat_head['lat'] = stations['lat']
     stat_head['name'] = stations['name']
     stat_head['e_dist'] = e_dist
+    stat_head['vs'] = vs
     # save station info after general header
     with open(args.out_file, mode = 'r+b') as out:
         out.seek(HEAD_SIZE)
