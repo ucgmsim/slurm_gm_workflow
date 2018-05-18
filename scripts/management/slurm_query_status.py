@@ -14,25 +14,6 @@ t_status = {'R': 'running', 'PD': 'in-queue'}
 
 def get_queued_tasks():
     cmd = "squeue -A nesi00213 -o '%A %t' -h"
-    cmd = '''echo "2182900 R
-2183326 R
-2183303 R
-2183228 R
-2183320 R
-2183265 R
-2183096 R
-2183264 R
-2183316 R
-2183321 R
-2183323 R
-2183331 R
-2183338 R
-2183253 R
-2183255 PD
-2183280 PD
-2183296 PD
-2183324 PD
-2183339 PD"'''
     process = Popen(shlex.split(cmd), stdout=PIPE)
     (output, err) = process.communicate()
     exit_code = process.wait()
