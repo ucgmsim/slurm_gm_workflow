@@ -2,13 +2,13 @@
 
 import glob
 import os.path
+from os.path import basename
 import sys
 import os
 import set_runparams
 
-# TODO: this needs to append the path to qcore as well
-qcore_path = '/projects/nesi00213/qcore'
-sys.path.append(qcore_path)
+#sys.path.append(os.path.abspath(os.path.curdir))
+
 from qcore.shared import *
 import estimate_emod3d as est_e3d
 
@@ -30,7 +30,7 @@ default_wct_scale=1.2
 # TODO: remove this once temp_shared is gone
 from temp_shared import resolve_header
 
-sys.path.append(os.getcwd())
+#sys.path.append(os.getcwd())
 
 print(sys.path)
 
@@ -39,11 +39,7 @@ import install
 # section for parser to determine if using automate wct
 import argparse
 
-parser = argparse.ArgumentParser()
-parser.add_argument("--ncore",type=str,default=default_core)
-parser.add_argument("--auto", nargs="?", type=str,const=True)
-parser.add_argument('--account', type=str, default=default_account)
-args = parser.parse_args()
+
 
 
 def confirm(q):
@@ -51,109 +47,100 @@ def confirm(q):
     print q
     return show_yes_no_question()
 
+def submit_sl_script(script_names,submit_yes=None):
+    #print "Submitting is not implemented yet!"
+    if submit_yes == None:
+        submit_yes = confirm("Also submit the job for you?")
+    if submit_yes:
+        for script in script_names:
+            #encode if it is unicode
+            #TODO:fix this in qcore.shared.exe()
+            if type(script) == unicode:
+                script = script.encode() 
+            print "Submitting %s" %script
+            res = exe("sbatch %s"%script, debug=False)
+    else:
+        print "User chose to submit the job manually"
 
-def create_sl(submit_yes,wall_clock_limit):
+
+
+def write_sl_script(lf_sim_dir,srf_name,wall_clock_limit, nb_cpus=default_core, run_time=default_run_time,memory=default_memory,account=default_account):
+
     from params_base import tools_dir
 
-    # execfile(os.path.join(bin_process_dir, "set_runparams.py"))
-    set_runparams.create_run_parameters()
+    set_runparams.create_run_parameters(srf_name)
+    generated_scripts = []
 
-    glob.glob('LF/*')
-    lf_sim_dirs = glob.glob('LF/*')
     f_template = open('run_emod3d.sl.template')
     template = f_template.readlines()
     str_template = ''.join(template)
-
-    for lf_sim_dir in lf_sim_dirs:
-        txt = str_template.replace("{{lf_sim_dir}}", lf_sim_dir).replace("{{tools_dir}}", tools_dir)
-        rup_mod = lf_sim_dir.split('/')[1]
-        fname_slurm_script = 'run_emod3d_%s.sl' % rup_mod
-        f_sl_script = open(fname_slurm_script, 'w')
-
-        # slurm header
-        # TODO: change this values to values that make more sense
-        # TODO: this value has to change accordingly to the value used for WCT estimation
-        nb_cpus = default_core
-        #run_time = "1:00:00"
-        run_time = wall_clock_limit
-        job_name = "run_emod3d.%s" % rup_mod
-        memory=default_memory
-        header = resolve_header(args.account, nb_cpus, run_time, job_name, "slurm", memory, exe_time,
-                                job_description="emod3d slurm script", additional_lines="#SBATCH --hint=nomultithread")
-
-        f_sl_script.write(header)
-        f_sl_script.write(txt)
-        f_sl_script.close()
-        print "Slurm script %s written" % fname_slurm_script
-        if submit_yes:
-            # TODO: implement submit_sl_script function and use it here
-            print "Submitting %s" % fname_slurm_script
-            res = exe("sbatch %s" % fname_slurm_script, debug=False)
-            # print res
-        else:
-            print "User chose to submit the job manually"
-#Start of main function
-#TODO: make this a __main__ function so its more modulized.
-if args.ncore != default_core:
-    #replace the default_core with ncore provided by user
-    default_core = args.ncore
-
-if args.auto == True:
-    #enable this feature after wct is properly implemented
-    #print "This feature is disabled for slurm scripts"
-    #exit(1)
-
-    # TODO: prepare an auto submit for slurm scripts
-    # TODO: resume using WCT functions after wct is updated to current estimation method
-    #import wct
-
-    try:
-        import params
-    except:
-        print "import params.py failed. check sys.path"
-    else:
-        # TODO: get some values for when DB is empty
-        # TODO: resume the WCT functions after wct is updated
-        #db = wct.WallClockDB('wallclock.sqlite')
-        nx = int(params.nx)
-        ny = int(params.ny)
-        nz = int(params.nz)
-        dt = float(params.dt)
-        sim_duration = float(params.sim_duration)
-        # TODO: decide if the nproc should be defined in params.py or parsed( or both?)
-        # using defaut_core for now, update this ASAP
-        #num_procs = int(params.n_proc)
-        num_procs = default_core
-        #TODO: resume these functions when WCT properly implemented
-        #est = db.estimate_wall_clock_time(nx, ny, nz, sim_duration, num_procs)
-        #est_max = est[0]
-        # all_clock_limit = est_max
-        total_est_core_hours= est_e3d.est_cour_hours_emod3d(nx,ny,nz,dt,sim_duration)
-        estimated_wct = est_e3d.est_wct(total_est_core_hours,num_procs, default_wct_scale)
-        submit_yes=True
-        create_sl(submit_yes,estimated_wct)
-else:
-
-    # install.wallclocl returns a datetime type value, transform it into string
-    #wall_clock_limit = str(install.wallclock('.'))
     
-    #TODO: replace all the WCT estimation with proper modules after wct.py is updated
+    txt = str_template.replace("{{lf_sim_dir}}", lf_sim_dir).replace("{{tools_dir}}", tools_dir)
+    fname_slurm_script = 'run_emod3d_%s.sl' % srf_name
+    f_sl_script = open(fname_slurm_script, 'w')
+
+    # slurm header
+    # TODO: this value has to change accordingly to the value used for WCT estimation
+    job_name = "run_emod3d.%s" % srf_name
+    header = resolve_header(args.account, nb_cpus, run_time, job_name, "slurm", memory, exe_time,
+                            job_description="emod3d slurm script", additional_lines="#SBATCH --hint=nomultithread")
+    
+    f_sl_script.write(header)
+    f_sl_script.write(txt)
+    f_sl_script.close()
+    
+    fname_sl_abs_path = os.path.join(os.path.abspath(os.path.curdir),fname_slurm_script)
+    print "Slurm script %s written" % fname_sl_abs_path
+    generated_scripts.append(fname_sl_abs_path)
+    return generated_scripts 
+
+if __name__ == '__main__':
+    #Start of main function
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--ncore",type=str,default=default_core)
+    parser.add_argument("--auto", nargs="?", type=str,const=True)
+    parser.add_argument('--account', type=str, default=default_account)
+    parser.add_argument('--srf',type=str,default=None)
+    args = parser.parse_args()
+
+    if args.ncore != default_core:
+        #replace the default_core with ncore provided by user
+        default_core = args.ncore
+
     try:
         import params
     except:
-        print "import params.py failed. check sys.path"
+        print "import params.py failed."
+        sys.exit()
     else:
-        nx = int(params.nx)
-        ny = int(params.ny)
-        nz = int(params.nz)
-        dt = float(params.dt)
-        sim_duration = float(params.sim_duration)
-        num_procs = default_core
-        total_est_core_hours= est_e3d.est_cour_hours_emod3d(nx,ny,nz,dt,sim_duration)
-        estimated_wct = est_e3d.est_wct(total_est_core_hours,num_procs, default_wct_scale)
-        print "Estimated WCT (scaled and rounded up):%s"%estimated_wct
-        wall_clock_limit = str(install.get_input_wc())
-        
-        submit_yes = confirm("Also submit the job for you?")
-
-        create_sl(submit_yes,wall_clock_limit)
+        wct_set=False 
+        for srf in params.srf_files:
+            #get the srf(rup) name without extensions
+            srf_name = os.path.splitext(basename(srf))[0]
+            #if srf(variation) is provided as args, only create the slurm with same name provided
+            if args.srf != None and srf_name != args.srf:
+                continue
+            #get lf_sim_dir
+            lf_sim_dir = os.path.join(params.lf_sim_root_dir,srf_name) 
+            # TODO: resume the WCT functions after wct is updated.
+            # note: the wct funcitons is should be ran in the est_wct scripts
+            nx = int(params.nx)
+            ny = int(params.ny)
+            nz = int(params.nz)
+            dt = float(params.dt)
+            sim_duration = float(params.sim_duration)
+            #default_core will be changed is user pars ncore
+            num_procs = default_core
+            total_est_core_hours= est_e3d.est_cour_hours_emod3d(nx,ny,nz,dt,sim_duration)
+            estimated_wct = est_e3d.est_wct(total_est_core_hours,num_procs, default_wct_scale)
+            print "Estimated WCT (scaled and rounded up):%s"%estimated_wct
+            
+            if args.auto == True:
+                created_scripts = write_sl_script(lf_sim_dir,srf_name,estimated_wct)
+                submit_sl_script(created_scripts,submit_yes=True)
+            else:
+                if wct_set == False:
+                    wall_clock_limit = str(install.get_input_wc())
+                    wct_set = True
+                created_scripts = write_sl_script(lf_sim_dir,srf_name,wall_clock_limit)
+                submit_sl_script(created_scripts)
