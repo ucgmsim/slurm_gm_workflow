@@ -13,17 +13,18 @@ def update_db(db, process, status, job=None, run_name=None, error=None):
     db.execute('''UPDATE state
                   SET status = (SELECT id FROM status_enum WHERE state = ?), 
                       last_modified = strftime('%s','now'),
-                      job_id = ?
+                      job_id = ?,
+                      error = ?
                   WHERE (job_id = ? or run_name = ?)
                    AND proc_type = (SELECT id FROM proc_type_enum WHERE proc_type = ?)
-                   AND status > (SELECT id FROM status_enum WHERE state = ?)''', (status, job, job, run_name, process, status))
+                   AND status <= (SELECT id FROM status_enum WHERE state = ?)''', (status, job, error, job, run_name, process, status))
     
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('run_folder', type=str, 
                         help="folder to the collection of runs on Kupe")
-    parser.add_argument('process', choices=['EMOD3D', 'post_EMOD3D', 'HF', 'BB', 'IM_calculation'])
+    parser.add_argument('process', choices=['EMOD3D', 'merge_ts', 'winbin_aio', 'HF', 'BB', 'IM_calculation'])
     parser.add_argument('status', type=str, choices=['created','in-queue','running','completed','failed'])
     parser.add_argument('-r', '--run_name', type=str,
                         help='name of run to be updated')

@@ -25,8 +25,9 @@ CREATE TABLE IF NOT EXISTS "proc_type_enum" (
 	PRIMARY KEY(`id`)
 );
 INSERT OR IGNORE  INTO `proc_type_enum` (id,proc_type) VALUES (1,'EMOD3D');
-INSERT OR IGNORE  INTO `proc_type_enum` (id,proc_type) VALUES (2,'post_EMOD3D');
-INSERT OR IGNORE  INTO `proc_type_enum` (id,proc_type) VALUES (3,'HF');
-INSERT OR IGNORE  INTO `proc_type_enum` (id,proc_type) VALUES (4,'BB');
-INSERT OR IGNORE  INTO `proc_type_enum` (id,proc_type) VALUES (5,'IM_calculation');
+INSERT OR IGNORE  INTO `proc_type_enum` (id,proc_type) VALUES (2,'merge_ts');
+INSERT OR IGNORE  INTO `proc_type_enum` (id,proc_type) VALUES (3,'winbin_aio');
+INSERT OR IGNORE  INTO `proc_type_enum` (id,proc_type) VALUES (4,'HF');
+INSERT OR IGNORE  INTO `proc_type_enum` (id,proc_type) VALUES (5,'BB');
+INSERT OR IGNORE  INTO `proc_type_enum` (id,proc_type) VALUES (6,'IM_calculation');
 COMMIT;

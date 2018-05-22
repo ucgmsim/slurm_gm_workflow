@@ -5,6 +5,8 @@ A script that creates a database and populates it with the status of
 each stage of the run
 """
 
+#TODO: extract all db methods to a db module rather than importing scripts to use parts of them.
+
 import argparse
 import sqlite3
 import os
