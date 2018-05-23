@@ -9,10 +9,8 @@ import sys
 from mpi4py import MPI
 import numpy as np
 
-# TODO: replace insert with qcore once merged binworkflow branch.
-sys.path.insert(0, '/home/vap30/ucgmsim/qcore/qcore/')
-from siteamp_models import nt2n, cb_amp
-import timeseries
+from qcore.siteamp_models import nt2n, cb_amp
+import qcore.timeseries
 ampdeamp = timeseries.ampdeamp
 bwfilter = timeseries.bwfilter
 
@@ -32,6 +30,7 @@ if is_master:
     arg('lf_dir', help = 'LF OutBin folder containing SEIS files')
     arg('lf_vm', help = 'LF VM folder containing velocity model')
     arg('hf_file', help = 'HF file path')
+    arg('vsite_file', help = 'Vs30 station file')
     arg('out_file', help = 'BB output file path')
     try:
         args = parser.parse_args()
@@ -77,9 +76,9 @@ lfvs = np.memmap('%s/vs3dfile.s' % (args.lf_vm), dtype = '<f4', \
                  shape = (int(params_vel.ny), \
                           int(params_vel.nz), \
                           int(params_vel.nx)))
-
-def get_vs30(station_name):
-    return 500.0
+# load vs30ref
+vsites = dict(np.loadtxt(args.vsite_file, \
+                         dtype = [('name', '|S8'), ('vs30', 'f')]))
 
 # initialise output with general metadata
 if is_master:
@@ -104,7 +103,11 @@ bin_data = np.memmap(args.out_file, mode = 'r+', dtype = 'f4', \
 my_stations = hf.stations[rank::size]
 stati = rank
 for stat in my_stations:
-    vsite = get_vs30(stat.name)
+    try:
+        vsite = vsites[stat.name]
+    except KeyError:
+        print('station not found in vs30ref: %s, using 500 cm/s.' % (stat.name))
+        vsite = 500.0
     stat_lfvs = lfvs[lf.stations.y[stati]][0][lf.stations.x[stati]]
     lf_acc = np.copy(lf.acc(stat.name))
     hf_acc = np.copy(hf.acc(stat.name))
