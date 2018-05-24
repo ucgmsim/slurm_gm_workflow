@@ -52,11 +52,9 @@ if is_master:
     if not np.array_equiv(lf.stations.name, hf.stations.name):
         print('LF and HF were run with different station files')
         comm.Abort()
-    if not lf.dt == hf.dt:
-        print('LF dt != HF dt. %s vs %s' % (lf.dt, hf.dt))
-        comm.Abort()
-    if not lf.nt == hf.nt:
-        print('LF nt != HF nt. %s vs %s' % (lf.nt, hf.nt))
+    if not np.isclose(lf.dt * lf.nt, hf.dt * hf.nt, atol = min(lf.dt, hf.dt)):
+        print('LF duration != HF duration. %s vs %s' % (lf.dt * lf.nt, \
+                                                        hf.dt * hf.nt))
         comm.Abort()
 #
 lfdt = lf.dt
