@@ -57,14 +57,13 @@ if is_master:
                                                         hf.dt * hf.nt))
         comm.Abort()
 #
-lfdt = lf.dt
-hfdt = hf.dt
-lfn2 = nt2n(lf.nt)
-hfn2 = nt2n(hf.nt)
 lf_start_sec = -1.0
 bb_start_sec = min(lf_start_sec, hf.start_sec)
-ddt = int(abs(max(lf_start_sec, hf.start_sec) - bb_start_sec) / lfdt)
-bbnt = max(lf.nt, hf.nt) + ddt
+bb_dt = min(lf.dt, hf.dt)
+d_dt = int(round(max(lf_start_sec, hf.start_sec) - bb_start_sec) / bb_dt)
+bb_nt = int(round(max(lf.duration, hf.duration) / bb_dt + d_dt)
+n2 = nt2n(bb_nt)
+d_ts = np.zeros(d_dt)
 head_total = HEAD_SIZE + lf.stations.size * HEAD_STAT
 
 # load velocity model
@@ -82,21 +81,21 @@ vsites = dict(np.loadtxt(args.vsite_file, \
 if is_master:
     with open(args.out_file, mode = 'w+b') as out:
         # save int/bool
-        np.array([lf.stations.size, bbnt], dtype = 'i4').tofile(out)
+        np.array([lf.stations.size, bb_nt], dtype = 'i4').tofile(out)
         # save float parameters
-        np.array([bbnt * lfdt, lfdt, bb_start_sec], \
+        np.array([bb_nt * lf.dt, lf.dt, bb_start_sec], \
                  dtype = 'f4').tofile(out)
         # save string parameters
         np.array([args.lf_dir, args.lf_vm, args.hf_file], \
                  dtype = '|S256').tofile(out)
         # fill space
-        out.seek(head_total + lf.stations.size * bbnt * 3 * 4 - 4)
+        out.seek(head_total + lf.stations.size * bb_nt * 3 * 4 - 4)
         np.zeros(1, dtype = 'i4').tofile(out)
 comm.Barrier()
 
 # load container to write to
 bin_data = np.memmap(args.out_file, mode = 'r+', dtype = 'f4', \
-                     shape = (lf.stations.size, bbnt, 3), offset = head_total)
+                     shape = (lf.stations.size, bb_nt, 3), offset = head_total)
 
 my_stations = hf.stations[rank::size]
 stati = rank
@@ -107,22 +106,22 @@ for stat in my_stations:
         print('station not found in vs30ref: %s, using 500 cm/s.' % (stat.name))
         vsite = 500.0
     stat_lfvs = lfvs[lf.stations.y[stati]][0][lf.stations.x[stati]]
-    lf_acc = np.copy(lf.acc(stat.name))
-    hf_acc = np.copy(hf.acc(stat.name))
-    bb_acc = np.empty(shape = (lf.nt + ddt, 3))
+    lf_acc = np.copy(lf.acc(stat.name, dt = bb_dt))
+    hf_acc = np.copy(hf.acc(stat.name, dt = bb_dt))
+    bb_acc = np.empty(shape = (bb_nt, 3))
     pga = np.max(np.abs(hf_acc), axis = 0) / 981.0
     # not optimised or fully tested below this point
     for c in xrange(3):
         hf_acc[:, c] = ampdeamp(hf_acc[:, c], \
-                             cb_amp(hfdt, hfn2, stat.vs, vsite, stat.vs, \
+                                cb_amp(bb_dt, n2, stat.vs, vsite, stat.vs, \
                                     pga[c]), amp = True)
-        hf_acc[:, c] = bwfilter(hf_acc[:, c], hfdt, 1.0, 'highpass')
+        hf_acc[:, c] = bwfilter(hf_acc[:, c], bb_dt, 1.0, 'highpass')
         lf_acc[:, c] = ampdeamp(lf_acc[:, c], \
-                             cb_amp(lfdt, lfn2, stat_lfvs, vsite, stat_lfvs, \
+                                cb_amp(bb_dt, n2, stat_lfvs, vsite, stat_lfvs, \
                                     pga[c]), amp = True)
-        lf_acc[:, c] = bwfilter(lf_acc[:, c], lfdt, 1.0, 'lowpass')
-        bb_acc[:, c] = np.cumsum((np.hstack(([0] * ddt, hf_acc[:, c])) + \
-                               np.hstack((lf_acc[:, c], [0] * ddt))) * lfdt)
+        lf_acc[:, c] = bwfilter(lf_acc[:, c], bb_dt, 1.0, 'lowpass')
+        bb_acc[:, c] = np.cumsum((np.hstack((d_ts, hf_acc[:, c])) + \
+                                  np.hstack((lf_acc[:, c], d_ts))) * bb_dt)
     bin_data[stati] = bb_acc
     # next station index
     stati += size
