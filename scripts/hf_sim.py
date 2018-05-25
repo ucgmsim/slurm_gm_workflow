@@ -136,7 +136,8 @@ if is_master:
                   nbu, ift, nl_skip, ic_flag, args.independent, \
                   args.site_vm_dir != None], dtype = 'i4').tofile(out)
         # save float parameters
-        np.array([args.duration, args.dt, args.t_sec, args.sdrop, flo, fhi, \
+        np.array([args.duration, args.dt, args.t_sec, args.sdrop, args.kappa, \
+                  args.qfexp, args.fmax, flo, fhi, \
                   args.rvfac, args.rvfac_shal, args.rvfac_deep, \
                   args.czero, args.calpha, args.mom, args.rupv, args.vs_moho, \
                   vp_sig, vsh_sig, rho_sig, qs_sig, \
