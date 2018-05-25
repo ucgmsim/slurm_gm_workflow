@@ -70,7 +70,7 @@ if is_master:
     arg('--duration', help = 'output length (seconds)', \
         type = float, default = 100.0)
     arg('--dt', help = 'timestep (seconds)', type = float, default = 0.005)
-    arg('--fmax', help = 'max sim frequency (Hz)', type = int, default = 10)
+    arg('--fmax', help = 'max sim frequency (Hz)', type = float, default = 10)
     arg('--kappa', help = '', type = float, default = 0.045)
     arg('--qfexp', help = 'Q frequency exponent', type = float, default = 0.6)
     # HF IN, line 10
