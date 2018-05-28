@@ -62,10 +62,10 @@ if is_master:
 lf_start_sec = -1.0
 bb_start_sec = min(lf_start_sec, hf.start_sec)
 bb_dt = min(lf.dt, hf.dt)
-d_dt = int(round(max(lf_start_sec, hf.start_sec) - bb_start_sec) / bb_dt)
-bb_nt = int(round(max(lf.duration, hf.duration) / bb_dt + d_dt))
+d_nt = int(round(max(lf_start_sec, hf.start_sec) - bb_start_sec) / bb_dt)
+bb_nt = int(round(max(lf.duration, hf.duration) / bb_dt + d_nt))
 n2 = nt2n(bb_nt)
-d_ts = np.zeros(d_dt)
+d_ts = np.zeros(d_nt)
 head_total = HEAD_SIZE + lf.stations.size * HEAD_STAT
 
 # load velocity model
