@@ -13,7 +13,6 @@ from qcore.siteamp_models import nt2n, cb_amp
 from qcore import timeseries
 ampdeamp = timeseries.ampdeamp
 bwfilter = timeseries.bwfilter
-acc2vel = timeseries.acc2vel
 HEAD_SIZE = timeseries.BBSeis.HEAD_SIZE
 HEAD_STAT = timeseries.BBSeis.HEAD_STAT
 
@@ -123,9 +122,8 @@ for stat in my_stations:
         lf_acc[:, c] = bwfilter(ampdeamp(lf_acc[:, c], \
                                 cb_amp(bb_dt, n2, stat_lfvs, vsite, stat_lfvs, \
                                 pga[c]), amp = True), bb_dt, 1.0, 'lowpass')
-        bin_data[stati, :, c] = acc2vel((np.hstack((d_ts, hf_acc[:, c])) + \
-                                         np.hstack((lf_acc[:, c], d_ts))), \
-                                         bb_dt)
+        bin_data[stati, :, c] = np.hstack((d_ts, hf_acc[:, c])) \
+                                + np.hstack((lf_acc[:, c], d_ts))
     # next station index
     stati += size
 
