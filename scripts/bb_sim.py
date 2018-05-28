@@ -10,17 +10,18 @@ from mpi4py import MPI
 import numpy as np
 
 from qcore.siteamp_models import nt2n, cb_amp
-import qcore.timeseries
+from qcore import timeseries
 ampdeamp = timeseries.ampdeamp
 bwfilter = timeseries.bwfilter
+acc2vel = timeseries.acc2vel
+HEAD_SIZE = timeseries.BBSeis.HEAD_SIZE
+HEAD_STAT = timeseries.BBSeis.HEAD_STAT
 
 comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
 size = comm.Get_size()
 master = 0
 is_master = not rank
-HEAD_SIZE = 0x0500
-HEAD_STAT = 0x2c
 
 # collect required arguements
 args = None
@@ -56,26 +57,34 @@ if is_master:
         print('LF duration != HF duration. %s vs %s' % (lf.dt * lf.nt, \
                                                         hf.dt * hf.nt))
         comm.Abort()
-#
+
+# load metadata
 lf_start_sec = -1.0
 bb_start_sec = min(lf_start_sec, hf.start_sec)
 bb_dt = min(lf.dt, hf.dt)
 d_dt = int(round(max(lf_start_sec, hf.start_sec) - bb_start_sec) / bb_dt)
-bb_nt = int(round(max(lf.duration, hf.duration) / bb_dt + d_dt)
+bb_nt = int(round(max(lf.duration, hf.duration) / bb_dt + d_dt))
 n2 = nt2n(bb_nt)
 d_ts = np.zeros(d_dt)
 head_total = HEAD_SIZE + lf.stations.size * HEAD_STAT
 
 # load velocity model
 sys.path.insert(0, args.lf_vm)
-import params_vel
+from params_vel import nx, ny, nz
 lfvs = np.memmap('%s/vs3dfile.s' % (args.lf_vm), dtype = '<f4', \
-                 shape = (int(params_vel.ny), \
-                          int(params_vel.nz), \
-                          int(params_vel.nx)))
+                 shape = (int(ny), int(nz), int(nx))) \
+                [lf.stations.y, 0, lf.stations.x] / 1000.0
 # load vs30ref
-vsites = dict(np.loadtxt(args.vsite_file, \
-                         dtype = [('name', '|S8'), ('vs30', 'f')]))
+try:
+    vsites = np.vectorize(dict(np.loadtxt(args.vsite_file, \
+                                          dtype = [('name', '|S8'), \
+                                                   ('vs30', 'f')])) \
+                          .get)(lf.stations.name)
+except TypeError:
+    if is_master:
+        print('vsite file is missing stations')
+    comm.Barrier()
+    comm.Abort()
 
 # initialise output with general metadata
 if is_master:
@@ -83,7 +92,7 @@ if is_master:
         # save int/bool
         np.array([lf.stations.size, bb_nt], dtype = 'i4').tofile(out)
         # save float parameters
-        np.array([bb_nt * lf.dt, lf.dt, bb_start_sec], \
+        np.array([bb_nt * bb_dt, bb_dt, bb_start_sec], \
                  dtype = 'f4').tofile(out)
         # save string parameters
         np.array([args.lf_dir, args.lf_vm, args.hf_file], \
@@ -97,32 +106,26 @@ comm.Barrier()
 bin_data = np.memmap(args.out_file, mode = 'r+', dtype = 'f4', \
                      shape = (lf.stations.size, bb_nt, 3), offset = head_total)
 
+# work on station subset
 my_stations = hf.stations[rank::size]
 stati = rank
 for stat in my_stations:
-    try:
-        vsite = vsites[stat.name]
-    except KeyError:
-        print('station not found in vs30ref: %s, using 500 cm/s.' % (stat.name))
-        vsite = 500.0
-    stat_lfvs = lfvs[lf.stations.y[stati]][0][lf.stations.x[stati]]
+    vsite = vsites[stati]
+    stat_lfvs = lfvs[stati]
     lf_acc = np.copy(lf.acc(stat.name, dt = bb_dt))
     hf_acc = np.copy(hf.acc(stat.name, dt = bb_dt))
-    bb_acc = np.empty(shape = (bb_nt, 3))
     pga = np.max(np.abs(hf_acc), axis = 0) / 981.0
-    # not optimised or fully tested below this point
+    # ideally remove loop
     for c in xrange(3):
-        hf_acc[:, c] = ampdeamp(hf_acc[:, c], \
+        hf_acc[:, c] = bwfilter(ampdeamp(hf_acc[:, c], \
                                 cb_amp(bb_dt, n2, stat.vs, vsite, stat.vs, \
-                                    pga[c]), amp = True)
-        hf_acc[:, c] = bwfilter(hf_acc[:, c], bb_dt, 1.0, 'highpass')
-        lf_acc[:, c] = ampdeamp(lf_acc[:, c], \
+                                pga[c]), amp = True), bb_dt, 1.0, 'highpass')
+        lf_acc[:, c] = bwfilter(ampdeamp(lf_acc[:, c], \
                                 cb_amp(bb_dt, n2, stat_lfvs, vsite, stat_lfvs, \
-                                    pga[c]), amp = True)
-        lf_acc[:, c] = bwfilter(lf_acc[:, c], bb_dt, 1.0, 'lowpass')
-        bb_acc[:, c] = np.cumsum((np.hstack((d_ts, hf_acc[:, c])) + \
-                                  np.hstack((lf_acc[:, c], d_ts))) * bb_dt)
-    bin_data[stati] = bb_acc
+                                pga[c]), amp = True), bb_dt, 1.0, 'lowpass')
+        bin_data[stati, :, c] = acc2vel((np.hstack((d_ts, hf_acc[:, c])) + \
+                                         np.hstack((lf_acc[:, c], d_ts))), \
+                                         bb_dt)
     # next station index
     stati += size
 
@@ -139,8 +142,10 @@ if is_master:
     # assuming same order, true if run with same station file, asserted above
     bb_stations.e_dist = hf.stations.e_dist
     bb_stations.hf_vs_ref = hf.stations.vs
-    #bb_stations.lf_vs_ref = lf_vs_ref
-    #bb_stations.vsite = vsite
+    # lf_vs_ref from velocity model
+    bb_stations.lf_vs_ref = lfvs
+    # vsite from vsite file
+    bb_stations.vsite = vsites
     # save station info after general header
     with open(args.out_file, mode = 'r+b') as out:
         out.seek(HEAD_SIZE)
