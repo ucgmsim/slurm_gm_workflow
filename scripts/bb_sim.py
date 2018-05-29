@@ -11,6 +11,7 @@ import numpy as np
 
 from qcore.siteamp_models import nt2n, cb_amp
 from qcore import timeseries
+vel2acc = timeseries.vel2acc
 ampdeamp = timeseries.ampdeamp
 bwfilter = timeseries.bwfilter
 HEAD_SIZE = timeseries.BBSeis.HEAD_SIZE
@@ -122,8 +123,9 @@ for stat in my_stations:
         lf_acc[:, c] = bwfilter(ampdeamp(lf_acc[:, c], \
                                 cb_amp(bb_dt, n2, stat_lfvs, vsite, stat_lfvs, \
                                 pga[c]), amp = True), bb_dt, 1.0, 'lowpass')
-        bin_data[stati, :, c] = np.hstack((d_ts, hf_acc[:, c])) \
-                                + np.hstack((lf_acc[:, c], d_ts))
+        bin_data[stati, :, c] = vel2acc(np.hstack((d_ts, hf_acc[:, c])) \
+                                        + np.hstack((lf_acc[:, c], d_ts))), \
+                                        bb_dt) / 981.0
     # next station index
     stati += size
 
