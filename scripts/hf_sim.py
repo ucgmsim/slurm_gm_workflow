@@ -179,7 +179,7 @@ def run_hf(local_statfile, n_stat, idx_0, velocity_model = args.velocity_model):
     # load vs
     with open(velocity_model, 'r') as vm:
         vm.readline()
-        vs = float(vm.readline().split()[2])
+        vs = float(vm.readline().split()[2]) * 1000.0
     p.wait()
     # edist is the only other variable that HF calculates
     e_dist = np.fromstring(stderr, dtype = 'f4', sep = '\n')

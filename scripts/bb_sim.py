@@ -72,7 +72,7 @@ sys.path.insert(0, args.lf_vm)
 from params_vel import nx, ny, nz
 lfvs = np.memmap('%s/vs3dfile.s' % (args.lf_vm), dtype = '<f4', \
                  shape = (int(ny), int(nz), int(nx))) \
-                [lf.stations.y, 0, lf.stations.x] / 1000.0
+                [lf.stations.y, 0, lf.stations.x] * 1000.0
 # load vs30ref
 try:
     vsites = np.vectorize(dict(np.loadtxt(args.vsite_file, \
