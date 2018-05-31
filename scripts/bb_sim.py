@@ -127,6 +127,9 @@ for stat in my_stations:
     # next station index
     stati += size
 
+# flush
+del bin_data
+
 # combine station metadata
 if is_master:
     bb_stations = np.rec.array(np.empty(lf.nstat, \
