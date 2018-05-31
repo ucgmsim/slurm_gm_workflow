@@ -1,0 +1,82 @@
+import os
+import sys
+
+sys.path.insert(0,'/home/ykh22/nesi/projects/nesi00213/workflow/devel/')
+sys.path.insert(0,'/nesi/projects/nesi00213/qcore/')
+
+
+import install
+from shared import *
+
+sim_root_dir='/nesi/projects/nesi00213/RunFolder/Cybershake/v17.8/Runs_test/'
+
+srf_root_dir='/nesi/projects/nesi00213/RunFolder/Cybershake/v17.8/Data/Sources/'
+vm_root_dir='/nesi/projects/nesi00213/RunFolder/Cybershake/v17.8/Data/VMs/'
+
+
+global_root='/nesi/projects/nesi00213/'
+run_dir = os.path.join(global_root,'RunFolder')
+user_root = os.path.join(run_dir,'Cybershake')
+stat_file_path="/nesi/projects/nesi00213/StationInfo/non_uniform_whole_nz_with_real_stations-hh400_17062017.ll"
+vs30_file_path = stat_file_path.replace('ll','vs30')
+vs30ref_file_path = stat_file_path.replace('ll','vs30ref')
+
+params_vel = 'params_vel.py'
+
+
+f=open('/home/ykh22/Cybershake/list_source.txt')
+
+source_list=[]
+
+for line in f:
+    source_list.append(line.replace('\n',''))
+
+#print list
+
+
+
+
+for source in source_list:
+    event_name = ""
+    run_name = source
+    vel_mod_dir=os.path.join(vm_root_dir,source)
+    #print vel_mod_dir
+    
+    #get all srf from source
+    srf_dir=os.path.join(os.path.join(srf_root_dir,source),"Srf")
+    list_srf= os.listdir(srf_dir)
+    srf_files= []
+    stoch_files=[]
+    stoch_dir=os.path.join(os.path.join(srf_root_dir,source),"Stoch")
+    list_stoch= os.listdir(stoch_dir)
+
+    for srf in list_srf:
+        srf_files.append(os.path.join(srf_dir,srf))
+
+    for stoch in list_stoch:
+        stoch_files.append(os.path.join(stoch_dir,stoch))
+
+
+    srf_stoch_pairs = zip(srf_files, stoch_files)
+    #print srf_stoch_pairs
+    #print list_srf
+    params_vel_path = os.path.join(vel_mod_dir,params_vel)
+    
+    execfile(params_vel_path,globals())
+
+    sim_dir = os.path.join(sim_root_dir,source)
+    print "!!!!SIM_DIR:%s"%sim_dir
+    yes_statcords = True
+    yes_model_params = False
+    vel_mod_params_dir = vel_mod_dir
+
+    #srf_dir = srf_root_dir
+
+ 
+    install.action(sim_dir,event_name,run_name, run_dir, vel_mod_dir, srf_root_dir, srf_stoch_pairs,params_vel_path,stat_file_path, vs30_file_path, vs30ref_file_path, MODEL_LAT,MODEL_LON,MODEL_ROT,hh,nx,ny,nz,sufx,sim_duration,flo,vel_mod_params_dir,yes_statcords, yes_model_params)
+
+
+    
+    #make symbolic link after install sim folder
+    cmd="ln -s %s %s"%(srf_root_dir, os.path.join(sim_dir,'Src'))
+    #print cmd
