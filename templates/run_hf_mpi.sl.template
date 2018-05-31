@@ -1,7 +1,16 @@
 
+#updating the stats in managementDB
+if [[ ! -d {{mgmt_db_location}}/mgmt_db_queue ]]; then
+    #create the queue folder if not exist
+    mkdir {{mgmt_db_location}}/mgmt_db_queue
+fi
+timestamp=`date +%Y%m%d_%H%M%S`
+echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} HF running --j $SLURM_JOBID" >> {{mgmt_db_location}}/mgmt_db_queue/$timestamp\_$SLURM_JOBID
 source machine_env.sh
 
 date
 srun python  $BINPROCESS/hfsims-stats-mpi.py {{hf_sim_dir}} {{hf_option}}
 date
 
+timestamp=`date +%Y%m%d_%H%M%S`
+echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} HF completed --j $SLURM_JOBID" >> {{mgmt_db_location}}/mgmt_db_queue/$timestamp\_$SLURM_JOBID

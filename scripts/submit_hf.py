@@ -28,6 +28,8 @@ from datetime import datetime
 timestamp_format = "%Y%m%d_%H%M%S"
 timestamp = datetime.now().strftime(timestamp_format)
 
+from management import create_mgmt_db
+from management import update_mgmt_db
 
 
 # TODO: move this to qcore library
@@ -40,15 +42,23 @@ def confirm(q):
     return show_yes_no_question()
 
 
-def submit_sl_script(script_names):
+def submit_sl_script(script,submit_yes=None):
     #print "Submitting is not implemented yet!"
-    submit_yes = confirm("Also submit the job for you?")
+    #if submit_yes == None:
+    #    submit_yes = confirm("Also submit the job for you?")
     if submit_yes:
-        for script in script_names:
-            print "Submitting %s" %script
-            res=exe("sbatch %s"%script,debug=False)
+        #encode if it is unicode
+        #TODO:fix this in qcore.shared.exe()
+        if type(script) == unicode:
+            script = script.encode()
+        print "Submitting %s" %script
+        res=exe("sbatch %s"%script,debug=False)
+        if len(res[1]) == 0:
+            #no errors, return the job id
+            return res[0].split()[-1]
     else:
         print "User chose to submit the job manually"
+        return None
     
 #TODO, probably move this to qcore lib
 def est_core_hours_hf(timestep,station_count,sub_fault_count, hf_coef):
@@ -64,7 +74,15 @@ def est_wct(est_core_hours, ncore, scale):
     estimated_wct = '{0:02.0f}:{1:02.0f}:00'.format(*divmod(time_per_cpu * 60, 60))
     return estimated_wct
 
+def update_db(process, status, mgmt_db_location, srf_name,jobid):
+    db = create_mgmt_db.connect_db(mgmt_db_location)
+    update_mgmt_db.update_db(db, process, status, job=jobid, run_name=srf_name)
+    db.connection.commit()
+
 def write_sl_script(hf_sim_dir, stoch_name, sl_template_prefix, hf_option, nb_cpus=default_core, run_time=default_run_time,memory=default_memory,account=default_account):
+
+    from params_base import mgmt_db_location
+
     f_template = open('%s.sl.template' % sl_template_prefix)
     template = f_template.readlines()
     str_template = ''.join(template)
@@ -72,22 +90,24 @@ def write_sl_script(hf_sim_dir, stoch_name, sl_template_prefix, hf_option, nb_cp
    
     txt = str_template.replace("{{hf_sim_dir}}", hf_sim_dir)
     txt = txt.replace("{{hf_option}}",str(hf_option))
+    txt = txt.replace("{{mgmt_db_location}}", mgmt_db_location)
     variation = stoch_name.replace('/', '__')
     print variation
 
     fname_sl_script = '%s_%s_%s.sl' % (sl_template_prefix, variation,timestamp)
-    f_llscript = open(fname_sl_script, 'w')
+    f_sl_script = open(fname_sl_script, 'w')
     job_name = "sim_hf.%s" % variation
 
     header = resolve_header(account, nb_cpus, run_time, job_name, "slurm", memory, timestamp,
                             job_description="HF calculation", additional_lines="###SBATCH -C avx")
-    f_llscript.write(header)
-    f_llscript.write(txt)
-    f_llscript.close()
-    print "Slurm script %s written" % fname_sl_script
-    generated_scripts.append(fname_sl_script)
+    f_sl_script.write(header)
+    f_sl_script.write(txt)
+    f_sl_script.close()
+    fname_sl_abs_path = os.path.join(os.path.abspath(os.path.curdir),fname_sl_script)
+    print "Slurm script %s written" % fname_sl_abs_path
+    generated_script = fname_sl_abs_path
 
-    return generated_scripts
+    return generated_script
 
 
 if __name__ == '__main__':
@@ -100,11 +120,13 @@ if __name__ == '__main__':
     parser.add_argument('--wct',type=str,nargs='?',default=None,const=None)
     #the const of auto is set to True, so that as long as --auto is used, no more value needs to be provided
     parser.add_argument('--auto',type=int,nargs='?',default=None,const=True)
+    parser.add_argument('--est_wct',type=int,nargs='?',default=None,const=True) 
     #rand_reset, if somehow the user decide to use it but not defined in params_base_bb
     #the const is set to True, so that as long as --rand_reset is used, no more value needs to be provided
     parser.add_argument('--rand_reset',type=int,nargs='?',default=None,const=True)
     parser.add_argument('--site_specific',type=int,nargs='?',default=None,const=True)
     parser.add_argument('--account',type=str,default=default_account)
+    parser.add_argument('--srf',type=str,default=None)
     args = parser.parse_args()
    
     #check if parsed ncore
@@ -146,44 +168,48 @@ if __name__ == '__main__':
                 hf_option = 0
                 print "Note: rand_reset is not defined in params_base_bb.py. We assume rand_reset=%s"%bool(hf_option)
         
-
-    #TODO: add in wct estimation
-    run_time=default_run_time
-
-    #--auto used, automatically assign run_time using estimation 
-
+    #est_wct and submit, if --auto used
     if args.auto != None:
-        timesteps= float(params.sim_duration)/float(params.hf_dt)
-        #get station count
-        station_count = len(get_stations(params.FD_STATLIST))
-        print station_count
-        #get the number of sub faults for estimation
-        #TODO:make it read through the whole list instead of assuming every stoch has same size
-        sub_fault_count,sub_fault_area=get_nsub_stoch(params.hf_slips[0],get_area=True)
-        print "sb:",sub_fault_area
-        est_chours = est_core_hours_hf(timesteps,station_count,sub_fault_area,default_hf_coef)
-        print est_chours
-        print "Warning, the estimated time is over estimating a lot."
-        run_time = est_wct(est_chours,ncore,default_scale)
-    #run the standard process(asking user), if --auto not used
+        args.est_wct = True
+        submit_yes = True
+    else:
+        #None: ask user if want to submit; False: dont submit
+        submit_yes = confirm("Also submit the job for you?")
+
+    print "account:",args.account
+
 
     #modify the logic to use the same as in install_bb:
     #sniff through params_base to get the names of srf, instead of running throught file directories.
 
     # loop through all srf file to generate related slurm scripts
+    counter_srf = 0
     for srf in params.srf_files:
         srf_name = os.path.splitext(basename(srf))[0]
-        #TODO: if for some reason the hf_run_names is not limited to one per simulation anymore, modify the logic here
-        if len(params_base_bb.hf_run_names) == 1:
-            #get hf_sim_dir
-            hf_sim_dir = os.path.join(os.path.join(params.hf_dir,params_base_bb.hf_run_names[0]), srf_name)
-            print "account:",args.account
-            created_scripts = write_sl_script(hf_sim_dir, srf_name , ll_name_prefix, hf_option,ncore,run_time,account=args.account)
-        #else:
+        #if srf(variation) is provided as args, only create the slurm with same name provided
+        if args.srf != None and srf_name != args.srf:
+            continue            
+        #--est_wct used, automatically assign run_time using estimation 
+        if args.est_wct != None:
+            timesteps= float(params.sim_duration)/float(params.hf_dt)
+            #get station count
+            station_count = len(get_stations(params.FD_STATLIST))
+            print station_count
+            #get the number of sub faults for estimation
+            #TODO:make it read through the whole list instead of assuming every stoch has same size
+            sub_fault_count,sub_fault_area=get_nsub_stoch(params.hf_slips[counter_srf],get_area=True)
+            print "sb:",sub_fault_area
+            est_chours = est_core_hours_hf(timesteps,station_count,sub_fault_area,default_hf_coef)
+            print est_chours
+            print "The estimated time is currently not so accurate."
+            run_time = est_wct(est_chours,ncore,default_scale)
+        else:
+            run_time = default_run_time
+        hf_sim_dir = os.path.join(os.path.join(params.hf_dir,params_base_bb.hf_run_names[counter_srf]), srf_name)
+        created_script = write_sl_script(hf_sim_dir, srf_name , ll_name_prefix, hf_option,ncore,run_time,account=args.account)
+        jobid = submit_sl_script(created_script,submit_yes)
+        if jobid != None:
+            update_db("HF","in-queue",params.mgmt_db_location,srf_name, jobid)
             
+        counter_srf += 1 
             
-        
-
-
-
-    submit_sl_script(created_scripts)

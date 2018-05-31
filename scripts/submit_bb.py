@@ -2,28 +2,35 @@ bin_process_path = '/nesi/transit/nesi00213/workflow'
 import glob
 import os.path
 import sys
+import fnmatch
+import os
+from os.path import basename
+
 
 sys.path.append(os.path.abspath(os.path.curdir))
-from params import *
-from params_base_bb import *
+import params 
+import params_base_bb 
 
 #datetime related
-import datetime as dtl 
-exetime_pattern = "%Y%m%d_%H%M%S"
-exe_time = dtl.datetime.now().strftime(exetime_pattern)
+from datetime import datetime 
+timestamp_format = "%Y%m%d_%H%M%S"
+timestamp = datetime.now().strftime(timestamp_format)
 
 default_account='nesi00213'
 default_version='run_bb_mpi'
+default_core="80"
+default_run_time="00:30:00"
+default_memory="16G"
+
 import argparse
-parser = argparse.ArgumentParser()
-parser.add_argument("--auto", nargs="?", type=str,const=True)
-parser.add_argument('--version',type=str,default=default_version)
-parser.add_argument('--account', type=str, default=default_account)
-args = parser.parse_args()
 
 # TODO: move this to qcore library
 from temp_shared import resolve_header
 from qcore.shared import *
+
+
+from management import create_mgmt_db
+from management import update_mgmt_db
 
 
 def confirm(q):
@@ -32,91 +39,147 @@ def confirm(q):
     return show_yes_no_question()
 
 
-def submit_sl_script(script_name):
-    #print "Submitting %s is not yet implemented" % script_name
-    #pass
-    res=exe("sbatch %s"%script_name,debug=False)
+def submit_sl_script(script,submit_yes=None):
+    #print "Submitting is not implemented yet!"
+    #if submit_yes == None:
+    #    submit_yes = confirm("Also submit the job for you?")
+    if submit_yes:
+        #encode if it is unicode
+        #TODO:fix this in qcore.shared.exe()
+        if type(script) == unicode:
+            script = script.encode()
+        print "Submitting %s" %script
+        res=exe("sbatch %s"%script,debug=False)
+        if len(res[1]) == 0:
+            #no errors, return the job id
+            return res[0].split()[-1]
+    else:
+        print "User chose to submit the job manually"
+        return None
     
+def update_db(process, status, mgmt_db_location, srf_name,jobid):
+    db = create_mgmt_db.connect_db(mgmt_db_location)
+    update_mgmt_db.update_db(db, process, status, job=jobid, run_name=srf_name)
+    db.connection.commit()
 
 
-def create_sl(bb_sim_dirs, sl_template_prefix, submit_yes):
-    pass
+def write_sl_script(bb_sim_dirs, srf_name, sl_template_prefix, nb_cpus=default_core, run_time=default_run_time,memory=default_memory,account=default_account):
+    
+    from params_base import mgmt_db_location
+
     f_template = open('%s.sl.template' % sl_template_prefix)
     template = f_template.readlines()
     str_template = ''.join(template)
 
-    for bb_sim_dir in bb_sim_dirs:
-        txt = str_template.replace("$bb_sim_dir", bb_sim_dir)
+    
+    txt = str_template.replace("$bb_sim_dir", bb_sim_dir)
 
-        #    variation = '_'.join(bb_sim_dir.split('/')[0:2])
-        variation = bb_sim_dir.replace(bb_dir + '/', '').replace('/', '__')
-        print variation
-        txt = txt.replace("$rup_mod", variation)
-        fname_slscript = '%s_%s.sl' % (sl_template_prefix, variation)
-        f_slscript = open(fname_slscript, 'w')
-        # TODO: change this values to values that make more sense or come from somewhere
-        nb_cpus = "80"
-        run_time = "00:30:00"
-        job_name = "sim_bb_%s" % variation
-        memory = "16G"
-        header = resolve_header("nesi00213", nb_cpus, run_time, job_name, "slurm", memory, exe_time,
-                                job_description="BB calculation", additional_lines="##SBATCH -C avx")
-        f_slscript.write(header)
-        f_slscript.write(txt)
-        f_slscript.close()
-        print "Slurm script %s written" % fname_slscript
-        if submit_yes:
-            submit_sl_script(fname_slscript)
+    #    variation = '_'.join(bb_sim_dir.split('/')[0:2])
+    variation = srf_name.replace('/', '__')
+    print variation
 
+    txt = txt.replace("$rup_mod", variation)
+    txt = txt.replace("{{mgmt_db_location}}", mgmt_db_location)
+
+    fname_sl_script = '%s_%s_%s.sl' % (sl_template_prefix, variation,timestamp)
+    f_sl_script = open(fname_sl_script, 'w')
+
+    # TODO: change this values to values that make more sense or come from somewhere
+    nb_cpus = "80"
+    run_time = "00:30:00"
+    job_name = "sim_bb_%s" % variation
+    memory = "16G"
+    header = resolve_header(account, nb_cpus, run_time, job_name, "slurm", memory, timestamp,
+                            job_description="BB calculation", additional_lines="##SBATCH -C avx")
+    f_sl_script.write(header)
+    f_sl_script.write(txt)
+    f_sl_script.close()
+   
+    fname_sl_abs_path = os.path.join(os.path.abspath(os.path.curdir),fname_sl_script) 
+    print "Slurm script %s written" % fname_sl_abs_path
+    generated_script = fname_sl_abs_path
+    return  generated_script
+
+
+if __name__ == '__main__':
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--auto", nargs="?", type=str,const=True)
+    parser.add_argument('--version',type=str,default=default_version)
+    parser.add_argument('--account', type=str, default=default_account)
+    parser.add_argument('--est_wct',type=int,nargs='?',default=None,const=True)
+    parser.add_argument('--srf',type=str,default=None)
+    args = parser.parse_args()
+
+    #version = 'MPI'
+    #sl_name_prefix = 'run_bb_mpi'
+    #if len(sys.argv) == 2:
+    #    version = sys.argv[1]
+    #    if version == 'MPI':
+    #        sl_name_prefix = 'run_bb_mpi'
+    #    else:
+    #        print 'Set to default %s' % version
+    if args.version != None:
+        version = args.version
+        if version == 'serial' or version == 'run_bb':
+            sl_name_prefix = 'run_bb'
+            ncore="1"
+        elif version == 'mp' or version == 'run_bb_mp':
+            sl_name_prefix = 'run_bb_mp'
+        elif version == 'mpi' or version == 'run_bb_mpi':
+            sl_name_prefix = 'run_bb_mpi'
         else:
-            print "User chose to submit the job manually"
-
-
-#version = 'MPI'
-#sl_name_prefix = 'run_bb_mpi'
-#if len(sys.argv) == 2:
-#    version = sys.argv[1]
-#    if version == 'MPI':
-#        sl_name_prefix = 'run_bb_mpi'
-#    else:
-#        print 'Set to default %s' % version
-if args.version != None:
-    version = args.version
-    if version == 'serial' or version == 'run_bb':
-        sl_name_prefix = 'run_bb'
-        ncore="1"
-    elif version == 'mp' or version == 'run_bb_mp':
-        sl_name_prefix = 'run_bb_mp'
-    elif version == 'mpi' or version == 'run_bb_mpi':
-        sl_name_prefix = 'run_bb_mpi'
+            print '% cannot be recognize as a valide option'%version
+            print 'version is set to default: %',default_version
+            version = default_version
+            sl_name_prefix = default_version
     else:
-        print '% cannot be recognize as a valide option'%version
-        print 'version is set to default: %',default_version
         version = default_version
         sl_name_prefix = default_version
-else:
-    version = default_version
-    sl_name_prefix = default_version
-    
-print version
+        
+    print version
 
-import fnmatch
-import os
 
-bb_sim_dirs = []
-bb_sim_dirs_to_skip = []
-file_to_find = 'params_bb_uncertain.py'
-for root, dirnames, filenames in os.walk(bb_dir):
-    for filename in fnmatch.filter(filenames, file_to_find):
-        if v_mod_1d_name not in root:
-            bb_sim_dirs_to_skip.append(root)
+#est_wct and submit, if --auto used
+    if args.auto != None:
+        args.est_wct = True
+        submit_yes = True
+    else:
+        #None: ask user if want to submit; False: dont submit
+        submit_yes = confirm("Also submit the job for you?")
+
+    counter_srf = 0
+    for srf in params.srf_files:
+        srf_name = os.path.splitext(basename(srf))[0]
+        #if srf(variation) is provided as args, only create the slurm with same name provided
+        if args.srf != None and srf_name != args.srf:
+            continue
+        #--est_wct used, automatically assign run_time using estimation 
+        if args.est_wct != None:
+            #TODO:enable time estimation after WCT is properly implemented
+            run_time = default_run_time
+            #timesteps= float(params.sim_duration)/float(params.hf_dt)
+            #get station count
+            #station_count = len(get_stations(params.FD_STATLIST))
+            #print station_count
+            #get the number of sub faults for estimation
+            #TODO:make it read through the whole list instead of assuming every stoch has same size
+            #sub_fault_count,sub_fault_area=get_nsub_stoch(params.hf_slips[counter_srf],get_area=True)
+            #print "sb:",sub_fault_area
+            #est_chours = est_core_hours_hf(timesteps,station_count,sub_fault_area,default_hf_coef)
+            #print est_chours
+            #print "The estimated time is currently not so accurate."
+            #run_time = est_wct(est_chours,ncore,default_scale)
         else:
-            bb_sim_dirs.append(root)
-print bb_sim_dirs
-if len(bb_sim_dirs_to_skip) > 0:
-    print "BB subdirectories to skip: ", bb_sim_dirs_to_skip
-    print "Note: Run install_bb.py again to process these"
+            run_time = default_run_time
+        bb_sim_dir = os.path.join(os.path.join(params.bb_dir,params_base_bb.hf_run_names[counter_srf]), srf_name)
+        created_script = write_sl_script(bb_sim_dir, srf_name , sl_name_prefix, account=args.account)
+        jobid = submit_sl_script(created_script,submit_yes)
+        if jobid != None:
+            update_db("BB","in-queue",params.mgmt_db_location,srf_name, jobid)
+        elif submit_yes == True and jobid == None:
+            print "there is error while trying to submit the slurm script, please manual check for errors"
 
-submit_yes = confirm("Also submit the job for you?")
+        counter_srf += 1
 
-create_sl(bb_sim_dirs, sl_name_prefix, submit_yes)
+

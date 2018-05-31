@@ -1,6 +1,13 @@
 
 source machine_env.sh
 
+if [[ ! -d {{mgmt_db_location}}/mgmt_db_queue ]]; then
+    #create the queue folder if not exist
+    mkdir {{mgmt_db_location}}/mgmt_db_queue
+fi
+timestamp=`date +%Y%m%d_%H%M%S`
+echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} merge_ts running --j $SLURM_JOBID" >> {{mgmt_db_location}}/mgmt_db_queue/$timestamp\_$SLURM_JOBID
+
 filelist=flist_`basename {{lf_sim_dir}}`
 exe={{tools_dir}}/merge_tsP3_par
 ls -X {{lf_sim_dir}}/OutBin/*xyts-?????.e3d >$filelist
@@ -8,3 +15,7 @@ NFILES=`cat $filelist |wc -l|sed -e 's/ //g'`
 OUTFILE=`head -1 $filelist  |sed -e 's/-[0-9]*.e3d/.e3d/g'`
 echo "NFILES=$NFILES OUTFILE=$OUTFILE"
 time srun $exe filelist=$filelist outfile=$OUTFILE nfiles=$NFILES
+
+#TODO: add in test
+timestamp=`date +%Y%m%d_%H%M%S`
+echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} merge_ts completed --j $SLURM_JOBID" >> {{mgmt_db_location}}/mgmt_db_queue/$timestamp\_$SLURM_JOBID

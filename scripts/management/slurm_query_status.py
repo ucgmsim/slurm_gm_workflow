@@ -79,9 +79,6 @@ def check_dependancy_met(task, task_list):
 
 def get_runnable_tasks(db):
     db_tasks = get_db_tasks_to_be_run(db)
-    db_tasks = [(1, u'test123', u'completed'), (2, u'test123', u'completed'), (3, u'test123', u'completed'), (4, u'test123', u'completed'),
-                (1, u'test_realiastion1', u'completed'), (5, u'test123', u'created'), (2, u'test_realiastion1', u'created'),
-                (3, u'test_realiastion1', u'created'), (4, u'test_realiastion1', u'created'), (5, u'test_realiastion1', u'created')]
     tasks_to_run = []
     for task in db_tasks:
         status = task[2]

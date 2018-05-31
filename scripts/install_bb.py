@@ -4,6 +4,8 @@ import os.path
 import sys
 sys.path.append(os.path.abspath(os.path.curdir))
 from params_base import *
+import argparse
+
 
 old_params = False
 #from params import hf_sdrop_list, hf_kappa_list, hf_sim_bin, hf_rvfac
@@ -45,7 +47,7 @@ def q1_generic(v_mod_1d_dir):
 
     return v_mod_1d_name,v_mod_1d_selected
 
-def q1_site_specific(stat_file_path):
+def q1_site_specific(stat_file_path, hf_stat_vs_ref=None):
     show_horizontal_line()
     print "Auto-detecting site-specific info"
     show_horizontal_line()
@@ -57,24 +59,24 @@ def q1_site_specific(stat_file_path):
     else:
         print "Error: No such path exists: %s" %v_mod_1d_path
         sys.exit()
-    
-    hf_stat_vs_ref_options =glob.glob(os.path.join(stat_file_path,'*.hfvs30ref'))
-    if len(hf_stat_vs_ref_options)==0:
-        print "Error: No HF Vsref file was found at %s" %stat_file_path
-        sys.exit()
-    hf_stat_vs_ref_options.sort()
+    if hf_stat_vs_ref == None:
+        hf_stat_vs_ref_options =glob.glob(os.path.join(stat_file_path,'*.hfvs30ref'))
+        if len(hf_stat_vs_ref_options)==0:
+            print "Error: No HF Vsref file was found at %s" %stat_file_path
+            sys.exit()
+        hf_stat_vs_ref_options.sort()
 
-    show_horizontal_line()
-    print "Select one of HF Vsref files"
-    show_horizontal_line()
-    hf_stat_vs_ref_selected=show_multiple_choice(hf_stat_vs_ref_options)
-    print " - HF Vsref tp be used: %s" %hf_stat_vs_ref_selected
+        show_horizontal_line()
+        print "Select one of HF Vsref files"
+        show_horizontal_line()
+        hf_stat_vs_ref_selected=show_multiple_choice(hf_stat_vs_ref_options)
+        print " - HF Vsref tp be used: %s" %hf_stat_vs_ref_selected
+    else:
+        hf_stat_vs_ref_selected = hf_stat_vs_ref
     return v_mod_1d_path, hf_stat_vs_ref_selected
 
-     
 
 def q2(v_mod_1d_name,srf,kappa,sdrop):
-
     hfVString='hf'+os.path.basename(hf_sim_bin).split('_')[-1]
     hf_run_name=v_mod_1d_name+'_'+hfVString+'_rvf'+hf_rvfac+'_sd'+sdrop+'_k'+kappa
     hf_run_name=hf_run_name.replace('.','p')
@@ -88,17 +90,19 @@ def q2(v_mod_1d_name,srf,kappa,sdrop):
 #    yes = confirm_name(hf_run_name)
     yes=True
     return yes, hf_run_name
-    
-def action(params_base_bb_dict):
+
+
+def store_params(params_base_bb_dict):
     f=open(os.path.join(sim_dir,"params_base_bb.py"),"w")
     keys = params_base_bb_dict.keys()
     for k in keys:
         val = params_base_bb_dict[k]
-        if type(val) != bool:
+        if type(val) == str:
             val="'%s'"%val
         f.write("%s=%s\n"%(k,val))
     f.close()
-    return hf_dir, bb_dir
+    #neither of these vars are modified or declared here, no point of returning it.
+#    return hf_dir, bb_dir
 
 
 def action_for_uncertainties(hf_sim_basedir,bb_sim_basedir,srf,slip,kappa,sdrop):
@@ -161,6 +165,12 @@ def main():
     global hf_kappa_list #no idea why hf_kappa_list is imported, but not usable in this function without this.
     global hf_sdrop_list
 
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--v1d', default=None, type=str, help="the full path pointing to the generic v1d file")
+    parser.add_argument('--site_v1d_dir',default=None, type=str, help="the to the directory containing site specific files, hf_stat_vs_ref must be provied as well if this is provided")
+    parser.add_argument('--hf_stat_vs_ref',default=None, type=str,help="site_v1d_dir must be provied as well if this is provided")
+    args = parser.parse_args()
+
     show_horizontal_line(c="*")
     print " "*37+"EMOD3D HF/BB Preparationi Ver."+bin_process_ver
     show_horizontal_line(c="*")
@@ -168,19 +178,33 @@ def main():
     params_base_bb_dict = {}
 
 #    params_base_bb_dict['rand_reset']=False #by default. But it may give less deterministic
-    is_site_specific_id= q0()
-    if is_site_specific_id:
-        v_mod_1d_path,hf_stat_vs_ref=q1_site_specific(os.path.dirname(stat_file))
+    if args.v1d != None :
+        v_mod_1d_selected = args.v1d
+        v_mod_1d_name = os.path.basename(v_mod_1d_selected).replace('.1d','')
+        params_base_bb_dict['site_specific']=False
+        params_base_bb_dict['hf_v_model']=v_mod_1d_selected
+    #TODO:add in logic for site specific as well, if the user provided as args
+    elif args.site_v1d_dir != None and args.hf_stat_vs_ref != None:
+        v_mod_1d_path,hf_stat_vs_ref=q1_site_specific(args.site_v1d_dir, hf_stat_vs_ref=args.hf_stat_vs_ref)
         v_mod_1d_name = "Site_Specific"
         params_base_bb_dict['site_specific']=True
         params_base_bb_dict['hf_v_model_path']=v_mod_1d_path
         params_base_bb_dict['hf_stat_vs_ref']=hf_stat_vs_ref
-        params_base_bb_dict['rand_reset']=True  
+        params_base_bb_dict['rand_reset']=True
+    else:    
+        is_site_specific_id= q0()
+        if is_site_specific_id:
+            v_mod_1d_path,hf_stat_vs_ref=q1_site_specific(os.path.dirname(stat_file))
+            v_mod_1d_name = "Site_Specific"
+            params_base_bb_dict['site_specific']=True
+            params_base_bb_dict['hf_v_model_path']=v_mod_1d_path
+            params_base_bb_dict['hf_stat_vs_ref']=hf_stat_vs_ref
+            params_base_bb_dict['rand_reset']=True  
 
-    else:
-        v_mod_1d_name, v_mod_1d_selected = q1_generic(v_mod_1d_dir)
-        params_base_bb_dict['site_specific']=False
-        params_base_bb_dict['hf_v_model']=v_mod_1d_selected
+        else:
+            v_mod_1d_name, v_mod_1d_selected = q1_generic(v_mod_1d_dir)
+            params_base_bb_dict['site_specific']=False
+            params_base_bb_dict['hf_v_model']=v_mod_1d_selected
 
     params_base_bb_dict['v_mod_1d_name']=v_mod_1d_name
 
@@ -203,19 +227,25 @@ def main():
             print "Error: hf_kappa_list (len=%d), hf_sdrop_list (len=%d) and srf_files (len=%d) should be of the same length."%(len(hf_kappa_list),len(hf_sdrop_list), len(srf_files))
             sys.exit()
 
-    hf_dir,bb_dir = action(params_base_bb_dict)
 
+    hf_run_names_list=[]
     for i in range(len(hf_kappa_list)):
         kappa = hf_kappa_list[i]
         sdrop = hf_sdrop_list[i]
         srf = srf_files[i]
         slip = hf_slips[i]
         yes, hf_run_name = q2(v_mod_1d_name,srf, kappa,sdrop)
+        #TODO:add_name_suffix return the exact same name, seems to be legacy and doing nothing here 
         hf_run_name = add_name_suffix(hf_run_name,yes)
+        #append the hf_run_name to a list for later purpose
+        hf_run_names_list.append(hf_run_name)
 
         hf_sim_basedir, bb_sim_basedir = os.path.join(hf_dir,hf_run_name), os.path.join(bb_dir,hf_run_name)
         action_for_uncertainties(hf_sim_basedir,bb_sim_basedir, srf, slip, kappa, sdrop)
-    
+    #
+    params_base_bb_dict['hf_run_names'] = hf_run_names_list
+    #store the parameters in params_base_bb.py 
+    store_params(params_base_bb_dict)
     
 
 if __name__ == "__main__":

@@ -1,6 +1,7 @@
 
 import glob
 import os.path
+from os.path import basename
 import sys
 import math
 
@@ -12,23 +13,33 @@ from qcore.shared import *
 sys.path.append(os.getcwd())
 from params_base import tools_dir
 from params_base import sim_dir
+from params_base import mgmt_db_location
+
+from management import create_mgmt_db
+from management import update_mgmt_db
+
 #datetime related
-import datetime as dtl
-exetime_pattern = "%Y%m%d_%H%M%S"
-exe_time = dtl.datetime.now().strftime(exetime_pattern)
+from datetime import datetime
+timestamp_format = "%Y%m%d_%H%M%S"
+timestamp = datetime.now().strftime(timestamp_format)
 
 
-# TODO: hardcoding is bad!
-# TODO: this number has to be extactly the same with EMOD3D(because of how we manage mpi in winbin-aio currently
-# may no longer be so after an proper update on winbin-aio-mpi
-max_tasks_per_node = "80"
+merge_ts_name_prefix = "post_emod3d_merge_ts"
+winbin_aio_name_prefix = "post_emod3d_winbin_aio"
+
+#TODO: implement estimation for these numbers
+default_run_time_merge_ts="00:30:00"
+default_run_time_winbin_aio="02:00:00"
+# default_core_merge_ts must be 4, higher number of cpu cause un-expected errors (TODO: maybe fix it when merg_ts's time become issue)
+default_core_merge_ts = "4"
+default_core_winbin_aio = "80"
+default_memory="16G"
 default_account='nesi00213'
+#TODO:the max number of cpu per node may need update when migrate machines
+#this variable is critical to prevent crashes for winbin-aio
+max_tasks_per_node = "80"
 
 import argparse
-parser = argparse.ArgumentParser()
-parser.add_argument("--auto", nargs="?", type=str,const=True)
-parser.add_argument('--account', type=str, default=default_account)
-args = parser.parse_args()
 
 
 def get_seis_len(seis_path):
@@ -41,52 +52,65 @@ def confirm(q):
     print q
     return show_yes_no_question()
 
-merge_ts_name_prefix = "post_emod3d_merge_ts"
-winbin_aio_name_prefix = "post_emod3d_winbin_aio"
+def submit_sl_script(script,submit_yes=None):
+    #print "Submitting is not implemented yet!"
+    print script
+    #if submit_yes == None:
+    #    submit_yes = confirm("Also submit the job for you?")
+    if submit_yes:
+        #encode if it is unicode
+        #TODO:fix this in qcore.shared.exe()
+        if type(script) == unicode:
+            script = script.encode()
+        print "Submitting %s" %script
+        res = exe("sbatch %s"%script, debug=False)
+        if len(res[1]) == 0:
+            #no errors, return the job id
+            return res[0].split()[-1]
+    else:
+        print "User chose to submit the job manually"
+        return None
 
-glob.glob('LF/*')
-lf_sim_dirs = glob.glob('LF/*')
-print lf_sim_dirs
-# reading merge_ts_template
-merge_ts_template = open('%s.sl.template' % merge_ts_name_prefix)
-merge_ts_template_contents = merge_ts_template.readlines()
-merge_ts_str_template = ''.join(merge_ts_template_contents)
-# reading winbin_aio_template
-winbin_aio_template = open('%s.sl.template' % winbin_aio_name_prefix)
-winbin_aio_template_contents = winbin_aio_template.readlines()
-winbin_aio_str_template = ''.join(winbin_aio_template_contents)
-
-submit_yes = confirm("Also submit the job for you?")
-
-for lf_sim_dir in lf_sim_dirs:
-    print "Working on", lf_sim_dir
-    # preparing merge_ts submit
-    txt = merge_ts_str_template.replace("{{lf_sim_dir}}", lf_sim_dir)
+def write_sl_script_merge_ts(lf_sim_dir,rup_mod, run_time=default_run_time_merge_ts, nb_cpus=default_core_merge_ts , memory=default_memory,account=default_account):
+    # reading merge_ts_template
+    merge_ts_template = open('%s.sl.template' % merge_ts_name_prefix)
+    merge_ts_template_contents = merge_ts_template.readlines()
+    merge_ts_str_template = ''.join(merge_ts_template_contents)
+    
+    # TODO: the merge_ts binrary needed to use relative path instead of absolute, maybe fix this
+    txt = merge_ts_str_template.replace("{{lf_sim_dir}}", os.path.relpath(lf_sim_dir,sim_dir))
     try:
         txt = txt.replace("{{tools_dir}}", tools_dir)
     except:
         print "**error while replacing tools_dir**"
+    txt = txt.replace("{{mgmt_db_location}}", mgmt_db_location)    
 
-    rup_mod = lf_sim_dir.split('/')[1]
-
-    # TODO: change this values to values that make more sense
-    nb_cpus = "4"
-    run_time = "00:30:00"
     job_name = "post_emod3d.merge_ts.%s" % rup_mod
-    memory = "16G"
-    header = resolve_header(args.account, nb_cpus, run_time, job_name, "Slurm", memory,exe_time,
+    header = resolve_header(args.account, nb_cpus, run_time, job_name, "Slurm", memory,timestamp,
                             job_description="post emod3d: merge_ts", additional_lines="###SBATCH -C avx")
 
-    fname_merge_ts_script = '%s_%s.sl' % (merge_ts_name_prefix, rup_mod)
+    fname_merge_ts_script = '%s_%s_%s.sl' % (merge_ts_name_prefix, rup_mod,timestamp)
     final_merge_ts = open(fname_merge_ts_script, 'w')
     final_merge_ts.write(header)
     final_merge_ts.write(txt)
     final_merge_ts.close()
     print "Slurm script %s written" % fname_merge_ts_script
+   
+    fname_sl_abs_path = os.path.join(os.path.abspath(os.path.curdir),fname_merge_ts_script) 
+    generated_script =  fname_sl_abs_path
+    return generated_script
+
+def write_sl_script_winbin_aio(lf_sim_dir,rup_mod, run_time = default_run_time_winbin_aio, nb_cpus=default_core_winbin_aio,memory=default_memory,account=default_account):
+
+    # reading winbin_aio_template
+    winbin_aio_template = open('%s.sl.template' % winbin_aio_name_prefix)
+    winbin_aio_template_contents = winbin_aio_template.readlines()
+    winbin_aio_str_template = ''.join(winbin_aio_template_contents)
 
     # preparing winbin_aio
-    txt = winbin_aio_str_template.replace("{{lf_sim_dir}}", lf_sim_dir)
-
+    # TODO: the merge_ts binrary needed to use relative path instead of absolute, maybe fix this
+    txt = winbin_aio_str_template.replace("{{lf_sim_dir}}", os.path.relpath(lf_sim_dir,sim_dir))
+    txt = txt.replace("{{mgmt_db_location}}", mgmt_db_location)
     #get the file count of seis files
     path_outbin=os.path.join(os.path.join(sim_dir,lf_sim_dir),"OutBin")
     sfl_len=int(get_seis_len(path_outbin))
@@ -99,27 +123,82 @@ for lf_sim_dir in lf_sim_dirs:
         nb_cpus = str(nodes*int(max_tasks_per_node))
             
 
-    # TODO: change this values to values that make more sense
-    #nb_cpus = max_tasks_per_node 
-    run_time = "00:30:00"
     job_name = "post_emod3d.winbin_aio.%s" % rup_mod
-    memory = "16G"
-    header = resolve_header(args.account, nb_cpus, run_time, job_name, "slurm", memory,exe_time,
+    header = resolve_header(args.account, nb_cpus, run_time, job_name, "slurm", memory,timestamp,
                             job_description="post emod3d: winbin_aio", additional_lines="###SBATCH -C avx")
 
-    fname_winbin_aio_script = '%s_%s.sl' % (winbin_aio_name_prefix, rup_mod)
+    fname_winbin_aio_script = '%s_%s_%s.sl' % (winbin_aio_name_prefix, rup_mod, timestamp)
     final_winbin_aio = open(fname_winbin_aio_script, 'w')
     final_winbin_aio.write(header)
     final_winbin_aio.write(txt)
     final_winbin_aio.close()
     print "Slurm script %s written" % fname_winbin_aio_script
+    fname_sl_abs_path = os.path.join(os.path.abspath(os.path.curdir),fname_winbin_aio_script)
+    generated_script = fname_sl_abs_path
+    return generated_script
 
-    if submit_yes:
-        # TODO: implement submit_sl_script and use here
-        # print "Submitting not implemented yet!"
-        res = exe("sbatch %s" % fname_merge_ts_script, debug=False)
-        res = exe("sbatch %s" % fname_winbin_aio_script, debug=False)
-    
-        print res
+def update_db(process, status, mgmt_db_location, srf_name,jobid):
+    db = create_mgmt_db.connect_db(mgmt_db_location)
+    update_mgmt_db.update_db(db, process, status, job=jobid, run_name=srf_name)
+    db.connection.commit()
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--auto", nargs="?", type=str,const=True)
+    parser.add_argument('--account', type=str, default=default_account)
+    parser.add_argument('--merge_ts', nargs="?", type=str,const=True)
+    parser.add_argument('--winbin_aio', nargs="?", type=str,const=True)
+    parser.add_argument('--srf',type=str,default=None)
+    parser.add_argument('--pre_hf', nargs="?", type=str,const=True)
+
+    args = parser.parse_args()
+
+    created_scripts = []
+    try:
+        import params
+    except:
+        print "import params.py failed."
+        sys.exit()
     else:
-        print "User chose to submit the job manually"
+        wct_set=False 
+        if args.auto == True:
+            submit_yes = True
+        else:
+            submit_yes = confirm("Also submit the job for you?")
+        for srf in params.srf_files:
+            #get the srf(rup) name without extensions
+            srf_name = os.path.splitext(basename(srf))[0]
+            #if srf(variation) is provided as args, only create the slurm with same name provided
+            if args.srf != None and srf_name != args.srf:
+                continue
+            #get lf_sim_dir
+            lf_sim_dir = os.path.join(params.lf_sim_root_dir,srf_name)
+            #TODO: update the script below when implemented estimation WCT
+            #nx = int(params.nx)
+            #ny = int(params.ny)
+            #nz = int(params.nz)
+            #dt = float(params.dt)
+            #sim_duration = float(params.sim_duration)
+            #default_core will be changed is user pars ncore
+            #num_procs = default_core
+            #total_est_core_hours= est_e3d.est_cour_hours_emod3d(nx,ny,nz,dt,sim_duration)
+            #estimated_wct = est_e3d.est_wct(total_est_core_hours,num_procs, default_wct_scale)
+            #print "Estimated WCT (scaled and rounded up):%s"%estimated_wct
+            
+            #run merge_ts related scripts only
+            #if non of args are provided, run script related to both
+            if args.winbin_aio != True and args.merge_ts != True:
+                args.merge_ts = True
+                args.winbin_aio = True
+
+            if args.merge_ts == True:
+                created_script = write_sl_script_merge_ts(lf_sim_dir,srf_name)
+                jobid = submit_sl_script(created_script,submit_yes)
+                if jobid != None:
+                    update_db("merge_ts","in-queue",mgmt_db_location,srf_name, jobid)
+            #run winbin_aio related scripts only
+            if args.winbin_aio == True:
+                created_script = write_sl_script_winbin_aio(lf_sim_dir,srf_name)
+                jobid = submit_sl_script(created_script,submit_yes)
+                if jobid != None:
+                    update_db("winbin_aio","in-queue",mgmt_db_location,srf_name, jobid)

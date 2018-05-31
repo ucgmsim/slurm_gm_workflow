@@ -18,7 +18,7 @@ def update_db(db, process, status, job=None, run_name=None, error=None):
                   WHERE (job_id = ? or run_name = ?)
                    AND proc_type = (SELECT id FROM proc_type_enum WHERE proc_type = ?)
                    AND status <= (SELECT id FROM status_enum WHERE state = ?)''', (status, job, error, job, run_name, process, status))
-    
+    db.connection.commit()    
 
 def main():
     parser = argparse.ArgumentParser()

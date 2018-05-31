@@ -3,10 +3,22 @@ source machine_env.sh
 
 export start=`date +%H:%M:%S_%d/%m/%Y`
 echo $start
+#updating the stats in managementDB
+if [[ ! -d {{mgmt_db_location}}/mgmt_db_queue ]]; then
+    #create the queue folder if not exist
+    mkdir {{mgmt_db_location}}/mgmt_db_queue
+fi
+timestamp=`date +%Y%m%d_%H%M%S`
+echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} EMOD3D running --j $SLURM_JOBID" >> {{mgmt_db_location}}/mgmt_db_queue/$timestamp\_$SLURM_JOBID
 srun {{tools_dir}}/emod3d-mpi -args "par={{lf_sim_dir}}/e3d.par"
 export end=`date +%H:%M:%S_%d/%m/%Y`
 echo $end
-source ./version
-echo "Saving execution time"
-python $BINPROCESS/wct.py -a $start $end
+#run test script and update mgmt_db
+#python $gmsim/workflow/scripts/test_and_update.py EMOD3D {{lf_sim_dir}} {{mgmt_db_location}} $SLURM_JOBID
+timestamp=`date +%Y%m%d_%H%M%S`
+echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} EMOD3D completed --j $SLURM_JOBID" >> {{mgmt_db_location}}/mgmt_db_queue/$timestamp\_$SLURM_JOBID
+##source ./version
+##TODO:re-enable wct after proper fix
+##echo "Saving execution time"
+##python $BINPROCESS/wct.py -a $start $end
 

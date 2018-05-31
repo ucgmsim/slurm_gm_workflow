@@ -15,6 +15,7 @@ ISSUES: remove default values in e3d_default.par where not needed.
 from __future__ import print_function
 import sys
 import os.path
+from os.path import basename
 
 sys.path.append(os.path.abspath(os.path.curdir))
 from shutil import copyfile
@@ -28,7 +29,7 @@ except ImportError:
     exit(1)
 
 
-def create_run_parameters():
+def create_run_parameters(srf_name=None):
     # attempt to append template file before importing params
     try:
         # throws NameError if var not set, AssertionError if blank
@@ -48,6 +49,9 @@ def create_run_parameters():
     p1 = {}
     p2 = {}
     for i, srf_file in enumerate(srf_files):
+        #skip all logic if a specific srf_name is provided
+        if srf_name != None and srf_name != os.path.splitext(basename(srf_file))[0]:
+            continue
         srf_file_basename = os.path.splitext(os.path.basename(srf_file))[0]  # take the filename only
         p1['lf_sim_dir'] = os.path.join(lf_sim_root_dir, srf_file_basename)
         shared.verify_user_dirs([p1['lf_sim_dir']])

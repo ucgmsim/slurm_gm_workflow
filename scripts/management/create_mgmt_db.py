@@ -16,6 +16,7 @@ def connect_db(path):
     db_location = os.path.join(path, 'slurm_mgmt.db')
     conn = sqlite3.connect(db_location)
     db = conn.cursor()
+    db.execute("PRAGMA synchronous = OFF") 
     return db
     
 
@@ -24,6 +25,7 @@ def initilize_db(path):
     sql_template_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../../templates/slurm_mgmt.db.sql')
     initilize_query = open(sql_template_file).read()
     db.executescript(initilize_query)
+    db.connection.commit()
     return db
 
 
@@ -52,6 +54,7 @@ def insert_task(db, run_name, proc):
     db.execute('''INSERT OR IGNORE INTO
                   `state`(run_name, proc_type, status, last_modified)
                   VALUES(?, ?, 1, strftime('%s','now'))''', (run_name, proc))
+    db.connection.commit()
 
 def main():
     parser = argparse.ArgumentParser()

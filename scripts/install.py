@@ -565,6 +565,10 @@ def main_local():
 
     srf_files, ___ = zip(*srf_stoch_pairs)
     create_mgmt_db.create_mgmt_db([], sim_dir, srf_files=srf_files)
+    #saves the location of mgmt_db to params_base.py
+    with open(os.path.join(sim_dir,"params_base.py"),"a") as f:
+        f.write("mgmt_db_location='%s'\n" % sim_dir)
+
 
     print "Installation completed"
     show_instruction(sim_dir)
