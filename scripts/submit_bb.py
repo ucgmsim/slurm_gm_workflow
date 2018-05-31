@@ -63,7 +63,7 @@ def update_db(process, status, mgmt_db_location, srf_name,jobid):
     db.connection.commit()
 
 
-def write_sl_script(bb_sim_dirs, srf_name, sl_template_prefix, nb_cpus=default_core, run_time=default_run_time,memory=default_memory,account=default_account):
+def write_sl_script(bb_sim_dirs, sim_dir, hf_run_name, srf_name, sl_template_prefix, nb_cpus=default_core, run_time=default_run_time,memory=default_memory,account=default_account):
     
     from params_base import mgmt_db_location
 
@@ -80,6 +80,7 @@ def write_sl_script(bb_sim_dirs, srf_name, sl_template_prefix, nb_cpus=default_c
 
     txt = txt.replace("$rup_mod", variation)
     txt = txt.replace("{{mgmt_db_location}}", mgmt_db_location)
+    txt = txt.replace("{{sim_dir}}",sim_dir).replace("{{hf_run_name}}",hf_run_name).replace("{{srf_name}}",srf_name)
 
     fname_sl_script = '%s_%s_%s.sl' % (sl_template_prefix, variation,timestamp)
     f_sl_script = open(fname_sl_script, 'w')
@@ -173,7 +174,9 @@ if __name__ == '__main__':
         else:
             run_time = default_run_time
         bb_sim_dir = os.path.join(os.path.join(params.bb_dir,params_base_bb.hf_run_names[counter_srf]), srf_name)
-        created_script = write_sl_script(bb_sim_dir, srf_name , sl_name_prefix, account=args.account)
+        hf_run_name = params_base_bb.hf_run_names[counter_srf]
+        sim_dir = params.sim_dir
+        created_script = write_sl_script(bb_sim_dir, sim_dir, hf_run_name, srf_name , sl_name_prefix, account=args.account)
         jobid = submit_sl_script(created_script,submit_yes)
         if jobid != None:
             update_db("BB","in-queue",params.mgmt_db_location,srf_name, jobid)

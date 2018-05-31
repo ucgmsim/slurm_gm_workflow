@@ -16,6 +16,12 @@ OUTFILE=`head -1 $filelist  |sed -e 's/-[0-9]*.e3d/.e3d/g'`
 echo "NFILES=$NFILES OUTFILE=$OUTFILE"
 time srun $exe filelist=$filelist outfile=$OUTFILE nfiles=$NFILES
 
-#TODO: add in test
 timestamp=`date +%Y%m%d_%H%M%S`
-echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} merge_ts completed --j $SLURM_JOBID" >> {{mgmt_db_location}}/mgmt_db_queue/$timestamp\_$SLURM_JOBID
+#test before update
+res=`$gmsim/deploy/slurm_gm_workflow/scripts/test_merge_ts.sh {{sim_dir}} {{srf_name}}`
+if [[ $? == 0 ]]; then
+    #passed
+    echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} merge_ts completed --j $SLURM_JOBID" >> {{mgmt_db_location}}/mgmt_db_queue/$timestamp\_$SLURM_JOBID
+else
+    echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} merge_ts failed --j $SLURM_JOBID --error '$res'" >> {{mgmt_db_location}}/mgmt_db_queue/$timestamp\_$SLURM_JOBID
+fi

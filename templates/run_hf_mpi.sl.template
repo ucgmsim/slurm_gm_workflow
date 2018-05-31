@@ -13,4 +13,11 @@ srun python  $BINPROCESS/hfsims-stats-mpi.py {{hf_sim_dir}} {{hf_option}}
 date
 
 timestamp=`date +%Y%m%d_%H%M%S`
-echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} HF completed --j $SLURM_JOBID" >> {{mgmt_db_location}}/mgmt_db_queue/$timestamp\_$SLURM_JOBID
+#test before update
+res=`$gmsim/deploy/slurm_gm_workflow/scripts/test_hf.sh {{sim_dir}} {{hf_run_name}} {{srf_name}}`
+if [[ $? == 0 ]]; then
+    #passed
+    echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} HF completed --j $SLURM_JOBID" >> {{mgmt_db_location}}/mgmt_db_queue/$timestamp\_$SLURM_JOBID
+else
+    echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} HF failed --j $SLURM_JOBID --error '$res'" >> {{mgmt_db_location}}/mgmt_db_queue/$timestamp\_$SLURM_JOBID
+fi

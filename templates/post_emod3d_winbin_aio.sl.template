@@ -12,9 +12,15 @@ echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_loca
 srun python $BINPROCESS/winbin-aio-mpi.py {{lf_sim_dir}}
 #srun python $BINPROCESS/winbin-aio.py {{lf_sim_dir}}
 
-#TODO: add in test
 date
 timestamp=`date +%Y%m%d_%H%M%S`
-echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} winbin_aio completed --j $SLURM_JOBID" >> {{mgmt_db_location}}/mgmt_db_queue/$timestamp\_$SLURM_JOBID
+#test before update
+res=`$gmsim/deploy/slurm_gm_workflow/scripts/test_winbin_aio.sh {{sim_dir}} {{srf_name}}`
+if [[ $? == 0 ]]; then
+    #passed
+    echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} winbin_aio completed --j $SLURM_JOBID" >> {{mgmt_db_location}}/mgmt_db_queue/$timestamp\_$SLURM_JOBID
+else
+    echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} winbin_aio failed --j $SLURM_JOBID --error '$res'" >> {{mgmt_db_location}}/mgmt_db_queue/$timestamp\_$SLURM_JOBID
+fi
 
 

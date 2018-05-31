@@ -79,7 +79,7 @@ def update_db(process, status, mgmt_db_location, srf_name,jobid):
     update_mgmt_db.update_db(db, process, status, job=jobid, run_name=srf_name)
     db.connection.commit()
 
-def write_sl_script(hf_sim_dir, stoch_name, sl_template_prefix, hf_option, nb_cpus=default_core, run_time=default_run_time,memory=default_memory,account=default_account):
+def write_sl_script(hf_sim_dir,sim_dir,hf_run_name, stoch_name, sl_template_prefix, hf_option, nb_cpus=default_core, run_time=default_run_time,memory=default_memory,account=default_account):
 
     from params_base import mgmt_db_location
 
@@ -91,6 +91,7 @@ def write_sl_script(hf_sim_dir, stoch_name, sl_template_prefix, hf_option, nb_cp
     txt = str_template.replace("{{hf_sim_dir}}", hf_sim_dir)
     txt = txt.replace("{{hf_option}}",str(hf_option))
     txt = txt.replace("{{mgmt_db_location}}", mgmt_db_location)
+    txt = txt.replace("{{sim_dir}}",sim_dir).replace("{{hf_run_name}}",hf_run_name).replace("{{srf_name}}", stoch_name)
     variation = stoch_name.replace('/', '__')
     print variation
 
@@ -206,7 +207,9 @@ if __name__ == '__main__':
         else:
             run_time = default_run_time
         hf_sim_dir = os.path.join(os.path.join(params.hf_dir,params_base_bb.hf_run_names[counter_srf]), srf_name)
-        created_script = write_sl_script(hf_sim_dir, srf_name , ll_name_prefix, hf_option,ncore,run_time,account=args.account)
+        sim_dir = params.sim_dir
+        hf_run_name = params_base_bb.hf_run_names[counter_srf]
+        created_script = write_sl_script(hf_sim_dir, sim_dir, hf_run_name, srf_name , ll_name_prefix, hf_option,ncore,run_time,account=args.account)
         jobid = submit_sl_script(created_script,submit_yes)
         if jobid != None:
             update_db("HF","in-queue",params.mgmt_db_location,srf_name, jobid)

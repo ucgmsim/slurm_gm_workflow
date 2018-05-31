@@ -4,12 +4,22 @@ if [[ $# -lt 1 ]];then
     echo "please provide the path root of runs"
     exit 1
 fi
-
 path_db_queue=$1/mgmt_db_queue
-for f in $path_db_queue/*;
-do
-    while IFS= read -r cmd; do
-        printf '%s\n' "$cmd"
-        $cmd
-    done < "$f"
-done
+
+#test if there is files under queue folder
+if [ -n "$(ls -A your/dir 2>/dev/null)" ];
+then
+
+    for f in $path_db_queue/*;
+    do
+        cat $f
+        bash $f
+        if [[ $? == 0 ]]; then
+            rm $f
+        else
+            echo "Error while executing $f"
+        fi
+    done
+else
+    echo "no queue-ed commands to run"
+fi

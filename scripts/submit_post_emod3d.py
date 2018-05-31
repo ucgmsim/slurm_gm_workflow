@@ -71,7 +71,7 @@ def submit_sl_script(script,submit_yes=None):
         print "User chose to submit the job manually"
         return None
 
-def write_sl_script_merge_ts(lf_sim_dir,rup_mod, run_time=default_run_time_merge_ts, nb_cpus=default_core_merge_ts , memory=default_memory,account=default_account):
+def write_sl_script_merge_ts(lf_sim_dir, sim_dir,rup_mod, run_time=default_run_time_merge_ts, nb_cpus=default_core_merge_ts , memory=default_memory,account=default_account):
     # reading merge_ts_template
     merge_ts_template = open('%s.sl.template' % merge_ts_name_prefix)
     merge_ts_template_contents = merge_ts_template.readlines()
@@ -84,6 +84,7 @@ def write_sl_script_merge_ts(lf_sim_dir,rup_mod, run_time=default_run_time_merge
     except:
         print "**error while replacing tools_dir**"
     txt = txt.replace("{{mgmt_db_location}}", mgmt_db_location)    
+    txt = txt.replace("{{sim_dir}}",sim_dir).replace("{{srf_name}}",rup_mod)
 
     job_name = "post_emod3d.merge_ts.%s" % rup_mod
     header = resolve_header(args.account, nb_cpus, run_time, job_name, "Slurm", memory,timestamp,
@@ -100,7 +101,7 @@ def write_sl_script_merge_ts(lf_sim_dir,rup_mod, run_time=default_run_time_merge
     generated_script =  fname_sl_abs_path
     return generated_script
 
-def write_sl_script_winbin_aio(lf_sim_dir,rup_mod, run_time = default_run_time_winbin_aio, nb_cpus=default_core_winbin_aio,memory=default_memory,account=default_account):
+def write_sl_script_winbin_aio(lf_sim_dir,sim_dir,rup_mod, run_time = default_run_time_winbin_aio, nb_cpus=default_core_winbin_aio,memory=default_memory,account=default_account):
 
     # reading winbin_aio_template
     winbin_aio_template = open('%s.sl.template' % winbin_aio_name_prefix)
@@ -111,6 +112,7 @@ def write_sl_script_winbin_aio(lf_sim_dir,rup_mod, run_time = default_run_time_w
     # TODO: the merge_ts binrary needed to use relative path instead of absolute, maybe fix this
     txt = winbin_aio_str_template.replace("{{lf_sim_dir}}", os.path.relpath(lf_sim_dir,sim_dir))
     txt = txt.replace("{{mgmt_db_location}}", mgmt_db_location)
+    txt = txt.replace("{{sim_dir}}",sim_dir).replace("{{srf_name}}",rup_mod)
     #get the file count of seis files
     path_outbin=os.path.join(os.path.join(sim_dir,lf_sim_dir),"OutBin")
     sfl_len=int(get_seis_len(path_outbin))
@@ -173,6 +175,7 @@ if __name__ == '__main__':
                 continue
             #get lf_sim_dir
             lf_sim_dir = os.path.join(params.lf_sim_root_dir,srf_name)
+            sim_dir = params.sim_dir
             #TODO: update the script below when implemented estimation WCT
             #nx = int(params.nx)
             #ny = int(params.ny)
@@ -192,13 +195,13 @@ if __name__ == '__main__':
                 args.winbin_aio = True
 
             if args.merge_ts == True:
-                created_script = write_sl_script_merge_ts(lf_sim_dir,srf_name)
+                created_script = write_sl_script_merge_ts(lf_sim_dir,sim_dir,srf_name)
                 jobid = submit_sl_script(created_script,submit_yes)
                 if jobid != None:
                     update_db("merge_ts","in-queue",mgmt_db_location,srf_name, jobid)
             #run winbin_aio related scripts only
             if args.winbin_aio == True:
-                created_script = write_sl_script_winbin_aio(lf_sim_dir,srf_name)
+                created_script = write_sl_script_winbin_aio(lf_sim_dir,sim_dir,srf_name)
                 jobid = submit_sl_script(created_script,submit_yes)
                 if jobid != None:
                     update_db("winbin_aio","in-queue",mgmt_db_location,srf_name, jobid)

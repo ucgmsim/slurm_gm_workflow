@@ -68,7 +68,7 @@ def submit_sl_script(script,submit_yes=None):
 
     
     
-def write_sl_script(lf_sim_dir,srf_name, run_time=default_run_time, nb_cpus=default_core,memory=default_memory,account=default_account):
+def write_sl_script(lf_sim_dir,sim_dir,srf_name, run_time=default_run_time, nb_cpus=default_core,memory=default_memory,account=default_account):
 
     from params_base import tools_dir
     from params_base import mgmt_db_location
@@ -82,6 +82,7 @@ def write_sl_script(lf_sim_dir,srf_name, run_time=default_run_time, nb_cpus=defa
     
     txt = str_template.replace("{{lf_sim_dir}}", lf_sim_dir).replace("{{tools_dir}}", tools_dir)
     txt = txt.replace("{{mgmt_db_location}}", mgmt_db_location)
+    txt = txt.replace("{{sim_dir}}", sim_dir).replace("{{srf_name}}",srf_name)
     fname_slurm_script = 'run_emod3d_%s_%s.sl' % (srf_name,timestamp)
     f_sl_script = open(fname_slurm_script, 'w')
 
@@ -137,6 +138,7 @@ if __name__ == '__main__':
                 continue
             #get lf_sim_dir
             lf_sim_dir = os.path.join(params.lf_sim_root_dir,srf_name) 
+            sim_dir = params.sim_dir
             nx = int(params.nx)
             ny = int(params.ny)
             nz = int(params.nz)
@@ -150,7 +152,7 @@ if __name__ == '__main__':
             
             
             if args.auto == True:
-                created_scripts = write_sl_script(lf_sim_dir,srf_name, run_time = estimated_wct)
+                created_scripts = write_sl_script(lf_sim_dir,sim_dir,srf_name, run_time = estimated_wct)
                 jobid = submit_sl_script(created_scripts,submit_yes)
             else:
                 if wct_set == False:
@@ -158,7 +160,7 @@ if __name__ == '__main__':
                     wct_set = True
                 if wct_set == True:
                     print "WCT set to: %s"%wall_clock_limit
-                created_scripts = write_sl_script(lf_sim_dir,srf_name,run_time = wall_clock_limit)
+                created_scripts = write_sl_script(lf_sim_dir,sim_dir,srf_name,run_time = wall_clock_limit)
                 jobid = submit_sl_script(created_scripts,submit_yes)
             #update the db if
             if jobid != None:
