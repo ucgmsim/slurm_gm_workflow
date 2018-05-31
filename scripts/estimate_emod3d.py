@@ -33,8 +33,10 @@ def est_wct(core_hours, ncore, scale=default_wct_scale):
     scaled_estimation = core_hours*scale
     #using ceil to round up the wct, so it will use at least one hour
     time_per_cpu = ceil(float(scaled_estimation/int(ncore)))
+    #final fail-prof
+    if time_per_cpu <= 1.0:
+        time_per_cpu = 1.0
     estimated_wct = '{0:02.0f}:{1:02.0f}:00'.format(*divmod(time_per_cpu * 60, 60))
-
     #please keep note that the value may exceed the limit of one job, which is typically 23:59:59
     #its the script that called this function to be responsible of doing thise check
     return estimated_wct
