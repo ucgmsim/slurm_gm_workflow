@@ -7,7 +7,7 @@ fi
 path_db_queue=$1/mgmt_db_queue
 
 #test if there is files under queue folder
-if [ -n "$(ls -A your/dir 2>/dev/null)" ];
+if [ -n "$(ls -A $path_db_queue 2>/dev/null)" ];
 then
 
     for f in $path_db_queue/*;
