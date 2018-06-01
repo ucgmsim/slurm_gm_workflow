@@ -3,8 +3,11 @@ from scripts.management import create_mgmt_db
 from scripts.management import update_mgmt_db
 from subprocess import call
 
+import qcore.load_config as ldcfg
+
 import argparse
 import os
+import sys
 
 default_n_runs = 20 
 default_1d_mod = "/nesi/transit/nesi00213/VelocityModel/Mod-1D/Cant1D_v2-midQ_leer.1d"
@@ -61,7 +64,7 @@ def main():
     parser.add_argument('--n_runs', default=default_n_runs, type=int)
     #cybershake-like simulations store mgmnt_db at different locations
     parser.add_argument('--single_sim', nargs="?", type=str,const=True)
-
+    parser.add_argument('--config',type=str,default=None,help="a path to a config file that constains all the required values.")
     
 
     args = parser.parse_args()
@@ -69,7 +72,22 @@ def main():
     n_runs_max = args.n_runs
     db = create_mgmt_db.connect_db(mgmt_db_location)
     db_tasks = []
-    
+   
+    if args.config != None: 
+        #parse and check for variables in config
+        try:
+            print "!!!!!!!!!!!!!",args.config
+            qcore_cfg = ldcfg.load(args.config)
+            print qcore_cfg
+        except Exception as e:
+            print e
+            print "Error while parsing the config file, please double check inputs."
+            sys.exit()
+        if 'v_1d_mod' in qcore_cfg:
+            default_1d_mod = qcore_cfg['v_1d_mod']
+        #append more logic here if more variables are requested 
+
+
     queued_tasks = slurm_query_status.get_queued_tasks()
     db_tasks = slurm_query_status.get_submitted_db_tasks(db)
     slurm_query_status.update_tasks(db, queued_tasks, db_tasks)
