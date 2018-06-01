@@ -13,7 +13,7 @@ cybershake_root=$1
 sim_root_dir=$cybershake_root/Runs
 vm_root_dir=$cybershake_root/Data/VMs
 
-cybershakei_cfg=$2
+cybershake_cfg=$2
 
 #get list of VM
 #cd $vm_root_dir
