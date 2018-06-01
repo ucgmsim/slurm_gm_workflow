@@ -91,6 +91,12 @@ def main():
     create_mgmt_db.create_mgmt_db([], path_cybershake, srf_files=srf_files)
     with open(os.path.join(sim_dir,"params_base.py"),"a") as f:
         f.write("mgmt_db_location='%s'\n" % path_cybershake)
+    
+    #store extra params provided
+    if 'hf_stat_vs_ref' in qcore_cfg:
+        with open(os.path.join(sim_dir,"params_base.py"),"a") as f:
+            f.write("hf_stat_vs_ref='%s'\n" % qcore_cfg['hf_stat_vs_ref'])
+
     #remove old params_base.pyc
     try:
         print "Removing probably incomplete "+os.path.join(sim_dir, "params_base.pyc")
