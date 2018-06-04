@@ -102,8 +102,10 @@ if is_master:
 comm.Barrier()
 
 # load container to write to
-bin_data = np.memmap(args.out_file, mode = 'r+', dtype = 'f4', \
-                     shape = (lf.stations.size, bb_nt, 3), offset = head_total)
+bin_data = open(args.out_file, 'r+b')
+bin_data.seek(head_total + rank * bb_nt * 3 * 4)
+bb_acc = np.empty((bb_nt, 3), dtype = 'f4')
+bb_skip = (size - 1) * bb_nt * 3 * 4
 
 # work on station subset
 my_stations = hf.stations[rank::size]
@@ -122,13 +124,12 @@ for stat in my_stations:
         lf_acc[:, c] = bwfilter(ampdeamp(lf_acc[:, c], \
                                 cb_amp(bb_dt, n2, stat_lfvs, vsite, stat_lfvs, \
                                 pga[c]), amp = True), bb_dt, 1.0, 'lowpass')
-        bin_data[stati, :, c] = (np.hstack((d_ts, hf_acc[:, c])) \
-                                 + np.hstack((lf_acc[:, c], d_ts))) / 981.0
+        bb_acc[:, c] = (np.hstack((d_ts, hf_acc[:, c])) \
+                        + np.hstack((lf_acc[:, c], d_ts))) / 981.0
+    bb_acc.tofile(bin_data)
     # next station index
     stati += size
-
-# flush
-del bin_data
+    bin_data.seek(bb_skip, 1)
 
 # combine station metadata
 if is_master:
@@ -148,6 +149,7 @@ if is_master:
     # vsite from vsite file
     bb_stations.vsite = vsites
     # save station info after general header
-    with open(args.out_file, mode = 'r+b') as out:
-        out.seek(HEAD_SIZE)
-        bb_stations.tofile(out)
+    bin_data.seek(HEAD_SIZE)
+    bb_stations.tofile(bin_data)
+
+bin_data.close()
