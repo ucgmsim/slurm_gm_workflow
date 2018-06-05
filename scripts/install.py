@@ -660,18 +660,28 @@ if __name__ == '__main__':
     #change corresponding variables to the args provided
     
     if args.user_root != None:
+        #TODO:bad hack, fix this with parsing
+        global user_root
         user_root = args.user_root
 
     if args.srf_dir != None:
+        #TODO:bad hack, fix this with parsing
+        global srf_default_dir 
         srf_default_dir = args.srf_dir
 
     if args.vm_dir != None:
+        #TODO:bad hack, fix this with parsing
+        global vel_mod_dir
         vel_mod_dir = args.vm_dir
     
     if args.v1d_dir != None:
+        #TODO:bad hack, fix this with parsing
+        global v_mod_1d_dir
         v_mod_1d_dir = args.v1d_dir 
 
     if args.station_dir != None:
+        #TODO:bad hack, fix this with parsing
+        global stat_dir
         stat_dir = args.station_dir
  
     #if sim_cfg parsed, run main_remote(which has no selection)

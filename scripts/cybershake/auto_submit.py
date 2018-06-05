@@ -11,7 +11,7 @@ import sys
 
 default_n_runs = 20 
 default_1d_mod = "/nesi/transit/nesi00213/VelocityModel/Mod-1D/Cant1D_v2-midQ_leer.1d"
-default_hf_vs30_ref = ""
+default_hf_vs30_ref = None
 
 def submit_task(sim_dir, proc_type, run_name):
     #TODO: using shell call is EXTREMELY undesirable. fix this in near future(fundamentally)
@@ -38,8 +38,12 @@ def submit_task(sim_dir, proc_type, run_name):
             print os.path.join(lf_sim_dir,"params_uncertain.py")," missing, creating"
             call("python $gmsim/workflow/scripts/submit_emod3d.py --set_params_only --srf %s"%run_name, shell=True)
             print "python $gmsim/workflow/scripts/submit_emod3d.py --set_params_only --srf %s"%run_name
-        call("python $gmsim/workflow/scripts/install_bb.py --v1d %s"%default_1d_mod, shell=True)
-        print "python $gmsim/workflow/scripts/install_bb.py --v1d %s"%default_1d_mod
+        if default_hf_vs30_ref != None:
+            print "python $gmsim/workflow/scripts/install_bb.py --v1d %s --hf_stat_vs_ref %s"%(default_1d_mod,default_hf_vs30_ref)
+            call("python $gmsim/workflow/scripts/install_bb.py --v1d %s --hf_stat_vs_ref %s"%(default_1d_mod,default_hf_vs30_ref), shell=True)
+        else:
+            call("python $gmsim/workflow/scripts/install_bb.py --v1d %s"%default_1d_mod, shell=True)
+            print "python $gmsim/workflow/scripts/install_bb.py --v1d %s"%default_1d_mod
         call("python $gmsim/workflow/scripts/submit_hf.py --auto --srf %s"%run_name, shell=True)
         print "python $gmsim/workflow/scripts/submit_hf.py --auto --srf %s"%run_name
     if proc_type == 5:
@@ -84,7 +88,13 @@ def main():
             print "Error while parsing the config file, please double check inputs."
             sys.exit()
         if 'v_1d_mod' in qcore_cfg:
+            #TODO:bad hack, fix this when possible (with parsing)
+            global default_1d_mod
             default_1d_mod = qcore_cfg['v_1d_mod']
+        if 'hf_stat_vs_ref' in qcore_cfg:
+            #TODO:bad hack, fix this when possible (with parsing)
+            global default_hf_vs30_ref
+            default_hf_vs30_ref =  qcore_cfg['hf_stat_vs_ref']
         #append more logic here if more variables are requested 
 
 
