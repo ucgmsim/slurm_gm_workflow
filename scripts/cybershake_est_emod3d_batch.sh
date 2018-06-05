@@ -23,7 +23,7 @@ do
 
     for rup in $list_sim;
     do
-        result=$($script_path/cybershake_est_emod3d.sh $rup /home/vap30/scratch/karim86_vm/$rup/ /home/vap30/scratch/karim86_srf/$rup/Srf)
+        result=$($script_path/cybershake_est_emod3d.sh $rup $path_vm/$rup/ $path_srf/$rup/Srf)
         #printf "\r %15s %5s %5s %6s %6s %6s %5s %12s %20s %20s\n" $rup_name $count_hypo $count_slip $nx $ny $nz $dt $sim_duration $estimated_core_hours $estimated_core_hours_total
         echo "$result"
         rup_total_ch=`echo $result| awk '{print $11}'`
