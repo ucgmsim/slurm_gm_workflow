@@ -14,7 +14,7 @@ default_hyperthread=False
 
 
 #get nx, ny,nz by dividing extended_* with hh
-def est_cour_hours_emod3d(nx, ny, nz,dt, sim_duration, emod3d_coef=default_emod3d_coef, round_len=default_round_len):
+def est_core_hours_emod3d(nx, ny, nz,dt, sim_duration, emod3d_coef=default_emod3d_coef, round_len=default_round_len):
     '''
     returns a float formate core hour
     '''

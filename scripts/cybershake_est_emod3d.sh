@@ -38,7 +38,7 @@ hh=`python -c "from params_vel import hh; print hh"`
 sim_duration=`python -c "from params_vel import sim_duration; print sim_duration"`
 
 cd $script_path
-estimated_core_hours=`python -c "import estimate_emod3d as est; print est.est_cour_hours_emod3d($nx,$ny,$nz,$dt,$sim_duration)"`
+estimated_core_hours=`python -c "import estimate_emod3d as est; print est.est_core_hours_emod3d($nx,$ny,$nz,$dt,$sim_duration)"`
 estimated_core_hours_total=`echo $estimated_core_hours*$count_srf | bc`
 
 #printf "\r %15s %5s %5s %6s %6s %6s %5s %12s %20s %20s\n" 'rup_name' 'hypo' 'slip' 'nx' 'ny' 'nz' 'dt' 'sim_duration' 'core_hours' 'core_hours_total'

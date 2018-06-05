@@ -184,7 +184,7 @@ if __name__ == '__main__':
             #sim_duration = float(params.sim_duration)
             #default_core will be changed is user pars ncore
             #num_procs = default_core
-            #total_est_core_hours= est_e3d.est_cour_hours_emod3d(nx,ny,nz,dt,sim_duration)
+            #total_est_core_hours= est_e3d.est_core_hours_emod3d(nx,ny,nz,dt,sim_duration)
             #estimated_wct = est_e3d.est_wct(total_est_core_hours,num_procs, default_wct_scale)
             #print "Estimated WCT (scaled and rounded up):%s"%estimated_wct
             
