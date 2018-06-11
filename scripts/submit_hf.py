@@ -94,8 +94,8 @@ def write_sl_script(hf_sim_dir, sim_dir, hf_run_name, stoch_name, sl_template_pr
 
     if binary:
         hf_submit_command = "srun python $BINPROCESS/hf_sim.py "
-        arguments_for_hf = [params_base_bb.hf_slip, params_base.FD_STATLIST, os.path.join(hf_sim_dir, "Acc/HF.bin"),
-                            "-m", params_base.v_mod_1d_dir, "--duration", params_base.sim_duration, "--dt", params_base.hf_dt]
+        arguments_for_hf = [params_base.hf_slips[0], params_base.FD_STATLIST, os.path.join(hf_sim_dir, "Acc/HF.bin"),
+                            "-m", params_base_bb.hf_v_model, "--duration", params_base.sim_duration, "--dt", params_base.hf_dt]
 
         hf_submit_command += " ".join(arguments_for_hf)
         if hf_option == 1:
