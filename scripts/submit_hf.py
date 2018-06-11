@@ -5,6 +5,7 @@ import sys
 
 sys.path.append(os.path.abspath(os.path.curdir))
 import params
+import params_base
 import params_base_bb
 
 import fnmatch
