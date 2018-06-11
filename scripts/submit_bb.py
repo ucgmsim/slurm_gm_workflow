@@ -8,7 +8,6 @@ from os.path import basename
 
 sys.path.append(os.path.abspath(os.path.curdir))
 import params
-import params_base
 import params_base_bb
 
 # datetime related
@@ -73,10 +72,10 @@ def write_sl_script(bb_sim_dirs, sim_dir, hf_run_name, srf_name, sl_template_pre
     str_template = ''.join(template)
     if binary:
         submit_command = "srun python $BINPROCESS/bb_sim.py "
-        arguments = [os.path.join(params_base.lf_sim_root_dir, srfname + "/OutBin"), params_base.vel_mod_dir,
-                     os.path.join(hf_sim_dir, "Acc/HF.bin"),
-                     params_base.stat_vs_est, os.path.join(params_base.bb_dir, hf_run_name + "/Acc/BB.bin"),
-                     params_base.flo]
+        arguments = [os.path.join(params.lf_sim_root_dir, srf_name + "/OutBin"), params.vel_mod_dir,
+                     os.path.join(params.hf_dir, hf_run_name, srf_name, "Acc/HF.bin"),
+                     params.stat_vs_est, os.path.join(params.bb_dir, hf_run_name, srf_name, "Acc/BB.bin"),
+                     params.flo]
         txt = str_template.replace("{{bb_submit_command}}", submit_command + " ".join(arguments))
     else:
         txt = str_template.replace("{{bb_submit_command}}",
