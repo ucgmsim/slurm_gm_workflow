@@ -3,7 +3,7 @@
 from os import path
 
 from qcore.geo import *
-from qcore.shared import *
+from shared_workflow.shared import *
 import sys
 import os
 

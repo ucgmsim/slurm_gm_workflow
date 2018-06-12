@@ -13,13 +13,11 @@ import sys
 import os
 sys.path.append(os.path.abspath(os.path.curdir))
 from subprocess import call, Popen, PIPE
-from qcore.shared import *
+from shared_workflow.shared import *
 from params import *
 from params_base_bb import *
 
 import glob
-
-sys.path.append('/nesi/projects/nesi00213/qcore')
 
 from shared_workflow import remaining_stations
 

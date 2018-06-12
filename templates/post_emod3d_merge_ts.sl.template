@@ -18,7 +18,7 @@ time srun $exe filelist=$filelist outfile=$OUTFILE nfiles=$NFILES
 
 timestamp=`date +%Y%m%d_%H%M%S`
 #test before update
-res=`$gmsim/deploy/slurm_gm_workflow/scripts/test_merge_ts.sh {{sim_dir}} {{srf_name}}`
+res=`$gmsim/workflow/scripts/test_merge_ts.sh {{sim_dir}} {{srf_name}}`
 if [[ $? == 0 ]]; then
     #passed
     echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} merge_ts completed --j $SLURM_JOBID" >> {{mgmt_db_location}}/mgmt_db_queue/$timestamp\_$SLURM_JOBID

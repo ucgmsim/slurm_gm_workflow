@@ -15,7 +15,7 @@ srun python  $BINPROCESS/match_seismo-mpi.py $bb_sim_dir
 date
 timestamp=`date +%Y%m%d_%H%M%S`
 #test before update
-res=`$gmsim/deploy/slurm_gm_workflow/scripts/test_bb.sh {{sim_dir}} {{hf_run_name}} {{srf_name}}`
+res=`$gmsim/workflow/scripts/test_bb.sh {{sim_dir}} {{hf_run_name}} {{srf_name}}`
 if [[ $? == 0 ]]; then
     #passed
     echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} BB completed --j $SLURM_JOBID" >> {{mgmt_db_location}}/mgmt_db_queue/$timestamp\_$SLURM_JOBID

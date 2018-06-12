@@ -3,7 +3,7 @@ from scripts.management import create_mgmt_db
 from scripts.management import update_mgmt_db
 from subprocess import call
 
-import qcore.load_config as ldcfg
+import shared_workflow.load_config as ldcfg
 
 import argparse
 import os
@@ -21,14 +21,14 @@ def submit_task(sim_dir, proc_type, run_name):
     #idenfity the proc_type, EMOD3D:1, merge_ts:2, winbin_aio:3, HF:4, BB:5
     if proc_type == 1:
         #EMOD 3D
-        call("python $gmsim/workflow/scripts/submit_emod3d.py --auto --srf %s"%run_name, shell=True)
         print "python $gmsim/workflow/scripts/submit_emod3d.py --auto --srf %s"%run_name
+        call("python $gmsim/workflow/scripts/submit_emod3d.py --auto --srf %s"%run_name, shell=True)
     if proc_type == 2:
-        call("python $gmsim/workflow/scripts/submit_post_emod3d.py --auto --merge_ts --srf %s"%run_name, shell=True)
         print "python $gmsim/workflow/scripts/submit_post_emod3d.py --auto --merge_ts --srf %s"%run_name
+        call("python $gmsim/workflow/scripts/submit_post_emod3d.py --auto --merge_ts --srf %s"%run_name, shell=True)
     if proc_type == 3:
-        call("python $gmsim/workflow/scripts/submit_post_emod3d.py --auto --winbin_aio --srf %s"%run_name, shell=True)
         print "python $gmsim/workflow/scripts/submit_post_emod3d.py --auto --winbin_aio --srf %s"%run_name
+        call("python $gmsim/workflow/scripts/submit_post_emod3d.py --auto --winbin_aio --srf %s"%run_name, shell=True)
     if proc_type == 4:
         #run the submit_post_emod3d before install_bb and submit_hf
         #TODO: fix this strange logic in the actual workflow
@@ -42,13 +42,13 @@ def submit_task(sim_dir, proc_type, run_name):
             print "python $gmsim/workflow/scripts/install_bb.py --v1d %s --hf_stat_vs_ref %s"%(default_1d_mod,default_hf_vs30_ref)
             call("python $gmsim/workflow/scripts/install_bb.py --v1d %s --hf_stat_vs_ref %s"%(default_1d_mod,default_hf_vs30_ref), shell=True)
         else:
-            call("python $gmsim/workflow/scripts/install_bb.py --v1d %s"%default_1d_mod, shell=True)
             print "python $gmsim/workflow/scripts/install_bb.py --v1d %s"%default_1d_mod
-        call("python $gmsim/workflow/scripts/submit_hf.py --auto --srf %s"%run_name, shell=True)
+            call("python $gmsim/workflow/scripts/install_bb.py --v1d %s"%default_1d_mod, shell=True)
         print "python $gmsim/workflow/scripts/submit_hf.py --auto --srf %s"%run_name
+        call("python $gmsim/workflow/scripts/submit_hf.py --auto --srf %s"%run_name, shell=True)
     if proc_type == 5:
+        print "python $gmsim/workflow/scripts/submit_hf.py --auto --srf %s"%run_name
         call("python $gmsim/workflow/scripts/submit_bb.py --auto --srf %s"%run_name, shell=True)
-        print "python $gmsim/workflow/scripts/submit_bb.py --auto --srf %s"%run_name
                 
     
     
@@ -81,7 +81,7 @@ def main():
         #parse and check for variables in config
         try:
             print "!!!!!!!!!!!!!",args.config
-            qcore_cfg = ldcfg.load(args.config)
+            qcore_cfg = ldcfg.load(directory=os.path.dirname(args.config),cfg_name=os.path.basename(args.config))
             print qcore_cfg
         except Exception as e:
             print e

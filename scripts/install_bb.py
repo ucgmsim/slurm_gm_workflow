@@ -20,7 +20,7 @@ finally:
 
 import glob
 # TODO: make sure that qcore is in the PYTHONPATH
-from qcore.shared import *
+from shared_workflow.shared import *
 
 params_bb_uncertain = 'params_bb_uncertain.py'
 params_uncertain='params_uncertain.py'

@@ -26,7 +26,7 @@ import argparse
 
 # TODO: move this to qcore library
 from temp_shared import resolve_header
-from qcore.shared import *
+from shared_workflow.shared import *
 
 
 from management import create_mgmt_db

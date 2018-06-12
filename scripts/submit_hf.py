@@ -12,8 +12,8 @@ import fnmatch
 from math import ceil
 import argparse
 
-from qcore.srf import get_nsub_stoch
-from qcore.shared import get_stations
+import qcore.srf
+import qcore.shared
 #default values
 default_version='run_hf_mpi'
 default_core="80"
@@ -34,7 +34,7 @@ from management import update_mgmt_db
 
 # TODO: move this to qcore library
 from temp_shared import resolve_header
-from qcore.shared import *
+from shared_workflow.shared import *
 
 def confirm(q):
     show_horizontal_line()
@@ -194,11 +194,11 @@ if __name__ == '__main__':
         if args.est_wct != None:
             timesteps= float(params.sim_duration)/float(params.hf_dt)
             #get station count
-            station_count = len(get_stations(params.FD_STATLIST))
+            station_count = len(qcore.shared.get_stations(params.FD_STATLIST))
             print station_count
             #get the number of sub faults for estimation
             #TODO:make it read through the whole list instead of assuming every stoch has same size
-            sub_fault_count,sub_fault_area=get_nsub_stoch(params.hf_slips[counter_srf],get_area=True)
+            sub_fault_count,sub_fault_area=qcore.srf.get_nsub_stoch(params.hf_slips[counter_srf],get_area=True)
             print "sb:",sub_fault_area
             est_chours = est_core_hours_hf(timesteps,station_count,sub_fault_area,default_hf_coef)
             print est_chours
