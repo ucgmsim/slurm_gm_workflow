@@ -75,7 +75,7 @@ def write_sl_script(bb_sim_dirs, sim_dir, hf_run_name, srf_name, sl_template_pre
         arguments = [os.path.join(params.lf_sim_root_dir, srf_name + "/OutBin"), params.vel_mod_dir,
                      os.path.join(params.hf_dir, hf_run_name, srf_name, "Acc/HF.bin"),
                      params.stat_vs_est, os.path.join(params.bb_dir, hf_run_name, srf_name, "Acc/BB.bin"),
-                     params.flo]
+                     "--flo", params.flo]
         txt = str_template.replace("{{bb_submit_command}}", submit_command + " ".join(arguments))
     else:
         txt = str_template.replace("{{bb_submit_command}}",
