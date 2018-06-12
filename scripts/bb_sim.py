@@ -32,6 +32,7 @@ if is_master:
     arg('hf_file', help = 'HF file path')
     arg('vsite_file', help = 'Vs30 station file')
     arg('out_file', help = 'BB output file path')
+    arg('--flo', help = 'low/high frequency cutoff', type = float)
     try:
         args = parser.parse_args()
     except SystemExit:
@@ -66,13 +67,19 @@ bb_nt = int(round(max(lf.duration, hf.duration) / bb_dt + d_nt))
 n2 = nt2n(bb_nt)
 d_ts = np.zeros(d_nt)
 head_total = HEAD_SIZE + lf.stations.size * HEAD_STAT
+if args.flo is None:
+    # min_vs / (5.0 * hh)
+    args.flo = 0.5 / (5.0 * lf.hh)
 
-# load velocity model
-sys.path.insert(0, args.lf_vm)
-from params_vel import nx, ny, nz
-lfvs = np.memmap('%s/vs3dfile.s' % (args.lf_vm), dtype = '<f4', \
-                 shape = (int(ny), int(nz), int(nx))) \
-                [lf.stations.y, 0, lf.stations.x] * 1000.0
+# vs30ref from velocity model
+# with open('%s/params_vel.json' % (args.lf_vm), 'r') as j:
+#     vm_conf = json.load(j)
+# lfvs = np.memmap('%s/vs3dfile.s' % (args.lf_vm), dtype = '<f4', \
+#                  shape = (vm_conf['ny'], vm_conf['nz'], vm_conf['nx'])) \
+#                 [lf.stations.y, 0, lf.stations.x] * 1000.0
+# fixed vs30ref
+lfvs = np.ones(lf.stations.size) * 500.0
+
 # load vs30ref
 try:
     vsites = np.vectorize(dict(np.loadtxt(args.vsite_file, \
@@ -120,10 +127,10 @@ for stat in my_stations:
     for c in xrange(3):
         hf_acc[:, c] = bwfilter(ampdeamp(hf_acc[:, c], \
                                 cb_amp(bb_dt, n2, stat.vs, vsite, stat.vs, \
-                                pga[c]), amp = True), bb_dt, 1.0, 'highpass')
+                                pga[c]), amp = True), bb_dt, args.flo, 'highpass')
         lf_acc[:, c] = bwfilter(ampdeamp(lf_acc[:, c], \
                                 cb_amp(bb_dt, n2, stat_lfvs, vsite, stat_lfvs, \
-                                pga[c]), amp = True), bb_dt, 1.0, 'lowpass')
+                                pga[c]), amp = True), bb_dt, args.flo, 'lowpass')
         bb_acc[:, c] = (np.hstack((d_ts, hf_acc[:, c])) \
                         + np.hstack((lf_acc[:, c], d_ts))) / 981.0
     bb_acc.tofile(bin_data)

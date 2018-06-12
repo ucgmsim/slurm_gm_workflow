@@ -10,7 +10,9 @@ timestamp=`date +%Y%m%d_%H%M%S`
 echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} BB running --j $SLURM_JOBID" >> {{mgmt_db_location}}/mgmt_db_queue/$timestamp\_$SLURM_JOBID
 
 echo "Computing BB"
-srun python  $BINPROCESS/match_seismo-mpi.py $bb_sim_dir
+# srun python  $BINPROCESS/match_seismo-mpi.py $bb_sim_dir
+# srun python $BINPROCESS/bb_sim.py {{LF_bin_out_dir}} {{velocity_model_dir}} {{HF_binary_out}} {{vs30_ll}} {{BB_out_name}} {{flo}}
+{{bb_submit_command}}
 
 date
 timestamp=`date +%Y%m%d_%H%M%S`
@@ -22,9 +24,3 @@ if [[ $? == 0 ]]; then
 else
     echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} BB failed --j $SLURM_JOBID --error '$res'" >> {{mgmt_db_location}}/mgmt_db_queue/$timestamp\_$SLURM_JOBID
 fi
-##echo "Making .tar out of Vel and Acc files"
-##here=`pwd`
-##cd $bb_sim_dir
-##tar cf BB_$rup_mod.tar Vel Acc
-##mv BB_$rup_mod.tar $here
-##date
