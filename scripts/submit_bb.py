@@ -71,7 +71,8 @@ def write_sl_script(bb_sim_dirs, sim_dir, hf_run_name, srf_name, sl_template_pre
     template = f_template.readlines()
     str_template = ''.join(template)
     if binary:
-        submit_command = "srun python $BINPROCESS/bb_sim.py "
+        create_directory = "mkdir -p " + os.path.join(params.bb_dir, hf_run_name, srf_name, "Acc") + "\n"
+        submit_command = create_directory + "srun python $BINPROCESS/bb_sim.py "
         arguments = [os.path.join(params.lf_sim_root_dir, srf_name + "/OutBin"), params.vel_mod_dir,
                      os.path.join(params.hf_dir, hf_run_name, srf_name, "Acc/HF.bin"),
                      params.stat_vs_est, os.path.join(params.bb_dir, hf_run_name, srf_name, "Acc/BB.bin"),
