@@ -9,8 +9,6 @@ echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_loca
 source machine_env.sh
 
 date
-# srun python  $BINPROCESS/hfsims-stats-mpi.py {{hf_sim_dir}} {{hf_option}}
-# srun python $BINPROCESS/hf_sim.py {{HF_stoch_file}} {{stat_file}} {{HF_binary_output}} -m {{1D_velocity_model}} --duration {{duration}} --dt {{HF_dt}} {{HF_mode}}
 {{hf_submit_command}}
 date
 
