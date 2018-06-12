@@ -32,7 +32,7 @@ if is_master:
     arg('hf_file', help = 'HF file path')
     arg('vsite_file', help = 'Vs30 station file')
     arg('out_file', help = 'BB output file path')
-    arg('flo', type=float, default=1.0, help="Frequency cut, defaults to 1.0 if nothing given")
+    arg('--flo', help = 'low/high frequency cutoff', type = float)
     try:
         args = parser.parse_args()
     except SystemExit:
@@ -67,6 +67,9 @@ bb_nt = int(round(max(lf.duration, hf.duration) / bb_dt + d_nt))
 n2 = nt2n(bb_nt)
 d_ts = np.zeros(d_nt)
 head_total = HEAD_SIZE + lf.stations.size * HEAD_STAT
+if args.flo is None:
+    # min_vs / (5.0 * hh)
+    args.flo = 0.5 / (5.0 * lf.hh)
 
 # load velocity model
 # sys.path.insert(0, args.lf_vm)
