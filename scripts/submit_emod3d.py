@@ -12,7 +12,7 @@ from management import update_mgmt_db
 
 #sys.path.append(os.path.abspath(os.path.curdir))
 
-from qcore.shared import *
+from shared_workflow.shared import *
 import estimate_emod3d as est_e3d
 
 #datetime related
@@ -125,6 +125,8 @@ if __name__ == '__main__':
         created_scripts = []
         if args.auto == True:
             submit_yes = True
+        elif args.set_params_only == True:
+            submit_yes = False
         else:
             submit_yes = confirm("Also submit the job for you?")
         for srf in params.srf_files:

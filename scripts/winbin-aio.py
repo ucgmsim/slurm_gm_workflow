@@ -32,8 +32,8 @@ sys.path.append(os.path.abspath(os.path.curdir))
 
 import numpy as np
 
-from qcore.shared import *
-from shared_bin import *
+from shared_workflow.shared import *
+from shared_workflow.shared_bin import *
 
 from params_base import *
 from shared_workflow import remaining_stations

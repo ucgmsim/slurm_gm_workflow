@@ -12,21 +12,19 @@ import fnmatch
 from math import ceil
 import argparse
 
-from qcore.srf import get_nsub_stoch
-from qcore.shared import get_stations
-
-# default values
-default_version = 'run_hf_mpi'
-default_core = "80"
-default_run_time = "00:30:00"
-default_memory = "16G"
-default_account = 'nesi00213'
-# TODO:this number needs to find a way to update more frequently, based on stored WCT.
-default_hf_coef = 1741000000
-default_scale = 1.2
-# datetime related
-from datetime import datetime
-
+import qcore.srf
+import qcore.shared
+#default values
+default_version='run_hf_mpi'
+default_core="80"
+default_run_time="00:30:00"
+default_memory="16G"
+default_account='nesi00213'
+#TODO:this number needs to find a way to update more frequently, based on stored WCT.
+default_hf_coef=1741000000
+default_scale=1.2
+#datetime related
+from datetime import datetime 
 timestamp_format = "%Y%m%d_%H%M%S"
 timestamp = datetime.now().strftime(timestamp_format)
 
@@ -35,7 +33,7 @@ from management import update_mgmt_db
 
 # TODO: move this to qcore library
 from temp_shared import resolve_header
-from qcore.shared import *
+from shared_workflow.shared import *
 
 
 def confirm(q):
@@ -208,15 +206,15 @@ if __name__ == '__main__':
             continue
             # --est_wct used, automatically assign run_time using estimation
         if args.est_wct != None:
-            timesteps = float(params.sim_duration) / float(params.hf_dt)
-            # get station count
-            station_count = len(get_stations(params.FD_STATLIST))
+            timesteps= float(params.sim_duration)/float(params.hf_dt)
+            #get station count
+            station_count = len(qcore.shared.get_stations(params.FD_STATLIST))
             print station_count
-            # get the number of sub faults for estimation
-            # TODO:make it read through the whole list instead of assuming every stoch has same size
-            sub_fault_count, sub_fault_area = get_nsub_stoch(params.hf_slips[counter_srf], get_area=True)
-            print "sb:", sub_fault_area
-            est_chours = est_core_hours_hf(timesteps, station_count, sub_fault_area, default_hf_coef)
+            #get the number of sub faults for estimation
+            #TODO:make it read through the whole list instead of assuming every stoch has same size
+            sub_fault_count,sub_fault_area=qcore.srf.get_nsub_stoch(params.hf_slips[counter_srf],get_area=True)
+            print "sb:",sub_fault_area
+            est_chours = est_core_hours_hf(timesteps,station_count,sub_fault_area,default_hf_coef)
             print est_chours
             print "The estimated time is currently not so accurate."
             run_time = est_wct(est_chours, ncore, default_scale)

@@ -19,7 +19,7 @@ from os.path import basename
 
 sys.path.append(os.path.abspath(os.path.curdir))
 from shutil import copyfile
-from qcore import shared
+from shared_workflow import shared
 
 params_uncertain = 'params_uncertain.py'
 try:

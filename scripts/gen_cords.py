@@ -5,7 +5,7 @@ import sys
 import os.path
 
 sys.path.append(os.path.abspath(os.path.curdir))
-from qcore.shared import *
+from shared_workflow.shared import *
 from shared_workflow import load_config as ldcfg
 workflow_config = ldcfg.load(os.path.dirname(os.path.realpath(__file__)),"workflow_config.json")
 tools_path = workflow_config['tools_path']

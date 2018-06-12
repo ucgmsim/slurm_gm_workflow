@@ -13,7 +13,7 @@ import argparse
 from management import create_mgmt_db
 
 # TODO: namespacing
-from qcore.shared import *
+from shared_workflow.shared import *
 print 
 workflow_config = ldcfg.load(os.path.dirname(os.path.realpath(__file__)),"workflow_config.json")
 workflow_root=workflow_config['gm_sim_workflow_root']

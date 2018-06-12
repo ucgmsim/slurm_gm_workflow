@@ -17,7 +17,7 @@ import math
 sys.path.append(os.path.abspath(os.path.curdir))
 from subprocess import call, Popen, PIPE
 
-from qcore.shared import *
+from shared_workflow.shared import *
 from params import *
 from params_base_bb import *
 
@@ -25,7 +25,7 @@ import glob
 
 # TODO: add qcore path in a better way
 sys.path.append('/projects/nesi00213/qcore')
-from qcore import parallel_executor
+from scripts import parallel_executor
 from shared_workflow import remaining_stations
 
 comm = MPI.COMM_WORLD

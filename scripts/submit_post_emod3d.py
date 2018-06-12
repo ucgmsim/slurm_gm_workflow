@@ -8,7 +8,7 @@ import math
 # TODO: remove this once temp_shared is gone
 from temp_shared import resolve_header
 
-from qcore.shared import *
+from shared_workflow.shared import *
 
 sys.path.append(os.getcwd())
 from params_base import tools_dir

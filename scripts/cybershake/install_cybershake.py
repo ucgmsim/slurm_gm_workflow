@@ -3,13 +3,13 @@
 import os
 import sys
 import glob
-import qcore.load_config as ldcfg
+import shared_workflow.load_config as ldcfg
 
 import argparse
 
 from scripts import install
 from scripts.management import create_mgmt_db
-from qcore.shared import *
+from shared_workflow.shared import *
 
 def main():
     parser = argparse.ArgumentParser()
@@ -20,7 +20,7 @@ def main():
     args = parser.parse_args()
     try:
         #try to read the config file
-        qcore_cfg = ldcfg.load(args.config)
+        qcore_cfg = ldcfg.load(os.path.dirname(args.config),os.path.basename(args.config))
     except:
         print "Error while parsing the config file, please double check inputs."
         sys.exit()
