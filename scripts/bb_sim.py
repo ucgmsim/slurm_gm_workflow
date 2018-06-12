@@ -71,14 +71,14 @@ if args.flo is None:
     # min_vs / (5.0 * hh)
     args.flo = 0.5 / (5.0 * lf.hh)
 
-# load velocity model
-# sys.path.insert(0, args.lf_vm)
-# from params_vel import nx, ny, nz
+# vs30ref from velocity model
+# with open('%s/params_vel.json' % (args.lf_vm), 'r') as j:
+#     vm_conf = json.load(j)
 # lfvs = np.memmap('%s/vs3dfile.s' % (args.lf_vm), dtype = '<f4', \
-#                  shape = (int(ny), int(nz), int(nx))) \
+#                  shape = (vm_conf['ny'], vm_conf['nz'], vm_conf['nx'])) \
 #                 [lf.stations.y, 0, lf.stations.x] * 1000.0
-# Mimic the fact that we have vs30ref = 500.
-lfvs = [500.] * lf.stations.size
+# fixed vs30ref
+lfvs = np.ones(lf.stations.size) * 500.0
 
 # load vs30ref
 try:
