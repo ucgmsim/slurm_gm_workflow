@@ -49,7 +49,7 @@ if is_master:
     # HF IN, line 3
     arg('out_file', help = 'file path for HF output')
     # ARG 0
-    arg('--sim-bin', help = 'high frequency binary (modified for binary out)', \
+    arg('--sim_bin', help = 'high frequency binary (modified for binary out)', \
         default = os.path.join(qconfig['tools_dir'], 'hb_high_v5.4.5_binmod'))
     arg('--t-sec', help = 'high frequency output start time', \
         type = float, default = 0.0)

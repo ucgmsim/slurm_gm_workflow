@@ -44,11 +44,11 @@ def submit_task(sim_dir, proc_type, run_name):
         else:
             print "python $gmsim/workflow/scripts/install_bb.py --v1d %s"%default_1d_mod
             call("python $gmsim/workflow/scripts/install_bb.py --v1d %s"%default_1d_mod, shell=True)
-        print "python $gmsim/workflow/scripts/submit_hf.py --auto --srf %s"%run_name
-        call("python $gmsim/workflow/scripts/submit_hf.py --auto --srf %s"%run_name, shell=True)
+        print "python $gmsim/workflow/scripts/submit_hf.py --binary --auto --srf %s"%run_name
+        call("python $gmsim/workflow/scripts/submit_hf.py --binary --auto --srf %s"%run_name, shell=True)
     if proc_type == 5:
-        print "python $gmsim/workflow/scripts/submit_hf.py --auto --srf %s"%run_name
-        call("python $gmsim/workflow/scripts/submit_bb.py --auto --srf %s"%run_name, shell=True)
+        print "python $gmsim/workflow/scripts/submit_bb.py --binary --auto --srf %s"%run_name
+        call("python $gmsim/workflow/scripts/submit_bb.py --binary --auto --srf %s"%run_name, shell=True)
                 
     
     
