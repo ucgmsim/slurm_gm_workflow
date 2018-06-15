@@ -13,11 +13,11 @@ default_n_runs = 20
 default_1d_mod = "/nesi/transit/nesi00213/VelocityModel/Mod-1D/Cant1D_v2-midQ_leer.1d"
 default_hf_vs30_ref = None
 
-def submit_task(sim_dir, proc_type, run_name):
+def submit_task(sim_dir, proc_type, run_name,db,binary_mode=True):
     #TODO: using shell call is EXTREMELY undesirable. fix this in near future(fundamentally)
     #change the working directory to the sim_dir
     os.chdir(sim_dir)
-    print "sim_dir:%s"%sim_dir
+#    print "sim_dir:%s"%sim_dir
     #idenfity the proc_type, EMOD3D:1, merge_ts:2, winbin_aio:3, HF:4, BB:5
     if proc_type == 1:
         #EMOD 3D
@@ -27,8 +27,13 @@ def submit_task(sim_dir, proc_type, run_name):
         print "python $gmsim/workflow/scripts/submit_post_emod3d.py --auto --merge_ts --srf %s"%run_name
         call("python $gmsim/workflow/scripts/submit_post_emod3d.py --auto --merge_ts --srf %s"%run_name, shell=True)
     if proc_type == 3:
-        print "python $gmsim/workflow/scripts/submit_post_emod3d.py --auto --winbin_aio --srf %s"%run_name
-        call("python $gmsim/workflow/scripts/submit_post_emod3d.py --auto --winbin_aio --srf %s"%run_name, shell=True)
+        #skipping winbin_aio if running binary mode
+        if binary_mode == True:
+            #update the mgmt_db
+            update_mgmt_db.update_db(db,'winbin_aio','completed',run_name=run_name)    
+        else:
+            print "python $gmsim/workflow/scripts/submit_post_emod3d.py --auto --winbin_aio --srf %s"%run_name
+            call("python $gmsim/workflow/scripts/submit_post_emod3d.py --auto --winbin_aio --srf %s"%run_name, shell=True)
     if proc_type == 4:
         #run the submit_post_emod3d before install_bb and submit_hf
         #TODO: fix this strange logic in the actual workflow
@@ -95,6 +100,8 @@ def main():
             #TODO:bad hack, fix this when possible (with parsing)
             global default_hf_vs30_ref
             default_hf_vs30_ref =  qcore_cfg['hf_stat_vs_ref']
+        if 'binary_mode' in qcore_cfg:
+            binary_mode = qcore_cfg['binary_mode']
         #append more logic here if more variables are requested 
 
 
@@ -125,7 +132,7 @@ def main():
             #non-cybershake, db is the same loc as sim_dir
             sim_dir = os.path.join(os.path.join(mgmt_db_location,"Runs"), vm_name)
         #submit the job
-        submit_task(sim_dir, proc_type, run_name)
+        submit_task(sim_dir, proc_type, run_name, db, binary_mode)
        
         submit_task_count = submit_task_count + 1
         

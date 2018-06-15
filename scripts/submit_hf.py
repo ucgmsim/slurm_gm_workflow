@@ -108,6 +108,12 @@ def write_sl_script(hf_sim_dir, sim_dir, hf_run_name, stoch_name, sl_template_pr
     txt = txt.replace("{{hf_submit_command}}", hf_submit_command)
     txt = txt.replace("{{sim_dir}}", sim_dir).replace("{{hf_run_name}}", hf_run_name).replace("{{srf_name}}",
                                                                                               stoch_name)
+    #replacing the name of test scipts
+    if binary:
+        txt = txt.replace("{{test_hf_script}}","test_hf_binary.sh")
+    else:
+        txt = txt.replace("{{test_hf_script}}","test_hf_ascii.sh")
+
     variation = stoch_name.replace('/', '__')
     print variation
 

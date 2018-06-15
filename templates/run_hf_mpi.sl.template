@@ -14,7 +14,7 @@ date
 
 timestamp=`date +%Y%m%d_%H%M%S`
 #test before update
-res=`$gmsim/workflow/scripts/test_hf.sh {{sim_dir}} {{hf_run_name}} {{srf_name}}`
+res=`$gmsim/workflow/scripts/{{test_hf_script}} {{sim_dir}} {{hf_run_name}} {{srf_name}}`
 if [[ $? == 0 ]]; then
     #passed
     echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} HF completed --j $SLURM_JOBID" >> {{mgmt_db_location}}/mgmt_db_queue/$timestamp\_$SLURM_JOBID

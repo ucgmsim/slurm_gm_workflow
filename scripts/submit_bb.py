@@ -90,6 +90,12 @@ def write_sl_script(bb_sim_dirs, sim_dir, hf_run_name, srf_name, sl_template_pre
     txt = txt.replace("{{mgmt_db_location}}", mgmt_db_location)
     txt = txt.replace("{{sim_dir}}", sim_dir).replace("{{hf_run_name}}", hf_run_name).replace("{{srf_name}}", srf_name)
 
+    #replace the name of test script
+    if binary:
+        txt = txt.replace("{{test_bb_script}}","test_bb_binary.sh")
+    else:
+        txt = txt.replace("{{test_bb_script}}","test_bb_ascii.sh")
+
     fname_sl_script = '%s_%s_%s.sl' % (sl_template_prefix, variation, timestamp)
     f_sl_script = open(fname_sl_script, 'w')
 
