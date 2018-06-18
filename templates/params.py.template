@@ -133,7 +133,8 @@ hf_prefix = 'hf'
 # duration of HF sim
 hf_t_len = sim_duration #'100' # seconds
 # HF simulation step. should be small
-hf_dt = 0.005 # '0.005' # seconds
+# this is moved to params_base.py
+# hf_dt = 0.005 # '0.005' # seconds
 # slip model
 # 1D velocity model
 # for western US, check applicability to NZ

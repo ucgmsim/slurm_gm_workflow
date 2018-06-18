@@ -40,6 +40,7 @@ latest_ll = 'non_uniform_with_real_stations_latest'
 #default values
 #TODO: after enabling different dt for LF and HF, this might need to change
 default_dt = 0.005
+default_hf_dt = 0.005
 
 def q_accept_custom_rupmodel():
     show_horizontal_line()
@@ -222,7 +223,7 @@ def q_final_confirm(run_name, yes_statcords, yes_model_params):
 
 def action(sim_dir, event_name, run_name, run_dir, vel_mod_dir, srf_dir, srf_stoch_pairs, params_vel_path,
            stat_file_path, vs30_file_path, vs30ref_file_path, MODEL_LAT, MODEL_LON, MODEL_ROT, hh, nx, ny, nz, sufx,
-           sim_duration, flo, vel_mod_params_dir, yes_statcords, yes_model_params,dt = default_dt):
+           sim_duration, flo, vel_mod_params_dir, yes_statcords, yes_model_params,dt = default_dt, hf_dt = default_hf_dt):
     lf_sim_root_dir, hf_dir, bb_dir, figures_dir = os.path.join(sim_dir, "LF"), os.path.join(sim_dir,
                                                                                              "HF"), os.path.join(
         sim_dir, "BB"), os.path.join(sim_dir, "Figures")
@@ -306,6 +307,7 @@ def action(sim_dir, event_name, run_name, run_dir, vel_mod_dir, srf_dir, srf_sto
         f.write("sufx = '%s'\n" % sufx)
         f.write("sim_duration = '%s'\n" % sim_duration)
         f.write("dt = %.4f\n" % dt)
+        f.write("hf_dt = %.4f\n" % hf_dt)
         f.write("flo = '%s'\n" % flo)
         f.write("\n#dir for vel_mod \n")
         f.write("vel_mod_params_dir = '%s'\n" % vel_mod_params_dir)

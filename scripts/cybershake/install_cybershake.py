@@ -11,6 +11,9 @@ from scripts import install
 from scripts.management import create_mgmt_db
 from shared_workflow.shared import *
 
+default_dt = 0.005
+default_hf_dt = 0.005
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("path_cybershake",type=str,default=None,help="the path to the root of a specific version cybershake.")
@@ -44,7 +47,16 @@ def main():
     params_vel = 'params_vel.py'
 
     #vars
-    dt = qcore_cfg['dt']
+    if 'dt' in qcore_cfg:
+        dt = qcore_cfg['dt']
+    else:
+        dt = default_dt
+
+    if 'hf_dt' in qcore_cfg:
+        hf_dt = qcore_cfg['hf_dt']
+    else:
+        hf_dt = default_hf_dt
+    
     source = args.vm
 
     #this variable has to be empty
@@ -86,7 +98,7 @@ def main():
     #srf_dir = srf_root_dir
 
 
-    install.action(sim_dir,event_name,run_name, run_dir, vel_mod_dir, srf_root_dir, srf_stoch_pairs,params_vel_path,stat_file_path, vs30_file_path, vs30ref_file_path, MODEL_LAT,MODEL_LON,MODEL_ROT,hh,nx,ny,nz,sufx,sim_duration,flo,vel_mod_params_dir,yes_statcords, yes_model_params, dt)
+    install.action(sim_dir,event_name,run_name, run_dir, vel_mod_dir, srf_root_dir, srf_stoch_pairs,params_vel_path,stat_file_path, vs30_file_path, vs30ref_file_path, MODEL_LAT,MODEL_LON,MODEL_ROT,hh,nx,ny,nz,sufx,sim_duration,flo,vel_mod_params_dir,yes_statcords, yes_model_params, dt, hf_dt)
 
     create_mgmt_db.create_mgmt_db([], path_cybershake, srf_files=srf_files)
     with open(os.path.join(sim_dir,"params_base.py"),"a") as f:
