@@ -20,6 +20,6 @@ do
 
     cmd="python $gmsim/workflow/scripts/cybershake/auto_submit.py $path_sim_root --config $cybershake_cfg"
     echo $cmd
-    ssh kuep "$cmd"
+    ssh kupe "$cmd"
     sleep $interval
 done
