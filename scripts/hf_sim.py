@@ -183,7 +183,11 @@ def run_hf(local_statfile, n_stat, idx_0, velocity_model = args.velocity_model):
     p.wait()
     # edist is the only other variable that HF calculates
     e_dist = np.fromstring(stderr, dtype = 'f4', sep = '\n')
-    assert(e_dist.size == n_stat)
+    try:
+        assert(e_dist.size == n_stat)
+    except AssertionError:
+        print('Expected %d e_dist values, got %d.' % (n_stat, e_dist.size))
+        raise
     return e_dist, vs
 
 # distribute work, must be sequential segments for processes
