@@ -187,6 +187,9 @@ def run_hf(local_statfile, n_stat, idx_0, velocity_model = args.velocity_model):
         assert(e_dist.size == n_stat)
     except AssertionError:
         print('Expected %d e_dist values, got %d.' % (n_stat, e_dist.size))
+        print('Dumping Fortran stderr to hf_err_%d...' % (idx_0))
+        with open('hf_err_%d' % (idx_0), 'w') as e:
+            e.write(stderr)
         comm.Abort()
     return e_dist, vs
 
