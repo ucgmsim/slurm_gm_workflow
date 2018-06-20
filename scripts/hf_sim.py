@@ -187,7 +187,7 @@ def run_hf(local_statfile, n_stat, idx_0, velocity_model = args.velocity_model):
         assert(e_dist.size == n_stat)
     except AssertionError:
         print('Expected %d e_dist values, got %d.' % (n_stat, e_dist.size))
-        raise
+        comm.Abort()
     return e_dist, vs
 
 # distribute work, must be sequential segments for processes
