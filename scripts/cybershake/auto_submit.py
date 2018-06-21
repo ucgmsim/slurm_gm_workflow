@@ -9,7 +9,8 @@ import argparse
 import os
 import sys
 
-default_n_runs = 20 
+default_binary_mode = True
+default_n_runs = 10 
 default_1d_mod = "/nesi/transit/nesi00213/VelocityModel/Mod-1D/Cant1D_v2-midQ_leer.1d"
 default_hf_vs30_ref = None
 
@@ -21,6 +22,11 @@ def submit_task(sim_dir, proc_type, run_name,db,binary_mode=True):
     #idenfity the proc_type, EMOD3D:1, merge_ts:2, winbin_aio:3, HF:4, BB:5
     if proc_type == 1:
         #EMOD 3D
+        lf_sim_dir = os.path.join(sim_dir,"LF/%s"%run_name)
+        if not os.path.isfile(os.path.join(lf_sim_dir,"params_uncertain.py")):
+            print os.path.join(lf_sim_dir,"params_uncertain.py")," missing, creating"
+            call("python $gmsim/workflow/scripts/submit_emod3d.py --set_params_only", shell=True)
+            print "python $gmsim/workflow/scripts/submit_emod3d.py --set_params_only"
         print "python $gmsim/workflow/scripts/submit_emod3d.py --auto --srf %s"%run_name
         call("python $gmsim/workflow/scripts/submit_emod3d.py --auto --srf %s"%run_name, shell=True)
     if proc_type == 2:
@@ -38,17 +44,13 @@ def submit_task(sim_dir, proc_type, run_name,db,binary_mode=True):
         #run the submit_post_emod3d before install_bb and submit_hf
         #TODO: fix this strange logic in the actual workflow
         #see if params_uncertain.py exsist
-        lf_sim_dir = os.path.join(sim_dir,"LF/%s"%run_name)
-        if not os.path.isfile(os.path.join(lf_sim_dir,"params_uncertain.py")):
-            print os.path.join(lf_sim_dir,"params_uncertain.py")," missing, creating"
-            call("python $gmsim/workflow/scripts/submit_emod3d.py --set_params_only --srf %s"%run_name, shell=True)
-            print "python $gmsim/workflow/scripts/submit_emod3d.py --set_params_only --srf %s"%run_name
-        if default_hf_vs30_ref != None:
-            print "python $gmsim/workflow/scripts/install_bb.py --v1d %s --hf_stat_vs_ref %s"%(default_1d_mod,default_hf_vs30_ref)
-            call("python $gmsim/workflow/scripts/install_bb.py --v1d %s --hf_stat_vs_ref %s"%(default_1d_mod,default_hf_vs30_ref), shell=True)
-        else:
-            print "python $gmsim/workflow/scripts/install_bb.py --v1d %s"%default_1d_mod
-            call("python $gmsim/workflow/scripts/install_bb.py --v1d %s"%default_1d_mod, shell=True)
+        if not os.path.isfile(os.path.join(sim_dir,"params_base_bb.py")):
+            if default_hf_vs30_ref != None:
+                print "python $gmsim/workflow/scripts/install_bb.py --v1d %s --hf_stat_vs_ref %s"%(default_1d_mod,default_hf_vs30_ref)
+                call("python $gmsim/workflow/scripts/install_bb.py --v1d %s --hf_stat_vs_ref %s"%(default_1d_mod,default_hf_vs30_ref), shell=True)
+            else:
+                print "python $gmsim/workflow/scripts/install_bb.py --v1d %s"%default_1d_mod
+                call("python $gmsim/workflow/scripts/install_bb.py --v1d %s"%default_1d_mod, shell=True)
         print "python $gmsim/workflow/scripts/submit_hf.py --binary --auto --srf %s"%run_name
         call("python $gmsim/workflow/scripts/submit_hf.py --binary --auto --srf %s"%run_name, shell=True)
     if proc_type == 5:
@@ -74,7 +76,7 @@ def main():
     #cybershake-like simulations store mgmnt_db at different locations
     parser.add_argument('--single_sim', nargs="?", type=str,const=True)
     parser.add_argument('--config',type=str,default=None,help="a path to a config file that constains all the required values.")
-    
+    parser.add_argument('--no_im', action="store_true")
 
     args = parser.parse_args()
     mgmt_db_location = args.run_folder
@@ -102,6 +104,8 @@ def main():
             default_hf_vs30_ref =  qcore_cfg['hf_stat_vs_ref']
         if 'binary_mode' in qcore_cfg:
             binary_mode = qcore_cfg['binary_mode']
+        else:
+            binary_mode = default_binary_mode
         #append more logic here if more variables are requested 
 
 
@@ -122,6 +126,11 @@ def main():
         proc_type = db_task_status[0]
         run_name = db_task_status[1]
         task_state = db_task_status[2]
+
+        #skip im calcs if no_im == true
+        if args.no_im and proc_type == 6:
+            continue
+        
 
         vm_name = get_vmname(run_name)
 
