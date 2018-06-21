@@ -118,10 +118,11 @@ def main():
     
     ntask_to_run = n_runs_max - len(db_tasks)
     submit_task_count = 0
+    task_num=0
     print submit_task_count
     print ntask_to_run
     while submit_task_count != ntask_to_run and submit_task_count < len(runnable_tasks):
-        db_task_status = runnable_tasks[submit_task_count]
+        db_task_status = runnable_tasks[task_num]
         
         proc_type = db_task_status[0]
         run_name = db_task_status[1]
@@ -129,6 +130,7 @@ def main():
 
         #skip im calcs if no_im == true
         if args.no_im and proc_type == 6:
+            task_num = task_num + 1
             continue
         
 
@@ -144,6 +146,7 @@ def main():
         submit_task(sim_dir, proc_type, run_name, db, binary_mode)
        
         submit_task_count = submit_task_count + 1
+        task_num = task_num + 1
         
 
 
