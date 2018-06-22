@@ -100,10 +100,10 @@ def write_sl_script(bb_sim_dirs, sim_dir, hf_run_name, srf_name, sl_template_pre
     f_sl_script = open(fname_sl_script, 'w')
 
     # TODO: change this values to values that make more sense or come from somewhere
-    nb_cpus = "80"
-    run_time = "00:30:00"
+#    nb_cpus = "80"
+#    run_time = "00:30:00"
     job_name = "sim_bb_%s" % variation
-    memory = "16G"
+#    memory = "16G"
     header = resolve_header(account, nb_cpus, run_time, job_name, "slurm", memory, timestamp,
                             job_description="BB calculation", additional_lines="##SBATCH -C avx")
     f_sl_script.write(header)
