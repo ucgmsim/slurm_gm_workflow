@@ -21,7 +21,7 @@ n_proc = '512'
 # works on Windows and POSIX paths
 user_scratch = os.path.join(user_root, 'scratch')
 
-nt = str(int(float(sim_duration)/float(dt)))## cap number of timesteps in simulation, not all timesteps have outputs
+nt = str(int(round(float(sim_duration)/float(dt))))## cap number of timesteps in simulation, not all timesteps have outputs
 
 # how often to save outputs (measured in simulation timesteps)
 DUMP_ITINC = '4000' # nt
