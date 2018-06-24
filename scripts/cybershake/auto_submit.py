@@ -121,7 +121,7 @@ def main():
     task_num=0
     print submit_task_count
     print ntask_to_run
-    while submit_task_count != ntask_to_run and submit_task_count < len(runnable_tasks):
+    while submit_task_count != ntask_to_run and submit_task_count < len(runnable_tasks) and task_num < len(runnable_tasks) :
         db_task_status = runnable_tasks[task_num]
         
         proc_type = db_task_status[0]

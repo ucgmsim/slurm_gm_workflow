@@ -41,8 +41,8 @@ def main():
     run_dir = sim_root_dir 
     user_root = os.path.join(run_dir,'Cybershake')
     stat_file_path= qcore_cfg['stat_file_path']
-    vs30_file_path = stat_file_path.replace('ll','vs30')
-    vs30ref_file_path = stat_file_path.replace('ll','vs30ref')
+    vs30_file_path = stat_file_path.replace('.ll','.vs30')
+    vs30ref_file_path = stat_file_path.replace('.ll','.vs30ref')
 
     params_vel = 'params_vel.py'
 

@@ -588,8 +588,8 @@ def main_remote(cfg):
     stat_file_path = config.get('remote', 'stat_path')
 
     stoch_file_path = srf_file_path.replace('Srf', 'Stoch').replace('srf', 'stoch')
-    vs30_file_path = stat_file_path.replace('ll', 'vs30')
-    vs30ref_file_path = stat_file_path.replace('ll', 'vs30ref')
+    vs30_file_path = stat_file_path.replace('.ll', '.vs30')
+    vs30ref_file_path = stat_file_path.replace('.ll', '.vs30ref')
 
     # test = config.get('remote','test')
     # if test == "":
