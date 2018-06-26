@@ -123,14 +123,14 @@ args = comm.bcast(args, root = master)
 nt = int(round(args.duration / args.dt))
 stations = np.loadtxt(args.station_file, \
                       dtype = [('lon', 'f4'), ('lat', 'f4'), ('name', '|S8')])
-head_total = HEAD_SIZE + HEAD_STAT * stations.shape[0]
+head_total = HEAD_SIZE + HEAD_STAT * stations.size
 
 # initialise output with general metadata
 if is_master:
     with open(args.out_file, mode = 'w+b') as out:
         # save int/bool parameters, rayset must be fixed to length = 4
         fwrs = args.rayset + [0] * (4 - len(args.rayset))
-        np.array([stations.shape[0], nt, args.seed, not args.no_siteamp, \
+        np.array([stations.size, nt, args.seed, not args.no_siteamp, \
                   args.path_dur, len(args.rayset), \
                   fwrs[0], fwrs[1], fwrs[2], fwrs[3], \
                   nbu, ift, nl_skip, ic_flag, args.independent, \
@@ -194,11 +194,11 @@ def run_hf(local_statfile, n_stat, idx_0, velocity_model = args.velocity_model):
     return e_dist, vs
 
 # distribute work, must be sequential segments for processes
-d = stations.shape[0] // size
-r = stations.shape[0] % size
+d = stations.size // size
+r = stations.size % size
 start = rank * d + min(r, rank)
 work = stations[start:start + d + (rank < r)]
-max_nstat = int(math.ceil(stations.shape[0] / float(size)))
+max_nstat = int(math.ceil(stations.size / float(size)))
 
 # process data to give Fortran code
 e_dist = np.empty(max_nstat, dtype = 'f4') * np.nan
@@ -206,14 +206,14 @@ vs = np.empty(max_nstat, dtype = 'f4') * np.nan
 in_stats = mkstemp()[1]
 if args.independent:
     vm = args.velocity_model
-    for s in xrange(work.shape[0]):
+    for s in xrange(work.size):
         if args.site_vm_dir != None:
             vm = os.path.join(args.site_vm_dir, '%s.1d' % (stations[s]['name']))
         np.savetxt(in_stats, work[s:s + 1], fmt = '%f %f %s')
         e_dist[s], vs[s] = run_hf(in_stats, 1, start + s, velocity_model = vm)
 else:
-    for s in xrange(0, work.shape[0], MAX_STATLIST):
-        n_stat = min(MAX_STATLIST, work.shape[0] - s)
+    for s in xrange(0, work.size, MAX_STATLIST):
+        n_stat = min(MAX_STATLIST, work.size - s)
         sidx = slice(s, s + n_stat)
         np.savetxt(in_stats, work[sidx], fmt = '%f %f %s')
         e_dist[sidx], vs[sidx] = run_hf(in_stats, n_stat, start + s)
@@ -230,7 +230,7 @@ comm.Gather(vs, recvbuf, root = master)
 if is_master:
     vs = recvbuf[np.isfinite(recvbuf)]
     # add station metadata to output
-    stat_head = np.zeros(stations.shape, dtype = np.dtype(stations.dtype.descr \
+    stat_head = np.zeros(stations.size, dtype = np.dtype(stations.dtype.descr \
             + [('e_dist', 'f4'), ('vs', 'f4')]))
     stat_head['lon'] = stations['lon']
     stat_head['lat'] = stations['lat']
