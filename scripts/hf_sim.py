@@ -121,7 +121,7 @@ if is_master:
         comm.Abort()
 args = comm.bcast(args, root = master)
 nt = int(round(args.duration / args.dt))
-stations = np.loadtxt(args.station_file, \
+stations = np.loadtxt(args.station_file, ndmin = 1, \
                       dtype = [('lon', 'f4'), ('lat', 'f4'), ('name', '|S8')])
 head_total = HEAD_SIZE + HEAD_STAT * stations.size
 
