@@ -84,7 +84,8 @@ lfvs = np.ones(lf.stations.size) * 500.0
 try:
     vsites = np.vectorize(dict(np.loadtxt(args.vsite_file, \
                                           dtype = [('name', '|S8'), \
-                                                   ('vs30', 'f')])) \
+                                                   ('vs30', 'f')], \
+                                          comments = ('#', '%'))) \
                           .get)(lf.stations.name)
 except TypeError:
     if is_master:
