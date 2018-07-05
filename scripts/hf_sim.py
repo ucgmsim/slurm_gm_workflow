@@ -5,7 +5,7 @@ Simulates high frequency seismograms for stations.
 from argparse import ArgumentParser
 import math
 import os
-from subprocess import call, Popen, PIPE
+from subprocess import Popen, PIPE
 import sys
 from tempfile import mkstemp
 
