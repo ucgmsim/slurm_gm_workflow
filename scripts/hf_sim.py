@@ -128,39 +128,54 @@ head_total = HEAD_SIZE + HEAD_STAT * stations.size
 file_size = head_total + stations.size * nt * N_COMP * FLOAT_SIZE
 
 # initialise output with general metadata
-def initialise():
-    with open(args.out_file, mode = 'w+b') as out:
-        # save int/bool parameters, rayset must be fixed to length = 4
+def initialise(check_only = False):
+    with open(args.out_file, mode = 'rb' if check_only else 'w+b') as out:
+        # int/bool parameters, rayset must be fixed to length = 4
         fwrs = args.rayset + [0] * (4 - len(args.rayset))
-        np.array([stations.size, nt, args.seed, not args.no_siteamp, \
-                  args.path_dur, len(args.rayset), \
-                  fwrs[0], fwrs[1], fwrs[2], fwrs[3], \
-                  nbu, ift, nl_skip, ic_flag, args.independent, \
-                  args.site_vm_dir != None], dtype = 'i4').tofile(out)
-        # save float parameters
-        np.array([args.duration, args.dt, args.t_sec, args.sdrop, args.kappa, \
-                  args.qfexp, args.fmax, flo, fhi, \
-                  args.rvfac, args.rvfac_shal, args.rvfac_deep, \
-                  args.czero, args.calpha, args.mom, args.rupv, args.vs_moho, \
-                  vp_sig, vsh_sig, rho_sig, qs_sig, \
-                  args.fa_sig1, args.fa_sig2, args.rv_sig1], \
-                 dtype = 'f4').tofile(out)
-        # save string parameters
+        i4 = np.array([stations.size, nt, args.seed, not args.no_siteamp, \
+                       args.path_dur, len(args.rayset), \
+                       fwrs[0], fwrs[1], fwrs[2], fwrs[3], \
+                       nbu, ift, nl_skip, ic_flag, args.independent, \
+                       args.site_vm_dir != None], dtype = 'i4')
+        # float parameters
+        f4 = np.array([args.duration, args.dt, args.t_sec, args.sdrop, \
+                       args.kappa, args.qfexp, args.fmax, flo, fhi, \
+                       args.rvfac, args.rvfac_shal, args.rvfac_deep, \
+                       args.czero, args.calpha, args.mom, args.rupv, \
+                       args.vs_moho, vp_sig, vsh_sig, rho_sig, qs_sig, \
+                       args.fa_sig1, args.fa_sig2, args.rv_sig1], dtype = 'f4')
+        # string parameters
         if args.site_vm_dir != None:
             vm = args.site_vm_dir
         else:
             vm = args.velocity_model
-        np.array(map(os.path.basename, [args.stoch_file, vm]), \
-                dtype = '|S64').tofile(out)
-        # store station metadata
-        out.seek(HEAD_SIZE)
+        s64 = np.array(map(os.path.basename, [args.stoch_file, vm]), \
+                dtype = '|S64')
+        # station metadata
         stat_head = np.zeros(stations.size, \
                              dtype = {'names':['lon', 'lat', 'name'], \
                                       'formats':['f4', 'f4', '|S8'], \
                                       'itemsize':HEAD_STAT})
         for column in stat_head.dtype.names:
             stat_head[column] = stations[column]
-        stat_head.tofile(out)
+
+        # verify or write
+        if check_only:
+            assert(np.min(np.fromfile(out, dtype=i4.dtype, count=i4.size) \
+                          == i4))
+            assert(np.min(np.fromfile(out, dtype=f4.dtype, count=f4.size) \
+                          == f4))
+            assert(np.min(np.fromfile(out, dtype=s64.dtype, count=s64.size) \
+                          == s64))
+            out.seek(HEAD_SIZE)
+            assert(np.min(np.fromfile(out, dtype=stat_head.dtype, \
+                                      count=stat_head.size) == stat_head))
+        else:
+            i4.tofile(out)
+            f4.tofile(out)
+            s64.tofile(out)
+            out.seek(HEAD_SIZE)
+            stat_head.tofile(out)
 
 def unfinished():
     try:
@@ -196,10 +211,14 @@ if is_master:
         initialise()
         station_mask = np.ones(stations.size, dtype = np.bool)
     else:
-        print('%d of %d stations completed. Resuming simulation.' \
-              % (stations.size - sum(station_mask), stations.size))
-    # assuming header is correct and matches current simulation
-    # TODO: version of initialise() that only makes sure header matches
+        try:
+            initialise(check_only = True)
+            print('%d of %d stations completed. Resuming simulation.' \
+                  % (stations.size - sum(station_mask), stations.size))
+        except AssertionError:
+            print('Simulation parameters mismatch. Starting fresh simulation.')
+            initialise()
+            station_mask = np.ones(stations.size, dtype = np.bool)
 station_mask = comm.bcast(station_mask, root = master)
 stations_todo = stations[station_mask]
 stations_todo_idx = np.arange(stations.size)[station_mask]
