@@ -3,7 +3,6 @@
 Simulates high frequency seismograms for stations.
 """
 from argparse import ArgumentParser
-import math
 import os
 from subprocess import Popen, PIPE
 import sys
