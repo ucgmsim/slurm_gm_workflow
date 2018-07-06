@@ -1,6 +1,5 @@
 source machine_env.sh
  
-date
 #updating the stats in managementDB
 if [[ ! -d {{mgmt_db_location}}/mgmt_db_queue ]]; then
     #create the queue folder if not exist
@@ -9,16 +8,31 @@ fi
 timestamp=`date +%Y%m%d_%H%M%S`
 echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} BB running --j $SLURM_JOBID" >> {{mgmt_db_location}}/mgmt_db_queue/$timestamp\_$SLURM_JOBID
 
+runtime_fmt="%Y-%m-%d_%H:%M:%S"
+start_time=`date +$runtime_fmt`
+echo $start_time
+
 echo "Computing BB"
 {{bb_submit_command}}
 
-date
+end_time=`date +$runtime_fmt`
+echo $end_time
+
+
 timestamp=`date +%Y%m%d_%H%M%S`
 #test before update
 res=`$gmsim/workflow/scripts/{{test_bb_script}} {{sim_dir}} {{hf_run_name}} {{srf_name}}`
 if [[ $? == 0 ]]; then
     #passed
     echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} BB completed --j $SLURM_JOBID --force" >> {{mgmt_db_location}}/mgmt_db_queue/$timestamp\_$SLURM_JOBID
+    if [[ ! -d {{sim_dir}}/ch_log ]]; then
+        mkdir {{sim_dir}}/ch_log
+    fi
+    run_time=`python -c "from datetime import datetime; tdelta= datetime.strptime('$end_time', '$runtime_fmt') - datetime.strptime('$start_time', '$runtime_fmt'); print tdelta.total_seconds()/3600"`
+    fd_name=`python -c "import params_base as pb; print pb.FD_STATLIST"`
+    fd_count=`cat $fd_name | wc -l`
+    dt=`python -c "import params_base as pb; print pb.hf_dt"`
+    echo "{{srf_name}} BB $SLURM_NTASKS $run_time $fd_count $dt" >> {{sim_dir}}/ch_log/BB.$timestamp.$SLURM_JOBID.log
 else
     echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} BB failed --j $SLURM_JOBID --error '$res' --force" >> {{mgmt_db_location}}/mgmt_db_queue/$timestamp\_$SLURM_JOBID
 fi

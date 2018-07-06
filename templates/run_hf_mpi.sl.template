@@ -8,9 +8,12 @@ timestamp=`date +%Y%m%d_%H%M%S`
 echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} HF running --j $SLURM_JOBID" >> {{mgmt_db_location}}/mgmt_db_queue/$timestamp\_$SLURM_JOBID
 source machine_env.sh
 
-date
+runtime_fmt="%Y-%m-%d_%H:%M:%S"
+start_time=`date +$runtime_fmt`
+echo $start_time
 {{hf_submit_command}}
-date
+end_time=`date +$runtime_fmt`
+echo $end_time 
 
 timestamp=`date +%Y%m%d_%H%M%S`
 #test before update
@@ -18,6 +21,16 @@ res=`$gmsim/workflow/scripts/{{test_hf_script}} {{sim_dir}} {{hf_run_name}} {{sr
 if [[ $? == 0 ]]; then
     #passed
     echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} HF completed --j $SLURM_JOBID --force " >> {{mgmt_db_location}}/mgmt_db_queue/$timestamp\_$SLURM_JOBID
+    #save the parameters
+    if [[ ! -d {{sim_dir}}/ch_log ]]; then
+        mkdir {{sim_dir}}/ch_log
+    fi
+    run_time=`python -c "from datetime import datetime; tdelta= datetime.strptime('$end_time', '$runtime_fmt') - datetime.strptime('$start_time', '$runtime_fmt'); print tdelta.total_seconds()/3600"`
+    fd_name=`python -c "import params_base as pb; print pb.FD_STATLIST"`
+    fd_count=`cat $fd_name | wc -l`
+    nt=`python -c "import params_base as pb; nt = float(pb.sim_duration)/float(pb.hf_dt);print int(nt)"`
+    nsub_stoch=`python -c "import params_base as params; from qcore.srf import get_nsub_stoch; sub_fault_count,sub_fault_area=get_nsub_stoch(params.hf_slips[0],get_area=True);print sub_fault_count"`
+    echo "{{srf_name}} HF $SLURM_NTASKS $run_time $fd_count $nt $nsub_stoch" >> {{sim_dir}}/ch_log/HF.$timestamp.$SLURM_JOBID.log
 else
     echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} HF failed --j $SLURM_JOBID --error '$res' --force " >> {{mgmt_db_location}}/mgmt_db_queue/$timestamp\_$SLURM_JOBID
 fi
