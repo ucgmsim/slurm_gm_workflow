@@ -3,9 +3,8 @@
 Simulates high frequency seismograms for stations.
 """
 from argparse import ArgumentParser
-import math
 import os
-from subprocess import call, Popen, PIPE
+from subprocess import Popen, PIPE
 import sys
 from tempfile import mkstemp
 
@@ -21,7 +20,9 @@ master = 0
 is_master = not rank
 HEAD_SIZE = 0x0200
 HEAD_STAT = 0x18
-MAX_STATLIST = 1000
+FLOAT_SIZE = 0x4
+N_COMP = 3
+MAX_STATLIST = 10
 
 # never changed / unknown function (line 6)
 nbu = 4
@@ -124,33 +125,107 @@ nt = int(round(args.duration / args.dt))
 stations = np.loadtxt(args.station_file, ndmin = 1, \
                       dtype = [('lon', 'f4'), ('lat', 'f4'), ('name', '|S8')])
 head_total = HEAD_SIZE + HEAD_STAT * stations.size
+file_size = head_total + stations.size * nt * N_COMP * FLOAT_SIZE
 
 # initialise output with general metadata
-if is_master:
-    with open(args.out_file, mode = 'w+b') as out:
-        # save int/bool parameters, rayset must be fixed to length = 4
+def initialise(check_only = False):
+    with open(args.out_file, mode = 'rb' if check_only else 'w+b') as out:
+        # int/bool parameters, rayset must be fixed to length = 4
         fwrs = args.rayset + [0] * (4 - len(args.rayset))
-        np.array([stations.size, nt, args.seed, not args.no_siteamp, \
-                  args.path_dur, len(args.rayset), \
-                  fwrs[0], fwrs[1], fwrs[2], fwrs[3], \
-                  nbu, ift, nl_skip, ic_flag, args.independent, \
-                  args.site_vm_dir != None], dtype = 'i4').tofile(out)
-        # save float parameters
-        np.array([args.duration, args.dt, args.t_sec, args.sdrop, args.kappa, \
-                  args.qfexp, args.fmax, flo, fhi, \
-                  args.rvfac, args.rvfac_shal, args.rvfac_deep, \
-                  args.czero, args.calpha, args.mom, args.rupv, args.vs_moho, \
-                  vp_sig, vsh_sig, rho_sig, qs_sig, \
-                  args.fa_sig1, args.fa_sig2, args.rv_sig1], \
-                 dtype = 'f4').tofile(out)
-        # save string parameters
+        i4 = np.array([stations.size, nt, args.seed, not args.no_siteamp, \
+                       args.path_dur, len(args.rayset), \
+                       fwrs[0], fwrs[1], fwrs[2], fwrs[3], \
+                       nbu, ift, nl_skip, ic_flag, args.independent, \
+                       args.site_vm_dir != None], dtype = 'i4')
+        # float parameters
+        f4 = np.array([args.duration, args.dt, args.t_sec, args.sdrop, \
+                       args.kappa, args.qfexp, args.fmax, flo, fhi, \
+                       args.rvfac, args.rvfac_shal, args.rvfac_deep, \
+                       args.czero, args.calpha, args.mom, args.rupv, \
+                       args.vs_moho, vp_sig, vsh_sig, rho_sig, qs_sig, \
+                       args.fa_sig1, args.fa_sig2, args.rv_sig1], dtype = 'f4')
+        # string parameters
         if args.site_vm_dir != None:
             vm = args.site_vm_dir
         else:
             vm = args.velocity_model
-        np.array(map(os.path.basename, [args.stoch_file, vm]), \
-                dtype = '|S64').tofile(out)
-comm.Barrier()
+        s64 = np.array(map(os.path.basename, [args.stoch_file, vm]), \
+                dtype = '|S64')
+        # station metadata
+        stat_head = np.zeros(stations.size, \
+                             dtype = {'names':['lon', 'lat', 'name'], \
+                                      'formats':['f4', 'f4', '|S8'], \
+                                      'itemsize':HEAD_STAT})
+        for column in stat_head.dtype.names:
+            stat_head[column] = stations[column]
+
+        # verify or write
+        if check_only:
+            assert(np.min(np.fromfile(out, dtype=i4.dtype, count=i4.size) \
+                          == i4))
+            assert(np.min(np.fromfile(out, dtype=f4.dtype, count=f4.size) \
+                          == f4))
+            assert(np.min(np.fromfile(out, dtype=s64.dtype, count=s64.size) \
+                          == s64))
+            out.seek(HEAD_SIZE)
+            assert(np.min(np.fromfile(out, dtype=stat_head.dtype, \
+                                      count=stat_head.size) == stat_head))
+        else:
+            i4.tofile(out)
+            f4.tofile(out)
+            s64.tofile(out)
+            out.seek(HEAD_SIZE)
+            stat_head.tofile(out)
+
+def unfinished():
+    try:
+        with open(args.out_file, 'rb') as hff:
+            hff.seek(HEAD_SIZE)
+            # checkpoints are vs and e_dist written to file
+            # assume continuing machine is the same endian
+            checkpoints = np.fromfile(hff, count = stations.size, \
+                                      dtype = {'names':['vs'], \
+                                               'formats':['f4'], \
+                                               'offsets':[20], \
+                                               'itemsize':HEAD_STAT})['vs'] > 0
+    except IOError:
+        # file not created yet
+        return
+    if checkpoints.size < stations.size:
+        # file size is too short (simulation not even started properly)
+        return
+    if os.stat(args.out_file).st_size > file_size:
+        # file size is too long (probably different simulation)
+        return
+    if np.min(checkpoints):
+        try:
+            initialise(check_only=True)
+            print('HF Simulation already completed.')
+            comm.Abort()
+        except AssertionError:
+            return
+    # seems ok to continue simulation
+    return np.invert(checkpoints)
+
+station_mask = None
+if is_master:
+    station_mask = unfinished()
+    if station_mask is None or sum(station_mask) == stations.size:
+        print('No valid checkpoints found. Starting fresh simulation.')
+        initialise()
+        station_mask = np.ones(stations.size, dtype = np.bool)
+    else:
+        try:
+            initialise(check_only=True)
+            print('%d of %d stations completed. Resuming simulation.' \
+                  % (stations.size - sum(station_mask), stations.size))
+        except AssertionError:
+            print('Simulation parameters mismatch. Starting fresh simulation.')
+            initialise()
+            station_mask = np.ones(stations.size, dtype = np.bool)
+station_mask = comm.bcast(station_mask, root = master)
+stations_todo = stations[station_mask]
+stations_todo_idx = np.arange(stations.size)[station_mask]
 
 def run_hf(local_statfile, n_stat, idx_0, velocity_model = args.velocity_model):
     """
@@ -171,17 +246,18 @@ def run_hf(local_statfile, n_stat, idx_0, velocity_model = args.velocity_model):
             % (nl_skip, vp_sig, vsh_sig, rho_sig, qs_sig, ic_flag), \
         velocity_name, \
         '%s %s %s' % (args.fa_sig1, args.fa_sig2, args.rv_sig1), \
-        str(args.path_dur), str(head_total + idx_0 * (nt * 3 * 4)), ''])
+        str(args.path_dur), str(head_total + idx_0 * (nt * N_COMP * FLOAT_SIZE)), ''])
 
     # run HF binary
     p = Popen([args.sim_bin], stdin = PIPE, stderr = PIPE)
     stderr = p.communicate(stdin)[1]
+
     # load vs
     with open(velocity_model, 'r') as vm:
         vm.readline()
-        vs = float(vm.readline().split()[2]) * 1000.0
-    p.wait()
-    # edist is the only other variable that HF calculates
+        vs = np.float32(float(vm.readline().split()[2]) * 1000.0)
+
+    # e_dist is the only other variable that HF calculates
     e_dist = np.fromstring(stderr, dtype = 'f4', sep = '\n')
     try:
         assert(e_dist.size == n_stat)
@@ -191,53 +267,41 @@ def run_hf(local_statfile, n_stat, idx_0, velocity_model = args.velocity_model):
         with open('hf_err_%d' % (idx_0), 'w') as e:
             e.write(stderr)
         comm.Abort()
-    return e_dist, vs
 
-# distribute work, must be sequential segments for processes
-d = stations.size // size
-r = stations.size % size
+    # write e_dist and vs to file
+    with open(args.out_file, 'r+b') as out:
+        out.seek(HEAD_SIZE + idx_0 * HEAD_STAT)
+        for i in xrange(n_stat):
+            out.seek(HEAD_STAT - 2 * FLOAT_SIZE, 1)
+            e_dist[i].tofile(out)
+            vs.tofile(out)
+
+# distribute work, must be sequential for optimisation
+d = stations_todo.size // size
+r = stations_todo.size % size
 start = rank * d + min(r, rank)
-work = stations[start:start + d + (rank < r)]
-max_nstat = int(math.ceil(stations.size / float(size)))
+work = stations_todo[start:start + d + (rank < r)]
+work_idx = stations_todo_idx[start:start + d + (rank < r)]
 
 # process data to give Fortran code
-e_dist = np.empty(max_nstat, dtype = 'f4') * np.nan
-vs = np.empty(max_nstat, dtype = 'f4') * np.nan
+t0 = MPI.Wtime()
 in_stats = mkstemp()[1]
 if args.independent:
     vm = args.velocity_model
     for s in xrange(work.size):
         if args.site_vm_dir != None:
-            vm = os.path.join(args.site_vm_dir, '%s.1d' % (stations[s]['name']))
+            vm = os.path.join(args.site_vm_dir, \
+                              '%s.1d' % (stations_todo[s]['name']))
         np.savetxt(in_stats, work[s:s + 1], fmt = '%f %f %s')
-        e_dist[s], vs[s] = run_hf(in_stats, 1, start + s, velocity_model = vm)
+        run_hf(in_stats, 1, work_idx[s], velocity_model = vm)
 else:
-    for s in xrange(0, work.size, MAX_STATLIST):
-        n_stat = min(MAX_STATLIST, work.size - s)
-        sidx = slice(s, s + n_stat)
-        np.savetxt(in_stats, work[sidx], fmt = '%f %f %s')
-        e_dist[sidx], vs[sidx] = run_hf(in_stats, n_stat, start + s)
+    # have to be careful if checkpointing, work is not always consecutive
+    c0 = 0
+    for c_work_idx in np.split(work_idx, np.where(np.diff(work_idx) != 1)[0] + 1):
+        for s in xrange(0, c_work_idx.size, MAX_STATLIST):
+            n_stat = min(MAX_STATLIST, c_work_idx.size - s)
+            np.savetxt(in_stats, work[c0 + s:c0 + s + n_stat], fmt = '%f %f %s')
+            run_hf(in_stats, n_stat, c_work_idx[s])
+        c0 += c_work_idx.size
 os.remove(in_stats)
-
-# gather station metadata
-recvbuf = None
-if is_master:
-    recvbuf = np.empty([size, max_nstat], dtype='f4')
-comm.Gather(e_dist, recvbuf, root = master)
-if is_master:
-    e_dist = recvbuf[np.isfinite(recvbuf)]
-comm.Gather(vs, recvbuf, root = master)
-if is_master:
-    vs = recvbuf[np.isfinite(recvbuf)]
-    # add station metadata to output
-    stat_head = np.zeros(stations.size, dtype = np.dtype(stations.dtype.descr \
-            + [('e_dist', 'f4'), ('vs', 'f4')]))
-    stat_head['lon'] = stations['lon']
-    stat_head['lat'] = stations['lat']
-    stat_head['name'] = stations['name']
-    stat_head['e_dist'] = e_dist
-    stat_head['vs'] = vs
-    # save station info after general header
-    with open(args.out_file, mode = 'r+b') as out:
-        out.seek(HEAD_SIZE)
-        stat_head.tofile(out)
+print('Process %03d of %03d finished (%.2fs).' % (rank, size, MPI.Wtime() - t0))
