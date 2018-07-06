@@ -197,9 +197,13 @@ def unfinished():
     if os.stat(args.out_file).st_size > file_size:
         # file size is too long (probably different simulation)
         return
-    if np.min(checkpoints) == True:
-        print('HF Simulation already completed or file doesn\'t match.')
-        comm.Abort()
+    if np.min(checkpoints):
+        try:
+            initialise(check_only=True)
+            print('HF Simulation already completed.')
+            comm.Abort()
+        except AssertionError:
+            return
     # seems ok to continue simulation
     return np.invert(checkpoints)
 
@@ -212,7 +216,7 @@ if is_master:
         station_mask = np.ones(stations.size, dtype = np.bool)
     else:
         try:
-            initialise(check_only = True)
+            initialise(check_only=True)
             print('%d of %d stations completed. Resuming simulation.' \
                   % (stations.size - sum(station_mask), stations.size))
         except AssertionError:
