@@ -10,6 +10,7 @@ import params_base_bb
 
 import fnmatch
 from math import ceil
+from math import log
 import argparse
 
 import qcore.srf
@@ -21,8 +22,12 @@ default_run_time="00:30:00"
 default_memory="16G"
 default_account='nesi00213'
 #TODO:this number needs to find a way to update more frequently, based on stored WCT.
-default_hf_coef=1741000000
+# complexity = NlogN * Nt * fd * Nsub
+default_hf_coef_ascii=40539996852
+default_hf_coef_binary=38087921480
+#standard deviation
 default_scale=1.2
+
 #datetime related
 from datetime import datetime 
 timestamp_format = "%Y%m%d_%H%M%S"
@@ -63,18 +68,26 @@ def submit_sl_script(script, submit_yes=None):
 
 # TODO, probably move this to qcore lib
 def est_core_hours_hf(timestep, station_count, sub_fault_count, hf_coef):
-    total_size = timestep * station_count * sub_fault_count
+    #eq = (Nt * logNt * FD * Nsub) / coef
+    total_size = timestep * log(timestep,2) * station_count * sub_fault_count
     core_hours = round(total_size / hf_coef, 2)
     return core_hours
 
 
 def est_wct(est_core_hours, ncore, scale):
+    if scale < 1.0:
+        print "Warning, scaling estimated Core hours lower than 1. scale = ", scale
     scaled_est = est_core_hours * scale
-    if scaled_est <= 0:
-        scaled_est = 1
     time_per_cpu = ceil(float(scaled_est) / float(ncore))
+    if time_per_cpu < 1.0:
+        time_per_cpu = 1.0
+    #increase the nodes if over 24 hours.
+    while time_per_cpu > 24.0:
+        time_per_cpu = time_per_cpu / 2
+        ncore = int(ncore) * 2
+
     estimated_wct = '{0:02.0f}:{1:02.0f}:00'.format(*divmod(time_per_cpu * 60, 60))
-    return estimated_wct
+    return estimated_wct,str(ncore)
 
 
 def update_db(process, status, mgmt_db_location, srf_name, jobid):
@@ -151,6 +164,7 @@ if __name__ == '__main__':
     parser.add_argument('--account', type=str, default=default_account)
     parser.add_argument('--srf', type=str, default=None)
     parser.add_argument('--binary', action="store_true")
+    parser.add_argument('--debug', action="store_true")
     args = parser.parse_args()
     # check if parsed ncore
     if args.ncore != default_core:
@@ -216,15 +230,21 @@ if __name__ == '__main__':
             timesteps= float(params.sim_duration)/float(params.hf_dt)
             #get station count
             station_count = len(qcore.shared.get_stations(params.FD_STATLIST))
-            print station_count
             #get the number of sub faults for estimation
             #TODO:make it read through the whole list instead of assuming every stoch has same size
             sub_fault_count,sub_fault_area=qcore.srf.get_nsub_stoch(params.hf_slips[counter_srf],get_area=True)
-            print "sb:",sub_fault_area
-            est_chours = est_core_hours_hf(timesteps,station_count,sub_fault_area,default_hf_coef)
-            print est_chours
-            print "The estimated time is currently not so accurate."
-            run_time = est_wct(est_chours, ncore, default_scale)
+            if args.debug == True:
+                print "sb:",sub_fault_area
+                print "nt:",timesteps
+                print "fd:",station_count
+                print "nsub:",sub_fault_count
+            if args.binary == True:
+                est_chours = est_core_hours_hf(timesteps,station_count,sub_fault_count,default_hf_coef_binary)
+            else:
+                est_chours = est_core_hours_hf(timesteps,station_count,sub_fault_count,default_hf_coef_ascii)
+            #print "The estimated time is currently not so accurate."
+            run_time,ncore = est_wct(est_chours, ncore, default_scale)
+            print "Estimated time: ",run_time," Core: ",ncore
         else:
             run_time = default_run_time
         hf_sim_dir = os.path.join(os.path.join(params.hf_dir, params_base_bb.hf_run_names[counter_srf]), srf_name)
