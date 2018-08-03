@@ -13,6 +13,8 @@ import subprocess
 
 from qcore.utils import setup_dir
 
+# the following keys should be consistent(in the same order) with the output params specified in proc_mpi_sl.template under each fault dir
+# TODO auto retrive from the templates rather than hardcode
 BB_KEYS = ['cores', 'run_time', 'fd_count', 'dt']
 HF_KEYS = ['cores', 'run_time', 'fd_count', 'nt', 'nsub_stoch']
 LF_KEYS = ['cores', 'run_time', 'nt', 'nx', 'ny', 'nz']
