@@ -49,7 +49,7 @@ def get_all_sims_dict(fault_dir):
             for i in range(len(data)):
                 key = KEY_DICT[f_suffix][i]
                 all_sims_dict[realization][f_suffix][key] = data[i]
-            if f_suffix == 'HF' and all_sims_dict[realization][f_suffix].get('total_memo_usage') == None:
+            if f_suffix == 'LF' and all_sims_dict[realization][f_suffix].get('total_memo_usage') == None:
                 realization_rlog_dir = os.path.join(fault_dir, 'LF', realization, 'Rlog')
                 all_sims_dict[realization][f_suffix]['total_memo_usage'] = get_one_realization_memo_cores(realization_rlog_dir)
         return all_sims_dict
