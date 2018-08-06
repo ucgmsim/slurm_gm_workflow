@@ -66,7 +66,7 @@ def get_all_sims_dict(fault_dir):
                 key = KEY_DICT[f_suffix][i]
                 if key == 'run_time':
                    # precision = get_precision(float(data[i]))
-                    data[i] = "{:.3f}".format(float(data[i]))
+                    data[i] = "{:.3f} hour".format(float(data[i]))
                 all_sims_dict[realization][f_suffix][key] = data[i]
             if f_suffix == 'LF' and all_sims_dict[realization][f_suffix].get('total_memory_usage') == None:
                 realization_rlog_dir = os.path.join(fault_dir, 'LF', realization, 'Rlog')
