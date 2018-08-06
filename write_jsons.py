@@ -26,12 +26,28 @@ ALL_META_JSON = 'all_sims.json'
 PARAMS_BASE = 'params_base.py'
 
 
+# TODO may not need this func for formating run_time. eg.only use {:.3f} if sure run_time would be 0.0xxxxxxxxx
+def get_precision(num):
+    """return a precision for formatting a float
+       num: a float
+       eg. nums is 0.567123---> precision is 2 (0.57)
+    """
+    decimals = str(num).split('.')[1]
+    i = 0
+    while i < len(decimals) - 1:
+        if decimals[i] != '0':
+            precision = i + 1 + 1   # float formatting starts from decimal 1 not 0
+            return precision
+        i += 1
+
+
 def get_all_sims_dict(fault_dir):
     """
     :param fault_dir: abs path to a single fault dir
     :return: all_sims_dict or None
     """
     ch_log_dir = os.path.join(fault_dir, CH_LOG)
+    print(ch_log_dir)
     if os.path.isdir(ch_log_dir):
         all_sims_dict = {}
         hh = get_hh(fault_dir)
@@ -48,10 +64,13 @@ def get_all_sims_dict(fault_dir):
                 all_sims_dict[realization] = {'common': {'hh': hh}, f_suffix: {}}
             for i in range(len(data)):
                 key = KEY_DICT[f_suffix][i]
+                if key == 'run_time':
+                   # precision = get_precision(float(data[i]))
+                    data[i] = "{:.3f}".format(float(data[i]))
                 all_sims_dict[realization][f_suffix][key] = data[i]
-            if f_suffix == 'LF' and all_sims_dict[realization][f_suffix].get('total_memo_usage') == None:
+            if f_suffix == 'LF' and all_sims_dict[realization][f_suffix].get('total_memory_usage') == None:
                 realization_rlog_dir = os.path.join(fault_dir, 'LF', realization, 'Rlog')
-                all_sims_dict[realization][f_suffix]['total_memo_usage'] = get_one_realization_memo_cores(realization_rlog_dir)
+                all_sims_dict[realization][f_suffix]['total_memory_usage'] = get_one_realization_memo_cores(realization_rlog_dir)
         return all_sims_dict
     else:
         print("{} does not have a ch_log dir\n If your input run_folder path points to a single fault dir then you need to add '-sf' option ".format(fault_dir))
@@ -74,7 +93,7 @@ def get_one_realization_memo_cores(realization_rlog_dir):
     if unit == 'Mb':
         total /= 1024.
         unit = 'GB'
-    return "{} {}".format(total, unit)
+    return "{:.1f} {}".format(total, unit)
 
 
 def get_hh(fault_dir):
