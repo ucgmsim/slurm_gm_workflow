@@ -2,8 +2,8 @@
 # There are 4 possible commands:
 # python write_jsons.py /nesi/nobackup/nesi00213/RunFolder/Cybershake/v18p6_batched/v18p6_exclude_1k_batch_2/Runs/
 # python write_jsons.py /nesi/nobackup/nesi00213/RunFolder/Cybershake/v18p6_batched/v18p6_exclude_1k_batch_2/Runs/ -sj
-# python write_jsons.py /nesi/nobackup/nesi00213/RunFolder/Cybershake/v18p6_batched/v18p6_exclude_1k_batch_2/Runs/HopeCW -sr
-# python write_jsons.py /nesi/nobackup/nesi00213/RunFolder/Cybershake/v18p6_batched/v18p6_exclude_1k_batch_2/Runs/HopeCW -sr -sj
+# python write_jsons.py /nesi/nobackup/nesi00213/RunFolder/Cybershake/v18p6_batched/v18p6_exclude_1k_batch_2/Runs/HopeCW -sf
+# python write_jsons.py /nesi/nobackup/nesi00213/RunFolder/Cybershake/v18p6_batched/v18p6_exclude_1k_batch_2/Runs/HopeCW -sf -sj
 
 import os
 import sys
@@ -15,9 +15,9 @@ from qcore.utils import setup_dir
 
 # the following keys should be consistent(in the same order) with the output params specified in proc_mpi_sl.template under each fault dir
 # TODO auto retrive from the templates rather than hardcode
-BB_KEYS = ['cores', 'run_time', 'fd_count', 'dt']
-HF_KEYS = ['cores', 'run_time', 'fd_count', 'nt', 'nsub_stoch']
-LF_KEYS = ['cores', 'run_time', 'nt', 'nx', 'ny', 'nz']
+BB_KEYS = ['cores', 'run_time', 'fd_count', 'dt', 'start_time', 'end_time']
+HF_KEYS = ['cores', 'run_time', 'fd_count', 'nt', 'nsub_stoch', 'start_time', 'end_time']
+LF_KEYS = ['cores', 'run_time', 'nt', 'nx', 'ny', 'nz', 'start_time', 'end_time']
 KEY_DICT = {'BB': BB_KEYS, 'HF': HF_KEYS, 'LF': LF_KEYS}
 
 CH_LOG = 'ch_log'

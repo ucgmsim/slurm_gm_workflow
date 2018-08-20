@@ -30,7 +30,7 @@ if [[ $? == 0 ]]; then
     fd_count=`cat $fd_name | wc -l`
     nt=`python -c "import params_base as pb; nt = float(pb.sim_duration)/float(pb.hf_dt);print int(nt)"`
     nsub_stoch=`python -c "import params_base as params; from qcore.srf import get_nsub_stoch; sub_fault_count,sub_fault_area=get_nsub_stoch(params.hf_slips[0],get_area=True);print sub_fault_count"`
-    echo "{{srf_name}} HF $SLURM_NTASKS $run_time $fd_count $nt $nsub_stoch" >> {{sim_dir}}/ch_log/HF.$timestamp.$SLURM_JOBID.log
+    echo "{{srf_name}} HF $SLURM_NTASKS $run_time $fd_count $nt $nsub_stoch $start_time $end_time" >> {{sim_dir}}/ch_log/HF.$timestamp.$SLURM_JOBID.log
 else
     echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} HF failed --j $SLURM_JOBID --error '$res' --force " >> {{mgmt_db_location}}/mgmt_db_queue/$timestamp\_$SLURM_JOBID
 fi
