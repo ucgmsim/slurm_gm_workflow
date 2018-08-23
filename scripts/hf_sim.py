@@ -125,7 +125,8 @@ nt = int(round(args.duration / args.dt))
 stations = np.loadtxt(args.station_file, ndmin = 1, \
                       dtype = [('lon', 'f4'), ('lat', 'f4'), ('name', '|S8')])
 head_total = HEAD_SIZE + HEAD_STAT * stations.size
-file_size = head_total + stations.size * nt * N_COMP * FLOAT_SIZE
+block_size = nt * N_COMP * FLOAT_SIZE
+file_size = head_total + stations.size * block_size
 
 # initialise output with general metadata
 def initialise(check_only = False):
@@ -276,7 +277,25 @@ def run_hf(local_statfile, n_stat, idx_0, velocity_model = args.velocity_model):
             e_dist[i].tofile(out)
             vs.tofile(out)
 
-# distribute work, must be sequential for optimisation
+def validate_end(idx_n):
+    """
+    Verify filesize has been extended by the correct amount.
+    idx_n: index of last station to be completed
+    """
+    expected_size = head_total + idx_n * block_size
+    try:
+        assert(os.stat(args.out_file).st_size == expected_size)
+    except AssertionError:
+        msg = 'Expected size: %d bytes (last stat idx: %d), actual %d bytes.' \
+                % (expected_size, idx_n, os.stat(args.out_file).st_size)
+        print(msg)
+        # this is here because kupe fails at stdio
+        with open('hf_err_validate', 'w') as e:
+            e.write(msg)
+        comm.Abort()
+
+# distribute work, must be sequential for optimisation,
+# and for validation function above to be thread safe
 d = stations_todo.size // size
 r = stations_todo.size % size
 start = rank * d + min(r, rank)
@@ -294,6 +313,8 @@ if args.independent:
                               '%s.1d' % (stations_todo[s]['name']))
         np.savetxt(in_stats, work[s:s + 1], fmt = '%f %f %s')
         run_hf(in_stats, 1, work_idx[s], velocity_model = vm)
+        if rank == size - 1:
+            validate_end(work_idx[s] + 1)
 else:
     # have to be careful if checkpointing, work is not always consecutive
     c0 = 0
@@ -303,5 +324,7 @@ else:
             np.savetxt(in_stats, work[c0 + s:c0 + s + n_stat], fmt = '%f %f %s')
             run_hf(in_stats, n_stat, c_work_idx[s])
         c0 += c_work_idx.size
+        if rank == size - 1:
+            validate_end(c0)
 os.remove(in_stats)
 print('Process %03d of %03d finished (%.2fs).' % (rank, size, MPI.Wtime() - t0))
