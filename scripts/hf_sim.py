@@ -282,12 +282,12 @@ def validate_end(idx_n):
     Verify filesize has been extended by the correct amount.
     idx_n: index of last station to be completed
     """
-    expected_size = head_total + idx_n * block_size
     try:
-        assert(os.stat(args.out_file).st_size == expected_size)
+        assert(os.stat(args.out_file).st_size == head_total + idx_n * block_size)
     except AssertionError:
         msg = 'Expected size: %d bytes (last stat idx: %d), actual %d bytes.' \
-                % (expected_size, idx_n, os.stat(args.out_file).st_size)
+                % (head_total + idx_n * block_size, \
+                   idx_n, os.stat(args.out_file).st_size)
         print(msg)
         # this is here because kupe fails at stdio
         with open('hf_err_validate', 'w') as e:
