@@ -33,7 +33,7 @@ if [[ $? == 0 ]]; then
     nx=`python -c "import params_base as pb; print pb.nx"`
     ny=`python -c "import params_base as pb; print pb.ny"`
     nz=`python -c "import params_base as pb; print pb.nz"`
-    echo "{{srf_name}} LF $SLURM_NTASKS $run_time $nt $nx $ny $nz" >> {{sim_dir}}/ch_log/LF.$timestamp.$SLURM_JOBID.log
+    echo "{{srf_name}} LF $SLURM_NTASKS $run_time $nt $nx $ny $nz $start_time $end_time" >> {{sim_dir}}/ch_log/LF.$timestamp.$SLURM_JOBID.log
 else
     echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} EMOD3D failed --j $SLURM_JOBID --error '$res' --force " >> {{mgmt_db_location}}/mgmt_db_queue/$timestamp\_$SLURM_JOBID   
 fi
