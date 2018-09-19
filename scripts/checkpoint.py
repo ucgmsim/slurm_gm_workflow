@@ -34,6 +34,34 @@ def checkpoint_sim_obs(waveform_dirs, relative_path_to_im_calc):
     return waveform_dirs
 
 
+def checkpoint_single(run_dir, realization_name, sim_or_obs):    
+    if sim_or_obs == 's':
+    	fault_name = realization_name.split('_')[0]
+        output_dir = os.path.join(run_dir, fault_name, 'IM_calc')
+    elif sim_or_obs == 'o':
+        output_dir = os.path.join(run_dir, 'IM_calc', realization_name)
+    
+    if os.path.isdir(output_dir):  # if output dir exists
+        sum_csv = glob.glob1(output_dir, '*.csv')
+        meta = glob.glob1(output_dir, '*imcalc.info')
+        # if sum_csv and meta are not empty lists('.csv' and '_imcalc.info' files present)
+        # then we think im calc on the corresponding dir is completed and hence remove
+        print("sum and meta", sum_csv and meta)
+        return (sum_csv and meta) != []
+
+
+def checkpoint_wrapper(run_dir, waveform_dirs, sim_or_obs):
+    for directory in waveform_dirs[:]:
+        dir_name = directory.split('/')[-1]
+        if dir_name == 'IM_calc':
+            waveform_dirs.remove(directory)
+        else:
+            exits = checkpoint_single(run_dir, dir_name, sim_or_obs)
+            if exits:
+                waveform_dirs.remove(directory)
+    return waveform_dirs
+
+
 def checkpoint_rrup(output_dir, srf_files):
     """
     Checkpoint for rrups

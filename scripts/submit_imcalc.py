@@ -1,5 +1,5 @@
 """
- python generate_sl.py -obs ~/test_obs/IMCalcExample/ -sim runs/Runs -srf /nesi/nobackup/nesi00213/RunFolder/Cybershake/v18p6_batched/v18p6_exclude_1k_batch_6/Data/Sources -ll /scale_akl_nobackup/filesets/transit/nesi00213/StationInfo/non_uniform_whole_nz_with_real_stations-hh400_v18p6.ll -o ~/rrup_out -ml 1000 -e -s -i OtaraWest02_HYP01-21_S1244 Pahiatua_HYP01-26_S1244 -t 24:00:00
+ python submit_imcalc.py -obs ~/test_obs/IMCalcExample/ -sim runs/Runs -srf /nesi/nobackup/nesi00213/RunFolder/Cybershake/v18p6_batched/v18p6_exclude_1k_batch_6/Data/Sources -ll /scale_akl_nobackup/filesets/transit/nesi00213/StationInfo/non_uniform_whole_nz_with_real_stations-hh400_v18p6.ll -o ~/rrup_out -ml 1000 -e -s -i OtaraWest02_HYP01-21_S1244 Pahiatua_HYP01-26_S1244 -t 24:00:00
 """
 
 from jinja2 import Template, Environment, FileSystemLoader
@@ -119,11 +119,12 @@ def get_fd_path(srf_filepath, sim_dir):
 def get_dirs(run_folder, arg_identifiers, com_pattern):
     dirs = []
     for identifier in arg_identifiers:
-        fault_name = identifier.split("_")[0]
+        fault_name = get_fault_name(identifier)
         dir_path = glob.glob(os.path.join(run_folder, com_pattern.format(fault_name, identifier)))
         if dir_path == []:
             print("{} does not exists".format(identifier))
-        dirs += dir_path
+        else:
+            dirs += dir_path
     return dirs
 
 
@@ -147,7 +148,7 @@ def main():
     parser.add_argument('-o', '--rrup_out_dir', default=DEFAULT_RRUP_OUTDIR,
                         help="output directory to store rupture distances output.Default is {}".format(
                             DEFAULT_RRUP_OUTDIR))
-    parser.add_argument('-c', '--comp', default=COMPS[0], help="specify which verlocity compoent to calculate. choose from {}. Default is {}".format(COMPS, COMPS[0])) 
+    parser.add_argument('-c', '--comp', default=COMPS[0], help="specify which verlocity compoent to calculate. choose from {}. Default is {}".format(COMPS, COMPS[0]))
     parser.add_argument('-i', '--identifiers', default='*', nargs='+',
                         help="a list of space-seperated unique runnames of the simulations.eg.'Albury_HYP01-01_S1244 OpouaweUruti_HYP44-47_S1674'")
     parser.add_argument('-t', '--time', default=TIME,
@@ -179,8 +180,8 @@ def main():
     # sim_dir = /nesi/nobackup/nesi00213/RunFolder/Cybershake/v18p5/Runs
     if args.sim_dir is not None:
         sim_waveform_dirs = get_dirs(args.sim_dir, args.identifiers, '{}/BB/*/{}')
-        sim_waveform_dirs = checkpoint.checkpoint_sim_obs(sim_waveform_dirs,
-                                                          '../../../IM_calc/')  # return dirs that are not calculated yet
+       # sim_waveform_dirs = checkpoint.checkpoint_sim_obs(sim_waveform_dirs, '../../../IM_calc/')  # return dirs that are not calculated yet
+        sim_waveform_dirs = checkpoint.checkpoint_wrapper(args.sim_dir, sim_waveform_dirs,'s')
         sim_run_names = map(os.path.basename, sim_waveform_dirs)
         sim_faults = map(get_fault_name, sim_run_names)
         sim_dirs = zip(sim_waveform_dirs, sim_run_names, sim_faults)
@@ -212,7 +213,8 @@ def main():
 
     if args.obs_dir is not None:
         obs_waveform_dirs = glob.glob(os.path.join(args.obs_dir, '*'))
-        obs_waveform_dirs = checkpoint.checkpoint_sim_obs(obs_waveform_dirs, '../IM_calc/')
+       # obs_waveform_dirs = checkpoint.checkpoint_sim_obs(obs_waveform_dirs, '../IM_calc/')
+        obs_waveform_dirs = checkpoint.checkpoint_wrapper(args.obs_dir, obs_waveform_dirs,'o')
         obs_run_names = map(os.path.basename, obs_waveform_dirs)
         obs_faults = map(get_fault_name, obs_run_names)
         obs_dirs = zip(obs_waveform_dirs, obs_run_names, obs_faults)
