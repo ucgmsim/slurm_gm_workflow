@@ -4,6 +4,8 @@
 A script that queries slurm and updates the status of a task in a slurm db
 """
 
+N_TASKS_TO_RUN = 20
+
 import argparse
 import create_mgmt_db
 import update_mgmt_db
@@ -51,6 +53,7 @@ def update_tasks(db, tasks, db_tasks):
         if not found:
             print "Task '{}' on '{}' not found on squeue; changing status to 'failed'".format(proc_type, run_name)
             update_mgmt_db.update_db(db, proc_type, 'failed', job_id, run_name, error='Task removed from squeue without completion')
+        db.connection.commit()
 
 def is_task_complete(task, task_list):
     process, run_name, status = task
@@ -77,21 +80,23 @@ def check_dependancy_met(task, task_list):
         HF_task[2] = 'completed'
         return is_task_complete(LF_task, task_list) and is_task_complete(HF_task, task_list)
 
-def get_runnable_tasks(db):
+def get_runnable_tasks(db, n_runs=N_TASKS_TO_RUN):
     db_tasks = get_db_tasks_to_be_run(db)
     tasks_to_run = []
     for task in db_tasks:
         status = task[2]
         if status == 'created' and check_dependancy_met(task, db_tasks):
             tasks_to_run.append(task)
+        if len(tasks_to_run) >= n_runs:
+            break
                 
     return tasks_to_run
 
 
-def run_new_task(db):
-    tasks = get_runnable_tasks(db)
+def run_new_task(db, n_runs):
+    tasks = get_runnable_tasks(db, n_runs)
     if len(tasks) > 0:
-        print tasks[0]
+        print tasks[0], len(tasks)
         
         """####
             <insert code to run/submit a new task>
@@ -106,7 +111,7 @@ def main():
     parser.add_argument('run_folder', type=str, 
                         help="folder to the collection of runs on Kupe")
     parser.add_argument('poll_interval', type=int, default=180, nargs='?')
-    parser.add_argument('--n_runs', '-n', default=20, type=int)
+    parser.add_argument('--n_runs', '-n', default=N_TASKS_TO_RUN, type=int)
     
     args = parser.parse_args()
     f = args.run_folder
@@ -122,7 +127,7 @@ def main():
     tasks_to_run = True
 
     while len(db_tasks) < n_runs and tasks_to_run is True:
-        tasks_to_run = run_new_task(db)
+        tasks_to_run = run_new_task(db, n_runs)
         
         
 
