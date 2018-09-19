@@ -30,7 +30,7 @@ MAIL = 'test@test.com'
 MEMORY = '90G'
 ADDI = '#SBATCH --hint=nomultithread'
 TIME_REGEX = '(24:00:00)|(^(2[0-3]|[01]?[0-9]):([0-5]?[0-9]):([0-5]?[0-9])$)'
-
+COMPS=['geom', '000', '090', 'ver', 'ellipsis']
 
 # TODO: calculate wall-clock time
 # TODO: read fd*.ll file to limit the stations that rrups is calculated for
@@ -42,7 +42,7 @@ TIME_REGEX = '(24:00:00)|(^(2[0-3]|[01]?[0-9]):([0-5]?[0-9]):([0-5]?[0-9])$)'
 # python generate_sl.py -o ~/test_obs/IMCalcExample  -ll /scale_akl_nobackup/filesets/transit/nesi00213/StationInfo/non_uniform_whole_nz_with_real_stations-hh400_v18p6.ll -ml 1000 -simple -e
 
 
-def generate_sl(sim_dirs, obs_dirs, station_file, rrup_files, output_dir, prefix, i, np, extended, simple, version,
+def generate_sl(sim_dirs, obs_dirs, station_file, rrup_files, output_dir, prefix, i, np, extended, simple, comp, version,
                 job_description, job_name, account, nb_cpus, wallclock_limit, exe_time, mail, memory, additional_lines):
     path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', TEMPLATES_DIR)
     j2_env = Environment(loader=FileSystemLoader(path), trim_blocks=True)
@@ -52,7 +52,7 @@ def generate_sl(sim_dirs, obs_dirs, station_file, rrup_files, output_dir, prefix
                                                      wallclock_limit=wallclock_limit, exe_time=exe_time, mail=mail, memory=memory,
                                                      additional_lines=additional_lines)
     context = j2_env.get_template(TEMPLATE_NAME).render(
-        time=time,
+        time=time,comp=comp,
         sim_dirs=sim_dirs, obs_dirs=obs_dirs,
         rrup_files=rrup_files, station_file=station_file,
         output_dir=output_dir, np=np, extended=extended, simple=simple)
@@ -76,7 +76,7 @@ def get_fault_name(run_name):
 
 
 def split_and_generate_slurms(sim_dirs, obs_dirs, station_file, rrup_files, output_dir, processes, max_lines, prefix,
-                              extended='', simple='', version=VERSION, job_description='', job_name=JOB,
+                              extended='', simple='', comp=COMPS[0], version=VERSION, job_description='', job_name=JOB,
                               account=ACCOUNT, nb_cpus=NTASKS, wallclock_limit=TIME, exe_time=EXE_TIME, mail=MAIL,
                               memory=MEMORY, additional_lines=ADDI):
     total_dir_lines = 0
@@ -94,7 +94,7 @@ def split_and_generate_slurms(sim_dirs, obs_dirs, station_file, rrup_files, outp
         if 0 <= last_line_index - total_dir_lines <= max_lines:
             last_line_index = total_dir_lines
         name, context = generate_sl(sim_dirs[i: last_line_index], obs_dirs[i: last_line_index], station_file,
-                                    rrup_files[i: last_line_index], output_dir, prefix, i, processes, extended, simple, version,
+                                    rrup_files[i: last_line_index], output_dir, prefix, i, processes, extended, simple, comp, version,
                 job_description, job_name, account, nb_cpus, wallclock_limit, exe_time, mail, memory, additional_lines)
         name_context_list.append((name, context))
         i += max_lines
@@ -147,10 +147,11 @@ def main():
     parser.add_argument('-o', '--rrup_out_dir', default=DEFAULT_RRUP_OUTDIR,
                         help="output directory to store rupture distances output.Default is {}".format(
                             DEFAULT_RRUP_OUTDIR))
+    parser.add_argument('-c', '--comp', default=COMPS[0], help="specify which verlocity compoent to calculate. choose from {}. Default is {}".format(COMPS, COMPS[0])) 
     parser.add_argument('-i', '--identifiers', default='*', nargs='+',
                         help="a list of space-seperated unique runnames of the simulations.eg.'Albury_HYP01-01_S1244 OpouaweUruti_HYP44-47_S1674'")
     parser.add_argument('-t', '--time', default=TIME,
-                        help="estimated running time for each slurm sciprt. must be in 'hh:mm:ss' format. Default is '00:30:00'")
+                        help="estimated running time for each slurm sciprt. must be in 'hh:mm:ss' format. Default is {}".format(TIME))
     parser.add_argument('--version', default=VERSION, help="default version is 'slurm'")
     parser.add_argument('--job_description', default=JOB, help="job description of slurm script. Default is {}".format(JOB))
     parser.add_argument('--job_name', default=JOB, help="job name of slurm script. Default is {}".format(JOB))
@@ -172,6 +173,9 @@ def main():
     if not re.match(TIME_REGEX, args.time):
         parser.error("time must be in 'hh:mm:ss' format and not exceeding 24:00:00")
 
+    if not args.comp in COMPS:
+        parser.error("verlocity component must be in {} where ellipsis means calculating all compoents".format(COMPS))
+
     # sim_dir = /nesi/nobackup/nesi00213/RunFolder/Cybershake/v18p5/Runs
     if args.sim_dir is not None:
         sim_waveform_dirs = get_dirs(args.sim_dir, args.identifiers, '{}/BB/*/{}')
@@ -184,7 +188,7 @@ def main():
         name_context_list = split_and_generate_slurms(sim_dirs, [], args.station_file, [], args.rrup_out_dir,
                                                       args.processes,
                                                       args.max_lines, 'sim', extended=args.extended_period,
-                                                      simple=args.simple_output, version=args.version, job_description=args.job_description, job_name=args.job_name,
+                                                      simple=args.simple_output, comp=args.comp, version=args.version, job_description=args.job_description, job_name=args.job_name,
                               account=args.account, nb_cpus=args.ntasks, wallclock_limit=args.time, exe_time=args.exe_time, mail=args.mail,
                               memory=args.memory, additional_lines=args.additional_lines)
         write_sl(name_context_list)
@@ -216,7 +220,7 @@ def main():
         name_context_list = split_and_generate_slurms([], obs_dirs, args.station_file, [], args.rrup_out_dir,
                                                       args.processes,
                                                       args.max_lines, 'obs', extended=args.extended_period,
-                                                      simple=args.simple_output, version=args.version, job_description=args.job_description, job_name=args.job_name,
+                                                      simple=args.simple_output, comp=args.comp, version=args.version, job_description=args.job_description, job_name=args.job_name,
                               account=args.account, nb_cpus=args.ntasks, wallclock_limit=args.time, exe_time=args.exe_time, mail=args.mail,
                               memory=args.memory, additional_lines=args.additional_lines)
         write_sl(name_context_list)
