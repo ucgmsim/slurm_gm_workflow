@@ -62,7 +62,6 @@ def generate_sl(sim_dirs, obs_dirs, station_file, rrup_files, output_dir, prefix
 
 def write_sl(name_context_list):
     for sl_name, context in name_context_list:
-        print("sl_name, ontext", sl_name, context)
         with open(sl_name, 'w') as sl:
             print("writing {}".format(sl_name))
             sl.write(context)
@@ -119,13 +118,11 @@ def get_fd_path(srf_filepath, sim_dir):
 
 def get_dirs(run_folder, arg_identifiers, com_pattern):
     dirs = []
-    print("Arg_identifiers", arg_identifiers)
     for identifier in arg_identifiers:
         fault_name = identifier.split("_")[0]
         dir_path = glob.glob(os.path.join(run_folder, com_pattern.format(fault_name, identifier)))
         if dir_path == []:
-            print("{} does not exists".format(dir_path))
-        print("id dir_path", dir_path)
+            print("{} does not exists".format(identifier))
         dirs += dir_path
     return dirs
 
@@ -177,9 +174,7 @@ def main():
 
     # sim_dir = /nesi/nobackup/nesi00213/RunFolder/Cybershake/v18p5/Runs
     if args.sim_dir is not None:
-        print("Args.sim_dir", args.sim_dir)
         sim_waveform_dirs = get_dirs(args.sim_dir, args.identifiers, '{}/BB/*/{}')
-        print("sim_waveform_dirs", sim_waveform_dirs)
         sim_waveform_dirs = checkpoint.checkpoint_sim_obs(sim_waveform_dirs,
                                                           '../../../IM_calc/')  # return dirs that are not calculated yet
         sim_run_names = map(os.path.basename, sim_waveform_dirs)
@@ -214,7 +209,6 @@ def main():
     if args.obs_dir is not None:
         obs_waveform_dirs = glob.glob(os.path.join(args.obs_dir, '*'))
         obs_waveform_dirs = checkpoint.checkpoint_sim_obs(obs_waveform_dirs, '../IM_calc/')
-        print("obs_waveform_dirs", obs_waveform_dirs)
         obs_run_names = map(os.path.basename, obs_waveform_dirs)
         obs_faults = map(get_fault_name, obs_run_names)
         obs_dirs = zip(obs_waveform_dirs, obs_run_names, obs_faults)
