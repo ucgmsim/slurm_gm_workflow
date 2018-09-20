@@ -1,6 +1,10 @@
 import os
 import glob
 
+IM_CLAC_DIR = 'IM_calc'
+CSV_PATTERN = '*.csv'
+CSV_SUFFIX = '.csv'
+META_PATTERN = '*imcalc.info'
 # Examples:
 # sim_waveform_dirs =
 # ['/nesi/nobackup/nesi00213/RunFolder/Cybershake/v18p6/Runs/test/Kelly/BB/Cant1D_v3-midQ_OneRay_hfnp2mm+_rvf0p8_sd50_k0p045/Kelly_HYP20-29_S1434',
@@ -10,40 +14,16 @@ import glob
 # output_sim_dir = /nesi/nobackup/nesi00213/RunFolder/Cybershake/v18p6/Runs/test/Kelly/BB/Cant1D_v3-midQ_OneRay_hfnp2mm+_rvf0p8_sd50_k0p045/Kelly_HYP20-29_S1434/../../../IM_calc/Kelly_HYP20-29_S1434/
 
 
-def checkpoint_sim_obs(waveform_dirs, relative_path_to_im_calc):
-    """
-    Checkpoint for simulation and observed waveform dirs
-    :param waveform_dirs:a list of both completed and not completed sim/obs waveform dirs
-    :param relative_path_to_im_calc: relative path from a single waveform dir to the IM_Calc output folder,
-                                     should be consistent with the path defined in im_calc_sl.template.
-    :return: a list of not completed waveform dirs
-    """
-    for directory in waveform_dirs[:]:
-        dir_name = directory.split('/')[-1]
-        if dir_name == 'IM_calc':
-            waveform_dirs.remove(directory)
-        else:
-            output_dir = os.path.join(directory, relative_path_to_im_calc, dir_name)
-            if os.path.isdir(output_dir):  # if output dir exists
-                sum_csv = glob.glob1(output_dir, '*.csv')
-                meta = glob.glob1(output_dir, '*imcalc.info')
-                # if sum_csv and meta are not empty lists('.csv' and '_imcalc.info' files present)
-                # then we think im calc on the corresponding dir is completed and hence remove
-                if sum_csv and meta:
-                    waveform_dirs.remove(directory)
-    return waveform_dirs
-
-
-def checkpoint_single(run_dir, realization_name, sim_or_obs):    
+def checkpoint_single(run_dir, realization_name, sim_or_obs):
     if sim_or_obs == 's':
-    	fault_name = realization_name.split('_')[0]
-        output_dir = os.path.join(run_dir, fault_name, 'IM_calc', realization_name)
+        fault_name = realization_name.split('_')[0]
+        output_dir = os.path.join(run_dir, fault_name, IM_CLAC_DIR, realization_name)
     elif sim_or_obs == 'o':
-        output_dir = os.path.join(run_dir, 'IM_calc', realization_name)
-    
+        output_dir = os.path.join(run_dir, IM_CLAC_DIR, realization_name)
+
     if os.path.isdir(output_dir):  # if output dir exists
-        sum_csv = glob.glob1(output_dir, '*.csv')
-        meta = glob.glob1(output_dir, '*.info')
+        sum_csv = glob.glob1(output_dir, CSV_PATTERN)
+        meta = glob.glob1(output_dir, META_PATTERN)
         # if sum_csv and meta are not empty lists('.csv' and '_imcalc.info' files present)
         # then we think im calc on the corresponding dir is completed and hence remove
         return (sum_csv and meta) != []
@@ -52,14 +32,14 @@ def checkpoint_single(run_dir, realization_name, sim_or_obs):
 def checkpoint_wrapper(run_dir, waveform_dirs, sim_or_obs):
     for directory in waveform_dirs[:]:
         dir_name = directory.split('/')[-1]
-        if dir_name == 'IM_calc':
+        if dir_name == IM_CLAC_DIR:
             waveform_dirs.remove(directory)
         else:
             exits = checkpoint_single(run_dir, dir_name, sim_or_obs)
             if exits:
                 waveform_dirs.remove(directory)
             else:
-                print("directory does not have csv or info",directory)
+                print("directory does not have csv or info", directory)
     return waveform_dirs
 
 
@@ -72,7 +52,7 @@ def checkpoint_rrup(output_dir, srf_files):
     """
     for srf in srf_files[:]:
         srf_name = srf.split('/')[-1].split('.')[0]
-        output_path = os.path.join(output_dir, srf_name + '.csv')
+        output_path = os.path.join(output_dir, srf_name + CSV_SUFFIX)
         if os.path.isfile(output_path):
             srf_files.remove(srf)
     return srf_files

@@ -14,8 +14,10 @@ from qcore import utils
 import re
 
 TEMPLATES_DIR = 'templates'
-TEMPLATE_NAME = 'im_calc_sl.template'
-HEADER_NAME = 'slurm_header.cfg'
+CONTEXT_TEMPLATE = 'im_calc_sl.template'
+HEADER_TEMPLATE = 'slurm_header.cfg'
+SL_NAME = '{}_im_calc_{}.sl'
+SKIP = 'skip'
 TIME = '00:30:00'
 DEFAULT_N_PROCESSES = 40
 DEFAULT_RRUP_OUTDIR = os.path.join('/home', getpass.getuser(), 'imcalc_rrup_out_{}'.format(
@@ -42,21 +44,32 @@ COMPS=['geom', '000', '090', 'ver', 'ellipsis']
 # python generate_sl.py -o ~/test_obs/IMCalcExample  -ll /scale_akl_nobackup/filesets/transit/nesi00213/StationInfo/non_uniform_whole_nz_with_real_stations-hh400_v18p6.ll -ml 1000 -simple -e
 
 
-def generate_sl(sim_dirs, obs_dirs, station_file, rrup_files, output_dir, prefix, i, np, extended, simple, comp, version,
-                job_description, job_name, account, nb_cpus, wallclock_limit, exe_time, mail, memory, additional_lines):
-    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', TEMPLATES_DIR)
-    j2_env = Environment(loader=FileSystemLoader(path), trim_blocks=True)
-
-    header = j2_env.get_template(HEADER_NAME).render(version=version, job_description=job_description,
+def generate_header(template_dir, template_name, version, job_description, job_name, account, nb_cpus, wallclock_limit, exe_time, mail, memory, additional_lines):
+    j2_env = Environment(loader=FileSystemLoader(template_dir), trim_blocks=True)
+    header = j2_env.get_template(template_name).render(version=version, job_description=job_description,
                                                      job_name=job_name, account=account, nb_cpus=nb_cpus,
-                                                     wallclock_limit=wallclock_limit, exe_time=exe_time, mail=mail, memory=memory,
+                                                     wallclock_limit=wallclock_limit, exe_time=exe_time, mail=mail,
+                                                     memory=memory,
                                                      additional_lines=additional_lines)
-    context = j2_env.get_template(TEMPLATE_NAME).render(
-        time=time,comp=comp,
+    return header
+
+
+def generate_context(template_dir, template_name, sim_dirs, obs_dirs, station_file, rrup_files, output_dir, np, extended, simple, comp):
+    j2_env = Environment(loader=FileSystemLoader(template_dir), trim_blocks=True)
+    context = j2_env.get_template(template_name).render(
+        time=time, comp=comp,
         sim_dirs=sim_dirs, obs_dirs=obs_dirs,
         rrup_files=rrup_files, station_file=station_file,
         output_dir=output_dir, np=np, extended=extended, simple=simple)
-    sl_name = '{}_im_calc_{}.sl'.format(prefix, i)
+    return context
+
+
+def generate_sl(sim_dirs, obs_dirs, station_file, rrup_files, output_dir, prefix, i, np, extended, simple, comp, version,
+                job_description, job_name, account, nb_cpus, wallclock_limit, exe_time, mail, memory, additional_lines):
+    template_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', TEMPLATES_DIR)
+    header = generate_header(template_path, HEADER_TEMPLATE, version, job_description, job_name, account, nb_cpus, wallclock_limit, exe_time, mail, memory, additional_lines)
+    context = generate_context(template_path, CONTEXT_TEMPLATE, sim_dirs, obs_dirs, station_file, rrup_files, output_dir, np, extended, simple, comp )
+    sl_name = SL_NAME.format(prefix, i)
     return sl_name, "{}\n{}".format(header, context)
 
 
@@ -112,7 +125,7 @@ def get_fd_path(srf_filepath, sim_dir):
             fd_path = utils.load_py_cfg(params_base)['FD_STATLIST']
             fd = "-fd {}".format(fd_path)
         except Exception as e:
-            fd = 'skip'
+            fd = SKIP
     return fd
 
 
@@ -201,7 +214,7 @@ def main():
         rrup_files = []
         for srf_file in srf_files:
             fd = get_fd_path(srf_file, args.sim_dir)
-            if fd != 'skip':
+            if fd != SKIP:
                 run_name = get_basename_without_ext(srf_file)
                 rrup_files.append((srf_file, run_name, fd))
         # rrup
