@@ -121,15 +121,15 @@ if is_master:
     except SystemExit:
         # invalid arguments or -h
         comm.Abort()
+    # random seed
+    seed_file = os.path.join(os.path.dirname(args.out_file), "SEED")
+    if os.path.isfile(seed_file):
+        args.seed = np.loadtxt(seed_file, dtype='i', ndmin=1)[0]
+    elif args.seed == 0:
+        import random
+        args.seed = random.randrange(1000000, 9999999)
+        np.savetxt(seed_file, np.array([args.seed], dtype=np.int32), fmt='%i')
 args = comm.bcast(args, root = master)
-# random seed
-seed_file = os.path.join(os.path.dirname(args.out_file), "SEED")
-if os.path.isfile(seed_file):
-    args.seed = np.loadtxt(seed_file, dtype='i', ndmin=1)[0]
-elif args.seed == 0:
-    import random
-    args.seed = random.randrange(1000000, 9999999)
-    np.savetxt(seed_file, np.array([args.seed], dtype=np.int32), fmt='%i')
 
 nt = int(round(args.duration / args.dt))
 stations = np.loadtxt(args.station_file, ndmin = 1, \
