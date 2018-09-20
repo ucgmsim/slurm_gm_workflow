@@ -39,7 +39,6 @@ ic_flag = True
 # seems to store details in {velocity_name}_{station_name}.1d if not '-1'
 velocity_name = '-1'
 
-default_rand_seed = 5481190
 args = None
 if is_master:
     parser = ArgumentParser()
@@ -65,7 +64,7 @@ if is_master:
     arg('--no-siteamp', help = 'disable BJ97 site amplification factors', \
         action = 'store_true')
     # HF IN, line 7
-    arg('--seed', help = 'random seed (0 for randomized seed)', type = int, default = default_rand_seed)
+    arg('--seed', help = 'random seed (0 for randomized seed)', type = int, default = 5481190)
     arg('-i', '--independent', action = 'store_true', \
         help = 'run stations independently (with same random seed)')
     # HF IN, line 9
