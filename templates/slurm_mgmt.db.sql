@@ -46,5 +46,5 @@ CREATE TABLE IF NOT EXISTS "time_log" (
 CREATE VIEW IF NOT EXISTS state_view AS
 SELECT state.id, state.run_name, status_enum.state, proc_type_enum.proc_type, state.job_id, state.last_modified
 FROM state, status_enum, proc_type_enum
-WHERE state.proc_type = proc_type_enum.id AND state.status = status_enum.id 
+WHERE state.proc_type = proc_type_enum.id AND state.status = status_enum.id;
 COMMIT;
