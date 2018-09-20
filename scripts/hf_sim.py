@@ -39,6 +39,7 @@ ic_flag = True
 # seems to store details in {velocity_name}_{station_name}.1d if not '-1'
 velocity_name = '-1'
 
+default_rand_seed = 5481190
 args = None
 if is_master:
     parser = ArgumentParser()
@@ -64,7 +65,7 @@ if is_master:
     arg('--no-siteamp', help = 'disable BJ97 site amplification factors', \
         action = 'store_true')
     # HF IN, line 7
-    arg('--seed', help = 'random seed', type = int, default = 5481190)
+    arg('--seed', help = 'random seed (0 for randomized seed)', type = int, default = default_rand_seed)
     arg('-i', '--independent', action = 'store_true', \
         help = 'run stations independently (with same random seed)')
     # HF IN, line 9
@@ -128,12 +129,40 @@ head_total = HEAD_SIZE + HEAD_STAT * stations.size
 block_size = nt * N_COMP * FLOAT_SIZE
 file_size = head_total + stations.size * block_size
 
+#####  random seed
+# args.seed == 0 means it will randomize a seed if SEED file is NOT found in the same directory as out_file
+seed_file = os.path.join(os.path.dirname(args.out_file),"SEED")
+if os.path.isfile(seed_file): #if file exists, we use this seed
+    with open(seed_file, 'r') as f:
+        print "Found {}: Specified seed arg {} is ignored (delete this file to override)".format(seed_file, args.seed)
+        seed = f.readlines()
+        try:
+            seed = int(seed[0])
+        except ValueError:
+            print "Error: The value in SEED is invalid"
+            raise
+elif args.seed == 0: # we will use a randomized seed
+    import random
+    seed = random.randrange(1000000,9999999)
+    with open(seed_file, 'w') as f:
+        f.write("{}\n".format(seed))
+    print "Random seed was auto-generated"
+else:
+    if args.seed == default_rand_seed:
+        print "Random seed is the default one {}".format(default_rand_seed)
+
+    else:
+        print "Random seed is user-specified"
+        seed = args.seed
+
+print "Random seed : {}".format(seed)
+    
 # initialise output with general metadata
 def initialise(check_only = False):
     with open(args.out_file, mode = 'rb' if check_only else 'w+b') as out:
         # int/bool parameters, rayset must be fixed to length = 4
         fwrs = args.rayset + [0] * (4 - len(args.rayset))
-        i4 = np.array([stations.size, nt, args.seed, not args.no_siteamp, \
+        i4 = np.array([stations.size, nt, seed, not args.no_siteamp, \
                        args.path_dur, len(args.rayset), \
                        fwrs[0], fwrs[1], fwrs[2], fwrs[3], \
                        nbu, ift, nl_skip, ic_flag, args.independent, \
@@ -236,7 +265,7 @@ def run_hf(local_statfile, n_stat, idx_0, velocity_model = args.velocity_model):
         '%d %s' % (len(args.rayset), ' '.join(map(str, args.rayset))), \
         str(int(not args.no_siteamp)), \
         '%d %d %s %s' % (nbu, ift, flo, fhi), \
-        str(args.seed), str(n_stat), \
+        str(seed), str(n_stat), \
         '%s %s %s %s %s' \
             % (args.duration, args.dt, args.fmax, args.kappa, args.qfexp), \
         '%s %s %s %s %s' % (args.rvfac, args.rvfac_shal, args.rvfac_deep, \
