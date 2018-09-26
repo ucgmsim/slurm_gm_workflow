@@ -30,6 +30,8 @@ def checkpoint_single(run_dir, realization_name, sim_or_obs):
 
 
 def checkpoint_wrapper(run_dir, waveform_dirs, sim_or_obs):
+    done = 0
+    todo = 0
     for directory in waveform_dirs[:]:
         dir_name = directory.split('/')[-1]
         if dir_name == IM_CLAC_DIR:
@@ -38,8 +40,11 @@ def checkpoint_wrapper(run_dir, waveform_dirs, sim_or_obs):
             exits = checkpoint_single(run_dir, dir_name, sim_or_obs)
             if exits:
                 waveform_dirs.remove(directory)
+                done += 1
             else:
-                print("directory does not have csv or info", directory)
+                todo += 1
+    if waveform_dirs[:] != []:
+        print("Inside {}, {} im_calc done, {} to do.".format(run_dir, done, todo)) 
     return waveform_dirs
 
 
