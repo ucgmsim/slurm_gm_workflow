@@ -20,7 +20,7 @@ def update_db(db, process, status, job=None, run_name=None, error=None):
                    AND status <= (SELECT id FROM status_enum WHERE state = ?)''', (status, job, error, job, run_name, process, status))
     db.connection.commit()    
 
-def force_update_db(db, process, status, job=None, run_name=None, error=None):
+def force_update_db(db, process, status, job=None, run_name=None, error=None, retry=False):
     db.execute('''UPDATE state
                   SET status = (SELECT id FROM status_enum WHERE state = ?), 
                       last_modified = strftime('%s','now'),
@@ -29,6 +29,11 @@ def force_update_db(db, process, status, job=None, run_name=None, error=None):
                   WHERE (job_id = ? or run_name = ?)
                    AND proc_type = (SELECT id FROM proc_type_enum WHERE proc_type = ?)
                    ''', (status, job, error, job, run_name, process))    
+    if retry:
+		db.execute('''UPDATE state
+					  SET retries = retries + 1
+					  WHERE (job_id = ? or run_name = ?)
+					  AND proc_type = (SELECT id FROM proc_type_enum WHERE proc_type = ?)''', (job, run_name, process))
     db.connection.commit()
 
 def main():
@@ -43,6 +48,7 @@ def main():
     parser.add_argument('-e' ,'--error', type=str)
    
     parser.add_argument('-f', '--force', action="store_true")
+    parser.add_argument('-rt', '--is_retry', action="store_true", default=False)
      
     args = parser.parse_args()
     f = args.run_folder
@@ -54,7 +60,7 @@ def main():
     db = create_mgmt_db.connect_db(f)
     
     if args.force:
-        force_update_db(db, process, status, job=job_id, run_name=run_name, error=error)
+        force_update_db(db, process, status, job=job_id, run_name=run_name, error=error, retry=args.is_retry)
     else:
         update_db(db, process, status, job=job_id, run_name=run_name, error=error)
 

@@ -114,7 +114,7 @@ def main():
     slurm_query_status.update_tasks(db, queued_tasks, db_tasks)
     db_tasks = slurm_query_status.get_submitted_db_tasks(db)
     #submitted_tasks = slurm_query_status.get_submitted_db_tasks(db)
-    runnable_tasks = slurm_query_status.get_runnable_tasks(db)
+    runnable_tasks = slurm_query_status.get_runnable_tasks(db, ntask_to_run)
     
     ntask_to_run = n_runs_max - len(db_tasks)
     submit_task_count = 0
