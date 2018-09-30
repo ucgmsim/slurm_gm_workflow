@@ -97,7 +97,7 @@ def update_db(process, status, mgmt_db_location, srf_name, jobid):
 
 
 def write_sl_script(hf_sim_dir, sim_dir, hf_run_name, stoch_name, sl_template_prefix, hf_option, nb_cpus=default_core,
-                    run_time=default_run_time, memory=default_memory, account=default_account, binary=False):
+                    run_time=default_run_time, memory=default_memory, account=default_account, binary=False, seed=None):
     from params_base import mgmt_db_location
 
     f_template = open('%s.sl.template' % sl_template_prefix)
@@ -116,6 +116,8 @@ def write_sl_script(hf_sim_dir, sim_dir, hf_run_name, stoch_name, sl_template_pr
     else:
         hf_submit_command = "srun python  $BINPROCESS/hfsims-stats-mpi.py " + hf_sim_dir + " " + str(hf_option)
 
+    if seed is not None:
+        hf_submit_command = "{} --seed {}".format(hf_submit_command, seed)
     txt = str_template.replace("{{hf_sim_dir}}", hf_sim_dir)
     txt = txt.replace("{{mgmt_db_location}}", mgmt_db_location)
     txt = txt.replace("{{hf_submit_command}}", hf_submit_command)
@@ -165,6 +167,7 @@ if __name__ == '__main__':
     parser.add_argument('--srf', type=str, default=None)
     parser.add_argument('--binary', action="store_true")
     parser.add_argument('--debug', action="store_true")
+    parser.add_argument('--seed', help="random seed number(0 for randomized seed)", type=int, default=None)
     args = parser.parse_args()
     # check if parsed ncore
     if args.ncore != default_core:
@@ -232,7 +235,7 @@ if __name__ == '__main__':
             station_count = len(qcore.shared.get_stations(params.FD_STATLIST))
             #get the number of sub faults for estimation
             #TODO:make it read through the whole list instead of assuming every stoch has same size
-            sub_fault_count,sub_fault_area=qcore.srf.get_nsub_stoch(params.hf_slips[counter_srf],get_area=True)
+            sub_fault_count,sub_fault_area=qcore.srf.get_nsub_stoch(params.hf_slips[counter_srf], get_area=True)
             if args.debug == True:
                 print "sb:",sub_fault_area
                 print "nt:",timesteps
@@ -244,16 +247,17 @@ if __name__ == '__main__':
                 est_chours = est_core_hours_hf(timesteps,station_count,sub_fault_count,default_hf_coef_ascii)
             #print "The estimated time is currently not so accurate."
             run_time,ncore = est_wct(est_chours, ncore, default_scale)
-            print "Estimated time: ",run_time," Core: ",ncore
+            print "Estimated time: ", run_time, " Core: ", ncore
         else:
             run_time = default_run_time
         hf_sim_dir = os.path.join(os.path.join(params.hf_dir, params_base_bb.hf_run_names[counter_srf]), srf_name)
         sim_dir = params.sim_dir
         hf_run_name = params_base_bb.hf_run_names[counter_srf]
         created_script = write_sl_script(hf_sim_dir, sim_dir, hf_run_name, srf_name, ll_name_prefix, hf_option, ncore,
-                                         run_time, account=args.account, binary=args.binary)
+                                         run_time, account=args.account, binary=args.binary, seed=args.seed)
         jobid = submit_sl_script(created_script, submit_yes)
         if jobid != None:
             update_db("HF", "in-queue", params.mgmt_db_location, srf_name, jobid)
 
         counter_srf += 1
+
