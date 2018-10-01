@@ -5,7 +5,7 @@ from math import ceil
 #TODO: this value should be auto updated with the correct implementation of WCT
 #default_emod3d_coef=6860795
 default_emod3d_coef=3.00097
-default_ncore=120
+default_ncore=160
 default_wct_scale=1.5
 default_round_len=2
 #hyperthread
@@ -23,16 +23,18 @@ def est_core_hours_emod3d(nx, ny, nz,dt, sim_duration, emod3d_coef=default_emod3
     estimated_hours= ((total_area*timesteps)*emod3d_coef)/(10**11)
     #estimated_hours = estimated_seconds/3600
     if round_len != 0:
+        #ignoring small digits after the 2nd(default)
         estimated_hours = round(estimated_hours, round_len)
     return estimated_hours
 
 #TODO:move shared funciton to a shared lib file
+#this function is used by LF, HF, and BB
 def est_wct(core_hours, ncore, scale=default_wct_scale):
-    if scale < 1:
+    if scale < 1.0:
         print "Warning!! scale is under 1, may cause under estimating WCT."
     scaled_estimation = core_hours*scale
     #using ceil to round up the wct, so it will use at least one hour
-    time_per_cpu = ceil(float(scaled_estimation/int(ncore)))
+    time_per_cpu = ceil(float(scaled_estimation)/int(ncore))
     #final fail-prof
     if time_per_cpu <= 1.0:
         time_per_cpu = 1.0
