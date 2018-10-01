@@ -53,8 +53,7 @@ def submit_task(sim_dir, proc_type, run_name, db, binary_mode=True, seed=None):
             else:
                 print "python $gmsim/workflow/scripts/install_bb.py --v1d %s"%default_1d_mod
                 call("python $gmsim/workflow/scripts/install_bb.py --v1d %s"%default_1d_mod, shell=True)
-      #  hf_cmd = "python $gmsim/workflow/scripts/submit_hf.py --binary --auto --srf %s"%run_name
-        hf_cmd = "python /home/melody.zhu/slurm_gm_workflow/scripts/submit_hf.py --binary --auto --srf %s"%run_name
+        hf_cmd = "python $gmsim/workflow/scripts/submit_hf.py --binary --auto --srf %s"%run_name
         if seed is not None:
             hf_cmd = "{} --seed {}".format(hf_cmd, seed)
         call(hf_cmd, shell=True)
@@ -115,15 +114,16 @@ def main():
             seed = qcore_cfg['seed']
 
         #append more logic here if more variables are requested 
-
+    print("seed",seed)
     queued_tasks = slurm_query_status.get_queued_tasks()
     db_tasks = slurm_query_status.get_submitted_db_tasks(db)
     slurm_query_status.update_tasks(db, queued_tasks, db_tasks)
     db_tasks = slurm_query_status.get_submitted_db_tasks(db)
     #submitted_tasks = slurm_query_status.get_submitted_db_tasks(db)
+    ntask_to_run = n_runs_max - len(db_tasks)
+    
     runnable_tasks = slurm_query_status.get_runnable_tasks(db, ntask_to_run)
     
-    ntask_to_run = n_runs_max - len(db_tasks)
     submit_task_count = 0
     task_num=0
     print submit_task_count
