@@ -20,9 +20,9 @@ def submit_task(sim_dir, proc_type, run_name,db,binary_mode=True):
     os.chdir(sim_dir)
 #    print "sim_dir:%s"%sim_dir
     #idenfity the proc_type, EMOD3D:1, merge_ts:2, winbin_aio:3, HF:4, BB:5
+    lf_sim_dir = os.path.join(sim_dir,"LF/%s"%run_name)
     if proc_type == 1:
         #EMOD 3D
-        lf_sim_dir = os.path.join(sim_dir,"LF/%s"%run_name)
         if not os.path.isfile(os.path.join(lf_sim_dir,"params_uncertain.py")):
             print os.path.join(lf_sim_dir,"params_uncertain.py")," missing, creating"
             call("python $gmsim/workflow/scripts/submit_emod3d.py --set_params_only", shell=True)
@@ -44,6 +44,10 @@ def submit_task(sim_dir, proc_type, run_name,db,binary_mode=True):
         #run the submit_post_emod3d before install_bb and submit_hf
         #TODO: fix this strange logic in the actual workflow
         #see if params_uncertain.py exsist
+        if not os.path.isfile(os.path.join(lf_sim_dir,"params_uncertain.py")):
+            print os.path.join(lf_sim_dir,"params_uncertain.py")," missing, creating"
+            call("python $gmsim/workflow/scripts/submit_emod3d.py --set_params_only", shell=True)
+            print "python $gmsim/workflow/scripts/submit_emod3d.py --set_params_only"
         if not os.path.isfile(os.path.join(sim_dir,"params_base_bb.py")):
             if default_hf_vs30_ref != None:
                 print "python $gmsim/workflow/scripts/install_bb.py --v1d %s --hf_stat_vs_ref %s"%(default_1d_mod,default_hf_vs30_ref)
