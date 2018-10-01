@@ -13,6 +13,7 @@ default_binary_mode = True
 default_n_runs = 10 
 default_1d_mod = "/nesi/transit/nesi00213/VelocityModel/Mod-1D/Cant1D_v2-midQ_leer.1d"
 default_hf_vs30_ref = None
+default_seed = None
 
 
 def submit_task(sim_dir, proc_type, run_name, db, binary_mode=True, seed=None):
@@ -52,7 +53,8 @@ def submit_task(sim_dir, proc_type, run_name, db, binary_mode=True, seed=None):
             else:
                 print "python $gmsim/workflow/scripts/install_bb.py --v1d %s"%default_1d_mod
                 call("python $gmsim/workflow/scripts/install_bb.py --v1d %s"%default_1d_mod, shell=True)
-        hf_cmd = "python $gmsim/workflow/scripts/submit_hf.py --binary --auto --srf %s"%run_name
+      #  hf_cmd = "python $gmsim/workflow/scripts/submit_hf.py --binary --auto --srf %s"%run_name
+        hf_cmd = "python /home/melody.zhu/slurm_gm_workflow/scripts/submit_hf.py --binary --auto --srf %s"%run_name
         if seed is not None:
             hf_cmd = "{} --seed {}".format(hf_cmd, seed)
         call(hf_cmd, shell=True)
@@ -79,19 +81,19 @@ def main():
     parser.add_argument('--single_sim', nargs="?", type=str,const=True)
     parser.add_argument('--config',type=str,default=None,help="a path to a config file that constains all the required values.")
     parser.add_argument('--no_im', action="store_true")
-    parser.add_argument('--seed', help="random seed number(0 for randomized seed)", type=int, default=None)
 
     args = parser.parse_args()
     mgmt_db_location = args.run_folder
     n_runs_max = args.n_runs
     db = create_mgmt_db.connect_db(mgmt_db_location)
     db_tasks = []
-   
+    seed = default_seed
+
     if args.config != None: 
         #parse and check for variables in config
         try:
-            print "!!!!!!!!!!!!!",args.config
-            qcore_cfg = ldcfg.load(directory=os.path.dirname(args.config),cfg_name=os.path.basename(args.config))
+            print "!!!!!!!!!!!!!", args.config
+            qcore_cfg = ldcfg.load(directory=os.path.dirname(args.config), cfg_name=os.path.basename(args.config))
             print qcore_cfg
         except Exception as e:
             print e
@@ -104,13 +106,15 @@ def main():
         if 'hf_stat_vs_ref' in qcore_cfg:
             #TODO:bad hack, fix this when possible (with parsing)
             global default_hf_vs30_ref
-            default_hf_vs30_ref =  qcore_cfg['hf_stat_vs_ref']
+            default_hf_vs30_ref = qcore_cfg['hf_stat_vs_ref']
         if 'binary_mode' in qcore_cfg:
             binary_mode = qcore_cfg['binary_mode']
         else:
             binary_mode = default_binary_mode
-        #append more logic here if more variables are requested 
+        if 'seed' in qcore_cfg:
+            seed = qcore_cfg['seed']
 
+        #append more logic here if more variables are requested 
 
     queued_tasks = slurm_query_status.get_queued_tasks()
     db_tasks = slurm_query_status.get_submitted_db_tasks(db)
@@ -135,7 +139,6 @@ def main():
         if args.no_im and proc_type == 6:
             task_num = task_num + 1
             continue
-        
 
         vm_name = get_vmname(run_name)
 
@@ -146,17 +149,12 @@ def main():
             #non-cybershake, db is the same loc as sim_dir
             sim_dir = os.path.join(os.path.join(mgmt_db_location,"Runs"), vm_name)
         #submit the job
-        submit_task(sim_dir, proc_type, run_name, db, binary_mode, args.seed)
+        submit_task(sim_dir, proc_type, run_name, db, binary_mode, seed)
        
         submit_task_count = submit_task_count + 1
         task_num = task_num + 1
         
 
-
 if __name__ == '__main__':
    main() 
-
-
-
-
 
