@@ -29,8 +29,9 @@ ACCOUNT = 'nesi00213'
 NTASKS = 1
 EXE_TIME = '%j'
 MAIL = 'test@test.com'
-MEMORY = '90G'
+MEMORY = '2G'
 ADDI = '#SBATCH --hint=nomultithread'
+ADDI = ADDI+'\n'+'#SBATCH --mem-per-cpu=%s'%MEMORY
 TIME_REGEX = '(24:00:00)|(^(2[0-3]|[01]?[0-9]):([0-5]?[0-9]):([0-5]?[0-9])$)'
 COMPS=['geom', '000', '090', 'ver', 'ellipsis']
 
@@ -171,7 +172,7 @@ def main():
     parser.add_argument('--job_name', default=JOB, help="job name of slurm script. Default is {}".format(JOB))
     parser.add_argument('--account', default=ACCOUNT, help="Account name. Default is {}.".format(ACCOUNT))
     parser.add_argument('--ntasks', default=NTASKS, type=int, help="number of tasks per node. Default is {}".format(NTASKS))
-    parser.add_argument('--exe_time', default=EXE_TIME, help="Default is {}".format(EXE_TIME))
+    parser.add_argument('--exe_time', default=EXE_TIME, help="Default is {}".format(EXE_TIME.replace('%','%%')))
     parser.add_argument('--mail', default=MAIL, help="Default is {}".format(MAIL))
     parser.add_argument('--memory', default=MEMORY, help="Memory per cpu. Default is {}".format(MEMORY))
     parser.add_argument('--additional_lines', default=ADDI, help="additional lines add to slurm header. Default is {}".format(ADDI))
