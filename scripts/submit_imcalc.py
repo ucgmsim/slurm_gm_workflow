@@ -9,7 +9,7 @@ import glob
 import getpass
 import time
 from datetime import datetime
-import checkpoint
+import im_calc_checkpoint as checkpoint
 from qcore import utils
 import re
 
