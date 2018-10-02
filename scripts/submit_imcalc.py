@@ -14,7 +14,7 @@ from qcore import utils
 import re
 
 TEMPLATES_DIR = 'templates'
-CONTEXT_TEMPLATE = 'im_calc_sl.template'
+CONTEXT_TEMPLATE = 'im_calc.sl.template'
 HEADER_TEMPLATE = 'slurm_header.cfg'
 SL_NAME = '{}_im_calc_{}.sl'
 SKIP = 'skip'
