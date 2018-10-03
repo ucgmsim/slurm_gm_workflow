@@ -13,10 +13,10 @@ default_binary_mode = True
 default_n_runs = 10 
 default_1d_mod = "/nesi/transit/nesi00213/VelocityModel/Mod-1D/Cant1D_v2-midQ_leer.1d"
 default_hf_vs30_ref = None
-default_seed = None
+default_hf_seed = None
 default_rand_reset = True
 
-def submit_task(sim_dir, proc_type, run_name, db, mgmt_db_location ,binary_mode=True, rand_reset=default_rand_reset, seed=None):
+def submit_task(sim_dir, proc_type, run_name, db, mgmt_db_location ,binary_mode=True, rand_reset=default_rand_reset, hf_seed=None):
     #TODO: using shell call is EXTREMELY undesirable. fix this in near future(fundamentally)
     #change the working directory to the sim_dir
     os.chdir(sim_dir)
@@ -59,8 +59,8 @@ def submit_task(sim_dir, proc_type, run_name, db, mgmt_db_location ,binary_mode=
                 print "python $gmsim/workflow/scripts/install_bb.py --v1d %s"%default_1d_mod
                 call("python $gmsim/workflow/scripts/install_bb.py --v1d %s"%default_1d_mod, shell=True)
         hf_cmd = "python $gmsim/workflow/scripts/submit_hf.py --binary --auto --srf %s"%run_name
-        if seed is not None:
-            hf_cmd = "{} --seed {}".format(hf_cmd, seed)
+        if hf_seed is not None:
+            hf_cmd = "{} --seed {}".format(hf_cmd, hf_seed)
         call(hf_cmd, shell=True)
         if rand_reset:
             hf_cmd = "{} --rand_reset".format(hf_cmd)
@@ -98,7 +98,7 @@ def main():
     n_runs_max = args.n_runs
     db = create_mgmt_db.connect_db(mgmt_db_location)
     db_tasks = []
-    seed = default_seed
+    hf_seed = default_hf_seed
 
     if args.config != None: 
         #parse and check for variables in config
@@ -123,8 +123,8 @@ def main():
         else:
             binary_mode = default_binary_mode
 
-        if 'seed' in qcore_cfg:
-            seed = qcore_cfg['seed']
+        if 'hf_seed' in qcore_cfg:
+            hf_seed = qcore_cfg['hf_seed']
       
         if 'rand_reset' in qcore_cfg:
             rand_reset = qcore_cfg['rand_reset']
@@ -132,7 +132,7 @@ def main():
             rand_reset = default_rand_reset
         #append more logic here if more variables are requested 
         
-    print("seed",seed)
+    print("hf_seed",hf_seed)
     queued_tasks = slurm_query_status.get_queued_tasks()
     db_tasks = slurm_query_status.get_submitted_db_tasks(db)
     slurm_query_status.update_tasks(db, queued_tasks, db_tasks)
@@ -167,7 +167,7 @@ def main():
             #non-cybershake, db is the same loc as sim_dir
             sim_dir = os.path.join(os.path.join(mgmt_db_location,"Runs"), vm_name)
         #submit the job
-        submit_task(sim_dir, proc_type, run_name, db, mgmt_db_location, binary_mode, rand_reset, seed)
+        submit_task(sim_dir, proc_type, run_name, db, mgmt_db_location, binary_mode, rand_reset, hf_seed)
        
         submit_task_count = submit_task_count + 1
         task_num = task_num + 1
