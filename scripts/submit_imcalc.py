@@ -13,10 +13,15 @@ import im_calc_checkpoint as checkpoint
 from qcore import utils
 import re
 
+from shared_workflow.shared import exe
+
+timestamp_format = "%Y%m%d_%H%M%S"
+timestamp = datetime.now().strftime(timestamp_format)
+
 TEMPLATES_DIR = 'templates'
 CONTEXT_TEMPLATE = 'im_calc.sl.template'
 HEADER_TEMPLATE = 'slurm_header.cfg'
-SL_NAME = '{}_im_calc_{}.sl'
+SL_NAME = 'im_calc_{}_{{timestamp}}_{}.sl'.replace('{{timestamp}}',timestamp)
 SKIP = 'skip'
 TIME = '00:30:00'
 DEFAULT_N_PROCESSES = 40
@@ -55,30 +60,42 @@ def generate_header(template_dir, template_name, version, job_description, job_n
     return header
 
 
-def generate_context(template_dir, template_name, sim_dirs, obs_dirs, station_file, rrup_files, output_dir, np, extended, simple, comp):
+def generate_context(template_dir, template_name, sim_dirs, obs_dirs, station_file, rrup_files, output_dir, np, extended, simple, comp,mgmt_db):
     j2_env = Environment(loader=FileSystemLoader(template_dir), trim_blocks=True)
     context = j2_env.get_template(template_name).render(
         time=time, comp=comp,
         sim_dirs=sim_dirs, obs_dirs=obs_dirs,
         rrup_files=rrup_files, station_file=station_file,
-        output_dir=output_dir, np=np, extended=extended, simple=simple)
+        output_dir=output_dir, np=np, extended=extended, simple=simple,mgmt_db=mgmt_db)
     return context
 
 
 def generate_sl(sim_dirs, obs_dirs, station_file, rrup_files, output_dir, prefix, i, np, extended, simple, comp, version,
-                job_description, job_name, account, nb_cpus, wallclock_limit, exe_time, mail, memory, additional_lines):
+                job_description, job_name, account, nb_cpus, wallclock_limit, exe_time, mail, memory, additional_lines,mgmt_db):
+
     template_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', TEMPLATES_DIR)
     header = generate_header(template_path, HEADER_TEMPLATE, version, job_description, job_name, account, nb_cpus, wallclock_limit, exe_time, mail, memory, additional_lines)
-    context = generate_context(template_path, CONTEXT_TEMPLATE, sim_dirs, obs_dirs, station_file, rrup_files, output_dir, np, extended, simple, comp )
+    context = generate_context(template_path, CONTEXT_TEMPLATE, sim_dirs, obs_dirs, station_file, rrup_files, output_dir, np, extended, simple, comp, mgmt_db)
     sl_name = SL_NAME.format(prefix, i)
     return sl_name, "{}\n{}".format(header, context)
 
 
-def write_sl(name_context_list):
+def write_sl(name_context_list, submit=False):
     for sl_name, context in name_context_list:
         with open(sl_name, 'w') as sl:
             print("writing {}".format(sl_name))
             sl.write(context)
+            if submit is True:
+                submit_sl_script(sl_name)
+
+def submit_sl_script(script):
+    if type(script) == unicode:
+        script = script.encode()
+    print "Submitting %s" % script
+    res = exe("sbatch %s" % script, debug=False)
+    if len(res[1]) == 0:
+        # no errors, return the job id
+        return res[0].split()[-1] 
 
 
 def get_basename_without_ext(path):
@@ -92,7 +109,7 @@ def get_fault_name(run_name):
 def split_and_generate_slurms(sim_dirs, obs_dirs, station_file, rrup_files, output_dir, processes, max_lines, prefix,
                               extended='', simple='', comp=COMPS[0], version=VERSION, job_description='', job_name=JOB,
                               account=ACCOUNT, nb_cpus=NTASKS, wallclock_limit=TIME, exe_time=EXE_TIME, mail=MAIL,
-                              memory=MEMORY, additional_lines=ADDI):
+                              memory=MEMORY, additional_lines=ADDI,mgmt_db=None):
     total_dir_lines = 0
     if sim_dirs != []:
         total_dir_lines = len(sim_dirs)
@@ -109,7 +126,7 @@ def split_and_generate_slurms(sim_dirs, obs_dirs, station_file, rrup_files, outp
             last_line_index = total_dir_lines
         name, context = generate_sl(sim_dirs[i: last_line_index], obs_dirs[i: last_line_index], station_file,
                                     rrup_files[i: last_line_index], output_dir, prefix, i, processes, extended, simple, comp, version,
-                job_description, job_name, account, nb_cpus, wallclock_limit, exe_time, mail, memory, additional_lines)
+                job_description, job_name, account, nb_cpus, wallclock_limit, exe_time, mail, memory, additional_lines,mgmt_db)
         name_context_list.append((name, context))
         i += max_lines
 
@@ -176,6 +193,9 @@ def main():
     parser.add_argument('--mail', default=MAIL, help="Default is {}".format(MAIL))
     parser.add_argument('--memory', default=MEMORY, help="Memory per cpu. Default is {}".format(MEMORY))
     parser.add_argument('--additional_lines', default=ADDI, help="additional lines add to slurm header. Default is {}".format(ADDI))
+    parser.add_argument('--mgmt_db', type=str, help='path to the mgmt_db')
+
+    parser.add_argument('--auto',action='store_true',help='submit the sl script as well')
 
     args = parser.parse_args()
 
@@ -205,8 +225,8 @@ def main():
                                                       args.max_lines, 'sim', extended=args.extended_period,
                                                       simple=args.simple_output, comp=args.comp, version=args.version, job_description=args.job_description, job_name=args.job_name,
                               account=args.account, nb_cpus=args.ntasks, wallclock_limit=args.time, exe_time=args.exe_time, mail=args.mail,
-                              memory=args.memory, additional_lines=args.additional_lines)
-        write_sl(name_context_list)
+                              memory=args.memory, additional_lines=args.additional_lines,mgmt_db=args.mgmt_db)
+        write_sl(name_context_list,args.auto)
 
     if args.srf_dir is not None:
         srf_files = get_dirs(args.srf_dir, args.identifiers, "{}/Srf/{}.srf")
