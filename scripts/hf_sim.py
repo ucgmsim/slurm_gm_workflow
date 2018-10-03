@@ -294,7 +294,7 @@ def run_hf(local_statfile, n_stat, idx_0, velocity_model = args.velocity_model):
 def validate_end(idx_n):
     """
     Verify filesize has been extended by the correct amount.
-    idx_n: index of last station to be completed
+    idx_n: position (starting at 1) of last station to be completed
     """
     try:
         assert(os.stat(args.out_file).st_size == head_total + idx_n * block_size)
@@ -339,6 +339,6 @@ else:
             run_hf(in_stats, n_stat, c_work_idx[s])
         c0 += c_work_idx.size
         if rank == size - 1:
-            validate_end(c0)
+            validate_end(work_idx[c0 - 1] + 1)
 os.remove(in_stats)
 print('Process %03d of %03d finished (%.2fs).' % (rank, size, MPI.Wtime() - t0))
