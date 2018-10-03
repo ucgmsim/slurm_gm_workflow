@@ -6,6 +6,7 @@ if [ $# -lt 2 ]; then
 fi
 ROOT=$1
 version=$2
+script_dir=`dirname "$0"`
 function test_dir {
     [ -d $1 ] && echo "$1 is available" || echo "Please get a version of the $1 library later on $2"
 }
@@ -26,11 +27,14 @@ chmod g+w ${ROOT}/{VelocityModel,VelocityModels,StationInfo,workflow,RunFolder,R
 # preparing the file bashrc.uceq
 rm -f ${ROOT}/share/bashrc.uceq
 touch ${ROOT}/share/bashrc.uceq
+
+#TODO:tempory disabled chgrp because its breaking the remote daemon. fix this if possible
+#cat $script_dir/change_grp.sh >> ${ROOT}/share/bashrc.uceq
+cat $script_dir/load_default_modules.sh >> ${ROOT}/share/bashrc.uceq
+
 echo "export gmsim='$ROOT'" >> ${ROOT}/share/bashrc.uceq
 echo 'export PATH=$PATH:'${ROOT}/workflow/scripts >> ${ROOT}/share/bashrc.uceq
 echo "export PYTHONPATH=$ROOT/qcore:$ROOT/workflow:"'$PYTHONPATH' >> ${ROOT}/share/bashrc.uceq
-echo "module load slurm" >> ${ROOT}/share/bashrc.uceq
-echo "module load mpi4py" >> ${ROOT}/share/bashrc.uceq
 
 print_message "Add source $ROOT/share/bashrc.uceq to your .bashrc"
 
@@ -60,6 +64,9 @@ print_message "Remember to edit the $ROOT/workflow/templates/machine_env.sh to f
 
 rm -f ${ROOT}/workflow/templates/machine_env.sh
 touch ${ROOT}/workflow/templates/machine_env.sh
+
+#script to change grp
+cat $script_dir/change_grp.sh >> ${ROOT}/workflow/templates/machine_env.sh
 
 echo "# Replace with the actual Python module" >> ${ROOT}/workflow/templates/machine_env.sh
 #loads the mpi4py module if the user happen to have not sourced bashrc.uceq

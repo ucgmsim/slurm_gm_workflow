@@ -14,17 +14,18 @@ default_n_runs = 10
 default_1d_mod = "/nesi/transit/nesi00213/VelocityModel/Mod-1D/Cant1D_v2-midQ_leer.1d"
 default_hf_vs30_ref = None
 default_seed = None
+default_rand_reset = True
 
-
-def submit_task(sim_dir, proc_type, run_name, db, binary_mode=True, seed=None):
+def submit_task(sim_dir, proc_type, run_name, db, mgmt_db_location ,binary_mode=True, rand_reset=default_rand_reset, seed=None):
     #TODO: using shell call is EXTREMELY undesirable. fix this in near future(fundamentally)
     #change the working directory to the sim_dir
     os.chdir(sim_dir)
+
 #    print "sim_dir:%s"%sim_dir
     #idenfity the proc_type, EMOD3D:1, merge_ts:2, winbin_aio:3, HF:4, BB:5
+    lf_sim_dir = os.path.join(sim_dir,"LF/%s"%run_name)
     if proc_type == 1:
         #EMOD 3D
-        lf_sim_dir = os.path.join(sim_dir,"LF/%s"%run_name)
         if not os.path.isfile(os.path.join(lf_sim_dir,"params_uncertain.py")):
             print os.path.join(lf_sim_dir,"params_uncertain.py")," missing, creating"
             call("python $gmsim/workflow/scripts/submit_emod3d.py --set_params_only", shell=True)
@@ -46,6 +47,10 @@ def submit_task(sim_dir, proc_type, run_name, db, binary_mode=True, seed=None):
         #run the submit_post_emod3d before install_bb and submit_hf
         #TODO: fix this strange logic in the actual workflow
         #see if params_uncertain.py exsist
+        if not os.path.isfile(os.path.join(lf_sim_dir,"params_uncertain.py")):
+            print os.path.join(lf_sim_dir,"params_uncertain.py")," missing, creating"
+            call("python $gmsim/workflow/scripts/submit_emod3d.py --set_params_only", shell=True)
+            print "python $gmsim/workflow/scripts/submit_emod3d.py --set_params_only"
         if not os.path.isfile(os.path.join(sim_dir,"params_base_bb.py")):
             if default_hf_vs30_ref != None:
                 print "python $gmsim/workflow/scripts/install_bb.py --v1d %s --hf_stat_vs_ref %s"%(default_1d_mod,default_hf_vs30_ref)
@@ -57,9 +62,16 @@ def submit_task(sim_dir, proc_type, run_name, db, binary_mode=True, seed=None):
         if seed is not None:
             hf_cmd = "{} --seed {}".format(hf_cmd, seed)
         call(hf_cmd, shell=True)
+        if rand_reset:
+            hf_cmd = "{} --rand_reset".format(hf_cmd)
+        print hf_cmd
+        call(hf_cmd, shell=True)
     if proc_type == 5:
         print "python $gmsim/workflow/scripts/submit_bb.py --binary --auto --srf %s"%run_name
         call("python $gmsim/workflow/scripts/submit_bb.py --binary --auto --srf %s"%run_name, shell=True)
+    if proc_type == 6:
+        #TODO: fix inconsistant naming in sub_imcalc.py
+        print "python $gmsim/workflow/scripts/submit_imcalc.py --auto --sim_dir %s --i %s"%(mgmt_db_location,run_name)
                 
 
 def get_vmname(srf_name):
@@ -110,10 +122,16 @@ def main():
             binary_mode = qcore_cfg['binary_mode']
         else:
             binary_mode = default_binary_mode
+
         if 'seed' in qcore_cfg:
             seed = qcore_cfg['seed']
-
+      
+        if 'rand_reset' in qcore_cfg:
+            rand_reset = qcore_cfg['rand_reset']
+        else:
+            rand_reset = default_rand_reset
         #append more logic here if more variables are requested 
+        
     print("seed",seed)
     queued_tasks = slurm_query_status.get_queued_tasks()
     db_tasks = slurm_query_status.get_submitted_db_tasks(db)
@@ -121,7 +139,7 @@ def main():
     db_tasks = slurm_query_status.get_submitted_db_tasks(db)
     #submitted_tasks = slurm_query_status.get_submitted_db_tasks(db)
     ntask_to_run = n_runs_max - len(db_tasks)
-    
+
     runnable_tasks = slurm_query_status.get_runnable_tasks(db, ntask_to_run)
     
     submit_task_count = 0
@@ -149,7 +167,7 @@ def main():
             #non-cybershake, db is the same loc as sim_dir
             sim_dir = os.path.join(os.path.join(mgmt_db_location,"Runs"), vm_name)
         #submit the job
-        submit_task(sim_dir, proc_type, run_name, db, binary_mode, seed)
+        submit_task(sim_dir, proc_type, run_name, db, mgmt_db_location, binary_mode, rand_reset, seed)
        
         submit_task_count = submit_task_count + 1
         task_num = task_num + 1

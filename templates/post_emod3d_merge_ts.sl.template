@@ -1,4 +1,4 @@
-
+#
 source machine_env.sh
 
 if [[ ! -d {{mgmt_db_location}}/mgmt_db_queue ]]; then
@@ -6,7 +6,7 @@ if [[ ! -d {{mgmt_db_location}}/mgmt_db_queue ]]; then
     mkdir {{mgmt_db_location}}/mgmt_db_queue
 fi
 timestamp=`date +%Y%m%d_%H%M%S`
-echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} merge_ts running --j $SLURM_JOBID" >> {{mgmt_db_location}}/mgmt_db_queue/$timestamp\_$SLURM_JOBID
+echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} merge_ts running --r {{srf_name}}" >> {{mgmt_db_location}}/mgmt_db_queue/$timestamp\_$SLURM_JOBID
 
 filelist=flist_`basename {{lf_sim_dir}}`
 exe={{tools_dir}}/merge_tsP3_par
@@ -21,7 +21,7 @@ timestamp=`date +%Y%m%d_%H%M%S`
 res=`$gmsim/workflow/scripts/test_merge_ts.sh {{sim_dir}} {{srf_name}}`
 if [[ $? == 0 ]]; then
     #passed
-    echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} merge_ts completed --j $SLURM_JOBID --force " >> {{mgmt_db_location}}/mgmt_db_queue/$timestamp\_$SLURM_JOBID
+    echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} merge_ts completed --r {{srf_name}} --force " >> {{mgmt_db_location}}/mgmt_db_queue/$timestamp\_$SLURM_JOBID
 else
-    echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} merge_ts failed --j $SLURM_JOBID --error '$res' --force" >> {{mgmt_db_location}}/mgmt_db_queue/$timestamp\_$SLURM_JOBID
+    echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} merge_ts failed --r {{srf_name}} --error '$res' --force" >> {{mgmt_db_location}}/mgmt_db_queue/$timestamp\_$SLURM_JOBID
 fi

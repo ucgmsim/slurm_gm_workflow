@@ -1,5 +1,7 @@
 import os
+import sys
 import glob
+import argparse
 
 IM_CLAC_DIR = 'IM_calc'
 CSV_PATTERN = '*.csv'
@@ -22,6 +24,7 @@ def checkpoint_single(run_dir, realization_name, sim_or_obs):
         output_dir = os.path.join(run_dir, IM_CLAC_DIR, realization_name)
 
     if os.path.isdir(output_dir):  # if output dir exists
+        
         sum_csv = glob.glob1(output_dir, CSV_PATTERN)
         meta = glob.glob1(output_dir, META_PATTERN)
         # if sum_csv and meta are not empty lists('.csv' and '_imcalc.info' files present)
@@ -62,3 +65,21 @@ def checkpoint_rrup(output_dir, srf_files):
             srf_files.remove(srf)
     return srf_files
 
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    
+    parser.add_argument('run_dir', type=str, help="the path to where Runs located")
+    parser.add_argument('srf', type=str, help="the srf/realization name")
+    parser.add_argument('--t', type=str, default='s', help='the type of run to check, default is: %(default)s')
+    parser.add_argument('--v', action="store_true", help='flag to echo messages')
+
+    args = parser.parse_args()
+    
+    res= checkpoint_single(args.run_dir, args.srf, args.t)
+    if res:
+        if args.v:print "%s %s passed"%(args.run_dir,args.srf)
+        sys.exit(1)
+    else:
+        if args.v:print "%s %s failed"%(args.run_dir,args.srf)
+        sys.exit(0)
