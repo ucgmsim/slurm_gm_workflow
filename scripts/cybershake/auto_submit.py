@@ -13,11 +13,16 @@ default_binary_mode = True
 default_n_runs = 10 
 default_1d_mod = "/nesi/transit/nesi00213/VelocityModel/Mod-1D/Cant1D_v2-midQ_leer.1d"
 default_hf_vs30_ref = None
+default_rand_reset = True
 
-def submit_task(sim_dir, proc_type, run_name,db,binary_mode=True):
+def submit_task(sim_dir, proc_type, run_name, db, mgmt_db_location ,binary_mode=True, rand_reset=default_rand_reset):
     #TODO: using shell call is EXTREMELY undesirable. fix this in near future(fundamentally)
     #change the working directory to the sim_dir
     os.chdir(sim_dir)
+
+    #initialize vars
+    hf_options = []
+
 #    print "sim_dir:%s"%sim_dir
     #idenfity the proc_type, EMOD3D:1, merge_ts:2, winbin_aio:3, HF:4, BB:5
     lf_sim_dir = os.path.join(sim_dir,"LF/%s"%run_name)
@@ -55,11 +60,16 @@ def submit_task(sim_dir, proc_type, run_name,db,binary_mode=True):
             else:
                 print "python $gmsim/workflow/scripts/install_bb.py --v1d %s"%default_1d_mod
                 call("python $gmsim/workflow/scripts/install_bb.py --v1d %s"%default_1d_mod, shell=True)
-        print "python $gmsim/workflow/scripts/submit_hf.py --binary --auto --srf %s"%run_name
-        call("python $gmsim/workflow/scripts/submit_hf.py --binary --auto --srf %s"%run_name, shell=True)
+        if rand_reset:
+            hf_options = hf_options + ' --rand_reset'
+        print "python $gmsim/workflow/scripts/submit_hf.py --binary --auto --srf %s %s"%(run_name, hf_options)
+        call("python $gmsim/workflow/scripts/submit_hf.py --binary --auto --srf %s %s"%(run_name, hf_options), shell=True)
     if proc_type == 5:
         print "python $gmsim/workflow/scripts/submit_bb.py --binary --auto --srf %s"%run_name
         call("python $gmsim/workflow/scripts/submit_bb.py --binary --auto --srf %s"%run_name, shell=True)
+    if proc_type == 6:
+        #TODO: fix inconsistant naming in sub_imcalc.py
+        print "python $gmsim/workflow/scripts/submit_imcalc.py --auto --sim_dir %s --i %s"%(mgmt_db_location,run_name)
                 
     
     
@@ -110,6 +120,11 @@ def main():
             binary_mode = qcore_cfg['binary_mode']
         else:
             binary_mode = default_binary_mode
+
+        if 'rand_reset' in qcore_cfg:
+            rand_reset = qcore_cfg['rand_reset']
+        else:
+            rand_reset = default_rand_reset
         #append more logic here if more variables are requested 
 
 
@@ -118,9 +133,9 @@ def main():
     slurm_query_status.update_tasks(db, queued_tasks, db_tasks)
     db_tasks = slurm_query_status.get_submitted_db_tasks(db)
     #submitted_tasks = slurm_query_status.get_submitted_db_tasks(db)
+    ntask_to_run = n_runs_max - len(db_tasks)
     runnable_tasks = slurm_query_status.get_runnable_tasks(db, ntask_to_run)
     
-    ntask_to_run = n_runs_max - len(db_tasks)
     submit_task_count = 0
     task_num=0
     print submit_task_count
@@ -147,7 +162,7 @@ def main():
             #non-cybershake, db is the same loc as sim_dir
             sim_dir = os.path.join(os.path.join(mgmt_db_location,"Runs"), vm_name)
         #submit the job
-        submit_task(sim_dir, proc_type, run_name, db, binary_mode)
+        submit_task(sim_dir, proc_type, run_name, db, mgmt_db_location, binary_mode, rand_reset)
        
         submit_task_count = submit_task_count + 1
         task_num = task_num + 1
