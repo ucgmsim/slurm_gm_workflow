@@ -5,6 +5,7 @@ A script that queries slurm and updates the status of a task in a slurm db
 """
 
 N_TASKS_TO_RUN = 20
+RETRY_MAX = 2
 
 import argparse
 import create_mgmt_db
@@ -29,11 +30,12 @@ def get_submitted_db_tasks(db):
                    AND status_enum.state IN ('running', 'in-queue')''')
     return db.fetchall()
 
-def get_db_tasks_to_be_run(db):
+def get_db_tasks_to_be_run(db, retry_max=RETRY_MAX):
     db.execute('''SELECT proc_type, run_name, status_enum.state 
                   FROM status_enum, state 
                   WHERE state.status = status_enum.id
-                   AND status_enum.state IN ('created', 'completed') ''')
+                   AND status_enum.state IN ('created', 'completed') 
+                   AND state.retries < ?''', retry_max)
     return db.fetchall()
 
 def update_tasks(db, tasks, db_tasks):
@@ -80,8 +82,8 @@ def check_dependancy_met(task, task_list):
         HF_task[2] = 'completed'
         return is_task_complete(LF_task, task_list) and is_task_complete(HF_task, task_list)
 
-def get_runnable_tasks(db, n_runs=N_TASKS_TO_RUN):
-    db_tasks = get_db_tasks_to_be_run(db)
+def get_runnable_tasks(db, n_runs=N_TASKS_TO_RUN, retry_max=RETRY_MAX):
+    db_tasks = get_db_tasks_to_be_run(db, retry_max)
     tasks_to_run = []
     for task in db_tasks:
         status = task[2]
