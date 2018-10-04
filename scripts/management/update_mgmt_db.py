@@ -14,26 +14,39 @@ def update_db(db, process, status, job=None, run_name=None, error=None):
                   SET status = (SELECT id FROM status_enum WHERE state = ?), 
                       last_modified = strftime('%s','now'),
                       job_id = ?,
-                      error = ?
+                      error = error || '\n' || ?
                   WHERE (job_id = ? or run_name = ?)
                    AND proc_type = (SELECT id FROM proc_type_enum WHERE proc_type = ?)
                    AND status <= (SELECT id FROM status_enum WHERE state = ?)''', (status, job, error, job, run_name, process, status))
     db.connection.commit()    
 
-def force_update_db(db, process, status, job=None, run_name=None, error=None, retry=False):
+def force_update_db(db, process, status, job=None, run_name=None, error='', retry=False, reset_retries=False):
+    if type(error) is str:
+        error = '\n' + error
+    else:
+        error = ''
     db.execute('''UPDATE state
                   SET status = (SELECT id FROM status_enum WHERE state = ?), 
                       last_modified = strftime('%s','now'),
                       job_id = ?,
-                      error = ?
+                      error = error || ?
                   WHERE (job_id = ? or run_name = ?)
                    AND proc_type = (SELECT id FROM proc_type_enum WHERE proc_type = ?)
                    ''', (status, job, error, job, run_name, process))    
     if retry:
 		db.execute('''UPDATE state
-					  SET retries = retries + 1
+					  SET retries = retries + 1,
+					  error = error || '\n' || 'Process failed retrying'
 					  WHERE (job_id = ? or run_name = ?)
 					  AND proc_type = (SELECT id FROM proc_type_enum WHERE proc_type = ?)''', (job, run_name, process))
+    if reset_retries:
+		db.execute('''UPDATE state
+					  SET retries = 0,
+					  error = error || '\n' || 'Reseting retries'
+					  WHERE (job_id = ? or run_name = ?)
+					  AND proc_type = (SELECT id FROM proc_type_enum WHERE proc_type = ?)''', (job, run_name, process))
+	
+		
     db.connection.commit()
 
 def main():
@@ -49,6 +62,7 @@ def main():
    
     parser.add_argument('-f', '--force', action="store_true")
     parser.add_argument('-rt', '--is_retry', action="store_true", default=False)
+    parser.add_argument('-rr', '--reset_retries', action="store_true", default=False)
      
     args = parser.parse_args()
     f = args.run_folder
@@ -60,7 +74,7 @@ def main():
     db = create_mgmt_db.connect_db(f)
     
     if args.force:
-        force_update_db(db, process, status, job=job_id, run_name=run_name, error=error, retry=args.is_retry)
+        force_update_db(db, process, status, job=job_id, run_name=run_name, error=error, retry=args.is_retry, reset_retries=args.reset_retries)
     else:
         update_db(db, process, status, job=job_id, run_name=run_name, error=error)
 

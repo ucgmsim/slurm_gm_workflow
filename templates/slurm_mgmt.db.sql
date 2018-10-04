@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS`state` (
 	`status`	INTEGER,
 	`job_id`	INTEGER UNIQUE,
 	`retries`	INTEGER,
-	`error`		TEXT,
+	`error`		TEXT DEFAULT '',
 	`last_modified`	INTEGER,
 	UNIQUE(`run_name`, `proc_type`)
 );
