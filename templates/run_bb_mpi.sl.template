@@ -6,7 +6,7 @@ if [[ ! -d {{mgmt_db_location}}/mgmt_db_queue ]]; then
     mkdir {{mgmt_db_location}}/mgmt_db_queue
 fi
 timestamp=`date +%Y%m%d_%H%M%S`
-echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} BB running --r {{srf_name}}" >> {{mgmt_db_location}}/mgmt_db_queue/$timestamp\_$SLURM_JOBID
+echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} BB running --run_name {{srf_name}} --job $SLURM_JOBID" >> {{mgmt_db_location}}/mgmt_db_queue/$timestamp\_$SLURM_JOBID
 
 runtime_fmt="%Y-%m-%d_%H:%M:%S"
 start_time=`date +$runtime_fmt`
@@ -24,7 +24,7 @@ timestamp=`date +%Y%m%d_%H%M%S`
 res=`$gmsim/workflow/scripts/{{test_bb_script}} {{sim_dir}} {{hf_run_name}} {{srf_name}}`
 if [[ $? == 0 ]]; then
     #passed
-    echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} BB completed --r {{srf_name}} --force" >> {{mgmt_db_location}}/mgmt_db_queue/$timestamp\_$SLURM_JOBID
+    echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} BB completed --run_name {{srf_name}} --force " >> {{mgmt_db_location}}/mgmt_db_queue/$timestamp\_$SLURM_JOBID
     if [[ ! -d {{sim_dir}}/ch_log ]]; then
         mkdir {{sim_dir}}/ch_log
     fi
@@ -34,5 +34,5 @@ if [[ $? == 0 ]]; then
     dt=`python -c "import params_base as pb; print pb.hf_dt"`
     echo "{{srf_name}} BB $SLURM_NTASKS $run_time $fd_count $dt $start_time $end_time" >> {{sim_dir}}/ch_log/BB.$timestamp.$SLURM_JOBID.log
 else
-    echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} BB failed --r {{srf_name}} --error '$res' --force" >> {{mgmt_db_location}}/mgmt_db_queue/$timestamp\_$SLURM_JOBID
+    echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} BB created --run_name {{srf_name}} --error '$res' --force --is_retry" >> {{mgmt_db_location}}/mgmt_db_queue/$timestamp\_$SLURM_JOBID
 fi

@@ -8,7 +8,7 @@ if [[ ! -d {{mgmt_db_location}}/mgmt_db_queue ]]; then
     mkdir {{mgmt_db_location}}/mgmt_db_queue
 fi
 timestamp=`date +%Y%m%d_%H%M%S`
-echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} winbin_aio running --r {{srf_name}}" >> {{mgmt_db_location}}/mgmt_db_queue/$timestamp\_$SLURM_JOBID
+echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} winbin_aio running --run_name {{srf_name}} --job $SLURM_JOBID" >> {{mgmt_db_location}}/mgmt_db_queue/$timestamp\_$SLURM_JOBID
 srun python $BINPROCESS/winbin-aio-mpi.py {{lf_sim_dir}}
 #srun python $BINPROCESS/winbin-aio.py {{lf_sim_dir}}
 
@@ -18,9 +18,9 @@ timestamp=`date +%Y%m%d_%H%M%S`
 res=`$gmsim/workflow/scripts/test_winbin_aio.sh {{sim_dir}} {{srf_name}}`
 if [[ $? == 0 ]]; then
     #passed
-    echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} winbin_aio completed --r {{srf_name}} --force " >> {{mgmt_db_location}}/mgmt_db_queue/$timestamp\_$SLURM_JOBID
+    echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} winbin_aio completed --run_name {{srf_name}} --force " >> {{mgmt_db_location}}/mgmt_db_queue/$timestamp\_$SLURM_JOBID
 else
-    echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} winbin_aio failed --r {{srf_name}} --error '$res' --force " >> {{mgmt_db_location}}/mgmt_db_queue/$timestamp\_$SLURM_JOBID
+    echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} winbin_aio failed --run_name {{srf_name}} --error '$res' --force " >> {{mgmt_db_location}}/mgmt_db_queue/$timestamp\_$SLURM_JOBID
 fi
 
 

@@ -35,7 +35,7 @@ def get_db_tasks_to_be_run(db, retry_max=RETRY_MAX):
                   FROM status_enum, state 
                   WHERE state.status = status_enum.id
                    AND status_enum.state IN ('created', 'completed') 
-                   AND state.retries < ?''', retry_max)
+                   AND state.retries < ?''', (retry_max,))
     return db.fetchall()
 
 def update_tasks(db, tasks, db_tasks):
@@ -46,15 +46,19 @@ def update_tasks(db, tasks, db_tasks):
             t_job_id, t_state = task.split()
             if job_id == int(t_job_id):
                 found = True
-                t_state_str = t_status[t_state]
+                try:
+                    t_state_str = t_status[t_state]
+                except KeyError:
+                    print "failed to recogize state code %s",t_state
+                    t_state_str == ''
                 if t_state_str == db_state:
                     print "not updating status ({}) of '{}' on '{}' ({})".format(t_state_str, proc_type, run_name, job_id)
                 else:
                     print "updating '{}' on '{}' to the status of '{}' from '{}' ({})".format(proc_type, run_name, t_state_str, db_state, job_id)
                     update_mgmt_db.update_db(db, proc_type, t_state_str, job_id, run_name)
         if not found:
-            print "Task '{}' on '{}' not found on squeue; changing status to 'failed'".format(proc_type, run_name)
-            update_mgmt_db.update_db(db, proc_type, 'failed', job_id, run_name, error='Task removed from squeue without completion')
+            print "Task '{}' on '{}' not found on squeue; resetting the status to 'created' for resubmission".format(proc_type, run_name)
+            update_mgmt_db.force_update_db(db, proc_type, 'created', job_id, run_name, error='Task removed from squeue without completion', retry=True)
         db.connection.commit()
 
 def is_task_complete(task, task_list):

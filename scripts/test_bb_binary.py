@@ -1,4 +1,4 @@
-
+import numpy as np
 import argparse
 from qcore.timeseries import BBSeis
 import sys
@@ -43,6 +43,9 @@ if __name__ == '__main__':
             #failed
             if show_msg: print "empty staion name detected, bb failed"
             sys.exit(1)
+    if np.min(bb.stations.vsite) == 0:
+        if show_msg: print "some vsite == 0, bb incomplete"
+        sys.exit(1)
         
     #pass both check
     if show_msg: print "BB passed"

@@ -10,6 +10,6 @@ elif [[ `hostname` = maui01 ]];then
     echo 'loaded maui module'; 
 else
     #Kupe use case
-    module load mpi4y
+    module load mpi4py
 fi
 

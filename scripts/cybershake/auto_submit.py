@@ -61,7 +61,6 @@ def submit_task(sim_dir, proc_type, run_name, db, mgmt_db_location ,binary_mode=
         hf_cmd = "python $gmsim/workflow/scripts/submit_hf.py --binary --auto --srf %s"%run_name
         if hf_seed is not None:
             hf_cmd = "{} --seed {}".format(hf_cmd, hf_seed)
-        call(hf_cmd, shell=True)
         if rand_reset:
             hf_cmd = "{} --rand_reset".format(hf_cmd)
         print hf_cmd
@@ -71,7 +70,10 @@ def submit_task(sim_dir, proc_type, run_name, db, mgmt_db_location ,binary_mode=
         call("python $gmsim/workflow/scripts/submit_bb.py --binary --auto --srf %s"%run_name, shell=True)
     if proc_type == 6:
         #TODO: fix inconsistant naming in sub_imcalc.py
-        print "python $gmsim/workflow/scripts/submit_imcalc.py --auto --sim_dir %s --i %s"%(mgmt_db_location,run_name)
+        tmp_path = os.path.join(mgmt_db_location,'Runs')
+        cmd = "python $gmsim/workflow/scripts/submit_imcalc.py --auto --sim_dir %s --i %s --mgmt_db %s"%(tmp_path,run_name, mgmt_db_location)
+        print cmd
+        call(cmd, shell=True)
                 
 
 def get_vmname(srf_name):
@@ -135,6 +137,8 @@ def main():
     print("hf_seed",hf_seed)
     queued_tasks = slurm_query_status.get_queued_tasks()
     db_tasks = slurm_query_status.get_submitted_db_tasks(db)
+    print 'queued task:', queued_tasks
+    print 'subbed task:',db_tasks
     slurm_query_status.update_tasks(db, queued_tasks, db_tasks)
     db_tasks = slurm_query_status.get_submitted_db_tasks(db)
     #submitted_tasks = slurm_query_status.get_submitted_db_tasks(db)
@@ -146,7 +150,7 @@ def main():
     task_num=0
     print submit_task_count
     print ntask_to_run
-    while submit_task_count != ntask_to_run and submit_task_count < len(runnable_tasks) and task_num < len(runnable_tasks) :
+    while submit_task_count < ntask_to_run and submit_task_count < len(runnable_tasks) and task_num < len(runnable_tasks) :
         db_task_status = runnable_tasks[task_num]
         
         proc_type = db_task_status[0]
