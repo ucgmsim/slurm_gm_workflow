@@ -5,10 +5,10 @@ CREATE TABLE IF NOT EXISTS "status_enum" (
 	PRIMARY KEY(`id`)
 );
 INSERT OR IGNORE INTO `status_enum` (id,state) VALUES (1,'created');
-INSERT OR IGNORE  INTO `status_enum` (id,state) VALUES (2,'in-queue');
-INSERT OR IGNORE  INTO `status_enum` (id,state) VALUES (3,'running');
-INSERT OR IGNORE  INTO `status_enum` (id,state) VALUES (4,'completed');
-INSERT OR IGNORE  INTO `status_enum` (id,state) VALUES (5,'failed');
+INSERT OR IGNORE INTO `status_enum` (id,state) VALUES (2,'queued');
+INSERT OR IGNORE INTO `status_enum` (id,state) VALUES (3,'running');
+INSERT OR IGNORE INTO `status_enum` (id,state) VALUES (4,'completed');
+INSERT OR IGNORE INTO `status_enum` (id,state) VALUES (5,'failed');
 CREATE TABLE IF NOT EXISTS`state` (
 	`id`	INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
 	`run_name`	TEXT NOT NULL,
@@ -28,20 +28,21 @@ CREATE TABLE IF NOT EXISTS "proc_type_enum" (
 	`proc_type`	TEXT NOT NULL UNIQUE,
 	PRIMARY KEY(`id`)
 );
-INSERT OR IGNORE  INTO `proc_type_enum` (id,proc_type) VALUES (1,'EMOD3D');
-INSERT OR IGNORE  INTO `proc_type_enum` (id,proc_type) VALUES (2,'merge_ts');
-INSERT OR IGNORE  INTO `proc_type_enum` (id,proc_type) VALUES (3,'winbin_aio');
-INSERT OR IGNORE  INTO `proc_type_enum` (id,proc_type) VALUES (4,'HF');
-INSERT OR IGNORE  INTO `proc_type_enum` (id,proc_type) VALUES (5,'BB');
-INSERT OR IGNORE  INTO `proc_type_enum` (id,proc_type) VALUES (6,'IM_calculation');
-INSERT OR IGNORE  INTO `proc_type_enum` (id,proc_type) VALUES (7,'IM_plot');
-INSERT OR IGNORE  INTO `proc_type_enum` (id,proc_type) VALUES (8,'Empirical');
+INSERT OR IGNORE INTO `proc_type_enum` (id,proc_type) VALUES (1,'EMOD3D');
+INSERT OR IGNORE INTO `proc_type_enum` (id,proc_type) VALUES (2,'merge_ts');
+INSERT OR IGNORE INTO `proc_type_enum` (id,proc_type) VALUES (3,'winbin_aio');
+INSERT OR IGNORE INTO `proc_type_enum` (id,proc_type) VALUES (4,'HF');
+INSERT OR IGNORE INTO `proc_type_enum` (id,proc_type) VALUES (5,'BB');
+INSERT OR IGNORE INTO `proc_type_enum` (id,proc_type) VALUES (6,'IM_calculation');
+INSERT OR IGNORE INTO `proc_type_enum` (id,proc_type) VALUES (7,'IM_plot');
+INSERT OR IGNORE INTO `proc_type_enum` (id,proc_type) VALUES (8,'Empirical');
 CREATE TABLE IF NOT EXISTS "time_log" (
 	`id`	INTEGER NOT NULL UNIQUE,
 	`state_id`	INTEGER,
-	`type` INTEGER,
+	`status` INTEGER,
 	`time` INTEGER,
-	PRIMARY KEY(`id`)
+	PRIMARY KEY(`id`),
+	FOREIGN KEY(`state_id`) REFERENCES state(id)
 );
 CREATE VIEW IF NOT EXISTS state_view AS
 SELECT state.id, state.run_name, status_enum.state, proc_type_enum.proc_type, state.job_id, state.last_modified

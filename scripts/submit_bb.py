@@ -1,3 +1,4 @@
+
 bin_process_path = '/nesi/transit/nesi00213/workflow'
 import glob
 import os.path
@@ -28,8 +29,9 @@ import argparse
 from temp_shared import resolve_header
 from shared_workflow.shared import *
 
-from management import create_mgmt_db
+
 from management import update_mgmt_db
+from management import db_helper
 
 
 def confirm(q):
@@ -58,7 +60,7 @@ def submit_sl_script(script, submit_yes=None):
 
 
 def update_db(process, status, mgmt_db_location, srf_name, jobid):
-    db = create_mgmt_db.connect_db(mgmt_db_location)
+    db = db_helper.connect_db(mgmt_db_location)
     update_mgmt_db.update_db(db, process, status, job=jobid, run_name=srf_name)
     db.connection.commit()
 

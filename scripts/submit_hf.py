@@ -33,7 +33,7 @@ from datetime import datetime
 timestamp_format = "%Y%m%d_%H%M%S"
 timestamp = datetime.now().strftime(timestamp_format)
 
-from management import create_mgmt_db
+from management import db_helper
 from management import update_mgmt_db
 
 # TODO: move this to qcore library
@@ -91,7 +91,7 @@ def est_wct(est_core_hours, ncore, scale):
 
 
 def update_db(process, status, mgmt_db_location, srf_name, jobid):
-    db = create_mgmt_db.connect_db(mgmt_db_location)
+    db = db_helper.connect_db(mgmt_db_location)
     update_mgmt_db.update_db(db, process, status, job=jobid, run_name=srf_name)
     db.connection.commit()
 

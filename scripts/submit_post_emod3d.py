@@ -15,7 +15,7 @@ from params_base import tools_dir
 from params_base import sim_dir
 from params_base import mgmt_db_location
 
-from management import create_mgmt_db
+from management import db_helper
 from management import update_mgmt_db
 
 #datetime related
@@ -140,7 +140,7 @@ def write_sl_script_winbin_aio(lf_sim_dir,sim_dir,rup_mod, run_time = default_ru
     return generated_script
 
 def update_db(process, status, mgmt_db_location, srf_name,jobid):
-    db = create_mgmt_db.connect_db(mgmt_db_location)
+    db = db_helper.connect_db(mgmt_db_location)
     update_mgmt_db.update_db(db, process, status, job=jobid, run_name=srf_name)
     db.connection.commit()
 

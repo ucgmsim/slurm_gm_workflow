@@ -5,7 +5,8 @@ A script that queries a slurm mgmt db and returns the status of a task
 """
 
 import argparse
-import create_mgmt_db
+import db_helper
+
 
 def print_run_status(db, run_name, error=False):
     if error:
@@ -31,6 +32,7 @@ def print_run_status(db, run_name, error=False):
         for statum in status:
             print "{:>25} | {:>15} | {:>10} | {:>8} | {:>20}".format(*statum)
 
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('run_folder', type=str, 
@@ -44,9 +46,10 @@ def main():
     f = args.run_folder
     run_name = args.run_name
     error = args.error
-    db = create_mgmt_db.connect_db(f)
+    db = db_helper.connect_db(f)
    
     print_run_status(db, run_name, error)
-    
+
+
 if __name__ == '__main__':
     main()
