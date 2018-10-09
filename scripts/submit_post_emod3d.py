@@ -139,10 +139,12 @@ def write_sl_script_winbin_aio(lf_sim_dir,sim_dir,rup_mod, run_time = default_ru
     generated_script = fname_sl_abs_path
     return generated_script
 
+
 def update_db(process, status, mgmt_db_location, srf_name,jobid):
     db = db_helper.connect_db(mgmt_db_location)
     update_mgmt_db.update_db(db, process, status, job=jobid, run_name=srf_name)
     db.connection.commit()
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -198,10 +200,10 @@ if __name__ == '__main__':
                 created_script = write_sl_script_merge_ts(lf_sim_dir,sim_dir,srf_name)
                 jobid = submit_sl_script(created_script,submit_yes)
                 if jobid != None:
-                    update_db("merge_ts","in-queue",mgmt_db_location,srf_name, jobid)
+                    update_db("merge_ts","queued",mgmt_db_location,srf_name, jobid)
             #run winbin_aio related scripts only
             if args.winbin_aio == True:
                 created_script = write_sl_script_winbin_aio(lf_sim_dir,sim_dir,srf_name)
                 jobid = submit_sl_script(created_script,submit_yes)
                 if jobid != None:
-                    update_db("winbin_aio","in-queue",mgmt_db_location,srf_name, jobid)
+                    update_db("winbin_aio","queued",mgmt_db_location,srf_name, jobid)

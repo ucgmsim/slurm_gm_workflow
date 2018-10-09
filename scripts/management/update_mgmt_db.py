@@ -22,8 +22,17 @@ def update_db(db, process, status, job=None, run_name=None, error=None):
                (status, job, error, job, run_name, process, status))
 
     if run_name is not None and (status == db_helper.State.running or status == db_helper.State.completed):
-        update_mgmt_db_time.update_time(db, run_name, process, status)
+        update_task_time(db, run_name, process, status)
     db.connection.commit()    
+
+
+def update_task_time(db, run_name, process, status):
+    db.execute('''INSERT OR IGNORE INTO
+                  `task_time_log`(state_id, status, time)
+                  VALUES((SELECT id FROM state_view WHERE run_name = ? AND proc_type = ? ),
+                          (SELECT id FROM status_enum WHERE UPPER(state) = UPPER(?)),
+                           strftime('%s','now'))''', (run_name, process, status))
+    db.connection.commit()
 
 
 def force_update_db(db, process, status, job=None, run_name=None, error='', retry=False, reset_retries=False):
@@ -52,6 +61,9 @@ def force_update_db(db, process, status, job=None, run_name=None, error='', retr
                       WHERE (job_id = ? or run_name = ?)
                        AND proc_type = (SELECT id FROM proc_type_enum WHERE proc_type = ?)''', (job, run_name, process))
 
+    if run_name is not None and (status == db_helper.State.running or status == db_helper.State.completed):
+        update_task_time(db, run_name, process, status)
+
     db.connection.commit()
 
 
@@ -59,8 +71,8 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('run_folder', type=str, 
                         help="folder to the collection of runs on Kupe")
-    parser.add_argument('process', choices=['EMOD3D', 'merge_ts', 'winbin_aio', 'HF', 'BB', 'IM_calculation'])
-    parser.add_argument('status', type=str, choices=['created', 'in-queue', 'running', 'completed', 'failed'])
+    parser.add_argument('process', choices=db_helper.enum_to_list(db_helper.Process))
+    parser.add_argument('status', type=str, choices=db_helper.enum_to_list(db_helper.State))
     parser.add_argument('-r', '--run_name', type=str,
                         help='name of run to be updated')
     parser.add_argument('-j', '--job', type=int)

@@ -15,8 +15,9 @@ N_TASKS_TO_RUN = 20
 RETRY_MAX = 2
 
 # TODO: Change the status strings to use the enum instead
+# TODO: create task class instead of a 'list'
 
-t_status = {'R': 'running', 'PD': 'in-queue'}
+t_status = {'R': 'running', 'PD': 'queued'}
 
 
 def get_queued_tasks():
@@ -32,7 +33,7 @@ def get_submitted_db_tasks(db):
     db.execute('''SELECT proc_type_enum.proc_type, run_name, job_id, status_enum.state 
                   FROM status_enum, proc_type_enum, state 
                   WHERE state.status = status_enum.id AND state.proc_type = proc_type_enum.id 
-                   AND status_enum.state IN ('running', 'in-queue')''')
+                   AND status_enum.state IN ('running', 'queued')''')
     return db.fetchall()
 
 
@@ -77,11 +78,13 @@ def check_dependancy_met(task, task_list):
     process, run_name, status = task
     if process is Process.EMOD3D or process is Process.HF:
         return True
+
     if process in (Process.merge_ts, Process.winbin_aio, Process.IM_calculation):
         dependant_task = list(task)
         dependant_task[0] = process - 1
         dependant_task[2] = 'completed'
         return is_task_complete(dependant_task, task_list)
+
     if process is Process.BB:
         LF_task = list(task)
         LF_task[0] = Process.winbin_aio
@@ -90,6 +93,7 @@ def check_dependancy_met(task, task_list):
         HF_task[0] = Process.HF
         HF_task[2] = 'completed'
         return is_task_complete(LF_task, task_list) and is_task_complete(HF_task, task_list)
+    return False
 
 
 def get_runnable_tasks(db, n_runs=N_TASKS_TO_RUN, retry_max=RETRY_MAX):

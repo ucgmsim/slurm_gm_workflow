@@ -13,7 +13,7 @@ def print_run_status(db, run_name, error=False):
         db.execute('''SELECT state.run_name, proc_type_enum.proc_type, status_enum.state, state.job_id, datetime(last_modified,'unixepoch'), state.error
                     FROM state, status_enum, proc_type_enum
                     WHERE state.proc_type = proc_type_enum.id AND state.status = status_enum.id
-                            AND state.run_name LIKE ? AND state.error <> ''
+                            AND UPPER(state.run_name) LIKE UPPER(?) AND state.error <> ''
                     ORDER BY state.run_name, status_enum.id
                     ''', (run_name,))
         status = db.fetchall()
@@ -23,7 +23,7 @@ def print_run_status(db, run_name, error=False):
         db.execute('''SELECT state.run_name, proc_type_enum.proc_type, status_enum.state, state.job_id, datetime(last_modified,'unixepoch')
                     FROM state, status_enum, proc_type_enum
                     WHERE state.proc_type = proc_type_enum.id AND state.status = status_enum.id
-                            AND state.run_name LIKE ?
+                            AND UPPER(state.run_name) LIKE UPPER(?)
                     ORDER BY state.run_name, status_enum.id
                     ''', (run_name,))
         status = db.fetchall()

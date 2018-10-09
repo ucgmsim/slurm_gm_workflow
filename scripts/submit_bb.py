@@ -196,7 +196,7 @@ if __name__ == '__main__':
                                          account=args.account, binary=args.binary)
         jobid = submit_sl_script(created_script, submit_yes)
         if jobid != None:
-            update_db("BB", "in-queue", params.mgmt_db_location, srf_name, jobid)
+            update_db("BB", "queued", params.mgmt_db_location, srf_name, jobid)
         elif submit_yes == True and jobid == None:
             print "there is error while trying to submit the slurm script, please manual check for errors"
 

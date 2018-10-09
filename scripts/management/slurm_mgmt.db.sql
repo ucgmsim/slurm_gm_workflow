@@ -1,5 +1,5 @@
 BEGIN TRANSACTION;
-CREATE TABLE IF NOT EXISTS "status_enum" (
+CREATE TABLE IF NOT EXISTS `status_enum` (
 	`id`	INTEGER NOT NULL UNIQUE,
 	`state`	TEXT NOT NULL UNIQUE,
 	PRIMARY KEY(`id`)
@@ -9,7 +9,7 @@ INSERT OR IGNORE INTO `status_enum` (id,state) VALUES (2,'queued');
 INSERT OR IGNORE INTO `status_enum` (id,state) VALUES (3,'running');
 INSERT OR IGNORE INTO `status_enum` (id,state) VALUES (4,'completed');
 INSERT OR IGNORE INTO `status_enum` (id,state) VALUES (5,'failed');
-CREATE TABLE IF NOT EXISTS`state` (
+CREATE TABLE IF NOT EXISTS `state` (
 	`id`	INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
 	`run_name`	TEXT NOT NULL,
 	`proc_type`	INTEGER NOT NULL,
@@ -20,8 +20,8 @@ CREATE TABLE IF NOT EXISTS`state` (
 	`last_modified`	INTEGER,
 	UNIQUE(`run_name`, `proc_type`)
 );
-CREATE INDEX IF NOT EXISTS state_search ON state (status);
-CREATE INDEX IF NOT EXISTS status ON state (run_name, job_id, status, proc_type);
+CREATE INDEX IF NOT EXISTS `state_search` ON state (status);
+CREATE INDEX IF NOT EXISTS `status` ON state (run_name, job_id, status, proc_type);
 
 CREATE TABLE IF NOT EXISTS "proc_type_enum" (
 	`id`	INTEGER NOT NULL UNIQUE,
@@ -36,13 +36,21 @@ INSERT OR IGNORE INTO `proc_type_enum` (id,proc_type) VALUES (5,'BB');
 INSERT OR IGNORE INTO `proc_type_enum` (id,proc_type) VALUES (6,'IM_calculation');
 INSERT OR IGNORE INTO `proc_type_enum` (id,proc_type) VALUES (7,'IM_plot');
 INSERT OR IGNORE INTO `proc_type_enum` (id,proc_type) VALUES (8,'Empirical');
-CREATE TABLE IF NOT EXISTS "time_log" (
+CREATE TABLE IF NOT EXISTS `task_time_log` (
 	`id`	INTEGER NOT NULL UNIQUE,
 	`state_id`	INTEGER,
 	`status` INTEGER,
 	`time` INTEGER,
 	PRIMARY KEY(`id`),
 	FOREIGN KEY(`state_id`) REFERENCES state(id)
+);
+CREATE TABLE IF NOT EXISTS `job_time_log`(
+    `id`	INTEGER NOT NULL UNIQUE,
+	`job_id`	INTEGER,
+	`status` INTEGER,
+	`time` INTEGER,
+	PRIMARY KEY(`id`),
+	FOREIGN KEY(`job_id`) REFERENCES state(job_id)
 );
 CREATE VIEW IF NOT EXISTS state_view AS
 SELECT state.id, state.run_name, status_enum.state, proc_type_enum.proc_type, state.job_id, state.last_modified

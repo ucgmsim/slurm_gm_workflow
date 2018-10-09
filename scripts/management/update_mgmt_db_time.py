@@ -1,19 +1,20 @@
 """
 @author: jam335 - jason.motha@canterbury.ac.nz
 
-A script that updates the submission time of a task in a slurm mgmt db
+A script that updates the submission time of a job in a slurm mgmt db
 """
 
 import argparse
 import db_helper
 
 
-def update_time(db, run_name, process, status):
+def update_job_time(db, job, status):
     db.execute('''INSERT OR IGNORE INTO
-                  `time_log`(state_id, status, time)
-                  VALUES((SELECT id FROM state_view WHERE run_name = ? AND proc_type = ? ),
-                          (SELECT id FROM status_enum WHERE UPPER(state) = UPPER(?)),
-                           strftime('%s','now'))''', (run_name, process, status))
+                  `job_time_log`(job_id, status, time)
+                  VALUES(?,
+                         (SELECT id FROM status_enum WHERE UPPER(state) = UPPER(?)),
+                         strftime('%s','now'))''',
+               (job, status))
     db.connection.commit()
 
 
@@ -21,19 +22,16 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('run_folder', type=str, 
                         help="folder to the collection of runs on Kupe")
-    parser.add_argument('run_name', type=str,
-                        help='name of run to be updated')
-    parser.add_argument('process', choices=['EMOD3D', 'post_EMOD3D', 'HF', 'BB', 'IM_calculation'])
-    parser.add_argument('status', type=str, choices=['created', 'in-queue', 'running', 'completed', 'failed'])
+    parser.add_argument('-j', '--job', type=int)
+    parser.add_argument('status', type=str, choices=db_helper.enum_to_list(db_helper.State))
     
     args = parser.parse_args()
     f = args.run_folder
-    process = args.process
-    run_name = args.run_name
     db = db_helper.connect_db(f)
     status = args.status
+    job_id = args.job
     
-    update_time(db, run_name, process, status)
+    update_job_time(db, job_id, status)
 
     db.connection.commit()
 

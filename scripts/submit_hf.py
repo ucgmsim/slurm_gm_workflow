@@ -257,7 +257,7 @@ if __name__ == '__main__':
                                          run_time, account=args.account, binary=args.binary, seed=args.seed)
         jobid = submit_sl_script(created_script, submit_yes)
         if jobid != None:
-            update_db("HF", "in-queue", params.mgmt_db_location, srf_name, jobid)
+            update_db("HF", "queued", params.mgmt_db_location, srf_name, jobid)
 
         counter_srf += 1
 

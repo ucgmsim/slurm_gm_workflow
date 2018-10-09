@@ -28,3 +28,7 @@ class Process(Enum):
     IM_calculation = 6
     IM_plot = 7
     Empirical = 8
+
+
+def enum_to_list(enum):
+    return [x.name for x in enum]
