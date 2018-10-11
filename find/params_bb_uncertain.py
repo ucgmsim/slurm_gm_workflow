@@ -1,0 +1,10 @@
+hf_accdir='/nesi/nobackup/nesi00213/RunFolder/Cybershake/v18p6_batched/v18p6_exclude_1k_batch_2/Runs/HopeCW/HF/Cant1D_v3-midQ_OneRay_hfnp2mm+_rvf0p8_sd50_k0p045/HopeCW_HYP21-25_S1444/Acc'
+hf_veldir='/nesi/nobackup/nesi00213/RunFolder/Cybershake/v18p6_batched/v18p6_exclude_1k_batch_2/Runs/HopeCW/HF/Cant1D_v3-midQ_OneRay_hfnp2mm+_rvf0p8_sd50_k0p045/HopeCW_HYP21-25_S1444/Vel'
+bb_accdir='/nesi/nobackup/nesi00213/RunFolder/Cybershake/v18p6_batched/v18p6_exclude_1k_batch_2/Runs/HopeCW/BB/Cant1D_v3-midQ_OneRay_hfnp2mm+_rvf0p8_sd50_k0p045/HopeCW_HYP21-25_S1444/Acc'
+bb_veldir='/nesi/nobackup/nesi00213/RunFolder/Cybershake/v18p6_batched/v18p6_exclude_1k_batch_2/Runs/HopeCW/BB/Cant1D_v3-midQ_OneRay_hfnp2mm+_rvf0p8_sd50_k0p045/HopeCW_HYP21-25_S1444/Vel'
+hf_resume=True
+bb_resume=True
+hf_slip='/nesi/nobackup/nesi00213/RunFolder/Cybershake/v18p6_batched/v18p6_exclude_1k_batch_2/Data/Sources/HopeCW/Stoch/HopeCW_HYP25-25_S1484.stoch'
+vel_dir='/nesi/nobackup/nesi00213/RunFolder/Cybershake/v18p6_batched/v18p6_exclude_1k_batch_2/Runs/HopeCW/LF/HopeCW_HYP21-25_S1444/Vel'
+hf_kappa='0.045'
+hf_sdrop='50'
