@@ -5,14 +5,15 @@ A script that queries a slurm mgmt db and returns the status of a task
 """
 
 import argparse
-import create_mgmt_db
+import db_helper
+
 
 def print_run_status(db, run_name, error=False):
     if error:
         db.execute('''SELECT state.run_name, proc_type_enum.proc_type, status_enum.state, state.job_id, datetime(last_modified,'unixepoch'), state.error
                     FROM state, status_enum, proc_type_enum
                     WHERE state.proc_type = proc_type_enum.id AND state.status = status_enum.id
-                            AND state.run_name LIKE ? AND state.error <> ''
+                            AND UPPER(state.run_name) LIKE UPPER(?) AND state.error <> ''
                     ORDER BY state.run_name, status_enum.id
                     ''', (run_name,))
         status = db.fetchall()
@@ -22,7 +23,7 @@ def print_run_status(db, run_name, error=False):
         db.execute('''SELECT state.run_name, proc_type_enum.proc_type, status_enum.state, state.job_id, datetime(last_modified,'unixepoch')
                     FROM state, status_enum, proc_type_enum
                     WHERE state.proc_type = proc_type_enum.id AND state.status = status_enum.id
-                            AND state.run_name LIKE ?
+                            AND UPPER(state.run_name) LIKE UPPER(?)
                     ORDER BY state.run_name, status_enum.id
                     ''', (run_name,))
         status = db.fetchall()
@@ -30,6 +31,7 @@ def print_run_status(db, run_name, error=False):
         print '_' * (25 + 15 + 10 + 20 + 8 + 3 * 4)
         for statum in status:
             print "{:>25} | {:>15} | {:>10} | {:>8} | {:>20}".format(*statum)
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -44,9 +46,10 @@ def main():
     f = args.run_folder
     run_name = args.run_name
     error = args.error
-    db = create_mgmt_db.connect_db(f)
+    db = db_helper.connect_db(f)
    
     print_run_status(db, run_name, error)
-    
+
+
 if __name__ == '__main__':
     main()

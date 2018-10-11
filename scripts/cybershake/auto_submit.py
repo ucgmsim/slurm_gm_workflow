@@ -1,5 +1,5 @@
+from scripts.management import db_helper
 from scripts.management import slurm_query_status
-from scripts.management import create_mgmt_db
 from scripts.management import update_mgmt_db
 from subprocess import call
 
@@ -98,7 +98,7 @@ def main():
     args = parser.parse_args()
     mgmt_db_location = args.run_folder
     n_runs_max = args.n_runs
-    db = create_mgmt_db.connect_db(mgmt_db_location)
+    db = db_helper.connect_db(mgmt_db_location)
     db_tasks = []
     hf_seed = default_hf_seed
 
