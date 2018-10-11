@@ -82,7 +82,8 @@ def get_scripts_context(git_dir, script, imports_dict, params_dict):
 
 #TODO gs of >=2 items not working properly
 #TODO write params_dict to file
-gs=['/home/melody.zhu/qcore']
+#TODO params in qcore is: import params.....
+gs=['/home/melody.zhu/slurm_gm_workflow']
 p = get_all_params_dict('.')
 for g in gs:
     d = get_scripts_imports(g,'.')
