@@ -3,6 +3,7 @@ import subprocess
 from qcore import utils
 import imp
 import glob
+import csv
 
 
 def get_scripts_imports(git_folder, params_dir):
@@ -16,17 +17,12 @@ def get_scripts_imports(git_folder, params_dir):
        
             if '.py' not in params_name:
                 params_name += '.py'
-            print("ppp",params_name, glob.glob1(params_dir, 'params*.py'))
 
             if params_name in glob.glob1(params_dir, 'params*.py'):
-                print("inininininin",params_name)
                 if d.get(script) is not None:
-                    print("not none")
                     d[script].add(params_name)
                 else:
-                    print("Add")
                     d[script] = {params_name}
-    print(d)
     return d
 
 
@@ -61,17 +57,18 @@ def load_py_cfg(f_path):
 def get_scripts_context(git_dir, script, imports_dict, params_dict):
     log = open("params_usage_{}.txt".format(git_dir.split('/')[-1]), 'a')
     imported_params = imports_dict[script]
-    log.write("@{}{}\n".format(script,'-'*90))
+    log.write("@{}{}\n".format(script,'-'*150))
     for params_file in imported_params:
         for i in range(len(params_dict[params_file])):
             param, _ = params_dict[params_file][i]
-            cmd = "cat {} | grep {}".format(script, param)
-            output = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True).communicate()[0].strip()
-            if output != '':
-                log.write("{}, {}, {}\n".format(script, params_file, param))
-                params_dict[params_file][i][1] = 1
+            if not param.startswith("__"):
+                cmd = "cat {} | grep {}".format(script, param)
+                output = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True).communicate()[0].strip()
+                if output != '':
+                    log.write("{}, {}\n".format(params_file, param))
+                    params_dict[params_file][i][1] = 1
         #        print("found", params_file,params_dict[params_file][i][0])
-    log.write('_' * 200 + '\n')
+    log.write('\n\n')
     log.close()
     return params_dict
 
@@ -83,13 +80,48 @@ def get_scripts_context(git_dir, script, imports_dict, params_dict):
 #TODO gs of >=2 items not working properly
 #TODO write params_dict to file
 #TODO params in qcore is: import params.....
-gs=['/home/melody.zhu/slurm_gm_workflow']
 p = get_all_params_dict('.')
-for g in gs:
-    d = get_scripts_imports(g,'.')
-    print("Afddsafs",d.keys())
-    for s in d.keys():
-        print(s)
-        get_scripts_context(g, s, d, p)
-print(p)
+
+g = '/home/melody.zhu/slurm_gm_workflow'
+d = get_scripts_imports(g,'.')
+print("Afddsafs",d.keys())
+for s in d.keys():
+    print(s)
+    p = get_scripts_context(g, s, d, p)
+
+gg = '/home/melody.zhu/qcore'
+dd = get_scripts_imports(gg,'.')
+print("Afddsafs",dd.keys())
+for s in dd.keys():
+    print(s)
+    p = get_scripts_context(gg, s, dd, p)
+
+
+ggg = '/home/melody.zhu/visualization'
+ddd = get_scripts_imports(ggg,'.')
+print("Afddsafs",ddd.keys())
+for s in ddd.keys():
+    print(s)
+    p = get_scripts_context(ggg, s, ddd, p)
+
+
+
+with open("params_used.csv", 'w') as c:
+    cw = csv.writer(c,  delimiter=',',quotechar='|')
+    cw.writerow(['params_script', 'used_param'])
+    for k, v in p.items():
+        print("Afdsafads",k,v)
+        for pa, bol in v:
+            if bol == 1 and not pa.startswith('__'):
+                cw.writerow([k, pa])
+
+
+with open("params_unused.csv", 'w') as c:
+    cw = csv.writer(c, delimiter=',',quotechar='|')
+    cw.writerow(['params_script', 'unused_param'])
+    for k, v in p.items():
+        for pa, bol in v:
+            if bol == 0 and not pa.startswith('__'):
+                cw.writerow([k, pa])
+
 

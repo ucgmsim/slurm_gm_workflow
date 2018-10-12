@@ -1,0 +1,28 @@
+@/home/melody.zhu/visualization/gmt/plot_ts_sum.py------------------------------------------------------------------------------------------------------------------------------------------------------
+params_base.py, run_name
+params_base.py, stat_file
+params_base.py, nx
+params_base.py, ny
+params_base.py, nz
+params_base.py, hh
+params_base.py, dt
+params_base.py, flo
+
+
+@/home/melody.zhu/visualization/gmt/plot_transfer.py------------------------------------------------------------------------------------------------------------------------------------------------------
+params_base.py, sim_dir
+params_base.py, run_name
+params_base.py, stat_file
+params_base.py, srf_files
+params_base.py, nz
+params_base.py, FD_STATLIST
+
+
+@/home/melody.zhu/visualization/gmt/plot_gen_seismo.py------------------------------------------------------------------------------------------------------------------------------------------------------
+params.py, scale
+params.py, version
+params.py, os
+params.py, flo
+params.py, nt
+
+
