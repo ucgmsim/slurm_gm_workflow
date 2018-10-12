@@ -21,7 +21,7 @@ def update_db(db, process, status, job=None, run_name=None, error=None):
                    AND status <= (SELECT id FROM status_enum WHERE state = ?)''',
                (status, job, error, job, run_name, process, status))
 
-    if run_name is not None and (status == db_helper.State.running or status == db_helper.State.completed):
+    if run_name is not None and (status == db_helper.State.running.value or status == db_helper.State.completed.value):
         update_task_time(db, run_name, process, status)
     db.connection.commit()    
 
