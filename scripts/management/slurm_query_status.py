@@ -76,21 +76,22 @@ def is_task_complete(task, task_list):
 
 def check_dependancy_met(task, task_list):
     process, run_name, status = task
+    process = db_helper.Process(process)
     if process is Process.EMOD3D or process is Process.HF:
         return True
 
     if process in (Process.merge_ts, Process.winbin_aio, Process.IM_calculation):
         dependant_task = list(task)
-        dependant_task[0] = process - 1
+        dependant_task[0] = process.value - 1
         dependant_task[2] = 'completed'
         return is_task_complete(dependant_task, task_list)
 
     if process is Process.BB:
         LF_task = list(task)
-        LF_task[0] = Process.winbin_aio
+        LF_task[0] = Process.winbin_aio.value
         LF_task[2] = 'completed'
         HF_task = list(task)
-        HF_task[0] = Process.HF
+        HF_task[0] = Process.HF.value
         HF_task[2] = 'completed'
         return is_task_complete(LF_task, task_list) and is_task_complete(HF_task, task_list)
     return False
