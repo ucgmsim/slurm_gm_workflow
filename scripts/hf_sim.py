@@ -134,6 +134,9 @@ if is_master:
     else:
         print("seed from command line: %d" % (args.seed))
 args = comm.bcast(args, root = master)
+args.seed += rank
+print ("Rank %d seed: %d" %(rank, args.seed))
+
 
 nt = int(round(args.duration / args.dt))
 stations = np.loadtxt(args.station_file, ndmin = 1, \
