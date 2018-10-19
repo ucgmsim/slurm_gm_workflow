@@ -6,7 +6,6 @@ A script that updates a slurm mgmt db and updates the status of a task
 
 import argparse
 import db_helper
-import update_mgmt_db_time
 
 
 def update_db(db, process, status, job=None, run_name=None, error=None):
@@ -14,16 +13,30 @@ def update_db(db, process, status, job=None, run_name=None, error=None):
     db.execute('''UPDATE state
                   SET status = (SELECT id FROM status_enum WHERE state = ?), 
                       last_modified = strftime('%s','now'),
-                      job_id = ?,
-                      error = error || '\n' || ?
+                      job_id = ?
                   WHERE (job_id = ? or run_name = ?)
                    AND proc_type = (SELECT id FROM proc_type_enum WHERE proc_type = ?)
                    AND status <= (SELECT id FROM status_enum WHERE state = ?)''',
-               (status, job, error, job, run_name, process, status))
+               (status, job, job, run_name, process, status))
 
     if run_name is not None and (status == db_helper.State.running.value or status == db_helper.State.completed.value):
         update_task_time(db, run_name, process, status)
-    db.connection.commit()    
+
+    if type(error) is str:
+        update_error(db, process, run_name, error)
+
+    db.connection.commit()
+
+
+def update_error(db, process, run_name, error):
+    db.execute('''INSERT INTO error (task_id, error)
+                  VALUES (
+                  (SELECT id from state 
+                   WHERE proc_type = (SELECT id FROM proc_type_enum WHERE proc_type = ?)
+                    AND run_name = ?) ,
+                  ?
+                  )
+                  ''', (process, run_name, error))
 
 
 def update_task_time(db, run_name, process, status):
@@ -36,30 +49,29 @@ def update_task_time(db, run_name, process, status):
 
 
 def force_update_db(db, process, status, job=None, run_name=None, error='', retry=False, reset_retries=False):
-    if type(error) is str:
-        error = '\n' + error
-    else:
-        error = ''
+
     db.execute('''UPDATE state
                   SET status = (SELECT id FROM status_enum WHERE state = ?), 
                       last_modified = strftime('%s','now'),
-                      job_id = ?,
-                      error = error || ?
+                      job_id = ?
                   WHERE (job_id = ? or run_name = ?)
                    AND proc_type = (SELECT id FROM proc_type_enum WHERE proc_type = ?)
                    ''', (status, job, error, job, run_name, process))    
     if retry:
         db.execute('''UPDATE state
-                      SET retries = retries + 1,
-                      error = error || '\n' || 'Process failed retrying'
+                      SET retries = retries + 1
                       WHERE (job_id = ? or run_name = ?)
                        AND proc_type = (SELECT id FROM proc_type_enum WHERE proc_type = ?)''', (job, run_name, process))
+        update_error(db, process, run_name, 'Process failed retrying')
     if reset_retries:
         db.execute('''UPDATE state
-                      SET retries = 0,
-                      error = error || '\n' || 'Reseting retries'
+                      SET retries = 0
                       WHERE (job_id = ? or run_name = ?)
                        AND proc_type = (SELECT id FROM proc_type_enum WHERE proc_type = ?)''', (job, run_name, process))
+        update_error(db, process, run_name, 'Reseting retries')
+
+    if type(error) is str:
+        update_error(db, process, run_name, error)
 
     if run_name is not None and (status == db_helper.State.running or status == db_helper.State.completed):
         update_task_time(db, run_name, process, status)

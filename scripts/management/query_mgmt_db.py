@@ -10,10 +10,10 @@ import db_helper
 
 def print_run_status(db, run_name, error=False):
     if error:
-        db.execute('''SELECT state.run_name, proc_type_enum.proc_type, status_enum.state, state.job_id, datetime(last_modified,'unixepoch'), state.error
-                    FROM state, status_enum, proc_type_enum
+        db.execute('''SELECT state.run_name, proc_type_enum.proc_type, status_enum.state, state.job_id, datetime(last_modified,'unixepoch'), error.error
+                    FROM state, status_enum, proc_type_enum, error
                     WHERE state.proc_type = proc_type_enum.id AND state.status = status_enum.id
-                            AND UPPER(state.run_name) LIKE UPPER(?) AND state.error <> ''
+                            AND UPPER(state.run_name) LIKE UPPER(?) AND error.task_id = state.id
                     ORDER BY state.run_name, status_enum.id
                     ''', (run_name,))
         status = db.fetchall()
