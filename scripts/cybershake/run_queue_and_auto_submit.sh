@@ -18,7 +18,7 @@ do
     echo $cmd
     $cmd
 
-    cmd="python $gmsim/workflow/scripts/cybershake/auto_submit.py $path_sim_root --config $cybershake_cfg --no_im"
+    cmd="python $gmsim/workflow/scripts/cybershake/auto_submit.py $path_sim_root --config $cybershake_cfg "
     echo $cmd
     $cmd
     sleep $interval

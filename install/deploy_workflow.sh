@@ -40,9 +40,9 @@ print_message "Add source $ROOT/share/bashrc.uceq to your .bashrc"
 
 
 # copying the files to the workflow
-cp -r ../scripts ${ROOT}/workflow/
-cp -r ../templates ${ROOT}/workflow/
-cp -r ../shared_workflow ${ROOT}/workflow/
+cp -r $script_dir/../scripts ${ROOT}/workflow/
+cp -r $script_dir/../templates ${ROOT}/workflow/
+cp -r $script_dir/../shared_workflow ${ROOT}/workflow/
 
 #create a file that contains version code for tracking
 echo $version >> ${ROOT}/workflow/version
@@ -66,7 +66,7 @@ rm -f ${ROOT}/workflow/templates/machine_env.sh
 touch ${ROOT}/workflow/templates/machine_env.sh
 
 #script to change grp
-cat $script_dir/change_grp.sh >> ${ROOT}/workflow/templates/machine_env.sh
+#cat $script_dir/change_grp.sh >> ${ROOT}/workflow/templates/machine_env.sh
 
 echo "# Replace with the actual Python module" >> ${ROOT}/workflow/templates/machine_env.sh
 #loads the mpi4py module if the user happen to have not sourced bashrc.uceq

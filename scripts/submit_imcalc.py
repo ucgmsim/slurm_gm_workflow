@@ -66,7 +66,7 @@ def generate_context(template_dir, template_name, sim_dirs, obs_dirs, station_fi
         time=time, comp=comp,
         sim_dirs=sim_dirs, obs_dirs=obs_dirs,
         rrup_files=rrup_files, station_file=station_file,
-        output_dir=output_dir, np=np, extended=extended, simple=simple,mgmt_db=mgmt_db)
+        output_dir=output_dir, np=np, extended=extended, simple=simple,mgmt_db_location=mgmt_db)
     return context
 
 
@@ -85,8 +85,9 @@ def write_sl(name_context_list, submit=False):
         with open(sl_name, 'w') as sl:
             print("writing {}".format(sl_name))
             sl.write(context)
-            if submit is True:
-                submit_sl_script(sl_name)
+        if submit is True:
+            fname_sl_real_path = os.path.realpath(sl_name)
+            submit_sl_script(fname_sl_real_path)
 
 def submit_sl_script(script):
     if type(script) == unicode:
@@ -96,6 +97,8 @@ def submit_sl_script(script):
     if len(res[1]) == 0:
         # no errors, return the job id
         return res[0].split()[-1] 
+    else:
+        print res
 
 
 def get_basename_without_ext(path):

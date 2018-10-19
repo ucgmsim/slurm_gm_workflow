@@ -1,4 +1,4 @@
-
+import numpy as np
 import argparse
 from qcore.timeseries import HFSeis
 import sys
@@ -43,6 +43,11 @@ if __name__ == '__main__':
             #failed
             if show_msg: print "empty staion name detected, hf failed"
             sys.exit(1)
+    #check for and vs ==0 (failed)
+    if np.min(hf.stations.vs) == 0:
+        if show_msg: print "some vs == 0, hf incomplete"
+        sys.exit(1)
+
         
     #pass both check
     if show_msg: print "HF passed"
