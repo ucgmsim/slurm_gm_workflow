@@ -16,9 +16,13 @@ CREATE TABLE IF NOT EXISTS `state` (
 	`status`	INTEGER,
 	`job_id`	INTEGER UNIQUE,
 	`retries`	INTEGER,
-	`error`		TEXT DEFAULT '',
 	`last_modified`	INTEGER,
 	UNIQUE(`run_name`, `proc_type`)
+);
+CREATE TABLE IF NOT EXISTS `error` (
+    `id`  INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
+    `task_id`INTEGER NOT NULL,
+	`error`		TEXT DEFAULT ''
 );
 CREATE INDEX IF NOT EXISTS `state_search` ON state (status);
 CREATE INDEX IF NOT EXISTS `status` ON state (run_name, job_id, status, proc_type);
@@ -53,7 +57,7 @@ CREATE TABLE IF NOT EXISTS `job_time_log`(
 	FOREIGN KEY(`job_id`) REFERENCES state(job_id)
 );
 CREATE VIEW IF NOT EXISTS state_view AS
-SELECT state.id, state.run_name, status_enum.state, proc_type_enum.proc_type, state.job_id, state.last_modified
+SELECT state.id, state.run_name, proc_type_enum.proc_type, status_enum.state, state.retries, state.job_id, state.last_modified
 FROM state, status_enum, proc_type_enum
 WHERE state.proc_type = proc_type_enum.id AND state.status = status_enum.id;
 COMMIT;
