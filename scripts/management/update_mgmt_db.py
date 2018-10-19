@@ -19,7 +19,7 @@ def update_db(db, process, status, job=None, run_name=None, error=None):
                    AND status <= (SELECT id FROM status_enum WHERE state = ?)''',
                (status, job, job, run_name, process, status))
 
-    if run_name is not None and (status == db_helper.State.running.value or status == db_helper.State.completed.value):
+    if run_name is not None and (status == db_helper.State.running.name or status == db_helper.State.completed.name):
         update_task_time(db, run_name, process, status)
 
     if type(error) is str:
