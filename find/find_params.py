@@ -12,7 +12,7 @@ def get_scripts_imports(git_folder, params_dir):
     output = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True).communicate()[0].strip().split('\n')
     for line in output:
         script, imports = line.split(':')
-        if not imports.startswith("#"):
+        if not imports.startswith("#") and 'winbin-aio' not in script and 'match_seismo' not in script:
             params_name = imports.split('from')[1].split('import')[0].strip()
 
             if '.py' not in params_name:
