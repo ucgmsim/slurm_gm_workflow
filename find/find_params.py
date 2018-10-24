@@ -65,6 +65,8 @@ def get_scripts_context(git_dir, script, imports_dict, params_dict):
                 cmd = "cat {} | grep {}".format(script, param)
                 output = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True).communicate()[0].strip()
                 if output != '':
+                    if param=="match_hf_flo":
+                        print(script,params_file,param)
                     log.write("{}, {}\n".format(params_file, param))
                     params_dict[params_file][i][1] = 1
                     #        print("found", params_file,params_dict[params_file][i][0])
@@ -73,13 +75,13 @@ def get_scripts_context(git_dir, script, imports_dict, params_dict):
     return params_dict
 
 
-def write_param_dict(outname, header, param_dict):
+def write_param_dict(outname, header, param_dict, bol):
     with open(outname, 'w') as c:
         cw = csv.writer(c, delimiter=',', quotechar='|')
         cw.writerow(header)
         for k, v in param_dict.items():
-            for pa, bol in v:
-                if bol == 0 and not pa.startswith('__'):
+            for pa, boll in v:
+                if boll == bol and not pa.startswith('__'):
                     cw.writerow([k, pa])
 
 
@@ -93,6 +95,6 @@ for g in gs:
     for s in d.keys():
         print(s)
         p = get_scripts_context(g, s, d, p)
-write_param_dict("params_used.csv", ['params_script', 'used_param'], p)
-write_param_dict("params_unused.csv", ['params_script', 'unused_param'], p)
+write_param_dict("params_used.csv", ['params_script', 'used_param'], p, 1)
+write_param_dict("params_unused.csv", ['params_script', 'unused_param'], p, 0)
 
