@@ -1,14 +1,10 @@
 #!/usr/bin/env python2
 """
 Generates 'e3d.par' from the default set, appending new key value pairs of parameters.
-
 @author Viktor Polak, Sung Bae
 @date 6 April 2016
-
 Replaces set_runparams.csh. Converted to python, handles params set in separate file.
-
 USAGE: edit params.py (not this file), execute this file from the same directory.
-
 ISSUES: remove default values in e3d_default.par where not needed.
 """
 
@@ -144,12 +140,12 @@ def create_run_parameters(sim_dir,srf_name=None):
         p2['ts_out_prefix'] = p1['ts_out_prefix']
         p2['swap_bytes'] = params.swap_bytes
         p2['lonlat_out'] = params.lonlat_out
-        p2['scale'] = params.scale
-        p2['enable_restart'] = params.ENABLE_RESTART
-        p2['restartdir'] = p1['restart_dir']
-        p2['restart_itinc'] = params.RESTART_ITINC
-        p2['read_restart'] = params.READ_RESTART
-        p2['restartname'] = params_base.run_name
+       # p2['scale'] = params.scale
+       # p2['enable_restart'] = params.ENABLE_RESTART
+       # p2['restartdir'] = p1['restart_dir']
+       # p2['restart_itinc'] = params.RESTART_ITINC
+       # p2['read_restart'] = params.READ_RESTART
+       # p2['restartname'] = params_base.run_name
         p2['logdir'] = p1['log_dir']
         p2['slipout'] = p1['slipout_dir'] + '/slipout-k2'
         # extras found in default parfile
@@ -184,9 +180,9 @@ def create_run_parameters(sim_dir,srf_name=None):
         p2['ts_yz'] = 0
         p2['ix_ts'] = 99
         # other locations
-        p2['wcc_prog_dir'] = params.wcc_prog_dir
-        p2['vel_mod_params_dir'] = params_base.vel_mod_params_dir
-        p2['global_root'] = params_base.global_root
+       # p2['wcc_prog_dir'] = params.wcc_prog_dir
+      #  p2['vel_mod_params_dir'] = params_base.vel_mod_params_dir
+      #  p2['global_root'] = params_base.global_root
         p2['sim_dir'] = params_base.sim_dir
         # p2['fault_file']= fault_file
         p2['stat_file'] = params_base.stat_file

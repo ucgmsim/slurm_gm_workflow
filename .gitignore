@@ -103,3 +103,5 @@ ENV/
 # ide
 *.idea 
 
+find/output/*.csv
+find/output/*.txt

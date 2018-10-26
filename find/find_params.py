@@ -95,6 +95,16 @@ for g in gs:
     for s in d.keys():
         print(s)
         p = get_scripts_context(g, s, d, p)
+
+
+for ptemplate in p.keys():
+    for i in range(len(p[ptemplate])):
+        cmd ="grep '{}' -r --include=\*.c {}".format(p[ptemplate][i][0], '/home/melody.zhu/EMOD3D')
+        output = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True).communicate()[0].strip().split('\n')
+        if output != ['']:
+            print("ffffffff",output[:2])
+            p[ptemplate][i][1] = 1
+
+
 write_param_dict("params_used.csv", ['params_script', 'used_param'], p, 1)
 write_param_dict("params_unused.csv", ['params_script', 'unused_param'], p, 0)
-

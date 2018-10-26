@@ -1,5 +1,6 @@
 #!/bin/bash
 BINPROCESS=$gmsim/workflow/scripts
+BINPROCESS=/home/melody.zhu/slurm_gm_workflow/scripts
 #script needs one arg(emod3d,post-emod, hf, or bb)
 if [[ $# -lt 1 ]];then
     echo "please provide the jobs you want to submit (emod3d,post_emod3d, hf, or bb)."
