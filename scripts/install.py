@@ -638,11 +638,11 @@ if __name__ == '__main__':
     
     parser = argparse.ArgumentParser()
     
-    parser.add_argument('--user_root',type=str,default=None)
-    parser.add_argument('--sim_cfg',type=str,default=None)
+    parser.add_argument('--user_root',type=str,default=None, help="the path to where to install the simulation")
+    parser.add_argument('--sim_cfg',type=str,default=None, help="abs path to a file that contains all the config needed for a single sim install")
     
-    parser.add_argument('--srf_dir',type=str,default=None)
-    parser.add_argument('--vm_dir',type=str,default=None)
+    parser.add_argument('--srf_dir',type=str,default=None, help="path that contains folders of faults/*.srf")
+    parser.add_argument('--vm_dir',type=str,default=None, help="path that contains VMs, params_vel must be present")
     parser.add_argument('--v1d_dir',type=str,default=None)
     parser.add_argument('--station_dir',type=str,default=None)
 
