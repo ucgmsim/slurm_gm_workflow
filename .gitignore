@@ -103,5 +103,6 @@ ENV/
 # ide
 *.idea 
 
-find/output/*.csv
-find/output/*.txt
+find/*.csv
+find/*.txt
+find/*.yaml
