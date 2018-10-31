@@ -24,9 +24,13 @@ def create_dict(input_file):
     print(d)
     return d
   
+def load_yaml(yaml_file):
+    with open(yaml_file, 'r') as stream:
+        try:
+            return yaml.load(stream)
+        except yaml.YAMLError as exc:
+            print(exc)
 
-d= create_dict('/home/melody.zhu/params.py')
-d.update(create_dict('/home/melody.zhu/params_base.py'))
-dump_yaml(d, "params.yaml")
+
 
 
