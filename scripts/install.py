@@ -453,7 +453,7 @@ def create_fault_params_dict(sim_dir, event_name, run_name, run_dir, vel_mod_dir
     fault_params_dict['hf_dir'] = hf_dir
     fault_params_dict['bb_dir'] = bb_dir
     fault_params_dict['srf_dir'] = srf_dir
-    fault_params_dict['srf_file'] = ''
+    fault_params_dict['srf_file'] = srf_files
     fault_params_dict['vel_mod_dir'] = vel_mod_dir
     fault_params_dict['v_mod_1d_dir'] = v_mod_1d_dir
     fault_params_dict['params_vel'] = params_vel_path
