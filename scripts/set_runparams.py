@@ -218,7 +218,7 @@ def extend_yaml(sim_dir, srf_name=None):
     p1 = {}
     p2 = {}
     fault_params_dict = utils.load_yaml('fault_params.yaml')
-    for i, srf_file in enumerate(params.srf_files):
+    for i, srf_file in enumerate(fault_params_dict['srf_files']):
         #skip all logic if a specific srf_name is provided
         if srf_name != None and srf_name != os.path.splitext(basename(srf_file))[0]:
             continue
@@ -354,7 +354,9 @@ def extend_yaml(sim_dir, srf_name=None):
         fault_params_dict['emod3d']['grid_file'] = fault_params_dict['vm']['GRIDFILE']
         fault_params_dict['emod3d']['model_params'] = fault_params_dict['vm']['MODEL_PARAMS']
 
+        utils.dump_yaml(fault_params_dict, os.path.join(fault_params_dict['lf_sim_dir'], 'sim_params.yaml'))
 
+        
 if __name__ == '__main__':
     sim_dir = os.getcwd()
     create_run_parameters(sim_dir)
