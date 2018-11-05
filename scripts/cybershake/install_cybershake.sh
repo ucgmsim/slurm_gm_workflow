@@ -23,7 +23,8 @@ echo $list_vm
 #each vm match with multiple srf
 for vm in $list_vm;
 do
-    python $script_location/install_cybershake.py $cybershake_root $cybershake_cfg $vm
+   echo "afsafd"
+   python $script_location/install_cybershake.py $cybershake_root $cybershake_cfg $vm
 done
 
 #list_source='ls 
