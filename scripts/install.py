@@ -406,6 +406,133 @@ def action(sim_dir, event_name, run_name, run_dir, vel_mod_dir, srf_dir, srf_sto
         print "Generation of statcords is skipped. You need to fix params_base.py manually"
 
 
+def create_fault_params_dict(sim_dir, event_name, run_name, run_dir, vel_mod_dir, srf_dir, srf_stoch_pairs, params_vel_path,
+           stat_file_path, vs30_file_path, vs30ref_file_path, MODEL_LAT, MODEL_LON, MODEL_ROT, hh, nx, ny, nz, sufx,
+           sim_duration, flo, vel_mod_params_dir, yes_statcords, yes_model_params, dt=default_dt, hf_dt=default_hf_dt):
+
+    lf_sim_root_dir = os.path.join(sim_dir, "LF")
+    hf_dir = os.path.join(sim_dir, "HF")
+    bb_dir = os.path.join(sim_dir, "BB")
+
+    dir_list = [sim_dir, lf_sim_root_dir, hf_dir, bb_dir]
+    if not os.path.isdir(user_root):
+        dir_list.insert(0, user_root)
+
+    verify_user_dirs(dir_list)
+
+    for filename in glob.glob(os.path.join(recipe_dir, '*.*')):
+        if filename == "README.md":
+            continue
+        shutil.copy(filename, sim_dir)
+
+        # TODO: the next two lines are two files for old post-processing
+        # shutil.copy(os.path.join(gmsa_dir,"parametersStation.py"),sim_dir)
+        # shutil.copy(os.path.join(gmsa_dir,"runPostProcessStation.ll"),sim_dir)
+    #    exe('ln -s %s/submit_emod3d.py %s'%(bin_process_dir,sim_dir))
+    shutil.copy(os.path.join(workflow_root, "version"), sim_dir)
+    shutil.copy(os.path.join(bin_process_dir, "submit.sh"), sim_dir)
+
+
+    if not yes_model_params:
+        print "Generation of model params has been skipped."
+        print "Re-directing related params to files under %s" % vel_mod_dir
+        vel_mod_params_dir = vel_mod_dir
+
+    # TODO: get rid of this
+    bin_process_ver = "slurm"
+
+    srf_files, stoch_files = zip(*srf_stoch_pairs)
+
+    fault_params_dict = OrderedDict()
+    fault_params_dict['run_name'] = run_name
+    fault_params_dict['version'] = emod3d_version
+    fault_params_dict['bin_process_ver'] = bin_process_ver
+    fault_params_dict['global_root'] = global_root
+    fault_params_dict['tools_dir'] = tools_dir
+    fault_params_dict['user_root'] = user_root
+    fault_params_dict['run_dir'] = run_dir
+    fault_params_dict['sim_dir'] = sim_dir
+    fault_params_dict['lf_sim_root_dir'] = lf_sim_root_dir
+    fault_params_dict['hf_dir'] = hf_dir
+    fault_params_dict['bb_dir'] = bb_dir
+    fault_params_dict['srf_dir'] = srf_dir
+    fault_params_dict['srf_file'] = srf_files
+    fault_params_dict['vel_mod_dir'] = vel_mod_dir
+    fault_params_dict['v_mod_1d_dir'] = v_mod_1d_dir
+    fault_params_dict['params_vel'] = params_vel_path
+    fault_params_dict['sim_duration'] = sim_duration
+    fault_params_dict['flo'] = flo
+
+    fault_params_dict['vm'] = OrderedDict()
+    fault_params_dict['vm']['MODEL_LAT'] = MODEL_LAT
+    fault_params_dict['vm']['MODEL_LON'] = MODEL_LON
+    fault_params_dict['vm']['MODEL_LON'] = MODEL_ROT
+    fault_params_dict['vm']['hh'] = hh
+    fault_params_dict['vm']['nx'] = nx
+    fault_params_dict['vm']['nz'] = nz
+    fault_params_dict['vm']['ny'] = ny
+    fault_params_dict['vm']['vel_mod_params_dir'] = vel_mod_params_dir
+    fault_params_dict['vm']['sufx'] = sufx
+    fault_params_dict['vm']['GRIDFILE'] = os.path.join(vel_mod_params_dir, 'gridfile%s' % sufx)
+    fault_params_dict['vm']['GRIDOUT'] = os.path.join(vel_mod_params_dir, 'gridout%s' % sufx)
+    fault_params_dict['vm']['MODEL_COORDS'] = os.path.join(vel_mod_params_dir, 'model_coords%s' % sufx)
+    fault_params_dict['vm']['MODEL_PARAMS'] = os.path.join(vel_mod_params_dir, 'model_params%s' % sufx)
+    fault_params_dict['vm']['MODEL_BOUNDS'] = os.path.join(vel_mod_params_dir, 'model_bounds%s' % sufx)
+
+    fault_params_dict['hf'] = OrderedDict()
+    fault_params_dict['hf']['hf_dt'] = hf_dt
+
+    fault_params_dict['emod3d'] = OrderedDict()
+    fault_params_dict['emod3d']['dt'] = dt
+
+    if stat_file_path == "":
+        # stat_path seems to empty, assigning all related value to latest_ll
+        print "stat_file_path is not specified."
+        print "Using %s" % latest_ll
+        run_stat_dir = os.path.join(stat_dir, event_name)
+        stat_file_path = os.path.join(run_stat_dir, event_name + '.ll')
+        vs30_file_path = os.path.join(run_stat_dir, event_name + '.vs30')
+        vs30ref_file_path = os.path.join(run_stat_dir, event_name + '.vs30ref')
+        # creating sub-folder for run_name
+        # check if folder already exist
+        if not os.path.isdir(run_stat_dir):
+            # folder not exist, creating
+            os.mkdir(run_stat_dir)
+            # making symbolic link to latest_ll
+            cmd = "ln -s %s %s" % (os.path.join(latest_ll_dir, latest_ll + '.ll'), stat_file_path)
+            exe(cmd)
+            # making symbolic link to lastest_ll.vs30 and .vs30ref
+            cmd = "ln -s %s %s" % (os.path.join(latest_ll_dir, latest_ll + '.vs30'), vs30_file_path)
+            exe(cmd)
+            cmd = "ln -s %s %s" % (os.path.join(latest_ll_dir, latest_ll + '.vs30ref'), vs30ref_file_path)
+            exe(cmd)
+    fault_params_dict['stat_vs_est'] = vs30_file_path
+    fault_params_dict['stat_vs_ref'] = vs30ref_file_path
+
+    if stat_file_path is not None:
+        fault_params_dict['stat_file'] = stat_file_path
+
+    # if yes_model_params:
+    #     print "Producing model params. It may take a minute or two"
+    #     from gen_coords import gen_coords
+    #     gen_coords()
+    #     print "Done"
+
+    if yes_statcords:
+        print "Producing statcords and FD_STATLIST. It may take a minute or two"
+
+        # Create Stat_cord & statList
+        import statlist2gp
+        fd_statcords, fd_statlist = statlist2gp.main(stat_file=stat_file_path)
+        print "Done"
+        fault_params_dict['stat_coords'] = fd_statcords
+        fault_params_dict['FD_STATLIST'] = fd_statlist
+    else:
+        print "Generation of statcords is skipped. You need to fix params_base.py manually"
+
+    return fault_params_dict
+
+
 def show_instruction(sim_dir):
     try:
         print "Removing probably incomplete "+os.path.join(sim_dir, "params_base.pyc")

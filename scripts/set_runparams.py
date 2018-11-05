@@ -12,10 +12,12 @@ from __future__ import print_function
 import sys
 import os.path
 from os.path import basename
+from collections import OrderedDict
 
 sys.path.append(os.path.abspath(os.path.curdir))
 from shutil import copyfile
 from shared_workflow import shared
+from qcore import utils
 
 params_uncertain = 'params_uncertain.py'
 #try:
@@ -25,12 +27,11 @@ params_uncertain = 'params_uncertain.py'
 #    exit(1)
 
 
-def create_run_parameters(sim_dir,srf_name=None):
+def create_run_parameters(sim_dir, srf_name=None):
     #import params_base
     sys.path.append(sim_dir)
     params_base = __import__('params_base', globals(), locals(), [], -1)
-    
-    
+
     # attempt to append template file before importing params
     try:
         # throws NameError if var not set, AssertionError if blank
@@ -190,6 +191,170 @@ def create_run_parameters(sim_dir,srf_name=None):
         p2['model_params'] = params_base.MODELPARAMS
 
         shared.write_to_py(os.path.join(p1['lf_sim_dir'], params.parfile), p2)
+
+
+def extend_yaml(sim_dir, srf_name=None):
+    #import params_base
+    sys.path.append(sim_dir)
+    params_base = __import__('params_base', globals(), locals(), [], -1)
+
+    # attempt to append template file before importing params
+    try:
+        # throws NameError if var not set, AssertionError if blank
+        assert (params_override != '')
+        # copy to temp file
+        copyfile('params.py', 'params_joined.py')
+        # append to temp
+        with open('params_joined.py', 'a') as fp:
+            with open('params_override_' + params_override + '.py', 'r') as tp:
+                fp.write(tp.readlines())
+        # import temp
+        import params_joined
+        os.remove('params_joined.py')
+    except (AssertionError, NameError, ImportError, OSError):
+        #import params
+        params = __import__('params', globals(), locals(), [], -1)
+
+    p1 = {}
+    p2 = {}
+    fault_params_dict = utils.load_yaml('fault_params.yaml')
+    for i, srf_file in enumerate(fault_params_dict['srf_files']):
+        #skip all logic if a specific srf_name is provided
+        if srf_name != None and srf_name != os.path.splitext(basename(srf_file))[0]:
+            continue
+        srf_file_basename = os.path.splitext(os.path.basename(srf_file))[0]  # take the filename only
+        fault_params_dict.lf = OrderedDict()
+        fault_params_dict['lf_sim_dir'] = os.path.join(fault_params_dict['lf_sim_root_dir'], srf_file_basename)
+        shared.verify_user_dirs(fault_params_dict['lf_sim_dir'])
+        fault_params_dict['lf']['restart_dir'] = os.path.join(fault_params_dict['lf_sim_dir'], 'Restart')
+        fault_params_dict['lf']['bin_output'] = os.path.join(fault_params_dict['lf_sim_dir'], 'OutBin')
+        fault_params_dict['lf']['SEISDIR'] = fault_params_dict['lf']['bin_output']
+        fault_params_dict['lf']['ts_file'] = os.path.join(fault_params_dict['lf']['bin_output'], fault_params_dict['run_name'] + '_xyts.e3d')  # the file created by merge_ts
+        fault_params_dict['lf']['log_dir'] = os.path.join(p1['lf_sim_dir'], 'Rlog')
+        fault_params_dict['lf']['slipout_dir'] = os.path.join(fault_params_dict['lf']['lf_sim_dir'], 'SlipOut')
+        fault_params_dict['lf']['vel_dir'] = os.path.join(fault_params_dict['lf']['lf_sim_dir'], 'Vel')
+        fault_params_dict['lf']['t_slice_dir'] = os.path.join(fault_params_dict['lf']['lf_sim_dir'], 'TSlice')
+        fault_params_dict['lf']['plot_ps_dir'] = os.path.join(fault_params_dict['lf']['t_slice_dir'], 'PlotFiles')
+        fault_params_dict['lf']['plot_png_dir'] = os.path.join(fault_params_dict['lf']['t_slice_dir'], 'Png')
+        fault_params_dict['lf']['ts_out_dir'] = os.path.join(fault_params_dict['lf']['t_slice_dir'], 'TSFiles')
+        fault_params_dict['lf']['ts_out_prefix'] = os.path.join(fault_params_dict['lf']['ts_out_dir'], fault_params_dict['run_name'])
+        fault_params_dict['lf']['FILELIST'] = os.path.join(fault_params_dict['lf']['lf_sim_dir'], 'fdb.filelist')
+        fault_params_dict['lf']['lf_vel_resume'] = True
+
+        fault_params_dict['emod3d']['version'] = fault_params_dict.version + '-mpi'
+
+        fault_params_dict['emod3d']['name'] = fault_params_dict.run_name
+        fault_params_dict['emod3d']['nproc'] = 512
+
+        fault_params_dict['emod3d']['nx'] = fault_params_dict['vm']['nx']
+        fault_params_dict['emod3d']['ny'] = fault_params_dict['vm']['ny']
+        fault_params_dict['emod3d']['nz'] = fault_params_dict['vm']['nz']
+        fault_params_dict['emod3d']['h'] = fault_params_dict['vm']['hh']
+        fault_params_dict['emod3d']['dt'] = 0.0200
+        fault_params_dict['emod3d']['nt'] = str(int(round(float(fault_params_dict['sim_duration'])/float(dt))))
+        fault_params_dict['emod3d']['bfilt'] = 4
+        fault_params_dict['emod3d']['flo'] = fault_params_dict['flo']
+        fault_params_dict['emod3d']['fhi'] = 0.0
+
+        fault_params_dict['emod3d']['bforce'] = 0
+        fault_params_dict['emod3d']['pointmt'] = 0
+        fault_params_dict['emod3d']['dblcpl'] = 0
+        fault_params_dict['emod3d']['ffault'] = 2
+        fault_params_dict['emod3d']['faultfile'] = srf_file
+
+        fault_params_dict['emod3d']['model_style'] = 1
+        # only for the 1D velocity model
+        # 'model=' + FD_VMODFILE, \
+        fault_params_dict['emod3d']['vmoddir'] = fault_params_dict['vel_mod_dir']
+        fault_params_dict['emod3d']['pmodfile'] = 'vp3dfile.p'
+        fault_params_dict['emod3d']['smodfile'] = 'vs3dfile.s'
+        fault_params_dict['emod3d']['dmodfile'] = 'rho3dfile.d'
+        fault_params_dict['emod3d']['qpfrac'] = 100
+        fault_params_dict['emod3d']['qsfrac'] = 50
+        fault_params_dict['emod3d']['qpqs_factor'] = 2.0
+        fault_params_dict['emod3d']['fmax'] = 25.0
+        fault_params_dict['emod3d']['fmin'] = 0.01
+        fault_params_dict['emod3d']['vmodel_swapb'] = 0
+
+        fault_params_dict['emod3d']['modellon'] = fault_params_dict['vm']['MODEL_LON']
+        fault_params_dict['emod3d']['modellat'] = fault_params_dict['vm']['MODEL_LAT']
+        fault_params_dict['emod3d']['modelrot'] = fault_params_dict['vm']['MODEL_ROT']
+
+        fault_params_dict['emod3d']['enable_output_dump'] = 1
+        fault_params_dict['emod3d']['dump_itinc'] = 4000
+        fault_params_dict['emod3d']['main_dump_dir'] = p1['bin_output']
+        fault_params_dict['emod3d']['nseis'] = 1
+        fault_params_dict['emod3d']['seiscords'] = fault_params_dict['stat_coords']
+        fault_params_dict['emod3d']['user_scratch'] = os.path.join(fault_params_dict['user_root'], 'scratch')
+        fault_params_dict['emod3d']['seisdir'] = os.path.join(fault_params_dict['emod3d']['user_scratch'], fault_params_dict['run_name'], srf_file_basename, 'SeismoBin')
+        fault_params_dict['emod3d']['ts_xy'] = 1
+        fault_params_dict['emod3d']['iz_ts'] = 1
+        fault_params_dict['emod3d']['ts_xz'] = 0
+        fault_params_dict['emod3d']['iy_ts'] = 2
+        fault_params_dict['emod3d']['ts_yz'] = 0
+        fault_params_dict['emod3d']['ix_ts'] = 99
+        fault_params_dict['emod3d']['dt_ts'] = 20
+        fault_params_dict['emod3d']['dx_ts'] = 5
+        fault_params_dict['emod3d']['dy_ts'] = 5
+        fault_params_dict['emod3d']['dz_ts'] = 1
+        fault_params_dict['emod3d']['ts_start'] = 0
+        fault_params_dict['emod3d']['ts_inc'] = 1
+        fault_params_dict['emod3d']['ts_total'] = str(int(fault_params_dict['sim_duration'] / (float(fault_params_dict['emod3d']['dt'] * float(dt_ts)))))
+        fault_params_dict['emod3d']['ts_file'] = fault_params_dict['lf']['ts_file']
+        fault_params_dict['emod3d']['ts_out_dir'] = fault_params_dict['lf']['ts_out_dir']
+        fault_params_dict['emod3d']['ts_out_prefix'] = fault_params_dict['lf']['ts_out_prefix']
+        fault_params_dict['emod3d']['swap_bytes'] = 0
+        fault_params_dict['emod3d']['lonlat_out'] = 1
+        fault_params_dict['emod3d']['scale'] = 1
+        fault_params_dict['emod3d']['enable_restart'] = 1
+        fault_params_dict['emod3d']['restartdir'] = fault_params_dict['lf']['restart_dir']
+        fault_params_dict['emod3d']['restart_itinc'] = 20000
+        fault_params_dict['emod3d']['read_restart'] = 0
+        fault_params_dict['emod3d']['restartname'] = fault_params_dict['run_name']
+        fault_params_dict['emod3d']['logdir'] = fault_params_dict['log_dir']
+        fault_params_dict['emod3d']['slipout'] = fault_params_dict['lf']['slipout_dir'] + '/slipout-k2'
+        # extras found in default parfile
+        fault_params_dict['emod3d']['span'] = 1
+        fault_params_dict['emod3d']['intmem'] = 1
+        fault_params_dict['emod3d']['maxmem'] = 1500
+        fault_params_dict['emod3d']['order'] = 4
+        fault_params_dict['emod3d']['model_style'] = 1
+        fault_params_dict['emod3d']['elas_only'] = 0
+        fault_params_dict['emod3d']['freesurf'] = 1
+        fault_params_dict['emod3d']['dampwidth'] = 0
+        fault_params_dict['emod3d']['qbndmax'] = 100.0
+        fault_params_dict['emod3d']['stype'] = '2tri-p10-h20'
+        fault_params_dict['emod3d']['tzero'] = 0.6
+        fault_params_dict['emod3d']['geoproj'] = 1
+        fault_params_dict['emod3d']['report'] = 100
+        fault_params_dict['emod3d']['all_in_one'] = 1
+        fault_params_dict['emod3d']['xseis'] = 0
+        fault_params_dict['emod3d']['iy_xs'] = 60
+        fault_params_dict['emod3d']['iz_xs'] = 1
+        fault_params_dict['emod3d']['dxout'] = 1
+        fault_params_dict['emod3d']['yseis'] = 0
+        fault_params_dict['emod3d']['ix_ys'] = 100
+        fault_params_dict['emod3d']['iz_ys'] = 1
+        fault_params_dict['emod3d']['dyout'] = 1
+        fault_params_dict['emod3d']['zseis'] = 0
+        fault_params_dict['emod3d']['ix_zs'] = 100
+        fault_params_dict['emod3d']['iy_zs'] = 50
+        fault_params_dict['emod3d']['dzout'] = 1
+        fault_params_dict['emod3d']['ts_xz'] = 0
+        fault_params_dict['emod3d']['iy_ts'] = 2
+        fault_params_dict['emod3d']['ts_yz'] = 0
+        fault_params_dict['emod3d']['ix_ts'] = 99
+        # other locations
+        fault_params_dict['emod3d']['wcc_prog_dir'] = os.path.join(fault_params_dict['global_root'], fault_params_dict['tools_dir'])
+        fault_params_dict['emod3d']['vel_mod_params_dir'] = fault_params_dict['vm']['vel_mod_params_dir']
+        fault_params_dict['emod3d']['global_root'] = fault_params_dict['global_root']
+        fault_params_dict['emod3d']['sim_dir'] = fault_params_dict['sim_dir']
+        # fault_params_dict['emod3d']['fault_file']= fault_file
+        fault_params_dict['emod3d']['stat_file'] = fault_params_dict['stat_file']
+        fault_params_dict['emod3d']['grid_file'] = fault_params_dict['vm']['GRIDFILE']
+        fault_params_dict['emod3d']['model_params'] = fault_params_dict['vm']['MODEL_PARAMS']
+
+        utils.dump_yaml(fault_params_dict, os.path.join(fault_params_dict['lf_sim_dir'], 'sim_params.yaml'))
 
 
 if __name__ == '__main__':
