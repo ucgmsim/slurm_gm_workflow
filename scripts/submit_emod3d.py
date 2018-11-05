@@ -39,7 +39,7 @@ import install
 # section for parser to determine if using automate wct
 import argparse
 
-
+from qcore import utils
 
 
 def confirm(q):
@@ -47,7 +47,8 @@ def confirm(q):
     print q
     return show_yes_no_question()
 
-def submit_sl_script(script,submit_yes=None):
+
+def submit_sl_script(script, submit_yes=None):
     #print "Submitting is not implemented yet!"
     print script
     #if submit_yes == None:
@@ -66,12 +67,11 @@ def submit_sl_script(script,submit_yes=None):
         print "User chose to submit the job manually"
         return None
 
-    
-    
+
 def write_sl_script(lf_sim_dir,sim_dir,srf_name, run_time=default_run_time, nb_cpus=default_core,memory=default_memory,account=default_account):
 
-    from params_base import tools_dir
-    from params_base import mgmt_db_location
+    # from params_base import tools_dir
+    # from params_base import mgmt_db_location
 
     set_runparams.create_run_parameters(srf_name)
     generated_scripts = []
@@ -80,10 +80,10 @@ def write_sl_script(lf_sim_dir,sim_dir,srf_name, run_time=default_run_time, nb_c
     template = f_template.readlines()
     str_template = ''.join(template)
     
-    txt = str_template.replace("{{lf_sim_dir}}", lf_sim_dir).replace("{{tools_dir}}", tools_dir)
-    txt = txt.replace("{{mgmt_db_location}}", mgmt_db_location)
-    txt = txt.replace("{{sim_dir}}", sim_dir).replace("{{srf_name}}",srf_name)
-    fname_slurm_script = 'run_emod3d_%s_%s.sl' % (srf_name,timestamp)
+    txt = str_template.replace("{{lf_sim_dir}}", lf_sim_dir).replace("{{tools_dir}}", params.tools_dir)
+    txt = txt.replace("{{mgmt_db_location}}", params.mgmt_db_location)
+    txt = txt.replace("{{sim_dir}}", sim_dir).replace("{{srf_name}}", srf_name)
+    fname_slurm_script = 'run_emod3d_%s_%s.sl' % (srf_name, timestamp)
     f_sl_script = open(fname_slurm_script, 'w')
 
     # slurm header
@@ -96,10 +96,11 @@ def write_sl_script(lf_sim_dir,sim_dir,srf_name, run_time=default_run_time, nb_c
     f_sl_script.write(txt)
     f_sl_script.close()
     
-    fname_sl_abs_path = os.path.join(os.path.abspath(os.path.curdir),fname_slurm_script)
+    fname_sl_abs_path = os.path.join(os.path.abspath(os.path.curdir), fname_slurm_script)
     print "Slurm script %s written" % fname_sl_abs_path
     generated_script = fname_sl_abs_path
     return generated_script 
+
 
 if __name__ == '__main__':
     #Start of main function
@@ -116,9 +117,9 @@ if __name__ == '__main__':
         default_core = args.ncore
 
     try:
-        import params
+        params = utils.load_params('sim_params.yaml')
     except:
-        print "import params.py failed."
+        print "load params failed."
         sys.exit()
     else:
         wct_set=False 
@@ -141,29 +142,28 @@ if __name__ == '__main__':
             #get lf_sim_dir
             lf_sim_dir = os.path.join(params.lf_sim_root_dir,srf_name) 
             sim_dir = params.sim_dir
-            nx = int(params.nx)
-            ny = int(params.ny)
-            nz = int(params.nz)
-            dt = float(params.dt)
+            nx = int(params.vm.nx)
+            ny = int(params.vm.ny)
+            nz = int(params.vm.nz)
+            dt = float(params.emod3d.dt)
             sim_duration = float(params.sim_duration)
             #default_core will be changed is user pars ncore
             num_procs = default_core
-            total_est_core_hours= est_e3d.est_core_hours_emod3d(nx,ny,nz,dt,sim_duration)
-            estimated_wct = est_e3d.est_wct(total_est_core_hours,num_procs, default_wct_scale)
-            print "Estimated WCT (scaled and rounded up):%s"%estimated_wct
-            
-            
+            total_est_core_hours = est_e3d.est_core_hours_emod3d(nx, ny, nz, dt, sim_duration)
+            estimated_wct = est_e3d.est_wct(total_est_core_hours, num_procs, default_wct_scale)
+            print "Estimated WCT (scaled and rounded up):%s" % estimated_wct
+
             if args.auto == True:
-                created_scripts = write_sl_script(lf_sim_dir,sim_dir,srf_name, run_time = estimated_wct)
-                jobid = submit_sl_script(created_scripts,submit_yes)
+                created_scripts = write_sl_script(lf_sim_dir, sim_dir, srf_name, run_time=estimated_wct)
+                jobid = submit_sl_script(created_scripts, submit_yes)
             else:
                 if wct_set == False:
                     wall_clock_limit = str(install.get_input_wc())
                     wct_set = True
                 if wct_set == True:
-                    print "WCT set to: %s"%wall_clock_limit
-                created_scripts = write_sl_script(lf_sim_dir,sim_dir,srf_name,run_time = wall_clock_limit)
-                jobid = submit_sl_script(created_scripts,submit_yes)
+                    print "WCT set to: %s" % wall_clock_limit
+                created_scripts = write_sl_script(lf_sim_dir, sim_dir, srf_name, run_time=wall_clock_limit)
+                jobid = submit_sl_script(created_scripts, submit_yes)
             #update the db if
             if jobid != None:
                 try:

@@ -356,7 +356,7 @@ def extend_yaml(sim_dir, srf_name=None):
 
         utils.dump_yaml(fault_params_dict, os.path.join(fault_params_dict['lf_sim_dir'], 'sim_params.yaml'))
 
-        
+
 if __name__ == '__main__':
     sim_dir = os.getcwd()
     create_run_parameters(sim_dir)

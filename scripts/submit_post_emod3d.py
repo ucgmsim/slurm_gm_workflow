@@ -11,9 +11,9 @@ from temp_shared import resolve_header
 from shared_workflow.shared import *
 
 sys.path.append(os.getcwd())
-from params_base import tools_dir
-from params_base import sim_dir
-from params_base import mgmt_db_location
+# from params_base import tools_dir
+# from params_base import sim_dir
+# from params_base import mgmt_db_location
 
 from management import create_mgmt_db
 from management import update_mgmt_db
@@ -41,16 +41,20 @@ max_tasks_per_node = "80"
 
 import argparse
 
+from qcore import utils
+
 
 def get_seis_len(seis_path):
     filepattern = os.path.join(seis_path, '*_seis*.e3d')
     seis_file_list = sorted(glob.glob(filepattern))
     return len(seis_file_list)
 
+
 def confirm(q):
     show_horizontal_line
     print q
     return show_yes_no_question()
+
 
 def submit_sl_script(script,submit_yes=None):
     #print "Submitting is not implemented yet!"
@@ -157,9 +161,9 @@ if __name__ == '__main__':
 
     created_scripts = []
     try:
-        import params
+        params = utils.load_params('sim_params.yaml')
     except:
-        print "import params.py failed."
+        print "load params failed."
         sys.exit()
     else:
         wct_set=False 
@@ -174,7 +178,7 @@ if __name__ == '__main__':
             if args.srf != None and srf_name != args.srf:
                 continue
             #get lf_sim_dir
-            lf_sim_dir = os.path.join(params.lf_sim_root_dir,srf_name)
+            lf_sim_dir = os.path.join(params.lf_sim_root_dir, srf_name)
             sim_dir = params.sim_dir
             #TODO: update the script below when implemented estimation WCT
             #nx = int(params.nx)
@@ -195,13 +199,13 @@ if __name__ == '__main__':
                 args.winbin_aio = True
 
             if args.merge_ts == True:
-                created_script = write_sl_script_merge_ts(lf_sim_dir,sim_dir,srf_name)
+                created_script = write_sl_script_merge_ts(lf_sim_dir,sim_dir, srf_name)
                 jobid = submit_sl_script(created_script,submit_yes)
                 if jobid != None:
-                    update_db("merge_ts","in-queue",mgmt_db_location,srf_name, jobid)
+                    update_db("merge_ts","in-queue",params.mgmt_db_location, srf_name, jobid)
             #run winbin_aio related scripts only
             if args.winbin_aio == True:
                 created_script = write_sl_script_winbin_aio(lf_sim_dir,sim_dir,srf_name)
                 jobid = submit_sl_script(created_script,submit_yes)
                 if jobid != None:
-                    update_db("winbin_aio","in-queue",mgmt_db_location,srf_name, jobid)
+                    update_db("winbin_aio","in-queue", params.mgmt_db_location, srf_name, jobid)
