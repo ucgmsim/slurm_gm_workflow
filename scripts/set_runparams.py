@@ -218,19 +218,19 @@ def extend_yaml(sim_dir, srf_name=None):
     p1 = {}
     p2 = {}
     fault_params_dict = utils.load_yaml('fault_params.yaml')
-    for i, srf_file in enumerate(fault_params_dict['srf_files']):
+    for i, srf_file in enumerate(fault_params_dict['srf_file']):
         #skip all logic if a specific srf_name is provided
         if srf_name != None and srf_name != os.path.splitext(basename(srf_file))[0]:
             continue
         srf_file_basename = os.path.splitext(os.path.basename(srf_file))[0]  # take the filename only
-        fault_params_dict.lf = OrderedDict()
-        fault_params_dict['lf_sim_dir'] = os.path.join(fault_params_dict['lf_sim_root_dir'], srf_file_basename)
-        shared.verify_user_dirs(fault_params_dict['lf_sim_dir'])
-        fault_params_dict['lf']['restart_dir'] = os.path.join(fault_params_dict['lf_sim_dir'], 'Restart')
-        fault_params_dict['lf']['bin_output'] = os.path.join(fault_params_dict['lf_sim_dir'], 'OutBin')
+        fault_params_dict['lf']= OrderedDict()
+        fault_params_dict['lf']['lf_sim_dir'] = os.path.join(fault_params_dict['lf_sim_root_dir'], srf_file_basename)
+        #shared.verify_user_dirs(fault_params_dict['lf']['lf_sim_dir'])
+        fault_params_dict['lf']['restart_dir'] = os.path.join(fault_params_dict['lf']['lf_sim_dir'], 'Restart')
+        fault_params_dict['lf']['bin_output'] = os.path.join(fault_params_dict['lf']['lf_sim_dir'], 'OutBin')
         fault_params_dict['lf']['SEISDIR'] = fault_params_dict['lf']['bin_output']
         fault_params_dict['lf']['ts_file'] = os.path.join(fault_params_dict['lf']['bin_output'], fault_params_dict['run_name'] + '_xyts.e3d')  # the file created by merge_ts
-        fault_params_dict['lf']['log_dir'] = os.path.join(p1['lf_sim_dir'], 'Rlog')
+        fault_params_dict['lf']['log_dir'] = os.path.join(fault_params_dict['lf']['lf_sim_dir'], 'Rlog')
         fault_params_dict['lf']['slipout_dir'] = os.path.join(fault_params_dict['lf']['lf_sim_dir'], 'SlipOut')
         fault_params_dict['lf']['vel_dir'] = os.path.join(fault_params_dict['lf']['lf_sim_dir'], 'Vel')
         fault_params_dict['lf']['t_slice_dir'] = os.path.join(fault_params_dict['lf']['lf_sim_dir'], 'TSlice')
@@ -241,9 +241,9 @@ def extend_yaml(sim_dir, srf_name=None):
         fault_params_dict['lf']['FILELIST'] = os.path.join(fault_params_dict['lf']['lf_sim_dir'], 'fdb.filelist')
         fault_params_dict['lf']['lf_vel_resume'] = True
 
-        fault_params_dict['emod3d']['version'] = fault_params_dict.version + '-mpi'
+        fault_params_dict['emod3d']['version'] = fault_params_dict['version'] + '-mpi'
 
-        fault_params_dict['emod3d']['name'] = fault_params_dict.run_name
+        fault_params_dict['emod3d']['name'] = fault_params_dict['run_name']
         fault_params_dict['emod3d']['nproc'] = 512
 
         fault_params_dict['emod3d']['nx'] = fault_params_dict['vm']['nx']
@@ -251,7 +251,7 @@ def extend_yaml(sim_dir, srf_name=None):
         fault_params_dict['emod3d']['nz'] = fault_params_dict['vm']['nz']
         fault_params_dict['emod3d']['h'] = fault_params_dict['vm']['hh']
         fault_params_dict['emod3d']['dt'] = 0.0200
-        fault_params_dict['emod3d']['nt'] = str(int(round(float(fault_params_dict['sim_duration'])/float(dt))))
+        fault_params_dict['emod3d']['nt'] = str(int(round(float(fault_params_dict['sim_duration'])/float(fault_params_dict['emod3d']['dt']))))
         fault_params_dict['emod3d']['bfilt'] = 4
         fault_params_dict['emod3d']['flo'] = fault_params_dict['flo']
         fault_params_dict['emod3d']['fhi'] = 0.0
@@ -282,7 +282,7 @@ def extend_yaml(sim_dir, srf_name=None):
 
         fault_params_dict['emod3d']['enable_output_dump'] = 1
         fault_params_dict['emod3d']['dump_itinc'] = 4000
-        fault_params_dict['emod3d']['main_dump_dir'] = p1['bin_output']
+        fault_params_dict['emod3d']['main_dump_dir'] = fault_params_dict['lf']['bin_output']
         fault_params_dict['emod3d']['nseis'] = 1
         fault_params_dict['emod3d']['seiscords'] = fault_params_dict['stat_coords']
         fault_params_dict['emod3d']['user_scratch'] = os.path.join(fault_params_dict['user_root'], 'scratch')
@@ -299,7 +299,7 @@ def extend_yaml(sim_dir, srf_name=None):
         fault_params_dict['emod3d']['dz_ts'] = 1
         fault_params_dict['emod3d']['ts_start'] = 0
         fault_params_dict['emod3d']['ts_inc'] = 1
-        fault_params_dict['emod3d']['ts_total'] = str(int(fault_params_dict['sim_duration'] / (float(fault_params_dict['emod3d']['dt'] * float(dt_ts)))))
+        fault_params_dict['emod3d']['ts_total'] = str(int(float(fault_params_dict['sim_duration']) / (float(fault_params_dict['emod3d']['dt']) * float(fault_params_dict['emod3d']['dt_ts']))))
         fault_params_dict['emod3d']['ts_file'] = fault_params_dict['lf']['ts_file']
         fault_params_dict['emod3d']['ts_out_dir'] = fault_params_dict['lf']['ts_out_dir']
         fault_params_dict['emod3d']['ts_out_prefix'] = fault_params_dict['lf']['ts_out_prefix']
@@ -311,7 +311,7 @@ def extend_yaml(sim_dir, srf_name=None):
         fault_params_dict['emod3d']['restart_itinc'] = 20000
         fault_params_dict['emod3d']['read_restart'] = 0
         fault_params_dict['emod3d']['restartname'] = fault_params_dict['run_name']
-        fault_params_dict['emod3d']['logdir'] = fault_params_dict['log_dir']
+        fault_params_dict['emod3d']['logdir'] = fault_params_dict['lf']['log_dir']
         fault_params_dict['emod3d']['slipout'] = fault_params_dict['lf']['slipout_dir'] + '/slipout-k2'
         # extras found in default parfile
         fault_params_dict['emod3d']['span'] = 1
@@ -353,10 +353,12 @@ def extend_yaml(sim_dir, srf_name=None):
         fault_params_dict['emod3d']['stat_file'] = fault_params_dict['stat_file']
         fault_params_dict['emod3d']['grid_file'] = fault_params_dict['vm']['GRIDFILE']
         fault_params_dict['emod3d']['model_params'] = fault_params_dict['vm']['MODEL_PARAMS']
-
-        utils.dump_yaml(fault_params_dict, os.path.join(fault_params_dict['lf_sim_dir'], 'sim_params.yaml'))
+        fault_params_dict['srf_file'] = srf_file
+        utils.dump_yaml(fault_params_dict, os.path.join(fault_params_dict['lf']['lf_sim_dir'], 'sim_params.yaml'))
 
 
 if __name__ == '__main__':
     sim_dir = os.getcwd()
     create_run_parameters(sim_dir)
+    extend_yaml(sim_dir)
+

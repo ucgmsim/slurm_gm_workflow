@@ -466,7 +466,8 @@ def create_fault_params_dict(sim_dir, event_name, run_name, run_dir, vel_mod_dir
     fault_params_dict['vm'] = OrderedDict()
     fault_params_dict['vm']['MODEL_LAT'] = MODEL_LAT
     fault_params_dict['vm']['MODEL_LON'] = MODEL_LON
-    fault_params_dict['vm']['MODEL_LON'] = MODEL_ROT
+    print("model rot add to fault params dict")
+    fault_params_dict['vm']['MODEL_ROT'] = MODEL_ROT
     fault_params_dict['vm']['hh'] = hh
     fault_params_dict['vm']['nx'] = nx
     fault_params_dict['vm']['nz'] = nz

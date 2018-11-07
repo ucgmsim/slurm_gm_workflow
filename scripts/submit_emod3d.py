@@ -74,6 +74,9 @@ def write_sl_script(lf_sim_dir,sim_dir,srf_name, run_time=default_run_time, nb_c
     # from params_base import mgmt_db_location
 
     set_runparams.create_run_parameters(srf_name)
+    print("extending")
+    set_runparams.extend_yaml(srf_name)   
+ 
     generated_scripts = []
 
     f_template = open('run_emod3d.sl.template')
@@ -117,10 +120,10 @@ if __name__ == '__main__':
         default_core = args.ncore
 
     try:
-        params = utils.load_params('sim_params.yaml')
-    except:
-        print "load params failed."
-        sys.exit()
+        params = utils.load_params('fault_params.yaml')
+    except Exception as e:
+        print(e, "load params failed.")
+        sys.exit(e)
     else:
         wct_set=False 
         created_scripts = []
@@ -130,7 +133,7 @@ if __name__ == '__main__':
             submit_yes = False
         else:
             submit_yes = confirm("Also submit the job for you?")
-        for srf in params.srf_files:
+        for srf in params.srf_file:
             #get the srf(rup) name without extensions
             srf_name = os.path.splitext(basename(srf))[0]
             #if srf(variation) is provided as args, only create the slurm with same name provided
@@ -138,7 +141,9 @@ if __name__ == '__main__':
                 continue
             if args.set_params_only == True:
                 set_runparams.create_run_parameters(srf_name)
+                set_runparams.extend_yaml(srf_name)
                 continue
+
             #get lf_sim_dir
             lf_sim_dir = os.path.join(params.lf_sim_root_dir,srf_name) 
             sim_dir = params.sim_dir
