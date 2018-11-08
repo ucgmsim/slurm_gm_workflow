@@ -4,9 +4,9 @@ from os.path import basename
 import sys
 
 sys.path.append(os.path.abspath(os.path.curdir))
-import params
-import params_base
-import params_base_bb
+# import params
+# import params_base
+# import params_base_bb
 
 import fnmatch
 from math import ceil
@@ -39,6 +39,9 @@ from management import update_mgmt_db
 # TODO: move this to qcore library
 from temp_shared import resolve_header
 from shared_workflow.shared import *
+
+from qcore import utils
+params = utils.load_params('fault_params.yaml')
 
 
 def confirm(q):
@@ -98,7 +101,7 @@ def update_db(process, status, mgmt_db_location, srf_name, jobid):
 
 def write_sl_script(hf_sim_dir, sim_dir, hf_run_name, stoch_name, sl_template_prefix, hf_option, nb_cpus=default_core,
                     run_time=default_run_time, memory=default_memory, account=default_account, binary=False, seed=None):
-    from params_base import mgmt_db_location
+    # from params_base import mgmt_db_location
 
     f_template = open('%s.sl.template' % sl_template_prefix)
     template = f_template.readlines()
@@ -107,8 +110,8 @@ def write_sl_script(hf_sim_dir, sim_dir, hf_run_name, stoch_name, sl_template_pr
     if binary:
         create_dir = "mkdir -p " + os.path.join(hf_sim_dir, "Acc") + "\n"
         hf_submit_command = create_dir + "srun python $BINPROCESS/hf_sim.py "
-        arguments_for_hf = [params_base.hf_slips[0], params_base.FD_STATLIST, os.path.join(hf_sim_dir, "Acc/HF.bin"),
-                            "-m", params_base_bb.hf_v_model, "--duration", params_base.sim_duration, "--dt", params.hf_dt]
+        arguments_for_hf = [params.hf.hf_slip[0], params.FD_STATLIST, os.path.join(hf_sim_dir, "Acc/HF.bin"),
+                            "-m", params.bb.hf_v_model, "--duration", params.sim_duration, "--dt", params.hf.hf_dt]
 
         hf_submit_command += " ".join(map(str, arguments_for_hf))
         if hf_option == 1:
@@ -119,7 +122,7 @@ def write_sl_script(hf_sim_dir, sim_dir, hf_run_name, stoch_name, sl_template_pr
     if seed is not None:
         hf_submit_command = "{} --seed {}".format(hf_submit_command, seed)
     txt = str_template.replace("{{hf_sim_dir}}", hf_sim_dir)
-    txt = txt.replace("{{mgmt_db_location}}", mgmt_db_location)
+    txt = txt.replace("{{mgmt_db_location}}", params.mgmt_db_location)
     txt = txt.replace("{{hf_submit_command}}", hf_submit_command)
     txt = txt.replace("{{sim_dir}}", sim_dir).replace("{{hf_run_name}}", hf_run_name).replace("{{srf_name}}",
                                                                                               stoch_name)
@@ -197,16 +200,23 @@ if __name__ == '__main__':
     # if auto flag is set to true, auto estimate the WCT and use default cores(or get from --ncore)
 
     # check rand_reset
-    if args.site_specific != None or params_base_bb.site_specific:
+    print(args.site_specific,params.bb.site_specific,args.rand_reset,params.bb.rand_reset)
+    if args.site_specific != None or params.bb.site_specific:
         print "Note: site_specific = True, rand_reset = True"
         hf_option = 2
     else:
         try:
-            if args.rand_reset != None or params_base_bb.rand_reset:
+            if args.rand_reset != None or params.bb.rand_reset:
+                print("Adfds")
                 hf_option = 1
+            else:
+                print("else")
+                hf_option = 0
         except:
+            print("Exceot")
             hf_option = 0
             print "Note: rand_reset is not defined in params_base_bb.py. We assume rand_reset=%s" % bool(hf_option)
+    print("hf_option",hf_option)
 
     # est_wct and submit, if --auto used
     if args.auto != None:
@@ -215,7 +225,7 @@ if __name__ == '__main__':
     else:
         # None: ask user if want to submit; False: dont submit
         submit_yes = confirm("Also submit the job for you?")
-
+    print("hf_option",hf_option)
     print "account:", args.account
 
     # modify the logic to use the same as in install_bb:
@@ -223,19 +233,19 @@ if __name__ == '__main__':
 
     # loop through all srf file to generate related slurm scripts
     counter_srf = 0
-    for srf in params.srf_files:
+    for srf in params.srf_file:
         srf_name = os.path.splitext(basename(srf))[0]
         # if srf(variation) is provided as args, only create the slurm with same name provided
         if args.srf != None and srf_name != args.srf:
             continue
             # --est_wct used, automatically assign run_time using estimation
         if args.est_wct != None:
-            timesteps= float(params.sim_duration)/float(params.hf_dt)
+            timesteps= float(params.sim_duration)/float(params.hf.hf_dt)
             #get station count
             station_count = len(qcore.shared.get_stations(params.FD_STATLIST))
             #get the number of sub faults for estimation
             #TODO:make it read through the whole list instead of assuming every stoch has same size
-            sub_fault_count,sub_fault_area=qcore.srf.get_nsub_stoch(params.hf_slips[counter_srf], get_area=True)
+            sub_fault_count,sub_fault_area=qcore.srf.get_nsub_stoch(params.hf.hf_slip[counter_srf], get_area=True)
             if args.debug == True:
                 print "sb:",sub_fault_area
                 print "nt:",timesteps
@@ -250,9 +260,9 @@ if __name__ == '__main__':
             print "Estimated time: ", run_time, " Core: ", ncore
         else:
             run_time = default_run_time
-        hf_sim_dir = os.path.join(os.path.join(params.hf_dir, params_base_bb.hf_run_names[counter_srf]), srf_name)
+        hf_sim_dir = os.path.join(os.path.join(params.hf_dir, params.bb.hf_run_names[counter_srf]), srf_name)
         sim_dir = params.sim_dir
-        hf_run_name = params_base_bb.hf_run_names[counter_srf]
+        hf_run_name = params.bb.hf_run_names[counter_srf]
         created_script = write_sl_script(hf_sim_dir, sim_dir, hf_run_name, srf_name, ll_name_prefix, hf_option, ncore,
                                          run_time, account=args.account, binary=args.binary, seed=args.seed)
         jobid = submit_sl_script(created_script, submit_yes)
@@ -260,4 +270,5 @@ if __name__ == '__main__':
             update_db("HF", "in-queue", params.mgmt_db_location, srf_name, jobid)
 
         counter_srf += 1
+
 
