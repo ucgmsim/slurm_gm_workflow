@@ -7,7 +7,7 @@ import getpass
 import fnmatch
 
 import datetime
-#from shared_workflow.load_config import load
+# from shared_workflow.load_config import load
 from shared_workflow import load_config as ldcfg
 import ConfigParser
 import argparse
@@ -15,15 +15,16 @@ from management import create_mgmt_db
 
 # TODO: namespacing
 from shared_workflow.shared import *
-print 
-workflow_config = ldcfg.load(os.path.dirname(os.path.realpath(__file__)),"workflow_config.json")
-workflow_root=workflow_config['gm_sim_workflow_root']
+from collections import OrderedDict
+
+print
+workflow_config = ldcfg.load(os.path.dirname(os.path.realpath(__file__)), "workflow_config.json")
+workflow_root = workflow_config['gm_sim_workflow_root']
 global_root = workflow_config["global_root"]
 tools_dir = os.path.join(global_root, 'EMOD3D/tools')
 bin_process_dir = os.path.join(global_root, 'workflow/scripts')
 emod3d_version = workflow_config["emod3d_version"]
 params_vel = workflow_config['params_vel']
-
 
 run_dir = workflow_config['runfolder_path']
 user = getpass.getuser()
@@ -38,10 +39,11 @@ stat_dir = os.path.join(global_root, 'StationInfo')
 latest_ll_dir = os.path.join(global_root, 'StationInfo/grid')
 latest_ll = 'non_uniform_with_real_stations_latest'
 
-#default values
-#TODO: after enabling different dt for LF and HF, this might need to change
+# default values
+# TODO: after enabling different dt for LF and HF, this might need to change
 default_dt = 0.005
 default_hf_dt = 0.005
+
 
 def q_accept_custom_rupmodel():
     show_horizontal_line()
@@ -118,13 +120,13 @@ def q_select_vel_model(vel_mod_dir):
 
     v_mod_ver_options = []
     for root, dirnames, filenames in os.walk(vel_mod_dir):
-        #returns the folder that contains params_vel.py
+        # returns the folder that contains params_vel.py
         for filename in fnmatch.filter(filenames, params_vel):
             v_mod_ver_options.append(root)
 
-    #vel_mod_subdirs = os.listdir(vel_mod_dir)
-    #print vel_mod_subdirs
-    #for subdir in vel_mod_subdirs:
+    # vel_mod_subdirs = os.listdir(vel_mod_dir)
+    # print vel_mod_subdirs
+    # for subdir in vel_mod_subdirs:
     #    vmodels = os.listdir(os.path.join(vel_mod_dir, subdir))
     #    v_mod_ver_options.extend([os.path.join(subdir, x) for x in vmodels])
     v_mod_ver_options.sort()
@@ -230,7 +232,7 @@ def q_final_confirm(run_name, yes_statcords, yes_model_params):
 
 def action(sim_dir, event_name, run_name, run_dir, vel_mod_dir, srf_dir, srf_stoch_pairs, params_vel_path,
            stat_file_path, vs30_file_path, vs30ref_file_path, MODEL_LAT, MODEL_LON, MODEL_ROT, hh, nx, ny, nz, sufx,
-           sim_duration, flo, vel_mod_params_dir, yes_statcords, yes_model_params,dt = default_dt, hf_dt = default_hf_dt):
+           sim_duration, flo, vel_mod_params_dir, yes_statcords, yes_model_params, dt=default_dt, hf_dt=default_hf_dt):
     lf_sim_root_dir, hf_dir, bb_dir, figures_dir = os.path.join(sim_dir, "LF"), os.path.join(sim_dir,
                                                                                              "HF"), os.path.join(
         sim_dir, "BB"), os.path.join(sim_dir, "Figures")
@@ -252,7 +254,7 @@ def action(sim_dir, event_name, run_name, run_dir, vel_mod_dir, srf_dir, srf_sto
     #    exe('ln -s %s/submit_emod3d.py %s'%(bin_process_dir,sim_dir))
     shutil.copy(os.path.join(workflow_root, "version"), sim_dir)
     shutil.copy(os.path.join(bin_process_dir, "submit.sh"), sim_dir)
-    
+
     # shutil.copy(os.path.join(bin_process_dir, "submit_emod3d.sh"), sim_dir)
     # shutil.copy(os.path.join(bin_process_dir, "submit_post_emod3d.sh"), sim_dir)
     # shutil.copy(os.path.join(bin_process_dir, "submit_hf.sh"), sim_dir)
@@ -319,7 +321,7 @@ def action(sim_dir, event_name, run_name, run_dir, vel_mod_dir, srf_dir, srf_sto
         f.write("\n#dir for vel_mod \n")
         f.write("vel_mod_params_dir = '%s'\n" % vel_mod_params_dir)
         f.write("GRIDFILE = '%s' #gridout-x used to be referred to as GRIDFILE by gen_ts \n" % (
-        os.path.join(vel_mod_params_dir, 'gridfile%s' % sufx)))
+            os.path.join(vel_mod_params_dir, 'gridfile%s' % sufx)))
         f.write("GRIDOUT = '%s'\n" % (os.path.join(vel_mod_params_dir, 'gridout%s' % sufx)))
         f.write("#input for statgrid gen\n")
         f.write("MODEL_COORDS = '%s'\n" % os.path.join(vel_mod_params_dir, 'model_coords%s' % sufx))
@@ -358,7 +360,7 @@ def action(sim_dir, event_name, run_name, run_dir, vel_mod_dir, srf_dir, srf_sto
             f.write("STAT_FILES=[stat_file]\n")
 
     print dir_list[0]
-    #set_permission(dir_list[
+    # set_permission(dir_list[
     #                   0])  # if user_root is first time created, recursively set permission from there. otherwise, set permission from sim_dir
 
     sys.path.append(sim_dir)
@@ -406,10 +408,12 @@ def action(sim_dir, event_name, run_name, run_dir, vel_mod_dir, srf_dir, srf_sto
         print "Generation of statcords is skipped. You need to fix params_base.py manually"
 
 
-def create_fault_params_dict(sim_dir, event_name, run_name, run_dir, vel_mod_dir, srf_dir, srf_stoch_pairs, params_vel_path,
-           stat_file_path, vs30_file_path, vs30ref_file_path, MODEL_LAT, MODEL_LON, MODEL_ROT, hh, nx, ny, nz, sufx,
-           sim_duration, flo, vel_mod_params_dir, yes_statcords, yes_model_params, dt=default_dt, hf_dt=default_hf_dt):
-
+def create_fault_params_dict(sim_dir, event_name, run_name, run_dir, vel_mod_dir, srf_dir, srf_stoch_pairs,
+                             params_vel_path,
+                             stat_file_path, vs30_file_path, vs30ref_file_path, MODEL_LAT, MODEL_LON, MODEL_ROT, hh, nx,
+                             ny, nz, sufx,
+                             sim_duration, flo, vel_mod_params_dir, yes_statcords, yes_model_params, dt=default_dt,
+                             hf_dt=default_hf_dt):
     lf_sim_root_dir = os.path.join(sim_dir, "LF")
     hf_dir = os.path.join(sim_dir, "HF")
     bb_dir = os.path.join(sim_dir, "BB")
@@ -431,7 +435,6 @@ def create_fault_params_dict(sim_dir, event_name, run_name, run_dir, vel_mod_dir
     #    exe('ln -s %s/submit_emod3d.py %s'%(bin_process_dir,sim_dir))
     shutil.copy(os.path.join(workflow_root, "version"), sim_dir)
     shutil.copy(os.path.join(bin_process_dir, "submit.sh"), sim_dir)
-
 
     if not yes_model_params:
         print "Generation of model params has been skipped."
@@ -466,7 +469,6 @@ def create_fault_params_dict(sim_dir, event_name, run_name, run_dir, vel_mod_dir
     fault_params_dict['vm'] = OrderedDict()
     fault_params_dict['vm']['MODEL_LAT'] = MODEL_LAT
     fault_params_dict['vm']['MODEL_LON'] = MODEL_LON
-    print("model rot add to fault params dict")
     fault_params_dict['vm']['MODEL_ROT'] = MODEL_ROT
     fault_params_dict['vm']['hh'] = hh
     fault_params_dict['vm']['nx'] = nx
@@ -482,7 +484,16 @@ def create_fault_params_dict(sim_dir, event_name, run_name, run_dir, vel_mod_dir
 
     fault_params_dict['hf'] = OrderedDict()
     fault_params_dict['hf']['hf_dt'] = hf_dt
+    fault_params_dict['hf']['hf_sim_bin'] = os.path.join(global_root, os.path.join(tools_dir, 'hb_high_v5.4.5_np2mm+'))
+    fault_params_dict['hf']['hf_prefix'] = 'hf'
+    fault_params_dict['hf']['hf_sdrop'] = 50
+    fault_params_dict['hf']['hf_kappa'] = 0.045
+    fault_params_dict['hf']['hf_rvfac'] = 0.8
+    fault_params_dict['hf']['hf_path_dur'] = 1
+    fault_params_dict['hf']['hf_slip'] = stoch_files
 
+    fault_params_dict['bb'] = OrderedDict()
+    
     fault_params_dict['emod3d'] = OrderedDict()
     fault_params_dict['emod3d']['dt'] = dt
 
@@ -536,7 +547,7 @@ def create_fault_params_dict(sim_dir, event_name, run_name, run_dir, vel_mod_dir
 
 def show_instruction(sim_dir):
     try:
-        print "Removing probably incomplete "+os.path.join(sim_dir, "params_base.pyc")
+        print "Removing probably incomplete " + os.path.join(sim_dir, "params_base.pyc")
         os.remove(os.path.join(sim_dir, "params_base.pyc"))
     except Exception, e:
         print e.args
@@ -702,10 +713,9 @@ def main_local():
 
     srf_files, ___ = zip(*srf_stoch_pairs)
     create_mgmt_db.create_mgmt_db([], sim_dir, srf_files=srf_files)
-    #saves the location of mgmt_db to params_base.py
-    with open(os.path.join(sim_dir,"params_base.py"),"a") as f:
+    # saves the location of mgmt_db to params_base.py
+    with open(os.path.join(sim_dir, "params_base.py"), "a") as f:
         f.write("mgmt_db_location='%s'\n" % sim_dir)
-
 
     print "Installation completed"
     show_instruction(sim_dir)
@@ -763,23 +773,24 @@ def main_remote(cfg):
 
 
 if __name__ == '__main__':
-    
-    parser = argparse.ArgumentParser()
-    
-    parser.add_argument('--user_root',type=str,default=None, help="the path to where to install the simulation")
-    parser.add_argument('--sim_cfg',type=str,default=None, help="abs path to a file that contains all the config needed for a single sim install")
-    
-    parser.add_argument('--srf_dir',type=str,default=None, help="path that contains folders of faults/*.srf")
-    parser.add_argument('--vm_dir',type=str,default=None, help="path that contains VMs, params_vel must be present")
-    parser.add_argument('--v1d_dir',type=str,default=None)
-    parser.add_argument('--station_dir',type=str,default=None)
 
-#if user desire using specific files, they should call the action function directly instead
-#    parser.add_argument('--srf',type=str,default=None)
-#    parser.add_argument('--stoch',type=str,default=None)
-#    parser.add_argument('--vm',type=str,default=None)
-#    parser.add_argument('--station',type=str,default=None)
-    
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument('--user_root', type=str, default=None, help="the path to where to install the simulation")
+    parser.add_argument('--sim_cfg', type=str, default=None,
+                        help="abs path to a file that contains all the config needed for a single sim install")
+
+    parser.add_argument('--srf_dir', type=str, default=None, help="path that contains folders of faults/*.srf")
+    parser.add_argument('--vm_dir', type=str, default=None, help="path that contains VMs, params_vel must be present")
+    parser.add_argument('--v1d_dir', type=str, default=None)
+    parser.add_argument('--station_dir', type=str, default=None)
+
+    # if user desire using specific files, they should call the action function directly instead
+    #    parser.add_argument('--srf',type=str,default=None)
+    #    parser.add_argument('--stoch',type=str,default=None)
+    #    parser.add_argument('--vm',type=str,default=None)
+    #    parser.add_argument('--station',type=str,default=None)
+
     args = parser.parse_args()
 
     # If the additional options provided, check if the folder exist
@@ -787,39 +798,39 @@ if __name__ == '__main__':
         path_to_check = getattr(args, arg)
         if path_to_check is not None:
             if not os.path.exists(path_to_check):
-                print "Error: path not exsist: %s"%path_to_check
+                print "Error: path not exsist: %s" % path_to_check
                 sys.exit()
             else:
-                print "%s is set to %s"%(arg,path_to_check)
+                print "%s is set to %s" % (arg, path_to_check)
         else:
             continue
 
-    #change corresponding variables to the args provided
-    
+    # change corresponding variables to the args provided
+
     if args.user_root != None:
-        #TODO:bad hack, fix this with parsing
+        # TODO:bad hack, fix this with parsing
         user_root = args.user_root
 
     if args.srf_dir != None:
-        #TODO:bad hack, fix this with parsing
+        # TODO:bad hack, fix this with parsing
         srf_default_dir = args.srf_dir
 
     if args.vm_dir != None:
-        #TODO:bad hack, fix this with parsing
+        # TODO:bad hack, fix this with parsing
         vel_mod_dir = args.vm_dir
-    
+
     if args.v1d_dir != None:
-        #TODO:bad hack, fix this with parsing
-        v_mod_1d_dir = args.v1d_dir 
+        # TODO:bad hack, fix this with parsing
+        v_mod_1d_dir = args.v1d_dir
 
     if args.station_dir != None:
-        #TODO:bad hack, fix this with parsing
+        # TODO:bad hack, fix this with parsing
         stat_dir = args.station_dir
-    print 'test' 
-    #if sim_cfg parsed, run main_remote(which has no selection)
+    print 'test'
+    # if sim_cfg parsed, run main_remote(which has no selection)
     if args.sim_cfg != None:
         cfg = args.sim_cfg
-        #check if the cfg exist, to prevent break
+        # check if the cfg exist, to prevent break
         if not os.path.exists(cfg):
             print "Error: No such file exists: %s" % cfg
             sys.exit()
@@ -827,13 +838,14 @@ if __name__ == '__main__':
             main_remote(cfg)
     else:
         main_local()
-    
-    #if len(sys.argv) == 1:
-    #    main_local()
-    #else:
-    #    cfg = sys.argv[1]
-    #    if not os.path.exists(cfg):
-    #        print "Error: No such file exists: %s" % cfg
-    #        sys.exit()
-    #    else:
-    #        main_remote(cfg)
+
+        # if len(sys.argv) == 1:
+        #    main_local()
+        # else:
+        #    cfg = sys.argv[1]
+        #    if not os.path.exists(cfg):
+        #        print "Error: No such file exists: %s" % cfg
+        #        sys.exit()
+        #    else:
+        #        main_remote(cfg)
+

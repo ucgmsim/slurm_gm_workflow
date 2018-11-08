@@ -3,20 +3,24 @@
 import os.path
 import sys
 sys.path.append(os.path.abspath(os.path.curdir))
-from params_base import *
+#from params_base import *
 import argparse
 
+from qcore import utils
+params = utils.load_params('fault_params.yaml')
 
-old_params = False
+from collections import OrderedDict
+old_params = True
+
 #from params import hf_sdrop_list, hf_kappa_list, hf_sim_bin, hf_rvfac
-try:
-    from params import hf_sdrop_list, hf_kappa_list
-except ImportError:
-    print "Info: Old version of params.py supporting singular kappa and sdrop"
-    from params import hf_sdrop, hf_kappa
-    old_params = True
-finally:
-    from params import hf_sim_bin, hf_rvfac
+# try:
+#     from params import hf_sdrop_list, hf_kappa_list
+# except ImportError:
+#     print "Info: Old version of params.py supporting singular kappa and sdrop"
+#     from params import hf_sdrop, hf_kappa
+#     old_params = True
+# finally:
+#     from params import hf_sim_bin, hf_rvfac
 
 import glob
 # TODO: make sure that qcore is in the PYTHONPATH
@@ -24,6 +28,7 @@ from shared_workflow.shared import *
 
 params_bb_uncertain = 'params_bb_uncertain.py'
 params_uncertain='params_uncertain.py'
+
 
 def q0():
     show_horizontal_line()
@@ -47,22 +52,23 @@ def q1_generic(v_mod_1d_dir):
 
     return v_mod_1d_name,v_mod_1d_selected
 
+
 def q1_site_specific(stat_file_path, hf_stat_vs_ref=None):
     show_horizontal_line()
     print "Auto-detecting site-specific info"
     show_horizontal_line()
     print "- Station file path: %s" %stat_file_path
     
-    v_mod_1d_path=os.path.join(os.path.dirname(stat_file),"1D")
+    v_mod_1d_path = os.path.join(os.path.dirname(params.stat_file), "1D")
     if os.path.exists(v_mod_1d_path):
         print "- 1D profiles found at %s" %v_mod_1d_path
     else:
         print "Error: No such path exists: %s" %v_mod_1d_path
         sys.exit()
     if hf_stat_vs_ref == None:
-        hf_stat_vs_ref_options =glob.glob(os.path.join(stat_file_path,'*.hfvs30ref'))
-        if len(hf_stat_vs_ref_options)==0:
-            print "Error: No HF Vsref file was found at %s" %stat_file_path
+        hf_stat_vs_ref_options = glob.glob(os.path.join(stat_file_path,'*.hfvs30ref'))
+        if len(hf_stat_vs_ref_options) == 0:
+            print "Error: No HF Vsref file was found at %s" % stat_file_path
             sys.exit()
         hf_stat_vs_ref_options.sort()
 
@@ -77,13 +83,13 @@ def q1_site_specific(stat_file_path, hf_stat_vs_ref=None):
 
 
 def q2(v_mod_1d_name,srf,kappa,sdrop):
-    hfVString='hf'+os.path.basename(hf_sim_bin).split('_')[-1]
-    hf_run_name=v_mod_1d_name+'_'+hfVString+'_rvf'+hf_rvfac+'_sd'+sdrop+'_k'+kappa
+    hfVString='hf'+os.path.basename(params.hf.hf_sim_bin).split('_')[-1]
+    hf_run_name=v_mod_1d_name+'_'+hfVString+'_rvf'+str(params.hf.hf_rvfac)+'_sd'+str(sdrop)+'_k'+str(kappa)
     hf_run_name=hf_run_name.replace('.','p')
     show_horizontal_line()
     print "- Vel. Model 1D: %s" %v_mod_1d_name
-    print "- hf_sim_bin: %s" %os.path.basename(hf_sim_bin)
-    print "- hf_rvfac: %s" %hf_rvfac
+    print "- hf_sim_bin: %s" %os.path.basename(params.hf.hf_sim_bin)
+    print "- hf_rvfac: %s" %params.hf.hf_rvfac
     print "- hf_sdrop: %s" %sdrop
     print "- hf_kappa: %s" %kappa
     print "- srf file: %s" %srf
@@ -93,7 +99,7 @@ def q2(v_mod_1d_name,srf,kappa,sdrop):
 
 
 def store_params(params_base_bb_dict):
-    f=open(os.path.join(sim_dir,"params_base_bb.py"),"w")
+    f=open(os.path.join(params.sim_dir,"params_base_bb.py"),"w")
     keys = params_base_bb_dict.keys()
     for k in keys:
         val = params_base_bb_dict[k]
@@ -112,7 +118,7 @@ def action_for_uncertainties(hf_sim_basedir,bb_sim_basedir,srf,slip,kappa,sdrop)
     bb_sim_dir = os.path.join(bb_sim_basedir,srf_basename)
     dirs.append(hf_sim_dir)
     dirs.append(bb_sim_dir)
-    params_uncertain_path=os.path.join(lf_sim_root_dir,srf_basename,params_uncertain)
+    params_uncertain_path=os.path.join(params.lf_sim_root_dir,srf_basename,params_uncertain)
     print params_uncertain_path
     execfile(params_uncertain_path,globals())
 
@@ -126,7 +132,7 @@ def action_for_uncertainties(hf_sim_basedir,bb_sim_basedir,srf,slip,kappa,sdrop)
         f.write("hf_resume=True\n")
         f.write("bb_resume=True\n")
         f.write("hf_slip='%s'\n"%slip)
-        f.write("vel_dir='%s'\n"%vel_dir)
+        f.write("vel_dir='%s'\n"%params.lf.vel_dir)
         f.write("hf_kappa='%s'\n"%kappa)
         f.write("hf_sdrop='%s'\n"%sdrop)
     
@@ -136,7 +142,7 @@ def action_for_uncertainties(hf_sim_basedir,bb_sim_basedir,srf,slip,kappa,sdrop)
         os.symlink(params_bb_uncertain_file, params_hf_uncertain_file)
     except OSError as e:
         print e
-        
+    return hf_sim_dir, bb_sim_dir    
 
 #    try: 
 #        set_permission(hf_sim_basedir)
@@ -172,10 +178,10 @@ def main():
     args = parser.parse_args()
 
     show_horizontal_line(c="*")
-    print " "*37+"EMOD3D HF/BB Preparationi Ver."+bin_process_ver
+    print " "*37+"EMOD3D HF/BB Preparationi Ver."+ params.bin_process_ver
     show_horizontal_line(c="*")
 
-    params_base_bb_dict = {}
+    params_base_bb_dict = OrderedDict()
 
 #    params_base_bb_dict['rand_reset']=False #by default. But it may give less deterministic
     if args.v1d != None :
@@ -192,9 +198,9 @@ def main():
         params_base_bb_dict['hf_stat_vs_ref']=hf_stat_vs_ref
         params_base_bb_dict['rand_reset']=True
     else:    
-        is_site_specific_id= q0()
+        is_site_specific_id = q0()
         if is_site_specific_id:
-            v_mod_1d_path,hf_stat_vs_ref=q1_site_specific(os.path.dirname(stat_file))
+            v_mod_1d_path,hf_stat_vs_ref=q1_site_specific(os.path.dirname(params.stat_file))
             v_mod_1d_name = "Site_Specific"
             params_base_bb_dict['site_specific']=True
             params_base_bb_dict['hf_v_model_path']=v_mod_1d_path
@@ -202,7 +208,7 @@ def main():
             params_base_bb_dict['rand_reset']=True  
 
         else:
-            v_mod_1d_name, v_mod_1d_selected = q1_generic(v_mod_1d_dir)
+            v_mod_1d_name, v_mod_1d_selected = q1_generic(params.v_mod_1d_dir)
             params_base_bb_dict['site_specific']=False
             params_base_bb_dict['hf_v_model']=v_mod_1d_selected
 
@@ -212,18 +218,18 @@ def main():
     #globals_dict = globals()
 
     if old_params:
-        hf_kappa_list = [hf_kappa]*len(srf_files)
-        hf_sdrop_list = [hf_sdrop]*len(srf_files)
-        if len(srf_files) > 1:
+        hf_kappa_list = [params.hf.hf_kappa]*len(params.srf_file)
+        hf_sdrop_list = [params.hf.hf_sdrop]*len(params.srf_file)
+        if len(params.srf_file) > 1:
             print "Info: You have specified multiple SRF files."
-            print "      A single hf_kappa(=%s) and hf_sdrop(=%s) specified in params.py will be used for all SRF files." %(hf_kappa, hf_sdrop)
+            print "      A single hf_kappa(=%s) and hf_sdrop(=%s) specified in params.py will be used for all SRF files." %(params.hf.hf_kappa, params.hf.hf_sdrop)
             print"       If you need to specific hf_kappa and hf_sdrop value for each SRF, add hf_kappa_list and hf_sdrop_list to params_base.py"
 
     else:
         print "hf_kappa_list: ", hf_kappa_list
         print "hf_sdrop_list: ", hf_sdrop_list
-        print "srf_files:", srf_files
-        if len(hf_kappa_list) != len(hf_sdrop_list) or len(hf_kappa_list) != len(srf_files):
+        print "srf_files:", params.srf_file
+        if len(hf_kappa_list) != len(hf_sdrop_list) or len(hf_kappa_list) != len(params.srf_files):
             print "Error: hf_kappa_list (len=%d), hf_sdrop_list (len=%d) and srf_files (len=%d) should be of the same length."%(len(hf_kappa_list),len(hf_sdrop_list), len(srf_files))
             sys.exit()
 
@@ -232,21 +238,35 @@ def main():
     for i in range(len(hf_kappa_list)):
         kappa = hf_kappa_list[i]
         sdrop = hf_sdrop_list[i]
-        srf = srf_files[i]
-        slip = hf_slips[i]
+        srf = params.srf_file[i]
+        slip = params.hf.hf_slip[i]
         yes, hf_run_name = q2(v_mod_1d_name,srf, kappa,sdrop)
         #TODO:add_name_suffix return the exact same name, seems to be legacy and doing nothing here 
         hf_run_name = add_name_suffix(hf_run_name,yes)
         #append the hf_run_name to a list for later purpose
         hf_run_names_list.append(hf_run_name)
 
-        hf_sim_basedir, bb_sim_basedir = os.path.join(hf_dir,hf_run_name), os.path.join(bb_dir,hf_run_name)
-        action_for_uncertainties(hf_sim_basedir,bb_sim_basedir, srf, slip, kappa, sdrop)
-    #
+        hf_sim_basedir, bb_sim_basedir = os.path.join(params.hf_dir,hf_run_name), os.path.join(params.bb_dir, hf_run_name)
+        hf_sim_dir, bb_sim_dir = action_for_uncertainties(hf_sim_basedir,bb_sim_basedir, srf, slip, kappa, sdrop)
+
+        params_base_bb_dict['hf_run_name'] = hf_run_name
+        params_base_bb_dict['hf_acc_dir'] = os.path.join(hf_sim_dir,"Acc")
+        params_base_bb_dict['hf_veldir'] = os.path.join(hf_sim_dir,"Vel")
+        params_base_bb_dict['bb_acc_dir'] = os.path.join(bb_sim_dir,"Acc")
+        params_base_bb_dict['bb_veldir'] = os.path.join(bb_sim_dir,"Vel")
+        params_base_bb_dict['hf_resume'] = True
+        params_base_bb_dict['bb_resume'] = True
+        utils.dump_yaml(params_base_bb_dict, os.path.join(hf_sim_dir, 'params_bb_uncertain.yaml'))
+    params_base_bb_dict.pop('hf_run_name', None)
     params_base_bb_dict['hf_run_names'] = hf_run_names_list
     #store the parameters in params_base_bb.py 
     store_params(params_base_bb_dict)
+
+    params.bb.update(params_base_bb_dict)
+    print("dddd",type(params), params)
+   # utils.dump_yaml(params, 'fault_params.yaml')
     
 
 if __name__ == "__main__":
     main() 
+
