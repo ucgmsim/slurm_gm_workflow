@@ -263,8 +263,9 @@ def main():
     store_params(params_base_bb_dict)
 
     params.bb.update(params_base_bb_dict)
-    print("dddd",type(params), params)
-   # utils.dump_yaml(params, 'fault_params.yaml')
+    print("ssss",type(params))
+    utils.dump_yaml(params, 'fault_params_b.yaml', obj_type=utils.DotDictify)
+
     
 
 if __name__ == "__main__":
