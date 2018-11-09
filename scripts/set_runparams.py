@@ -244,7 +244,7 @@ def extend_yaml(sim_dir, srf_name=None):
         fault_params_dict['emod3d']['version'] = fault_params_dict['version'] + '-mpi'
 
         fault_params_dict['emod3d']['name'] = fault_params_dict['run_name']
-        fault_params_dict['emod3d']['nproc'] = 512
+        fault_params_dict['emod3d']['n_proc'] = 512
 
         fault_params_dict['emod3d']['nx'] = fault_params_dict['vm']['nx']
         fault_params_dict['emod3d']['ny'] = fault_params_dict['vm']['ny']

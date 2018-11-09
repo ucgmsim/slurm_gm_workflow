@@ -398,8 +398,8 @@ def action(sim_dir, event_name, run_name, run_dir, vel_mod_dir, srf_dir, srf_sto
         print "Producing statcords and FD_STATLIST. It may take a minute or two"
 
         # Create Stat_cord & statList
-        import statlist2gp
-        fd_statcords, fd_statlist = statlist2gp.main(stat_file=stat_file_path)
+        import statlist2gp2
+        fd_statcords, fd_statlist = statlist2gp2.main(stat_file=stat_file_path)
         print "Done"
         with open(os.path.join(sim_dir, "params_base.py"), "a") as f:
             f.write("stat_coords='%s'\n" % fd_statcords)
@@ -496,7 +496,7 @@ def create_fault_params_dict(sim_dir, event_name, run_name, run_dir, vel_mod_dir
     
     fault_params_dict['emod3d'] = OrderedDict()
     fault_params_dict['emod3d']['dt'] = dt
-
+    fault_params_dict['emod3d']['n_proc'] = 512
     if stat_file_path == "":
         # stat_path seems to empty, assigning all related value to latest_ll
         print "stat_file_path is not specified."
@@ -535,7 +535,7 @@ def create_fault_params_dict(sim_dir, event_name, run_name, run_dir, vel_mod_dir
 
         # Create Stat_cord & statList
         import statlist2gp
-        fd_statcords, fd_statlist = statlist2gp.main(stat_file=stat_file_path)
+        fd_statcords, fd_statlist = statlist2gp.main(fault_params_dict, stat_file=stat_file_path)
         print "Done"
         fault_params_dict['stat_coords'] = fd_statcords
         fault_params_dict['FD_STATLIST'] = fd_statlist

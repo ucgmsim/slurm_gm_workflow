@@ -8,13 +8,18 @@ import sys
 import os
 
 sys.path.append(os.path.abspath(os.path.curdir))
-from params import *
+#from params import *
 
 
-def main(stat_file = 'default.ll', \
-        MODEL_LAT = MODEL_LAT, MODEL_LON = MODEL_LON, MODEL_ROT = MODEL_ROT, \
-        hh = hh, nx = nx, ny = ny, sim_dir = sim_dir, sufx = sufx, \
-        debug = False):
+def main(fault_params_dict, stat_file = 'default.ll', debug = False):
+    MODEL_LAT = fault_params_dict['vm']['MODEL_LAT']
+    MODEL_LON = fault_params_dict['vm']['MODEL_LON']
+    MODEL_ROT = fault_params_dict['vm']['MODEL_ROT']
+    hh = fault_params_dict['vm']['hh']
+    nx = fault_params_dict['vm']['nx']
+    ny = fault_params_dict['vm']['ny']
+    sim_dir = fault_params_dict['sim_dir']
+    sufx = fault_params_dict['vm']['sufx']
     verify_strings([MODEL_LAT, MODEL_LON, MODEL_ROT, hh, nx, ny,sim_dir,sufx])
 
     outpath = sim_dir
@@ -86,6 +91,5 @@ def main(stat_file = 'default.ll', \
     return gp_out, ll_out
 
 
-if __name__ == '__main__':
-    main(stat_file = stat_file)
+
 

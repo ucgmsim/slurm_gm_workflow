@@ -7,8 +7,8 @@ import os
 from os.path import basename
 
 sys.path.append(os.path.abspath(os.path.curdir))
-import params
-import params_base_bb
+# import params
+# import params_base_bb
 
 # datetime related
 from datetime import datetime
@@ -31,6 +31,9 @@ from shared_workflow.shared import *
 from management import create_mgmt_db
 from management import update_mgmt_db
 
+
+from qcore import utils
+params = utils.load_params('fault_params.yaml')
 
 def confirm(q):
     show_horizontal_line()
@@ -65,7 +68,7 @@ def update_db(process, status, mgmt_db_location, srf_name, jobid):
 
 def write_sl_script(bb_sim_dirs, sim_dir, hf_run_name, srf_name, sl_template_prefix, nb_cpus=default_core,
                     run_time=default_run_time, memory=default_memory, account=default_account, binary=False):
-    from params_base import mgmt_db_location
+    # from params_base import mgmt_db_location
 
     f_template = open('%s.sl.template' % sl_template_prefix)
     template = f_template.readlines()
@@ -87,7 +90,7 @@ def write_sl_script(bb_sim_dirs, sim_dir, hf_run_name, srf_name, sl_template_pre
     print variation
 
     txt = txt.replace("$rup_mod", variation)
-    txt = txt.replace("{{mgmt_db_location}}", mgmt_db_location)
+    txt = txt.replace("{{mgmt_db_location}}", params.mgmt_db_location)
     txt = txt.replace("{{sim_dir}}", sim_dir).replace("{{hf_run_name}}", hf_run_name).replace("{{srf_name}}", srf_name)
 
     #replace the name of test script
@@ -164,7 +167,7 @@ if __name__ == '__main__':
         submit_yes = confirm("Also submit the job for you?")
 
     counter_srf = 0
-    for srf in params.srf_files:
+    for srf in params.srf_file:
         srf_name = os.path.splitext(basename(srf))[0]
         # if srf(variation) is provided as args, only create the slurm with same name provided
         if args.srf != None and srf_name != args.srf:
@@ -187,8 +190,8 @@ if __name__ == '__main__':
             # run_time = est_wct(est_chours,ncore,default_scale)
         else:
             run_time = default_run_time
-        bb_sim_dir = os.path.join(os.path.join(params.bb_dir, params_base_bb.hf_run_names[counter_srf]), srf_name)
-        hf_run_name = params_base_bb.hf_run_names[counter_srf]
+        bb_sim_dir = os.path.join(os.path.join(params.bb_dir, params.bb.hf_run_names[counter_srf]), srf_name)
+        hf_run_name = params.bb.hf_run_names[counter_srf]
         sim_dir = params.sim_dir
         created_script = write_sl_script(bb_sim_dir, sim_dir, hf_run_name, srf_name, sl_name_prefix,
                                          account=args.account, binary=args.binary)
@@ -199,3 +202,4 @@ if __name__ == '__main__':
             print "there is error while trying to submit the slurm script, please manual check for errors"
 
         counter_srf += 1
+
