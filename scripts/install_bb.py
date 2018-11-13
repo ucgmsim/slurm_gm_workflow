@@ -264,7 +264,7 @@ def main():
 
     params.bb.update(params_base_bb_dict)
     print("ssss",type(params))
-    utils.dump_yaml(params, 'fault_params_b.yaml', obj_type=utils.DotDictify)
+    utils.dump_yaml(params, 'fault_params.yaml', obj_type=utils.DotDictify)
 
     
 
