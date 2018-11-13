@@ -5,24 +5,16 @@ A script that creates a database and populates it with the status of
 each stage of the run
 """
 
-#TODO: extract all db methods to a db module rather than importing scripts to use parts of them.
 
 import argparse
-import sqlite3
 import os
-import glob
 
-def connect_db(path):
-    db_location = os.path.join(path, 'slurm_mgmt.db')
-    conn = sqlite3.connect(db_location)
-    db = conn.cursor()
-    db.execute("PRAGMA synchronous = OFF") 
-    return db
-    
+from db_helper import connect_db
+
 
 def initilize_db(path):
     db = connect_db(path)
-    sql_template_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../../templates/slurm_mgmt.db.sql')
+    sql_template_file = 'slurm_mgmt.db.sql'
     initilize_query = open(sql_template_file).read()
     db.executescript(initilize_query)
     db.connection.commit()
@@ -32,6 +24,7 @@ def initilize_db(path):
 def get_procs(db):
     db.execute('''select * from proc_type_enum''')
     return db.fetchall()
+
 
 def create_mgmt_db(realisations, f, srf_files=[]):
     additonal_realisations = [os.path.splitext(os.path.basename(srf))[0] for srf in srf_files]
@@ -50,11 +43,13 @@ def create_mgmt_db(realisations, f, srf_files=[]):
 
     db.connection.commit()
 
+
 def insert_task(db, run_name, proc):
     db.execute('''INSERT OR IGNORE INTO
                   `state`(run_name, proc_type, status, last_modified, retries)
                   VALUES(?, ?, 1, strftime('%s','now'), 0)''', (run_name, proc))
     db.connection.commit()
+
 
 def main():
     parser = argparse.ArgumentParser()

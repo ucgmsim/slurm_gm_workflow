@@ -120,13 +120,13 @@ def q_select_vel_model(vel_mod_dir):
 
     v_mod_ver_options = []
     for root, dirnames, filenames in os.walk(vel_mod_dir):
-        # returns the folder that contains params_vel.py
+        #returns the folder that contains params_vel.py
         for filename in fnmatch.filter(filenames, params_vel):
             v_mod_ver_options.append(root)
 
-    # vel_mod_subdirs = os.listdir(vel_mod_dir)
-    # print vel_mod_subdirs
-    # for subdir in vel_mod_subdirs:
+    #vel_mod_subdirs = os.listdir(vel_mod_dir)
+    #print vel_mod_subdirs
+    #for subdir in vel_mod_subdirs:
     #    vmodels = os.listdir(os.path.join(vel_mod_dir, subdir))
     #    v_mod_ver_options.extend([os.path.join(subdir, x) for x in vmodels])
     v_mod_ver_options.sort()

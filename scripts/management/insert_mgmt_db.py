@@ -6,8 +6,8 @@ A script that updates a slurm mgmt db and inserts a new task to run
 
 import argparse
 import create_mgmt_db
+import scripts.management.db_helper
 
- 
 
 def main():
     parser = argparse.ArgumentParser()
@@ -21,11 +21,12 @@ def main():
     f = args.run_folder
     process = args.process
     run_name = args.run_name
-    db = create_mgmt_db.connect_db(f)
+    db = scripts.management.db_helper.connect_db(f)
     
     create_mgmt_db.insert_task(db, run_name, process)
 
     db.connection.commit()
+
 
 if __name__ == '__main__':
     main()

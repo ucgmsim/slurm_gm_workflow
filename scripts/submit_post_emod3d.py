@@ -15,7 +15,7 @@ sys.path.append(os.getcwd())
 # from params_base import sim_dir
 # from params_base import mgmt_db_location
 
-from management import create_mgmt_db
+from management import db_helper
 from management import update_mgmt_db
 
 #datetime related
@@ -74,6 +74,7 @@ def submit_sl_script(script, submit_yes=None):
     else:
         print "User chose to submit the job manually"
         return None
+
 
 def write_sl_script_merge_ts(lf_sim_dir, sim_dir, tools_dir, mgmt_db_location, rup_mod, run_time=default_run_time_merge_ts, nb_cpus=default_core_merge_ts , memory=default_memory,account=default_account):
     # reading merge_ts_template
@@ -145,7 +146,7 @@ def write_sl_script_winbin_aio(lf_sim_dir, sim_dir, mgmt_db_location, rup_mod, r
 
 
 def update_db(process, status, mgmt_db_location, srf_name,jobid):
-    db = create_mgmt_db.connect_db(mgmt_db_location)
+    db = db_helper.connect_db(mgmt_db_location)
     update_mgmt_db.update_db(db, process, status, job=jobid, run_name=srf_name)
     db.connection.commit()
 
@@ -203,11 +204,10 @@ if __name__ == '__main__':
                 created_script = write_sl_script_merge_ts(lf_sim_dir, params.sim_dir, params.tools_dir, params.mgmt_db_location, srf_name)
                 jobid = submit_sl_script(created_script,submit_yes)
                 if jobid != None:
-                    update_db("merge_ts","in-queue",params.mgmt_db_location, srf_name, jobid)
+                    update_db("merge_ts","queued",params.mgmt_db_location, srf_name, jobid)
             #run winbin_aio related scripts only
             if args.winbin_aio == True:
                 created_script = write_sl_script_winbin_aio(lf_sim_dir, params.sim_dir, params.mgmt_db_location, srf_name)
                 jobid = submit_sl_script(created_script,submit_yes)
                 if jobid != None:
-                    update_db("winbin_aio", "in-queue", params.mgmt_db_location, srf_name, jobid)
-
+                    update_db("winbin_aio", "queued", params.mgmt_db_location, srf_name, jobid)

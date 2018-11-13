@@ -5,9 +5,10 @@ import os.path
 from os.path import basename
 import sys
 import os
+
 import set_runparams
 
-from management import create_mgmt_db
+from management import db_helper
 from management import update_mgmt_db
 
 #sys.path.append(os.path.abspath(os.path.curdir))
@@ -176,11 +177,11 @@ if __name__ == '__main__':
                 except:
                     print "error while parsing the jobid, please check the scipt"
                     sys.exit()
-                #cmd = "python $gmsim/workflow/scripts/management/update_mgmt_db.py %s EMOD3D in-queue --run_name %s --j %s"%(params.mgmt_db_location, srf_name,jobid)
+                #cmd = "python $gmsim/workflow/scripts/management/update_mgmt_db.py %s EMOD3D queued --run_name %s --j %s"%(params.mgmt_db_location, srf_name,jobid)
                 #exe(cmd, debug=False)
                 
                 process = 'EMOD3D'
-                status = 'in-queue'
-                db = create_mgmt_db.connect_db(params.mgmt_db_location)
+                status = 'queued'
+                db = db_helper.connect_db(params.mgmt_db_location)
                 update_mgmt_db.update_db(db, process, status, job=jobid, run_name=srf_name)
                 db.connection.commit()
