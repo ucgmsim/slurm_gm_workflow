@@ -79,7 +79,7 @@ if __name__ == '__main__':
     res= checkpoint_single(args.run_dir, args.srf, args.t)
     if res:
         if args.v:print "%s %s passed"%(args.run_dir,args.srf)
-        sys.exit(1)
+        sys.exit(0)
     else:
         if args.v:print "%s %s failed"%(args.run_dir,args.srf)
-        sys.exit(0)
+        sys.exit(1)
