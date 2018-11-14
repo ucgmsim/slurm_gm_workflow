@@ -14,7 +14,7 @@ from db_helper import connect_db
 
 def initilize_db(path):
     db = connect_db(path)
-    sql_template_file = 'slurm_mgmt.db.sql'
+    sql_template_file = os.path.join(os.path.dirname(os.path.realpath(__file__)),'slurm_mgmt.db.sql')
     initilize_query = open(sql_template_file).read()
     db.executescript(initilize_query)
     db.connection.commit()

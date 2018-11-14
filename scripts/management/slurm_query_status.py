@@ -38,6 +38,7 @@ def get_submitted_db_tasks(db):
 
 
 def get_db_tasks_to_be_run(db, retry_max=RETRY_MAX):
+    print 'retry_max',retry_max
     db.execute('''SELECT proc_type, run_name, status_enum.state 
                   FROM status_enum, state 
                   WHERE state.status = status_enum.id
@@ -51,6 +52,8 @@ def update_tasks(db, tasks, db_tasks):
         found = False
         proc_type, run_name, job_id, db_state = db_task
         for task in tasks.splitlines():
+#            print "db_task: ",db_task
+#            print "task:    ",task
             t_job_id, t_state = task.split()
             if job_id == int(t_job_id):
                 found = True
