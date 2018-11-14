@@ -13,6 +13,9 @@ import im_calc_checkpoint as checkpoint
 from qcore import utils
 import re
 
+from management import db_helper
+from management import update_mgmt_db
+
 from shared_workflow.shared import exe
 
 timestamp_format = "%Y%m%d_%H%M%S"
@@ -79,15 +82,23 @@ def generate_sl(sim_dirs, obs_dirs, station_file, rrup_files, output_dir, prefix
     sl_name = SL_NAME.format(prefix, i)
     return sl_name, "{}\n{}".format(header, context)
 
+def update_db(process, status, mgmt_db_location, srf_name, jobid):
+    db = db_helper.connect_db(mgmt_db_location)
+    update_mgmt_db.update_db(db, process, status, job=jobid, run_name=srf_name)
+    db.connection.commit()
 
-def write_sl(name_context_list, submit=False):
-    for sl_name, context in name_context_list:
+
+def write_sl(name_context_list, submit=False, mgmt_db_location=None):
+    for sl_name, context,srf_list in name_context_list:
         with open(sl_name, 'w') as sl:
             print("writing {}".format(sl_name))
             sl.write(context)
         if submit is True:
             fname_sl_real_path = os.path.realpath(sl_name)
-            submit_sl_script(fname_sl_real_path)
+            jobid = submit_sl_script(fname_sl_real_path)
+            if jobid != None and mgmt_db_location != None:
+                for srf_name in srf_list:
+                    update_db("IM_calculation", "queued", mgmt_db_location, srf_name, jobid)
 
 def submit_sl_script(script):
     if type(script) == unicode:
@@ -99,6 +110,7 @@ def submit_sl_script(script):
         return res[0].split()[-1] 
     else:
         print res
+        return None
 
 
 def get_basename_without_ext(path):
@@ -130,7 +142,8 @@ def split_and_generate_slurms(sim_dirs, obs_dirs, station_file, rrup_files, outp
         name, context = generate_sl(sim_dirs[i: last_line_index], obs_dirs[i: last_line_index], station_file,
                                     rrup_files[i: last_line_index], output_dir, prefix, i, processes, extended, simple, comp, version,
                 job_description, job_name, account, nb_cpus, wallclock_limit, exe_time, mail, memory, additional_lines,mgmt_db)
-        name_context_list.append((name, context))
+        #append the name of sl, content of sl and related srf names
+        name_context_list.append((name, context,zip(*sim_dirs)[1][i: last_line_index]))
         i += max_lines
 
     return name_context_list
@@ -229,7 +242,7 @@ def main():
                                                       simple=args.simple_output, comp=args.comp, version=args.version, job_description=args.job_description, job_name=args.job_name,
                               account=args.account, nb_cpus=args.ntasks, wallclock_limit=args.time, exe_time=args.exe_time, mail=args.mail,
                               memory=args.memory, additional_lines=args.additional_lines,mgmt_db=args.mgmt_db)
-        write_sl(name_context_list,args.auto)
+        write_sl(name_context_list,args.auto, args.mgmt_db)
 
     if args.srf_dir is not None:
         srf_files = get_dirs(args.srf_dir, args.identifiers, "{}/Srf/{}.srf")

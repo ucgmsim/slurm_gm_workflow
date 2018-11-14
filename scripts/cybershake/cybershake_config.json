@@ -4,7 +4,8 @@
     "v_1d_mod"  :   "/nesi/transit/nesi00213/VelocityModel/Mod-1D/Cant1D_v2-midQ_leer.1d",
     "dt"    : 0.02,
     "hf_dt" : 0.005,
-    "rand_reset" : True,
-    "hf_seed": null
+    "rand_reset" : true,
+    "hf_seed": null,
+    "extended_period": false
 }
 

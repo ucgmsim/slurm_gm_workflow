@@ -53,13 +53,16 @@ def q1_generic(v_mod_1d_dir):
     return v_mod_1d_name,v_mod_1d_selected
 
 
-def q1_site_specific(stat_file_path, hf_stat_vs_ref=None):
+def q1_site_specific(stat_file_path, hf_stat_vs_ref=None, v1d_mod_dir=None):
     show_horizontal_line()
     print "Auto-detecting site-specific info"
     show_horizontal_line()
     print "- Station file path: %s" %stat_file_path
     
-    v_mod_1d_path = os.path.join(os.path.dirname(params.stat_file), "1D")
+    if v1d_mod_dir != None:
+        v_mod_1d_path=v1d_mod_dir
+    else:
+        v_mod_1d_path=os.path.join(os.path.dirname(stat_file_path),"1D")
     if os.path.exists(v_mod_1d_path):
         print "- 1D profiles found at %s" %v_mod_1d_path
     else:
@@ -191,7 +194,7 @@ def main():
         params_base_bb_dict['hf_v_model']=v_mod_1d_selected
     #TODO:add in logic for site specific as well, if the user provided as args
     elif args.site_v1d_dir != None and args.hf_stat_vs_ref != None:
-        v_mod_1d_path,hf_stat_vs_ref=q1_site_specific(args.site_v1d_dir, hf_stat_vs_ref=args.hf_stat_vs_ref)
+        v_mod_1d_path,hf_stat_vs_ref=q1_site_specific(os.path.dirname(stat_file),hf_stat_vs_ref=args.hf_stat_vs_ref, v1d_mod_dir=args.site_v1d_dir)
         v_mod_1d_name = "Site_Specific"
         params_base_bb_dict['site_specific']=True
         params_base_bb_dict['hf_v_model_path']=v_mod_1d_path
