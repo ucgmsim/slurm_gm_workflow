@@ -1,8 +1,8 @@
 # TODO: move this file to qcore library ASAP
 
 
-def resolve_header(account, nb_cpus, wallclock_limit, job_name, version, memory, exe_time , job_description,  additional_lines=""):
-    with open("slurm_header.cfg") as f:
+def resolve_header(account, nb_cpus, wallclock_limit, job_name, version, memory, exe_time , job_description,  additional_lines="", cfg='slurm_header.cfg'):
+    with open(cfg) as f:
         lines = f.readlines()
         full_txt = "".join(lines)
         full_txt = full_txt.replace("{{account}}", account)

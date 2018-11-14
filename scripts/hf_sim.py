@@ -135,6 +135,12 @@ if is_master:
         print("seed from command line: %d" % (args.seed))
 args = comm.bcast(args, root = master)
 
+#change seed for each rank if 'i' is not set
+if args.independent != True:
+    args.seed += rank
+print ("Rank %d seed: %d" %(rank, args.seed))
+
+
 nt = int(round(args.duration / args.dt))
 stations = np.loadtxt(args.station_file, ndmin = 1, \
                       dtype = [('lon', 'f4'), ('lat', 'f4'), ('name', '|S8')])

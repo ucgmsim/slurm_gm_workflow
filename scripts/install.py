@@ -4,6 +4,7 @@ import os
 import glob
 import shutil
 import getpass
+import fnmatch
 
 import datetime
 #from shared_workflow.load_config import load
@@ -24,7 +25,7 @@ emod3d_version = workflow_config["emod3d_version"]
 params_vel = workflow_config['params_vel']
 
 
-run_dir = os.path.join(global_root, 'RunFolder')
+run_dir = workflow_config['runfolder_path']
 user = getpass.getuser()
 user_root = os.path.join(run_dir, user)  # global_root
 srf_default_dir = os.path.join(global_root, 'RupModel')
@@ -114,12 +115,18 @@ def q_select_vel_model(vel_mod_dir):
     show_horizontal_line()
     print "Select one of available VelocityModels (from %s)" % vel_mod_dir
     show_horizontal_line()
+
     v_mod_ver_options = []
-    vel_mod_subdirs = os.listdir(vel_mod_dir)
-    print vel_mod_subdirs
-    for subdir in vel_mod_subdirs:
-        vmodels = os.listdir(os.path.join(vel_mod_dir, subdir))
-        v_mod_ver_options.extend([os.path.join(subdir, x) for x in vmodels])
+    for root, dirnames, filenames in os.walk(vel_mod_dir):
+        #returns the folder that contains params_vel.py
+        for filename in fnmatch.filter(filenames, params_vel):
+            v_mod_ver_options.append(root)
+
+    #vel_mod_subdirs = os.listdir(vel_mod_dir)
+    #print vel_mod_subdirs
+    #for subdir in vel_mod_subdirs:
+    #    vmodels = os.listdir(os.path.join(vel_mod_dir, subdir))
+    #    v_mod_ver_options.extend([os.path.join(subdir, x) for x in vmodels])
     v_mod_ver_options.sort()
     v_mod_ver = show_multiple_choice(v_mod_ver_options)
     print v_mod_ver
@@ -631,11 +638,11 @@ if __name__ == '__main__':
     
     parser = argparse.ArgumentParser()
     
-    parser.add_argument('--user_root',type=str,default=None)
-    parser.add_argument('--sim_cfg',type=str,default=None)
+    parser.add_argument('--user_root',type=str,default=None, help="the path to where to install the simulation")
+    parser.add_argument('--sim_cfg',type=str,default=None, help="abs path to a file that contains all the config needed for a single sim install")
     
-    parser.add_argument('--srf_dir',type=str,default=None)
-    parser.add_argument('--vm_dir',type=str,default=None)
+    parser.add_argument('--srf_dir',type=str,default=None, help="path that contains folders of faults/*.srf")
+    parser.add_argument('--vm_dir',type=str,default=None, help="path that contains VMs, params_vel must be present")
     parser.add_argument('--v1d_dir',type=str,default=None)
     parser.add_argument('--station_dir',type=str,default=None)
 
