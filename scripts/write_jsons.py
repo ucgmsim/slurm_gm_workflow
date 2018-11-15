@@ -18,10 +18,12 @@ from qcore.utils import setup_dir
 BB_KEYS = ['cores', 'run_time', 'fd_count', 'dt', 'start_time', 'end_time']
 HF_KEYS = ['cores', 'run_time', 'fd_count', 'nt', 'nsub_stoch', 'start_time', 'end_time']
 LF_KEYS = ['cores', 'run_time', 'nt', 'nx', 'ny', 'nz', 'start_time', 'end_time']
-KEY_DICT = {'BB': BB_KEYS, 'HF': HF_KEYS, 'LF': LF_KEYS}
+IM_KEYS = ['start_time', 'end_time']
+POST_EMOD_KEYS = ['start_time', 'end_time']
+KEY_DICT = {'BB': BB_KEYS, 'HF': HF_KEYS, 'LF': LF_KEYS, 'IM_calc': IM_KEYS, 'post_emod': POST_EMOD_KEYS}
 
 CH_LOG = 'ch_log'
-JSON_DIR = 'jsons'
+JSON_DIR = '/home/melody.zhu/jsons'
 ALL_META_JSON = 'all_sims.json'
 PARAMS_BASE = 'params_base.py'
 
@@ -51,26 +53,32 @@ def get_all_sims_dict(fault_dir):
     if os.path.isdir(ch_log_dir):
         all_sims_dict = {}
         hh = get_hh(fault_dir)
-        for f in os.listdir(ch_log_dir):  # iterate through all realizations
-            f_suffix = f[:2]
-            with open(os.path.join(ch_log_dir, f), 'r') as log_file:
-                buf = log_file.readlines()
-            raw_data = buf[0].strip().split()
-            realization = raw_data[0]
-            data = raw_data[2:]
-            if realization in all_sims_dict.keys():
-                all_sims_dict[realization].update({f_suffix: {}})
-            else:
-                all_sims_dict[realization] = {'common': {'hh': hh}, f_suffix: {}}
-            for i in range(len(data)):
-                key = KEY_DICT[f_suffix][i]
-                if key == 'run_time':
-                   # precision = get_precision(float(data[i]))
-                    data[i] = "{:.3f} hour".format(float(data[i]))
-                all_sims_dict[realization][f_suffix][key] = data[i]
-            if f_suffix == 'LF' and all_sims_dict[realization][f_suffix].get('total_memory_usage') == None:
-                realization_rlog_dir = os.path.join(fault_dir, 'LF', realization, 'Rlog')
-                all_sims_dict[realization][f_suffix]['total_memory_usage'] = get_one_realization_memo_cores(realization_rlog_dir)
+        for f in os.listdir(ch_log_dir)[:10]:  # iterate through all realizations
+            print(f)
+            segs = f.split('.')
+            if len(segs) == 4:
+                sim_type = segs[0]
+                #print("seg len is 4", f)
+                with open(os.path.join(ch_log_dir, f), 'r') as log_file:
+                    buf = log_file.readlines()
+                raw_data = buf[0].strip().split()
+                realization = raw_data[0]
+                data = raw_data[2:]
+                if realization in all_sims_dict.keys():
+                    all_sims_dict[realization].update({sim_type: {}})
+                else:
+                    all_sims_dict[realization] = {'common': {'hh': hh}, sim_type: {}}
+                for i in range(len(data)):
+                    key = KEY_DICT[sim_type][i]
+                    if key == 'run_time':
+                       # precision = get_precision(float(data[i]))
+                        data[i] = "{:.3f} hour".format(float(data[i]))
+                    all_sims_dict[realization][sim_type][key] = data[i]
+                if sim_type == 'LF' and all_sims_dict[realization][sim_type].get('total_memory_usage') is None:
+                    realization_rlog_dir = os.path.join(fault_dir, 'LF', realization, 'Rlog')
+                    all_sims_dict[realization][sim_type]['total_memory_usage'] = get_one_realization_memo_cores(realization_rlog_dir)
+                all_sims_dict[realization][sim_type]['submit_time'] = get_submit_time(ch_log_dir, sim_type, realization)
+                print all_sims_dict
         return all_sims_dict
     else:
         print("{} does not have a ch_log dir\n If your input run_folder path points to a single fault dir then you need to add '-sf' option ".format(fault_dir))
@@ -102,12 +110,33 @@ def get_hh(fault_dir):
     :return: hh value string
     """
     os.chdir(fault_dir)
-    params_base = PARAMS_BASE
-    if os.path.isfile(params_base):
+    if os.path.isfile(PARAMS_BASE):
         cmd = "grep 'hh =' params_base.py"
         output = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True).communicate()[0]  # output = "hh = '0.4' #must be in formate like 0.200 (3decimal places)\n"
         hh = output.split("#")[0].split("=")[1].strip().replace("'", '')  # "'0.4'" ---> '0.4'
         return hh
+
+
+def get_submit_time(ch_log_dir, sim_type, realization):
+    """
+    get submit_time for a realization by reading its log file
+    :param sim_type: [BB|HF|LF]
+    :param realization: eg.Hossack_HYP222-501_S3454
+    :return: submit_time
+    """
+    if sim_type == 'LF':
+        sim_type = 'EMOD3D'
+    time_file = os.path.join(ch_log_dir, "{}.{}.log".format(sim_type, realization))
+    if os.path.isfile(time_file):
+        with open(time_file, 'r') as f:
+            submit_time = f.read().split(':')[-1].strip()  # 20181031_060458
+        date, time = submit_time.split('_')
+        try:
+            return "{}-{}-{}_{}:{}:{}".format(date[:4], date[4:6], date[6:], time[:2], time[2:4], time[4:])  # 2018-10-31_06:59:22
+        except IndexError:
+            return submit_time
+    else:
+        print("{} {} does not have a submit time log file".format(sim_type, realization))
 
 
 def write_json(data_dict, out_dir, out_name):
@@ -146,6 +175,7 @@ def write_fault_jsons(fault_dir, single_json):
             for realization, realization_dict in all_sims_dict.items():
                 out_name = "{}.json".format(realization)
                 write_json(realization_dict, out_dir, out_name)
+                print("writing" ,realization)
         print("Json file(s) write to {}".format(out_dir))
 
 
