@@ -1,4 +1,4 @@
-#TODO: 1.ADD ERROR EXCEPTION 2.ADD COMMENTS
+#TODO:1.TEST WITH IM_calc and post_emod when their normal log file is available along with the submittime log file 2.ADD ERROR EXCEPTION 3.ADD COMMENTS
 # There are 4 possible commands:
 # python write_jsons.py /nesi/nobackup/nesi00213/RunFolder/Cybershake/v18p6_batched/v18p6_exclude_1k_batch_2/Runs/
 # python write_jsons.py /nesi/nobackup/nesi00213/RunFolder/Cybershake/v18p6_batched/v18p6_exclude_1k_batch_2/Runs/ -sj
@@ -23,7 +23,7 @@ POST_EMOD_KEYS = ['start_time', 'end_time']
 KEY_DICT = {'BB': BB_KEYS, 'HF': HF_KEYS, 'LF': LF_KEYS, 'IM_calc': IM_KEYS, 'post_emod': POST_EMOD_KEYS}
 
 CH_LOG = 'ch_log'
-JSON_DIR = '/home/melody.zhu/jsons'
+JSON_DIR = 'jsons'
 ALL_META_JSON = 'all_sims.json'
 PARAMS_BASE = 'params_base.py'
 
@@ -49,16 +49,13 @@ def get_all_sims_dict(fault_dir):
     :return: all_sims_dict or None
     """
     ch_log_dir = os.path.join(fault_dir, CH_LOG)
-    print(ch_log_dir)
     if os.path.isdir(ch_log_dir):
         all_sims_dict = {}
         hh = get_hh(fault_dir)
-        for f in os.listdir(ch_log_dir)[:10]:  # iterate through all realizations
-            print(f)
+        for f in os.listdir(ch_log_dir):  # iterate through all realizations
             segs = f.split('.')
-            if len(segs) == 4:
+            if len(segs) == 4: # exclude submit time log file
                 sim_type = segs[0]
-                #print("seg len is 4", f)
                 with open(os.path.join(ch_log_dir, f), 'r') as log_file:
                     buf = log_file.readlines()
                 raw_data = buf[0].strip().split()
@@ -78,7 +75,6 @@ def get_all_sims_dict(fault_dir):
                     realization_rlog_dir = os.path.join(fault_dir, 'LF', realization, 'Rlog')
                     all_sims_dict[realization][sim_type]['total_memory_usage'] = get_one_realization_memo_cores(realization_rlog_dir)
                 all_sims_dict[realization][sim_type]['submit_time'] = get_submit_time(ch_log_dir, sim_type, realization)
-                print all_sims_dict
         return all_sims_dict
     else:
         print("{} does not have a ch_log dir\n If your input run_folder path points to a single fault dir then you need to add '-sf' option ".format(fault_dir))
@@ -175,7 +171,6 @@ def write_fault_jsons(fault_dir, single_json):
             for realization, realization_dict in all_sims_dict.items():
                 out_name = "{}.json".format(realization)
                 write_json(realization_dict, out_dir, out_name)
-                print("writing" ,realization)
         print("Json file(s) write to {}".format(out_dir))
 
 
