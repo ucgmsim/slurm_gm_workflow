@@ -14,7 +14,7 @@ srf_name=$3
 cd $sim_dir
 fd_ll=`python -c "from params_base import *; print FD_STATLIST"`
 
-bb_sim_dir=`python -c "import os; print os.path.join(os.path.join(os.path.join('$sim_dir','BB'), '$bb_run_name'), '$srf_name')"`
+bb_sim_dir=`python -c "import os; print os.path.join('$sim_dir','BB')"`
 bb_acc_dir=$bb_sim_dir/Acc
 bb_bin=$bb_acc_dir/BB.bin
 
