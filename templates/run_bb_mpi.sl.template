@@ -21,7 +21,7 @@ echo $end_time
 
 timestamp=`date +%Y%m%d_%H%M%S`
 #test before update
-res=`$gmsim/workflow/scripts/{{test_bb_script}} {{sim_dir}} {{hf_run_name}} {{srf_name}}`
+res=`$gmsim/workflow/scripts/{{test_bb_script}} {{sim_dir}} {{srf_name}}`
 if [[ $? == 0 ]]; then
     #passed
     echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} BB completed --run_name {{srf_name}} --force " >> {{mgmt_db_location}}/mgmt_db_queue/$timestamp\_$SLURM_JOBID
