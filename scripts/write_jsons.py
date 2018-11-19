@@ -10,6 +10,7 @@ import sys
 import json
 import argparse
 import subprocess
+from datetime import datetime
 
 from qcore.utils import setup_dir
 
@@ -126,10 +127,9 @@ def get_submit_time(ch_log_dir, sim_type, realization):
     if os.path.isfile(time_file):
         with open(time_file, 'r') as f:
             submit_time = f.read().split(':')[-1].strip()  # 20181031_060458
-        date, time = submit_time.split('_')
         try:
-            return "{}-{}-{}_{}:{}:{}".format(date[:4], date[4:6], date[6:], time[:2], time[2:4], time[4:])  # 2018-10-31_06:59:22
-        except IndexError:
+            return datetime.strptime(submit_time, '%Y%m%d_%H%M%S').strftime('%Y-%m-%d_%H:%M:%S')  # 2018-10-31_06:59:22
+        except ValueError:
             return submit_time
     else:
         print("{} {} does not have a submit time log file".format(sim_type, realization))
