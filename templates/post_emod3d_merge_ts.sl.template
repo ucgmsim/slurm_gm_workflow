@@ -6,6 +6,9 @@ if [[ ! -d {{mgmt_db_location}}/mgmt_db_queue ]]; then
     mkdir {{mgmt_db_location}}/mgmt_db_queue
 fi
 timestamp=`date +%Y%m%d_%H%M%S`
+runtime_fmt="%Y-%m-%d_%H:%M:%S"
+start_time=`date +$runtime_fmt`
+
 echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} merge_ts running --run_name {{srf_name}} --job $SLURM_JOBID" >> {{mgmt_db_location}}/mgmt_db_queue/$timestamp\_$SLURM_JOBID
 
 filelist=flist_`basename {{lf_sim_dir}}`
@@ -17,11 +20,15 @@ echo "NFILES=$NFILES OUTFILE=$OUTFILE"
 time srun $exe filelist=$filelist outfile=$OUTFILE nfiles=$NFILES
 
 timestamp=`date +%Y%m%d_%H%M%S`
+end_time=`date +$runtime_fmt`
+
 #test before update
 res=`$gmsim/workflow/scripts/test_merge_ts.sh {{sim_dir}} {{srf_name}}`
 if [[ $? == 0 ]]; then
     #passed
     echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} merge_ts completed --run_name {{srf_name}} --force " >> {{mgmt_db_location}}/mgmt_db_queue/$timestamp\_$SLURM_JOBID
+    #save meta data
+    echo "{{srf_name}} $start_time $end_time" >> {{sim_dir}}/ch_log/post_emod3d_merge_ts.$timestamp.$SLURM_JOBID.log
 else
     echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} merge_ts failed --run_name {{srf_name}} --error '$res' --force" >> {{mgmt_db_location}}/mgmt_db_queue/$timestamp\_$SLURM_JOBID
 fi
