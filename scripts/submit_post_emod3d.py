@@ -176,7 +176,7 @@ if __name__ == '__main__':
             if args.srf != None and srf_name != args.srf:
                 continue
             #get lf_sim_dir
-            lf_sim_dir = os.path.join(params.lf_sim_root_dir,srf_name)
+            lf_sim_dir = params.lf_sim_root_dir
             sim_dir = params.sim_dir
             #TODO: update the script below when implemented estimation WCT
             #nx = int(params.nx)
