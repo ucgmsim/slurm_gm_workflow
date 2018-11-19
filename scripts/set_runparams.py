@@ -59,7 +59,8 @@ def create_run_parameters(sim_dir,srf_name=None):
         if srf_name != None and srf_name != os.path.splitext(basename(srf_file))[0]:
             continue
         srf_file_basename = os.path.splitext(os.path.basename(srf_file))[0]  # take the filename only
-        p1['lf_sim_dir'] = os.path.join(params_base.lf_sim_root_dir, srf_file_basename)
+        #TODO: make it read lf_sim_dir from the new params version 
+        p1['lf_sim_dir'] = params_base.lf_sim_root_dir
         shared.verify_user_dirs([p1['lf_sim_dir']])
 
         p1['restart_dir'] = os.path.join(p1['lf_sim_dir'], 'Restart')
