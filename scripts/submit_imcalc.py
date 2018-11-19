@@ -143,7 +143,11 @@ def split_and_generate_slurms(sim_dirs, obs_dirs, station_file, rrup_files, outp
                                     rrup_files[i: last_line_index], output_dir, prefix, i, processes, extended, simple, comp, version,
                 job_description, job_name, account, nb_cpus, wallclock_limit, exe_time, mail, memory, additional_lines,mgmt_db)
         #append the name of sl, content of sl and related srf names
-        name_context_list.append((name, context,zip(*sim_dirs)[1][i: last_line_index]))
+        if not sim_dirs:
+            srf_name = None
+        else:
+            srf_name = zip(*sim_dirs)[1][i: last_line_index]
+        name_context_list.append((name, context, srf_name))
         i += max_lines
 
     return name_context_list
