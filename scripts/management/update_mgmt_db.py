@@ -56,7 +56,7 @@ def force_update_db(db, process, status, job=None, run_name=None, error='', retr
                       job_id = ?
                   WHERE (job_id = ? or run_name = ?)
                    AND proc_type = (SELECT id FROM proc_type_enum WHERE proc_type = ?)
-                   ''', (status, job, error, job, run_name, process))    
+                   ''', (status, job, job, run_name, process))    
     if retry:
         db.execute('''UPDATE state
                       SET retries = retries + 1

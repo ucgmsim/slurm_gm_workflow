@@ -16,10 +16,10 @@ do
     #run the commands queued up first, before submit
     cmd='$gmsim/workflow/scripts/cybershake/run_db_queue.sh'" $path_sim_root"
     echo $cmd
-    ssh kupe "$cmd"
+    ssh maui "$cmd"
 
     cmd='python $gmsim/workflow/scripts/cybershake/auto_submit.py'" $path_sim_root --config $cybershake_cfg --no_im"
     echo $cmd
-    ssh kupe "$cmd"
+    ssh maui "$cmd"
     sleep $interval
 done
