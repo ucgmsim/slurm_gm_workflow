@@ -260,8 +260,10 @@ if __name__ == '__main__':
             print "Estimated time: ", run_time, " Core: ", ncore
         else:
             run_time = default_run_time
-        hf_sim_dir = os.path.join(os.path.join(params.hf_dir, params.bb.hf_run_names[counter_srf]), srf_name)
+
+        hf_sim_dir = params.hf_dir
         sim_dir = params.sim_dir
+        #TODO: although not used, this variable may be useful for future automation. decide to keep or remove later.
         hf_run_name = params.bb.hf_run_names[counter_srf]
         created_script = write_sl_script(hf_sim_dir, sim_dir, hf_run_name, srf_name, ll_name_prefix, hf_option, ncore,
                                          run_time, account=args.account, binary=args.binary, seed=args.seed)

@@ -3,7 +3,7 @@
 #get run_name from $1
 
 if [[ $# -lt 3 ]]; then
-    echo "please provide the sim_dir, hf_run_name, and srf_name"
+    echo "please provide the sim_dir, and srf_name"
     exit 1
 fi
 
@@ -14,7 +14,7 @@ srf_name=$3
 cd $sim_dir
 fd_ll=`python -c "from params_base import *; print FD_STATLIST"`
 
-hf_sim_dir=`python -c "import os; print os.path.join(os.path.join(os.path.join('$sim_dir','HF'), '$hf_run_name'), '$srf_name')"`
+hf_sim_dir=`python -c "import os; print os.path.join('$sim_dir','HF')"`
 hf_acc_dir=$hf_sim_dir/Acc
 hf_bin=$hf_acc_dir/HF.bin
 

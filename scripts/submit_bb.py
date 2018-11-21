@@ -1,5 +1,4 @@
 
-bin_process_path = '/nesi/transit/nesi00213/workflow'
 import glob
 import os.path
 import sys
@@ -68,7 +67,7 @@ def update_db(process, status, mgmt_db_location, srf_name, jobid):
     db.connection.commit()
 
 
-def write_sl_script(bb_sim_dirs, sim_dir, hf_run_name, srf_name, sl_template_prefix, nb_cpus=default_core,
+def write_sl_script(bb_sim_dir, sim_dir, hf_run_name, srf_name, sl_template_prefix, nb_cpus=default_core,
                     run_time=default_run_time, memory=default_memory, account=default_account, binary=False):
     # from params_base import mgmt_db_location
 
@@ -76,11 +75,11 @@ def write_sl_script(bb_sim_dirs, sim_dir, hf_run_name, srf_name, sl_template_pre
     template = f_template.readlines()
     str_template = ''.join(template)
     if binary:
-        create_directory = "mkdir -p " + os.path.join(params.bb_dir, hf_run_name, srf_name, "Acc") + "\n"
+        create_directory = "mkdir -p " + os.path.join(bb_sim_dir, "Acc") + "\n"
         submit_command = create_directory + "srun python $BINPROCESS/bb_sim.py "
-        arguments = [os.path.join(params.lf_sim_root_dir, srf_name + "/OutBin"), params.vel_mod_dir,
-                     os.path.join(params.hf_dir, hf_run_name, srf_name, "Acc/HF.bin"),
-                     params.stat_vs_est, os.path.join(params.bb_dir, hf_run_name, srf_name, "Acc/BB.bin"),
+        arguments = [os.path.join(params.lf_sim_root_dir, "/OutBin"), params.vel_mod_dir,
+                     os.path.join(params.hf_dir, "Acc/HF.bin"),
+                     params.stat_vs_est, os.path.join(bb_sim_dir, "Acc/BB.bin"),
                      "--flo", params.flo]
         txt = str_template.replace("{{bb_submit_command}}", submit_command + " ".join(arguments))
     else:
@@ -192,7 +191,9 @@ if __name__ == '__main__':
             # run_time = est_wct(est_chours,ncore,default_scale)
         else:
             run_time = default_run_time
-        bb_sim_dir = os.path.join(os.path.join(params.bb_dir, params.bb.hf_run_names[counter_srf]), srf_name)
+
+        bb_sim_dir = params.bb_dir
+        #TODO: save status as HF. refer to submit_hf
         hf_run_name = params.bb.hf_run_names[counter_srf]
         sim_dir = params.sim_dir
         created_script = write_sl_script(bb_sim_dir, sim_dir, hf_run_name, srf_name, sl_name_prefix,
