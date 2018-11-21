@@ -92,7 +92,10 @@ def q_select_rupmodel(srf_selected_dir, srf_file_options):
     print "Select Rupture Model - Step 2."
     show_horizontal_line()
     srf_file_options.sort()
-    srf_files_selected = show_multiple_choice(srf_file_options, singular=False)  # always in list
+    # choose one srf (instead of multiple to fit the new versioning
+    # singular returns a str instead of str[]. reformat
+    srf_files_selected = []
+    srf_files_selected.append(show_multiple_choice(srf_file_options, singular=True))  # always in list
 
     print srf_files_selected
     srf_stoch_pairs = []
@@ -233,34 +236,27 @@ def q_final_confirm(run_name, yes_statcords, yes_model_params):
 def action(sim_dir, event_name, run_name, run_dir, vel_mod_dir, srf_dir, srf_stoch_pairs, params_vel_path,
            stat_file_path, vs30_file_path, vs30ref_file_path, MODEL_LAT, MODEL_LON, MODEL_ROT, hh, nx, ny, nz, sufx,
            sim_duration, flo, vel_mod_params_dir, yes_statcords, yes_model_params, dt=default_dt, hf_dt=default_hf_dt):
-    lf_sim_root_dir, hf_dir, bb_dir, figures_dir = os.path.join(sim_dir, "LF"), os.path.join(sim_dir,
-                                                                                             "HF"), os.path.join(
-        sim_dir, "BB"), os.path.join(sim_dir, "Figures")
+
+    lf_sim_root_dir = os.path.join(sim_dir, "LF")
+    hf_dir = os.path.join(sim_dir, "HF")
+    bb_dir = os.path.join(sim_dir, "BB")
+    figures_dir = os.path.join(sim_dir, "Figures")
 
     dir_list = [sim_dir, lf_sim_root_dir, hf_dir, bb_dir, figures_dir]
+
     if not os.path.isdir(user_root):
         dir_list.insert(0, user_root)
 
     verify_user_dirs(dir_list)
 
     for filename in glob.glob(os.path.join(recipe_dir, '*.*')):
+        #copy related templates to the simulation folder
         if filename == "README.md":
             continue
         shutil.copy(filename, sim_dir)
 
-        # TODO: the next two lines are two files for old post-processing
-        # shutil.copy(os.path.join(gmsa_dir,"parametersStation.py"),sim_dir)
-        # shutil.copy(os.path.join(gmsa_dir,"runPostProcessStation.ll"),sim_dir)
-    #    exe('ln -s %s/submit_emod3d.py %s'%(bin_process_dir,sim_dir))
     shutil.copy(os.path.join(workflow_root, "version"), sim_dir)
     shutil.copy(os.path.join(bin_process_dir, "submit.sh"), sim_dir)
-
-    # shutil.copy(os.path.join(bin_process_dir, "submit_emod3d.sh"), sim_dir)
-    # shutil.copy(os.path.join(bin_process_dir, "submit_post_emod3d.sh"), sim_dir)
-    # shutil.copy(os.path.join(bin_process_dir, "submit_hf.sh"), sim_dir)
-    # shutil.copy(os.path.join(bin_process_dir, "submit_bb.sh"), sim_dir)
-    # shutil.copy(os.path.join(bin_process_dir, "install_bb.sh"), sim_dir)
-    # shutil.copy(os.path.join(bin_process_dir, "params.py.template"), os.path.join(sim_dir, "params.py"))
 
     # Rename params.py.template to params.py
     shutil.move(os.path.join(sim_dir, "params.py.template"), os.path.join(sim_dir, "params.py"))
@@ -270,7 +266,7 @@ def action(sim_dir, event_name, run_name, run_dir, vel_mod_dir, srf_dir, srf_sto
         print "Re-directing related params to files under %s" % vel_mod_dir
         vel_mod_params_dir = vel_mod_dir
 
-    # TODO: get rid of this
+    # TODO: adjust this to use the params versioning
     bin_process_ver = "slurm"
 
     srf_files, stoch_files = zip(*srf_stoch_pairs)
@@ -748,7 +744,10 @@ def main_remote(cfg):
     stoch_file_path = list(filter(None, (x.strip() for x in stoch_file_path.splitlines())))
 
     #    srf_stoch_pairs=[(srf_file_path,stoch_file_path)]
-    srf_stoch_pairs = zip(srf_file_list, stoch_file_path)
+    # TODO: a quick workaround to make sure it takes only one srf
+    # TODO: fix these logic when new config params versioning is properly impelmented
+    srf_stoch_pairs = zip(srf_file_list[0], stoch_file_path[0])
+
     print srf_stoch_pairs
 
     params_vel_path = os.path.join(vel_mod_dir, params_vel)

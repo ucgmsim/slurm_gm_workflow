@@ -21,7 +21,7 @@ echo $end_time
 
 timestamp=`date +%Y%m%d_%H%M%S`
 #test before update
-res=`$gmsim/workflow/scripts/{{test_bb_script}} {{sim_dir}} {{hf_run_name}} {{srf_name}}`
+res=`$gmsim/workflow/scripts/{{test_bb_script}} {{sim_dir}} {{srf_name}}`
 if [[ $? == 0 ]]; then
     #passed
     echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} BB completed --run_name {{srf_name}} --force " >> {{mgmt_db_location}}/mgmt_db_queue/$timestamp\_$SLURM_JOBID
@@ -32,6 +32,7 @@ if [[ $? == 0 ]]; then
     fd_name=`python -c "import params_base as pb; print pb.FD_STATLIST"`
     fd_count=`cat $fd_name | wc -l`
     dt=`python -c "import params_base as pb; print pb.hf_dt"`
+    #save meta data
     echo "{{srf_name}} BB $SLURM_NTASKS $run_time $fd_count $dt $start_time $end_time" >> {{sim_dir}}/ch_log/BB.$timestamp.$SLURM_JOBID.log
 else
     echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} BB created --run_name {{srf_name}} --error '$res' --force --is_retry" >> {{mgmt_db_location}}/mgmt_db_queue/$timestamp\_$SLURM_JOBID

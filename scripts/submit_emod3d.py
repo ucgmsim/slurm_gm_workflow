@@ -146,7 +146,7 @@ if __name__ == '__main__':
                 continue
 
             #get lf_sim_dir
-            lf_sim_dir = os.path.join(params.lf_sim_root_dir,srf_name) 
+            lf_sim_dir = params.lf_sim_root_dir 
             sim_dir = params.sim_dir
             nx = int(params.vm.nx)
             ny = int(params.vm.ny)
