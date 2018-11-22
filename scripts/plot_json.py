@@ -51,7 +51,7 @@ def get_run_time(fault_dir):
 def plot_run_time(stats_dict, fault_dir, out_dir):
     df = pd.DataFrame.from_dict(stats_dict)
    
-    axes = df.hist(xlabelsize=8,bins=2)
+    axes = df.hist(xlabelsize=8)
 
     for ax in axes.flatten():
         print ax
