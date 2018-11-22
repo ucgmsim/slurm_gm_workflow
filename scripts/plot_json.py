@@ -51,16 +51,17 @@ def get_run_time(fault_dir):
 def plot_run_time(stats_dict, fault_dir, out_dir):
     df = pd.DataFrame.from_dict(stats_dict)
    
-    axes = df.hist(xlabelsize=8)
+    axes = df.hist(xlabelsize=8, rwidth=0.5)
 
     for ax in axes.flatten():
         print ax
-        ax.set_xlabel("time (h)")
+        ax.set_xlabel("run time (h)")
         ax.set_ylabel("number of runs")
 
     out_path = os.path.join(fault_dir, out_dir)
     print(out_path)
     utils.setup_dir(out_path)
+    plt.suptitle("{} {}".format(fault_dir.split('/')[-1],"v18p6 run time"))
     plt.savefig(os.path.join(out_path, OUT_NAME))
     plt.show()
 
