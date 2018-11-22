@@ -78,6 +78,8 @@ def q_select_rupmodel_dir(mysrf_dir):
     srf_selected_dir = os.path.join(mysrf_dir, srf_selected, "Srf")
     try:
         srf_file_options = os.listdir(srf_selected_dir)
+        #filter out files that are not *.srf
+        srf_file_options = [ x for x in srf_file_options if x.endswith('.srf') ]
     except OSError:
         print "!! Srf directory not found. Going into %s" % srf_selected
         return q_select_rupmodel_dir(os.path.join(mysrf_dir, srf_selected))
