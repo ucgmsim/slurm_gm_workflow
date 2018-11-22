@@ -121,7 +121,7 @@ if __name__ == '__main__':
         default_core = args.ncore
 
     try:
-        params = utils.load_params('fault_params.yaml')
+        params = utils.load_params('sim_params.yaml')
     except Exception as e:
         print(e, "load params failed.")
         sys.exit(e)

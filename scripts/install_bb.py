@@ -7,7 +7,7 @@ sys.path.append(os.path.abspath(os.path.curdir))
 import argparse
 
 from qcore import utils
-params = utils.load_params('fault_params.yaml')
+params = utils.load_params('sim_params.yaml')
 
 from collections import OrderedDict
 old_params = True
@@ -221,8 +221,8 @@ def main():
     #globals_dict = globals()
 
     if old_params:
-        hf_kappa_list = [params.hf.hf_kappa]*len(params.srf_file)
-        hf_sdrop_list = [params.hf.hf_sdrop]*len(params.srf_file)
+        hf_kappa_list = [params.hf.hf_kappa]
+        hf_sdrop_list = [params.hf.hf_sdrop]
         if len(params.srf_file) > 1:
             print "Info: You have specified multiple SRF files."
             print "      A single hf_kappa(=%s) and hf_sdrop(=%s) specified in params.py will be used for all SRF files." %(params.hf.hf_kappa, params.hf.hf_sdrop)
@@ -238,7 +238,9 @@ def main():
 
 
     hf_run_names_list=[]
+    print("len hf_kappa list",len(hf_kappa_list),hf_kappa_list)
     for i in range(len(hf_kappa_list)):
+        print i
         kappa = hf_kappa_list[i]
         sdrop = hf_sdrop_list[i]
         srf = params.srf_file[i]
@@ -267,7 +269,7 @@ def main():
 
     params.bb.update(params_base_bb_dict)
     print("ssss",type(params))
-    utils.dump_yaml(params, 'fault_params.yaml', obj_type=utils.DotDictify)
+    utils.dump_yaml(params, 'sim_params.yaml', obj_type=utils.DotDictify)
 
     
 

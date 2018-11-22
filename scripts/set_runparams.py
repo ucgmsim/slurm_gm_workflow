@@ -218,14 +218,14 @@ def extend_yaml(sim_dir, srf_name=None):
 
     p1 = {}
     p2 = {}
-    fault_params_dict = utils.load_yaml('fault_params.yaml')
+    fault_params_dict = utils.load_yaml('sim_params.yaml')
     for i, srf_file in enumerate(fault_params_dict['srf_file']):
         #skip all logic if a specific srf_name is provided
         if srf_name != None and srf_name != os.path.splitext(basename(srf_file))[0]:
             continue
         srf_file_basename = os.path.splitext(os.path.basename(srf_file))[0]  # take the filename only
         fault_params_dict['lf']= OrderedDict()
-        fault_params_dict['lf']['lf_sim_dir'] = os.path.join(fault_params_dict['lf_sim_root_dir'], srf_file_basename)
+        fault_params_dict['lf']['lf_sim_dir'] = fault_params_dict['lf_sim_root_dir']
         #shared.verify_user_dirs(fault_params_dict['lf']['lf_sim_dir'])
         fault_params_dict['lf']['restart_dir'] = os.path.join(fault_params_dict['lf']['lf_sim_dir'], 'Restart')
         fault_params_dict['lf']['bin_output'] = os.path.join(fault_params_dict['lf']['lf_sim_dir'], 'OutBin')
@@ -355,7 +355,7 @@ def extend_yaml(sim_dir, srf_name=None):
         fault_params_dict['emod3d']['grid_file'] = fault_params_dict['vm']['GRIDFILE']
         fault_params_dict['emod3d']['model_params'] = fault_params_dict['vm']['MODEL_PARAMS']
         fault_params_dict['srf_file'] = srf_file
-        utils.dump_yaml(fault_params_dict, os.path.join(fault_params_dict['lf']['lf_sim_dir'], 'sim_params.yaml'))
+        utils.dump_yaml(fault_params_dict, os.path.join(fault_params_dict['sim_dir'], 'sim_params.yaml'))
 
 
 if __name__ == '__main__':

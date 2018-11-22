@@ -17,6 +17,8 @@ from management import create_mgmt_db
 from shared_workflow.shared import *
 from collections import OrderedDict
 
+from qcore import utils
+
 print
 workflow_config = ldcfg.load(os.path.dirname(os.path.realpath(__file__)), "workflow_config.json")
 workflow_root = workflow_config['gm_sim_workflow_root']
@@ -537,7 +539,6 @@ def create_fault_params_dict(sim_dir, event_name, run_name, run_dir, vel_mod_dir
         fault_params_dict['FD_STATLIST'] = fd_statlist
     else:
         print "Generation of statcords is skipped. You need to fix params_base.py manually"
-
     return fault_params_dict
 
 
@@ -705,14 +706,22 @@ def main_local():
     #        f.close()
     #        print "PATH was updated"
     # new workflow no longer ask for wct at install phase, it is asked at submit_*.py
-    # wallclock(sim_dir)
+    # wallclock(sim_dir0)
+    print("local creating fault dict")
+    fault_params_dict = create_fault_params_dict(sim_dir, event_name, run_name, run_dir, vel_mod_dir, srf_dir, srf_stoch_pairs,
+                             params_vel_path, stat_file_path, vs30_file_path, vs30ref_file_path, MODEL_LAT, MODEL_LON, MODEL_ROT, hh, nx,
+                             ny, nz, sufx, sim_duration, flo, vel_mod_params_dir, yes_statcords, yes_model_params)
 
+    
     srf_files, ___ = zip(*srf_stoch_pairs)
     create_mgmt_db.create_mgmt_db([], sim_dir, srf_files=srf_files)
     # saves the location of mgmt_db to params_base.py
     with open(os.path.join(sim_dir, "params_base.py"), "a") as f:
         f.write("mgmt_db_location='%s'\n" % sim_dir)
+    
 
+    fault_params_dict['mgmt_db_location'] = sim_dir
+    utils.dump_yaml(fault_params_dict, os.path.join(sim_dir, 'sim_params.yaml'))
     print "Installation completed"
     show_instruction(sim_dir)
 
@@ -767,6 +776,13 @@ def main_remote(cfg):
            stat_file_path, vs30_file_path, vs30ref_file_path, MODEL_LAT, MODEL_LON, MODEL_ROT, hh, nx, ny, nz, sufx,
            sim_duration, flo, vel_mod_params_dir, yes_statcords, yes_model_params)
     #
+    print("local creating fault dict")
+    create_fault_params_dict(sim_dir, event_name, run_name, run_dir, vel_mod_dir, srf_dir, srf_stoch_pairs,
+                             params_vel_path, stat_file_path, vs30_file_path, vs30ref_file_path, MODEL_LAT, MODEL_LON, MODEL_ROT, hh, nx,
+                             ny, nz, sufx, sim_duration, flo, vel_mod_params_dir, yes_statcords, yes_model_params)
+
+    print("fault dict created")
+
     print "Installation completed"
     show_instruction(sim_dir)
 
