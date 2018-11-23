@@ -163,7 +163,7 @@ if __name__ == '__main__':
 
     created_scripts = []
     try:
-        params = utils.load_params('fault_params.yaml')
+        params = utils.load_params('sim_params.yaml')
     except:
         print "load params failed."
         sys.exit()
@@ -173,7 +173,7 @@ if __name__ == '__main__':
             submit_yes = True
         else:
             submit_yes = confirm("Also submit the job for you?")
-        for srf in params.srf_file:
+        for srf in [params.srf_file]:
             #get the srf(rup) name without extensions
             srf_name = os.path.splitext(basename(srf))[0]
             #if srf(variation) is provided as args, only create the slurm with same name provided

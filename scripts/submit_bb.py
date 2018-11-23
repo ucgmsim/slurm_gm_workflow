@@ -34,7 +34,8 @@ from management import db_helper
 
 
 from qcore import utils
-params = utils.load_params('fault_params.yaml')
+params = utils.load_params('sim_params.yaml')
+print("lf_sim_roor_dir",params.lf_sim_root_dir)
 
 def confirm(q):
     show_horizontal_line()
@@ -77,7 +78,7 @@ def write_sl_script(bb_sim_dir, sim_dir, hf_run_name, srf_name, sl_template_pref
     if binary:
         create_directory = "mkdir -p " + os.path.join(bb_sim_dir, "Acc") + "\n"
         submit_command = create_directory + "srun python $BINPROCESS/bb_sim.py "
-        arguments = [os.path.join(params.lf_sim_root_dir, "/OutBin"), params.vel_mod_dir,
+        arguments = [os.path.join(params.lf_sim_root_dir, "OutBin"), params.vel_mod_dir,
                      os.path.join(params.hf_dir, "Acc/HF.bin"),
                      params.stat_vs_est, os.path.join(bb_sim_dir, "Acc/BB.bin"),
                      "--flo", params.flo]
@@ -167,12 +168,11 @@ if __name__ == '__main__':
         # None: ask user if want to submit; False: dont submit
         submit_yes = confirm("Also submit the job for you?")
 
-    counter_srf = 0
-    for srf in params.srf_file:
-        srf_name = os.path.splitext(basename(srf))[0]
+
+    srf = params.srf_file
+    srf_name = os.path.splitext(basename(srf))[0]
+    if args.srf is None or srf_name == args.srf:
         # if srf(variation) is provided as args, only create the slurm with same name provided
-        if args.srf != None and srf_name != args.srf:
-            continue
         # --est_wct used, automatically assign run_time using estimation
         if args.est_wct != None:
             # TODO:enable time estimation after WCT is properly implemented
@@ -194,7 +194,7 @@ if __name__ == '__main__':
 
         bb_sim_dir = params.bb_dir
         #TODO: save status as HF. refer to submit_hf
-        hf_run_name = params.bb.hf_run_names[counter_srf]
+        hf_run_name = params.bb.hf_run_names[0]
         sim_dir = params.sim_dir
         created_script = write_sl_script(bb_sim_dir, sim_dir, hf_run_name, srf_name, sl_name_prefix,
                                          account=args.account, binary=args.binary)
@@ -203,6 +203,4 @@ if __name__ == '__main__':
             update_db("BB", "queued", params.mgmt_db_location, srf_name, jobid)
         elif submit_yes == True and jobid == None:
             print "there is error while trying to submit the slurm script, please manual check for errors"
-
-        counter_srf += 1
 

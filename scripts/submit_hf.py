@@ -41,7 +41,7 @@ from temp_shared import resolve_header
 from shared_workflow.shared import *
 
 from qcore import utils
-params = utils.load_params('fault_params.yaml')
+params = utils.load_params('sim_params.yaml')
 
 
 def confirm(q):
@@ -232,20 +232,19 @@ if __name__ == '__main__':
     # sniff through params_base to get the names of srf, instead of running throught file directories.
 
     # loop through all srf file to generate related slurm scripts
-    counter_srf = 0
-    for srf in params.srf_file:
-        srf_name = os.path.splitext(basename(srf))[0]
-        # if srf(variation) is provided as args, only create the slurm with same name provided
-        if args.srf != None and srf_name != args.srf:
-            continue
-            # --est_wct used, automatically assign run_time using estimation
+
+    srf = params.srf_file
+    srf_name = os.path.splitext(basename(srf))[0]
+    # if srf(variation) is provided as args, only create the slurm with same name provided
+    if args.srf is None or srf_name == args.srf:
+        print("args.est_ect", args.est_wct)
         if args.est_wct != None:
             timesteps= float(params.sim_duration)/float(params.hf.hf_dt)
             #get station count
             station_count = len(qcore.shared.get_stations(params.FD_STATLIST))
             #get the number of sub faults for estimation
             #TODO:make it read through the whole list instead of assuming every stoch has same size
-            sub_fault_count,sub_fault_area=qcore.srf.get_nsub_stoch(params.hf.hf_slip[counter_srf], get_area=True)
+            sub_fault_count,sub_fault_area=qcore.srf.get_nsub_stoch(params.hf.hf_slip[0], get_area=True)
             if args.debug == True:
                 print "sb:",sub_fault_area
                 print "nt:",timesteps
@@ -260,17 +259,12 @@ if __name__ == '__main__':
             print "Estimated time: ", run_time, " Core: ", ncore
         else:
             run_time = default_run_time
-
         hf_sim_dir = params.hf_dir
         sim_dir = params.sim_dir
         #TODO: although not used, this variable may be useful for future automation. decide to keep or remove later.
-        hf_run_name = params.bb.hf_run_names[counter_srf]
-        created_script = write_sl_script(hf_sim_dir, sim_dir, hf_run_name, srf_name, ll_name_prefix, hf_option, ncore,
-                                         run_time, account=args.account, binary=args.binary, seed=args.seed)
+        hf_run_name = params.bb.hf_run_names[0]
+        print("hf_sim_dir, sim_dir, hf_run_name", hf_sim_dir,sim_dir,hf_run_name)
+        created_script = write_sl_script(hf_sim_dir, sim_dir, hf_run_name, srf_name, ll_name_prefix, hf_option, ncore, run_time, account=args.account, binary=args.binary, seed=args.seed)
         jobid = submit_sl_script(created_script, submit_yes)
         if jobid != None:
             update_db("HF", "queued", params.mgmt_db_location, srf_name, jobid)
-
-        counter_srf += 1
-
-

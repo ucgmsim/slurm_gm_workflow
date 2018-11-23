@@ -134,7 +134,9 @@ if __name__ == '__main__':
             submit_yes = False
         else:
             submit_yes = confirm("Also submit the job for you?")
-        for srf in params.srf_file:
+        print params.srf_file
+        for srf in [params.srf_file]:  #too lazay to get rid of for loop so makeit a list of only one string for now
+            print("Srffffffff", srf)
             #get the srf(rup) name without extensions
             srf_name = os.path.splitext(basename(srf))[0]
             #if srf(variation) is provided as args, only create the slurm with same name provided
@@ -144,7 +146,7 @@ if __name__ == '__main__':
                 set_runparams.create_run_parameters(srf_name)
                 set_runparams.extend_yaml(srf_name)
                 continue
-
+            print("not set_params_only")
             #get lf_sim_dir
             lf_sim_dir = params.lf_sim_root_dir 
             sim_dir = params.sim_dir

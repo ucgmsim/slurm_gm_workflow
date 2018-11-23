@@ -42,7 +42,7 @@ if is_master:
         # invalid arguments or -h
         comm.Abort()
 args = comm.bcast(args, root = master)
-
+print("args.lf",args.lf_dir)
 # load data stores
 lf = timeseries.LFSeis(args.lf_dir)
 hf = timeseries.HFSeis(args.hf_file)
