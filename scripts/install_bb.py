@@ -121,30 +121,30 @@ def action_for_uncertainties(hf_sim_basedir,bb_sim_basedir,srf,slip,kappa,sdrop)
     bb_sim_dir = os.path.join(bb_sim_basedir,srf_basename)
     dirs.append(hf_sim_dir)
     dirs.append(bb_sim_dir)
-    params_uncertain_path=os.path.join(params.lf_sim_root_dir,srf_basename,params_uncertain)
-    print params_uncertain_path
-    execfile(params_uncertain_path,globals())
+  #  params_uncertain_path=os.path.join(params.lf_sim_root_dir,srf_basename,params_uncertain)
+ #   print params_uncertain_path
+#    execfile(params_uncertain_path,globals())
 
     verify_user_dirs(dirs)
-    params_bb_uncertain_file = os.path.join(bb_sim_dir,params_bb_uncertain) 
-    with open(params_bb_uncertain_file,'w') as f:
-        f.write("hf_accdir='%s'\n"%os.path.join(hf_sim_dir,"Acc"))
-        f.write("hf_veldir='%s'\n"%os.path.join(hf_sim_dir,"Vel"))
-        f.write("bb_accdir='%s'\n"%os.path.join(bb_sim_dir,"Acc"))
-        f.write("bb_veldir='%s'\n"%os.path.join(bb_sim_dir,"Vel"))
-        f.write("hf_resume=True\n")
-        f.write("bb_resume=True\n")
-        f.write("hf_slip='%s'\n"%slip)
-        f.write("vel_dir='%s'\n"%params.lf.vel_dir)
-        f.write("hf_kappa='%s'\n"%kappa)
-        f.write("hf_sdrop='%s'\n"%sdrop)
+   # params_bb_uncertain_file = os.path.join(bb_sim_dir,params_bb_uncertain) 
+   # with open(params_bb_uncertain_file,'w') as f:
+    #    f.write("hf_accdir='%s'\n"%os.path.join(hf_sim_dir,"Acc"))
+     #   f.write("hf_veldir='%s'\n"%os.path.join(hf_sim_dir,"Vel"))
+      #  f.write("bb_accdir='%s'\n"%os.path.join(bb_sim_dir,"Acc"))
+       # f.write("bb_veldir='%s'\n"%os.path.join(bb_sim_dir,"Vel"))
+       # f.write("hf_resume=True\n")
+       # f.write("bb_resume=True\n")
+       # f.write("hf_slip='%s'\n"%slip)
+       # f.write("vel_dir='%s'\n"%params.lf.vel_dir)
+       # f.write("hf_kappa='%s'\n"%kappa)
+       # f.write("hf_sdrop='%s'\n"%sdrop)
     
-    params_hf_uncertain_file = os.path.join(hf_sim_dir,params_bb_uncertain)
-    print params_hf_uncertain_file 
-    try:
-        os.symlink(params_bb_uncertain_file, params_hf_uncertain_file)
-    except OSError as e:
-        print e
+   # params_hf_uncertain_file = os.path.join(hf_sim_dir,params_bb_uncertain)
+   # print params_hf_uncertain_file 
+   # try:
+    #    os.symlink(params_bb_uncertain_file, params_hf_uncertain_file)
+   # except OSError as e:
+    #    print e
     return hf_sim_dir, bb_sim_dir    
 
 #    try: 

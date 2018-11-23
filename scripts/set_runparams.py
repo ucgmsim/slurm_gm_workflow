@@ -197,24 +197,24 @@ def create_run_parameters(sim_dir, srf_name=None):
 def extend_yaml(sim_dir, srf_name=None):
     #import params_base
     sys.path.append(sim_dir)
-    params_base = __import__('params_base', globals(), locals(), [], -1)
+   # params_base = __import__('params_base', globals(), locals(), [], -1)
 
     # attempt to append template file before importing params
-    try:
+   # try:
         # throws NameError if var not set, AssertionError if blank
-        assert (params_override != '')
+    #    assert (params_override != '')
         # copy to temp file
-        copyfile('params.py', 'params_joined.py')
+     #   copyfile('params.py', 'params_joined.py')
         # append to temp
-        with open('params_joined.py', 'a') as fp:
-            with open('params_override_' + params_override + '.py', 'r') as tp:
-                fp.write(tp.readlines())
+      #  with open('params_joined.py', 'a') as fp:
+       #     with open('params_override_' + params_override + '.py', 'r') as tp:
+        #        fp.write(tp.readlines())
         # import temp
-        import params_joined
-        os.remove('params_joined.py')
-    except (AssertionError, NameError, ImportError, OSError):
+     #   import params_joined
+      #  os.remove('params_joined.py')
+   # except (AssertionError, NameError, ImportError, OSError):
         #import params
-        params = __import__('params', globals(), locals(), [], -1)
+    #    params = __import__('params', globals(), locals(), [], -1)
 
     p1 = {}
     p2 = {}
@@ -356,10 +356,10 @@ def extend_yaml(sim_dir, srf_name=None):
         fault_params_dict['emod3d']['model_params'] = fault_params_dict['vm']['MODEL_PARAMS']
         fault_params_dict['srf_file'] = srf_file
         utils.dump_yaml(fault_params_dict, os.path.join(fault_params_dict['sim_dir'], 'sim_params.yaml'))
-
+        shared.write_to_py(os.path.join(fault_params_dict['lf_sim_root_dir'], 'e3d.par'), fault_params_dict['emod3d'])
 
 if __name__ == '__main__':
     sim_dir = os.getcwd()
-    create_run_parameters(sim_dir)
+  #  create_run_parameters(sim_dir)
     extend_yaml(sim_dir)
 

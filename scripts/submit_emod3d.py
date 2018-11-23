@@ -74,7 +74,7 @@ def write_sl_script(lf_sim_dir,sim_dir,srf_name, run_time=default_run_time, nb_c
     # from params_base import tools_dir
     # from params_base import mgmt_db_location
 
-    set_runparams.create_run_parameters(srf_name)
+   # set_runparams.create_run_parameters(srf_name)
     print("extending")
     set_runparams.extend_yaml(srf_name)   
  
@@ -135,7 +135,7 @@ if __name__ == '__main__':
         else:
             submit_yes = confirm("Also submit the job for you?")
         print params.srf_file
-        for srf in [params.srf_file]:  #too lazay to get rid of for loop so makeit a list of only one string for now
+        for srf in params.srf_file:
             print("Srffffffff", srf)
             #get the srf(rup) name without extensions
             srf_name = os.path.splitext(basename(srf))[0]
@@ -143,7 +143,7 @@ if __name__ == '__main__':
             if args.srf != None and srf_name != args.srf:
                 continue
             if args.set_params_only == True:
-                set_runparams.create_run_parameters(srf_name)
+               # set_runparams.create_run_parameters(srf_name)
                 set_runparams.extend_yaml(srf_name)
                 continue
             print("not set_params_only")

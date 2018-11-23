@@ -694,9 +694,9 @@ def main_local():
     #    vel_mod_params_dir = os.path.join(global_root, "VelocityModel/SthIsland/ModelParams")
 
     event_name = ""
-    action(sim_dir, event_name, run_name, run_dir, vel_mod_dir_full, srf_dir, srf_stoch_pairs, params_vel_path,
-           stat_file_path, vs30_file_path, vs30ref_file_path, MODEL_LAT, MODEL_LON, MODEL_ROT, hh, nx, ny, nz, sufx,
-           sim_duration, flo, vel_mod_params_dir, yes_statcords, yes_model_params)
+   # action(sim_dir, event_name, run_name, run_dir, vel_mod_dir_full, srf_dir, srf_stoch_pairs, params_vel_path,
+    #       stat_file_path, vs30_file_path, vs30ref_file_path, MODEL_LAT, MODEL_LON, MODEL_ROT, hh, nx, ny, nz, sufx,
+     #      sim_duration, flo, vel_mod_params_dir, yes_statcords, yes_model_params)
     # The following code add the same PATH multiple times over time. Perhaps not really needed.
     #    #add bin_process to PATH if it is not already there
     #    if not bin_process_dir in os.environ['PATH']:
@@ -716,8 +716,8 @@ def main_local():
     srf_files, ___ = zip(*srf_stoch_pairs)
     create_mgmt_db.create_mgmt_db([], sim_dir, srf_files=srf_files)
     # saves the location of mgmt_db to params_base.py
-    with open(os.path.join(sim_dir, "params_base.py"), "a") as f:
-        f.write("mgmt_db_location='%s'\n" % sim_dir)
+   # with open(os.path.join(sim_dir, "params_base.py"), "a") as f:
+    #    f.write("mgmt_db_location='%s'\n" % sim_dir)
     
 
     fault_params_dict['mgmt_db_location'] = sim_dir
