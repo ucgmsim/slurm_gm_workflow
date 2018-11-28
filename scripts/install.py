@@ -24,7 +24,8 @@ workflow_config = ldcfg.load(os.path.dirname(os.path.realpath(__file__)), "workf
 workflow_root = workflow_config['gm_sim_workflow_root']
 global_root = workflow_config["global_root"]
 tools_dir = os.path.join(global_root, 'EMOD3D/tools')
-bin_process_dir = os.path.join(global_root, 'workflow/scripts')
+#bin_process_dir = os.path.join(global_root, 'workflow/scripts')
+bin_process_dir = "/home/melody.zhu/slurm_gm_workflow/scripts"
 emod3d_version = workflow_config["emod3d_version"]
 params_vel = workflow_config['params_vel']
 
@@ -33,7 +34,8 @@ user = getpass.getuser()
 user_root = os.path.join(run_dir, user)  # global_root
 srf_default_dir = os.path.join(global_root, 'RupModel')
 vel_mod_dir = os.path.join(global_root, 'VelocityModels')
-recipe_dir = os.path.join(global_root, "workflow/templates")
+#recipe_dir = os.path.join(global_root, "workflow/templates")
+recipe_dir = "/home/melody.zhu/slurm_gm_workflow/templates"
 v_mod_1d_dir = os.path.join(global_root, 'VelocityModel', 'Mod-1D')
 gmsa_dir = os.path.join(global_root, 'groundMotionStationAnalysis')
 stat_dir = os.path.join(global_root, 'StationInfo')
@@ -708,7 +710,7 @@ def main_local():
     # new workflow no longer ask for wct at install phase, it is asked at submit_*.py
     # wallclock(sim_dir0)
     print("local creating fault dict")
-    fault_params_dict = create_fault_params_dict(sim_dir, event_name, run_name, run_dir, vel_mod_dir, srf_dir, srf_stoch_pairs,
+    fault_params_dict = create_fault_params_dict(sim_dir, event_name, run_name, run_dir, vel_mod_dir_full, srf_dir, srf_stoch_pairs,
                              params_vel_path, stat_file_path, vs30_file_path, vs30ref_file_path, MODEL_LAT, MODEL_LON, MODEL_ROT, hh, nx,
                              ny, nz, sufx, sim_duration, flo, vel_mod_params_dir, yes_statcords, yes_model_params)
 

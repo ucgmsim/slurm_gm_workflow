@@ -134,7 +134,7 @@ if __name__ == '__main__':
             submit_yes = False
         else:
             submit_yes = confirm("Also submit the job for you?")
-        print params.srf_file
+        print("params.srf_file", params.srf_file)
         for srf in params.srf_file:
             print("Srffffffff", srf)
             #get the srf(rup) name without extensions

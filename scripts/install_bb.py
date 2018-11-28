@@ -265,7 +265,7 @@ def main():
     params_base_bb_dict.pop('hf_run_name', None)
     params_base_bb_dict['hf_run_names'] = hf_run_names_list
     #store the parameters in params_base_bb.py 
-    store_params(params_base_bb_dict)
+    #store_params(params_base_bb_dict)
 
     params.bb.update(params_base_bb_dict)
     print("ssss",type(params))

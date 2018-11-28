@@ -1,5 +1,5 @@
 #!/bin/bash
-BINPROCESS=$gmsim/workflow/scripts
+#BINPROCESS=$gmsim/workflow/scripts
 BINPROCESS=/home/melody.zhu/slurm_gm_workflow/scripts
 #script needs one arg(emod3d,post-emod, hf, or bb)
 if [[ $# -lt 1 ]];then
