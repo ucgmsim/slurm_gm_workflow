@@ -9,7 +9,8 @@ import argparse
 
 from scripts import install
 from scripts.management import create_mgmt_db
-from shared_workflow.shared import *
+#from shared_workflow.shared import *
+from shared_workflow.shared import verify_user_dirs
 
 default_dt = 0.005
 default_hf_dt = 0.005
@@ -68,19 +69,22 @@ def main():
     #print vel_mod_dir
 
     #get all srf from source
-    srf_dir=os.path.join(os.path.join(srf_root_dir,source),"Srf")
-    list_srf= glob.glob(os.path.join(srf_dir,'*.srf'))
-    srf_files= []
-    stoch_files=[]
-    stoch_dir=os.path.join(os.path.join(srf_root_dir,source),"Stoch")
-    list_stoch= glob.glob(os.path.join(stoch_dir,'*.stoch'))
+    srf_dir = os.path.join(os.path.join(srf_root_dir,source),"Srf")
+    stoch_dir = os.path.join(os.path.join(srf_root_dir,source),"Stoch")
+    list_srf = glob.glob(os.path.join(srf_dir,'*.srf'))
+    srf_files = []
+    stoch_files = []
 
     for srf in list_srf:
-        srf_files.append(os.path.join(srf_dir,srf))
-
-    for stoch in list_stoch:
-        stoch_files.append(os.path.join(stoch_dir,stoch))
-
+        #try to match find the stoch with same basename
+        srf_name = os.path.splitext(os.path.basename(srf))[0]
+        stoch_file_path = os.path.join(stoch_dir,srf_name+'.stoch')       
+        if not os.path.isfile(stoch_file_path):
+            print "Error: Corresponding Stock file is not found:\n%s" % stoch_file_path
+            sys.exit()
+        else:
+            srf_files.append(srf)
+            stoch_files.append(stoch_file_path)
 
     srf_stoch_pairs = zip(srf_files, stoch_files)
     #print srf_stoch_pairs
