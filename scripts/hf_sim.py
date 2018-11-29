@@ -4,6 +4,7 @@ Simulates high frequency seismograms for stations.
 """
 from argparse import ArgumentParser
 import os
+import random
 from subprocess import Popen, PIPE
 import sys
 from tempfile import mkstemp
@@ -39,6 +40,11 @@ ic_flag = True
 # seems to store details in {velocity_name}_{station_name}.1d if not '-1'
 velocity_name = '-1'
 
+
+def random_seed():
+    return random.randrange(1000000, 9999999)
+
+
 args = None
 if is_master:
     parser = ArgumentParser()
@@ -64,10 +70,8 @@ if is_master:
     arg('--no-siteamp', help = 'disable BJ97 site amplification factors', \
         action = 'store_true')
     # HF IN, line 7
-    arg('--seed', help = 'random seed (0 for randomized seed)', type = int, \
-        default = 5481190)
-    arg('-i', '--independent', action = 'store_true', \
-        help = 'run stations independently (with same random seed)')
+    arg('--seed', help = 'random seed (0:randomised reproducable, -1:fully randomised)', \
+        type = int, default = 5481190)
     # HF IN, line 9
     arg('--duration', help = 'output length (seconds)', \
         type = float, default = 100.0)
@@ -123,21 +127,18 @@ if is_master:
         comm.Abort()
     # random seed
     seed_file = os.path.join(os.path.dirname(args.out_file), "SEED")
-    if os.path.isfile(seed_file):
+    if args.seed == -1:
+        print("seed is always randomised")
+    elif os.path.isfile(seed_file):
         args.seed = np.loadtxt(seed_file, dtype='i', ndmin=1)[0]
         print("seed taken from file: %d" % (args.seed))
     elif args.seed == 0:
-        import random
-        args.seed = random.randrange(1000000, 9999999)
+        args.seed = random_seed()
         np.savetxt(seed_file, np.array([args.seed], dtype=np.int32), fmt='%i')
         print("seed generated: %d" % (args.seed))
     else:
         print("seed from command line: %d" % (args.seed))
 args = comm.bcast(args, root = master)
-
-args.seed += rank
-print ("Rank %d seed: %d" %(rank, args.seed))
-
 
 nt = int(round(args.duration / args.dt))
 stations = np.loadtxt(args.station_file, ndmin = 1, \
@@ -154,7 +155,7 @@ def initialise(check_only = False):
         i4 = np.array([stations.size, nt, args.seed, not args.no_siteamp, \
                        args.path_dur, len(args.rayset), \
                        fwrs[0], fwrs[1], fwrs[2], fwrs[3], \
-                       nbu, ift, nl_skip, ic_flag, args.independent, \
+                       nbu, ift, nl_skip, ic_flag, args.seed >= 0, \
                        args.site_vm_dir != None], dtype = 'i4')
         # float parameters
         f4 = np.array([args.duration, args.dt, args.t_sec, args.sdrop, \
@@ -250,11 +251,16 @@ def run_hf(local_statfile, n_stat, idx_0, velocity_model = args.velocity_model):
     """
     Runs HF Fortran code.
     """
+    if args.seed >= 0:
+        assert n_stat == 1
+        seed = args.seed + idx_0
+    else:
+        seed = random_seed()
     stdin = '\n'.join(['', str(args.sdrop), local_statfile, args.out_file, \
         '%d %s' % (len(args.rayset), ' '.join(map(str, args.rayset))), \
         str(int(not args.no_siteamp)), \
         '%d %d %s %s' % (nbu, ift, flo, fhi), \
-        str(args.seed), str(n_stat), \
+        str(seed), str(n_stat), \
         '%s %s %s %s %s' \
             % (args.duration, args.dt, args.fmax, args.kappa, args.qfexp), \
         '%s %s %s %s %s' % (args.rvfac, args.rvfac_shal, args.rvfac_deep, \
@@ -323,7 +329,7 @@ work_idx = stations_todo_idx[start:start + d + (rank < r)]
 # process data to give Fortran code
 t0 = MPI.Wtime()
 in_stats = mkstemp()[1]
-if args.independent:
+if args.seed >= 0:
     vm = args.velocity_model
     for s in xrange(work.size):
         if args.site_vm_dir != None:
@@ -333,7 +339,7 @@ if args.independent:
         run_hf(in_stats, 1, work_idx[s], velocity_model = vm)
         if rank == size - 1:
             validate_end(work_idx[s] + 1)
-else:
+elif args.seed == -1:
     # have to be careful if checkpointing, work is not always consecutive
     c0 = 0
     for c_work_idx in np.split(work_idx, np.where(np.diff(work_idx) != 1)[0] + 1):
