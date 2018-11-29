@@ -135,9 +135,9 @@ if is_master:
         print("seed from command line: %d" % (args.seed))
 args = comm.bcast(args, root = master)
 
-#if not args.independent:
-#    args.seed += rank
-args.seed += rank
+if not args.independent:
+    args.seed += rank
+#args.seed += rank
 
 print ("Rank %d seed: %d" %(rank, args.seed))
 
