@@ -716,13 +716,14 @@ def main_local():
 
     
     srf_files, ___ = zip(*srf_stoch_pairs)
-    create_mgmt_db.create_mgmt_db([], sim_dir, srf_files=srf_files)
+    fault_dir = os.path.abspath(os.path.join(sim_dir, os.pardir))
+    create_mgmt_db.create_mgmt_db([], fault_dir, srf_files=srf_files)
     # saves the location of mgmt_db to params_base.py
    # with open(os.path.join(sim_dir, "params_base.py"), "a") as f:
     #    f.write("mgmt_db_location='%s'\n" % sim_dir)
     
 
-    fault_params_dict['mgmt_db_location'] = sim_dir
+    fault_params_dict['mgmt_db_location'] = fault_dir
     utils.dump_yaml(fault_params_dict, os.path.join(sim_dir, 'sim_params.yaml'))
     print "Installation completed"
     show_instruction(sim_dir)

@@ -355,8 +355,19 @@ def extend_yaml(sim_dir, srf_name=None):
         fault_params_dict['emod3d']['grid_file'] = fault_params_dict['vm']['GRIDFILE']
         fault_params_dict['emod3d']['model_params'] = fault_params_dict['vm']['MODEL_PARAMS']
         fault_params_dict['srf_file'] = srf_file
-        utils.dump_yaml(fault_params_dict, os.path.join(fault_params_dict['sim_dir'], 'sim_params.yaml'))
         shared.write_to_py(os.path.join(fault_params_dict['lf_sim_root_dir'], 'e3d.par'), fault_params_dict['emod3d'])
+        # pop duplicated params before writing to yaml file
+        fault_params_dict['emod3d'].pop('faultfile')
+        fault_params_dict['emod3d'].pop('global_root')
+        fault_params_dict['emoded'].pop('logdir')
+        fault_params_dict['emoded'].pop('main_dump_dir')
+        fault_params_dict['emoded'].pop('model_params')
+        fault_params_dict['emoded'].pop('seiscords')
+        fault_params_dict['emoded'].pop('vel_mod_params_dir')
+        fault_params_dict['emoded'].pop('vmoddir')
+        fault_params_dict['emoded'].pop('wcc_prog_dir')         
+        utils.dump_yaml(fault_params_dict, os.path.join(fault_params_dict['sim_dir'], 'sim_params.yaml')) 
+
 
 if __name__ == '__main__':
     sim_dir = os.getcwd()
