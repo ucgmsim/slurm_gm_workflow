@@ -416,7 +416,6 @@ def create_fault_params_dict(sim_dir, event_name, run_name, run_dir, vel_mod_dir
                              hf_dt=default_hf_dt):
     lf_sim_root_dir = os.path.join(sim_dir, "LF")
     hf_dir = os.path.join(sim_dir, "HF")
-    bb_dir = os.path.join(sim_dir, "BB")
 
     dir_list = [sim_dir, lf_sim_root_dir, hf_dir, bb_dir]
     if not os.path.isdir(user_root):
@@ -446,57 +445,74 @@ def create_fault_params_dict(sim_dir, event_name, run_name, run_dir, vel_mod_dir
 
     srf_files, stoch_files = zip(*srf_stoch_pairs)
 
-    fault_params_dict = OrderedDict()
-    fault_params_dict['run_name'] = run_name
-    fault_params_dict['version'] = emod3d_version
-    fault_params_dict['bin_process_ver'] = bin_process_ver
-    fault_params_dict['global_root'] = global_root
-    fault_params_dict['tools_dir'] = tools_dir
-    fault_params_dict['user_root'] = user_root
-    fault_params_dict['run_dir'] = run_dir
-    fault_params_dict['sim_dir'] = sim_dir
-    fault_params_dict['lf_sim_root_dir'] = lf_sim_root_dir
-    fault_params_dict['hf_dir'] = hf_dir
-    fault_params_dict['bb_dir'] = bb_dir
-    fault_params_dict['srf_dir'] = srf_dir
-    fault_params_dict['srf_file'] = srf_files
+    bb_dir = os.path.join(sim_dir, "BB")
+    root_params_dict = {}
+    fault_params_dict = {}
+    sim_params_dict = {}
+    vm_params_dict = {}
+
+    sim_params_dict['run_name'] = run_name
+
+    #select during install
+    root_params_dict['version'] = emod3d_version
+
+    root_params_dict['dt'] = 0.02
+    root_params_dict['bin_process_ver'] = bin_process_ver
+    #sim_params_dict['global_root'] = global_root
+    #sim_params_dict['tools_dir'] = tools_dir
+
+    #potential remove
+    sim_params_dict['user_root'] = user_root
+    sim_params_dict['run_dir'] = run_dir
+
+    sim_params_dict['sim_dir'] = sim_dir
+    #sim_params_dict['lf_sim_root_dir'] = lf_sim_root_dir
+    #sim_params_dict['hf_dir'] = hf_dir
+
+    #sim_params_dict['bb_dir'] = bb_dir
+    #sim_params_dict['srf_dir'] = srf_dir
+
+    sim_params_dict['srf_file'] = srf_files
     fault_params_dict['vel_mod_dir'] = vel_mod_dir
-    fault_params_dict['v_mod_1d_dir'] = v_mod_1d_dir
-    fault_params_dict['params_vel'] = params_vel_path
-    fault_params_dict['sim_duration'] = sim_duration
-    fault_params_dict['flo'] = flo
+    #sim_params_dict['v_mod_1d_dir'] = v_mod_1d_dir
+    sim_params_dict['params_vel'] = params_vel_path
+    sim_params_dict['sim_duration'] = sim_duration
+    root_params_dict['flo'] = flo
 
-    fault_params_dict['vm'] = OrderedDict()
-    fault_params_dict['vm']['MODEL_LAT'] = MODEL_LAT
-    fault_params_dict['vm']['MODEL_LON'] = MODEL_LON
-    fault_params_dict['vm']['MODEL_ROT'] = MODEL_ROT
-    fault_params_dict['vm']['hh'] = hh
-    fault_params_dict['vm']['nx'] = nx
-    fault_params_dict['vm']['nz'] = nz
-    fault_params_dict['vm']['ny'] = ny
-    fault_params_dict['vm']['vel_mod_params_dir'] = vel_mod_params_dir
-    fault_params_dict['vm']['sufx'] = sufx
-    fault_params_dict['vm']['GRIDFILE'] = os.path.join(vel_mod_params_dir, 'gridfile%s' % sufx)
-    fault_params_dict['vm']['GRIDOUT'] = os.path.join(vel_mod_params_dir, 'gridout%s' % sufx)
-    fault_params_dict['vm']['MODEL_COORDS'] = os.path.join(vel_mod_params_dir, 'model_coords%s' % sufx)
-    fault_params_dict['vm']['MODEL_PARAMS'] = os.path.join(vel_mod_params_dir, 'model_params%s' % sufx)
-    fault_params_dict['vm']['MODEL_BOUNDS'] = os.path.join(vel_mod_params_dir, 'model_bounds%s' % sufx)
+    vm_params_dict['MODEL_LAT'] = MODEL_LAT
+    vm_params_dict['MODEL_LON'] = MODEL_LON
+    vm_params_dict['MODEL_ROT'] = MODEL_ROT
+    vm_params_dict['hh'] = hh
+    vm_params_dict['nx'] = nx
+    vm_params_dict['nz'] = nz
+    vm_params_dict['ny'] = ny
 
-    fault_params_dict['hf'] = OrderedDict()
-    fault_params_dict['hf']['hf_dt'] = hf_dt
-    fault_params_dict['hf']['hf_sim_bin'] = os.path.join(global_root, os.path.join(tools_dir, 'hb_high_v5.4.5_np2mm+'))
-    fault_params_dict['hf']['hf_prefix'] = 'hf'
-    fault_params_dict['hf']['hf_sdrop'] = 50
-    fault_params_dict['hf']['hf_kappa'] = 0.045
-    fault_params_dict['hf']['hf_rvfac'] = 0.8
-    fault_params_dict['hf']['hf_path_dur'] = 1
-    fault_params_dict['hf']['hf_slip'] = stoch_files
+    # =vel_mod_dir
+    #sim_params_dict['vm']['vel_mod_params_dir'] = vel_mod_params_dir
 
-    fault_params_dict['bb'] = OrderedDict()
-    
-    fault_params_dict['emod3d'] = OrderedDict()
-    fault_params_dict['emod3d']['dt'] = dt
-    fault_params_dict['emod3d']['n_proc'] = 512
+    vm_params_dict['sufx'] = sufx
+    vm_params_dict['GRIDFILE'] = os.path.join(vel_mod_params_dir, 'gridfile%s' % sufx)
+    vm_params_dict['GRIDOUT'] = os.path.join(vel_mod_params_dir, 'gridout%s' % sufx)
+    vm_params_dict['MODEL_COORDS'] = os.path.join(vel_mod_params_dir, 'model_coords%s' % sufx)
+    vm_params_dict['MODEL_PARAMS'] = os.path.join(vel_mod_params_dir, 'model_params%s' % sufx)
+    vm_params_dict['MODEL_BOUNDS'] = os.path.join(vel_mod_params_dir, 'model_bounds%s' % sufx)
+
+    root_params_dict['hf'] = {}
+    sim_params_dict['hf'] = {}
+    root_params_dict['hf']['hf_dt'] = hf_dt
+    #sim_params_dict['hf']['hf_sim_bin'] = os.path.join(global_root, os.path.join(tools_dir, 'hb_high_v5.4.5_np2mm+'))
+    #sim_params_dict['hf']['hf_prefix'] = 'hf'
+    root_params_dict['hf']['hf_sdrop'] = 50
+    root_params_dict['hf']['hf_kappa'] = 0.045
+    root_params_dict['hf']['hf_rvfac'] = 0.8
+    root_params_dict['hf']['hf_path_dur'] = 1
+    sim_params_dict['hf']['hf_slip'] = stoch_files
+
+    sim_params_dict['bb'] = {}
+
+    # potential remove
+    sim_params_dict['emod3d'] = {}
+    sim_params_dict['emod3d']['n_proc'] = 512
     if stat_file_path == "":
         # stat_path seems to empty, assigning all related value to latest_ll
         print "stat_file_path is not specified."
@@ -518,11 +534,11 @@ def create_fault_params_dict(sim_dir, event_name, run_name, run_dir, vel_mod_dir
             exe(cmd)
             cmd = "ln -s %s %s" % (os.path.join(latest_ll_dir, latest_ll + '.vs30ref'), vs30ref_file_path)
             exe(cmd)
-    fault_params_dict['stat_vs_est'] = vs30_file_path
-    fault_params_dict['stat_vs_ref'] = vs30ref_file_path
+    root_params_dict['stat_vs_est'] = vs30_file_path
+    root_params_dict['stat_vs_ref'] = vs30ref_file_path
 
     if stat_file_path is not None:
-        fault_params_dict['stat_file'] = stat_file_path
+        sim_params_dict['stat_file'] = stat_file_path
 
     # if yes_model_params:
     #     print "Producing model params. It may take a minute or two"
@@ -535,13 +551,13 @@ def create_fault_params_dict(sim_dir, event_name, run_name, run_dir, vel_mod_dir
 
         # Create Stat_cord & statList
         import statlist2gp
-        fd_statcords, fd_statlist = statlist2gp.main(fault_params_dict, stat_file=stat_file_path)
+        fd_statcords, fd_statlist = statlist2gp.main(sim_params_dict, stat_file=stat_file_path)
         print "Done"
-        fault_params_dict['stat_coords'] = fd_statcords
-        fault_params_dict['FD_STATLIST'] = fd_statlist
+        sim_params_dict['stat_coords'] = fd_statcords
+        sim_params_dict['FD_STATLIST'] = fd_statlist
     else:
         print "Generation of statcords is skipped. You need to fix params_base.py manually"
-    return fault_params_dict
+    return root_params_dict, fault_params_dict, sim_params_dict, vm_params_dict
 
 
 def show_instruction(sim_dir):
@@ -710,21 +726,22 @@ def main_local():
     # new workflow no longer ask for wct at install phase, it is asked at submit_*.py
     # wallclock(sim_dir0)
     print("local creating fault dict")
-    fault_params_dict = create_fault_params_dict(sim_dir, event_name, run_name, run_dir, vel_mod_dir_full, srf_dir, srf_stoch_pairs,
+    root_params_dict, fault_params_dict, sim_params_dict, vm_params_dict = create_sim_params_dict(sim_dir, event_name, run_name, run_dir, vel_mod_dir_full, srf_dir, srf_stoch_pairs,
                              params_vel_path, stat_file_path, vs30_file_path, vs30ref_file_path, MODEL_LAT, MODEL_LON, MODEL_ROT, hh, nx,
                              ny, nz, sufx, sim_duration, flo, vel_mod_params_dir, yes_statcords, yes_model_params)
 
-    
     srf_files, ___ = zip(*srf_stoch_pairs)
     fault_dir = os.path.abspath(os.path.join(sim_dir, os.pardir))
     create_mgmt_db.create_mgmt_db([], fault_dir, srf_files=srf_files)
     # saves the location of mgmt_db to params_base.py
-   # with open(os.path.join(sim_dir, "params_base.py"), "a") as f:
+    # with open(os.path.join(sim_dir, "params_base.py"), "a") as f:
     #    f.write("mgmt_db_location='%s'\n" % sim_dir)
-    
 
-    fault_params_dict['mgmt_db_location'] = fault_dir
-    utils.dump_yaml(fault_params_dict, os.path.join(sim_dir, 'sim_params.yaml'))
+    root_params_dict['mgmt_db_location'] = fault_dir
+    utils.dump_yaml(root_params_dict, os.path.join(sim_dir, 'root_params.yaml'))
+    utils.dump_yaml(fault_params_dict, os.path.join(sim_dir, 'fault_params.yaml'))
+    utils.dump_yaml(sim_params_dict, os.path.join(sim_dir, 'sim_params.yaml'))
+    utils.dump_yaml(vm_params_dict, os.path.join(sim_dir, 'vm_params.yaml'))
     print "Installation completed"
     show_instruction(sim_dir)
 
@@ -780,7 +797,7 @@ def main_remote(cfg):
            sim_duration, flo, vel_mod_params_dir, yes_statcords, yes_model_params)
     #
     print("local creating fault dict")
-    create_fault_params_dict(sim_dir, event_name, run_name, run_dir, vel_mod_dir, srf_dir, srf_stoch_pairs,
+    create_sim_params_dict(sim_dir, event_name, run_name, run_dir, vel_mod_dir, srf_dir, srf_stoch_pairs,
                              params_vel_path, stat_file_path, vs30_file_path, vs30ref_file_path, MODEL_LAT, MODEL_LON, MODEL_ROT, hh, nx,
                              ny, nz, sufx, sim_duration, flo, vel_mod_params_dir, yes_statcords, yes_model_params)
 
