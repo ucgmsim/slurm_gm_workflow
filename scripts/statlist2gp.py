@@ -11,15 +11,15 @@ sys.path.append(os.path.abspath(os.path.curdir))
 #from params import *
 
 
-def main(fault_params_dict, stat_file = 'default.ll', debug = False):
-    MODEL_LAT = fault_params_dict['vm']['MODEL_LAT']
-    MODEL_LON = fault_params_dict['vm']['MODEL_LON']
-    MODEL_ROT = fault_params_dict['vm']['MODEL_ROT']
-    hh = fault_params_dict['vm']['hh']
-    nx = fault_params_dict['vm']['nx']
-    ny = fault_params_dict['vm']['ny']
-    sim_dir = fault_params_dict['sim_dir']
-    sufx = fault_params_dict['vm']['sufx']
+def main(sim_params_dict, vm_params_dict, stat_file = 'default.ll', debug = False):
+    MODEL_LAT = vm_params_dict['MODEL_LAT']
+    MODEL_LON = vm_params_dict['MODEL_LON']
+    MODEL_ROT = vm_params_dict['MODEL_ROT']
+    hh = vm_params_dict['hh']
+    nx = vm_params_dict['nx']
+    ny = vm_params_dict['ny']
+    sim_dir = sim_params_dict['sim_dir']
+    sufx = vm_params_dict['sufx']
     verify_strings([MODEL_LAT, MODEL_LON, MODEL_ROT, hh, nx, ny,sim_dir,sufx])
 
     outpath = sim_dir

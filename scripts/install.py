@@ -408,7 +408,7 @@ def action(sim_dir, event_name, run_name, run_dir, vel_mod_dir, srf_dir, srf_sto
         print "Generation of statcords is skipped. You need to fix params_base.py manually"
 
 
-def create_fault_params_dict(sim_dir, event_name, run_name, run_dir, vel_mod_dir, srf_dir, srf_stoch_pairs,
+def create_sim_params_dict(sim_dir, event_name, run_name, run_dir, vel_mod_dir, srf_dir, srf_stoch_pairs,
                              params_vel_path,
                              stat_file_path, vs30_file_path, vs30ref_file_path, MODEL_LAT, MODEL_LON, MODEL_ROT, hh, nx,
                              ny, nz, sufx,
@@ -416,8 +416,9 @@ def create_fault_params_dict(sim_dir, event_name, run_name, run_dir, vel_mod_dir
                              hf_dt=default_hf_dt):
     lf_sim_root_dir = os.path.join(sim_dir, "LF")
     hf_dir = os.path.join(sim_dir, "HF")
-
+    bb_dir = os.path.join(sim_dir, 'BB')
     dir_list = [sim_dir, lf_sim_root_dir, hf_dir, bb_dir]
+    
     if not os.path.isdir(user_root):
         dir_list.insert(0, user_root)
 
@@ -551,7 +552,7 @@ def create_fault_params_dict(sim_dir, event_name, run_name, run_dir, vel_mod_dir
 
         # Create Stat_cord & statList
         import statlist2gp
-        fd_statcords, fd_statlist = statlist2gp.main(sim_params_dict, stat_file=stat_file_path)
+        fd_statcords, fd_statlist = statlist2gp.main(sim_params_dict, vm_params_dict, stat_file=stat_file_path)
         print "Done"
         sim_params_dict['stat_coords'] = fd_statcords
         sim_params_dict['FD_STATLIST'] = fd_statlist
@@ -675,7 +676,7 @@ def main_local():
     #    HH = q3() ## HH is taken directly from params_vel.py
     v_mod_ver, vel_mod_dir_full, params_vel_path = q_select_vel_model(vel_mod_dir)
 
-    execfile(params_vel_path, globals())  # import params_vel, to retrieve HH
+   # execfile(params_vel_path, globals())  # import params_vel, to retrieve HH
 
     yes_real_stations = q_real_stations()
     if yes_real_stations:
