@@ -1,8 +1,7 @@
 import os
 import yaml
 import sys
-sys.path.append('/home/melody/qcore/qcore')
-import utils
+from qcore import utils
 
 
 def get_e3d_defatuls():
@@ -78,4 +77,4 @@ def get_e3d_defatuls():
 
 
 d = get_e3d_defatuls()
-utils.dump_yaml(d, 'emod3d_defaults.yaml', obj_type=None)
+utils.dump_yaml(d, '/home/melody.zhu/slurm_gm_workflow/shared_workflow/emod3d_defaults.yaml')
