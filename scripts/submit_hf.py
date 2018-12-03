@@ -111,8 +111,8 @@ def write_sl_script(hf_sim_dir, sim_dir, hf_run_name, stoch_name, sl_template_pr
                             "-m", params_base_bb.hf_v_model, "--duration", params_base.sim_duration, "--dt", params.hf_dt]
 
         hf_submit_command += " ".join(map(str, arguments_for_hf))
-        if hf_option == 1:
-            hf_submit_command += " -i"
+#        if hf_option == 1:
+#            hf_submit_command += " -i"
     else:
         hf_submit_command = "srun python  $BINPROCESS/hfsims-stats-mpi.py " + hf_sim_dir + " " + str(hf_option)
 
@@ -223,7 +223,7 @@ if __name__ == '__main__':
 
     # loop through all srf file to generate related slurm scripts
     counter_srf = 0
-    for srf in params.srf_files:
+    for srf in params.hf_slips:
         srf_name = os.path.splitext(basename(srf))[0]
         # if srf(variation) is provided as args, only create the slurm with same name provided
         if args.srf != None and srf_name != args.srf:
