@@ -249,7 +249,7 @@ def extend_yaml(sim_dir, srf_name=None):
         # sim_params_dict['lf']['FILELIST'] = os.path.join(sim_params_dict['lf']['lf_sim_dir'], 'fdb.filelist')
         # sim_params_dict['lf']['lf_vel_resume'] = True
 
-        e3d_dict = {}
+        e3d_dict = e3d_defaults
         e3d_dict['version'] = emod3d_version + '-mpi'
 
         e3d_dict['name'] = params.run_name
@@ -362,7 +362,6 @@ def extend_yaml(sim_dir, srf_name=None):
         e3d_dict['stat_file'] = params.stat_file
         e3d_dict['grid_file'] = params.GRIDFILE
         e3d_dict['model_params'] = params.MODEL_PARAMS
-        e3d_dict.update(e3d_defaults)
         shared.write_to_py(os.path.join(params.sim_dir, 'LF', 'e3d.par'), e3d_dict)
 
 
