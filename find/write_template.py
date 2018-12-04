@@ -4,7 +4,7 @@ import sys
 from qcore import utils
 
 
-def get_e3d_defatuls():
+def get_e3d_defaults():
     d = {}
     d['all_in_one'] = 1
     d['bflit'] = 4
@@ -68,7 +68,6 @@ def get_e3d_defatuls():
     d['ts_xz'] = 0
     d['ts_yz'] = 0
     d['tzero'] = 0.6
-    d['version'] = '3.0.4-mpi'
     d['vmodel_swapb'] = 0
     d['xseis'] = 0
     d['yseis'] = 0
@@ -76,5 +75,5 @@ def get_e3d_defatuls():
     return d
 
 
-d = get_e3d_defatuls()
-utils.dump_yaml(d, '/home/melody.zhu/slurm_gm_workflow/shared_workflow/emod3d_defaults.yaml')
+# d = get_e3d_defaults()
+# utils.dump_yaml(d, '/home/melody.zhu/slurm_gm_workflow/shared_workflow/emod3d_defaults.yaml')
