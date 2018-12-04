@@ -42,6 +42,11 @@ import argparse
 
 from qcore import utils
 
+from shared_workflow import load_config
+workflow_config = load_config.load(os.path.dirname(os.path.realpath(__file__)), "workflow_config.json")
+global_root = workflow_config["global_root"]
+tools_dir = os.path.join(global_root, 'EMOD3D/tools')
+
 
 def confirm(q):
     show_horizontal_line()
@@ -69,7 +74,7 @@ def submit_sl_script(script, submit_yes=None):
         return None
 
 
-def write_sl_script(lf_sim_dir,sim_dir,srf_name, run_time=default_run_time, nb_cpus=default_core,memory=default_memory,account=default_account):
+def write_sl_script(lf_sim_dir, sim_dir, srf_name, mgmt_db_location, run_time=default_run_time, nb_cpus=default_core,memory=default_memory,account=default_account):
 
     # from params_base import tools_dir
     # from params_base import mgmt_db_location
@@ -84,8 +89,8 @@ def write_sl_script(lf_sim_dir,sim_dir,srf_name, run_time=default_run_time, nb_c
     template = f_template.readlines()
     str_template = ''.join(template)
     
-    txt = str_template.replace("{{lf_sim_dir}}", lf_sim_dir).replace("{{tools_dir}}", params.tools_dir)
-    txt = txt.replace("{{mgmt_db_location}}", params.mgmt_db_location)
+    txt = str_template.replace("{{lf_sim_dir}}", lf_sim_dir).replace("{{tools_dir}}", tools_dir)
+    txt = txt.replace("{{mgmt_db_location}}", mgmt_db_location)
     txt = txt.replace("{{sim_dir}}", sim_dir).replace("{{srf_name}}", srf_name)
     fname_slurm_script = 'run_emod3d_%s_%s.sl' % (srf_name, timestamp)
     f_sl_script = open(fname_slurm_script, 'w')
@@ -121,7 +126,9 @@ if __name__ == '__main__':
         default_core = args.ncore
 
     try:
-        params = utils.load_params('sim_params.yaml')
+        sim_params = utils.load_params('sim_params.yaml')
+        vm_params = utils.load_params('vm_params.yaml')
+        root_params = utils.load_params('root_params.yaml')
     except Exception as e:
         print(e, "load params failed.")
         sys.exit(e)
@@ -135,7 +142,7 @@ if __name__ == '__main__':
         else:
             submit_yes = confirm("Also submit the job for you?")
         print("params.srf_file", params.srf_file)
-        for srf in params.srf_file:
+        for srf in sim_params.srf_file:
             print("Srffffffff", srf)
             #get the srf(rup) name without extensions
             srf_name = os.path.splitext(basename(srf))[0]
@@ -148,13 +155,13 @@ if __name__ == '__main__':
                 continue
             print("not set_params_only")
             #get lf_sim_dir
-            lf_sim_dir = params.lf_sim_root_dir 
-            sim_dir = params.sim_dir
-            nx = int(params.vm.nx)
-            ny = int(params.vm.ny)
-            nz = int(params.vm.nz)
-            dt = float(params.emod3d.dt)
-            sim_duration = float(params.sim_duration)
+            lf_sim_dir = os.path.join(sim_params.sim_dir, 'LF')
+            sim_dir = sim_params.sim_dir
+            nx = int(vm_params.nx)
+            ny = int(vm_params.ny)
+            nz = int(vm_params.nz)
+            dt = float(root_params.dt)
+            sim_duration = float(sim_params.sim_duration)
             #default_core will be changed is user pars ncore
             num_procs = default_core
             total_est_core_hours = est_e3d.est_core_hours_emod3d(nx, ny, nz, dt, sim_duration)
@@ -162,7 +169,7 @@ if __name__ == '__main__':
             print "Estimated WCT (scaled and rounded up):%s" % estimated_wct
 
             if args.auto == True:
-                created_scripts = write_sl_script(lf_sim_dir, sim_dir, srf_name, run_time=estimated_wct)
+                created_scripts = write_sl_script(lf_sim_dir, sim_dir, srf_name, root_params.mgmt_db_location, run_time=estimated_wct)
                 jobid = submit_sl_script(created_scripts, submit_yes)
             else:
                 if wct_set == False:
@@ -170,7 +177,7 @@ if __name__ == '__main__':
                     wct_set = True
                 if wct_set == True:
                     print "WCT set to: %s" % wall_clock_limit
-                created_scripts = write_sl_script(lf_sim_dir, sim_dir, srf_name, run_time=wall_clock_limit)
+                created_scripts = write_sl_script(lf_sim_dir, sim_dir, srf_name, root_params.mgmt_db_location, run_time=wall_clock_limit)
                 jobid = submit_sl_script(created_scripts, submit_yes)
             #update the db if
             if jobid != None:
@@ -184,6 +191,6 @@ if __name__ == '__main__':
                 
                 process = 'EMOD3D'
                 status = 'queued'
-                db = db_helper.connect_db(params.mgmt_db_location)
+                db = db_helper.connect_db(root_params.mgmt_db_location)
                 update_mgmt_db.update_db(db, process, status, job=jobid, run_name=srf_name)
                 db.connection.commit()

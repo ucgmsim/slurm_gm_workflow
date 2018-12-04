@@ -408,7 +408,7 @@ def action(sim_dir, event_name, run_name, run_dir, vel_mod_dir, srf_dir, srf_sto
         print "Generation of statcords is skipped. You need to fix params_base.py manually"
 
 
-def create_sim_params_dict(sim_dir, event_name, run_name, run_dir, vel_mod_dir, srf_dir, srf_stoch_pairs,
+def create_sim_params_dict(version, sim_dir, event_name, run_name, run_dir, vel_mod_dir, srf_dir, srf_stoch_pairs,
                              params_vel_path,
                              stat_file_path, vs30_file_path, vs30ref_file_path, MODEL_LAT, MODEL_LON, MODEL_ROT, hh, nx,
                              ny, nz, sufx,
@@ -455,7 +455,7 @@ def create_sim_params_dict(sim_dir, event_name, run_name, run_dir, vel_mod_dir, 
     sim_params_dict['run_name'] = run_name
 
     #select during install
-    root_params_dict['version'] = emod3d_version
+    root_params_dict['version'] = version
 
     root_params_dict['dt'] = 0.02
     root_params_dict['bin_process_ver'] = bin_process_ver
@@ -727,7 +727,7 @@ def main_local():
     # new workflow no longer ask for wct at install phase, it is asked at submit_*.py
     # wallclock(sim_dir0)
     print("local creating fault dict")
-    root_params_dict, fault_params_dict, sim_params_dict, vm_params_dict = create_sim_params_dict(sim_dir, event_name, run_name, run_dir, vel_mod_dir_full, srf_dir, srf_stoch_pairs,
+    root_params_dict, fault_params_dict, sim_params_dict, vm_params_dict = create_sim_params_dict(args.version, sim_dir, event_name, run_name, run_dir, vel_mod_dir_full, srf_dir, srf_stoch_pairs,
                              params_vel_path, stat_file_path, vs30_file_path, vs30ref_file_path, MODEL_LAT, MODEL_LON, MODEL_ROT, hh, nx,
                              ny, nz, sufx, sim_duration, flo, vel_mod_params_dir, yes_statcords, yes_model_params)
 
@@ -798,7 +798,7 @@ def main_remote(cfg):
            sim_duration, flo, vel_mod_params_dir, yes_statcords, yes_model_params)
     #
     print("local creating fault dict")
-    create_sim_params_dict(sim_dir, event_name, run_name, run_dir, vel_mod_dir, srf_dir, srf_stoch_pairs,
+    create_sim_params_dict(args.version, sim_dir, event_name, run_name, run_dir, vel_mod_dir, srf_dir, srf_stoch_pairs,
                              params_vel_path, stat_file_path, vs30_file_path, vs30ref_file_path, MODEL_LAT, MODEL_LON, MODEL_ROT, hh, nx,
                              ny, nz, sufx, sim_duration, flo, vel_mod_params_dir, yes_statcords, yes_model_params)
 
@@ -820,6 +820,7 @@ if __name__ == '__main__':
     parser.add_argument('--vm_dir', type=str, default=None, help="path that contains VMs, params_vel must be present")
     parser.add_argument('--v1d_dir', type=str, default=None)
     parser.add_argument('--station_dir', type=str, default=None)
+    parser.add_argument('--version', type=str, default=None, help="version of simulation. eg.'gmsim_v18.5.3'")
 
     # if user desire using specific files, they should call the action function directly instead
     #    parser.add_argument('--srf',type=str,default=None)

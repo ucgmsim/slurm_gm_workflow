@@ -42,6 +42,11 @@ import argparse
 
 from qcore import utils
 
+from shared_workflow import load_config
+workflow_config = load_config.load(os.path.dirname(os.path.realpath(__file__)), "workflow_config.json")
+global_root = workflow_config["global_root"]
+tools_dir = os.path.join(global_root, 'EMOD3D/tools')
+
 
 def get_seis_len(seis_path):
     filepattern = os.path.join(seis_path, '*_seis*.e3d')
@@ -163,7 +168,8 @@ if __name__ == '__main__':
 
     created_scripts = []
     try:
-        params = utils.load_params('sim_params.yaml')
+        sim_params = utils.load_params('sim_params.yaml')
+        root_params = utils.load_params('root_params.yaml')
     except:
         print "load params failed."
         sys.exit()
@@ -173,7 +179,7 @@ if __name__ == '__main__':
             submit_yes = True
         else:
             submit_yes = confirm("Also submit the job for you?")
-        for srf in [params.srf_file]:
+        for srf in sim_params.srf_file:
             #get the srf(rup) name without extensions
             srf_name = os.path.splitext(basename(srf))[0]
             #if srf(variation) is provided as args, only create the slurm with same name provided
@@ -181,8 +187,7 @@ if __name__ == '__main__':
                 continue
             #get lf_sim_dir
 
-            lf_sim_dir = params.lf_sim_root_dir
-            sim_dir = params.sim_dir
+            lf_sim_dir = os.path.join(sim_params.sim_dir, 'LF')
 
             #TODO: update the script below when implemented estimation WCT
             #nx = int(params.nx)
@@ -203,13 +208,13 @@ if __name__ == '__main__':
                 args.winbin_aio = True
 
             if args.merge_ts == True:
-                created_script = write_sl_script_merge_ts(lf_sim_dir, params.sim_dir, params.tools_dir, params.mgmt_db_location, srf_name)
-                jobid = submit_sl_script(created_script,submit_yes)
+                created_script = write_sl_script_merge_ts(lf_sim_dir, sim_params.sim_dir, tools_dir, root_params.mgmt_db_location, srf_name)
+                jobid = submit_sl_script(created_script, submit_yes)
                 if jobid != None:
-                    update_db("merge_ts","queued",params.mgmt_db_location, srf_name, jobid)
+                    update_db("merge_ts","queued", root_params.mgmt_db_location, srf_name, jobid)
             #run winbin_aio related scripts only
             if args.winbin_aio == True:
-                created_script = write_sl_script_winbin_aio(lf_sim_dir, params.sim_dir, params.mgmt_db_location, srf_name)
+                created_script = write_sl_script_winbin_aio(lf_sim_dir, sim_params.sim_dir, root_params.mgmt_db_location, srf_name)
                 jobid = submit_sl_script(created_script,submit_yes)
                 if jobid != None:
-                    update_db("winbin_aio", "queued", params.mgmt_db_location, srf_name, jobid)
+                    update_db("winbin_aio", "queued", root_params.mgmt_db_location, srf_name, jobid)

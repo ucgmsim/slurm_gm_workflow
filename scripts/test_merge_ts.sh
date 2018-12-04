@@ -9,8 +9,8 @@ fi
 
 sim_dir=$1
 srf_name=$2
-run_name=`python -c "from qcore import utils; p = utils.load_params('sim_params.yaml'); print p.run_name"`
-lf_sim_dir=`python -c "from qcore import utils; p = utils.load_params('sim_params.yaml'); print p.lf.SEISDIR"`
+run_name=`python -c "from qcore import utils; p = utils.load_params('sim_params.yaml'); print(p.run_name)"`
+lf_sim_dir=$sim_dir/LF/OutBin
 
 cd $sim_dir
 

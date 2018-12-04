@@ -75,5 +75,5 @@ def get_e3d_defaults():
     return d
 
 
-# d = get_e3d_defaults()
+# d = get_e3d_defatuls()
 # utils.dump_yaml(d, '/home/melody.zhu/slurm_gm_workflow/shared_workflow/emod3d_defaults.yaml')

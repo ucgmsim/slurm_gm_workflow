@@ -12,7 +12,7 @@ fi
 sim_dir=$1
 srf_name=$2
 run_name=`python -c "from qcore import utils; d=utils.load_params('sim_params.yaml'); print d.run_name"`
-lf_sim_dir=`python -c "from qcore import utils; d=utils.load_params('sim_params.yaml'); print d.lf.lf_sim_dir"`
+lf_sim_dir=$sim_dir/LF/OutBin
 echo $lf_sim_dir
 #check Rlog
 cd $lf_sim_dir/Rlog 2> /dev/null
