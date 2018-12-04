@@ -22,7 +22,8 @@ from qcore import utils
 from shared_workflow import load_config
 workflow_config = load_config.load(os.path.dirname(os.path.realpath(__file__)), "workflow_config.json")
 global_root = workflow_config["global_root"]
-tools_dir = os.path.join(global_root, 'EMOD3D/tools')
+tools_dir = os.path.join(global_root, 'opt/maui/emod3d/3.0.4-gcc/bin')
+emod3d_version = workflow_config["emod3d_version"]
 
 #params_uncertain = 'params_uncertain.py'
 #try:
@@ -251,7 +252,7 @@ def extend_yaml(sim_dir, srf_name=None):
         # sim_params_dict['lf']['lf_vel_resume'] = True
 
         e3d_dict = {}
-        e3d_dict['version'] = sim_params_dict['version'] + '-mpi'
+        e3d_dict['version'] = emod3d_version + '-mpi'
 
         e3d_dict['name'] = sim_params_dict['run_name']
         e3d_dict['n_proc'] = 512
@@ -355,7 +356,7 @@ def extend_yaml(sim_dir, srf_name=None):
         e3d_dict['ts_yz'] = 0
         e3d_dict['ix_ts'] = 99
         # other locations
-        e3d_dict['wcc_prog_dir'] = os.path.join(sim_params_dict['global_root'], sim_params_dict['tools_dir'])
+        e3d_dict['wcc_prog_dir'] = tools_dir
         e3d_dict['vel_mod_params_dir'] = fault_params_dict['vel_mod_dir']
         e3d_dict['global_root'] = global_root
         e3d_dict['sim_dir'] = sim_params_dict['sim_dir']
@@ -364,7 +365,7 @@ def extend_yaml(sim_dir, srf_name=None):
         e3d_dict['grid_file'] = vm_params_dict['GRIDFILE']
         e3d_dict['model_params'] = vm_params_dict['MODEL_PARAMS']
 
-        shared.write_to_py(os.path.join(sim_params_dict[sim_dir], 'LF', 'e3d.par'), e3d_dict)
+        shared.write_to_py(os.path.join(sim_params_dict['sim_dir'], 'LF', 'e3d.par'), e3d_dict)
 
 
 if __name__ == '__main__':

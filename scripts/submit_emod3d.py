@@ -45,7 +45,7 @@ from qcore import utils
 from shared_workflow import load_config
 workflow_config = load_config.load(os.path.dirname(os.path.realpath(__file__)), "workflow_config.json")
 global_root = workflow_config["global_root"]
-tools_dir = os.path.join(global_root, 'EMOD3D/tools')
+tools_dir = os.path.join(global_root, 'opt/maui/emod3d/3.0.4-gcc/bin')
 
 
 def confirm(q):
@@ -141,7 +141,7 @@ if __name__ == '__main__':
             submit_yes = False
         else:
             submit_yes = confirm("Also submit the job for you?")
-        print("params.srf_file", params.srf_file)
+        print("params.srf_file", sim_params.srf_file)
         for srf in sim_params.srf_file:
             print("Srffffffff", srf)
             #get the srf(rup) name without extensions

@@ -408,12 +408,7 @@ def action(sim_dir, event_name, run_name, run_dir, vel_mod_dir, srf_dir, srf_sto
         print "Generation of statcords is skipped. You need to fix params_base.py manually"
 
 
-def create_sim_params_dict(version, sim_dir, event_name, run_name, run_dir, vel_mod_dir, srf_dir, srf_stoch_pairs,
-                             params_vel_path,
-                             stat_file_path, vs30_file_path, vs30ref_file_path, MODEL_LAT, MODEL_LON, MODEL_ROT, hh, nx,
-                             ny, nz, sufx,
-                             sim_duration, flo, vel_mod_params_dir, yes_statcords, yes_model_params, dt=default_dt,
-                             hf_dt=default_hf_dt):
+def create_sim_params_dict(version, sim_dir, event_name, run_name, run_dir, vel_mod_dir, srf_dir, srf_stoch_pairs, params_vel_path,stat_file_path, vs30_file_path, vs30ref_file_path, MODEL_LAT, MODEL_LON, MODEL_ROT, hh, nx, ny, nz, sufx,sim_duration, flo, vel_mod_params_dir, yes_statcords, yes_model_params, dt=default_dt, hf_dt=default_hf_dt):
     lf_sim_root_dir = os.path.join(sim_dir, "LF")
     hf_dir = os.path.join(sim_dir, "HF")
     bb_dir = os.path.join(sim_dir, 'BB')
@@ -459,6 +454,7 @@ def create_sim_params_dict(version, sim_dir, event_name, run_name, run_dir, vel_
 
     root_params_dict['dt'] = 0.02
     root_params_dict['bin_process_ver'] = bin_process_ver
+    root_params_dict['stat_file'] = stat_file_path
     #sim_params_dict['global_root'] = global_root
     #sim_params_dict['tools_dir'] = tools_dir
 
@@ -676,7 +672,7 @@ def main_local():
     #    HH = q3() ## HH is taken directly from params_vel.py
     v_mod_ver, vel_mod_dir_full, params_vel_path = q_select_vel_model(vel_mod_dir)
 
-   # execfile(params_vel_path, globals())  # import params_vel, to retrieve HH
+    execfile(params_vel_path, globals())  # import params_vel, to retrieve HH
 
     yes_real_stations = q_real_stations()
     if yes_real_stations:
@@ -832,15 +828,16 @@ if __name__ == '__main__':
 
     # If the additional options provided, check if the folder exist
     for arg in vars(args):
-        path_to_check = getattr(args, arg)
-        if path_to_check is not None:
-            if not os.path.exists(path_to_check):
-                print "Error: path not exsist: %s" % path_to_check
-                sys.exit()
+        if arg != 'version':
+            path_to_check = getattr(args, arg)
+            if path_to_check is not None:
+                if not os.path.exists(path_to_check):
+                    print "Error: path not exsist: %s" % path_to_check
+                    sys.exit()
+                else:
+                    print "%s is set to %s" % (arg, path_to_check)
             else:
-                print "%s is set to %s" % (arg, path_to_check)
-        else:
-            continue
+                continue
 
     # change corresponding variables to the args provided
 
