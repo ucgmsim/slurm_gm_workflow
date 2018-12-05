@@ -12,9 +12,9 @@ hf_run_name=$2
 srf_name=$3
 
 cd $sim_dir
-fd_ll=`python -c "from params_base import *; print FD_STATLIST"`
+fd_ll=`python -c "from qcore_import utils; p = utils.load_params('sim_params.yaml'); print p.FD_STATLIST"`
 
-hf_sim_dir=`python -c "import os; print os.path.join('$sim_dir','HF')"`
+hf_sim_dir=$sim_dir/HF
 hf_acc_dir=$hf_sim_dir/Acc
 hf_bin=$hf_acc_dir/HF.bin
 

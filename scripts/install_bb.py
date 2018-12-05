@@ -7,9 +7,15 @@ sys.path.append(os.path.abspath(os.path.curdir))
 import argparse
 
 from qcore import utils
-params = utils.load_params('sim_params.yaml')
+params = utils.load_params('root_dict.yaml', 'fault_params.yaml', 'sim_params.yaml', 'vm_params.yaml')
 
-from collections import OrderedDict
+from shared_workflow import load_config
+workflow_config = load_config.load(os.path.dirname(os.path.realpath(__file__)), "workflow_config.json")
+global_root = workflow_config["global_root"]
+tools_dir = os.path.join(global_root, 'opt/maui/emod3d/3.0.4-gcc/bin')
+emod3d_version = workflow_config["emod3d_version"]
+
+
 old_params = True
 
 #from params import hf_sdrop_list, hf_kappa_list, hf_sim_bin, hf_rvfac
@@ -26,8 +32,8 @@ import glob
 # TODO: make sure that qcore is in the PYTHONPATH
 from shared_workflow.shared import *
 
-params_bb_uncertain = 'params_bb_uncertain.py'
-params_uncertain='params_uncertain.py'
+#params_bb_uncertain = 'params_bb_uncertain.py'
+#params_uncertain='params_uncertain.py'
 
 
 def q0():
@@ -85,13 +91,14 @@ def q1_site_specific(stat_file_path, hf_stat_vs_ref=None, v1d_mod_dir=None):
     return v_mod_1d_path, hf_stat_vs_ref_selected
 
 
-def q2(v_mod_1d_name,srf,kappa,sdrop):
-    hfVString='hf'+os.path.basename(params.hf.hf_sim_bin).split('_')[-1]
-    hf_run_name=v_mod_1d_name+'_'+hfVString+'_rvf'+str(params.hf.hf_rvfac)+'_sd'+str(sdrop)+'_k'+str(kappa)
-    hf_run_name=hf_run_name.replace('.','p')
+def q2(v_mod_1d_name, srf, kappa, sdrop):
+    hf_sim_bin = os.path.join(tools_dir, 'hb_high_v5.4.5_np2mm+')
+    hfVString = 'hf'+os.path.basename(hf_sim_bin).split('_')[-1]
+    hf_run_name = v_mod_1d_name+'_'+hfVString+'_rvf'+str(params.hf.hf_rvfac)+'_sd'+str(sdrop)+'_k'+str(kappa)
+    hf_run_name = hf_run_name.replace('.', 'p')
     show_horizontal_line()
     print "- Vel. Model 1D: %s" %v_mod_1d_name
-    print "- hf_sim_bin: %s" %os.path.basename(params.hf.hf_sim_bin)
+    print "- hf_sim_bin: %s" %os.path.basename(hf_sim_bin)
     print "- hf_rvfac: %s" %params.hf.hf_rvfac
     print "- hf_sdrop: %s" %sdrop
     print "- hf_kappa: %s" %kappa
@@ -101,11 +108,11 @@ def q2(v_mod_1d_name,srf,kappa,sdrop):
     return yes, hf_run_name
 
 
-def store_params(params_base_bb_dict):
+def store_params(root_dict):
     f=open(os.path.join(params.sim_dir,"params_base_bb.py"),"w")
-    keys = params_base_bb_dict.keys()
+    keys = root_dict.keys()
     for k in keys:
-        val = params_base_bb_dict[k]
+        val = root_dict[k]
         if type(val) == str:
             val="'%s'"%val
         f.write("%s=%s\n"%(k,val))
@@ -169,7 +176,6 @@ def action_for_uncertainties(hf_sim_basedir,bb_sim_basedir,srf,slip,kappa,sdrop)
 #        print "Directory already exists: %s" %os.path.join(bb_sim_dir,"HF")
 
 
-
 def main():
     global hf_kappa_list #no idea why hf_kappa_list is imported, but not usable in this function without this.
     global hf_sdrop_list
@@ -184,38 +190,42 @@ def main():
     print " "*37+"EMOD3D HF/BB Preparationi Ver."+ params.bin_process_ver
     show_horizontal_line(c="*")
 
-    params_base_bb_dict = OrderedDict()
-
-#    params_base_bb_dict['rand_reset']=False #by default. But it may give less deterministic
+    root_dict = utils.load_yaml('root_dict.yaml')
+    root_dict['bb'] = {}
+#    root_dict['rand_reset']=False #by default. But it may give less deterministic
     if args.v1d != None :
         v_mod_1d_selected = args.v1d
         v_mod_1d_name = os.path.basename(v_mod_1d_selected).replace('.1d','')
-        params_base_bb_dict['site_specific']=False
-        params_base_bb_dict['hf_v_model']=v_mod_1d_selected
+        root_dict['bb']['site_specific'] = False
+        root_dict['v_mod_1d_name'] = v_mod_1d_selected
+        #root_dict['hf_v_model']=v_mod_1d_selected
     #TODO:add in logic for site specific as well, if the user provided as args
     elif args.site_v1d_dir != None and args.hf_stat_vs_ref != None:
-        v_mod_1d_path,hf_stat_vs_ref=q1_site_specific(os.path.dirname(stat_file),hf_stat_vs_ref=args.hf_stat_vs_ref, v1d_mod_dir=args.site_v1d_dir)
+        v_mod_1d_path,hf_stat_vs_ref=q1_site_specific(os.path.dirname(params.stat_file),hf_stat_vs_ref=args.hf_stat_vs_ref, v1d_mod_dir=args.site_v1d_dir)
         v_mod_1d_name = "Site_Specific"
-        params_base_bb_dict['site_specific']=True
-        params_base_bb_dict['hf_v_model_path']=v_mod_1d_path
-        params_base_bb_dict['hf_stat_vs_ref']=hf_stat_vs_ref
-        params_base_bb_dict['rand_reset']=True
+        root_dict['bb']['site_specific']=True
+        root_dict['v_mod_1d_name'] = v_mod_1d_path
+        #root_dict['hf_v_model_path']=v_mod_1d_path
+        root_dict['hf_stat_vs_ref']=hf_stat_vs_ref
+        root_dict['bb']['rand_reset']=True
     else:    
         is_site_specific_id = q0()
         if is_site_specific_id:
             v_mod_1d_path,hf_stat_vs_ref=q1_site_specific(os.path.dirname(params.stat_file))
             v_mod_1d_name = "Site_Specific"
-            params_base_bb_dict['site_specific']=True
-            params_base_bb_dict['hf_v_model_path']=v_mod_1d_path
-            params_base_bb_dict['hf_stat_vs_ref']=hf_stat_vs_ref
-            params_base_bb_dict['rand_reset']=True  
+            root_dict['bb']['site_specific']=True
+            root_dict['v_mod_1d_name'] = v_mod_1d_path
+            #root_dict['hf_v_model_path']=v_mod_1d_path
+            root_dict['hf_stat_vs_ref']=hf_stat_vs_ref
+            root_dict['bb']['rand_reset']=True
 
         else:
             v_mod_1d_name, v_mod_1d_selected = q1_generic(params.v_mod_1d_dir)
-            params_base_bb_dict['site_specific']=False
-            params_base_bb_dict['hf_v_model']=v_mod_1d_selected
+            root_dict['bb']['site_specific']=False
+            root_dict['v_mod_1d_name'] = v_mod_1d_selected
+            #root_dict['hf_v_model']=v_mod_1d_selected
 
-    params_base_bb_dict['v_mod_1d_name']=v_mod_1d_name
+    #root_dict['v_mod_1d_name']=v_mod_1d_name
 
 
     #globals_dict = globals()
@@ -254,20 +264,18 @@ def main():
         hf_sim_basedir, bb_sim_basedir = os.path.join(params.hf_dir,hf_run_name), os.path.join(params.bb_dir, hf_run_name)
         hf_sim_dir, bb_sim_dir = action_for_uncertainties(hf_sim_basedir,bb_sim_basedir, srf, slip, kappa, sdrop)
 
-        params_base_bb_dict['hf_run_name'] = hf_run_name
-        params_base_bb_dict['hf_acc_dir'] = os.path.join(hf_sim_dir,"Acc")
-        params_base_bb_dict['hf_veldir'] = os.path.join(hf_sim_dir,"Vel")
-        params_base_bb_dict['bb_acc_dir'] = os.path.join(bb_sim_dir,"Acc")
-        params_base_bb_dict['bb_veldir'] = os.path.join(bb_sim_dir,"Vel")
-        params_base_bb_dict['hf_resume'] = True
-        params_base_bb_dict['bb_resume'] = True
-        utils.dump_yaml(params_base_bb_dict, os.path.join(hf_sim_dir, 'params_bb_uncertain.yaml'))
-    params_base_bb_dict.pop('hf_run_name', None)
-    params_base_bb_dict['hf_run_names'] = hf_run_names_list
-    #store the parameters in params_base_bb.py 
-    #store_params(params_base_bb_dict)
+        root_dict['bb']['hf_run_name'] = hf_run_name
+        # root_dict['hf_acc_dir'] = os.path.join(hf_sim_dir,"Acc")
+        # root_dict['hf_veldir'] = os.path.join(hf_sim_dir,"Vel")
+        # root_dict['bb_acc_dir'] = os.path.join(bb_sim_dir,"Acc")
+        # root_dict['bb_veldir'] = os.path.join(bb_sim_dir,"Vel")
+        # root_dict['hf_resume'] = True
+        # root_dict['bb_resume'] = True
+        utils.dump_yaml(root_dict, os.path.join(params.sim_dir, 'root_params.yaml'))
 
-    params.bb.update(params_base_bb_dict)
+    #store the parameters in params_base_bb.py 
+    #store_params(root_dict)
+
     print("ssss",type(params))
     utils.dump_yaml(params, 'sim_params.yaml', obj_type=utils.DotDictify)
 

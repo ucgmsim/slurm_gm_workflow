@@ -34,8 +34,8 @@ from management import db_helper
 
 
 from qcore import utils
-params = utils.load_params('sim_params.yaml')
-print("lf_sim_roor_dir",params.lf_sim_root_dir)
+params = utils.load_params('root_dict.yaml', 'fault_params.yaml', 'sim_params.yaml', 'vm_params.yaml')
+
 
 def confirm(q):
     show_horizontal_line()
@@ -78,8 +78,8 @@ def write_sl_script(bb_sim_dir, sim_dir, hf_run_name, srf_name, sl_template_pref
     if binary:
         create_directory = "mkdir -p " + os.path.join(bb_sim_dir, "Acc") + "\n"
         submit_command = create_directory + "srun python $BINPROCESS/bb_sim.py "
-        arguments = [os.path.join(params.lf_sim_root_dir, "OutBin"), params.vel_mod_dir,
-                     os.path.join(params.hf_dir, "Acc/HF.bin"),
+        arguments = [os.path.join(params.sim_dir, 'LF', "OutBin"), params.vel_mod_dir,
+                     os.path.join(params.sim_dir, 'HF', "Acc/HF.bin"),
                      params.stat_vs_est, os.path.join(bb_sim_dir, "Acc/BB.bin"),
                      "--flo", params.flo]
         txt = str_template.replace("{{bb_submit_command}}", submit_command + " ".join(arguments))
@@ -169,7 +169,7 @@ if __name__ == '__main__':
         submit_yes = confirm("Also submit the job for you?")
 
 
-    srf = params.srf_file
+    srf = params.srf_file[0]
     srf_name = os.path.splitext(basename(srf))[0]
     if args.srf is None or srf_name == args.srf:
         # if srf(variation) is provided as args, only create the slurm with same name provided
@@ -192,7 +192,7 @@ if __name__ == '__main__':
         else:
             run_time = default_run_time
 
-        bb_sim_dir = params.bb_dir
+        bb_sim_dir = os.path.join(params.sim_dir, 'BB')
         #TODO: save status as HF. refer to submit_hf
         hf_run_name = params.bb.hf_run_names[0]
         sim_dir = params.sim_dir

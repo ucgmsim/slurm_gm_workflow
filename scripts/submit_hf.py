@@ -1,4 +1,3 @@
-import glob
 import os.path
 from os.path import basename
 import sys
@@ -41,7 +40,7 @@ from temp_shared import resolve_header
 from shared_workflow.shared import *
 
 from qcore import utils
-params = utils.load_params('sim_params.yaml')
+params = utils.load_params('root_dict.yaml', 'fault_params.yaml', 'sim_params.yaml', 'vm_params.yaml')
 
 
 def confirm(q):
@@ -111,7 +110,7 @@ def write_sl_script(hf_sim_dir, sim_dir, hf_run_name, stoch_name, sl_template_pr
         create_dir = "mkdir -p " + os.path.join(hf_sim_dir, "Acc") + "\n"
         hf_submit_command = create_dir + "srun python $BINPROCESS/hf_sim.py "
         arguments_for_hf = [params.hf.hf_slip[0], params.FD_STATLIST, os.path.join(hf_sim_dir, "Acc/HF.bin"),
-                            "-m", params.bb.hf_v_model, "--duration", params.sim_duration, "--dt", params.hf.hf_dt]
+                            "-m", params.v_mod_1d_name, "--duration", params.sim_duration, "--dt", params.hf.hf_dt]
 
         hf_submit_command += " ".join(map(str, arguments_for_hf))
         if hf_option == 1:
@@ -233,7 +232,7 @@ if __name__ == '__main__':
 
     # loop through all srf file to generate related slurm scripts
 
-    srf = params.srf_file
+    srf = params.srf_file[0]
     srf_name = os.path.splitext(basename(srf))[0]
     # if srf(variation) is provided as args, only create the slurm with same name provided
     if args.srf is None or srf_name == args.srf:
@@ -259,8 +258,8 @@ if __name__ == '__main__':
             print "Estimated time: ", run_time, " Core: ", ncore
         else:
             run_time = default_run_time
-        hf_sim_dir = params.hf_dir
-        sim_dir = params.sim_dir
+        hf_sim_dir = os.path.join(params.sim_dir, 'HF')
+        sim_dir = os.path.join(params.sim_dir, 'BB')
         #TODO: although not used, this variable may be useful for future automation. decide to keep or remove later.
         hf_run_name = params.bb.hf_run_names[0]
         print("hf_sim_dir, sim_dir, hf_run_name", hf_sim_dir,sim_dir,hf_run_name)

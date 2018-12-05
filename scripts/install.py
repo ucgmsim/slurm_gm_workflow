@@ -453,7 +453,7 @@ def create_sim_params_dict(version, sim_dir, event_name, run_name, run_dir, vel_
     root_params_dict['version'] = version
 
     root_params_dict['dt'] = 0.02
-    root_params_dict['bin_process_ver'] = bin_process_ver
+    root_params_dict['bin_process_ver'] = "slurm"
     root_params_dict['stat_file'] = stat_file_path
     #sim_params_dict['global_root'] = global_root
     #sim_params_dict['tools_dir'] = tools_dir
