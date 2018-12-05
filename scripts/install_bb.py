@@ -7,14 +7,14 @@ sys.path.append(os.path.abspath(os.path.curdir))
 import argparse
 
 from qcore import utils
-params = utils.load_params('root_dict.yaml', 'fault_params.yaml', 'sim_params.yaml', 'vm_params.yaml')
+params = utils.load_params('root_params.yaml', 'fault_params.yaml', 'sim_params.yaml', 'vm_params.yaml')
 
 from shared_workflow import load_config
 workflow_config = load_config.load(os.path.dirname(os.path.realpath(__file__)), "workflow_config.json")
 global_root = workflow_config["global_root"]
 tools_dir = os.path.join(global_root, 'opt/maui/emod3d/3.0.4-gcc/bin')
 emod3d_version = workflow_config["emod3d_version"]
-
+V_MOD_1D_DIR = os.path.join(global_root, 'VelocityModel', 'Mod-1D')
 
 old_params = True
 
@@ -47,7 +47,7 @@ def q1_generic(v_mod_1d_dir):
     show_horizontal_line()
     print "Select one of 1D Velocity models (from %s)" %v_mod_1d_dir
     show_horizontal_line()
- 
+
     v_mod_1d_options = glob.glob(os.path.join(v_mod_1d_dir,'*.1d'))
     v_mod_1d_options.sort()
 
@@ -190,7 +190,7 @@ def main():
     print " "*37+"EMOD3D HF/BB Preparationi Ver."+ params.bin_process_ver
     show_horizontal_line(c="*")
 
-    root_dict = utils.load_yaml('root_dict.yaml')
+    root_dict = utils.load_yaml('root_params.yaml')
     root_dict['bb'] = {}
 #    root_dict['rand_reset']=False #by default. But it may give less deterministic
     if args.v1d != None :
@@ -220,7 +220,7 @@ def main():
             root_dict['bb']['rand_reset']=True
 
         else:
-            v_mod_1d_name, v_mod_1d_selected = q1_generic(params.v_mod_1d_dir)
+            v_mod_1d_name, v_mod_1d_selected = q1_generic(V_MOD_1D_DIR)
             root_dict['bb']['site_specific']=False
             root_dict['v_mod_1d_name'] = v_mod_1d_selected
             #root_dict['hf_v_model']=v_mod_1d_selected
@@ -261,7 +261,7 @@ def main():
         #append the hf_run_name to a list for later purpose
         hf_run_names_list.append(hf_run_name)
 
-        hf_sim_basedir, bb_sim_basedir = os.path.join(params.hf_dir,hf_run_name), os.path.join(params.bb_dir, hf_run_name)
+        hf_sim_basedir, bb_sim_basedir = os.path.join(params.sim_dir, 'HF', hf_run_name), os.path.join(params.sim_dir, 'BB', hf_run_name)
         hf_sim_dir, bb_sim_dir = action_for_uncertainties(hf_sim_basedir,bb_sim_basedir, srf, slip, kappa, sdrop)
 
         root_dict['bb']['hf_run_name'] = hf_run_name
@@ -277,7 +277,7 @@ def main():
     #store_params(root_dict)
 
     print("ssss",type(params))
-    utils.dump_yaml(params, 'sim_params.yaml', obj_type=utils.DotDictify)
+    #utils.dump_yaml(params, 'sim_params.yaml', obj_type=utils.DotDictify)
 
     
 

@@ -40,7 +40,7 @@ from temp_shared import resolve_header
 from shared_workflow.shared import *
 
 from qcore import utils
-params = utils.load_params('root_dict.yaml', 'fault_params.yaml', 'sim_params.yaml', 'vm_params.yaml')
+params = utils.load_params('root_params.yaml', 'fault_params.yaml', 'sim_params.yaml', 'vm_params.yaml')
 
 
 def confirm(q):
@@ -259,9 +259,9 @@ if __name__ == '__main__':
         else:
             run_time = default_run_time
         hf_sim_dir = os.path.join(params.sim_dir, 'HF')
-        sim_dir = os.path.join(params.sim_dir, 'BB')
+        sim_dir = os.path.join(params.sim_dir)
         #TODO: although not used, this variable may be useful for future automation. decide to keep or remove later.
-        hf_run_name = params.bb.hf_run_names[0]
+        hf_run_name = params.bb.hf_run_name
         print("hf_sim_dir, sim_dir, hf_run_name", hf_sim_dir,sim_dir,hf_run_name)
         created_script = write_sl_script(hf_sim_dir, sim_dir, hf_run_name, srf_name, ll_name_prefix, hf_option, ncore, run_time, account=args.account, binary=args.binary, seed=args.seed)
         jobid = submit_sl_script(created_script, submit_yes)
