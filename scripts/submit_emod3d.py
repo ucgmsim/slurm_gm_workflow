@@ -121,10 +121,6 @@ if __name__ == '__main__':
     parser.add_argument('--set_params_only', nargs="?",type=str,const=True)
     args = parser.parse_args()
 
-    if args.ncore != default_core:
-        #replace the default_core with ncore provided by userme_slurm_script
-        default_core = args.ncore
-
     try:
         params = utils.load_params('root_params.yaml', 'sim_params.yaml', 'vm_params.yaml')
     except Exception as e:
@@ -161,13 +157,14 @@ if __name__ == '__main__':
             dt = float(params.dt)
             sim_duration = float(params.sim_duration)
             #default_core will be changed is user pars ncore
-            num_procs = default_core
+
+            num_procs = args.ncore
             total_est_core_hours = est_e3d.est_core_hours_emod3d(nx, ny, nz, dt, sim_duration)
             estimated_wct = est_e3d.est_wct(total_est_core_hours, num_procs, default_wct_scale)
             print "Estimated WCT (scaled and rounded up):%s" % estimated_wct
 
             if args.auto == True:
-                created_scripts = write_sl_script(lf_sim_dir, sim_dir, srf_name, params.mgmt_db_location, run_time=estimated_wct)
+                created_scripts = write_sl_script(lf_sim_dir, sim_dir, srf_name, params.mgmt_db_location, run_time=estimated_wct, nb_cpus = num_procs)
                 jobid = submit_sl_script(created_scripts, submit_yes)
             else:
                 if wct_set == False:
@@ -175,8 +172,9 @@ if __name__ == '__main__':
                     wct_set = True
                 if wct_set == True:
                     print "WCT set to: %s" % wall_clock_limit
-                created_scripts = write_sl_script(lf_sim_dir, sim_dir, srf_name, params.mgmt_db_location, run_time=wall_clock_limit)
+                created_scripts = write_sl_script(lf_sim_dir, sim_dir, srf_name, params.mgmt_db_location, run_time=wall_clock_limit, nb_cpus = num_procs)
                 jobid = submit_sl_script(created_scripts, submit_yes)
+
             #update the db if
             if jobid != None:
                 try:

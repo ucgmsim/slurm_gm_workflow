@@ -113,8 +113,8 @@ def write_sl_script(hf_sim_dir, sim_dir, hf_run_name, stoch_name, sl_template_pr
                             "-m", params.v_mod_1d_name, "--duration", params.sim_duration, "--dt", params.hf.hf_dt]
 
         hf_submit_command += " ".join(map(str, arguments_for_hf))
-        if hf_option == 1:
-            hf_submit_command += " -i"
+#        if hf_option == 1:
+#            hf_submit_command += " -i"
     else:
         hf_submit_command = "srun python  $BINPROCESS/hfsims-stats-mpi.py " + hf_sim_dir + " " + str(hf_option)
 

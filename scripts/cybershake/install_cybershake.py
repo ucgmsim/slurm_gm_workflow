@@ -1,4 +1,4 @@
-#thi0s script will require an input for the "model" name.
+#this script will require an input for the "model" name.
 
 import os
 import sys
@@ -8,13 +8,13 @@ import shared_workflow.load_config as ldcfg
 import argparse
 
 from scripts import install
-print("afdsf", install.__file__)
 from scripts.management import create_mgmt_db
 from shared_workflow.shared import *
 from qcore import utils
 
 default_dt = 0.005
 default_hf_dt = 0.005
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -70,19 +70,22 @@ def main():
     #print vel_mod_dir
 
     #get all srf from source
-    srf_dir=os.path.join(os.path.join(srf_root_dir,source),"Srf")
-    list_srf= glob.glob(os.path.join(srf_dir,'*.srf'))
-    srf_files= []
-    stoch_files=[]
-    stoch_dir=os.path.join(os.path.join(srf_root_dir,source),"Stoch")
-    list_stoch= glob.glob(os.path.join(stoch_dir,'*.stoch'))
+    srf_dir = os.path.join(os.path.join(srf_root_dir,source),"Srf")
+    stoch_dir = os.path.join(os.path.join(srf_root_dir,source),"Stoch")
+    list_srf = glob.glob(os.path.join(srf_dir,'*.srf'))
+    srf_files = []
+    stoch_files = []
 
     for srf in list_srf:
-        srf_files.append(os.path.join(srf_dir,srf))
-
-    for stoch in list_stoch:
-        stoch_files.append(os.path.join(stoch_dir,stoch))
-
+        #try to match find the stoch with same basename
+        srf_name = os.path.splitext(os.path.basename(srf))[0]
+        stoch_file_path = os.path.join(stoch_dir,srf_name+'.stoch')       
+        if not os.path.isfile(stoch_file_path):
+            print "Error: Corresponding Stock file is not found:\n%s" % stoch_file_path
+            sys.exit()
+        else:
+            srf_files.append(srf)
+            stoch_files.append(stoch_file_path)
 
     srf_stoch_pairs = zip(srf_files, stoch_files)
     #print srf_stoch_pairs
@@ -107,7 +110,7 @@ def main():
     with open(os.path.join(sim_dir,"params_base.py"),"a") as f:
         f.write("mgmt_db_location='%s'\n" % path_cybershake)
     fault_params_dict.update({'mgmt_db_location': path_cybershake})
-    utils.dump_yaml(fault_params_dict, os.path.join(sim_dir,'fault_params.yaml'))
+    utils.dump_yaml(fault_params_dict, os.path.join(sim_dir, 'fault_params.yaml'))
     print("dumped")  
     #store extra params provided
     if 'hf_stat_vs_ref' in qcore_cfg:
