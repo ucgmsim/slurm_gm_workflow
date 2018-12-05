@@ -1,6 +1,7 @@
 from scripts.management import db_helper
 from scripts.management import slurm_query_status
 from scripts.management import update_mgmt_db
+from scripts.management.db_helper import Process
 from subprocess import call
 
 import shared_workflow.load_config as ldcfg
@@ -19,79 +20,109 @@ default_hf_seed = None
 default_rand_reset = True
 default_extended_period = False
 
-def submit_task(sim_dir, proc_type, run_name, db, mgmt_db_location ,binary_mode=True, rand_reset=default_rand_reset, hf_seed=None, extended_period=default_extended_period):
-    #TODO: using shell call is EXTREMELY undesirable. fix this in near future(fundamentally)
-    #change the working directory to the sim_dir
+
+def submit_task(sim_dir, proc_type, run_name, db, mgmt_db_location, binary_mode=True, rand_reset=default_rand_reset,
+                hf_seed=None, extended_period=default_extended_period):
+    # TODO: using shell call is EXTREMELY undesirable. fix this in near future(fundamentally)
+
     os.chdir(sim_dir)
+
     ch_log_dir = os.path.join(sim_dir,'ch_log')
     #create the folder if not exsist
     if not os.path.isdir(ch_log_dir):
         os.mkdir(ch_log_dir)
     submitted_time = datetime.now().strftime('%Y%m%d_%H%M%S')
-#    print "sim_dir:%s"%sim_dir
-    #idenfity the proc_type, EMOD3D:1, merge_ts:2, winbin_aio:3, HF:4, BB:5
-    lf_sim_dir = os.path.join(sim_dir,"LF/%s"%run_name)
-    if proc_type == 1:
-        #EMOD 3D
-        if not os.path.isfile(os.path.join(lf_sim_dir,"params_uncertain.py")):
-            print os.path.join(lf_sim_dir,"params_uncertain.py")," missing, creating"
-            call("python $gmsim/workflow/scripts/submit_emod3d.py --set_params_only", shell=True)
-            print "python $gmsim/workflow/scripts/submit_emod3d.py --set_params_only"
-        print "python $gmsim/workflow/scripts/submit_emod3d.py --auto --srf %s"%run_name
-        call("python $gmsim/workflow/scripts/submit_emod3d.py --auto --srf %s"%run_name, shell=True)
-        #save meta, TODO:replace proper db update when merge
-        call("echo 'submitted time: %s' >> %s"%(submitted_time,os.path.join(ch_log_dir,'EMOD3D.%s.log'%run_name)), shell=True)
-    if proc_type == 2:
-        print "python $gmsim/workflow/scripts/submit_post_emod3d.py --auto --merge_ts --srf %s"%run_name
-        call("python $gmsim/workflow/scripts/submit_post_emod3d.py --auto --merge_ts --srf %s"%run_name, shell=True)
-        call("echo 'submitted time: %s' >> %s"%(submitted_time,os.path.join(ch_log_dir,'post_emod.%s.log'%run_name)), shell=True)
-    if proc_type == 3:
-        #skipping winbin_aio if running binary mode
-        if binary_mode == True:
-            #update the mgmt_db
-            update_mgmt_db.update_db(db,'winbin_aio','completed',run_name=run_name)    
+
+    lf_sim_dir = os.path.join(sim_dir, "LF/%s" % run_name)
+    params_uncertain_path = os.path.join(lf_sim_dir, "params_uncertain.py")
+    if proc_type == Process.EMOD3D.value:
+        check_params_uncertain(params_uncertain_path)
+        cmd = "python $gmsim/workflow/scripts/submit_emod3d.py --auto --srf %s" % run_name
+        print cmd
+        call(cmd, shell=True)
+
+    if proc_type == Process.merge_ts.value:
+        cmd = "python $gmsim/workflow/scripts/submit_post_emod3d.py --auto --merge_ts --srf %s" % run_name
+        print cmd
+        call(cmd, shell=True)
+
+    if proc_type == Process.winbin_aio.value:
+        # skipping winbin_aio if running binary mode
+        if binary_mode:
+            # update the mgmt_db
+            update_mgmt_db.update_db(db, 'winbin_aio', 'completed', run_name=run_name)
         else:
-            print "python $gmsim/workflow/scripts/submit_post_emod3d.py --auto --winbin_aio --srf %s"%run_name
-            call("python $gmsim/workflow/scripts/submit_post_emod3d.py --auto --winbin_aio --srf %s"%run_name, shell=True)
-            call("echo 'submitted time: %s' >> %s"%(submitted_time,os.path.join(ch_log_dir,'winbin.%s.log'%run_name)), shell=True)
-    if proc_type == 4:
-        #run the submit_post_emod3d before install_bb and submit_hf
-        #TODO: fix this strange logic in the actual workflow
-        #see if params_uncertain.py exsist
-        if not os.path.isfile(os.path.join(lf_sim_dir,"params_uncertain.py")):
-            print os.path.join(lf_sim_dir,"params_uncertain.py")," missing, creating"
-            call("python $gmsim/workflow/scripts/submit_emod3d.py --set_params_only", shell=True)
-            print "python $gmsim/workflow/scripts/submit_emod3d.py --set_params_only"
-        if not os.path.isfile(os.path.join(sim_dir,"params_base_bb.py")):
-            if default_hf_vs30_ref != None:
-                print "python $gmsim/workflow/scripts/install_bb.py --v1d %s --hf_stat_vs_ref %s"%(default_1d_mod,default_hf_vs30_ref)
-                call("python $gmsim/workflow/scripts/install_bb.py --v1d %s --hf_stat_vs_ref %s"%(default_1d_mod,default_hf_vs30_ref), shell=True)
+            cmd = "python $gmsim/workflow/scripts/submit_post_emod3d.py --auto --winbin_aio --srf %s" % run_name
+            print cmd
+            call(cmd, shell=True)
+
+    if proc_type == Process.HF.value:
+        # run the submit_post_emod3d before install_bb and submit_hf
+        # TODO: fix this strange logic in the actual workflow
+
+        check_params_uncertain(params_uncertain_path)
+
+        if not os.path.isfile(os.path.join(sim_dir, "params_base_bb.py")):
+            if default_hf_vs30_ref is not None:
+                cmd = "python $gmsim/workflow/scripts/install_bb.py --v1d %s --hf_stat_vs_ref %s" % (default_1d_mod, default_hf_vs30_ref)
             else:
-                print "python $gmsim/workflow/scripts/install_bb.py --v1d %s"%default_1d_mod
-                call("python $gmsim/workflow/scripts/install_bb.py --v1d %s"%default_1d_mod, shell=True)
-        hf_cmd = "python $gmsim/workflow/scripts/submit_hf.py --binary --auto --srf %s"%run_name
+                cmd = "python $gmsim/workflow/scripts/install_bb.py --v1d %s" % default_1d_mod
+            print cmd
+            call(cmd, shell=True)
+        hf_cmd = "python $gmsim/workflow/scripts/submit_hf.py --binary --auto --srf %s" % run_name
+
         if hf_seed is not None:
             hf_cmd = "{} --seed {}".format(hf_cmd, hf_seed)
         if rand_reset:
             hf_cmd = "{} --rand_reset".format(hf_cmd)
         print hf_cmd
         call(hf_cmd, shell=True)
-        call("echo 'submitted time: %s' >> %s"%(submitted_time,os.path.join(ch_log_dir,'HF.%s.log'%run_name)), shell=True)
-    if proc_type == 5:
-        print "python $gmsim/workflow/scripts/submit_bb.py --binary --auto --srf %s"%run_name
-        call("python $gmsim/workflow/scripts/submit_bb.py --binary --auto --srf %s"%run_name, shell=True)
-        call("echo 'submitted time: %s' >> %s"%(submitted_time,os.path.join(ch_log_dir,'BB.%s.log'%run_name)), shell=True)
-    if proc_type == 6:
-        #TODO: fix inconsistant naming in sub_imcalc.py
-        tmp_path = os.path.join(mgmt_db_location,'Runs')
-            
-        cmd = "python $gmsim/workflow/scripts/submit_imcalc.py --auto --sim_dir %s --i %s --mgmt_db %s --simple_output"%(tmp_path,run_name, mgmt_db_location)
+
+    if proc_type == Process.BB.value:
+        cmd = "python $gmsim/workflow/scripts/submit_bb.py --binary --auto --srf %s" % run_name
+        print cmd
+        call(cmd, shell=True)
+
+    if proc_type == Process.IM_calculation.value:
+        # TODO: fix inconsistent naming in sub_imcalc.py
+        tmp_path = os.path.join(mgmt_db_location, 'Runs')
+        cmd = "python $gmsim/workflow/scripts/submit_imcalc.py --auto -s --sim_dir %s --i %s --mgmt_db %s" % (tmp_path, run_name, mgmt_db_location)
         if extended_period == True:
             cmd = cmd + ' -e'
         print cmd
         call(cmd, shell=True)
-        #save the job meta data
-        call("echo 'submitted time: %s' >> %s"%(submitted_time,os.path.join(ch_log_dir,'IM_calc.%s.log'%run_name)), shell=True)
+
+    fault = run_name.split('_')[0]
+    source_path = os.path.join(mgmt_db_location, 'Data/Sources', fault, 'srf', run_name)
+    srf_path = source_path + '.srf'
+
+    if proc_type == Process.rrup.value:
+        tmp_path = os.path.join(mgmt_db_location, 'Runs')
+        rrup_dir = os.path.join(mgmt_db_location, 'Runs', fault, 'verification')
+        cmd = "python $gmsim/workflow/scripts/submit_imcalc.py --auto -s --sim_dir %s --i %s --mgmt_db %s -srf %s -o %s" % (tmp_path, run_name, mgmt_db_location, srf_path, rrup_dir)
+        print cmd
+        call(cmd, shell=True)
+
+    if proc_type == Process.Empirical.value:
+        cmd = "$gmsim/workflow/scripts/submit_empirical.py -np 40 -i {} {}".format(run_name, mgmt_db_location)
+        print cmd
+        call(cmd, shell=True)
+
+    if proc_type == Process.Verification.value:
+        pass
+
+    # save the job meta data
+    call("echo 'submitted time: %s' >> %s" % (submitted_time, os.path.join(ch_log_dir, Process(proc_type).name + '.%s.log'%run_name)),
+         shell=True)
+
+
+def check_params_uncertain(params_uncertain_path):
+    if not os.path.isfile(params_uncertain_path):
+        print params_uncertain_path, " missing, creating"
+        cmd = "python $gmsim/workflow/scripts/submit_emod3d.py --set_params_only"
+        call(cmd, shell=True)
+        print cmd
+
 
 def get_vmname(srf_name):
     """

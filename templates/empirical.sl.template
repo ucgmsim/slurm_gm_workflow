@@ -1,0 +1,33 @@
+source machine_env.sh
+
+export EMP_PATH=$gmsim/Empirical_Engine
+export PYTHONPATH=$gmsim/qcore:/$PYTHONPATH:$IMPATH
+
+script_start=`date`
+echo "script started running at: $script_start"
+
+echo ___calculating empirical___
+{% for run_name, fault_name in run_data %}
+    echo {{run_name}}
+    {% set srf_info = }
+    #update db to running
+    timestamp=`date +%Y%m%d_%H%M%S`
+    echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} Empirical running --run_name {{run_name}} --j $SLURM_JOBID" >> {{mgmt_db_location}}/mgmt_db_queue/$timestamp\_$SLURM_JOBID
+    #run the script
+    time $EMP_PATH/calculate_empirical.py -i {{run_name}} {{extended}} -r {{rrup_file}} -srf {{srf_info}}
+
+#test before update mgmt_db -- Needs a test to see if files are output
+    timestamp=`date +%Y%m%d_%H%M%S`
+    res=`echo 0`
+#update mgmt_db
+    if [[ $? == 0 ]]; then
+        #passed
+        echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} Empirical completed --run_name {{sim_name}} --force" >> {{mgmt_db_location}}/mgmt_db_queue/$timestamp\_$SLURM_JOBID
+        #save metadata for collection
+    else
+        #failed
+        echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} Empirical failed --run_name {{sim_name}} --error '$res' --force"  >> {{mgmt_db_location}}/mgmt_db_queue/$timestamp\_$SLURM_JOBID
+    fi
+{% endfor %}
+{% endif %}
+date
