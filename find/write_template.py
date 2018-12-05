@@ -1,10 +1,4 @@
-import os
-import yaml
-import sys
-from qcore import utils
-
-
-def get_e3d_defaults():
+def get_e3d_defaults(*tup):
     d = {}
     d['all_in_one'] = 1
     d['bflit'] = 4
@@ -72,6 +66,13 @@ def get_e3d_defaults():
     d['xseis'] = 0
     d['yseis'] = 0
     d['zseis'] = 0
+
+    try:
+        for k, v in tup:
+            d[k] = v
+    except (ValueError, TypeError) as e:
+        print("Argument(s) must tuple(s) of (key, value) pairs. eg. get_e3d_defaults((k1, v1), (k2,v2))")
+
     return d
 
 
