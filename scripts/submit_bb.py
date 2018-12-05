@@ -90,6 +90,7 @@ def write_sl_script(bb_sim_dir, sim_dir, hf_run_name, srf_name, sl_template_pref
 
     txt = txt.replace("$rup_mod", variation)
     txt = txt.replace("{{mgmt_db_location}}", params.mgmt_db_location)
+    print("sim dir, hf_run_name, srf_name",sim_dir, hf_run_name,srf_name)
     txt = txt.replace("{{sim_dir}}", sim_dir).replace("{{hf_run_name}}", hf_run_name).replace("{{srf_name}}", srf_name)
 
     #replace the name of test script
@@ -191,7 +192,9 @@ if __name__ == '__main__':
 
         bb_sim_dir = os.path.join(params.sim_dir, 'BB')
         #TODO: save status as HF. refer to submit_hf
-        hf_run_name = params.bb.hf_run_names
+
+        hf_run_name = params.bb.hf_run_name
+
         created_script = write_sl_script(bb_sim_dir, params.sim_dir, hf_run_name, srf_name, sl_name_prefix,
                                          account=args.account, binary=args.binary)
         jobid = submit_sl_script(created_script, submit_yes)
@@ -199,4 +202,5 @@ if __name__ == '__main__':
             update_db("BB", "queued", params.mgmt_db_location, srf_name, jobid)
         elif submit_yes == True and jobid == None:
             print "there is error while trying to submit the slurm script, please manual check for errors"
+
 
