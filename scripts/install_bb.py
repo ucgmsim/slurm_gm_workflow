@@ -247,31 +247,31 @@ def main():
             sys.exit()
 
 
-    hf_run_names_list=[]
-    print("len hf_kappa list",len(hf_kappa_list),hf_kappa_list)
-    for i in range(len(hf_kappa_list)):
-        print i
-        kappa = hf_kappa_list[i]
-        sdrop = hf_sdrop_list[i]
-        srf = params.srf_file[i]
-        slip = params.hf.hf_slip[i]
-        yes, hf_run_name = q2(v_mod_1d_name,srf, kappa,sdrop)
-        #TODO:add_name_suffix return the exact same name, seems to be legacy and doing nothing here 
-        hf_run_name = add_name_suffix(hf_run_name,yes)
-        #append the hf_run_name to a list for later purpose
-        hf_run_names_list.append(hf_run_name)
+    # hf_run_names_list=[]
+    # print("len hf_kappa list",len(hf_kappa_list),hf_kappa_list)
+    # for i in range(len(hf_kappa_list)):
+    #     print i
+    #     kappa = hf_kappa_list[i]
+    #     sdrop = hf_sdrop_list[i]
+    #     srf = params.srf_file[i]
+    #     slip = params.hf.hf_slip[i]
+        # yes, hf_run_name = q2(v_mod_1d_name,srf, kappa,sdrop)
+        # #TODO:add_name_suffix return the exact same name, seems to be legacy and doing nothing here
+        # hf_run_name = add_name_suffix(hf_run_name,yes)
+        # #append the hf_run_name to a list for later purpose
+        # hf_run_names_list.append(hf_run_name)
 
-        hf_sim_basedir, bb_sim_basedir = os.path.join(params.sim_dir, 'HF', hf_run_name), os.path.join(params.sim_dir, 'BB', hf_run_name)
-        hf_sim_dir, bb_sim_dir = action_for_uncertainties(hf_sim_basedir,bb_sim_basedir, srf, slip, kappa, sdrop)
+        # hf_sim_basedir, bb_sim_basedir = os.path.join(params.sim_dir, 'HF', hf_run_name), os.path.join(params.sim_dir, 'BB', hf_run_name)
+        # hf_sim_dir, bb_sim_dir = action_for_uncertainties(hf_sim_basedir,bb_sim_basedir, srf, slip, kappa, sdrop)
 
-        root_dict['bb']['hf_run_name'] = hf_run_name
+        # root_dict['bb']['hf_run_name'] = hf_run_name
         # root_dict['hf_acc_dir'] = os.path.join(hf_sim_dir,"Acc")
         # root_dict['hf_veldir'] = os.path.join(hf_sim_dir,"Vel")
         # root_dict['bb_acc_dir'] = os.path.join(bb_sim_dir,"Acc")
         # root_dict['bb_veldir'] = os.path.join(bb_sim_dir,"Vel")
         # root_dict['hf_resume'] = True
         # root_dict['bb_resume'] = True
-        utils.dump_yaml(root_dict, os.path.join(params.sim_dir, 'root_params.yaml'))
+    utils.dump_yaml(root_dict, os.path.join(params.sim_dir, 'root_params.yaml'))
 
     #store the parameters in params_base_bb.py 
     #store_params(root_dict)

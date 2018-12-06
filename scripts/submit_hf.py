@@ -98,7 +98,7 @@ def update_db(process, status, mgmt_db_location, srf_name, jobid):
     db.connection.commit()
 
 
-def write_sl_script(hf_sim_dir, sim_dir, hf_run_name, stoch_name, sl_template_prefix, hf_option, nb_cpus=default_core,
+def write_sl_script(hf_sim_dir, sim_dir, stoch_name, sl_template_prefix, hf_option, nb_cpus=default_core,
                     run_time=default_run_time, memory=default_memory, account=default_account, binary=False, seed=None):
     # from params_base import mgmt_db_location
 
@@ -123,8 +123,7 @@ def write_sl_script(hf_sim_dir, sim_dir, hf_run_name, stoch_name, sl_template_pr
     txt = str_template.replace("{{hf_sim_dir}}", hf_sim_dir)
     txt = txt.replace("{{mgmt_db_location}}", params.mgmt_db_location)
     txt = txt.replace("{{hf_submit_command}}", hf_submit_command)
-    txt = txt.replace("{{sim_dir}}", sim_dir).replace("{{hf_run_name}}", hf_run_name).replace("{{srf_name}}",
-                                                                                              stoch_name)
+    txt = txt.replace("{{sim_dir}}", sim_dir).replace("{{srf_name}}", stoch_name)
     #replacing the name of test scipts
     if binary:
         txt = txt.replace("{{test_hf_script}}","test_hf_binary.sh")
@@ -259,11 +258,10 @@ if __name__ == '__main__':
         else:
             run_time = default_run_time
         hf_sim_dir = os.path.join(params.sim_dir, 'HF')
-        sim_dir = os.path.join(params.sim_dir)
+
         #TODO: although not used, this variable may be useful for future automation. decide to keep or remove later.
-        hf_run_name = params.bb.hf_run_name
-        print("hf_sim_dir, sim_dir, hf_run_name", hf_sim_dir,sim_dir,hf_run_name)
-        created_script = write_sl_script(hf_sim_dir, sim_dir, hf_run_name, srf_name, ll_name_prefix, hf_option, ncore, run_time, account=args.account, binary=args.binary, seed=args.seed)
+
+        created_script = write_sl_script(hf_sim_dir, params.sim_dir, srf_name, ll_name_prefix, hf_option, ncore, run_time, account=args.account, binary=args.binary, seed=args.seed)
         jobid = submit_sl_script(created_script, submit_yes)
         if jobid != None:
             update_db("HF", "queued", params.mgmt_db_location, srf_name, jobid)

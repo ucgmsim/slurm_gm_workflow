@@ -2,17 +2,17 @@
 
 #get run_name from $1
 
-if [[ $# -lt 3 ]]; then
+if [[ $# -lt 1 ]]; then
     echo "please provide the sim_dir, and srf_name"
     exit 1
 fi
 
 sim_dir=$1
-hf_run_name=$2
-srf_name=$3
+#hf_run_name=$2
+#srf_name=$3
 
 cd $sim_dir
-fd_ll=`python -c "from qcore_import utils; p = utils.load_params('sim_params.yaml'); print p.FD_STATLIST"`
+fd_ll=`python -c "from qcore import utils; p = utils.load_params('sim_params.yaml'); print p.FD_STATLIST"`
 
 hf_sim_dir=$sim_dir/HF
 hf_acc_dir=$hf_sim_dir/Acc
