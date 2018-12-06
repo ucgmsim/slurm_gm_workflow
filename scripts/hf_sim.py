@@ -167,8 +167,8 @@ if is_master:
 
 args = comm.bcast(args, root = master)
 
-if not args.independent:
-    args.seed += rank
+#if not args.independent:
+#    args.seed += rank
 
 print ("Rank %d seed: %d" %(rank, args.seed))
 
