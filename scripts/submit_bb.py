@@ -65,7 +65,7 @@ def update_db(process, status, mgmt_db_location, srf_name, jobid):
     db.connection.commit()
 
 
-def write_sl_script(bb_sim_dir, sim_dir, hf_run_name, srf_name, sl_template_prefix, nb_cpus=default_core,
+def write_sl_script(bb_sim_dir, sim_dir, srf_name, sl_template_prefix, nb_cpus=default_core,
                     run_time=default_run_time, memory=default_memory, account=default_account, binary=False):
     # from params_base import mgmt_db_location
 
@@ -90,9 +90,10 @@ def write_sl_script(bb_sim_dir, sim_dir, hf_run_name, srf_name, sl_template_pref
 
     txt = txt.replace("$rup_mod", variation)
     txt = txt.replace("{{mgmt_db_location}}", params.mgmt_db_location)
-    print("sim dir, hf_run_name, srf_name",sim_dir, hf_run_name,srf_name)
-    txt = txt.replace("{{sim_dir}}", sim_dir).replace("{{hf_run_name}}", hf_run_name).replace("{{srf_name}}", srf_name)
-
+    print("sim dir, srf_name", sim_dir, srf_name)
+    # txt = txt.replace("{{sim_dir}}", sim_dir).replace("{{hf_run_name}}", hf_run_name).replace("{{srf_name}}", srf_name)
+    # get rid of hf_run_name
+    txt = txt.replace("{{sim_dir}}", sim_dir).replace("{{srf_name}}", srf_name)
     #replace the name of test script
     if binary:
         txt = txt.replace("{{test_bb_script}}","test_bb_binary.sh")
@@ -193,9 +194,9 @@ if __name__ == '__main__':
         bb_sim_dir = os.path.join(params.sim_dir, 'BB')
         #TODO: save status as HF. refer to submit_hf
 
-        hf_run_name = params.bb.hf_run_name
+        # hf_run_name = params.bb.hf_run_name
 
-        created_script = write_sl_script(bb_sim_dir, params.sim_dir, hf_run_name, srf_name, sl_name_prefix,
+        created_script = write_sl_script(bb_sim_dir, params.sim_dir, srf_name, sl_name_prefix,
                                          account=args.account, binary=args.binary)
         jobid = submit_sl_script(created_script, submit_yes)
         if jobid != None:
