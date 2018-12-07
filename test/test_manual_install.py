@@ -70,10 +70,10 @@ def test_bb_bin(bench_path, test_path):
     check_values(b1, b2)
 
 
-test_lf_bin('/home/melody.zhu/Albury_newman/Albury_VM_home_melodypzhu_Albury_Data_VMs_Albury-h0p4_EMODv3p0p4_181206/LF/OutBin', '/home/melody.zhu/Albury_bench/Runs/Albury/LF/Albury_HYP15-21_S1384/OutBin')
+test_lf_bin('/home/melody.zhu/Albury_newman/Albury_VM_home_melodypzhu_Albury_Data_VMs_Albury-h0p4_EMODv3p0p4_181207/LF/OutBin', '/home/melody.zhu/Albury_bench/Runs/Albury/LF/Albury_HYP15-21_S1384/OutBin')
 
-test_e3ds('/home/melody.zhu/Albury_newman/Albury_VM_home_melodypzhu_Albury_Data_VMs_Albury-h0p4_EMODv3p0p4_181206/LF/OutBin', '/home/melody.zhu/Albury_bench/Runs/Albury/LF/Albury_HYP15-21_S1384/OutBin')
+test_e3ds('/home/melody.zhu/Albury_newman/Albury_VM_home_melodypzhu_Albury_Data_VMs_Albury-h0p4_EMODv3p0p4_181207/LF/OutBin', '/home/melody.zhu/Albury_bench/Runs/Albury/LF/Albury_HYP15-21_S1384/OutBin')
 
-test_bb_bin('/home/melody.zhu/Albury_newman/Albury_VM_home_melodypzhu_Albury_Data_VMs_Albury-h0p4_EMODv3p0p4_181206/BB/Acc/BB.bin', '/home/melody.zhu/Albury_bench/Runs/Albury/BB/Cant1D_d2-midQ_leer_hfnp2mm+_rvf0p8_sd50_k0p045/Albury_HYP15-21_S1384/Acc/BB.bin')
+test_bb_bin('/home/melody.zhu/Albury_newman/Albury_VM_home_melodypzhu_Albury_Data_VMs_Albury-h0p4_EMODv3p0p4_181207/BB/Acc/BB.bin', '/home/melody.zhu/Albury_bench/Runs/Albury/BB/Cant1D_v2-midQ_leer_hfnp2mm+_rvf0p8_sd50_k0p045/Albury_HYP15-21_S1384/Acc/BB.bin')
 
-test_hf_bin('/home/melody.zhu/Albury_newman/Albury_VM_home_melodypzhu_Albury_Data_VMs_Albury-h0p4_EMODv3p0p4_181206/HF/Acc/HF.bin', '/home/melody.zhu/Albury_bench/Runs/Albury/HF/Cant1D_d2-midQ_leer_hfnp2mm+_rvf0p8_sd50_k0p045/Albury_HYP15-21_S1384/Acc/HF.bin')
+test_hf_bin('/home/melody.zhu/Albury_newman/Albury_VM_home_melodypzhu_Albury_Data_VMs_Albury-h0p4_EMODv3p0p4_181207/HF/Acc/HF.bin', '/home/melody.zhu/Albury_bench/Runs/Albury/HF/Cant1D_v2-midQ_leer_hfnp2mm+_rvf0p8_sd50_k0p045/Albury_HYP15-21_S1384/Acc/HF.bin')

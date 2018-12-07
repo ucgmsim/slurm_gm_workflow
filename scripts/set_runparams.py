@@ -206,10 +206,10 @@ def extend_yaml(sim_dir, srf_name=None):
     srf_file = params.srf_file[0]
     e3d_yaml = os.path.join(workflow_config['templates_dir'], 'emod3d_defaults_{}.yaml'.format(params.version))
     e3d_dict = utils.load_yaml(e3d_yaml)
-
+    print("flo is ",params.flo)
     #skip all logic if a specific srf_name is provided
     if srf_name is None or srf_name == os.path.splitext(basename(srf_file))[0]:
-
+        srf_file_basename = os.path.splitext(os.path.basename(srf_file))[0] 
         e3d_dict['version'] = emod3d_version + '-mpi'
 
         e3d_dict['name'] = params.run_name
@@ -222,6 +222,7 @@ def extend_yaml(sim_dir, srf_name=None):
         e3d_dict['dt'] = params.dt
         e3d_dict['nt'] = str(int(round(float(params.sim_duration)/float(params.dt))))
         e3d_dict['bfilt'] = 4
+        e3d_dict['flo'] = float(params.flo)
 
         e3d_dict['faultfile'] = srf_file
 
