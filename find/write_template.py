@@ -1,3 +1,6 @@
+from qcore import utils
+
+
 def get_e3d_defaults(*tup):
     d = {}
     d['all_in_one'] = 1
@@ -21,12 +24,10 @@ def get_e3d_defaults(*tup):
     d['enable_restart'] = 1
     d['ffault'] = 2
     d['fhi'] = 0.0
-    d['flo'] = 0.25  #to remove. should be retieved from srfile
     d['fmax'] = 25
     d['fmin'] = 0.01
     d['freesurf'] = 1
     d['geoproj'] = 1
-    d['global_root'] = '/nesi/project/nesi00213'
     d['intmem'] = 1
     d['ix_ts'] = 99
     d['ix_ys'] = 100
@@ -40,7 +41,6 @@ def get_e3d_defaults(*tup):
     d['lonlat_out'] = 1
     d['maxmem'] = 1500
     d['model_style'] = 1
-    d['n_proc'] = 512  #test to remove from e3d.par
     d['nseis'] = 1
     d['order'] = 4
     d['pointmt'] = 0
@@ -76,5 +76,7 @@ def get_e3d_defaults(*tup):
     return d
 
 
-# d = get_e3d_defatuls()
+d = get_e3d_defaults()
+utils.dump_yaml(d, 'emod3d_defaults_gmsim_v18.5.3.yaml')
 # utils.dump_yaml(d, '/home/melody.zhu/slurm_gm_workflow/shared_workflow/emod3d_defaults.yaml')
+

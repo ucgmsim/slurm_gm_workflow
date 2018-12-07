@@ -1,4 +1,5 @@
 #!/usr/bin/env python2
+"""python ~/slurm_gm_workflow/scripts/install.py --user_root ~/Albury_newman --srf_dir ~/Albury_newman/Data/Sources/ --vm_dir ~/Albury/Data/VMs/ --version gmsim_v18.5.3"""
 
 import os
 import glob
@@ -35,7 +36,7 @@ user_root = os.path.join(run_dir, user)  # global_root
 srf_default_dir = os.path.join(global_root, 'RupModel')
 vel_mod_dir = os.path.join(global_root, 'VelocityModels')
 #recipe_dir = os.path.join(global_root, "workflow/templates")
-recipe_dir = "/home/melody.zhu/slurm_gm_workflow/templates"
+recipe_dir = workflow_config['templates_dir']
 v_mod_1d_dir = os.path.join(global_root, 'VelocityModel', 'Mod-1D')
 gmsa_dir = os.path.join(global_root, 'groundMotionStationAnalysis')
 stat_dir = os.path.join(global_root, 'StationInfo')
@@ -738,7 +739,7 @@ def main_local():
     utils.dump_yaml(root_params_dict, os.path.join(sim_dir, 'root_params.yaml'))
     utils.dump_yaml(fault_params_dict, os.path.join(sim_dir, 'fault_params.yaml'))
     utils.dump_yaml(sim_params_dict, os.path.join(sim_dir, 'sim_params.yaml'))
-    utils.dump_yaml(vm_params_dict, os.path.join(sim_dir, 'vm_params.yaml'))
+    utils.dump_yaml(vm_params_dict, os.path.join(fault_params_dict['vel_mod_dir'], 'vm_params.yaml'))
     print "Installation completed"
     show_instruction(sim_dir)
 

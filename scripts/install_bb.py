@@ -7,7 +7,9 @@ sys.path.append(os.path.abspath(os.path.curdir))
 import argparse
 
 from qcore import utils
-params = utils.load_params('root_params.yaml', 'fault_params.yaml', 'sim_params.yaml', 'vm_params.yaml')
+
+params = utils.load_params('root_params.yaml', 'fault_params.yaml', 'sim_params.yaml')
+utils.update(params, utils.load_params(os.path.join(params.vel_mod_dir, 'vm_params.yaml')))
 
 from shared_workflow import load_config
 workflow_config = load_config.load(os.path.dirname(os.path.realpath(__file__)), "workflow_config.json")

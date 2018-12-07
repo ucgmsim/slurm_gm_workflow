@@ -8,10 +8,9 @@ if [[ $# -lt 1 ]]; then
 fi
 
 sim_dir=$1
-echo $sim_dir
 cd $sim_dir
 fd_ll=`python -c "from qcore import utils; p = utils.load_params('sim_params.yaml'); print p.FD_STATLIST"`
-echo $fd_ll
+
 bb_sim_dir=$sim_dir/BB
 bb_acc_dir=$bb_sim_dir/Acc
 bb_bin=$bb_acc_dir/BB.bin

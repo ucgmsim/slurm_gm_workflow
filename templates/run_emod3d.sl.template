@@ -29,10 +29,11 @@ if [[ $? == 0 ]]; then
         mkdir {{sim_dir}}/ch_log
     fi  
     run_time=`python -c "from datetime import datetime; tdelta= datetime.strptime('$end_time', '$runtime_fmt') - datetime.strptime('$start_time', '$runtime_fmt'); print tdelta.total_seconds()/3600"`
-    nt=`python -c "from qcore import utils; d = utils.load_params('vm_params.yaml'); print d.nt"`
-    nx=`python -c "from qcore import utils; d = utils.load_params('vm_params.yaml'); print d.nx"`
-    ny=`python -c "from qcore import utils; d = utils.load_params('vm_params.yaml'); print d.ny"`
-    nz=`python -c "from qcore import utils; d = utils.load_params('vm_params.yaml'); print d.nz"`
+    vm_yaml=`python -c "import os; from qcore import utils; d = utils.load_params('fault_params.yaml'); print os.path.join(d.vel_mod_dir, 'vm_params.yaml')"`
+    nt=`python -c "from qcore import utils; d = utils.load_params($vm_yaml); print d.nt"`
+    nx=`python -c "from qcore import utils; d = utils.load_params($vm_yaml); print d.nx"`
+    ny=`python -c "from qcore import utils; d = utils.load_params($vm_yaml); print d.ny"`
+    nz=`python -c "from qcore import utils; d = utils.load_params($vm_yaml); print d.nz"`
     #save meta data
     echo "{{srf_name}} LF $SLURM_NTASKS $run_time $nt $nx $ny $nz $start_time $end_time" >> {{sim_dir}}/ch_log/LF.$timestamp.$SLURM_JOBID.log
 else
