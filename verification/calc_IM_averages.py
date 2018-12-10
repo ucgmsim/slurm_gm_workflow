@@ -67,7 +67,7 @@ def calc_im_median(input_files, output_file):
 
 if __name__ == '__main__':
     parser = ArgumentParser(
-        "Calculates the median across the input files files for each IM/site "
+        "Calculates the median across the input files for each IM/site "
         "pair and saves the result in the specified csv file.")
 
     parser.add_argument("output_file", help="Full path to the output csv file")
