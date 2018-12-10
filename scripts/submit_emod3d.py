@@ -75,12 +75,6 @@ def submit_sl_script(script, submit_yes=None):
 
 
 def write_sl_script(lf_sim_dir, sim_dir, srf_name, mgmt_db_location, run_time=default_run_time, nb_cpus=default_core,memory=default_memory,account=default_account):
-
-    # from params_base import tools_dir
-    # from params_base import mgmt_db_location
-
-   # set_runparams.create_run_parameters(srf_name)
-    print("extending")
     set_runparams.extend_yaml(srf_name)   
  
     generated_scripts = []
@@ -138,7 +132,6 @@ if __name__ == '__main__':
             submit_yes = confirm("Also submit the job for you?")
         print("params.srf_file", params.srf_file)
         for srf in params.srf_file:
-            print("Srffffffff", srf)
             #get the srf(rup) name without extensions
             srf_name = os.path.splitext(basename(srf))[0]
             #if srf(variation) is provided as args, only create the slurm with same name provided

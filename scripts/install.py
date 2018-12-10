@@ -238,178 +238,7 @@ def q_final_confirm(run_name, yes_statcords, yes_model_params):
     return show_yes_no_question()
 
 
-def action(sim_dir, event_name, run_name, run_dir, vel_mod_dir, srf_dir, srf_stoch_pairs, params_vel_path,
-           stat_file_path, vs30_file_path, vs30ref_file_path, MODEL_LAT, MODEL_LON, MODEL_ROT, hh, nx, ny, nz, sufx,
-           sim_duration, flo, vel_mod_params_dir, yes_statcords, yes_model_params, dt=default_dt, hf_dt=default_hf_dt):
-
-    lf_sim_root_dir = os.path.join(sim_dir, "LF")
-    hf_dir = os.path.join(sim_dir, "HF")
-    bb_dir = os.path.join(sim_dir, "BB")
-    figures_dir = os.path.join(sim_dir, "Figures")
-
-    dir_list = [sim_dir, lf_sim_root_dir, hf_dir, bb_dir, figures_dir]
-
-    if not os.path.isdir(user_root):
-        dir_list.insert(0, user_root)
-
-    verify_user_dirs(dir_list)
-
-    for filename in glob.glob(os.path.join(recipe_dir, '*.*')):
-        #copy related templates to the simulation folder
-        if filename == "README.md":
-            continue
-        shutil.copy(filename, sim_dir)
-
-    shutil.copy(os.path.join(workflow_root, "version"), sim_dir)
-    shutil.copy(os.path.join(bin_process_dir, "submit.sh"), sim_dir)
-
-    # Rename params.py.template to params.py
-    shutil.move(os.path.join(sim_dir, "params.py.template"), os.path.join(sim_dir, "params.py"))
-
-    if not yes_model_params:
-        print "Generation of model params has been skipped."
-        print "Re-directing related params to files under %s" % vel_mod_dir
-        vel_mod_params_dir = vel_mod_dir
-
-    # TODO: adjust this to use the params versioning
-    bin_process_ver = "slurm"
-
-    srf_files, stoch_files = zip(*srf_stoch_pairs)
-    with open(os.path.join(sim_dir, "params_base.py"), "w") as f:
-        f.write("run_name='%s'\n" % run_name)
-        f.write("version='%s'\n" % emod3d_version)
-        f.write("bin_process_ver='%s'\n" % bin_process_ver)
-
-        f.write("global_root='%s'\n" % global_root)
-        f.write("tools_dir='%s'\n" % tools_dir)
-        f.write("user_root='%s'\n" % user_root)
-        f.write("run_dir='%s'\n" % run_dir)
-        f.write("sim_dir='%s'\n" % sim_dir)
-        f.write("lf_sim_root_dir='%s'\n" % lf_sim_root_dir)
-        f.write("hf_dir='%s'\n" % hf_dir)
-        f.write("bb_dir='%s'\n" % bb_dir)
-        f.write("figures_dir='%s'\n" % figures_dir)
-        f.write("srf_dir='%s'\n" % srf_dir)
-        f.write("srf_files=%s\n" % str(list(srf_files)))
-        f.write("hf_slips=%s\n" % str(list(stoch_files)))
-        f.write("# A single value of hf_kappa and hf_sdrop specified in params.py will be used by default\n")
-        f.write("# If you wish to use a specific hf_kappa and hf_sdrop value for each SRF, uncomment and edit below\n")
-        f.write("#hf_kappa_list=[]\n")
-        f.write("#hf_sdrop_list=[]\n")
-
-        f.write("vel_mod_dir='%s'\n" % vel_mod_dir)
-        f.write("v_mod_1d_dir='%s'\n" % v_mod_1d_dir)
-        #   f.write("vel_mod_params_dir='%s'\n"%vel_mod_params_dir) #see above
-        #   f.write("GRIDFILE='%s'\n"%GRIDFILE)
-        #   f.write("MODEL_COORDS='%s'\n"%MODEL_COORDS)
-        f.write(
-            "params_vel='%s'\n" % params_vel_path)  # assumes one params_vel for all velocity models tested (not yet supported)
-        f.write("\n#FROM VELECITY MODEL\n")
-        f.write("MODEL_LAT = '%s'\n" % MODEL_LAT)
-        f.write("MODEL_LON = '%s'\n" % MODEL_LON)
-        f.write("MODEL_ROT = '%s'\n" % MODEL_ROT)
-        f.write("\n#spatial grid spacing\n")
-        f.write("hh = '%s'" % hh + " #must be in formate like 0.200 (3decimal places)" "\n")
-        f.write("\n#x,y,z grid size (multiple grid spacing\n")
-        f.write("nx = '%s'\n" % nx)
-        f.write("ny = '%s'\n" % ny)
-        f.write("nz = '%s'\n" % nz)
-        f.write("sufx = '%s'\n" % sufx)
-        f.write("sim_duration = '%s'\n" % sim_duration)
-        f.write("dt = %.4f\n" % dt)
-        f.write("hf_dt = %.4f\n" % hf_dt)
-        f.write("flo = '%s'\n" % flo)
-        f.write("\n#dir for vel_mod \n")
-        f.write("vel_mod_params_dir = '%s'\n" % vel_mod_params_dir)
-        f.write("GRIDFILE = '%s' #gridout-x used to be referred to as GRIDFILE by gen_ts \n" % (
-            os.path.join(vel_mod_params_dir, 'gridfile%s' % sufx)))
-        f.write("GRIDOUT = '%s'\n" % (os.path.join(vel_mod_params_dir, 'gridout%s' % sufx)))
-        f.write("#input for statgrid gen\n")
-        f.write("MODEL_COORDS = '%s'\n" % os.path.join(vel_mod_params_dir, 'model_coords%s' % sufx))
-        f.write("MODELPARAMS = '%s'\n" % os.path.join(vel_mod_params_dir, 'model_params%s' % sufx))
-        f.write("MODEL_BOUNDS = '%s'\n" % os.path.join(vel_mod_params_dir, 'model_bounds%s' % sufx))
-
-        # check if stat_file is empty. empty means user skipped make_obs.sh and is for future events.
-        # use non_uniform_lastest.ll files for future events
-        # stat_file_path is retrived by config, will always be type(string)
-        if stat_file_path == "":
-            # stat_path seems to empty, assigning all related value to latest_ll
-            print "stat_file_path is not specified."
-            print "Using %s" % latest_ll
-            run_stat_dir = os.path.join(stat_dir, event_name)
-            stat_file_path = os.path.join(run_stat_dir, event_name + '.ll')
-            vs30_file_path = os.path.join(run_stat_dir, event_name + '.vs30')
-            vs30ref_file_path = os.path.join(run_stat_dir, event_name + '.vs30ref')
-            # creating sub-folder for run_name
-            # check if folder already exist
-            if not os.path.isdir(run_stat_dir):
-                # folder not exist, creating
-                os.mkdir(run_stat_dir)
-                # making symbolic link to latest_ll
-                cmd = "ln -s %s %s" % (os.path.join(latest_ll_dir, latest_ll + '.ll'), stat_file_path)
-                exe(cmd)
-                # making symbolic link to lastest_ll.vs30 and .vs30ref
-                cmd = "ln -s %s %s" % (os.path.join(latest_ll_dir, latest_ll + '.vs30'), vs30_file_path)
-                exe(cmd)
-                cmd = "ln -s %s %s" % (os.path.join(latest_ll_dir, latest_ll + '.vs30ref'), vs30ref_file_path)
-                exe(cmd)
-        f.write("stat_vs_est = '%s'\n" % vs30_file_path)
-        f.write("stat_vs_ref= '%s'\n" % vs30ref_file_path)
-
-        if stat_file_path is not None:
-            f.write("stat_file='%s'\n" % stat_file_path)
-            f.write("STAT_FILES=[stat_file]\n")
-
-    print dir_list[0]
-    # set_permission(dir_list[
-    #                   0])  # if user_root is first time created, recursively set permission from there. otherwise, set permission from sim_dir
-
-    sys.path.append(sim_dir)
-
-    show_horizontal_line(c='*')
-
-    # create model_params
-    if yes_model_params:
-        print "Producing model params. It may take a minute or two"
-        from gen_coords import gen_coords
-        gen_coords()
-        print "Done"
-        # else:
-        # print "Generation of model params is skipped. You need to fix params_base.py manually"
-
-    # currently not generating statgrid on the fly, using pregenerated .ll
-    # if stat_file_path is None:
-    #    show_horizontal_line(c='*')
-    #
-    #    print "Producing statgrid. It may take a minute or two"
-    #
-    #    import gen_statgrid
-    #    stat_file_path = gen_statgrid.main(outDir=sim_dir)
-    #    print "Done"
-    #    with open(os.path.join(sim_dir,"params_base.py"),"a") as f:
-    #        f.write("stat_file='%s'\n" %stat_file_path)
-    #        f.write("STAT_FILES=[stat_file]\n")
-    #
-    #    print "Statgrid: %s" %stat_file_path
-
-
-
-    show_horizontal_line(c='*')
-    if yes_statcords:
-        print "Producing statcords and FD_STATLIST. It may take a minute or two"
-
-        # Create Stat_cord & statList
-        import statlist2gp2
-        fd_statcords, fd_statlist = statlist2gp2.main(stat_file=stat_file_path)
-        print "Done"
-        with open(os.path.join(sim_dir, "params_base.py"), "a") as f:
-            f.write("stat_coords='%s'\n" % fd_statcords)
-            f.write("FD_STATLIST='%s'\n" % fd_statlist)
-    else:
-        print "Generation of statcords is skipped. You need to fix params_base.py manually"
-
-
-def create_sim_params_dict(version, sim_dir, event_name, run_name, run_dir, vel_mod_dir, srf_dir, srf_stoch_pairs, params_vel_path,stat_file_path, vs30_file_path, vs30ref_file_path, MODEL_LAT, MODEL_LON, MODEL_ROT, hh, nx, ny, nz, sufx,sim_duration, flo, vel_mod_params_dir, yes_statcords, yes_model_params, dt=default_dt, hf_dt=default_hf_dt):
+def create_params_dict(version, sim_dir, event_name, run_name, run_dir, vel_mod_dir, srf_dir, srf_stoch_pairs, params_vel_path,stat_file_path, vs30_file_path, vs30ref_file_path, MODEL_LAT, MODEL_LON, MODEL_ROT, hh, nx, ny, nz, sufx,sim_duration, flo, vel_mod_params_dir, yes_statcords, yes_model_params, dt=default_dt, hf_dt=default_hf_dt):
     lf_sim_root_dir = os.path.join(sim_dir, "LF")
     hf_dir = os.path.join(sim_dir, "HF")
     bb_dir = os.path.join(sim_dir, 'BB')
@@ -456,23 +285,15 @@ def create_sim_params_dict(version, sim_dir, event_name, run_name, run_dir, vel_
     root_params_dict['dt'] = 0.02
     root_params_dict['bin_process_ver'] = "slurm"
     root_params_dict['stat_file'] = stat_file_path
-    #sim_params_dict['global_root'] = global_root
-    #sim_params_dict['tools_dir'] = tools_dir
 
     #potential remove
     sim_params_dict['user_root'] = user_root
     sim_params_dict['run_dir'] = run_dir
 
     sim_params_dict['sim_dir'] = sim_dir
-    #sim_params_dict['lf_sim_root_dir'] = lf_sim_root_dir
-    #sim_params_dict['hf_dir'] = hf_dir
-
-    #sim_params_dict['bb_dir'] = bb_dir
-    #sim_params_dict['srf_dir'] = srf_dir
 
     sim_params_dict['srf_file'] = srf_files
     fault_params_dict['vel_mod_dir'] = vel_mod_dir
-    #sim_params_dict['v_mod_1d_dir'] = v_mod_1d_dir
     sim_params_dict['params_vel'] = params_vel_path
     sim_params_dict['sim_duration'] = sim_duration
     root_params_dict['flo'] = flo
@@ -485,9 +306,6 @@ def create_sim_params_dict(version, sim_dir, event_name, run_name, run_dir, vel_
     vm_params_dict['nz'] = nz
     vm_params_dict['ny'] = ny
 
-    # =vel_mod_dir
-    #sim_params_dict['vm']['vel_mod_params_dir'] = vel_mod_params_dir
-
     vm_params_dict['sufx'] = sufx
     vm_params_dict['GRIDFILE'] = os.path.join(vel_mod_params_dir, 'gridfile%s' % sufx)
     vm_params_dict['GRIDOUT'] = os.path.join(vel_mod_params_dir, 'gridout%s' % sufx)
@@ -498,8 +316,6 @@ def create_sim_params_dict(version, sim_dir, event_name, run_name, run_dir, vel_
     root_params_dict['hf'] = {}
     sim_params_dict['hf'] = {}
     root_params_dict['hf']['hf_dt'] = hf_dt
-    #sim_params_dict['hf']['hf_sim_bin'] = os.path.join(global_root, os.path.join(tools_dir, 'hb_high_v5.4.5_np2mm+'))
-    #sim_params_dict['hf']['hf_prefix'] = 'hf'
     root_params_dict['hf']['hf_sdrop'] = 50
     root_params_dict['hf']['hf_kappa'] = 0.045
     root_params_dict['hf']['hf_rvfac'] = 0.8
@@ -710,30 +526,13 @@ def main_local():
     #    vel_mod_params_dir = os.path.join(global_root, "VelocityModel/SthIsland/ModelParams")
 
     event_name = ""
-   # action(sim_dir, event_name, run_name, run_dir, vel_mod_dir_full, srf_dir, srf_stoch_pairs, params_vel_path,
-    #       stat_file_path, vs30_file_path, vs30ref_file_path, MODEL_LAT, MODEL_LON, MODEL_ROT, hh, nx, ny, nz, sufx,
-     #      sim_duration, flo, vel_mod_params_dir, yes_statcords, yes_model_params)
-    # The following code add the same PATH multiple times over time. Perhaps not really needed.
-    #    #add bin_process to PATH if it is not already there
-    #    if not bin_process_dir in os.environ['PATH']:
-    #        f=open("/home/%s/.bashrc" %user,'a')
-    #        f.write("export PATH=$PATH:%s\n" %os.path.join(bin_process_path,bin_process_ver))
-
-    #        f.close()
-    #        print "PATH was updated"
-    # new workflow no longer ask for wct at install phase, it is asked at submit_*.py
-    # wallclock(sim_dir0)
-    print("local creating fault dict")
-    root_params_dict, fault_params_dict, sim_params_dict, vm_params_dict = create_sim_params_dict(args.version, sim_dir, event_name, run_name, run_dir, vel_mod_dir_full, srf_dir, srf_stoch_pairs,
+    root_params_dict, fault_params_dict, sim_params_dict, vm_params_dict = create_params_dict(args.version, sim_dir, event_name, run_name, run_dir, vel_mod_dir_full, srf_dir, srf_stoch_pairs,
                              params_vel_path, stat_file_path, vs30_file_path, vs30ref_file_path, MODEL_LAT, MODEL_LON, MODEL_ROT, hh, nx,
                              ny, nz, sufx, sim_duration, flo, vel_mod_params_dir, yes_statcords, yes_model_params)
 
     srf_files, ___ = zip(*srf_stoch_pairs)
     fault_dir = os.path.abspath(os.path.join(sim_dir, os.pardir))
     create_mgmt_db.create_mgmt_db([], fault_dir, srf_files=srf_files)
-    # saves the location of mgmt_db to params_base.py
-    # with open(os.path.join(sim_dir, "params_base.py"), "a") as f:
-    #    f.write("mgmt_db_location='%s'\n" % sim_dir)
 
     root_params_dict['mgmt_db_location'] = fault_dir
     utils.dump_yaml(root_params_dict, os.path.join(sim_dir, 'root_params.yaml'))
@@ -788,19 +587,10 @@ def main_remote(cfg):
 
     vel_mod_params_dir = vel_mod_dir
 
-    #    action(sim_dir,event_name,run_name,vel_mod_dir, srf_stoch_pairs,params_vel_path,stat_file_path, vs30_file_path, vs30ref_file_path, MODEL_LAT,MODEL_LON,MODEL_ROT,hh,nx,ny,nz,sufx,sim_duration,flo,vel_mod_params_dir,yes_statcords, yes_model_params)
     srf_dir = srf_default_dir  # the above is perhaps unnecessary
-    action(sim_dir, event_name, run_name, run_dir, vel_mod_dir, srf_dir, srf_stoch_pairs, params_vel_path,
-           stat_file_path, vs30_file_path, vs30ref_file_path, MODEL_LAT, MODEL_LON, MODEL_ROT, hh, nx, ny, nz, sufx,
-           sim_duration, flo, vel_mod_params_dir, yes_statcords, yes_model_params)
-    #
-    print("local creating fault dict")
-    create_sim_params_dict(args.version, sim_dir, event_name, run_name, run_dir, vel_mod_dir, srf_dir, srf_stoch_pairs,
+    create_params_dict(args.version, sim_dir, event_name, run_name, run_dir, vel_mod_dir, srf_dir, srf_stoch_pairs,
                              params_vel_path, stat_file_path, vs30_file_path, vs30ref_file_path, MODEL_LAT, MODEL_LON, MODEL_ROT, hh, nx,
                              ny, nz, sufx, sim_duration, flo, vel_mod_params_dir, yes_statcords, yes_model_params)
-
-    print("fault dict created")
-
     print "Installation completed"
     show_instruction(sim_dir)
 

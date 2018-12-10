@@ -47,6 +47,7 @@ workflow_config = load_config.load(os.path.dirname(os.path.realpath(__file__)), 
 global_root = workflow_config["global_root"]
 tools_dir = os.path.join(global_root, 'opt/maui/emod3d/3.0.4-gcc/bin')
 
+
 def get_seis_len(seis_path):
     filepattern = os.path.join(seis_path, '*_seis*.e3d')
     seis_file_list = sorted(glob.glob(filepattern))
