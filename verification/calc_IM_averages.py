@@ -1,6 +1,5 @@
 #!/usr/bin/env python
-"""Takes all csv files from an input folder and
-calculates the median across the different files for each IM/site pair
+"""Calculates the median across the input files files for each IM/site pair
 and saves the result in the specified csv file.
 """
 import pandas as pd
@@ -10,7 +9,7 @@ from argparse import ArgumentParser
 
 from qcore.im import order_im_cols_df
 
-STATION_COl_NAME = 'station'
+STATION_COL_NAME = 'station'
 COMPONENT_COL_NAME = 'component'
 DEFAULT_COMPONENT = 'geom'
 
@@ -32,7 +31,7 @@ def calc_im_median(input_files, output_file):
     im_columns = np.unique(np.concatenate(
         [df.select_dtypes(include=np.float).columns.values for df in dfs]))
     stations = np.unique(np.concatenate(
-        [df[STATION_COl_NAME].values for df in dfs]))
+        [df[STATION_COL_NAME].values for df in dfs]))
 
     # Pre-populate data with nan
     data = np.zeros((stations.shape[0], im_columns.shape[0], len(input_files)),
@@ -46,7 +45,7 @@ def calc_im_median(input_files, output_file):
             np.isin(
                 im_columns, df.select_dtypes(include=np.float).columns.values))
         cur_stations_indices = np.flatnonzero(
-            np.isin(stations, df[STATION_COl_NAME].values))
+            np.isin(stations, df[STATION_COL_NAME].values))
 
         cur_data = df[im_columns[cur_columns_indices]].values
 
@@ -58,7 +57,7 @@ def calc_im_median(input_files, output_file):
     # Create the result dataframe
     result_df = pd.DataFrame(
         data=median, columns=["{}_median".format(col) for col in im_columns])
-    result_df[STATION_COl_NAME] = stations
+    result_df[STATION_COL_NAME] = stations
     result_df[COMPONENT_COL_NAME] = DEFAULT_COMPONENT
 
     result_df = order_im_cols_df(result_df)
@@ -68,9 +67,8 @@ def calc_im_median(input_files, output_file):
 
 if __name__ == '__main__':
     parser = ArgumentParser(
-        "Takes all csv files from an input folder and calculates the median "
-        "across the different files for each IM/site pair and saves the "
-        "result in the specified csv file.")
+        "Calculates the median across the input files files for each IM/site "
+        "pair and saves the result in the specified csv file.")
 
     parser.add_argument("output_file", help="Full path to the output csv file")
     parser.add_argument("input_files", help="Input IM csv files to average",
