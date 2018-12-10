@@ -29,12 +29,12 @@ if [[ $? == 0 ]]; then
         mkdir {{sim_dir}}/ch_log
     fi  
     run_time=`python -c "from datetime import datetime; tdelta= datetime.strptime('$end_time', '$runtime_fmt') - datetime.strptime('$start_time', '$runtime_fmt'); print tdelta.total_seconds()/3600"`
-    nt=`python -c "import os; from qcore import utils; di = utils.load_params('fault_params.yaml'); vm_yaml = os.path.join(di.vel_mod_dir, 'vm_params.yaml'); d = utils.load_params(vm_yaml); print d.nt"`
+    nt=`python -c "from qcore import utils; d = utils.load_params('root_params.yaml', 'sim_params.yaml'); print int(float(d.sim_duration) / float(d.dt))"`
     nx=`python -c "import os; from qcore import utils; di = utils.load_params('fault_params.yaml'); vm_yaml = os.path.join(di.vel_mod_dir, 'vm_params.yaml'); d = utils.load_params(vm_yaml); print d.nx"`
     ny=`python -c "import os; from qcore import utils; di = utils.load_params('fault_params.yaml'); vm_yaml = os.path.join(di.vel_mod_dir, 'vm_params.yaml'); d = utils.load_params(vm_yaml); print d.nz"`
     nz=`python -c "import os; from qcore import utils; di = utils.load_params('fault_params.yaml'); vm_yaml = os.path.join(di.vel_mod_dir, 'vm_params.yaml'); d = utils.load_params(vm_yaml); print d.nz"`
     #save meta data
-    echo $nz
+    echo $nt
     echo "{{srf_name}} LF $SLURM_NTASKS $run_time $nt $nx $ny $nz $start_time $end_time" >> {{sim_dir}}/ch_log/LF.$timestamp.$SLURM_JOBID.log
 else
     echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} EMOD3D failed --run_name {{srf_name}} --error '$res' --force " >> {{mgmt_db_location}}/mgmt_db_queue/$timestamp\_$SLURM_JOBID   
