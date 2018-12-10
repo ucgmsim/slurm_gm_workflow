@@ -14,10 +14,6 @@ lf_sim_dir=$sim_dir/LF/OutBin
 
 cd $sim_dir
 
-#run_name=`python -c "from params_base import *; print run_name"`
-#fd_ll=`python -c "from params_base import *; print FD_STATLIST"`
-
-    
 #check if $run_name_xyts.e3d is there
 #TODO: add in test that xyts.e3d does not contains too much 0 (which means binrary failed)
 

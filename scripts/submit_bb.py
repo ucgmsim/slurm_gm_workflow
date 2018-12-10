@@ -1,11 +1,8 @@
-import os.path
+import argparse
 import sys
 import os
-from os.path import basename
 
 sys.path.append(os.path.abspath(os.path.curdir))
-# import params
-# import params_base_bb
 
 # datetime related
 from datetime import datetime
@@ -19,16 +16,12 @@ default_core = "80"
 default_run_time = "00:30:00"
 default_memory = "16G"
 
-import argparse
-
 # TODO: move this to qcore library
 from temp_shared import resolve_header
 from shared_workflow.shared import *
 
-
 from management import update_mgmt_db
 from management import db_helper
-
 
 from qcore import utils
 
@@ -43,9 +36,6 @@ def confirm(q):
 
 
 def submit_sl_script(script, submit_yes=None):
-    # print "Submitting is not implemented yet!"
-    # if submit_yes == None:
-    #    submit_yes = confirm("Also submit the job for you?")
     if submit_yes:
         # encode if it is unicode
         # TODO:fix this in qcore.shared.exe()
@@ -86,7 +76,7 @@ def write_sl_script(bb_sim_dir, sim_dir, srf_name, sl_template_prefix, nb_cpus=d
         txt = str_template.replace("{{bb_submit_command}}",
                                    "srun python  $BINPROCESS/match_seismo-mpi.py " + bb_sim_dir)
 
-    #    variation = '_'.join(bb_sim_dir.split('/')[0:2])
+    # variation = '_'.join(bb_sim_dir.split('/')[0:2])
     variation = srf_name.replace('/', '__')
     print variation
 
@@ -96,20 +86,20 @@ def write_sl_script(bb_sim_dir, sim_dir, srf_name, sl_template_prefix, nb_cpus=d
     # txt = txt.replace("{{sim_dir}}", sim_dir).replace("{{hf_run_name}}", hf_run_name).replace("{{srf_name}}", srf_name)
     # get rid of hf_run_name
     txt = txt.replace("{{sim_dir}}", sim_dir).replace("{{srf_name}}", srf_name)
-    #replace the name of test script
+    # replace the name of test script
     if binary:
-        txt = txt.replace("{{test_bb_script}}","test_bb_binary.sh")
+        txt = txt.replace("{{test_bb_script}}", "test_bb_binary.sh")
     else:
-        txt = txt.replace("{{test_bb_script}}","test_bb_ascii.sh")
+        txt = txt.replace("{{test_bb_script}}", "test_bb_ascii.sh")
 
     fname_sl_script = '%s_%s_%s.sl' % (sl_template_prefix, variation, timestamp)
     f_sl_script = open(fname_sl_script, 'w')
 
     # TODO: change this values to values that make more sense or come from somewhere
-#    nb_cpus = "80"
-#    run_time = "00:30:00"
+    #    nb_cpus = "80"
+    #    run_time = "00:30:00"
     job_name = "sim_bb_%s" % variation
-#    memory = "16G"
+    #    memory = "16G"
     header = resolve_header(account, nb_cpus, run_time, job_name, "slurm", memory, timestamp,
                             job_description="BB calculation", additional_lines="##SBATCH -C avx")
     f_sl_script.write(header)
@@ -169,9 +159,8 @@ if __name__ == '__main__':
         # None: ask user if want to submit; False: dont submit
         submit_yes = confirm("Also submit the job for you?")
 
-
     srf = params.srf_file[0]
-    srf_name = os.path.splitext(basename(srf))[0]
+    srf_name = os.path.splitext(os.path.basename(srf))[0]
     if args.srf is None or srf_name == args.srf:
         # if srf(variation) is provided as args, only create the slurm with same name provided
         # --est_wct used, automatically assign run_time using estimation
@@ -194,7 +183,7 @@ if __name__ == '__main__':
             run_time = default_run_time
 
         bb_sim_dir = os.path.join(params.sim_dir, 'BB')
-        #TODO: save status as HF. refer to submit_hf
+        # TODO: save status as HF. refer to submit_hf
 
         # hf_run_name = params.bb.hf_run_name
 
@@ -205,5 +194,3 @@ if __name__ == '__main__':
             update_db("BB", "queued", params.mgmt_db_location, srf_name, jobid)
         elif submit_yes == True and jobid == None:
             print "there is error while trying to submit the slurm script, please manual check for errors"
-
-

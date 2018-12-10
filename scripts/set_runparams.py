@@ -19,23 +19,24 @@ from shared_workflow import shared, write_template
 from qcore import utils
 
 from shared_workflow import load_config
+
 workflow_config = load_config.load(os.path.dirname(os.path.realpath(__file__)), "workflow_config.json")
 global_root = workflow_config["global_root"]
 tools_dir = os.path.join(global_root, 'opt/maui/emod3d/3.0.4-gcc/bin')
 emod3d_version = workflow_config["emod3d_version"]
 
 
-def extend_yaml(sim_dir, srf_name=None):
+def create_run_params(sim_dir, srf_name=None):
     sys.path.append(sim_dir)
     params = utils.load_params('root_params.yaml', 'fault_params.yaml', 'sim_params.yaml')
-    utils.update(params, utils.load_params(os.path.join(params.vel_mod_dir,'vm_params.yaml')))
+    utils.update(params, utils.load_params(os.path.join(params.vel_mod_dir, 'vm_params.yaml')))
     srf_file = params.srf_file[0]
     e3d_yaml = os.path.join(workflow_config['templates_dir'], 'emod3d_defaults_{}.yaml'.format(params.version))
     e3d_dict = utils.load_yaml(e3d_yaml)
-    print("flo is ",params.flo)
-    #skip all logic if a specific srf_name is provided
+    print("flo is ", params.flo)
+    # skip all logic if a specific srf_name is provided
     if srf_name is None or srf_name == os.path.splitext(basename(srf_file))[0]:
-        srf_file_basename = os.path.splitext(os.path.basename(srf_file))[0] 
+        srf_file_basename = os.path.splitext(os.path.basename(srf_file))[0]
         e3d_dict['version'] = emod3d_version + '-mpi'
 
         e3d_dict['name'] = params.run_name
@@ -46,7 +47,7 @@ def extend_yaml(sim_dir, srf_name=None):
         e3d_dict['nz'] = params.nz
         e3d_dict['h'] = params.hh
         e3d_dict['dt'] = params.dt
-        e3d_dict['nt'] = str(int(round(float(params.sim_duration)/float(params.dt))))
+        e3d_dict['nt'] = str(int(round(float(params.sim_duration) / float(params.dt))))
         e3d_dict['bfilt'] = 4
         e3d_dict['flo'] = float(params.flo)
 
@@ -57,7 +58,6 @@ def extend_yaml(sim_dir, srf_name=None):
         e3d_dict['modellon'] = params.MODEL_LON
         e3d_dict['modellat'] = params.MODEL_LAT
         e3d_dict['modelrot'] = params.MODEL_ROT
-
 
         e3d_dict['main_dump_dir'] = os.path.join(params.sim_dir, 'LF', 'OutBin')
         e3d_dict['seiscords'] = params.stat_coords
@@ -87,5 +87,4 @@ def extend_yaml(sim_dir, srf_name=None):
 
 if __name__ == '__main__':
     sim_dir = os.getcwd()
-    extend_yaml(sim_dir)
-
+    create_run_params(sim_dir)

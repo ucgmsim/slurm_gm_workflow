@@ -1,17 +1,15 @@
 #!/usr/bin/env python2
 
-from os import path
-
-from qcore.geo import *
-from shared_workflow.shared import *
 import sys
 import os
 
+from qcore.geo import *
+from shared_workflow.shared import *
+
 sys.path.append(os.path.abspath(os.path.curdir))
-#from params import *
 
 
-def main(sim_params_dict, vm_params_dict, stat_file = 'default.ll', debug = False):
+def main(sim_params_dict, vm_params_dict, stat_file='default.ll', debug=False):
     MODEL_LAT = vm_params_dict['MODEL_LAT']
     MODEL_LON = vm_params_dict['MODEL_LON']
     MODEL_ROT = vm_params_dict['MODEL_ROT']
@@ -20,24 +18,23 @@ def main(sim_params_dict, vm_params_dict, stat_file = 'default.ll', debug = Fals
     ny = vm_params_dict['ny']
     sim_dir = sim_params_dict['sim_dir']
     sufx = vm_params_dict['sufx']
-    verify_strings([MODEL_LAT, MODEL_LON, MODEL_ROT, hh, nx, ny,sim_dir,sufx])
+    verify_strings([MODEL_LAT, MODEL_LON, MODEL_ROT, hh, nx, ny, sim_dir, sufx])
 
     outpath = sim_dir
-    filename = 'fd%s'%sufx
+    filename = 'fd%s' % sufx
 
     print stat_file
 
     # arbitrary longlat station input
     ll_in = stat_file
     # where to save gridpoint and longlat station files
-    gp_out = path.join(outpath, '%s.statcords' % filename)
-    ll_out = path.join(outpath, '%s.ll' % filename)
+    gp_out = os.path.join(outpath, '%s.statcords' % filename)
+    ll_out = os.path.join(outpath, '%s.ll' % filename)
 
-
-    print "From: %s" %stat_file
+    print "From: %s" % stat_file
     print "To:"
-    print "  %s" %gp_out
-    print "  %s" %ll_out
+    print "  %s" % gp_out
+    print "  %s" % ll_out
 
     # velocity model parameters
     nx = int(nx)
@@ -48,13 +45,13 @@ def main(sim_params_dict, vm_params_dict, stat_file = 'default.ll', debug = Fals
     hh = float(hh)
 
     # retrieve in station names, latitudes and longitudes
-    sname, slat, slon = get_stations(ll_in, locations = True)
+    sname, slat, slon = get_stations(ll_in, locations=True)
     slon = map(float, slon)
     slat = map(float, slat)
 
     # convert ll to grid points
     xy = ll2gp_multi(map(list, zip(slon, slat)), \
-            mlon, mlat, mrot, nx, ny, hh, keep_outside = True)
+                     mlon, mlat, mrot, nx, ny, hh, keep_outside=True)
 
     # store gridpoints and names if unique position
     sxy = []
@@ -89,7 +86,3 @@ def main(sim_params_dict, vm_params_dict, stat_file = 'default.ll', debug = Fals
             llf.write('%11.5f %11.5f %s\n' % (pos[0], pos[1], suname[i]))
 
     return gp_out, ll_out
-
-
-
-

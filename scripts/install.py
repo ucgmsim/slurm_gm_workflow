@@ -16,7 +16,6 @@ from management import create_mgmt_db
 
 # TODO: namespacing
 from shared_workflow.shared import *
-from collections import OrderedDict
 
 from qcore import utils
 
@@ -25,7 +24,7 @@ workflow_config = ldcfg.load(os.path.dirname(os.path.realpath(__file__)), "workf
 workflow_root = workflow_config['gm_sim_workflow_root']
 global_root = workflow_config["global_root"]
 tools_dir = os.path.join(global_root, 'EMOD3D/tools')
-#bin_process_dir = os.path.join(global_root, 'workflow/scripts')
+# bin_process_dir = os.path.join(global_root, 'workflow/scripts')
 bin_process_dir = "/home/melody.zhu/slurm_gm_workflow/scripts"
 emod3d_version = workflow_config["emod3d_version"]
 params_vel = workflow_config['params_vel']
@@ -35,7 +34,7 @@ user = getpass.getuser()
 user_root = os.path.join(run_dir, user)  # global_root
 srf_default_dir = os.path.join(global_root, 'RupModel')
 vel_mod_dir = os.path.join(global_root, 'VelocityModels')
-#recipe_dir = os.path.join(global_root, "workflow/templates")
+# recipe_dir = os.path.join(global_root, "workflow/templates")
 recipe_dir = workflow_config['templates_dir']
 v_mod_1d_dir = os.path.join(global_root, 'VelocityModel', 'Mod-1D')
 gmsa_dir = os.path.join(global_root, 'groundMotionStationAnalysis')
@@ -128,15 +127,10 @@ def q_select_vel_model(vel_mod_dir):
 
     v_mod_ver_options = []
     for root, dirnames, filenames in os.walk(vel_mod_dir):
-        #returns the folder that contains params_vel.py
+        # returns the folder that contains params_vel.py
         for filename in fnmatch.filter(filenames, params_vel):
             v_mod_ver_options.append(root)
 
-    #vel_mod_subdirs = os.listdir(vel_mod_dir)
-    #print vel_mod_subdirs
-    #for subdir in vel_mod_subdirs:
-    #    vmodels = os.listdir(os.path.join(vel_mod_dir, subdir))
-    #    v_mod_ver_options.extend([os.path.join(subdir, x) for x in vmodels])
     v_mod_ver_options.sort()
     v_mod_ver = show_multiple_choice(v_mod_ver_options)
     print v_mod_ver
@@ -238,12 +232,15 @@ def q_final_confirm(run_name, yes_statcords, yes_model_params):
     return show_yes_no_question()
 
 
-def create_params_dict(version, sim_dir, event_name, run_name, run_dir, vel_mod_dir, srf_dir, srf_stoch_pairs, params_vel_path,stat_file_path, vs30_file_path, vs30ref_file_path, MODEL_LAT, MODEL_LON, MODEL_ROT, hh, nx, ny, nz, sufx,sim_duration, flo, vel_mod_params_dir, yes_statcords, yes_model_params, dt=default_dt, hf_dt=default_hf_dt):
+def create_params_dict(version, sim_dir, event_name, run_name, run_dir, vel_mod_dir, srf_dir, srf_stoch_pairs,
+                       params_vel_path, stat_file_path, vs30_file_path, vs30ref_file_path, MODEL_LAT, MODEL_LON,
+                       MODEL_ROT, hh, nx, ny, nz, sufx, sim_duration, flo, vel_mod_params_dir, yes_statcords,
+                       yes_model_params, dt=default_dt, hf_dt=default_hf_dt):
     lf_sim_root_dir = os.path.join(sim_dir, "LF")
     hf_dir = os.path.join(sim_dir, "HF")
     bb_dir = os.path.join(sim_dir, 'BB')
     dir_list = [sim_dir, lf_sim_root_dir, hf_dir, bb_dir]
-    
+
     if not os.path.isdir(user_root):
         dir_list.insert(0, user_root)
 
@@ -279,14 +276,14 @@ def create_params_dict(version, sim_dir, event_name, run_name, run_dir, vel_mod_
 
     sim_params_dict['run_name'] = run_name
 
-    #select during install
+    # select during install
     root_params_dict['version'] = version
 
     root_params_dict['dt'] = 0.02
     root_params_dict['bin_process_ver'] = "slurm"
     root_params_dict['stat_file'] = stat_file_path
 
-    #potential remove
+    # potential remove
     sim_params_dict['user_root'] = user_root
     sim_params_dict['run_dir'] = run_dir
 
@@ -526,9 +523,21 @@ def main_local():
     #    vel_mod_params_dir = os.path.join(global_root, "VelocityModel/SthIsland/ModelParams")
 
     event_name = ""
-    root_params_dict, fault_params_dict, sim_params_dict, vm_params_dict = create_params_dict(args.version, sim_dir, event_name, run_name, run_dir, vel_mod_dir_full, srf_dir, srf_stoch_pairs,
-                             params_vel_path, stat_file_path, vs30_file_path, vs30ref_file_path, MODEL_LAT, MODEL_LON, MODEL_ROT, hh, nx,
-                             ny, nz, sufx, sim_duration, flo, vel_mod_params_dir, yes_statcords, yes_model_params)
+    root_params_dict, fault_params_dict, sim_params_dict, vm_params_dict = create_params_dict(args.version, sim_dir,
+                                                                                              event_name, run_name,
+                                                                                              run_dir, vel_mod_dir_full,
+                                                                                              srf_dir, srf_stoch_pairs,
+                                                                                              params_vel_path,
+                                                                                              stat_file_path,
+                                                                                              vs30_file_path,
+                                                                                              vs30ref_file_path,
+                                                                                              MODEL_LAT, MODEL_LON,
+                                                                                              MODEL_ROT, hh, nx,
+                                                                                              ny, nz, sufx,
+                                                                                              sim_duration, flo,
+                                                                                              vel_mod_params_dir,
+                                                                                              yes_statcords,
+                                                                                              yes_model_params)
 
     srf_files, ___ = zip(*srf_stoch_pairs)
     fault_dir = os.path.abspath(os.path.join(sim_dir, os.pardir))
@@ -558,14 +567,6 @@ def main_remote(cfg):
     vs30_file_path = stat_file_path.replace('.ll', '.vs30')
     vs30ref_file_path = stat_file_path.replace('.ll', '.vs30ref')
 
-    # test = config.get('remote','test')
-    # if test == "":
-    #    print "test:Non"
-    # else:
-    #    print "false"
-    #    print type(test)
-    # sys.exit()
-
     srf_file_list = list(filter(None, (x.strip() for x in srf_file_path.splitlines())))
     stoch_file_path = list(filter(None, (x.strip() for x in stoch_file_path.splitlines())))
 
@@ -589,8 +590,9 @@ def main_remote(cfg):
 
     srf_dir = srf_default_dir  # the above is perhaps unnecessary
     create_params_dict(args.version, sim_dir, event_name, run_name, run_dir, vel_mod_dir, srf_dir, srf_stoch_pairs,
-                             params_vel_path, stat_file_path, vs30_file_path, vs30ref_file_path, MODEL_LAT, MODEL_LON, MODEL_ROT, hh, nx,
-                             ny, nz, sufx, sim_duration, flo, vel_mod_params_dir, yes_statcords, yes_model_params)
+                       params_vel_path, stat_file_path, vs30_file_path, vs30ref_file_path, MODEL_LAT, MODEL_LON,
+                       MODEL_ROT, hh, nx,
+                       ny, nz, sufx, sim_duration, flo, vel_mod_params_dir, yes_statcords, yes_model_params)
     print "Installation completed"
     show_instruction(sim_dir)
 
@@ -608,12 +610,6 @@ if __name__ == '__main__':
     parser.add_argument('--v1d_dir', type=str, default=None)
     parser.add_argument('--station_dir', type=str, default=None)
     parser.add_argument('--version', type=str, default=None, help="version of simulation. eg.'gmsim_v18.5.3'")
-
-    # if user desire using specific files, they should call the action function directly instead
-    #    parser.add_argument('--srf',type=str,default=None)
-    #    parser.add_argument('--stoch',type=str,default=None)
-    #    parser.add_argument('--vm',type=str,default=None)
-    #    parser.add_argument('--station',type=str,default=None)
 
     args = parser.parse_args()
 
@@ -663,14 +659,3 @@ if __name__ == '__main__':
             main_remote(cfg)
     else:
         main_local()
-
-        # if len(sys.argv) == 1:
-        #    main_local()
-        # else:
-        #    cfg = sys.argv[1]
-        #    if not os.path.exists(cfg):
-        #        print "Error: No such file exists: %s" % cfg
-        #        sys.exit()
-        #    else:
-        #        main_remote(cfg)
-

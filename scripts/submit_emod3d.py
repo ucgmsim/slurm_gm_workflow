@@ -1,10 +1,10 @@
 # TODO: import the CONFIG here
 
 import glob
-import os.path
-from os.path import basename
 import sys
 import os
+# section for parser to determine if using automate wct
+import argparse
 
 import set_runparams
 
@@ -34,11 +34,7 @@ default_wct_scale=1.2
 # TODO: remove this once temp_shared is gone
 from temp_shared import resolve_header
 
-
 import install
-
-# section for parser to determine if using automate wct
-import argparse
 
 from qcore import utils
 
@@ -75,7 +71,7 @@ def submit_sl_script(script, submit_yes=None):
 
 
 def write_sl_script(lf_sim_dir, sim_dir, srf_name, mgmt_db_location, run_time=default_run_time, nb_cpus=default_core,memory=default_memory,account=default_account):
-    set_runparams.extend_yaml(srf_name)   
+    set_runparams.create_run_params(srf_name)
  
     generated_scripts = []
 
@@ -133,13 +129,13 @@ if __name__ == '__main__':
         print("params.srf_file", params.srf_file)
         for srf in params.srf_file:
             #get the srf(rup) name without extensions
-            srf_name = os.path.splitext(basename(srf))[0]
+            srf_name = os.path.splitext(os.path.basename(srf))[0]
             #if srf(variation) is provided as args, only create the slurm with same name provided
             if args.srf != None and srf_name != args.srf:
                 continue
             if args.set_params_only == True:
                # set_runparams.create_run_parameters(srf_name)
-                set_runparams.extend_yaml(srf_name)
+                set_runparams.create_run_params(srf_name)
                 continue
             print("not set_params_only")
             #get lf_sim_dir
