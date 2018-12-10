@@ -103,6 +103,6 @@ ENV/
 # ide
 *.idea 
 
-find/*.csv
-find/*.txt
-find/*.yaml
+find/
+
+test/

@@ -34,7 +34,6 @@ if [[ $? == 0 ]]; then
     ny=`python -c "import os; from qcore import utils; di = utils.load_params('fault_params.yaml'); vm_yaml = os.path.join(di.vel_mod_dir, 'vm_params.yaml'); d = utils.load_params(vm_yaml); print d.nz"`
     nz=`python -c "import os; from qcore import utils; di = utils.load_params('fault_params.yaml'); vm_yaml = os.path.join(di.vel_mod_dir, 'vm_params.yaml'); d = utils.load_params(vm_yaml); print d.nz"`
     #save meta data
-    echo $nt
     echo "{{srf_name}} LF $SLURM_NTASKS $run_time $nt $nx $ny $nz $start_time $end_time" >> {{sim_dir}}/ch_log/LF.$timestamp.$SLURM_JOBID.log
 else
     echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} EMOD3D failed --run_name {{srf_name}} --error '$res' --force " >> {{mgmt_db_location}}/mgmt_db_queue/$timestamp\_$SLURM_JOBID   
