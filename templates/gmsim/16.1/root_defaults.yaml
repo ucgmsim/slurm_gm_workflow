@@ -1,0 +1,10 @@
+bin_process_ver: slurm
+hf:
+  hf_dt: 0.005
+  hf_rvfac: 0.8
+  hf_sdrop: 50
+  hf_path_dur: 1
+  hf_kappa: 0.045
+bb:
+  site_specific: false
+flo: 0.25
