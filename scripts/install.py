@@ -24,7 +24,8 @@ workflow_config = ldcfg.load(os.path.dirname(os.path.realpath(__file__)), "workf
 workflow_root = workflow_config['gm_sim_workflow_root']
 global_root = workflow_config["global_root"]
 tools_dir = os.path.join(global_root, 'EMOD3D/tools')
-bin_process_dir = os.path.join(global_root, 'workflow/scripts')
+#bin_process_dir = os.path.join(global_root, 'workflow/scripts')
+bin_process_dir = '/home/melody.zhu/slurm_gm_workflow/scripts'
 emod3d_version = workflow_config["emod3d_version"]
 params_vel = workflow_config['params_vel']
 
