@@ -134,7 +134,7 @@ def main():
     args = parser.parse_args()
 
     show_horizontal_line(c="*")
-    print " " * 37 + "EMOD3D HF/BB Preparationi Ver." + params.bin_process_ver
+    print " " * 37 + "EMOD3D HF/BB Preparationi Ver.slurm"
     show_horizontal_line(c="*")
 
     root_dict = utils.load_yaml('root_params.yaml')
