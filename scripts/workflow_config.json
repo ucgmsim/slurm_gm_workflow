@@ -7,6 +7,6 @@
   "install_bb_name" : "install_bb.py",
   "params_vel" : "params_vel.py",
   "runfolder_path" : "/nesi/nobackup/nesi00213/RunFolder/",
-  "templates_dir": "/home/melody.zhu/slurm_gm_workflow/templates"
+  "templates_dir": "/nesi/project/nesi00213/workflow/templates"
 }
 
