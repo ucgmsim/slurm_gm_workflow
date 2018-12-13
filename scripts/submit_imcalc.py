@@ -82,6 +82,7 @@ def generate_sl(sim_dirs, obs_dirs, station_file, rrup_files, output_dir, prefix
     sl_name = SL_NAME.format(prefix, i)
     return sl_name, "{}\n{}".format(header, context)
 
+
 def update_db(process, status, mgmt_db_location, srf_name, jobid):
     db = db_helper.connect_db(mgmt_db_location)
     update_mgmt_db.update_db(db, process, status, job=jobid, run_name=srf_name)
@@ -89,7 +90,7 @@ def update_db(process, status, mgmt_db_location, srf_name, jobid):
 
 
 def write_sl(name_context_list, submit=False, mgmt_db_location=None):
-    for sl_name, context,srf_list in name_context_list:
+    for sl_name, context, srf_list in name_context_list:
         with open(sl_name, 'w') as sl:
             print("writing {}".format(sl_name))
             sl.write(context)

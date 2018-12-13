@@ -10,7 +10,8 @@ import db_helper
 
 def print_run_status(db, run_name, error=False):
     if error:
-        db.execute('''SELECT state.run_name, proc_type_enum.proc_type, status_enum.state, state.job_id, datetime(last_modified,'unixepoch'), error.error
+        db.execute('''SELECT state.run_name, proc_type_enum.proc_type, status_enum.state, state.job_id, state.retries,
+                             datetime(last_modified,'unixepoch'), error.error
                     FROM state, status_enum, proc_type_enum, error
                     WHERE state.proc_type = proc_type_enum.id AND state.status = status_enum.id
                             AND UPPER(state.run_name) LIKE UPPER(?) AND error.task_id = state.id
@@ -18,19 +19,21 @@ def print_run_status(db, run_name, error=False):
                     ''', (run_name,))
         status = db.fetchall()
         for statum in status:
-            print ''' Run_name: {}\n Process: {}\n Status: {}\n Job-ID: {}\n Last_Modified: {}\n Error: {} \n'''.format(*statum)
+            print(''' Run_name: {}\n Process: {}\n Status: {}\n Job-ID: {}\n Retries: {}\n'''
+                  '''Last_Modified: {}\n Error: {} \n'''.format(*statum))
     else:
-        db.execute('''SELECT state.run_name, proc_type_enum.proc_type, status_enum.state, state.job_id, datetime(last_modified,'unixepoch')
+        db.execute('''SELECT state.run_name, proc_type_enum.proc_type, status_enum.state, state.job_id, state.retries,
+                             datetime(last_modified,'unixepoch')
                     FROM state, status_enum, proc_type_enum
                     WHERE state.proc_type = proc_type_enum.id AND state.status = status_enum.id
                             AND UPPER(state.run_name) LIKE UPPER(?)
                     ORDER BY state.run_name, status_enum.id
                     ''', (run_name,))
         status = db.fetchall()
-        print "{:>25} | {:>15} | {:>10} | {:>8} | {:>20}".format('run_name', 'process', 'status', 'job-id', 'last_modified')
-        print '_' * (25 + 15 + 10 + 20 + 8 + 3 * 4)
+        print "{:>25} | {:>15} | {:>10} | {:>8} | {:>7} | {:>20}".format('run_name', 'process', 'status', 'job-id', 'retries', 'last_modified')
+        print '_' * (25 + 15 + 10 + 20 + 8 + 7 + 3 * 4)
         for statum in status:
-            print "{:>25} | {:>15} | {:>10} | {:>8} | {:>20}".format(*statum)
+            print "{:>25} | {:>15} | {:>10} | {:>8} | {:>7} | {:>20}".format(*statum)
 
 
 def main():

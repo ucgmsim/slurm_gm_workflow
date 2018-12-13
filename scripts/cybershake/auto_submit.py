@@ -25,6 +25,8 @@ def submit_task(sim_dir, proc_type, run_name, db, mgmt_db_location, binary_mode=
                 hf_seed=None, extended_period=default_extended_period):
     # TODO: using shell call is EXTREMELY undesirable. fix this in near future(fundamentally)
 
+    do_verification = False
+
     os.chdir(sim_dir)
 
     ch_log_dir = os.path.join(sim_dir,'ch_log')
@@ -96,20 +98,21 @@ def submit_task(sim_dir, proc_type, run_name, db, mgmt_db_location, binary_mode=
     source_path = os.path.join(mgmt_db_location, 'Data/Sources', fault, 'srf', run_name)
     srf_path = source_path + '.srf'
 
-    if proc_type == Process.rrup.value:
-        tmp_path = os.path.join(mgmt_db_location, 'Runs')
-        rrup_dir = os.path.join(mgmt_db_location, 'Runs', fault, 'verification')
-        cmd = "python $gmsim/workflow/scripts/submit_imcalc.py --auto -s --sim_dir %s --i %s --mgmt_db %s -srf %s -o %s" % (tmp_path, run_name, mgmt_db_location, srf_path, rrup_dir)
-        print cmd
-        call(cmd, shell=True)
+    if do_verification:
+        if proc_type == Process.rrup.value:
+            tmp_path = os.path.join(mgmt_db_location, 'Runs')
+            rrup_dir = os.path.join(mgmt_db_location, 'Runs', fault, 'verification')
+            cmd = "python $gmsim/workflow/scripts/submit_imcalc.py --auto -s --sim_dir %s --i %s --mgmt_db %s -srf %s -o %s" % (tmp_path, run_name, mgmt_db_location, srf_path, rrup_dir)
+            print cmd
+            call(cmd, shell=True)
 
-    if proc_type == Process.Empirical.value:
-        cmd = "$gmsim/workflow/scripts/submit_empirical.py -np 40 -i {} {}".format(run_name, mgmt_db_location)
-        print cmd
-        call(cmd, shell=True)
+        if proc_type == Process.Empirical.value:
+            cmd = "$gmsim/workflow/scripts/submit_empirical.py -np 40 -i {} {}".format(run_name, mgmt_db_location)
+            print cmd
+            call(cmd, shell=True)
 
-    if proc_type == Process.Verification.value:
-        pass
+        if proc_type == Process.Verification.value:
+            pass
 
     # save the job meta data
     call("echo 'submitted time: %s' >> %s" % (submitted_time, os.path.join(ch_log_dir, Process(proc_type).name + '.%s.log'%run_name)),
