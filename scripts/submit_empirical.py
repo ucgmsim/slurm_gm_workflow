@@ -22,11 +22,11 @@ def generate_header(template_path, account, np):
     return header
 
 
-def generate_context(template_path, run_data, output_dir, np, extended, mgmt_db):
+def generate_context(template_path, run_data, np, extended, mgmt_db):
     j2_env = Environment(loader=FileSystemLoader(template_path), trim_blocks=True)
     context = j2_env.get_template('empirical.sl.template').render(
         run_data=run_data,
-        output_dir=output_dir, np=np, extended=extended, mgmt_db_location=mgmt_db)
+        np=np, extended=extended, mgmt_db_location=mgmt_db)
     return context
 
 
@@ -41,7 +41,7 @@ def write_sl(sl_name, content):
         f.write(content)
 
 
-def generate_sl( np, extended, cybershake_folder, account, realisations):
+def generate_sl(np, extended, cybershake_folder, account, realisations):
     faults = map(get_fault_name, realisations)
     run_data = zip(realisations, faults)
     run_data = [(realisation, fault) for realisation, fault in run_data if rrup_file_exists(cybershake_folder, fault, realisation)]
@@ -50,7 +50,7 @@ def generate_sl( np, extended, cybershake_folder, account, realisations):
 
     template_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'templates/')
     header = generate_header(template_path, account, np)
-    context = generate_context(template_path, run_data, output_dir, np, extended, cybershake_folder)
+    context = generate_context(template_path, run_data, np, extended, cybershake_folder)
     sl_name = 'run_empirical_{}.sl'.format(timestamp)
     content = "{}\n{}".format(header, context)
     write_sl(sl_name, content)
