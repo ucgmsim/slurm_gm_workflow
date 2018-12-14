@@ -29,8 +29,8 @@ def submit_task(sim_dir, proc_type, run_name, db, mgmt_db_location, binary_mode=
 
     os.chdir(sim_dir)
 
-    ch_log_dir = os.path.join(sim_dir,'ch_log')
-    #create the folder if not exsist
+    ch_log_dir = os.path.join(sim_dir, 'ch_log')
+    # create the folder if not exsist
     if not os.path.isdir(ch_log_dir):
         os.mkdir(ch_log_dir)
     submitted_time = datetime.now().strftime('%Y%m%d_%H%M%S')
@@ -40,12 +40,12 @@ def submit_task(sim_dir, proc_type, run_name, db, mgmt_db_location, binary_mode=
     if proc_type == Process.EMOD3D.value:
         check_params_uncertain(params_uncertain_path)
         cmd = "python $gmsim/workflow/scripts/submit_emod3d.py --auto --srf %s" % run_name
-        print cmd
+        print(cmd)
         call(cmd, shell=True)
 
     if proc_type == Process.merge_ts.value:
         cmd = "python $gmsim/workflow/scripts/submit_post_emod3d.py --auto --merge_ts --srf %s" % run_name
-        print cmd
+        print(cmd)
         call(cmd, shell=True)
 
     if proc_type == Process.winbin_aio.value:
@@ -55,7 +55,7 @@ def submit_task(sim_dir, proc_type, run_name, db, mgmt_db_location, binary_mode=
             update_mgmt_db.update_db(db, 'winbin_aio', 'completed', run_name=run_name)
         else:
             cmd = "python $gmsim/workflow/scripts/submit_post_emod3d.py --auto --winbin_aio --srf %s" % run_name
-            print cmd
+            print(cmd)
             call(cmd, shell=True)
 
     if proc_type == Process.HF.value:
@@ -69,7 +69,7 @@ def submit_task(sim_dir, proc_type, run_name, db, mgmt_db_location, binary_mode=
                 cmd = "python $gmsim/workflow/scripts/install_bb.py --v1d %s --hf_stat_vs_ref %s" % (default_1d_mod, default_hf_vs30_ref)
             else:
                 cmd = "python $gmsim/workflow/scripts/install_bb.py --v1d %s" % default_1d_mod
-            print cmd
+            print(cmd)
             call(cmd, shell=True)
         hf_cmd = "python $gmsim/workflow/scripts/submit_hf.py --binary --auto --srf %s" % run_name
 
@@ -77,12 +77,12 @@ def submit_task(sim_dir, proc_type, run_name, db, mgmt_db_location, binary_mode=
             hf_cmd = "{} --seed {}".format(hf_cmd, hf_seed)
         if rand_reset:
             hf_cmd = "{} --rand_reset".format(hf_cmd)
-        print hf_cmd
+        print(hf_cmd)
         call(hf_cmd, shell=True)
 
     if proc_type == Process.BB.value:
         cmd = "python $gmsim/workflow/scripts/submit_bb.py --binary --auto --srf %s" % run_name
-        print cmd
+        print(cmd)
         call(cmd, shell=True)
 
     if proc_type == Process.IM_calculation.value:
@@ -91,7 +91,7 @@ def submit_task(sim_dir, proc_type, run_name, db, mgmt_db_location, binary_mode=
         cmd = "python $gmsim/workflow/scripts/submit_imcalc.py --auto -s --sim_dir %s --i %s --mgmt_db %s" % (tmp_path, run_name, mgmt_db_location)
         if extended_period == True:
             cmd = cmd + ' -e'
-        print cmd
+        print(cmd)
         call(cmd, shell=True)
 
     fault = run_name.split('_')[0]
@@ -103,12 +103,12 @@ def submit_task(sim_dir, proc_type, run_name, db, mgmt_db_location, binary_mode=
             tmp_path = os.path.join(mgmt_db_location, 'Runs')
             rrup_dir = os.path.join(mgmt_db_location, 'Runs', fault, 'verification')
             cmd = "python $gmsim/workflow/scripts/submit_imcalc.py --auto -s --sim_dir %s --i %s --mgmt_db %s -srf %s -o %s" % (tmp_path, run_name, mgmt_db_location, srf_path, rrup_dir)
-            print cmd
+            print(cmd)
             call(cmd, shell=True)
 
         if proc_type == Process.Empirical.value:
             cmd = "$gmsim/workflow/scripts/submit_empirical.py -np 40 -i {} {}".format(run_name, mgmt_db_location)
-            print cmd
+            print(cmd)
             call(cmd, shell=True)
 
         if proc_type == Process.Verification.value:
@@ -121,10 +121,10 @@ def submit_task(sim_dir, proc_type, run_name, db, mgmt_db_location, binary_mode=
 
 def check_params_uncertain(params_uncertain_path):
     if not os.path.isfile(params_uncertain_path):
-        print params_uncertain_path, " missing, creating"
+        print(params_uncertain_path, " missing, creating")
         cmd = "python $gmsim/workflow/scripts/submit_emod3d.py --set_params_only"
         call(cmd, shell=True)
-        print cmd
+        print(cmd)
 
 
 def get_vmname(srf_name):
@@ -141,7 +141,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('run_folder', type=str, help="folder to the collection of runs on Kupe")
     parser.add_argument('--n_runs', default=default_n_runs, type=int)
-    #cybershake-like simulations store mgmnt_db at different locations
+    # cybershake-like simulations store mgmnt_db at different locations
     parser.add_argument('--single_sim', nargs="?", type=str,const=True)
     parser.add_argument('--config',type=str,default=None,help="a path to a config file that constains all the required values.")
     parser.add_argument('--no_im', action="store_true")
@@ -156,12 +156,12 @@ def main():
     if args.config != None: 
         #parse and check for variables in config
         try:
-            print "!!!!!!!!!!!!!", args.config
+            print("!!!!!!!!!!!!!", args.config)
             qcore_cfg = ldcfg.load(directory=os.path.dirname(args.config), cfg_name=os.path.basename(args.config))
-            print qcore_cfg
+            print(qcore_cfg)
         except Exception as e:
-            print e
-            print "Error while parsing the config file, please double check inputs."
+            print(e)
+            print("Error while parsing the config file, please double check inputs.")
             sys.exit()
         if 'v_1d_mod' in qcore_cfg:
             #TODO:bad hack, fix this when possible (with parsing)
@@ -190,11 +190,11 @@ def main():
             extended_period = default_extended_period
         #append more logic here if more variables are requested 
         
-    print("hf_seed",hf_seed)
+    print("hf_seed", hf_seed)
     queued_tasks = slurm_query_status.get_queued_tasks()
     db_tasks = slurm_query_status.get_submitted_db_tasks(db)
-    print 'queued task:', queued_tasks
-    print 'subbed task:',db_tasks
+    print('queued task:', queued_tasks)
+    print('subbed task:', db_tasks)
     slurm_query_status.update_tasks(db, queued_tasks, db_tasks)
     db_tasks = slurm_query_status.get_submitted_db_tasks(db)
     #submitted_tasks = slurm_query_status.get_submitted_db_tasks(db)
@@ -203,9 +203,9 @@ def main():
     runnable_tasks = slurm_query_status.get_runnable_tasks(db, ntask_to_run)
     
     submit_task_count = 0
-    task_num=0
-    print submit_task_count
-    print ntask_to_run
+    task_num = 0
+    print(submit_task_count)
+    print(ntask_to_run)
     while submit_task_count < ntask_to_run and submit_task_count < len(runnable_tasks) and task_num < len(runnable_tasks) :
         db_task_status = runnable_tasks[task_num]
         
