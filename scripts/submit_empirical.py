@@ -35,13 +35,13 @@ def rrup_file_exists(cybershake_folder, fault, realisation):
     return os.path.exists(rrup_file)
 
 
-def write_sl(output_dir, sl_name, content):
-    fp = os.path.join(output_dir, sl_name)
+def write_sl(sl_name, content):
+    fp = sl_name
     with open(fp, "w") as f:
         f.write(content)
 
 
-def generate_sl(output_dir, np, extended, cybershake_folder, account, realisations):
+def generate_sl( np, extended, cybershake_folder, account, realisations):
     faults = map(get_fault_name, realisations)
     run_data = zip(realisations, faults)
     run_data = [(realisation, fault) for realisation, fault in run_data if rrup_file_exists(cybershake_folder, fault, realisation)]
@@ -53,7 +53,7 @@ def generate_sl(output_dir, np, extended, cybershake_folder, account, realisatio
     context = generate_context(template_path, run_data, output_dir, np, extended, cybershake_folder)
     sl_name = 'run_empirical_{}.sl'.format(timestamp)
     content = "{}\n{}".format(header, context)
-    write_sl(output_dir, sl_name, content)
+    write_sl(sl_name, content)
 
 
 def main():
@@ -64,11 +64,10 @@ def main():
                         help="indicates extended pSA period to be calculated if present")
     parser.add_argument("-np", default=40, help="number of processes to use")
     parser.add_argument('--account', default=DEFAULT_ACCOUNT, help="specify the NeSI project")
-    parser.add_argument('-o', '--output', help="path the empirical file is outputted, defaults to verification folder in realisation folder")
 
     args = parser.parse_args()
 
-    generate_sl(args.output, args.np, args.extended_period, args.cybershake_folder, args.account, args.identifiers)
+    generate_sl(args.np, args.extended_period, args.cybershake_folder, args.account, args.identifiers)
 
 
 if __name__ == '__main__':
