@@ -1,0 +1,10 @@
+{
+  "input_cols": [["LF","nx"], ["LF","ny"], ["LF","nz"], ["LF","nt"]],
+  "target_col": ["LF","run_time"],
+
+  "units": [64, 64],
+  "dropout": 0.15,
+  "activation": "relu",
+
+  "n_epochs": 10
+}
