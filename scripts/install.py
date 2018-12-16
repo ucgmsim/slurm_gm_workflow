@@ -262,9 +262,6 @@ def create_params_dict(version, sim_dir, event_name, run_name, run_dir, vel_mod_
         print "Re-directing related params to files under %s" % vel_mod_dir
         vel_mod_params_dir = vel_mod_dir
 
-    # TODO: get rid of this
-    bin_process_ver = "slurm"
-
     srf_files, stoch_files = zip(*srf_stoch_pairs)
 
     bb_dir = os.path.join(sim_dir, "BB")
@@ -279,7 +276,6 @@ def create_params_dict(version, sim_dir, event_name, run_name, run_dir, vel_mod_
     root_params_dict['version'] = version
 
     root_params_dict['dt'] = 0.02
-    root_params_dict['bin_process_ver'] = "slurm"
     root_params_dict['stat_file'] = stat_file_path
 
     # potential remove
