@@ -35,6 +35,8 @@ class WCEstModel(object):
 
     def predict(self, X: np.ndarray):
         """Performs the actual prediction using the current model
+        The data has to have been scaled (with the same parameters/scaler
+        as used for training)
 
         Parameters
         ----------
@@ -52,10 +54,17 @@ class WCEstModel(object):
         """Saves a model"""
         raise NotImplementedError()
 
-    @staticmethod
-    def from_saved_model(self, model_file: str):
-        """Loads a model from the specified file"""
+    def load_model(self, model_file: str):
+        """Loads a model from the specified model file"""
         raise NotImplementedError()
+
+    @classmethod
+    def from_saved_model(cls, model_file: str):
+        """Loads a model from the specified file"""
+        model = cls()
+        model.load_model(model_file)
+
+        return model
 
 
 class NNWcEstModel(WCEstModel):
@@ -148,6 +157,7 @@ class NNWcEstModel(WCEstModel):
 
     def predict(self, X: np.ndarray):
         """Performs the actual prediction using the current model
+
         For full doc see WCEstModel.predict
         """
         if not self.is_trained:
@@ -170,17 +180,6 @@ class NNWcEstModel(WCEstModel):
             raise Exception("This model has already been trained!")
 
         self._model = keras.models.load_model(model_file)
-
-    @staticmethod
-    def from_saved_model(self, model_file: str):
-        """Creates a new nn model instance from a save file"""
-        nn_model = NNWcEstModel()
-        nn_model.load_model(model_file)
-
-        return nn_model
-
-
-
-
+        self.is_trained = True
 
 

@@ -1,18 +1,14 @@
+#!/usr/bin/env python3
 """
 Functions for easy estimation of WC, uses pre-trained models.
-
-Needs to stay python2 and 3 compatible.
-
-It is worth noting that some of these functions (load_model) would
-normally be added the model class. However since that is written in python3,
-these have been added here.
 """
 import os
 import glob
 import pickle
-import keras
 
 import numpy as np
+
+from estimation.model import NNWcEstModel
 
 LF_MODEL_DIR = "/home/cbs51/code/slurm_gm_workflow/estimation/models/LF"
 
@@ -20,8 +16,9 @@ MODEL_PREFIX = "model_"
 SCALER_PREFIX = "scaler_"
 
 
-def estimate_LF_WC_single(nx, ny, nz, nt, model_dir=LF_MODEL_DIR,
-                   model_prefix=MODEL_PREFIX, scaler_prefix=SCALER_PREFIX):
+def estimate_LF_WC_single(
+        nx: float, ny: float, nz: float, nt: float, model_dir: str = LF_MODEL_DIR,
+        model_prefix: str = MODEL_PREFIX, scaler_prefix: str = SCALER_PREFIX):
     """Convenience function to make a single estimation
 
     If the input parameters (or even just the order) of the model
@@ -45,8 +42,9 @@ def estimate_LF_WC_single(nx, ny, nz, nt, model_dir=LF_MODEL_DIR,
                           scaler_prefix=scaler_prefix)
 
 
-def estimate_LF_WC(input_data, model_dir=LF_MODEL_DIR,
-                   model_prefix=MODEL_PREFIX, scaler_prefix=SCALER_PREFIX):
+def estimate_LF_WC(input_data: np.ndarray, model_dir: str = LF_MODEL_DIR,
+                   model_prefix: str = MODEL_PREFIX,
+                   scaler_prefix: str = SCALER_PREFIX):
     """Function to use for making estimations
 
     Scales the input data and then returns the estimations
@@ -72,7 +70,7 @@ def estimate_LF_WC(input_data, model_dir=LF_MODEL_DIR,
     return wc
 
 
-def load_model(dir, model_prefix, scaler_prefix):
+def load_model(dir: str, model_prefix: str, scaler_prefix: str):
     """Loads a model and its associated standard scaler
 
     If there are several models in the specified directory, then the latest
@@ -101,10 +99,10 @@ def load_model(dir, model_prefix, scaler_prefix):
         raise Exception(
             "No matching scaler was found for model {}".format(model_file))
 
-    with open(scaler_file, 'r') as f:
+    with open(scaler_file, 'rb') as f:
         scaler = pickle.load(f)
 
-    model = keras.models.load_model(model_file)
+    model = NNWcEstModel.from_saved_model(model_file)
 
     print("Loaded model {} and scaler {}".format(model_file, scaler_file))
 
