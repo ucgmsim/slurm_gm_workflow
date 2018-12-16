@@ -7,6 +7,7 @@ import json
 import os
 import glob
 import datetime
+import pickle
 
 import pandas as pd
 import numpy as np
@@ -14,7 +15,6 @@ import matplotlib.pyplot as plt
 
 from argparse import ArgumentParser
 from sklearn.preprocessing import StandardScaler
-from sklearn.externals import joblib
 
 from estimation.model import NNWcEstModel
 
@@ -23,6 +23,8 @@ CONFIG_TARGET_COL_KEY = "target_col"
 
 SCALER_FILENAME = "scaler_{}.pickle"
 MODEL_FILENAME = "model_{}.h5"
+
+TIMESTAMP_TEMPLATE = "{0:%Y%m%d_%H%M%S}"
 
 
 def preprocessing(X: np.ndarray, y: np.ndarray, scaler_file: str = None):
@@ -45,7 +47,9 @@ def preprocessing(X: np.ndarray, y: np.ndarray, scaler_file: str = None):
     X = std_scaler.fit_transform(X)
 
     if scaler_file is not None:
-        joblib.dump(std_scaler, scaler_file)
+        with open(scaler_file, "wb") as f:
+            # Have to use protocol 2 so it can be loaded in python2
+            pickle.dump(std_scaler, f, protocol=2)
 
     return X, y, std_scaler
 
@@ -98,7 +102,7 @@ def main(args):
          input_data_cols], axis=1)
     y = data_df.loc[:, tuple(target_col)].values
 
-    timestamp = "{0:%Y%m%d_%H%M%S}".format(datetime.datetime.now())
+    timestamp = TIMESTAMP_TEMPLATE.format(datetime.datetime.now())
 
     # Preprocessing
     X, y, _ = preprocessing(X, y, os.path.join(
