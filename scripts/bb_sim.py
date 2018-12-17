@@ -39,6 +39,7 @@ if is_master:
     arg("--flo", help="low/high frequency cutoff", type=float)
     arg("--fmin", help="fmin for site amplification", type=float, default=0.2)
     arg("--fmidbot", help="fmidbot for site amplification", type=float, default=0.5)
+    arg("--lfvsref", help="Override LF Vs30 reference value (m/s)", type=float)
     try:
         args = parser.parse_args()
     except SystemExit:
@@ -77,14 +78,16 @@ if args.flo is None:
     # min_vs / (5.0 * hh)
     args.flo = 0.5 / (5.0 * lf.hh)
 
-# vs30ref from velocity model
-# with open('%s/params_vel.json' % (args.lf_vm), 'r') as j:
-#     vm_conf = json.load(j)
-# lfvs = np.memmap('%s/vs3dfile.s' % (args.lf_vm), dtype = '<f4', \
-#                  shape = (vm_conf['ny'], vm_conf['nz'], vm_conf['nx'])) \
-#                 [lf.stations.y, 0, lf.stations.x] * 1000.0
-# fixed vs30ref
-lfvs = np.ones(lf.stations.size) * 500.0
+if args.lfvsref is None:
+    # vs30ref from velocity model
+    with open('%s/params_vel.json' % (args.lf_vm), 'r') as j:
+        vm_conf = json.load(j)
+    lfvs = np.memmap('%s/vs3dfile.s' % (args.lf_vm), dtype = '<f4', \
+                     shape = (vm_conf['ny'], vm_conf['nz'], vm_conf['nx'])) \
+                    [lf.stations.y, 0, lf.stations.x] * 1000.0
+else:
+    # fixed vs30ref
+    lfvs = np.ones(lf.stations.size, dtype=np.float32) * args.lfvsref
 
 # load vs30ref
 try:
