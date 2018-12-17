@@ -268,7 +268,7 @@ def create_params_dict(version, sim_dir, event_name, run_name, run_dir, vel_mod_
     srf_files, stoch_files = zip(*srf_stoch_pairs)
 
     bb_dir = os.path.join(sim_dir, "BB")
-    template_path = os.path.join(workflow_config['templates_dir'], 'gmsim', version)
+    template_path = os.path.join(recipe_dir, 'gmsim', version)
     root_yaml_dict = utils.load_yaml(os.path.join(template_path, 'root_defaults.yaml'))
     fault_params_dict = {}
     sim_params_dict = {}
