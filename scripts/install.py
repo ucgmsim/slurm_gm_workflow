@@ -269,7 +269,7 @@ def create_params_dict(version, sim_dir, event_name, run_name, run_dir, vel_mod_
 
     bb_dir = os.path.join(sim_dir, "BB")
     template_path = os.path.join(recipe_dir, 'gmsim', version)
-    root_yaml_dict = utils.load_yaml(os.path.join(template_path, 'root_defaults.yaml'))
+    root_params_dict = utils.load_yaml(os.path.join(template_path, 'root_defaults.yaml'))
     fault_params_dict = {}
     sim_params_dict = {}
     vm_params_dict = {}
@@ -280,7 +280,6 @@ def create_params_dict(version, sim_dir, event_name, run_name, run_dir, vel_mod_
     root_params_dict['version'] = version
 
     root_params_dict['dt'] = 0.02
-    root_params_dict['bin_process_ver'] = "slurm"
     root_params_dict['stat_file'] = stat_file_path
 
     # potential remove
@@ -293,7 +292,6 @@ def create_params_dict(version, sim_dir, event_name, run_name, run_dir, vel_mod_
     fault_params_dict['vel_mod_dir'] = vel_mod_dir
     sim_params_dict['params_vel'] = params_vel_path
     sim_params_dict['sim_duration'] = sim_duration
-    root_params_dict['flo'] = flo
 
     vm_params_dict['MODEL_LAT'] = MODEL_LAT
     vm_params_dict['MODEL_LON'] = MODEL_LON
@@ -310,13 +308,7 @@ def create_params_dict(version, sim_dir, event_name, run_name, run_dir, vel_mod_
     vm_params_dict['MODEL_PARAMS'] = os.path.join(vel_mod_params_dir, 'model_params%s' % sufx)
     vm_params_dict['MODEL_BOUNDS'] = os.path.join(vel_mod_params_dir, 'model_bounds%s' % sufx)
 
-    root_params_dict['hf'] = {}
     sim_params_dict['hf'] = {}
-    root_params_dict['hf']['hf_dt'] = hf_dt
-    # root_params_dict['hf']['hf_sdrop'] = 50
-    # root_params_dict['hf']['hf_kappa'] = 0.045
-    # root_params_dict['hf']['hf_rvfac'] = 0.8
-    # root_params_dict['hf']['hf_path_dur'] = 1
     sim_params_dict['hf']['hf_slip'] = stoch_files
 
     sim_params_dict['bb'] = {}
