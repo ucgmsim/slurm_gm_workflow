@@ -30,12 +30,14 @@ args = None
 if is_master:
     parser = ArgumentParser()
     arg = parser.add_argument
-    arg('lf_dir', help = 'LF OutBin folder containing SEIS files')
-    arg('lf_vm', help = 'LF VM folder containing velocity model')
-    arg('hf_file', help = 'HF file path')
-    arg('vsite_file', help = 'Vs30 station file')
-    arg('out_file', help = 'BB output file path')
-    arg('--flo', help = 'low/high frequency cutoff', type = float)
+    arg('lf_dir', help='LF OutBin folder containing SEIS files')
+    arg('lf_vm', help='LF VM folder containing velocity model')
+    arg('hf_file', help='HF file path')
+    arg('vsite_file', help='Vs30 station file')
+    arg('out_file', help='BB output file path')
+    arg('--flo', help='low/high frequency cutoff', type=float)
+    arg('--fmin', help='fmin for site amplification', type=float, default=0.2)
+    arg('--fmidbot', help='fmidbot for site amplification', type=float, default=0.5)
     try:
         args = parser.parse_args()
     except SystemExit:
@@ -193,6 +195,8 @@ bin_seek = head_total + stations_todo_idx * bb_nt * N_COMP * FLOAT_SIZE
 bin_seek_vsite = HEAD_SIZE + stations_todo_idx * HEAD_STAT + 40
 
 # work on station subset
+fmin = args.fmin
+fmidbot = args.fminbot
 t0 = MPI.Wtime()
 bb_acc = np.empty((bb_nt, N_COMP), dtype = 'f4')
 for i, stat in enumerate(stations_todo):
@@ -205,10 +209,10 @@ for i, stat in enumerate(stations_todo):
     for c in xrange(3):
         hf_acc[:, c] = bwfilter(ampdeamp(hf_acc[:, c], \
                                 cb_amp(bb_dt, n2, stat.vs, vsite, stat.vs, \
-                                pga[c]), amp = True), bb_dt, args.flo, 'highpass')
+                                pga[c], fmin=fmin, fmidbot=fmidbot), amp = True), bb_dt, args.flo, 'highpass')
         lf_acc[:, c] = bwfilter(ampdeamp(lf_acc[:, c], \
                                 cb_amp(bb_dt, n2, stat_lfvs, vsite, stat_lfvs, \
-                                pga[c]), amp = True), bb_dt, args.flo, 'lowpass')
+                                pga[c], fmin=fmin, fmidbot=fmidbot), amp = True), bb_dt, args.flo, 'lowpass')
         bb_acc[:, c] = (np.hstack((d_ts, hf_acc[:, c])) \
                         + np.hstack((lf_acc[:, c], d_ts))) / 981.0
     bin_data.seek(bin_seek[i])
