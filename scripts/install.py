@@ -268,7 +268,8 @@ def create_params_dict(version, sim_dir, event_name, run_name, run_dir, vel_mod_
     srf_files, stoch_files = zip(*srf_stoch_pairs)
 
     bb_dir = os.path.join(sim_dir, "BB")
-    root_params_dict = get_yaml_template(version)
+    template_path = os.path.join(workflow_config['templates_dir'], 'gmsim', version)
+    root_yaml_dict = utils.load_yaml(os.path.join(template_path, 'root_defaults.yaml'))
     fault_params_dict = {}
     sim_params_dict = {}
     vm_params_dict = {}
@@ -471,12 +472,6 @@ def wallclock(sim_dir):
         if yes_change_wc:
             user_input_wc = get_input_wc()
             return user_input_wc
-
-
-def get_yaml_template(version):
-    template_path = os.path.join(workflow_config['templates_dir'], 'gmsim', version)
-    root_yaml_dict = utils.load_yaml(os.path.join(template_path, 'root_defaults.yaml'))
-    return root_yaml_dict
 
 
 def main_local():
