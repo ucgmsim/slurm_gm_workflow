@@ -75,6 +75,8 @@ class NNWcEstModel(WCEstModel):
     activation_const = "activation"
 
     n_epochs_const = "n_epochs"
+    loss_const = "loss"
+    metrics_const = "metrics"
 
     def __init__(self, model_config_file: str = None):
         """Sets the model parameters from the config file
@@ -113,7 +115,9 @@ class NNWcEstModel(WCEstModel):
         model = self._build_model(X.shape[1])
 
         # Optimizer
-        model.compile(optimizer="adam", loss="mse")
+        loss_name = self._config_dict[self.loss_const]
+        model.compile(optimizer="adam", loss=loss_name,
+                      metrics=self._config_dict[self.metrics_const])
 
         # Train the model
         self.hist = model.fit(X_train, y_train,
@@ -121,13 +125,14 @@ class NNWcEstModel(WCEstModel):
                               validation_data=val_data)
 
         print("Trained the model using {} samples giving a "
-              "MSE loss of {:.5f} for the final epoch.".format(
-            X_train.shape[0], self.hist.history['loss'][-1]))
+              "{} loss of {:.5f} for the final epoch.".format(
+            X_train.shape[0], loss_name, self.hist.history['loss'][-1]))
 
         if val_data is not None:
             print("Validated the model using {} samples giving a "
-                  "MSE loss of {:.5f} for the final epoch.".format(
-                val_data[0].shape[0], self.hist.history['val_loss'][-1]))
+                  "{} loss of {:.5f} for the final epoch.".format(
+                val_data[0].shape[0], loss_name,
+                self.hist.history['val_loss'][-1]))
 
         self.train_data, self.val_data = (X_train, y_train), val_data
         self._model, self.is_trained = model, True

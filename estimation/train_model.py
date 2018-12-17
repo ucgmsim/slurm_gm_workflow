@@ -114,6 +114,11 @@ def main(args):
     model.save_model(os.path.join(
         args.output_dir, MODEL_FILENAME.format(timestamp)))
 
+    if args.verbose:
+        for key in model.hist.history.keys():
+            print("Final epoch value for {}: {:.5f}".format(
+                key, model.hist.history[key][-1]))
+
     if args.show_loss:
         show_loss(model)
 
@@ -144,6 +149,8 @@ if __name__ == '__main__':
     parser.add_argument("--show_loss", action="store_true", default=False,
                         help="If a NN model is used, show a "
                              "loss and validation loss graph")
+    parser.add_argument("-v", "--verbose", action="store_true", default=False,
+                        help="Adds more verbosity")
 
     args = parser.parse_args()
 
