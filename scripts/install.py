@@ -264,12 +264,11 @@ def create_params_dict(version, sim_dir, event_name, run_name, run_dir, vel_mod_
         vel_mod_params_dir = vel_mod_dir
 
     # TODO: get rid of this
-    bin_process_ver = "slurm"
 
     srf_files, stoch_files = zip(*srf_stoch_pairs)
 
     bb_dir = os.path.join(sim_dir, "BB")
-    root_params_dict = {}
+    root_params_dict = get_yaml_template(version)
     fault_params_dict = {}
     sim_params_dict = {}
     vm_params_dict = {}
@@ -313,10 +312,10 @@ def create_params_dict(version, sim_dir, event_name, run_name, run_dir, vel_mod_
     root_params_dict['hf'] = {}
     sim_params_dict['hf'] = {}
     root_params_dict['hf']['hf_dt'] = hf_dt
-    root_params_dict['hf']['hf_sdrop'] = 50
-    root_params_dict['hf']['hf_kappa'] = 0.045
-    root_params_dict['hf']['hf_rvfac'] = 0.8
-    root_params_dict['hf']['hf_path_dur'] = 1
+    # root_params_dict['hf']['hf_sdrop'] = 50
+    # root_params_dict['hf']['hf_kappa'] = 0.045
+    # root_params_dict['hf']['hf_rvfac'] = 0.8
+    # root_params_dict['hf']['hf_path_dur'] = 1
     sim_params_dict['hf']['hf_slip'] = stoch_files
 
     sim_params_dict['bb'] = {}
@@ -472,6 +471,12 @@ def wallclock(sim_dir):
         if yes_change_wc:
             user_input_wc = get_input_wc()
             return user_input_wc
+
+
+def get_yaml_template(version):
+    template_path = os.path.join(workflow_config['templates_dir'], 'gmsim', version)
+    root_yaml_dict = utils.load_yaml(os.path.join(template_path, 'root_defaults.yaml'))
+    return root_yaml_dict
 
 
 def main_local():
