@@ -7,14 +7,25 @@ from shared_workflow.shared import *
 import sys
 import os
 
-sys.path.append(os.path.abspath(os.path.curdir))
-from params import *
+#sys.path.append(os.path.abspath(os.path.curdir))
+#from params import *
+from qcore.utils import load_py_cfg
 
-
-def main(stat_file = 'default.ll', \
-        MODEL_LAT = MODEL_LAT, MODEL_LON = MODEL_LON, MODEL_ROT = MODEL_ROT, \
-        hh = hh, nx = nx, ny = ny, sim_dir = sim_dir, sufx = sufx, \
+def main(sim_dir, stat_file = 'default.ll',\
         debug = False):
+
+#    params = __import__('params', globals(), locals(), [], -1)
+    params = load_py_cfg(os.path.join(sim_dir,"params_base.py"))
+
+    MODEL_LAT = params['MODEL_LAT']
+    MODEL_LON = params['MODEL_LON']
+    MODEL_ROT = params['MODEL_ROT']
+    hh = params['hh']
+    nx = params['nx']
+    ny = params['ny']
+    sim_dir = params['sim_dir']
+    sufx = params['sufx']
+    
     verify_strings([MODEL_LAT, MODEL_LON, MODEL_ROT, hh, nx, ny,sim_dir,sufx])
 
     outpath = sim_dir
