@@ -196,7 +196,7 @@ bin_seek_vsite = HEAD_SIZE + stations_todo_idx * HEAD_STAT + 40
 
 # work on station subset
 fmin = args.fmin
-fmidbot = args.fminbot
+fmidbot = args.fmidbot
 t0 = MPI.Wtime()
 bb_acc = np.empty((bb_nt, N_COMP), dtype = 'f4')
 for i, stat in enumerate(stations_todo):
