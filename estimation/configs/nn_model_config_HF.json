@@ -1,0 +1,10 @@
+{
+  "input_cols": [["HF","fd_count"], ["HF","nsub_stoch"], ["HF","nt"]],
+  "target_col": ["HF","run_time"],
+
+  "units": [32, 32],
+  "dropout": null,
+  "activation": "relu",
+
+  "n_epochs": 10
+}

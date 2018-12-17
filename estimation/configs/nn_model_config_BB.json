@@ -1,0 +1,10 @@
+{
+  "input_cols": [["BB","fd_count"], ["HF","nt"]],
+  "target_col": ["BB","run_time"],
+
+  "units": [32, 32],
+  "dropout": 0.1,
+  "activation": "relu",
+
+  "n_epochs": 10
+}

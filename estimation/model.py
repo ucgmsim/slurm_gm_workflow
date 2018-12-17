@@ -86,10 +86,10 @@ class NNWcEstModel(WCEstModel):
         """
         super().__init__(model_config_file)
 
-        self.config_dict = None
+        self._config_dict = None
         if model_config_file is not None:
             with open(model_config_file, "r") as f:
-                self.config_dict = json.load(f)
+                self._config_dict = json.load(f)
 
         self._model, self.hist = None, None
         self.train_data, self.val_data = None, None
@@ -116,8 +116,18 @@ class NNWcEstModel(WCEstModel):
         model.compile(optimizer="adam", loss="mse")
 
         # Train the model
-        self.hist = model.fit(X_train, y_train, epochs=10,
-                         validation_data=val_data)
+        self.hist = model.fit(X_train, y_train,
+                              epochs=self._config_dict[self.n_epochs_const],
+                              validation_data=val_data)
+
+        print("Trained the model using {} samples giving a "
+              "MSE loss of {:.5f} for the final epoch.".format(
+            X_train.shape[0], self.hist.history['loss'][-1]))
+
+        if val_data is not None:
+            print("Validated the model using {} samples giving a "
+                  "MSE loss of {:.5f} for the final epoch.".format(
+                val_data[0].shape[0], self.hist.history['val_loss'][-1]))
 
         self.train_data, self.val_data = (X_train, y_train), val_data
         self._model, self.is_trained = model, True
@@ -130,9 +140,9 @@ class NNWcEstModel(WCEstModel):
                             "unless loading from an existing save model, "
                             "in which case from_saved_model should be used.")
 
-        units = self.config_dict[self.units_const]
-        dropout = self.config_dict[self.dropout_const]
-        activation = self.config_dict[self.activation_const]
+        units = self._config_dict[self.units_const]
+        dropout = self._config_dict[self.dropout_const]
+        activation = self._config_dict[self.activation_const]
 
         # Build the model
         model = keras.models.Sequential()
