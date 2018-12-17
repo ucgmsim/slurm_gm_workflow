@@ -31,9 +31,8 @@ def create_run_params(sim_dir, srf_name=None):
     params = utils.load_params('root_params.yaml', 'fault_params.yaml', 'sim_params.yaml')
     utils.update(params, utils.load_params(os.path.join(params.vel_mod_dir, 'vm_params.yaml')))
     srf_file = params.srf_file[0]
-    e3d_yaml = os.path.join(workflow_config['templates_dir'], 'emod3d_defaults.yaml')
+    e3d_yaml = os.path.join(workflow_config['templates_dir'], 'gmsim', params.version, 'emod3d_defaults.yaml')
     e3d_dict = utils.load_yaml(e3d_yaml)
-    print("flo is ", params.flo)
     # skip all logic if a specific srf_name is provided
     if srf_name is None or srf_name == os.path.splitext(basename(srf_file))[0]:
         srf_file_basename = os.path.splitext(os.path.basename(srf_file))[0]
