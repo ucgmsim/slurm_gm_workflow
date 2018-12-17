@@ -19,7 +19,8 @@ print
 workflow_config = ldcfg.load(os.path.dirname(os.path.realpath(__file__)),"workflow_config.json")
 workflow_root=workflow_config['gm_sim_workflow_root']
 global_root = workflow_config["global_root"]
-tools_dir = os.path.join(global_root, 'EMOD3D/tools')
+#tools_dir = os.path.join(global_root, 'EMOD3D/tools')
+tools_dir = workflow_config["tools_dir"]
 bin_process_dir = os.path.join(global_root, 'workflow/scripts')
 emod3d_version = workflow_config["emod3d_version"]
 params_vel = workflow_config['params_vel']
@@ -395,7 +396,7 @@ def action(sim_dir, event_name, run_name, run_dir, vel_mod_dir, srf_dir, srf_sto
 
         # Create Stat_cord & statList
         import statlist2gp
-        fd_statcords, fd_statlist = statlist2gp.main(stat_file=stat_file_path)
+        fd_statcords, fd_statlist = statlist2gp.main(sim_dir,stat_file=stat_file_path)
         print "Done"
         with open(os.path.join(sim_dir, "params_base.py"), "a") as f:
             f.write("stat_coords='%s'\n" % fd_statcords)
