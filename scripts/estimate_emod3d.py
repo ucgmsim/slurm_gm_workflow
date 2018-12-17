@@ -6,6 +6,8 @@ from math import ceil
 #default_emod3d_coef=6860795
 default_emod3d_coef=3.00097
 default_ncore=160
+default_core_per_node=40
+default_time_thresh=0.5
 default_wct_scale=1.5
 default_round_len=2
 #hyperthread
@@ -30,18 +32,32 @@ def est_core_hours_emod3d(nx, ny, nz,dt, sim_duration, emod3d_coef=default_emod3
 #TODO:move shared funciton to a shared lib file
 #this function is used by LF, HF, and BB
 def est_wct(core_hours, ncore, scale=default_wct_scale):
+    #reformat
+    ncore = int(ncore)
     if scale < 1.0:
         print "Warning!! scale is under 1, may cause under estimating WCT."
     scaled_estimation = core_hours*scale
+    time_per_cpu = float(scaled_estimation)/int(ncore)
+    
+    #scale up the nodes requesting base on WCT
+    time_thresh = default_time_thresh*(ncore/default_core_per_node)
+    while time_per_cpu > time_thresh:
+        ncore = ncore + default_core_per_node
+        time_thresh = default_time_thresh * ( ncore/default_core_per_node )
+        time_per_cpu = float(scaled_estimation)/int(ncore)
+    
     #using ceil to round up the wct, so it will use at least one hour
-    time_per_cpu = ceil(float(scaled_estimation)/int(ncore))
+    time_per_cpu = ceil(time_per_cpu)
+    
     #final fail-prof
     if time_per_cpu <= 1.0:
         time_per_cpu = 1.0
+
+
     estimated_wct = '{0:02.0f}:{1:02.0f}:00'.format(*divmod(time_per_cpu * 60, 60))
     #please keep note that the value may exceed the limit of one job, which is typically 23:59:59
     #its the script that called this function to be responsible of doing thise check
-    return estimated_wct
+    return estimated_wct,str(ncore)
 
 if __name__ == '__main__':
       
