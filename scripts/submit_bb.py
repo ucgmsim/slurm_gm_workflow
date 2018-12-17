@@ -70,7 +70,7 @@ def write_sl_script(bb_sim_dir, sim_dir, srf_name, sl_template_prefix, nb_cpus=d
         arguments = [os.path.join(sim_dir, 'LF', "OutBin"), params.vel_mod_dir,
                      os.path.join(sim_dir, 'HF', "Acc/HF.bin"),
                      params.stat_vs_est, os.path.join(bb_sim_dir, "Acc/BB.bin"),
-                     "--flo", params.flo]
+                     "--flo", str(params.flo)]
         txt = str_template.replace("{{bb_submit_command}}", submit_command + " ".join(arguments))
     else:
         txt = str_template.replace("{{bb_submit_command}}",
