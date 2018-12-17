@@ -6,4 +6,6 @@ hf:
   hf_kappa: 0.045
 bb:
   site_specific: false
+  fmin: 0.2
+  fmidbot: 0.5
 flo: 0.25
