@@ -11,8 +11,8 @@ fi
 
 sim_dir=$1
 srf_name=$2
-run_name=`python -c "from params_base import *; print run_name"`
-lf_sim_dir=`python -c "import os; print os.path.join(os.path.join('$sim_dir','LF'), '$srf_name')"`
+#run_name=`python -c "from params_base import *; print run_name"`
+lf_sim_dir=`python -c "import os; print os.path.join('$sim_dir','LF')"`
 
 #check Rlog
 cd $lf_sim_dir/Rlog 2> /dev/null

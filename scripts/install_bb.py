@@ -115,7 +115,7 @@ def action_for_uncertainties(hf_sim_basedir,bb_sim_basedir,srf,slip,kappa,sdrop)
     bb_sim_dir = os.path.join(bb_sim_basedir,srf_basename)
     dirs.append(hf_sim_dir)
     dirs.append(bb_sim_dir)
-    params_uncertain_path=os.path.join(lf_sim_root_dir,srf_basename,params_uncertain)
+    params_uncertain_path=os.path.join(lf_sim_root_dir,params_uncertain)
     print params_uncertain_path
     execfile(params_uncertain_path,globals())
 

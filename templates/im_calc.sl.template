@@ -17,7 +17,7 @@ echo ___calculating simulations___
     start_time=`date +$runtime_fmt`
     echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} IM_calculation running --run_name {{sim_name}} --j $SLURM_JOBID" >> {{mgmt_db_location}}/mgmt_db_queue/$timestamp\_$SLURM_JOBID
     #run the script
-    time python2 $IMPATH/calculate_ims.py {{sim_dir}}/Acc/BB.bin b -o {{sim_dir}}/../../../IM_calc/ -np {{np}} -i {{sim_name}} -r {{fault_name}} -c {{comp}} -t s {{extended}} {{simple}}
+    time python2 $IMPATH/calculate_ims.py {{sim_dir}}/Acc/BB.bin b -o {{sim_dir}}/../IM_calc/ -np {{np}} -i {{sim_name}} -r {{fault_name}} -c {{comp}} -t s {{extended}} {{simple}}
 
 #test before update mgmt_db
     timestamp=`date +%Y%m%d_%H%M%S`

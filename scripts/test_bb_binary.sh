@@ -2,14 +2,14 @@
 
 #get run_name from $1
 
-if [[ $# -lt 3 ]]; then
-    echo "please provide the sim_dir, bb_run_name, and srf_name"
+if [[ $# -lt 1 ]]; then
+    echo "please provide the sim_dir"
     exit 1
 fi
 
 sim_dir=$1
-bb_run_name=$2
-srf_name=$3
+#bb_run_name=$2
+#srf_name=$3
 
 cd $sim_dir
 fd_ll=`python -c "from params_base import *; print FD_STATLIST"`
