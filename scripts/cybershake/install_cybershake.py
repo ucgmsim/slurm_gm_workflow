@@ -9,11 +9,12 @@ import argparse
 
 from scripts import install
 from scripts.management import create_mgmt_db
-#from shared_workflow.shared import *
-from shared_workflow.shared import verify_user_dirs
+from shared_workflow.shared import *
+from qcore import utils
 
 default_dt = 0.005
 default_hf_dt = 0.005
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -103,11 +104,14 @@ def main():
 
 
     install.action(sim_dir,event_name,run_name, run_dir, vel_mod_dir, srf_root_dir, srf_stoch_pairs,params_vel_path,stat_file_path, vs30_file_path, vs30ref_file_path, MODEL_LAT,MODEL_LON,MODEL_ROT,hh,nx,ny,nz,sufx,sim_duration,flo,vel_mod_params_dir,yes_statcords, yes_model_params, dt, hf_dt)
-
+    fault_params_dict = install.create_fault_params_dict(sim_dir,event_name,run_name, run_dir, vel_mod_dir, srf_root_dir, srf_stoch_pairs,params_vel_path,stat_file_path, vs30_file_path, vs30ref_file_path, MODEL_LAT,MODEL_LON,MODEL_ROT,hh,nx,ny,nz,sufx,sim_duration,flo,vel_mod_params_dir,yes_statcords, yes_model_params, dt, hf_dt)
+   
     create_mgmt_db.create_mgmt_db([], path_cybershake, srf_files=srf_files)
     with open(os.path.join(sim_dir,"params_base.py"),"a") as f:
         f.write("mgmt_db_location='%s'\n" % path_cybershake)
-    
+    fault_params_dict.update({'mgmt_db_location': path_cybershake})
+    utils.dump_yaml(fault_params_dict, os.path.join(sim_dir, 'fault_params.yaml'))
+    print("dumped")  
     #store extra params provided
     if 'hf_stat_vs_ref' in qcore_cfg:
         with open(os.path.join(sim_dir,"params_base.py"),"a") as f:
