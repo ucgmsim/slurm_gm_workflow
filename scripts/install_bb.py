@@ -111,8 +111,8 @@ def store_params(params_base_bb_dict):
 def action_for_uncertainties(hf_sim_basedir,bb_sim_basedir,srf,slip,kappa,sdrop):
     dirs = []
     srf_basename = os.path.splitext(os.path.basename(srf))[0] #take the filename only
-    hf_sim_dir = os.path.join(hf_sim_basedir,srf_basename)
-    bb_sim_dir = os.path.join(bb_sim_basedir,srf_basename)
+    hf_sim_dir = hf_sim_basedir
+    bb_sim_dir = bb_sim_basedir
     dirs.append(hf_sim_dir)
     dirs.append(bb_sim_dir)
     params_uncertain_path=os.path.join(lf_sim_root_dir,params_uncertain)
@@ -243,7 +243,8 @@ def main():
         #append the hf_run_name to a list for later purpose
         hf_run_names_list.append(hf_run_name)
 
-        hf_sim_basedir, bb_sim_basedir = os.path.join(hf_dir,hf_run_name), os.path.join(bb_dir,hf_run_name)
+        #hf_sim_basedir, bb_sim_basedir = os.path.join(hf_dir,hf_run_name), os.path.join(bb_dir,hf_run_name)
+        hf_sim_basedir, bb_sim_basedir = hf_dir,bb_dir
         action_for_uncertainties(hf_sim_basedir,bb_sim_basedir, srf, slip, kappa, sdrop)
     #
     params_base_bb_dict['hf_run_names'] = hf_run_names_list
