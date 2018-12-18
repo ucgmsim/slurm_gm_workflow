@@ -26,21 +26,6 @@ ALL_META_JSON = 'all_sims.json'
 PARAMS_BASE = 'params_base.py'
 
 
-# TODO may not need this func for formating run_time. eg.only use {:.3f} if sure run_time would be 0.0xxxxxxxxx
-def get_precision(num):
-    """return a precision for formatting a float
-       num: a float
-       eg. nums is 0.567123---> precision is 2 (0.57)
-    """
-    decimals = str(num).split('.')[1]
-    i = 0
-    while i < len(decimals) - 1:
-        if decimals[i] != '0':
-            precision = i + 1 + 1   # float formatting starts from decimal 1 not 0
-            return precision
-        i += 1
-
-
 def get_all_sims_dict(fault_dir):
     """
     :param fault_dir: abs path to a single fault dir
@@ -53,6 +38,11 @@ def get_all_sims_dict(fault_dir):
         hh = get_hh(fault_dir)
         for f in os.listdir(ch_log_dir):  # iterate through all realizations
             f_suffix = f[:2]
+
+            # Resilience against other dirs in ch_log (such as EMOD3Dxxx.log)
+            if f_suffix not in KEY_DICT.keys():
+                continue
+
             with open(os.path.join(ch_log_dir, f), 'r') as log_file:
                 buf = log_file.readlines()
             raw_data = buf[0].strip().split()
@@ -65,7 +55,6 @@ def get_all_sims_dict(fault_dir):
             for i in range(len(data)):
                 key = KEY_DICT[f_suffix][i]
                 if key == 'run_time':
-                   # precision = get_precision(float(data[i]))
                     data[i] = "{:.3f} hour".format(float(data[i]))
                 all_sims_dict[realization][f_suffix][key] = data[i]
             if f_suffix == 'LF' and all_sims_dict[realization][f_suffix].get('total_memory_usage') == None:

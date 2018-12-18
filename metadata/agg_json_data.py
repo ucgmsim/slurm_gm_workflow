@@ -64,6 +64,12 @@ def create_dataframe(json_file):
 
     if len(columns) > 0:
         row_data = get_row_data(data_dict, columns)
+
+        # Remove empty rows
+        empty_rows_mask = np.all(pd.isnull(row_data), axis=1)
+        row_data = row_data[~empty_rows_mask]
+        index = np.asarray(index)[~empty_rows_mask]
+
         df = pd.DataFrame(index=index,
                           columns=pd.MultiIndex.from_tuples(columns),
                           data=row_data)
@@ -97,7 +103,7 @@ def get_row_data(data_dict, column_paths):
             cur_row_data.append(np.nan)
 
         row_data.append(cur_row_data)
-    return row_data
+    return np.asarray(row_data)
 
 
 def clean_df(df):
@@ -128,8 +134,12 @@ def clean_df(df):
 
 
 def main(args):
+    # Check if the output file already exists (No overwrite)
+    if os.path.isfile(args.output_file):
+        print("Output file already exists. Not proceeding. Exiting.")
+
     # Get all .json files
-    print("Searching for matching .json files")
+    print("Searching for matching json files")
     if args.not_recursive:
         json_files = glob.glob(
             os.path.join(
