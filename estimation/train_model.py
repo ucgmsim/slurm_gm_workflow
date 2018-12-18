@@ -8,6 +8,7 @@ import os
 import glob
 import datetime
 import pickle
+import shutil
 
 import pandas as pd
 import numpy as np
@@ -17,6 +18,7 @@ from argparse import ArgumentParser
 from sklearn.preprocessing import StandardScaler
 
 from estimation.model import NNWcEstModel
+from metadata.agg_json_data import MetaConst
 
 CONFIG_INPUT_COLS_KEY = "input_cols"
 CONFIG_TARGET_COL_KEY = "target_col"
@@ -74,6 +76,18 @@ def show_loss(model: NNWcEstModel):
     plt.show()
 
 
+def gen_fake_ncores_data(X: np.ndarray, y: np.ndarray, core_col_ix: int,
+                         n_cores: int):
+    """Computes the run_time for the given samples for the specified number
+    of cores. Assumes run time is inversely proportional to number of cores."""
+    X_new = np.copy(X)
+    X_new[:, core_col_ix] = n_cores
+
+    y_new = (y * X[:, core_col_ix]) / X_new[:, core_col_ix]
+
+    return X_new, y_new
+
+
 def main(args):
     # Get the data files (dataframes/csv)
     files = args.input_files
@@ -102,6 +116,28 @@ def main(args):
          input_data_cols], axis=1)
     y = data_df.loc[:, tuple(target_col)].values
 
+    # Fake number of cores data generation
+    if args.fake_n_cores is not None:
+        # Check that number of cores is actually an input feature
+        col_names = [col_path[1] for col_path in input_data_cols]
+        if MetaConst.n_cores.value not in col_names:
+            print("Number of cores is not one of the input features, ignoring "
+                  "fake_n_cores argument!")
+        else:
+            print("Creating fake n_cores data, "
+                  "for {} number of cores".format(args.fake_n_cores))
+            new_X_data, new_y_data = [], []
+            for cur_n_cores in args.fake_n_cores:
+                # Generate the fake data
+                X_new, y_new = gen_fake_ncores_data(
+                    X, y, col_names.index(MetaConst.n_cores.value),
+                    cur_n_cores)
+                new_X_data.append(X_new)
+                new_y_data.append(y_new)
+
+            X = np.concatenate((X, np.concatenate(new_X_data, axis=0)), axis=0)
+            y = np.concatenate((y, np.concatenate(new_y_data)))
+
     timestamp = TIMESTAMP_TEMPLATE.format(datetime.datetime.now())
 
     # Preprocessing
@@ -113,6 +149,13 @@ def main(args):
     model.train(X, y, args.val_split)
     model.save_model(os.path.join(
         args.output_dir, MODEL_FILENAME.format(timestamp)))
+
+    # Also save the config file used
+    shutil.copy(args.config, os.path.join(
+        os.path.dirname(args.output_dir),
+        "{}_{}.json".format(
+            os.path.basename(args.config).split('.')[0], timestamp)
+    ))
 
     if args.verbose:
         for key in model.hist.history.keys():
@@ -151,6 +194,11 @@ if __name__ == '__main__':
                              "loss and validation loss graph")
     parser.add_argument("-v", "--verbose", action="store_true", default=False,
                         help="Adds more verbosity")
+    parser.add_argument("--fake_n_cores", type=int, default=None,
+                        help="Use the training data with fake n_cores "
+                             "assumes run_time is proptional "
+                             "to the inverse of n_cores",
+                        nargs="+")
 
     args = parser.parse_args()
 

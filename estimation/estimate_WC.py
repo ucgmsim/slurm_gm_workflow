@@ -19,8 +19,9 @@ SCALER_PREFIX = "scaler_"
 
 
 def estimate_LF_WC_single(
-        nx: float, ny: float, nz: float, nt: float, model_dir: str = LF_MODEL_DIR,
-        model_prefix: str = MODEL_PREFIX, scaler_prefix: str = SCALER_PREFIX):
+        nx: float, ny: float, nz: float, nt: float, n_cores: int,
+        model_dir: str = LF_MODEL_DIR, model_prefix: str = MODEL_PREFIX,
+        scaler_prefix: str = SCALER_PREFIX):
     """Convenience function to make a single estimation
 
     If the input parameters (or even just the order) of the model
@@ -28,7 +29,7 @@ def estimate_LF_WC_single(
 
     Params
     ------
-    nx, ny, nz, nt: float
+    nx, ny, nz, nt, n_cores: float, int
         Input features for the model
 
     Returns
@@ -38,7 +39,7 @@ def estimate_LF_WC_single(
     """
     # Make a numpy array of the input data in the right shape
     # The order of the features has to the same as for training!!
-    data = np.array([nx, ny, nz, nt]).reshape(1, 4)
+    data = np.array([nx, ny, nz, nt, n_cores]).reshape(1, 5)
 
     return estimate(data, model_dir=model_dir, model_prefix=model_prefix,
                     scaler_prefix=scaler_prefix)
