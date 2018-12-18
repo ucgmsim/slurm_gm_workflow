@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 """
 Generates 'e3d.par' from the default set, appending new key value pairs of parameters.
 
@@ -33,7 +33,6 @@ def create_run_parameters(sim_dir,srf_name=None):
     #import params_base
     sys.path.append(sim_dir)
     params_base = __import__('params_base', globals(), locals(), [], -1)
-    
     
     # attempt to append template file before importing params
     try:
