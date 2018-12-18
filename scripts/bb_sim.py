@@ -12,6 +12,7 @@ import numpy as np
 
 from qcore.siteamp_models import nt2n, cb_amp
 from qcore import timeseries
+
 ampdeamp = timeseries.ampdeamp
 bwfilter = timeseries.bwfilter
 HEAD_SIZE = timeseries.BBSeis.HEAD_SIZE
@@ -30,18 +31,22 @@ args = None
 if is_master:
     parser = ArgumentParser()
     arg = parser.add_argument
-    arg('lf_dir', help = 'LF OutBin folder containing SEIS files')
-    arg('lf_vm', help = 'LF VM folder containing velocity model')
-    arg('hf_file', help = 'HF file path')
-    arg('vsite_file', help = 'Vs30 station file')
-    arg('out_file', help = 'BB output file path')
-    arg('--flo', help = 'low/high frequency cutoff', type = float)
+    arg("lf_dir", help="LF OutBin folder containing SEIS files")
+    arg("lf_vm", help="LF VM folder containing velocity model")
+    arg("hf_file", help="HF file path")
+    arg("vsite_file", help="Vs30 station file")
+    arg("out_file", help="BB output file path")
+    arg("--flo", help="low/high frequency cutoff", type=float)
+    arg("--fmin", help="fmin for site amplification", type=float, default=0.2)
+    arg("--fmidbot", help="fmidbot for site amplification", type=float, default=0.5)
+    arg("--lfvsref", help="Override LF Vs30 reference value (m/s)", type=float)
     try:
         args = parser.parse_args()
     except SystemExit:
         # invalid arguments or -h
         comm.Abort()
-args = comm.bcast(args, root = master)
+args = comm.bcast(args, root=master)
+
 # load data stores
 lf = timeseries.LFSeis(args.lf_dir)
 hf = timeseries.HFSeis(args.hf_file)
@@ -50,14 +55,13 @@ hf = timeseries.HFSeis(args.hf_file)
 # abort if behaviour is undefined
 if is_master:
     if not lf.nstat == hf.nstat:
-        print('LF nstat != HF nstat. %s vs %s' % (lf.nstat, hf.nstat))
+        print("LF nstat != HF nstat. %s vs %s" % (lf.nstat, hf.nstat))
         comm.Abort()
     if not np.array_equiv(lf.stations.name, hf.stations.name):
-        print('LF and HF were run with different station files')
+        print("LF and HF were run with different station files")
         comm.Abort()
-    if not np.isclose(lf.dt * lf.nt, hf.dt * hf.nt, atol = min(lf.dt, hf.dt)):
-        print('LF duration != HF duration. %s vs %s' % (lf.dt * lf.nt, \
-                                                        hf.dt * hf.nt))
+    if not np.isclose(lf.dt * lf.nt, hf.dt * hf.nt, atol=min(lf.dt, hf.dt)):
+        print("LF duration != HF duration. %s vs %s" % (lf.dt * lf.nt, hf.dt * hf.nt))
         comm.Abort()
 
 # load metadata
@@ -74,44 +78,65 @@ if args.flo is None:
     # min_vs / (5.0 * hh)
     args.flo = 0.5 / (5.0 * lf.hh)
 
-# vs30ref from velocity model
-# with open('%s/params_vel.json' % (args.lf_vm), 'r') as j:
-#     vm_conf = json.load(j)
-# lfvs = np.memmap('%s/vs3dfile.s' % (args.lf_vm), dtype = '<f4', \
-#                  shape = (vm_conf['ny'], vm_conf['nz'], vm_conf['nx'])) \
-#                 [lf.stations.y, 0, lf.stations.x] * 1000.0
-# fixed vs30ref
-lfvs = np.ones(lf.stations.size) * 500.0
+if args.lfvsref is None:
+    # vs30ref from velocity model
+    with open('%s/params_vel.json' % (args.lf_vm), 'r') as j:
+        vm_conf = json.load(j)
+    lfvs = np.memmap('%s/vs3dfile.s' % (args.lf_vm), dtype = '<f4', \
+                     shape = (vm_conf['ny'], vm_conf['nz'], vm_conf['nx'])) \
+                    [lf.stations.y, 0, lf.stations.x] * 1000.0
+else:
+    # fixed vs30ref
+    lfvs = np.ones(lf.stations.size, dtype=np.float32) * args.lfvsref
 
 # load vs30ref
 try:
     # has to be a numpy array of np.float32 as written directly to binary
-    vsites = np.vectorize(dict(np.loadtxt(args.vsite_file, \
-                                          dtype = [('name', '|S8'), \
-                                                   ('vs30', 'f4')], \
-                                          comments = ('#', '%'))) \
-                          .get)(lf.stations.name)
-    assert(not np.isnan(vsites).any())
+    vsites = np.vectorize(
+        dict(
+            np.loadtxt(
+                args.vsite_file,
+                dtype=[("name", "|S8"), ("vs30", "f4")],
+                comments=("#", "%"),
+            )
+        ).get
+    )(lf.stations.name)
+    assert not np.isnan(vsites).any()
 except AssertionError:
     if is_master:
-        print('vsite file is missing stations')
+        print("vsite file is missing stations")
         comm.Abort()
 
 # initialise output with general metadata
-def initialise(check_only = False):
-    with open(args.out_file, mode = 'rb' if check_only else 'w+b') as out:
+def initialise(check_only=False):
+    with open(args.out_file, mode="rb" if check_only else "w+b") as out:
         # int/bool parameters
-        i = np.array([lf.stations.size, bb_nt], dtype = 'i4')
+        i = np.array([lf.stations.size, bb_nt], dtype="i4")
         # float parameters
-        f = np.array([bb_nt * bb_dt, bb_dt, bb_start_sec], dtype = 'f4')
+        f = np.array([bb_nt * bb_dt, bb_dt, bb_start_sec], dtype="f4")
         # string parameters
-        s = np.array([args.lf_dir, args.lf_vm, args.hf_file], dtype = '|S256')
+        s = np.array([args.lf_dir, args.lf_vm, args.hf_file], dtype="|S256")
         # station metadata
-        bb_stations = np.rec.array(np.zeros(lf.nstat, dtype = { \
-                'names':['lon', 'lat', 'name', 'x', 'y', 'z', \
-                         'e_dist', 'hf_vs_ref', 'lf_vs_ref'], \
-                'formats':['f4', 'f4', '|S8', 'i4', 'i4', 'i4', \
-                           'f4', 'f4', 'f4'], 'itemsize':HEAD_STAT}))
+        bb_stations = np.rec.array(
+            np.zeros(
+                lf.nstat,
+                dtype={
+                    "names": [
+                        "lon",
+                        "lat",
+                        "name",
+                        "x",
+                        "y",
+                        "z",
+                        "e_dist",
+                        "hf_vs_ref",
+                        "lf_vs_ref",
+                    ],
+                    "formats": ["f4", "f4", "|S8", "i4", "i4", "i4", "f4", "f4", "f4"],
+                    "itemsize": HEAD_STAT,
+                },
+            )
+        )
         # copy most from LF
         for col in bb_stations.dtype.names[:-3]:
             bb_stations[col] = lf.stations[col]
@@ -127,8 +152,7 @@ def initialise(check_only = False):
             for a in [i, f, s, bb_stations]:
                 if a is bb_stations:
                     out.seek(HEAD_SIZE)
-                assert(np.min(np.fromfile(out, dtype=a.dtype, count=a.size) \
-                              == a))
+                assert np.min(np.fromfile(out, dtype=a.dtype, count=a.size) == a)
         else:
             i.tofile(out)
             f.tofile(out)
@@ -139,17 +163,26 @@ def initialise(check_only = False):
             out.seek(file_size - FLOAT_SIZE)
             np.float32().tofile(out)
 
+
 def unfinished():
     try:
-        with open(args.out_file, 'rb') as bbf:
+        with open(args.out_file, "rb") as bbf:
             bbf.seek(HEAD_SIZE)
             # checkpoints are vsite written to file
             # assume continuing machine is the same endian
-            ckpoints = np.fromfile(bbf, count = lf.stations.size, \
-                                   dtype = {'names':['vsite'], \
-                                            'formats':['f4'], \
-                                            'offsets':[40], \
-                                            'itemsize':HEAD_STAT})['vsite'] > 0
+            ckpoints = (
+                np.fromfile(
+                    bbf,
+                    count=lf.stations.size,
+                    dtype={
+                        "names": ["vsite"],
+                        "formats": ["f4"],
+                        "offsets": [40],
+                        "itemsize": HEAD_STAT,
+                    },
+                )["vsite"]
+                > 0
+            )
     except IOError:
         # file not created yet
         return
@@ -159,61 +192,99 @@ def unfinished():
     if np.min(ckpoints):
         try:
             initialise(check_only=True)
-            print('BB Simulation already completed.')
+            print("BB Simulation already completed.")
             comm.Abort()
         except AssertionError:
             return
     # seems ok to continue simulation
     return np.invert(ckpoints)
 
+
 station_mask = None
 if is_master:
     station_mask = unfinished()
     if station_mask is None or sum(station_mask) == lf.stations.size:
-        print('No valid checkpoints found. Starting fresh simulation.')
+        print("No valid checkpoints found. Starting fresh simulation.")
         initialise()
-        station_mask = np.ones(lf.stations.size, dtype = np.bool)
+        station_mask = np.ones(lf.stations.size, dtype=np.bool)
     else:
         try:
             initialise(check_only=True)
-            print('%d of %d stations completed. Resuming simulation.' \
-                  % (lf.stations.size - sum(station_mask), lf.stations.size))
+            print(
+                "%d of %d stations completed. Resuming simulation."
+                % (lf.stations.size - sum(station_mask), lf.stations.size)
+            )
         except AssertionError:
-            print('Simulation parameters mismatch. Starting fresh simulation.')
+            print("Simulation parameters mismatch. Starting fresh simulation.")
             initialise()
-            station_mask = np.ones(lf.stations.size, dtype = np.bool)
-station_mask = comm.bcast(station_mask, root = master)
+            station_mask = np.ones(lf.stations.size, dtype=np.bool)
+station_mask = comm.bcast(station_mask, root=master)
 stations_todo = hf.stations[station_mask][rank::size]
 stations_todo_idx = np.arange(hf.stations.size)[station_mask][rank::size]
 
 # load container to write to
-bin_data = open(args.out_file, 'r+b')
+bin_data = open(args.out_file, "r+b")
 bin_seek = head_total + stations_todo_idx * bb_nt * N_COMP * FLOAT_SIZE
 bin_seek_vsite = HEAD_SIZE + stations_todo_idx * HEAD_STAT + 40
 
 # work on station subset
+fmin = args.fmin
+fmidbot = args.fmidbot
 t0 = MPI.Wtime()
-bb_acc = np.empty((bb_nt, N_COMP), dtype = 'f4')
+bb_acc = np.empty((bb_nt, N_COMP), dtype="f4")
 for i, stat in enumerate(stations_todo):
     vsite = vsites[stations_todo_idx[i]]
     stat_lfvs = lfvs[stations_todo_idx[i]]
-    lf_acc = np.copy(lf.acc(stat.name, dt = bb_dt))
-    hf_acc = np.copy(hf.acc(stat.name, dt = bb_dt))
-    pga = np.max(np.abs(hf_acc), axis = 0) / 981.0
+    lf_acc = np.copy(lf.acc(stat.name, dt=bb_dt))
+    hf_acc = np.copy(hf.acc(stat.name, dt=bb_dt))
+    pga = np.max(np.abs(hf_acc), axis=0) / 981.0
     # ideally remove loop
     for c in xrange(3):
-        hf_acc[:, c] = bwfilter(ampdeamp(hf_acc[:, c], \
-                                cb_amp(bb_dt, n2, stat.vs, vsite, stat.vs, \
-                                pga[c]), amp = True), bb_dt, args.flo, 'highpass')
-        lf_acc[:, c] = bwfilter(ampdeamp(lf_acc[:, c], \
-                                cb_amp(bb_dt, n2, stat_lfvs, vsite, stat_lfvs, \
-                                pga[c]), amp = True), bb_dt, args.flo, 'lowpass')
-        bb_acc[:, c] = (np.hstack((d_ts, hf_acc[:, c])) \
-                        + np.hstack((lf_acc[:, c], d_ts))) / 981.0
+        hf_acc[:, c] = bwfilter(
+            ampdeamp(
+                hf_acc[:, c],
+                cb_amp(
+                    bb_dt,
+                    n2,
+                    stat.vs,
+                    vsite,
+                    stat.vs,
+                    pga[c],
+                    fmin=fmin,
+                    fmidbot=fmidbot,
+                ),
+                amp=True,
+            ),
+            bb_dt,
+            args.flo,
+            "highpass",
+        )
+        lf_acc[:, c] = bwfilter(
+            ampdeamp(
+                lf_acc[:, c],
+                cb_amp(
+                    bb_dt,
+                    n2,
+                    stat_lfvs,
+                    vsite,
+                    stat_lfvs,
+                    pga[c],
+                    fmin=fmin,
+                    fmidbot=fmidbot,
+                ),
+                amp=True,
+            ),
+            bb_dt,
+            args.flo,
+            "lowpass",
+        )
+        bb_acc[:, c] = (
+            np.hstack((d_ts, hf_acc[:, c])) + np.hstack((lf_acc[:, c], d_ts))
+        ) / 981.0
     bin_data.seek(bin_seek[i])
     bb_acc.tofile(bin_data)
     # write vsite as used for checkpointing
     bin_data.seek(bin_seek_vsite[i])
     vsite.tofile(bin_data)
 bin_data.close()
-print('Process %03d of %03d finished (%.2fs).' % (rank, size, MPI.Wtime() - t0))
+print("Process %03d of %03d finished (%.2fs)." % (rank, size, MPI.Wtime() - t0))
