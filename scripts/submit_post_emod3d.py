@@ -174,12 +174,10 @@ if __name__ == '__main__':
             submit_yes = True
         else:
             submit_yes = confirm("Also submit the job for you?")
-        for srf in params.srf_file:
             # get the srf(rup) name without extensions
-            srf_name = os.path.splitext(os.path.basename(srf))[0]
+        srf_name = os.path.splitext(os.path.basename(params.srf_file))[0]
             # if srf(variation) is provided as args, only create the slurm with same name provided
-            if args.srf is not None and srf_name != args.srf:
-                continue
+        if args.srf is None or srf_name == args.srf:
             # get lf_sim_dir
 
             lf_sim_dir = os.path.join(params.sim_dir, 'LF')

@@ -30,13 +30,12 @@ def create_run_params(sim_dir, srf_name=None):
     sys.path.append(sim_dir)
     params = utils.load_params('root_params.yaml', 'fault_params.yaml', 'sim_params.yaml')
     utils.update(params, utils.load_params(os.path.join(params.vel_mod_dir, 'vm_params.yaml')))
-    srf_file = params.srf_file[0]
     e3d_yaml = os.path.join(workflow_config['templates_dir'], 'emod3d_defaults_{}.yaml'.format(params.version))
     e3d_dict = utils.load_yaml(e3d_yaml)
     print("flo is ", params.flo)
     # skip all logic if a specific srf_name is provided
-    if srf_name is None or srf_name == os.path.splitext(basename(srf_file))[0]:
-        srf_file_basename = os.path.splitext(os.path.basename(srf_file))[0]
+    if srf_name is None or srf_name == os.path.splitext(basename(params.srf_file))[0]:
+        srf_file_basename = os.path.splitext(os.path.basename(params.srf_file))[0]
         e3d_dict['version'] = emod3d_version + '-mpi'
 
         e3d_dict['name'] = params.run_name
@@ -51,7 +50,7 @@ def create_run_params(sim_dir, srf_name=None):
         e3d_dict['bfilt'] = 4
         e3d_dict['flo'] = float(params.flo)
 
-        e3d_dict['faultfile'] = srf_file
+        e3d_dict['faultfile'] = params.srf_file
 
         e3d_dict['vmoddir'] = params.vel_mod_dir
 

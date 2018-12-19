@@ -110,7 +110,7 @@ def write_sl_script(hf_sim_dir, sim_dir, stoch_name, sl_template_prefix, hf_opti
     if binary:
         create_dir = "mkdir -p " + os.path.join(hf_sim_dir, "Acc") + "\n"
         hf_submit_command = create_dir + "srun python $BINPROCESS/hf_sim.py "
-        arguments_for_hf = [params.hf.hf_slip[0], params.FD_STATLIST, os.path.join(hf_sim_dir, "Acc/HF.bin"),
+        arguments_for_hf = [params.hf.hf_slip, params.FD_STATLIST, os.path.join(hf_sim_dir, "Acc/HF.bin"),
                             "-m", params.v_mod_1d_name, "--duration", params.sim_duration, "--dt", params.hf.hf_dt]
 
         hf_submit_command += " ".join(map(str, arguments_for_hf))
@@ -232,8 +232,7 @@ if __name__ == '__main__':
 
     # loop through all srf file to generate related slurm scripts
 
-    srf = params.srf_file[0]
-    srf_name = os.path.splitext(basename(srf))[0]
+    srf_name = os.path.splitext(basename(params.srf_file))[0]
     # if srf(variation) is provided as args, only create the slurm with same name provided
     if args.srf is None or srf_name == args.srf:
         print("args.est_ect", args.est_wct)
@@ -243,7 +242,7 @@ if __name__ == '__main__':
             station_count = len(qcore.shared.get_stations(params.FD_STATLIST))
             # get the number of sub faults for estimation
             # TODO:make it read through the whole list instead of assuming every stoch has same size
-            sub_fault_count, sub_fault_area = qcore.srf.get_nsub_stoch(params.hf.hf_slip[0], get_area=True)
+            sub_fault_count, sub_fault_area = qcore.srf.get_nsub_stoch(params.hf.hf_slip, get_area=True)
             if args.debug:
                 print "sb:", sub_fault_area
                 print "nt:", timesteps

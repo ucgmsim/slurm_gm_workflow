@@ -122,8 +122,8 @@ def action_for_uncertainties(hf_sim_basedir, bb_sim_basedir, srf, slip, kappa, s
 
 
 def main():
-    global hf_kappa_list  # no idea why hf_kappa_list is imported, but not usable in this function without this.
-    global hf_sdrop_list
+    # global hf_kappa_list  # no idea why hf_kappa_list is imported, but not usable in this function without this.
+    # global hf_sdrop_list
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--v1d', default=None, type=str, help="the full path pointing to the generic v1d file")
@@ -177,22 +177,23 @@ def main():
     # root_dict['v_mod_1d_name']=v_mod_1d_name
 
     if old_params:
-        hf_kappa_list = [params.hf.hf_kappa]
-        hf_sdrop_list = [params.hf.hf_sdrop]
-        if len(params.srf_file) > 1:
+        # hf_kappa_list = [params.hf.hf_kappa]
+        # hf_sdrop_list = [params.hf.hf_sdrop]
+        if len([params.srf_file]) > 1:
             print "Info: You have specified multiple SRF files."
             print "      A single hf_kappa(=%s) and hf_sdrop(=%s) specified in params.py will be used for all SRF files." % (
                 params.hf.hf_kappa, params.hf.hf_sdrop)
             print"       If you need to specific hf_kappa and hf_sdrop value for each SRF, add hf_kappa_list and hf_sdrop_list to params_base.py"
 
-    else:
-        print "hf_kappa_list: ", hf_kappa_list
-        print "hf_sdrop_list: ", hf_sdrop_list
-        print "srf_files:", params.srf_file
-        if len(hf_kappa_list) != len(hf_sdrop_list) or len(hf_kappa_list) != len(params.srf_files):
-            print "Error: hf_kappa_list (len=%d), hf_sdrop_list (len=%d) and srf_files (len=%d) should be of the same length." % (
-                len(hf_kappa_list), len(hf_sdrop_list), len(srf_files))
-            sys.exit()
+    #dunno what the following does, old_prams always=True
+    # else:
+    #     print "hf_kappa_list: ", hf_kappa_list
+    #     print "hf_sdrop_list: ", hf_sdrop_list
+    #     print "srf_files:", params.srf_file
+    #     if len(hf_kappa_list) != len(hf_sdrop_list) or len(hf_kappa_list) != len([params.srf_file]):
+    #         print "Error: hf_kappa_list (len=%d), hf_sdrop_list (len=%d) and srf_files (len=%d) should be of the same length." % (
+    #             len(hf_kappa_list), len(hf_sdrop_list), len([params.srf_file]))
+    #         sys.exit()
 
             # #TODO:add_name_suffix return the exact same name, seems to be legacy and doing nothing here
             # hf_run_name = add_name_suffix(hf_run_name,yes)

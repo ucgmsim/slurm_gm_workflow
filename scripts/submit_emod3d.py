@@ -127,31 +127,28 @@ if __name__ == '__main__':
         else:
             submit_yes = confirm("Also submit the job for you?")
         print("params.srf_file", params.srf_file)
-        for srf in params.srf_file:
             #get the srf(rup) name without extensions
-            srf_name = os.path.splitext(os.path.basename(srf))[0]
-            #if srf(variation) is provided as args, only create the slurm with same name provided
-            if args.srf != None and srf_name != args.srf:
-                continue
-            if args.set_params_only == True:
-               # set_runparams.create_run_parameters(srf_name)
-                set_runparams.create_run_params(srf_name)
-                continue
-            print("not set_params_only")
-            #get lf_sim_dir
-            lf_sim_dir = os.path.join(params.sim_dir, 'LF')
-            sim_dir = params.sim_dir
-            nx = int(params.nx)
-            ny = int(params.ny)
-            nz = int(params.nz)
-            dt = float(params.dt)
-            sim_duration = float(params.sim_duration)
-            #default_core will be changed is user pars ncore
+        srf_name = os.path.splitext(os.path.basename(params.srf_file))[0]
+        if args.set_params_only == True:
+            set_runparams.create_run_params(srf_name)
+        else:
+        #if srf(variation) is provided as args, only create the slurm with same name provided
+            if args.srf is None or srf_name == args.srf:
+                print("not set_params_only")
+                #get lf_sim_dir
+                lf_sim_dir = os.path.join(params.sim_dir, 'LF')
+                sim_dir = params.sim_dir
+                nx = int(params.nx)
+                ny = int(params.ny)
+                nz = int(params.nz)
+                dt = float(params.dt)
+                sim_duration = float(params.sim_duration)
+                #default_core will be changed is user pars ncore
 
-            num_procs = args.ncore
-            total_est_core_hours = est_e3d.est_core_hours_emod3d(nx, ny, nz, dt, sim_duration)
-            estimated_wct = est_e3d.est_wct(total_est_core_hours, num_procs, default_wct_scale)
-            print "Estimated WCT (scaled and rounded up):%s" % estimated_wct
+                num_procs = args.ncore
+                total_est_core_hours = est_e3d.est_core_hours_emod3d(nx, ny, nz, dt, sim_duration)
+                estimated_wct = est_e3d.est_wct(total_est_core_hours, num_procs, default_wct_scale)
+                print "Estimated WCT (scaled and rounded up):%s" % estimated_wct
 
             if args.auto == True:
                 created_scripts = write_sl_script(lf_sim_dir, sim_dir, srf_name, params.mgmt_db_location, run_time=estimated_wct, nb_cpus = num_procs)
@@ -174,7 +171,7 @@ if __name__ == '__main__':
                     sys.exit()
                 #cmd = "python $gmsim/workflow/scripts/management/update_mgmt_db.py %s EMOD3D queued --run_name %s --j %s"%(params.mgmt_db_location, srf_name,jobid)
                 #exe(cmd, debug=False)
-                
+
                 process = 'EMOD3D'
                 status = 'queued'
                 db = db_helper.connect_db(params.mgmt_db_location)

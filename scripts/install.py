@@ -101,7 +101,7 @@ def q_select_rupmodel(srf_selected_dir, srf_file_options):
     srf_files_selected.append(show_multiple_choice(srf_file_options, singular=True))  # always in list
 
     print srf_files_selected
-    srf_stoch_pairs = []
+
     for srf_file_selected in srf_files_selected:
         srf_file_path = os.path.join(srf_selected_dir, srf_file_selected)
         stoch_selected_dir = os.path.abspath(os.path.join(srf_selected_dir, os.path.pardir, 'Stoch'))
@@ -114,9 +114,8 @@ def q_select_rupmodel(srf_selected_dir, srf_file_options):
             sys.exit()
 
         print "Corresponding Stock file is also found:\n%s" % stoch_file_path
-        srf_stoch_pairs.append((srf_file_path, stoch_file_path))
 
-    return srf_files_selected, srf_stoch_pairs
+    return srf_files_selected, srf_file_path, stoch_file_path
 
 
 def q_select_vel_model(vel_mod_dir):
@@ -231,7 +230,7 @@ def q_final_confirm(run_name, yes_statcords, yes_model_params):
     return show_yes_no_question()
 
 
-def create_params_dict(version, sim_dir, event_name, run_name, run_dir, vel_mod_dir, srf_dir, srf_stoch_pairs,
+def create_params_dict(version, sim_dir, event_name, run_name, run_dir, vel_mod_dir, srf_dir, srf_file, stoch_file,
                        params_vel_path, stat_file_path, vs30_file_path, vs30ref_file_path, MODEL_LAT, MODEL_LON,
                        MODEL_ROT, hh, nx, ny, nz, sufx, sim_duration, flo, vel_mod_params_dir, yes_statcords,
                        yes_model_params, dt=default_dt, hf_dt=default_hf_dt):
@@ -262,9 +261,6 @@ def create_params_dict(version, sim_dir, event_name, run_name, run_dir, vel_mod_
         print "Re-directing related params to files under %s" % vel_mod_dir
         vel_mod_params_dir = vel_mod_dir
 
-    srf_files, stoch_files = zip(*srf_stoch_pairs)
-
-    bb_dir = os.path.join(sim_dir, "BB")
     root_params_dict = {}
     fault_params_dict = {}
     sim_params_dict = {}
@@ -284,7 +280,7 @@ def create_params_dict(version, sim_dir, event_name, run_name, run_dir, vel_mod_
 
     sim_params_dict['sim_dir'] = sim_dir
 
-    sim_params_dict['srf_file'] = srf_files
+    sim_params_dict['srf_file'] = srf_file
     fault_params_dict['vel_mod_dir'] = vel_mod_dir
     sim_params_dict['params_vel'] = params_vel_path
     sim_params_dict['sim_duration'] = sim_duration
@@ -312,7 +308,7 @@ def create_params_dict(version, sim_dir, event_name, run_name, run_dir, vel_mod_
     root_params_dict['hf']['hf_kappa'] = 0.045
     root_params_dict['hf']['hf_rvfac'] = 0.8
     root_params_dict['hf']['hf_path_dur'] = 1
-    sim_params_dict['hf']['hf_slip'] = stoch_files
+    sim_params_dict['hf']['hf_slip'] = stoch_file
 
     sim_params_dict['bb'] = {}
 
@@ -477,7 +473,7 @@ def main_local():
     srf_dir = srf_default_dir  # the above is perhaps unnecessary
 
     srf_selected, srf_selected_dir, srf_file_options = q_select_rupmodel_dir(srf_dir)
-    srf_files_selected, srf_stoch_pairs = q_select_rupmodel(srf_selected_dir, srf_file_options)
+    srf_files_selected, srf_file, stoch_file = q_select_rupmodel(srf_selected_dir, srf_file_options)
     #    HH = q3() ## HH is taken directly from params_vel.py
     v_mod_ver, vel_mod_dir_full, params_vel_path = q_select_vel_model(vel_mod_dir)
 
@@ -521,7 +517,7 @@ def main_local():
     root_params_dict, fault_params_dict, sim_params_dict, vm_params_dict = create_params_dict(args.version, sim_dir,
                                                                                               event_name, run_name,
                                                                                               run_dir, vel_mod_dir_full,
-                                                                                              srf_dir, srf_stoch_pairs,
+                                                                                              srf_dir, srf_file, stoch_file,
                                                                                               params_vel_path,
                                                                                               stat_file_path,
                                                                                               vs30_file_path,
@@ -534,9 +530,8 @@ def main_local():
                                                                                               yes_statcords,
                                                                                               yes_model_params)
 
-    srf_files, ___ = zip(*srf_stoch_pairs)
     fault_dir = os.path.abspath(os.path.join(sim_dir, os.pardir))
-    create_mgmt_db.create_mgmt_db([], fault_dir, srf_files=srf_files)
+    create_mgmt_db.create_mgmt_db([], fault_dir, srf_files=srf_file)
 
     root_params_dict['mgmt_db_location'] = fault_dir
     utils.dump_yaml(root_params_dict, os.path.join(sim_dir, 'root_params.yaml'))
@@ -562,15 +557,14 @@ def main_remote(cfg):
     vs30_file_path = stat_file_path.replace('.ll', '.vs30')
     vs30ref_file_path = stat_file_path.replace('.ll', '.vs30ref')
 
-    srf_file_list = list(filter(None, (x.strip() for x in srf_file_path.splitlines())))
-    stoch_file_path = list(filter(None, (x.strip() for x in stoch_file_path.splitlines())))
+    srf_file = filter(None, (x.strip() for x in srf_file_path.splitlines()))
+    stoch_file = filter(None, (x.strip() for x in stoch_file_path.splitlines()))
 
     #    srf_stoch_pairs=[(srf_file_path,stoch_file_path)]
     # TODO: a quick workaround to make sure it takes only one srf
     # TODO: fix these logic when new config params versioning is properly impelmented
-    srf_stoch_pairs = zip(srf_file_list[0], stoch_file_path[0])
 
-    print srf_stoch_pairs
+    print srf_file, stoch_file
 
     params_vel_path = os.path.join(vel_mod_dir, params_vel)
 
@@ -584,7 +578,7 @@ def main_remote(cfg):
     vel_mod_params_dir = vel_mod_dir
 
     srf_dir = srf_default_dir  # the above is perhaps unnecessary
-    create_params_dict(args.version, sim_dir, event_name, run_name, run_dir, vel_mod_dir, srf_dir, srf_stoch_pairs,
+    create_params_dict(args.version, sim_dir, event_name, run_name, run_dir, vel_mod_dir, srf_dir, srf_file, stoch_file,
                        params_vel_path, stat_file_path, vs30_file_path, vs30ref_file_path, MODEL_LAT, MODEL_LON,
                        MODEL_ROT, hh, nx,
                        ny, nz, sufx, sim_duration, flo, vel_mod_params_dir, yes_statcords, yes_model_params)

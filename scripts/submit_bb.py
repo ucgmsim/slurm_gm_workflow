@@ -159,8 +159,7 @@ if __name__ == '__main__':
         # None: ask user if want to submit; False: dont submit
         submit_yes = confirm("Also submit the job for you?")
 
-    srf = params.srf_file[0]
-    srf_name = os.path.splitext(os.path.basename(srf))[0]
+    srf_name = os.path.splitext(os.path.basename(params.srf_file))[0]
     if args.srf is None or srf_name == args.srf:
         # if srf(variation) is provided as args, only create the slurm with same name provided
         # --est_wct used, automatically assign run_time using estimation
