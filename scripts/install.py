@@ -45,7 +45,7 @@ latest_ll = 'non_uniform_with_real_stations_latest'
 # default values
 # TODO: after enabling different dt for LF and HF, this might need to change
 default_dt = 0.005
-default_hf_dt = 0.005
+# default_hf_dt = 0.005
 
 
 def q_accept_custom_rupmodel():
@@ -232,8 +232,8 @@ def q_final_confirm(run_name, yes_statcords, yes_model_params):
 
 def create_params_dict(version, sim_dir, event_name, run_name, run_dir, vel_mod_dir, srf_dir, srf_file, stoch_file,
                        params_vel_path, stat_file_path, vs30_file_path, vs30ref_file_path, MODEL_LAT, MODEL_LON,
-                       MODEL_ROT, hh, nx, ny, nz, sufx, sim_duration, flo, vel_mod_params_dir, yes_statcords,
-                       yes_model_params, dt=default_dt, hf_dt=default_hf_dt):
+                       MODEL_ROT, hh, nx, ny, nz, sufx, sim_duration, vel_mod_params_dir, yes_statcords,
+                       yes_model_params, dt=default_dt):
     lf_sim_root_dir = os.path.join(sim_dir, "LF")
     hf_dir = os.path.join(sim_dir, "HF")
     bb_dir = os.path.join(sim_dir, 'BB')
@@ -274,7 +274,7 @@ def create_params_dict(version, sim_dir, event_name, run_name, run_dir, vel_mod_
     # select during install
     root_params_dict['version'] = version
 
-    root_params_dict['dt'] = 0.02
+    root_params_dict['dt'] = dt
     root_params_dict['stat_file'] = stat_file_path
 
     # potential remove
@@ -521,7 +521,7 @@ def main_local():
                                                                                               MODEL_LAT, MODEL_LON,
                                                                                               MODEL_ROT, hh, nx,
                                                                                               ny, nz, sufx,
-                                                                                              sim_duration, flo,
+                                                                                              sim_duration,
                                                                                               vel_mod_params_dir,
                                                                                               yes_statcords,
                                                                                               yes_model_params)
@@ -577,7 +577,7 @@ def main_remote(cfg):
     create_params_dict(args.version, sim_dir, event_name, run_name, run_dir, vel_mod_dir, srf_dir, srf_file, stoch_file,
                        params_vel_path, stat_file_path, vs30_file_path, vs30ref_file_path, MODEL_LAT, MODEL_LON,
                        MODEL_ROT, hh, nx,
-                       ny, nz, sufx, sim_duration, flo, vel_mod_params_dir, yes_statcords, yes_model_params)
+                       ny, nz, sufx, sim_duration, vel_mod_params_dir, yes_statcords, yes_model_params)
     print "Installation completed"
     show_instruction(sim_dir)
 
