@@ -10,6 +10,7 @@ import numpy as np
 
 from estimation.model import NNWcEstModel
 
+# Better solution for these locations?
 LF_MODEL_DIR = "/home/cbs51/code/slurm_gm_workflow/estimation/models/LF"
 HF_MODEL_DIR = "/home/cbs51/code/slurm_gm_workflow/estimation/models/HF"
 BB_MODEL_DIR = "/home/cbs51/code/slurm_gm_workflow/estimation/models/BB"
@@ -18,8 +19,22 @@ MODEL_PREFIX = "model_"
 SCALER_PREFIX = "scaler_"
 
 
+def get_wct(core_hours, overestimate_factor=0.1):
+    """Pad the number of core hours by the specified fact.
+    Then convert to wall clock time.
+
+    Use this when estimation as max run time in a slurm script.
+    """
+    return convert_to_wct(core_hours * (1.0 + overestimate_factor))
+
+
+def convert_to_wct(core_hours):
+    """Converts number of core hours to a wall clock string"""
+    return '{0:02.0f}:{1:02.0f}:00'.format(*divmod(core_hours * 60, 60))
+
+
 def estimate_LF_WC_single(
-        nx: float, ny: float, nz: float, nt: float, n_cores: int,
+        nx: int, ny: int, nz: int, nt: int, n_cores: int,
         model_dir: str = LF_MODEL_DIR, model_prefix: str = MODEL_PREFIX,
         scaler_prefix: str = SCALER_PREFIX):
     """Convenience function to make a single estimation
@@ -37,16 +52,20 @@ def estimate_LF_WC_single(
     wc: float
         Estimated wall clock time
     """
-    # Make a numpy array of the input data in the right shape
+    # Make a numpy array of the input data in the right shape.
     # The order of the features has to the same as for training!!
-    data = np.array([nx, ny, nz, nt, n_cores]).reshape(1, 5)
+    data = np.array([float(nx),
+                     float(ny),
+                     float(nz),
+                     float(nt),
+                     float(n_cores)]).reshape(1, 5)
 
     return estimate(data, model_dir=model_dir, model_prefix=model_prefix,
                     scaler_prefix=scaler_prefix)
 
 
 def estimate_HF_WC_single(
-        fd_count: int, nsub_stoch: float, nt: float, model_dir: str = HF_MODEL_DIR,
+        fd_count: int, nsub_stoch: float, nt: int, model_dir: str = HF_MODEL_DIR,
         model_prefix: str = MODEL_PREFIX, scaler_prefix: str = SCALER_PREFIX):
     """Convenience function to make a single estimation
 
@@ -65,14 +84,16 @@ def estimate_HF_WC_single(
     """
     # Make a numpy array of the input data in the right shape
     # The order of the features has to the same as for training!!
-    data = np.array([fd_count, nsub_stoch, nt]).reshape(1, 3)
+    data = np.array([float(fd_count),
+                     float(nsub_stoch),
+                     float(nt)]).reshape(1, 3)
 
     return estimate(data, model_dir=model_dir, model_prefix=model_prefix,
                     scaler_prefix=scaler_prefix)
 
 
 def estimate_BB_WC_single(
-        fd_count: int, nt: float, model_dir: str = BB_MODEL_DIR,
+        fd_count: int, nt: int, model_dir: str = BB_MODEL_DIR,
         model_prefix: str = MODEL_PREFIX, scaler_prefix: str = SCALER_PREFIX):
     """Convenience function to make a single estimation
 
@@ -93,7 +114,7 @@ def estimate_BB_WC_single(
     """
     # Make a numpy array of the input data in the right shape
     # The order of the features has to the same as for training!!
-    data = np.array([fd_count, nt]).reshape(1, 2)
+    data = np.array([float(fd_count), float(nt)]).reshape(1, 2)
 
     return estimate(data, model_dir=model_dir, model_prefix=model_prefix,
                     scaler_prefix=scaler_prefix)
