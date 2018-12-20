@@ -23,7 +23,8 @@ print
 workflow_config = ldcfg.load(os.path.dirname(os.path.realpath(__file__)), "workflow_config.json")
 workflow_root = workflow_config['gm_sim_workflow_root']
 global_root = workflow_config["global_root"]
-tools_dir = os.path.join(global_root, 'EMOD3D/tools')
+#tools_dir = os.path.join(global_root, 'EMOD3D/tools')
+tools_dir = workflow_config["tools_dir"]
 bin_process_dir = os.path.join(global_root, 'workflow/scripts')
 emod3d_version = workflow_config["emod3d_version"]
 params_vel = workflow_config['params_vel']
@@ -83,6 +84,8 @@ def q_select_rupmodel_dir(mysrf_dir):
     srf_selected_dir = os.path.join(mysrf_dir, srf_selected, "Srf")
     try:
         srf_file_options = os.listdir(srf_selected_dir)
+        #filter out files that are not *.srf
+        srf_file_options = [ x for x in srf_file_options if x.endswith('.srf') ]
     except OSError:
         print "!! Srf directory not found. Going into %s" % srf_selected
         return q_select_rupmodel_dir(os.path.join(mysrf_dir, srf_selected))
@@ -353,7 +356,9 @@ def create_params_dict(version, sim_dir, event_name, run_name, run_dir, vel_mod_
 
         # Create Stat_cord & statList
         import statlist2gp
+
         fd_statcords, fd_statlist = statlist2gp.main(sim_params_dict, vm_params_dict, stat_file=stat_file_path)
+
         print "Done"
         sim_params_dict['stat_coords'] = fd_statcords
         sim_params_dict['FD_STATLIST'] = fd_statlist

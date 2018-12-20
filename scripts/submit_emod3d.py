@@ -128,6 +128,7 @@ if __name__ == '__main__':
             submit_yes = confirm("Also submit the job for you?")
         print("params.srf_file", params.srf_file)
             #get the srf(rup) name without extensions
+
         srf_name = os.path.splitext(os.path.basename(params.srf_file))[0]
         if args.set_params_only == True:
             set_runparams.create_run_params(srf_name)

@@ -111,8 +111,10 @@ def store_params(root_dict):
 def action_for_uncertainties(hf_sim_basedir, bb_sim_basedir, srf, slip, kappa, sdrop):
     dirs = []
     srf_basename = os.path.splitext(os.path.basename(srf))[0]  # take the filename only
-    hf_sim_dir = os.path.join(hf_sim_basedir, srf_basename)
-    bb_sim_dir = os.path.join(bb_sim_basedir, srf_basename)
+    # hf_sim_dir = os.path.join(hf_sim_basedir, srf_basename)
+    # bb_sim_dir = os.path.join(bb_sim_basedir, srf_basename)
+    hf_sim_dir = hf_sim_basedir
+    bb_sim_dir = bb_sim_basedir
     dirs.append(hf_sim_dir)
     dirs.append(bb_sim_dir)
 

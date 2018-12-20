@@ -95,7 +95,7 @@ def check_dependancy_met(task, task_list):
 
     if process is Process.BB:
         LF_task = list(task)
-        LF_task[0] = Process.winbin_aio.value
+        LF_task[0] = Process.EMOD3D.value
         LF_task[2] = 'completed'
         HF_task = list(task)
         HF_task[0] = Process.HF.value

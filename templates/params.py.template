@@ -76,7 +76,7 @@ RESTART_ITINC = '20000'
 
 # directories - main. change global_root with user_root as required
 
-wcc_prog_dir = os.path.join(global_root, tools_dir)
+wcc_prog_dir = os.environ["E3D_TOOLS_DIR"]
 #seis_tmp_dir = os.path.join(user_scratch, run_name, 'SeismoBin') #written directly to e3d.par
 
 # directories - derived
@@ -128,7 +128,7 @@ LONLAT_OUT = '1' # LONLAT_OUT =1 means output triplet is (lon,lat,amplitude) for
 ##############################################
 
 # binary that simulates the HF data
-hf_sim_bin = os.path.join(global_root, os.path.join(tools_dir,'hb_high_v5.4.5_np2mm+'))
+hf_sim_bin = os.path.join(os.environ["E3D_TOOLS_DIR"],'hb_high_v5.4.5_np2mm+')
 hf_prefix = 'hf'
 # duration of HF sim
 hf_t_len = sim_duration #'100' # seconds
@@ -245,8 +245,8 @@ CENTER_ORIGIN = '1'
 # distance calculation
 GEOPROJ = '1'
 # binaries
-XYZ2LL_BIN = os.path.join(global_root, os.path.join(tools_dir, 'xyz2lonlat') )
-LL2GRID_BIN = os.path.join(global_root, os.path.join(tools_dir,'latlon2statgrid') )
+XYZ2LL_BIN = os.path.join(os.environ["E3D_TOOLS_DIR"], 'xyz2lonlat')
+LL2GRID_BIN = os.path.join(os.environ["E3D_TOOLS_DIR"],'latlon2statgrid')
 # station file list for generating station grid
 #STAT_FILES = [stat_file] #now to be found in params_base.py
 

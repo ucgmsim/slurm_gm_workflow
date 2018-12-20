@@ -19,7 +19,7 @@ META_PATTERN = '*imcalc.info'
 def checkpoint_single(run_dir, realization_name, sim_or_obs):
     if sim_or_obs == 's':
         fault_name = realization_name.split('_')[0]
-        output_dir = os.path.join(run_dir, fault_name, IM_CLAC_DIR, realization_name)
+        output_dir = os.path.join(run_dir, fault_name, realization_name, IM_CLAC_DIR)
     elif sim_or_obs == 'o':
         output_dir = os.path.join(run_dir, IM_CLAC_DIR, realization_name)
 

@@ -191,7 +191,7 @@ def main():
             sim_dir = mgmt_db_location 
         else:
             #non-cybershake, db is the same loc as sim_dir
-            sim_dir = os.path.join(os.path.join(mgmt_db_location,"Runs"), vm_name)
+            sim_dir = os.path.join(mgmt_db_location,"Runs", vm_name, run_name)
         #submit the job
         submit_task(sim_dir, proc_type, run_name, db, mgmt_db_location, binary_mode, rand_reset, hf_seed, extended_period)
        
