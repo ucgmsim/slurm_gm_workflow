@@ -17,7 +17,7 @@ echo ___calculating simulations___
     start_time=`date +$runtime_fmt`
     echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} IM_calculation running --run_name {{sim_name}} --j $SLURM_JOBID" >> {{mgmt_db_location}}/mgmt_db_queue/$timestamp\_$SLURM_JOBID
     #run the script
-    time python2 $IMPATH/calculate_ims.py {{sim_dir}}/Acc/BB.bin b -o {{sim_dir}}/../../../IM_calc/ -np {{np}} -i {{sim_name}} -r {{fault_name}} -c {{comp}} -t s {{extended}} {{simple}}
+    time python2 $IMPATH/calculate_ims.py {{sim_dir}}/Acc/BB.bin b -o {{sim_dir}}/../IM_calc/ -np {{np}} -i {{sim_name}} -r {{fault_name}} -c {{comp}} -t s {{extended}} {{simple}}
 
 #test before update mgmt_db
     timestamp=`date +%Y%m%d_%H%M%S`
@@ -33,7 +33,7 @@ echo ___calculating simulations___
             mkdir {{mgmt_db_location}}/Runs/{{fault_name}}/ch_log
         fi
         #TODO: adjust this temporary code to use the update_db once merged
-        cd {{mgmt_db_location}}/Runs/{{fault_name}}
+        cd {{mgmt_db_location}}/Runs/{{fault_name}}/{{sim_name}}
         fd_name=`python -c "import params_base as pb; print pb.FD_STATLIST"`
         fd_count=`cat $fd_name | wc -l`
         nt=`python -c "import params_base as pb; nt = float(pb.sim_duration)/float(pb.hf_dt);print int(nt)"`

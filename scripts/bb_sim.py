@@ -45,6 +45,7 @@ if is_master:
     except SystemExit:
         # invalid arguments or -h
         comm.Abort()
+
 args = comm.bcast(args, root=master)
 
 # load data stores
