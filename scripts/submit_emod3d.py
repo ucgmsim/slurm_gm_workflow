@@ -49,6 +49,7 @@ def write_sl_script(
         lf_sim_dir, sim_dir, srf_name, mgmt_db_location, run_time=default_run_time,
         nb_cpus=default_core, memory=default_memory, account=default_account):
     set_runparams.create_run_params(srf_name)
+    """Populates the template and writes the resulting slurm script to file"""
 
     with open('run_emod3d.sl.template', 'r') as f:
         template = f.read()
@@ -127,20 +128,26 @@ if __name__ == '__main__':
                 print("Number of cores is different from default "
                       "number of cores. Estimation will be less accurate.")
 
-            estimated_chours = wc.estimate_LF_WC_single(
+            est_run_time = wc.estimate_LF_WC_single(
                 int(params.nx), int(params.ny), int(params.nz),
-                int(params.sim_duration / params.dt), num_procs)
+                int(float(params.sim_duration) / float(params.dt)), num_procs)
             print("Estimated WCT {}".format(
-                wc.convert_to_wct(estimated_chours)))
+                wc.convert_to_wct(est_run_time)))
 
             if args.auto:
                 created_scripts = write_sl_script(
                     lf_sim_dir, sim_dir, srf_name, params.mgmt_db_location,
-                    run_time=wc.get_wct(estimated_chours), nb_cpus=num_procs)
+                    run_time=wc.get_wct(est_run_time), nb_cpus=num_procs)
             else:
                 # Get the wall clock time from the user
                 if wall_clock_limit is None:
-                    wall_clock_limit = str(install.get_input_wc())
+                    print("Use the estimated wall clock time? (Adds a 10% "
+                          "overestimation to ensure the job completes)")
+                    use_estimation = show_yes_no_question()
+                    if use_estimation:
+                        wall_clock_limit = wc.get_wct(est_run_time)
+                    else:
+                        wall_clock_limit = str(install.get_input_wc())
                     print("WCT set to: %s" % wall_clock_limit)
 
                 created_scripts = write_sl_script(
@@ -148,7 +155,6 @@ if __name__ == '__main__':
                     run_time=wall_clock_limit, nb_cpus=num_procs)
 
             # Submit for the user if specified
-            jobid = None
             if submit_yes:
                 print(created_scripts)
                 if submit_yes:
@@ -170,3 +176,6 @@ if __name__ == '__main__':
                             db, 'EMOD3D', 'queued',
                             job=jobid, run_name=srf_name)
                         db.connection.commit()
+            else:
+                print("User chose to submit the job manually")
+

@@ -11,26 +11,28 @@ import numpy as np
 from estimation.model import NNWcEstModel
 
 # Better solution for these locations?
-LF_MODEL_DIR = "/home/cbs51/code/slurm_gm_workflow/estimation/models/LF"
-HF_MODEL_DIR = "/home/cbs51/code/slurm_gm_workflow/estimation/models/HF"
-BB_MODEL_DIR = "/home/cbs51/code/slurm_gm_workflow/estimation/models/BB"
+LF_MODEL_DIR = "/nesi/project/nesi00213/estimation/models/LF/"
+HF_MODEL_DIR = "/nesi/project/nesi00213/estimation/models/HF/"
+BB_MODEL_DIR = "/nesi/project/nesi00213/estimation/models/BB/"
 
 MODEL_PREFIX = "model_"
 SCALER_PREFIX = "scaler_"
 
+HF_DEFAULT_NCORES = 80
 
-def get_wct(core_hours, overestimate_factor=0.1):
-    """Pad the number of core hours by the specified fact.
+
+def get_wct(run_time, overestimate_factor=0.1):
+    """Pad the run time (in hours) by the specified factor.
     Then convert to wall clock time.
 
     Use this when estimation as max run time in a slurm script.
     """
-    return convert_to_wct(core_hours * (1.0 + overestimate_factor))
+    return convert_to_wct(run_time * (1.0 + overestimate_factor))
 
 
-def convert_to_wct(core_hours):
-    """Converts number of core hours to a wall clock string"""
-    return '{0:02.0f}:{1:02.0f}:00'.format(*divmod(core_hours * 60, 60))
+def convert_to_wct(run_time):
+    """Converts the run time (in hours) to a wall clock string"""
+    return '{0:02.0f}:{1:02.0f}:00'.format(*divmod(run_time * 60, 60))
 
 
 def estimate_LF_WC_single(
@@ -61,12 +63,13 @@ def estimate_LF_WC_single(
                      float(n_cores)]).reshape(1, 5)
 
     return estimate(data, model_dir=model_dir, model_prefix=model_prefix,
-                    scaler_prefix=scaler_prefix)
+                    scaler_prefix=scaler_prefix)[0][0]
 
 
 def estimate_HF_WC_single(
-        fd_count: int, nsub_stoch: float, nt: int, model_dir: str = HF_MODEL_DIR,
-        model_prefix: str = MODEL_PREFIX, scaler_prefix: str = SCALER_PREFIX):
+        fd_count: int, nsub_stoch: float, nt: int, n_cores: int,
+        model_dir: str = HF_MODEL_DIR, model_prefix: str = MODEL_PREFIX,
+        scaler_prefix: str = SCALER_PREFIX):
     """Convenience function to make a single estimation
 
     If the input parameters (or even just the order) of the model
@@ -74,7 +77,7 @@ def estimate_HF_WC_single(
 
     Params
     ------
-    fd_count, nsub_stoch, nt: int, float
+    fd_count, nsub_stoch, nt, n_cores: int, float
         Input features for the model
 
     Returns
@@ -82,14 +85,20 @@ def estimate_HF_WC_single(
     wc: float
         Estimated wall clock time
     """
+    if n_cores != HF_DEFAULT_NCORES:
+        print("WARNING: The model currently only supports estimation "
+              "for {} number of cores. Therefore any estimation with a "
+              "different number of cores will be very inaccurate.")
+
     # Make a numpy array of the input data in the right shape
     # The order of the features has to the same as for training!!
     data = np.array([float(fd_count),
                      float(nsub_stoch),
-                     float(nt)]).reshape(1, 3)
+                     float(nt),
+                     float(n_cores)]).reshape(1, 4)
 
     return estimate(data, model_dir=model_dir, model_prefix=model_prefix,
-                    scaler_prefix=scaler_prefix)
+                    scaler_prefix=scaler_prefix)[0][0]
 
 
 def estimate_BB_WC_single(
@@ -117,7 +126,7 @@ def estimate_BB_WC_single(
     data = np.array([float(fd_count), float(nt)]).reshape(1, 2)
 
     return estimate(data, model_dir=model_dir, model_prefix=model_prefix,
-                    scaler_prefix=scaler_prefix)
+                    scaler_prefix=scaler_prefix)[0][0]
 
 
 def estimate(input_data: np.ndarray, model_dir: str,
@@ -137,7 +146,7 @@ def estimate(input_data: np.ndarray, model_dir: str,
 
     Returns
     -------
-    wc: float
+    wc: np.ndarray
         Estimated wall clock time
     """
     model, scaler = load_model(model_dir, model_prefix, scaler_prefix)

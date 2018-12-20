@@ -14,7 +14,6 @@ import fnmatch
 import configparser
 import datetime
 import argparse
-from builtins import input
 
 from qcore import utils
 from shared_workflow import load_config as ldcfg
@@ -28,8 +27,7 @@ workflow_config = ldcfg.load(os.path.dirname(os.path.realpath(__file__)), "workf
 workflow_root = workflow_config['gm_sim_workflow_root']
 global_root = workflow_config["global_root"]
 tools_dir = os.path.join(global_root, 'EMOD3D/tools')
-#bin_process_dir = os.path.join(global_root, 'workflow/scripts')
-bin_process_dir = '/home/melody.zhu/slurm_gm_workflow/scripts'
+bin_process_dir = os.path.join(global_root, 'workflow/scripts')
 emod3d_version = workflow_config["emod3d_version"]
 params_vel = workflow_config['params_vel']
 
@@ -451,12 +449,13 @@ def get_input_wc():
             "Enter the WallClock time limit you "
             "would like to use: ")), "%H:%M:%S").time()
     except ValueError:
-        print(r'input value error. input does not match formate : %H:%M:%S')
+        print(r'Input value error. Input does not match format : %H:%M:%S')
         print(r'Must not exceed the limit where: %H <= 23, %M <= 59, %S <= 59')
         user_input_wc = get_input_wc()
     show_horizontal_line()
 
     return user_input_wc
+
 
 # Is this used anywhere??
 def wallclock(sim_dir):

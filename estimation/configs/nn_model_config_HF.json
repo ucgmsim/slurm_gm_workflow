@@ -1,12 +1,13 @@
 {
-  "input_cols": [["HF","fd_count"], ["HF","nsub_stoch"], ["HF","nt"]],
+  "input_cols": [["HF","fd_count"], ["HF","nsub_stoch"], ["HF","nt"],
+                ["HF", "cores"]],
   "target_col": ["HF","run_time"],
 
   "units": [32, 32],
   "dropout": null,
   "activation": "relu",
 
-  "n_epochs": 10,
+  "n_epochs": 25,
   "loss": "mae",
   "metrics": ["mse", "mae"]
 }

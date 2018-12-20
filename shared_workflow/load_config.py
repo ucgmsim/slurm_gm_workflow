@@ -16,6 +16,3 @@ def load(directory=os.path.dirname(os.path.abspath(__file__)),
         print("This is a fatal error. Please contact someone "
               "from the software team.")
         exit(1)
-
-
-

@@ -13,13 +13,14 @@ import subprocess
 import sys
 import re
 
-from builtins import input
+if sys.version_info.major == 3:
+    basestring = str
 
 
 def write_to_py(pyfile, vardict):
     with open(pyfile, 'w') as fp:
         for (key, value) in vardict.items():
-            if type(value) == str or type(value) == unicode:
+            if isinstance(value, basestring):
                 fp.write('%s="%s"\n' % (key, value))
             else:
                 fp.write('%s=%s\n' % (key, value))
@@ -39,7 +40,7 @@ def par_value(variable):
     return ''.join(result.split('=')[1:]).rstrip('\n')
 
 
-def get_stations(source_file, locations = False):
+def get_stations(source_file, locations=False):
     """returns a list of stations
     sample line in source file:
     171.74765   -43.90236 ADCS
