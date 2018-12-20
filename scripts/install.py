@@ -24,7 +24,7 @@ workflow_config = ldcfg.load(os.path.dirname(os.path.realpath(__file__)), "workf
 workflow_root = workflow_config['gm_sim_workflow_root']
 global_root = workflow_config["global_root"]
 #tools_dir = os.path.join(global_root, 'EMOD3D/tools')
-tools_dir = workflow_config["tools_dir"]
+#tools_dir = workflow_config["tools_dir"]
 bin_process_dir = os.path.join(global_root, 'workflow/scripts')
 emod3d_version = workflow_config["emod3d_version"]
 params_vel = workflow_config['params_vel']
@@ -277,9 +277,8 @@ def create_params_dict(version, sim_dir, event_name, run_name, run_dir, vel_mod_
     # select during install
     root_params_dict['version'] = version
 
-    root_params_dict['dt'] = dt
     root_params_dict['stat_file'] = stat_file_path
-
+    root_params_dict['dt'] = dt
     # potential remove
     sim_params_dict['user_root'] = user_root
     sim_params_dict['run_dir'] = run_dir
@@ -529,7 +528,7 @@ def main_local():
                                                                                               sim_duration,
                                                                                               vel_mod_params_dir,
                                                                                               yes_statcords,
-                                                                                              yes_model_params)
+                                                                                              yes_model_params, dt=dt)
 
     fault_dir = os.path.abspath(os.path.join(sim_dir, os.pardir))
     create_mgmt_db.create_mgmt_db([], fault_dir, srf_files=srf_file)
@@ -582,7 +581,7 @@ def main_remote(cfg):
     create_params_dict(args.version, sim_dir, event_name, run_name, run_dir, vel_mod_dir, srf_dir, srf_file, stoch_file,
                        params_vel_path, stat_file_path, vs30_file_path, vs30ref_file_path, MODEL_LAT, MODEL_LON,
                        MODEL_ROT, hh, nx,
-                       ny, nz, sufx, sim_duration, vel_mod_params_dir, yes_statcords, yes_model_params)
+                       ny, nz, sufx, sim_duration, vel_mod_params_dir, yes_statcords, yes_model_params, dt=dt)
     print "Installation completed"
     show_instruction(sim_dir)
 

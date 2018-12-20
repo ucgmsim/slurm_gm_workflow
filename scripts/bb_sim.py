@@ -9,6 +9,7 @@ import sys
 
 from mpi4py import MPI
 import numpy as np
+import json
 
 from qcore.siteamp_models import nt2n, cb_amp
 from qcore import timeseries
@@ -39,7 +40,7 @@ if is_master:
     arg("--flo", help="low/high frequency cutoff", type=float)
     arg("--fmin", help="fmin for site amplification", type=float, default=0.2)
     arg("--fmidbot", help="fmidbot for site amplification", type=float, default=0.5)
-    arg("--lfvsref", help="Override LF Vs30 reference value (m/s)", type=float)
+    arg("--lfvsref", help="Override LF Vs30 reference value (m/s)", type=float, default=500.)
     try:
         args = parser.parse_args()
     except SystemExit:

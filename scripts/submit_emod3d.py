@@ -148,7 +148,7 @@ if __name__ == '__main__':
 
                 num_procs = args.ncore
                 total_est_core_hours = est_e3d.est_core_hours_emod3d(nx, ny, nz, dt, sim_duration)
-                estimated_wct = est_e3d.est_wct(total_est_core_hours, num_procs, default_wct_scale)
+                estimated_wct, num_procs = est_e3d.est_wct(total_est_core_hours, num_procs, default_wct_scale)
                 print "Estimated WCT (scaled and rounded up):%s" % estimated_wct
 
             if args.auto == True:
