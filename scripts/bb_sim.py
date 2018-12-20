@@ -6,6 +6,7 @@ Combines low frequency and high frequency seismograms.
 from argparse import ArgumentParser
 import os
 import sys
+import json
 
 from mpi4py import MPI
 import numpy as np
