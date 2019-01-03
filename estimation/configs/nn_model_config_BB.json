@@ -1,5 +1,5 @@
 {
-  "input_cols": [["BB","fd_count"], ["HF","nt"]],
+  "input_cols": [["BB","fd_count"], ["HF","nt"], ["BB", "cores"]],
   "target_col": ["BB","run_time"],
 
   "units": [32, 32],

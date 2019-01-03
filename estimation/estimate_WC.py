@@ -19,6 +19,7 @@ MODEL_PREFIX = "model_"
 SCALER_PREFIX = "scaler_"
 
 HF_DEFAULT_NCORES = 80
+BB_DEFAULT_NCORES = 80
 
 
 def get_wct(run_time, overestimate_factor=0.1):
@@ -87,8 +88,9 @@ def estimate_HF_WC_single(
     """
     if n_cores != HF_DEFAULT_NCORES:
         print("WARNING: The model currently only supports estimation "
-              "for {} number of cores. Therefore any estimation with a "
-              "different number of cores will be very inaccurate.")
+              "for {} number of cores. Therefore estimation for {} number "
+              "of cores will be very inaccurate.".format(
+                HF_DEFAULT_NCORES, n_cores))
 
     # Make a numpy array of the input data in the right shape
     # The order of the features has to the same as for training!!
@@ -102,7 +104,7 @@ def estimate_HF_WC_single(
 
 
 def estimate_BB_WC_single(
-        fd_count: int, nt: int, model_dir: str = BB_MODEL_DIR,
+        fd_count: int, nt: int, n_cores: int, model_dir: str = BB_MODEL_DIR,
         model_prefix: str = MODEL_PREFIX, scaler_prefix: str = SCALER_PREFIX):
     """Convenience function to make a single estimation
 
@@ -111,19 +113,24 @@ def estimate_BB_WC_single(
 
     Params
     ------
-    fd_count, nt: int, float
+    fd_count, nt, n_cores: int, float
         Input features for the model
         Where nt is the nt from HF
-
 
     Returns
     -------
     wc: float
         Estimated wall clock time
     """
+    if n_cores != BB_DEFAULT_NCORES:
+        print("WARNING: The model currently only supports estimation "
+              "for {} number of cores. Therefore estimation for {} number "
+              "of cores will be very inaccurate.".format(
+                BB_DEFAULT_NCORES, n_cores))
+
     # Make a numpy array of the input data in the right shape
     # The order of the features has to the same as for training!!
-    data = np.array([float(fd_count), float(nt)]).reshape(1, 2)
+    data = np.array([float(fd_count), float(nt), float(n_cores)]).reshape(1, 3)
 
     return estimate(data, model_dir=model_dir, model_prefix=model_prefix,
                     scaler_prefix=scaler_prefix)[0][0]

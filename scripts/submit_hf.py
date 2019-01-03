@@ -1,15 +1,13 @@
-import os
-import sys
+#!/usr/bin/env python3
+"""Script to create and submit a slurm script for HF"""
 import argparse
 
-from math import ceil, log
 from datetime import datetime
 
 import qcore
+import install
 import estimation.estimate_WC as wc
 
-from management import db_helper
-from management import update_mgmt_db
 from qcore import utils, shared, srf
 
 # TODO: move this to qcore library
@@ -20,17 +18,12 @@ sys.path.append(os.path.abspath(os.path.curdir))
 
 # default values
 default_version = 'run_hf_mpi'
-default_core = "80"
+default_core = 80
 default_wct = "00:30:00"
 default_memory = "16G"
 default_account = 'nesi00213'
 
-# TODO:this number needs to find a way to update more frequently, based on stored WCT.
-# complexity = NlogN * Nt * fd * Nsub
-default_hf_coef_ascii = 40539996852
-default_hf_coef_binary = 38087921480
-
-# standard deviation
+# standard deviation (doesn't appear to be used anywhere?)
 default_scale = 1.2
 
 # Timestamping
@@ -43,18 +36,11 @@ utils.update(params, utils.load_params(
     os.path.join(params.vel_mod_dir, 'vm_params.yaml')))
 
 
-def confirm(q):
-    show_horizontal_line()
-    print(q)
-    return show_yes_no_question()
-
-
 def write_sl_script(hf_sim_dir, sim_dir, stoch_name, sl_template_prefix,
                     hf_option, nb_cpus=default_core, wct=default_wct,
                     memory=default_memory, account=default_account,
                     binary=False, seed=None):
     """Populates the template and writes the resulting slurm script to file"""
-
     with open('%s.sl.template' % sl_template_prefix, 'r') as f:
         template = f.read()
 
@@ -90,18 +76,18 @@ def write_sl_script(hf_sim_dir, sim_dir, stoch_name, sl_template_prefix,
     print(variation)
 
     job_name = "sim_hf.%s" % variation
-    header = resolve_header(account, nb_cpus, wct, job_name, "slurm",
+    header = resolve_header(account, str(nb_cpus), wct, job_name, "slurm",
                             memory, timestamp, job_description="HF calculation",
                             additional_lines="###SBATCH -C avx")
-    fname_sl_script = '%s_%s_%s.sl' % (sl_template_prefix, variation, timestamp)
-    with open(fname_sl_script, 'w') as f:
+    script_name = '%s_%s_%s.sl' % (sl_template_prefix, variation, timestamp)
+    with open(script_name, 'w') as f:
         f.write(header)
         f.write(template)
 
-    fname_sl_abs_path = os.path.join(os.path.abspath(os.path.curdir),
-                                     fname_sl_script)
-    print("Slurm script %s written" % fname_sl_abs_path)
-    return fname_sl_abs_path
+    script_name_abs = os.path.join(os.path.abspath(os.path.curdir),
+                                   script_name)
+    print("Slurm script %s written" % script_name_abs)
+    return script_name_abs
 
 
 if __name__ == '__main__':
@@ -109,13 +95,11 @@ if __name__ == '__main__':
         description="Create (and submit if specified) the slurm script for HF")
 
     parser.add_argument('--version', type=str, default=None, const=None)
-    parser.add_argument('--ncore', type=str, default=default_core)
+    parser.add_argument('--ncore', type=int, default=default_core)
 
     # if the --auto flag is used, wall clock time will be estimated the job
     # submitted automatically
     parser.add_argument('--auto', type=int, nargs='?', default=None,
-                        const=True)
-    parser.add_argument('--est_wct', type=int, nargs='?', default=None,
                         const=True)
 
     # rand_reset, if somehow the user decide to use it but not defined in
@@ -128,13 +112,14 @@ if __name__ == '__main__':
                         const=True)
     parser.add_argument('--account', type=str, default=default_account)
     parser.add_argument('--srf', type=str, default=None)
-    parser.add_argument('--binary', action="store_true")
-    parser.add_argument('--debug', action="store_true")
+    parser.add_argument('--ascii', action="store_true", default=False)
+    parser.add_argument('--debug', action="store_true", default=False)
     parser.add_argument('--seed', type=int, default=None,
                         help="random seed number(0 for randomized seed)")
     args = parser.parse_args()
 
     # check if the args is none, if not, change the version
+    ncore = args.ncore
     if args.version is not None:
         version = args.version
         if version == 'serial' or version == 'run_hf':
@@ -173,84 +158,65 @@ if __name__ == '__main__':
     print("hf_option", hf_option)
 
     # est_wct and submit, if --auto used
-    if args.auto is not None:
-        args.est_wct = True
-        submit_yes = True
-    else:
-        # None: ask user if want to submit; False: dont submit
-        submit_yes = confirm("Also submit the job for you?")
+    submit_yes = True if args.auto else confirm("Also submit the job for you?")
+
     print("hf_option", hf_option)
     print("account:", args.account)
 
     # modify the logic to use the same as in install_bb:
     # sniff through params_base to get the names of srf,
-    # instead of running throught file directories.
+    # instead of running through file directories.
 
     # loop through all srf file to generate related slurm scripts
-
     srf = params.srf_file[0]
     srf_name = os.path.splitext(os.path.basename(srf))[0]
     # if srf(variation) is provided as args, only create
     # the slurm with same name provided
     if args.srf is None or srf_name == args.srf:
-        print("args.est_wct: ", args.est_wct)
-        if args.est_wct is not None:
-            nt = int(float(params.sim_duration) / float(params.hf.hf_dt))
-            fd_count = len(qcore.shared.get_stations(params.FD_STATLIST))
-            # TODO:make it read through the whole list
-            #  instead of assuming every stoch has same size
-            nsub_stoch, sub_fault_area = qcore.srf.get_nsub_stoch(
-                params.hf.hf_slip[0], get_area=True)
+        nt = int(float(params.sim_duration) / float(params.hf.hf_dt))
+        fd_count = len(qcore.shared.get_stations(params.FD_STATLIST))
+        # TODO:make it read through the whole list
+        #  instead of assuming every stoch has same size
+        nsub_stoch, sub_fault_area = qcore.srf.get_nsub_stoch(
+            params.hf.hf_slip[0], get_area=True)
 
-            if args.debug:
-                print("sb:", sub_fault_area)
-                print("nt:", nt)
-                print("fd:", fd_count)
-                print("nsub:", nsub_stoch)
+        if args.debug:
+            print("sb:", sub_fault_area)
+            print("nt:", nt)
+            print("fd:", fd_count)
+            print("nsub:", nsub_stoch)
 
-            if args.binary:
-                est_run_time = wc.estimate_HF_WC_single(
-                    fd_count, nsub_stoch, nt, args.ncore)
-                wct = wc.get_wct(est_run_time)
-                print("Estimated time: {}, Number of cores: {}."
-                      "\nUsing WCT of {} to ensure job finishes.".format(
-                        wc.convert_to_wct(est_run_time), args.ncore, wct))
-            else:
-                print("No time estimation available for ascii. "
-                      "Using default WCT {}".format(default_wct))
-                wct = default_wct
-        else:
+        if args.ascii:
+            print("No time estimation available for ascii. "
+                  "Using default WCT {}".format(default_wct))
             wct = default_wct
+        else:
+            est_run_time = wc.estimate_HF_WC_single(
+                fd_count, nsub_stoch, nt, ncore)
+            wct = wc.get_wct(est_run_time)
+            print("Estimated time: {} with {} number of cores".format(
+                wc.convert_to_wct(est_run_time), ncore))
+
+            print("Use the estimated wall clock time? (Adds a 10% "
+                  "overestimation to ensure the job completes)")
+            use_estimation = show_yes_no_question()
+
+            if use_estimation:
+                wct = wc.get_wct(est_run_time)
+            else:
+                wct = str(install.get_input_wc())
+            print("WCT set to: %s" % wct)
+
         hf_sim_dir = os.path.join(params.sim_dir, 'HF')
 
         # Create/write the script
         script_file = write_sl_script(
             hf_sim_dir, params.sim_dir, srf_name, ll_name_prefix, hf_option,
-            args.ncore, wct, account=args.account, binary=args.binary,
+            ncore, wct, account=args.account, binary=not args.ascii,
             seed=args.seed)
 
         # Submit the script
-        if submit_yes:
-            print("Submitting %s" % script_file)
-            res = exe("sbatch %s" % script_file, debug=False)
-            if len(res[1]) == 0:
-                # no errors, return the job id
-                jobid = res[0].split()[-1]
-
-                try:
-                    int(jobid)
-                except ValueError:
-                    print("{} is not a valid jobid. Submitting the "
-                          "job most likely failed".format(jobid))
-                    sys.exit()
-
-                # Update the db
-                db = db_helper.connect_db(params.mgmt_db_location)
-                update_mgmt_db.update_db(
-                    db, "HF", 'queued',
-                    job=jobid, run_name=srf_name)
-                db.connection.commit()
-        else:
-            print("User chose to submit the job manually")
+        submit_sl_script(
+            "HF", "queued", params.mgmt_db_location, srf_name, submit_yes)
 
 

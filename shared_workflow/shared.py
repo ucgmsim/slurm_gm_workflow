@@ -13,6 +13,9 @@ import subprocess
 import sys
 import re
 
+from management import db_helper
+from management import update_mgmt_db
+
 if sys.version_info.major == 3:
     basestring = str
 
@@ -299,6 +302,12 @@ def show_horizontal_line(c='=', length=100):
     print(c*length)
 
 
+def confirm(q):
+    show_horizontal_line()
+    print(q)
+    return show_yes_no_question()
+
+
 def confirm_name(name):
     show_horizontal_line()
     print("Automated Name: ", name)
@@ -343,6 +352,32 @@ def exe(cmd, debug=True,shell=False, stdout=subprocess.PIPE,
             print(err) # also printing to stdout (syncing err msg to cmd executed)
 
     return out, err
+
+
+def submit_sl_script(script, process, status, mgmt_db_location, srf_name,
+                     submit_yes=False):
+    """Submits the slurm script and udpates the management db"""
+    if submit_yes:
+        print("Submitting %s" % script)
+        res = exe("sbatch %s" % script, debug=False)
+        if len(res[1]) == 0:
+            # no errors, return the job id
+            jobid = res[0].split()[-1]
+
+            try:
+                int(jobid)
+            except ValueError:
+                print("{} is not a valid jobid. Submitting the "
+                      "job most likely failed".format(jobid))
+                sys.exit()
+
+            # Update the db
+            db = db_helper.connect_db(mgmt_db_location)
+            update_mgmt_db.update_db(db, process, status, job=jobid,
+                                     run_name=srf_name)
+            db.connection.commit()
+    else:
+        print("User chose to submit the job manually")
 
 
 ### functions mostly used in regression_test

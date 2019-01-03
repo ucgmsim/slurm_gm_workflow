@@ -151,7 +151,12 @@ def main(args):
                 args.input_dir, "**/",
                 "{}.json".format(args.filename_pattern)),
             recursive=True)
-    print("Found {} matching .json files".format(len(json_files)))
+
+    if len(json_files) == 0:
+        print("No matching .json files found. Quitting.")
+        exit()
+    else:
+        print("Found {} matching .json files".format(len(json_files)))
 
     print("Creating and cleaning dataframes...")
     if args.n_procs > 1:
@@ -163,11 +168,12 @@ def main(args):
     # Get rid of all empty entries
     dfs = [df for df in dfs if df is not None]
 
-    print("Combining dataframes...")
-    result_df = pd.concat(dfs, axis=0)
+    if len(dfs) > 0:
+        print("Combining dataframes...")
+        result_df = pd.concat(dfs, axis=0)
 
-    print("Saving the final dataframe in {}".format(args.output_file))
-    result_df.to_csv(args.output_file)
+        print("Saving the final dataframe in {}".format(args.output_file))
+        result_df.to_csv(args.output_file)
 
 
 if __name__ == '__main__':
