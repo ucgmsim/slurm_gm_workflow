@@ -3,10 +3,10 @@
   "emod3d_version" : "3.0.4",
   "global_root" : "/nesi/project/nesi00213",
   "bin_process_path" : "/nesi/project/nesi00213/opt/maui/emod3d/3.0.4-gcc/bin/",
-  "qcore_lib_path" : "/nesi/project/nesi00213/qcore",
+  "qcore_lib_path" : "/home/melody.zhu/qcore",
   "install_bb_name" : "install_bb.py",
   "params_vel" : "params_vel.py",
   "runfolder_path" : "/nesi/nobackup/nesi00213/RunFolder/",
-  "templates_dir": "/nesi/project/nesi00213/workflow/templates"
+  "templates_dir": "/home/melody.zhu/slurm_gm_workflow/templates"
 }
 
