@@ -5,7 +5,6 @@ if [[ ! -d {{mgmt_db_location}}/mgmt_db_queue ]]; then
 fi
 timestamp=`date +%Y%m%d_%H%M%S`
 echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} HF running --run_name {{srf_name}} --job $SLURM_JOBID" >> {{mgmt_db_location}}/mgmt_db_queue/$timestamp\_$SLURM_JOBID
-source machine_env.sh
 
 runtime_fmt="%Y-%m-%d_%H:%M:%S"
 start_time=`date +$runtime_fmt`

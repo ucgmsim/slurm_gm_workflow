@@ -42,7 +42,8 @@ def write_sl_script(bb_sim_dir, sim_dir, srf_name, sl_template_prefix,
 
     if binary:
         create_directory = "mkdir -p " + os.path.join(bb_sim_dir, "Acc") + "\n"
-        submit_command = create_directory + "srun python $BINPROCESS/bb_sim.py "
+        submit_command = create_directory + "srun python $gmsim/workflow" \
+                                            "/scripts/bb_sim.py "
         arguments = [os.path.join(sim_dir, 'LF', "OutBin"), params.vel_mod_dir,
                      os.path.join(sim_dir, 'HF', "Acc/HF.bin"),
                      params.stat_vs_est, os.path.join(bb_sim_dir, "Acc/BB.bin"),
@@ -51,8 +52,8 @@ def write_sl_script(bb_sim_dir, sim_dir, srf_name, sl_template_prefix,
             "{{bb_submit_command}}", submit_command + " ".join(arguments))
     else:
         template = template.replace(
-            "{{bb_submit_command}}",
-            "srun python  $BINPROCESS/match_seismo-mpi.py " + bb_sim_dir)
+            "{{bb_submit_command}}", "srun python  $gmsim/workflow/scripts"
+                                     "/match_seismo-mpi.py " + bb_sim_dir)
 
     variation = srf_name.replace('/', '__')
     print(variation)

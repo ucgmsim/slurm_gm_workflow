@@ -46,7 +46,8 @@ def write_sl_script(hf_sim_dir, sim_dir, stoch_name, sl_template_prefix,
 
     if binary:
         create_dir = "mkdir -p " + os.path.join(hf_sim_dir, "Acc") + "\n"
-        hf_submit_command = create_dir + "srun python $BINPROCESS/hf_sim.py "
+        hf_submit_command = create_dir + "srun python $gmsim/workflow" \
+                                         "/scripts/hf_sim.py "
         arguments_for_hf = [params.hf.hf_slip[0], params.FD_STATLIST,
                             os.path.join(hf_sim_dir, "Acc/HF.bin"), "-m",
                             params.v_mod_1d_name, "--duration",
@@ -54,8 +55,9 @@ def write_sl_script(hf_sim_dir, sim_dir, stoch_name, sl_template_prefix,
 
         hf_submit_command += " ".join(list(map(str, arguments_for_hf)))
     else:
-        hf_submit_command = "srun python  $BINPROCESS/hfsims-stats-mpi.py "\
-                            + hf_sim_dir + " " + str(hf_option)
+        hf_submit_command = "srun python  $gmsim/workflow/scripts" \
+                            "/hfsims-stats-mpi.py " + hf_sim_dir + " " \
+                            + str(hf_option)
 
     if seed is not None:
         hf_submit_command = "{} --seed {}".format(hf_submit_command, seed)
