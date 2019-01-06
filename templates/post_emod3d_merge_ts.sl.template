@@ -1,5 +1,4 @@
 #
-source machine_env.sh
 
 if [[ ! -d {{mgmt_db_location}}/mgmt_db_queue ]]; then
     #create the queue folder if not exist

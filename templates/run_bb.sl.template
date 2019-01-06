@@ -1,10 +1,8 @@
-source machine_env.sh
- 
 date
 python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} BB running --r {{srf_name}}
 
 echo "Computing BB"
-srun python $BINPROCESS/match_seismo.py $bb_sim_dir
+srun python $gmsim/workflow/scripts/match_seismo.py $bb_sim_dir
 
 date
 python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} BB completed --r {{srf_name}}

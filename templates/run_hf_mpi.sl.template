@@ -1,4 +1,3 @@
-
 #updating the stats in managementDB
 if [[ ! -d {{mgmt_db_location}}/mgmt_db_queue ]]; then
     #create the queue folder if not exist
@@ -25,11 +24,11 @@ if [[ $? == 0 ]]; then
     if [[ ! -d {{sim_dir}}/ch_log ]]; then
         mkdir {{sim_dir}}/ch_log
     fi
-    run_time=`python -c "from datetime import datetime; tdelta= datetime.strptime('$end_time', '$runtime_fmt') - datetime.strptime('$start_time', '$runtime_fmt'); print tdelta.total_seconds()/3600"`
-    fd_name=`python -c "from qcore import utils; pb = utils.load_params('sim_params.yaml'); print pb.FD_STATLIST"`
+    run_time=`python -c "from datetime import datetime; tdelta= datetime.strptime('$end_time', '$runtime_fmt') - datetime.strptime('$start_time', '$runtime_fmt'); print(tdelta.total_seconds()/3600)"`
+    fd_name=`python -c "from qcore import utils; pb = utils.load_params('sim_params.yaml'); print(pb.FD_STATLIST)"`
     fd_count=`cat $fd_name | wc -l`
-    nt=`python -c "from qcore import utils; d = utils.load_params('root_params.yaml', 'sim_params.yaml'); print int(float(d.sim_duration) / float(d.dt))"`
-    nsub_stoch=`python -c "from qcore import utils; params = utils.load_params('sim_params.yaml'); from qcore.srf import get_nsub_stoch; sub_fault_count,sub_fault_area=get_nsub_stoch(params.hf.hf_slip[0],get_area=True);print sub_fault_count"`
+    nt=`python -c "from qcore import utils; d = utils.load_params('root_params.yaml', 'sim_params.yaml'); print(int(float(d.sim_duration) / float(d.dt)))"`
+    nsub_stoch=`python -c "from qcore import utils; params = utils.load_params('sim_params.yaml'); from qcore.srf import get_nsub_stoch; sub_fault_count,sub_fault_area=get_nsub_stoch(params.hf.hf_slip[0],get_area=True);print(sub_fault_count)"`
     #save meta data
     echo "{{srf_name}} HF $SLURM_NTASKS $run_time $fd_count $nt $nsub_stoch $start_time $end_time" >> {{sim_dir}}/ch_log/HF.$timestamp.$SLURM_JOBID.log
 else
