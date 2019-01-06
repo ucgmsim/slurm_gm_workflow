@@ -112,7 +112,7 @@ def test_hf_bin(bench_path, test_path):
     h1 = timeseries.HFSeis(bench_path)
     h2 = timeseries.HFSeis(test_path)
     check_headers(h1, h2)
-   # check_data(h1, h2)
+    check_data(h1, h2)
 
 
 def test_bb_bin(bench_path, test_path):
