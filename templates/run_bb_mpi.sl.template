@@ -31,7 +31,7 @@ if [[ $? == 0 ]]; then
     run_time=`python -c "from datetime import datetime; tdelta= datetime.strptime('$end_time', '$runtime_fmt') - datetime.strptime('$start_time', '$runtime_fmt'); print tdelta.total_seconds()/3600"`
     fd_name=`python -c "from qcore import utils; pb = utils.load_params('sim_params.yaml'); print pb.FD_STATLIST"`
     fd_count=`cat $fd_name | wc -l`
-    dt=`python -c "from qcore import utils; pb = utils.load_params('sim_params.yaml'); print pb.hf.hf_dt"`
+    dt=`python -c "from qcore import utils; pb = utils.load_params('root_params.yaml'); print pb.hf.hf_dt"`
     #save meta data
     echo "{{srf_name}} BB $SLURM_NTASKS $run_time $fd_count $dt $start_time $end_time" >> {{sim_dir}}/ch_log/BB.$timestamp.$SLURM_JOBID.log
 else
