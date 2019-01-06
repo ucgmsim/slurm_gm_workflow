@@ -10,7 +10,7 @@ fi
 sim_dir=$1
 
 cd $sim_dir
-fd_ll=`python -c "from qcore import utils; p = utils.load_params('sim_params.yaml'); print p.FD_STATLIST"`
+fd_ll=`python -c "from qcore import utils; p = utils.load_params('sim_params.yaml'); print(p.FD_STATLIST)"`
 
 hf_sim_dir=$sim_dir/HF
 hf_acc_dir=$hf_sim_dir/Acc

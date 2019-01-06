@@ -647,7 +647,7 @@ if __name__ == '__main__':
                              "be present")
     parser.add_argument('--v1d_dir', type=str, default=None)
     parser.add_argument('--station_dir', type=str, default=None)
-    parser.add_argument('--version', type=str, default=None,
+    parser.add_argument('--version', type=str, required=True,
                         help="version of simulation. eg.'gmsim_v18.5.3'")
 
     args = parser.parse_args()

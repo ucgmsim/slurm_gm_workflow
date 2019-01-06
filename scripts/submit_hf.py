@@ -197,8 +197,9 @@ if __name__ == '__main__':
             print("Estimated time: {} with {} number of cores".format(
                 wc.convert_to_wct(est_run_time), ncore))
 
-            print("Use the estimated wall clock time? (Adds a 10% "
-                  "overestimation to ensure the job completes)")
+            print("Use the estimated wall clock time? (Minimum of 5 mins, "
+                  "otherwise adds a 10% overestimation to ensure "
+                  "the job completes)")
             use_estimation = show_yes_no_question()
 
             if use_estimation:

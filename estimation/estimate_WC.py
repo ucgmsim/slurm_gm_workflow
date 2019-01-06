@@ -28,7 +28,10 @@ def get_wct(run_time, overestimate_factor=0.1):
 
     Use this when estimation as max run time in a slurm script.
     """
-    return convert_to_wct(run_time * (1.0 + overestimate_factor))
+    if run_time < (5.0 / 60.0):
+        return convert_to_wct(5.0 / 60.0)
+    else:
+        return convert_to_wct(run_time * (1.0 + overestimate_factor))
 
 
 def convert_to_wct(run_time):

@@ -135,10 +135,11 @@ if __name__ == '__main__':
             est_run_time = wc.estimate_BB_WC_single(fd_count, nt, ncores)
             wct = wc.get_wct(est_run_time)
             print("Estimated time: {} with {} number of cores".format(
-                wc.convert_to_wct(est_run_time), args.ncore))
+                wc.convert_to_wct(est_run_time), ncores))
 
-            print("Use the estimated wall clock time? (Adds a 10% "
-                  "overestimation to ensure the job completes)")
+            print("Use the estimated wall clock time? (Minimum of 5 mins, "
+                  "otherwise adds a 10% overestimation to ensure "
+                  "the job completes)")
             use_estimation = show_yes_no_question()
 
             if use_estimation:

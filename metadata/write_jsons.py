@@ -84,7 +84,7 @@ def get_all_sims_dict(fault_dir):
                 for i in range(len(data)):
                     key = KEY_DICT[sim_type][i]
                     if key == 'run_time':
-                        data[i] = "{:.3f} hour".format(float(data[i]))
+                        data[i] = "{:.5f} hour".format(float(data[i]))
                     result_dict[realization][sim_type][key] = data[i]
 
                 # Extra LF metadata

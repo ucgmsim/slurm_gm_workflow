@@ -134,8 +134,9 @@ if __name__ == '__main__':
             else:
                 # Get the wall clock time from the user
                 if wall_clock_limit is None:
-                    print("Use the estimated wall clock time? (Adds a 10% "
-                          "overestimation to ensure the job completes)")
+                    print("Use the estimated wall clock time? (Minimum of "
+                          "5 mins, otherwise adds a 10% overestimation to "
+                          "ensure the job completes)")
                     use_estimation = show_yes_no_question()
                     if use_estimation:
                         wall_clock_limit = wc.get_wct(est_run_time)
