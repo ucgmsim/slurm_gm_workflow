@@ -133,7 +133,8 @@ if __name__ == '__main__':
             nt = int(float(params.sim_duration) / float(params.hf.hf_dt))
             fd_count = len(shared.get_stations(params.FD_STATLIST))
 
-            est_run_time = wc.estimate_BB_WC_single(fd_count, nt, ncores)
+            est_core_hours, est_run_time = wc.estimate_BB_WC_single(
+                fd_count, nt, ncores)
             wct = wc.get_wct(est_run_time)
             print("Estimated time: {} with {} number of cores".format(
                 wc.convert_to_wct(est_run_time), ncores))

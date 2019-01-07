@@ -20,6 +20,7 @@ from argparse import ArgumentParser
 
 class MetaConst(Enum):
     run_time = "run_time"
+    core_hours = "core_hours"
     n_cores = "cores"
     fd_count = "fd_count"
     nsub_stoch = "nsub_stoch"
@@ -127,7 +128,7 @@ def clean_df(df):
                 # Try to convert everything else to numeric
                 else:
                     df[sim_type, meta_col] = pd.to_numeric(df[sim_type, meta_col],
-                                                           errors='ignore',
+                                                           errors='coerce',
                                                            downcast='float')
 
     return df
@@ -140,17 +141,15 @@ def main(args):
 
     # Get all .json files
     print("Searching for matching json files")
-    if args.not_recursive:
-        json_files = glob.glob(
-            os.path.join(
-                args.input_dir, "{}.json".format(args.filename_pattern)),
-            recursive=False)
-    else:
-        json_files = glob.glob(
-            os.path.join(
-                args.input_dir, "**/",
-                "{}.json".format(args.filename_pattern)),
-            recursive=True)
+    file_pattern = "{}.json".format(args.filename_pattern) if args.not_recursive \
+        else os.path.join("**/", "{}.json".format(args.filename_pattern))
+
+    json_files = [glob.glob(
+        os.path.join(cur_dir, file_pattern), recursive=not args.not_recursive)
+        for cur_dir in args.input_dirs]
+
+    # Flatten the list of list of files
+    json_files = [file for file_list in json_files for file in file_list]
 
     if len(json_files) == 0:
         print("No matching .json files found. Quitting.")
@@ -172,6 +171,24 @@ def main(args):
         print("Combining dataframes...")
         result_df = pd.concat(dfs, axis=0)
 
+        # Calculate the core hours for each simulation type
+        if args.calc_core_hours:
+            for sim_type in SimTypeConst:
+                if sim_type.value in result_df.columns.levels[0].values:
+                    cur_df = result_df.loc[:, sim_type.value]
+
+                    if MetaConst.run_time.value in cur_df.columns \
+                            and MetaConst.n_cores.value in cur_df.columns:
+                        result_df.loc[:, (sim_type.value, MetaConst.core_hours.value)] = \
+                            cur_df.loc[:, MetaConst.run_time.value] \
+                            * cur_df.loc[:, MetaConst.n_cores.value]
+                    # Missing run time and number of cores column
+                    else:
+                        print("Columns {} and {} do no exist for "
+                              "simulation type {}".format(
+                                MetaConst.run_time.value, MetaConst.run_time.value,
+                                sim_type.value))
+
         print("Saving the final dataframe in {}".format(args.output_file))
         result_df.to_csv(args.output_file)
 
@@ -179,10 +196,10 @@ def main(args):
 if __name__ == '__main__':
     parser = ArgumentParser()
 
-    parser.add_argument("input_dir", type=str,
-                        help="Input directory that contains the json "
-                             "files with the metadata")
-    parser.add_argument("output_file", type=str,
+    parser.add_argument("-i", "--input_dirs", type=str, nargs='+',
+                        help="Input directory/directories that contains the "
+                             "json files with the metadata")
+    parser.add_argument("-o", "--output_file", type=str,
                         help="The name of the file to save the "
                              "resulting dataframe")
     parser.add_argument("-n", "--n_procs", type=int, default=4,
@@ -194,6 +211,10 @@ if __name__ == '__main__':
                         default="all_sims",
                         help="The json file pattern to search. "
                              "Do not add .json. Defaults to 'all_sims'.")
+    parser.add_argument("--calc_core_hours", action="store_true", default=False,
+                        help="Calculates the total number of core hours "
+                             "from the run_time and number of cores and adds "
+                             "them to the dataframe as a column")
 
     args = parser.parse_args()
     main(args)

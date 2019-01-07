@@ -1,6 +1,6 @@
 {
   "input_cols": [["BB","fd_count"], ["HF","nt"], ["BB", "cores"]],
-  "target_col": ["BB","run_time"],
+  "target_col": ["BB","core_hours"],
 
   "units": [32, 32],
   "dropout": 0.1,

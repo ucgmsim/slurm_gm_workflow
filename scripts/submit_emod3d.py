@@ -121,7 +121,7 @@ if __name__ == '__main__':
                 print("Number of cores is different from default "
                       "number of cores. Estimation will be less accurate.")
 
-            est_run_time = wc.estimate_LF_WC_single(
+            est_core_hours, est_run_time = wc.estimate_LF_WC_single(
                 int(params.nx), int(params.ny), int(params.nz),
                 int(float(params.sim_duration) / float(params.dt)), num_procs)
             print("Estimated WCT {}".format(

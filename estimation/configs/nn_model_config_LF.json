@@ -5,7 +5,7 @@
     ["LF","nz"],
     ["LF","nt"],
     ["LF", "cores"]],
-  "target_col": ["LF","run_time"],
+  "target_col": ["LF","core_hours"],
 
   "units": [32, 32, 32],
   "dropout": 0.01,

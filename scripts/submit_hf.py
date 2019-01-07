@@ -193,7 +193,7 @@ if __name__ == '__main__':
                   "Using default WCT {}".format(default_wct))
             wct = default_wct
         else:
-            est_run_time = wc.estimate_HF_WC_single(
+            est_core_hours, est_run_time = wc.estimate_HF_WC_single(
                 fd_count, nsub_stoch, nt, ncore)
             wct = wc.get_wct(est_run_time)
             print("Estimated time: {} with {} number of cores".format(

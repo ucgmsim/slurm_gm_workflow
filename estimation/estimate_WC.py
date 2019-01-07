@@ -55,8 +55,10 @@ def estimate_LF_WC_single(
 
     Returns
     -------
-    wc: float
-        Estimated wall clock time
+    core_hours: float
+        Estimated number of core hours
+    run time: float
+        Estimated run time (hours)
     """
     # Make a numpy array of the input data in the right shape.
     # The order of the features has to the same as for training!!
@@ -66,8 +68,10 @@ def estimate_LF_WC_single(
                      float(nt),
                      float(n_cores)]).reshape(1, 5)
 
-    return estimate(data, model_dir=model_dir, model_prefix=model_prefix,
+    core_hours = estimate(data, model_dir=model_dir, model_prefix=model_prefix,
                     scaler_prefix=scaler_prefix)[0][0]
+
+    return core_hours, core_hours / n_cores
 
 
 def estimate_HF_WC_single(
@@ -86,8 +90,10 @@ def estimate_HF_WC_single(
 
     Returns
     -------
-    wc: float
-        Estimated wall clock time
+    core_hours: float
+        Estimated number of core hours
+    run_time: float
+        Estimated run time (hours)
     """
     if n_cores != HF_DEFAULT_NCORES:
         print("WARNING: The model currently only supports estimation "
@@ -102,8 +108,10 @@ def estimate_HF_WC_single(
                      float(nt),
                      float(n_cores)]).reshape(1, 4)
 
-    return estimate(data, model_dir=model_dir, model_prefix=model_prefix,
+    core_hours = estimate(data, model_dir=model_dir, model_prefix=model_prefix,
                     scaler_prefix=scaler_prefix)[0][0]
+
+    return core_hours, core_hours / n_cores
 
 
 def estimate_BB_WC_single(
@@ -122,8 +130,10 @@ def estimate_BB_WC_single(
 
     Returns
     -------
-    wc: float
-        Estimated wall clock time
+    core_hours: float
+        Estimated number of core hours
+    run_time: float
+        Estimated run time (hours)
     """
     if n_cores != BB_DEFAULT_NCORES:
         print("WARNING: The model currently only supports estimation "
@@ -135,8 +145,10 @@ def estimate_BB_WC_single(
     # The order of the features has to the same as for training!!
     data = np.array([float(fd_count), float(nt), float(n_cores)]).reshape(1, 3)
 
-    return estimate(data, model_dir=model_dir, model_prefix=model_prefix,
+    core_hours = estimate(data, model_dir=model_dir, model_prefix=model_prefix,
                     scaler_prefix=scaler_prefix)[0][0]
+
+    return core_hours, core_hours / n_cores
 
 
 def estimate(input_data: np.ndarray, model_dir: str,
