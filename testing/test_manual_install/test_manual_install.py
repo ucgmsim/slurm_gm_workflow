@@ -99,8 +99,6 @@ def test_e3ds(bench_path, test_path):
             'diff {} {}'.format(os.path.join(bench_path, bench_e3ds[i]), os.path.join(test_path, test_e3ds[i])))
         logs += out + err
 
-# assert logs == ''
-
 
 def test_hf_bin(bench_path, test_path):
     """
