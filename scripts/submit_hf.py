@@ -3,9 +3,6 @@ from os.path import basename
 import sys
 
 sys.path.append(os.path.abspath(os.path.curdir))
-# import params
-# import params_base
-# import params_base_bb
 
 import fnmatch
 from math import ceil
@@ -206,13 +203,10 @@ if __name__ == '__main__':
     else:
         try:
             if args.rand_reset is not None or params.bb.rand_reset:
-                print("Adfds")
                 hf_option = 1
             else:
-                print("else")
                 hf_option = 0
         except:
-            print("Exceot")
             hf_option = 0
             print "Note: rand_reset is not defined in params_base_bb.py. We assume rand_reset=%s" % bool(hf_option)
     print("hf_option", hf_option)
@@ -233,7 +227,7 @@ if __name__ == '__main__':
     # loop through all srf file to generate related slurm scripts
 
     srf_name = os.path.splitext(basename(params.srf_file))[0]
-    print("ddddd",srf_name)
+
     # if srf(variation) is provided as args, only create the slurm with same name provided
     if args.srf is None or srf_name == args.srf:
         print("args.est_ect", args.est_wct)
@@ -243,7 +237,6 @@ if __name__ == '__main__':
             station_count = len(qcore.shared.get_stations(params.FD_STATLIST))
             # get the number of sub faults for estimation
             # TODO:make it read through the whole list instead of assuming every stoch has same size
-            print ("adfsadf", params.hf.hf_slip)
             sub_fault_count, sub_fault_area = qcore.srf.get_nsub_stoch(params.hf.hf_slip, get_area=True)
             if args.debug:
                 print "sb:", sub_fault_area

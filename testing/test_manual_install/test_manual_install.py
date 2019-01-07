@@ -1,5 +1,12 @@
 """
-python test_manual_install.py --bench_e3d /home/melody.zhu/Albury_bench/Runs/Albury/LF/Albury_HYP15-21_S1384/e3d.par --test_e3d /home/melody.zhu/Albury_newman/Albury_VM_home_melodypzhu_Albury_newman_Data_VMs_Albury-h0p4_EMODv3p0p4_181220/LF/e3d.par --bench_outbin /home/melody.zhu/Albury_bench/Runs/Albury/LF/Albury_HYP15-21_S1384/OutBin --test_outbin /home/melody.zhu/Albury_newman/Albury_VM_home_melodypzhu_Albury_newman_Data_VMs_Albury-h0p4_EMODv3p0p4_181220/LF/OutBin --bench_hf /home/melody.zhu/Albury_bench/Runs/Albury/HF/Cant1D_v2-midQ_leer_hfnp2mm+_rvf0p8_sd50_k0p045/Albury_HYP15-21_S1384/Acc/HF.bin --test_hf /home/melody.zhu/Albury_newman/Albury_VM_home_melodypzhu_Albury_newman_Data_VMs_Albury-h0p4_EMODv3p0p4_181220/HF/Acc/HF.bin --bench_bb /home/melody.zhu/Albury_bench/Runs/Albury/BB/Cant1D_v2-midQ_leer_hfnp2mm+_rvf0p8_sd50_k0p045/Albury_HYP15-21_S1384/Acc/BB.bin --test_bb /home/melody.zhu/Albury_newman/Albury_VM_home_melodypzhu_Albury_newman_Data_VMs_Albury-h0p4_EMODv3p0p4_181220/BB/Acc/BB.bin
+python test_manual_install.py --bench_e3d /home/melody.zhu/Albury_bench/Runs/Albury/LF/Albury_HYP15-21_S1384/e3d.par
+                              --test_e3d /home/melody.zhu/Albury_newman/Albury_VM_home_melodypzhu_Albury_newman_Data_VMs_Albury-h0p4_EMODv3p0p4_181220/LF/e3d.par
+                              --bench_outbin /home/melody.zhu/Albury_bench/Runs/Albury/LF/Albury_HYP15-21_S1384/OutBin
+                              --test_outbin /home/melody.zhu/Albury_newman/Albury_VM_home_melodypzhu_Albury_newman_Data_VMs_Albury-h0p4_EMODv3p0p4_181220/LF/OutBin
+                              --bench_hf /home/melody.zhu/Albury_bench/Runs/Albury/HF/Cant1D_v2-midQ_leer_hfnp2mm+_rvf0p8_sd50_k0p045/Albury_HYP15-21_S1384/Acc/HF.bin
+                              --test_hf /home/melody.zhu/Albury_newman/Albury_VM_home_melodypzhu_Albury_newman_Data_VMs_Albury-h0p4_EMODv3p0p4_181220/HF/Acc/HF.bin
+                              --bench_bb /home/melody.zhu/Albury_bench/Runs/Albury/BB/Cant1D_v2-midQ_leer_hfnp2mm+_rvf0p8_sd50_k0p045/Albury_HYP15-21_S1384/Acc/BB.bin
+                              --test_bb /home/melody.zhu/Albury_newman/Albury_VM_home_melodypzhu_Albury_newman_Data_VMs_Albury-h0p4_EMODv3p0p4_181220/BB/Acc/BB.bin
 
 """
 
@@ -12,12 +19,17 @@ from qcore import shared
 from qcore import utils
 
 
-DIVIDER = '-' *20
-TXT1 = 'txt1'
-TXT2 = 'txt2'
+DIVIDER = '-' * 20
+TXT_DIR_1 = 'txt1'
+TXT_DIR_2 = 'txt2'
 
 
 def get_par_dict(e3d_par):
+    """
+    return e3d.par as a dict
+    :param e3d_par: path to e3d.par
+    :return: dict
+    """
     d = {}
     with open(e3d_par, 'r') as e1:
         t1 = e1.readlines()
@@ -28,6 +40,12 @@ def get_par_dict(e3d_par):
 
 
 def test_e3d_par(bench_e3d, test_e3d):
+    """
+    check if test e3d.par is the same as benchmark e3d.par
+    :param bench_e3d: path to benchmark e3d.par
+    :param test_e3d: path to test e3d.par
+    :return: 
+    """
     print("{}testing e3d.par{}".format(DIVIDER, DIVIDER))
     d1 = get_par_dict(bench_e3d)
     d2 = get_par_dict(test_e3d)
@@ -59,15 +77,30 @@ def check_headers(s1, s2):
 
 
 def check_data(s1, s2):
-    utils.setup_dir(TXT1)
-    utils.setup_dir(TXT2)
-    s1.all2txt(prefix='./{}/'.format(TXT1))
-    s2.all2txt(prefix='./{}/'.format(TXT2))
-    for f in os.listdir('txt1'):
-        out, err = shared.exe('diff {} {}'.format(os.path.join('txt1', f), os.path.join('txt2', f)))
+    """load data of two timeseries objs to txt files and compare"""
+    utils.setup_dir(TXT_DIR_1)
+    utils.setup_dir(TXT_DIR_2)
+    s1.all2txt(prefix='./{}/'.format(TXT_DIR_1))
+    s2.all2txt(prefix='./{}/'.format(TXT_DIR_2))
+    for f in os.listdir(TXT_DIR_1)[:50]:
+        out, err = shared.exe('diff {} {}'.format(os.path.join(TXT_DIR_1, f), os.path.join(TXT_DIR_2, f)))
         
-    shutil.rmtree(TXT1)
-    shutil.rmtree(TXT2)
+    shutil.rmtree(TXT_DIR_1)
+    shutil.rmtree(TXT_DIR_2)
+
+
+def test_e3ds(bench_path, test_path):
+    """
+    :param bench_path: path to benchmark OutBin folder
+    :param test_path:
+    :return:
+    """
+    print("{}testing e3d segments{}".format(DIVIDER, DIVIDER))
+    bench_e3ds = sorted(os.listdir(bench_path))
+    test_e3ds = sorted(os.listdir(test_path))
+    assert len(bench_e3ds) == len(test_e3ds)
+    for i in range(len(bench_e3ds)):
+        out, err = shared.exe('diff {} {}'.format(os.path.join(bench_path, bench_e3ds[i]), os.path.join(test_path, test_e3ds[i])))
 
 
 def test_lf_bin(bench_path, test_path):
@@ -81,23 +114,6 @@ def test_lf_bin(bench_path, test_path):
     l2 = timeseries.LFSeis(test_path)
     check_headers(l1, l2)
     check_data(l1, l2)
-
-
-def test_e3ds(bench_path, test_path):
-    """
-    :param bench_path: path to benchmark OutBin folder
-    :param test_path:
-    :return:
-    """
-    print("{}testing e3d segments{}".format(DIVIDER, DIVIDER))
-    bench_e3ds = sorted(os.listdir(bench_path))
-    test_e3ds = sorted(os.listdir(test_path))
-    assert len(bench_e3ds) == len(test_e3ds)
-    logs = ''
-    for i in range(len(bench_e3ds)):
-        out, err = shared.exe(
-            'diff {} {}'.format(os.path.join(bench_path, bench_e3ds[i]), os.path.join(test_path, test_e3ds[i])))
-        logs += out + err
 
 
 def test_hf_bin(bench_path, test_path):
@@ -147,9 +163,9 @@ def main():
     if args.bench_outbin and args.test_outbin:
         assert os.path.isdir(args.bench_outbin)
         assert os.path.isdir(args.test_outbin)
-        test_lf_bin(args.bench_outbin, args.test_outbin)
         test_e3ds(args.bench_outbin, args.test_outbin)
-
+        test_lf_bin(args.bench_outbin, args.test_outbin)
+        
     if args.bench_hf and args.test_hf:
         assert os.path.isfile(args.bench_hf)
         assert os.path.isfile(args.test_hf)
