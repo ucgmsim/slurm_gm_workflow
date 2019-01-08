@@ -161,9 +161,6 @@ if __name__ == '__main__':
                   " We assume rand_reset=%s" % bool(hf_option))
     print("hf_option", hf_option)
 
-    # est_wct and submit, if --auto used
-    submit_yes = True if args.auto else confirm("Also submit the job for you?")
-
     print("hf_option", hf_option)
     print("account:", args.account)
 
@@ -220,6 +217,8 @@ if __name__ == '__main__':
             seed=args.seed)
 
         # Submit the script
+        submit_yes = True if args.auto \
+            else confirm("Also submit the job for you?")
         submit_sl_script(
             "HF", "queued", params.mgmt_db_location, srf_name, submit_yes)
 

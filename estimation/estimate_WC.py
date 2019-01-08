@@ -18,6 +18,8 @@ BB_MODEL_DIR = "/nesi/project/nesi00213/estimation/models/BB/"
 MODEL_PREFIX = "model_"
 SCALER_PREFIX = "scaler_"
 
+DEFAULT_NCORES_PER_NODE = 40
+
 HF_DEFAULT_NCORES = 80
 BB_DEFAULT_NCORES = 80
 
@@ -40,9 +42,9 @@ def convert_to_wct(run_time):
 
 
 def estimate_LF_WC_single(
-        nx: int, ny: int, nz: int, nt: int, n_cores: int,
-        model_dir: str = LF_MODEL_DIR, model_prefix: str = MODEL_PREFIX,
-        scaler_prefix: str = SCALER_PREFIX):
+        nx: int, ny: int, nz: int, nt: int, ncores: int, scale_ncores: bool,
+        node_time_th_factor: float = 0.5, model_dir: str = LF_MODEL_DIR,
+        model_prefix: str = MODEL_PREFIX, scaler_prefix: str = SCALER_PREFIX):
     """Convenience function to make a single estimation
 
     If the input parameters (or even just the order) of the model
@@ -52,6 +54,11 @@ def estimate_LF_WC_single(
     ------
     nx, ny, nz, nt, n_cores: float, int
         Input features for the model
+    scale_ncores: bool
+        If True then the number of cores is adjusted until
+        n_nodes * node_time_th == run_time
+    node_time_th: float
+        Node time threshold factor, does nothing if scale_ncores is not set
 
     Returns
     -------
@@ -59,6 +66,10 @@ def estimate_LF_WC_single(
         Estimated number of core hours
     run time: float
         Estimated run time (hours)
+    n_cores: int
+        The number of cores to use, returns the argument n_cores
+        if scale_ncores is not set. Otherwise returns the updated ncores.
+
     """
     # Make a numpy array of the input data in the right shape.
     # The order of the features has to the same as for training!!
@@ -66,12 +77,31 @@ def estimate_LF_WC_single(
                      float(ny),
                      float(nz),
                      float(nt),
-                     float(n_cores)]).reshape(1, 5)
+                     float(ncores)]).reshape(1, 5)
 
-    core_hours = estimate(data, model_dir=model_dir, model_prefix=model_prefix,
-                    scaler_prefix=scaler_prefix)[0][0]
+    core_hours = estimate(
+        data, model_dir=model_dir, model_prefix=model_prefix,
+        scaler_prefix=scaler_prefix)[0][0]
 
-    return core_hours, core_hours / n_cores
+    # Just estimate, no number of cores scaling
+    if not scale_ncores:
+        return core_hours, core_hours / ncores, ncores
+    # Estimate and iteratively update the number of cores until
+    # the threshold is meet
+    else:
+        run_time = core_hours / ncores
+        time_th = node_time_th_factor * (ncores / DEFAULT_NCORES_PER_NODE)
+        while run_time > time_th:
+            ncores += DEFAULT_NCORES_PER_NODE
+            time_th = node_time_th_factor * (ncores / DEFAULT_NCORES_PER_NODE)
+
+            data[-1] = float(ncores)
+            core_hours = estimate(
+                data, model_dir=model_dir, model_prefix=model_prefix,
+                scaler_prefix=scaler_prefix)[0][0]
+            run_time = core_hours / ncores
+
+        return core_hours, run_time, ncores
 
 
 def estimate_HF_WC_single(
