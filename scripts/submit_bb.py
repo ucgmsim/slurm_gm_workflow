@@ -12,6 +12,7 @@ import params_base_bb
 
 # datetime related
 from datetime import datetime
+from time import sleep
 
 timestamp_format = "%Y%m%d_%H%M%S"
 timestamp = datetime.now().strftime(timestamp_format)
@@ -59,10 +60,24 @@ def submit_sl_script(script, submit_yes=None):
 
 
 def update_db(process, status, mgmt_db_location, srf_name, jobid):
-    db = db_helper.connect_db(mgmt_db_location)
-    update_mgmt_db.update_db(db, process, status, job=jobid, run_name=srf_name)
-    db.connection.commit()
-
+    db_queue_path = os.path.join(mgmt_db_location,"mgmt_db_queue")
+    cmd_name = os.path.join(db_queue_path, "%s_%s_q"%(timestamp,jobid))
+    #TODO: change this to use python3's format()
+    cmd = "python $gmsim/workflow/scripts/management/update_mgmt_db.py %s %s %s --run_name %s  --job %s"%(mgmt_db_location, process, status, srf_name, jobid)
+    with open(cmd_name, 'w+') as f:
+        f.write(cmd)
+        f.close()
+#    db = db_helper.connect_db(mgmt_db_location)
+#    while True:
+#        try:
+#            update_mgmt_db.update_db(db, process, status, job=jobid, run_name=srf_name)
+#        except:
+#            print("en error occured while trying to update DB, re-trying")
+#            sleep(10)
+#        else:
+#            break
+#    db.connection.commit()
+#    db.connection.close()
 
 def write_sl_script(bb_sim_dir, sim_dir, hf_run_name, srf_name, sl_template_prefix, nb_cpus=default_core,
                     run_time=default_run_time, memory=default_memory, account=default_account, binary=False):

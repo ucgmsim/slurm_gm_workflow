@@ -10,6 +10,7 @@ import set_runparams
 
 from management import db_helper
 from management import update_mgmt_db
+from time import sleep
 
 #sys.path.append(os.path.abspath(os.path.curdir))
 
@@ -173,6 +174,22 @@ if __name__ == '__main__':
                 
                 process = 'EMOD3D'
                 status = 'queued'
-                db = db_helper.connect_db(params.mgmt_db_location)
-                update_mgmt_db.update_db(db, process, status, job=jobid, run_name=srf_name)
-                db.connection.commit()
+                #echo to a queue instead of updating
+                #get queue location
+                db_queue_path = os.path.join(params.mgmt_db_location,"mgmt_db_queue")
+                cmd_name = os.path.join(db_queue_path, "%s_%s_q"%(timestamp,jobid))
+                cmd = "python $gmsim/workflow/scripts/management/update_mgmt_db.py " + params.mgmt_db_location + " EMOD3D " + " queued " + " --run_name " + srf_name + " --job " + jobid
+                with open(cmd_name, 'w+') as f:
+                    f.write(cmd)
+                    f.close()
+                #db = db_helper.connect_db(params.mgmt_db_location)
+                #while True:
+                #    try:
+                #        update_mgmt_db.update_db(db, process, status, job=jobid, run_name=srf_name)
+                #    except:
+                #        print("en error occured while trying to update DB, re-trying")
+                #        sleep(10)
+                #    else:
+                #        break
+                #db.connection.commit()
+                #db.connection.close()
