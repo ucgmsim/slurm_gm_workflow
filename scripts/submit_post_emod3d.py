@@ -145,54 +145,40 @@ if __name__ == '__main__':
     except Exception as ex:
         print("Failed to load params with exception\n", ex)
         sys.exit(1)
-    else:
-        submit_yes = True if args.auto else \
-            confirm("Also submit the job for you?")
 
-        wct_set = False
-<<<<<<< HEAD
-        for srf in params.srf_file:
-            # get the srf(rup) name without extensions
-            srf_name = os.path.splitext(os.path.basename(srf))[0]
-            # if srf(variation) is provided as args, only create the slurm
-            # with same name provided
-            if args.srf is not None and srf_name != args.srf:
-                continue
-=======
-        if args.auto:
-            submit_yes = True
-        else:
-            submit_yes = confirm("Also submit the job for you?")
-            # get the srf(rup) name without extensions
-        srf_name = os.path.splitext(os.path.basename(params.srf_file))[0]
-            # if srf(variation) is provided as args, only create the slurm with same name provided
-        if args.srf is None or srf_name == args.srf:
-            # get lf_sim_dir
->>>>>>> params
+    submit_yes = True if args.auto else \
+        confirm("Also submit the job for you?")
 
-            # get lf_sim_dir
-            lf_sim_dir = os.path.join(params.sim_dir, 'LF')
+    # get the srf(rup) name without extensions
+    srf_name = os.path.splitext(os.path.basename(params.srf_file))[0]
+    # if srf(variation) is provided as args, only create the slurm
+    # with same name provided
+    if args.srf is None or srf_name == args.srf:
+        # get lf_sim_dir
 
-            # run merge_ts related scripts only
-            # if non of args are provided, run script related to both
-            if not args.winbin_aio and not args.merge_ts:
-                args.merge_ts, args.winbin_aio = True, True
+        # get lf_sim_dir
+        lf_sim_dir = os.path.join(params.sim_dir, 'LF')
 
-            if args.merge_ts:
-                script = write_sl_script_merge_ts(
-                    lf_sim_dir, params.sim_dir, tools_dir,
-                    params.mgmt_db_location, srf_name)
-                submit_sl_script(
-                    script, "merge_ts", "queued", params.mgmt_db_location,
-                    srf_name, submit_yes)
+        # run merge_ts related scripts only
+        # if non of args are provided, run script related to both
+        if not args.winbin_aio and not args.merge_ts:
+            args.merge_ts, args.winbin_aio = True, True
 
-            # run winbin_aio related scripts only
-            if args.winbin_aio:
-                script = write_sl_script_winbin_aio(
-                    lf_sim_dir, params.sim_dir, params.mgmt_db_location,
-                    srf_name)
-                submit_sl_script(
-                    script, "winbin_aio", "queued", params.mgmt_db_location,
-                    srf_name, submit_yes)
+        if args.merge_ts:
+            script = write_sl_script_merge_ts(
+                lf_sim_dir, params.sim_dir, tools_dir,
+                params.mgmt_db_location, srf_name)
+            submit_sl_script(
+                script, "merge_ts", "queued", params.mgmt_db_location,
+                srf_name, submit_yes)
+
+        # run winbin_aio related scripts only
+        if args.winbin_aio:
+            script = write_sl_script_winbin_aio(
+                lf_sim_dir, params.sim_dir, params.mgmt_db_location,
+                srf_name)
+            submit_sl_script(
+                script, "winbin_aio", "queued", params.mgmt_db_location,
+                srf_name, submit_yes)
 
 
