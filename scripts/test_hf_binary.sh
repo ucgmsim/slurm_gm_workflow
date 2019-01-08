@@ -8,6 +8,8 @@ if [[ $# -lt 1 ]]; then
 fi
 
 sim_dir=$1
+#hf_run_name=$2
+#srf_name=$3
 
 cd $sim_dir
 fd_ll=`python -c "from qcore import utils; p = utils.load_params('sim_params.yaml'); print(p.FD_STATLIST)"`

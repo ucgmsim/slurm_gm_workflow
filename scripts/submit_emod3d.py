@@ -100,16 +100,11 @@ if __name__ == '__main__':
 
         print("params.srf_file", params.srf_file)
         wall_clock_limit = None
-        for srf in params.srf_file:
-            # Get the srf(rup) name without extensions
-            srf_name = os.path.splitext(os.path.basename(srf))[0]
-            # If srf(variation) is provided as args,
-            # only create the slurm with same name provided
-            if args.srf is not None and srf_name != args.srf:
-                continue
-            if args.set_params_only:
-                set_runparams.create_run_params(srf_name)
-                continue
+        # Get the srf(rup) name without extensions
+        srf_name = os.path.splitext(os.path.basename(params.srf_file))[0]
+        if args.set_params_only:
+            set_runparams.create_run_params(srf_name)
+        elif args.srf is None or srf_name == args.srf:
             print("not set_params_only")
             # get lf_sim_dir
             lf_sim_dir = os.path.join(params.sim_dir, 'LF')
@@ -148,5 +143,5 @@ if __name__ == '__main__':
                     lf_sim_dir, sim_dir, srf_name, params.mgmt_db_location,
                     run_time=wall_clock_limit, nb_cpus=n_cores)
 
-            submit_sl_script(script, 'EMOD3D', 'queued',
-                             params.mgmt_db_location, srf_name, submit_yes)
+        submit_sl_script(script, 'EMOD3D', 'queued',
+                         params.mgmt_db_location, srf_name, submit_yes)

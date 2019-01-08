@@ -12,9 +12,6 @@ from qcore import shared
 from temp_shared import resolve_header
 from shared_workflow.shared import *
 
-from management import update_mgmt_db
-from management import db_helper
-
 from qcore import utils
 
 sys.path.append(os.path.abspath(os.path.curdir))
@@ -117,10 +114,7 @@ if __name__ == '__main__':
     # est_wct and submit, if --auto used
     submit_yes = True if args.auto else confirm("Also submit the job for you?")
 
-    # if srf(variation) is provided as args, only create the slurm
-    # with same name provided
-    srf = params.srf_file[0]
-    srf_name = os.path.splitext(os.path.basename(srf))[0]
+    srf_name = os.path.splitext(os.path.basename(params.srf_file))[0]
     if args.srf is None or srf_name == args.srf:
 
         # WCT estimation

@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 """Script to create and submit a slurm script for HF"""
+import sys
+import os.path
 import argparse
+
+sys.path.append(os.path.abspath(os.path.curdir))
 
 from datetime import datetime
 
@@ -13,8 +17,6 @@ from qcore import utils, shared, srf
 # TODO: move this to qcore library
 from temp_shared import resolve_header
 from shared_workflow.shared import *
-
-sys.path.append(os.path.abspath(os.path.curdir))
 
 # default values
 default_version = 'run_hf_mpi'
@@ -48,7 +50,7 @@ def write_sl_script(hf_sim_dir, sim_dir, stoch_name, sl_template_prefix,
         create_dir = "mkdir -p " + os.path.join(hf_sim_dir, "Acc") + "\n"
         hf_submit_command = create_dir + "srun python $gmsim/workflow" \
                                          "/scripts/hf_sim.py "
-        arguments_for_hf = [params.hf.hf_slip[0], params.FD_STATLIST,
+        arguments_for_hf = [params.hf.hf_slip, params.FD_STATLIST,
                             os.path.join(hf_sim_dir, "Acc/HF.bin"), "-m",
                             params.v_mod_1d_name, "--duration",
                             params.sim_duration, "--dt", params.hf.hf_dt]
@@ -170,8 +172,7 @@ if __name__ == '__main__':
     # instead of running through file directories.
 
     # loop through all srf file to generate related slurm scripts
-    srf = params.srf_file[0]
-    srf_name = os.path.splitext(os.path.basename(srf))[0]
+    srf_name = os.path.splitext(os.path.basename(params.srf_file))[0]
     # if srf(variation) is provided as args, only create
     # the slurm with same name provided
     if args.srf is None or srf_name == args.srf:
@@ -180,7 +181,7 @@ if __name__ == '__main__':
         # TODO:make it read through the whole list
         #  instead of assuming every stoch has same size
         nsub_stoch, sub_fault_area = qcore.srf.get_nsub_stoch(
-            params.hf.hf_slip[0], get_area=True)
+            params.hf.hf_slip, get_area=True)
 
         if args.debug:
             print("sb:", sub_fault_area)

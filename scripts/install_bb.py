@@ -1,6 +1,5 @@
 #!/usr/bin/env python
-
-import os
+"""Script for creating the bb folder structure and params"""
 import glob
 import argparse
 
@@ -55,7 +54,7 @@ def q1_site_specific(stat_file_path, hf_stat_vs_ref=None, v1d_mod_dir=None):
     show_horizontal_line()
     print("- Station file path: %s" % stat_file_path)
 
-    if v1d_mod_dir != None:
+    if v1d_mod_dir is not None:
         v_mod_1d_path = v1d_mod_dir
     else:
         v_mod_1d_path = os.path.join(os.path.dirname(stat_file_path), "1D")
@@ -64,7 +63,7 @@ def q1_site_specific(stat_file_path, hf_stat_vs_ref=None, v1d_mod_dir=None):
     else:
         print("Error: No such path exists: %s" % v_mod_1d_path)
         sys.exit()
-    if hf_stat_vs_ref == None:
+    if hf_stat_vs_ref is None:
         hf_stat_vs_ref_options = glob.glob(
             os.path.join(stat_file_path, '*.hfvs30ref'))
         if len(hf_stat_vs_ref_options) == 0:
@@ -111,13 +110,7 @@ def store_params(root_dict):
         f.write("%s=%s\n" % (k, val))
     f.close()
 
-
 def main():
-    # no idea why hf_kappa_list is imported,
-    # but not usable in this function without this.
-    global hf_kappa_list
-    global hf_sdrop_list
-
     parser = argparse.ArgumentParser()
     parser.add_argument('--v1d', default=None, type=str,
                         help="the full path pointing to the generic v1d file")
@@ -165,12 +158,8 @@ def main():
             root_dict['bb']['site_specific'] = False
             root_dict['v_mod_1d_name'] = v_mod_1d_selected
 
-    # root_dict['v_mod_1d_name']=v_mod_1d_name
-
     if old_params:
-        hf_kappa_list = [params.hf.hf_kappa]
-        hf_sdrop_list = [params.hf.hf_sdrop]
-        if len(params.srf_file) > 1:
+        if len([params.srf_file]) > 1:
             print("Info: You have specified multiple SRF files.")
             print("      A single hf_kappa(=%s) and hf_sdrop(=%s) specified "
                   "in params.py will be used for all "
@@ -178,17 +167,6 @@ def main():
             print("       If you need to specific hf_kappa and hf_sdrop value "
                   "for each SRF, add hf_kappa_list and hf_sdrop_list to "
                   "params_base.py")
-
-    else:
-        print("hf_kappa_list: ", hf_kappa_list)
-        print("hf_sdrop_list: ", hf_sdrop_list)
-        print("srf_files:", params.srf_file)
-        if len(hf_kappa_list) != len(hf_sdrop_list) or \
-                len(hf_kappa_list) != len(params.srf_files):
-            print("Error: hf_kappa_list (len=%d), hf_sdrop_list (len=%d) "
-                  "and srf_files (len=%d) should be of the same length." % (
-                    len(hf_kappa_list), len(hf_sdrop_list), len(srf_files)))
-            sys.exit()
 
     utils.dump_yaml(root_dict, os.path.join(params.sim_dir, 'root_params.yaml'))
 

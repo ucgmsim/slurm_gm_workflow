@@ -171,11 +171,12 @@ def get_dirs(run_folder, arg_identifiers, com_pattern):
     dirs = []
     for identifier in arg_identifiers:
         fault_name = get_fault_name(identifier)
-        dir_path = glob.glob(os.path.join(run_folder, com_pattern.format(fault_name, identifier)))
-        if dir_path == []:
-            print("{} does not exists".format(identifier))
+        #dir_path = glob.glob(os.path.join(run_folder, com_pattern.format(fault_name, identifier)))
+        dir_path = os.path.join(run_folder, com_pattern.format(fault_name, identifier))
+        if glob.glob(dir_path) == []:
+            print("{} does not exists".format(dir_path))
         else:
-            dirs += dir_path
+            dirs.append(dir_path)
     return dirs
 
 
@@ -233,10 +234,10 @@ def main():
 
     # sim_dir = /nesi/nobackup/nesi00213/RunFolder/Cybershake/v18p5/Runs
     if args.sim_dir is not None:
-        sim_waveform_dirs = get_dirs(args.sim_dir, args.identifiers, '{}/BB/*/{}')
+        sim_waveform_dirs = get_dirs(args.sim_dir, args.identifiers, '{}/{}/BB')
        # sim_waveform_dirs = checkpoint.checkpoint_sim_obs(sim_waveform_dirs, '../../../IM_calc/')  # return dirs that are not calculated yet
         sim_waveform_dirs = checkpoint.checkpoint_wrapper(args.sim_dir, sim_waveform_dirs,'s')
-        sim_run_names = map(os.path.basename, sim_waveform_dirs)
+        sim_run_names = map(os.path.basename, map(os.path.dirname, sim_waveform_dirs))
         sim_faults = map(get_fault_name, sim_run_names)
         sim_dirs = zip(sim_waveform_dirs, sim_run_names, sim_faults)
         # sim
