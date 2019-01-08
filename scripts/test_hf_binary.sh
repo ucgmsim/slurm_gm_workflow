@@ -29,5 +29,5 @@ fi
 #check station names are not empty
 echo "adfsa"
 echo $fd_ll
-python $gmsim/workflow/scripts/test_hf_binary.py $hf_bin $fd_ll
+python $gmsim/workflow/scripts/test_binary.py $hf_bin $fd_ll hf --verbose
 

@@ -156,7 +156,8 @@ if __name__ == '__main__':
         # Create/write the script
         script_file = write_sl_script(
             bb_sim_dir, params.sim_dir, srf_name, sl_name_prefix,
-            nb_cpus=ncores, account=args.account, binary=not args.ascii)
+            nb_cpus=ncores, account=args.account, binary=not args.ascii,
+            run_time=wct)
 
         # Submit the script
         submit_sl_script(script_file, "BB", 'queued', srf_name, submit_yes)

@@ -17,6 +17,8 @@ from enum import Enum
 from multiprocessing import Pool
 from argparse import ArgumentParser
 
+DATE_COLUMNS = ["end_time", "start_time", "submit_time"]
+DATETIME_FMT = "%Y-%m-%d_%H:%M:%S"
 
 class MetaConst(Enum):
     run_time = "run_time"
@@ -125,11 +127,16 @@ def clean_df(df):
                         [(value.split(" ")[0] if type(value) is str else value)     # Handle np.nan values
                             for value in df[sim_type, rt_param].values],
                         dtype=np.float32)
+                # Convert date strings to date type
+                elif meta_col in DATE_COLUMNS:
+                    df[sim_type, meta_col] = pd.to_datetime(
+                        df[sim_type, meta_col], format=DATETIME_FMT,
+                        errors='coerce')
                 # Try to convert everything else to numeric
                 else:
-                    df[sim_type, meta_col] = pd.to_numeric(df[sim_type, meta_col],
-                                                           errors='coerce',
-                                                           downcast='float')
+                    df[sim_type, meta_col] = pd.to_numeric(
+                        df[sim_type, meta_col], errors='coerce',
+                        downcast='float')
 
     return df
 

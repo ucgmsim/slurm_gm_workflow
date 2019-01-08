@@ -1,5 +1,3 @@
-source machine_env.sh
- 
 #updating the stats in managementDB
 if [[ ! -d {{mgmt_db_location}}/mgmt_db_queue ]]; then
     #create the queue folder if not exist

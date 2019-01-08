@@ -26,5 +26,5 @@ fi
 
 #check the len(fd_ll) == len(hf.stations)
 #check station names are not empty
-python $gmsim/workflow/scripts/test_bb_binary.py $bb_bin $fd_ll
+python $gmsim/workflow/scripts/test_binary.py $bb_bin $fd_ll bb --verbose
 

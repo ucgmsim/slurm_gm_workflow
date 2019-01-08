@@ -21,7 +21,7 @@ timestamp_format = "%Y%m%d_%H%M%S"
 timestamp = datetime.now().strftime(timestamp_format)
 
 # Default values
-default_core = "160"
+default_core = 160
 default_run_time = "02:00:00"
 default_memory = "16G"
 default_account = 'nesi00213'
@@ -53,7 +53,7 @@ def write_sl_script(
     # slurm header
     job_name = "run_emod3d.%s" % srf_name
     header = resolve_header(
-        account, nb_cpus, run_time, job_name, "slurm", memory, timestamp,
+        account, str(nb_cpus), run_time, job_name, "slurm", memory, timestamp,
         job_description="emod3d slurm script",
         additional_lines="#SBATCH --hint=nomultithread")
 
@@ -74,7 +74,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description="Create (and submit if specified) the slurm script for LF")
 
-    parser.add_argument("--ncore", type=str, default=default_core)
+    parser.add_argument("--ncore", type=int, default=default_core)
     parser.add_argument("--auto", nargs="?", type=str, const=True)
     parser.add_argument('--account', type=str, default=default_account)
     parser.add_argument('--srf', type=str, default=None)
@@ -116,21 +116,21 @@ if __name__ == '__main__':
             sim_dir = params.sim_dir
 
             # default_core will be changed is user passes ncore
-            num_procs = args.ncore
-            if num_procs != default_core:
+            n_cores = args.ncore
+            if n_cores != default_core:
                 print("Number of cores is different from default "
                       "number of cores. Estimation will be less accurate.")
 
             est_core_hours, est_run_time = wc.estimate_LF_WC_single(
                 int(params.nx), int(params.ny), int(params.nz),
-                int(float(params.sim_duration) / float(params.dt)), num_procs)
+                int(float(params.sim_duration) / float(params.dt)), n_cores)
             print("Estimated WCT {}".format(
                 wc.convert_to_wct(est_run_time)))
 
             if args.auto:
                 script = write_sl_script(
                     lf_sim_dir, sim_dir, srf_name, params.mgmt_db_location,
-                    run_time=wc.get_wct(est_run_time), nb_cpus=num_procs)
+                    run_time=wc.get_wct(est_run_time), nb_cpus=n_cores)
             else:
                 # Get the wall clock time from the user
                 if wall_clock_limit is None:
@@ -146,7 +146,7 @@ if __name__ == '__main__':
 
                 script = write_sl_script(
                     lf_sim_dir, sim_dir, srf_name, params.mgmt_db_location,
-                    run_time=wall_clock_limit, nb_cpus=num_procs)
+                    run_time=wall_clock_limit, nb_cpus=n_cores)
 
             submit_sl_script(script, 'EMOD3D', 'queued',
                              params.mgmt_db_location, srf_name, submit_yes)
