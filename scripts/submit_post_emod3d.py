@@ -2,6 +2,7 @@ import glob
 import os
 import sys
 import math
+from time import sleep
 
 # TODO: remove this once temp_shared is gone
 from temp_shared import resolve_header
@@ -146,9 +147,25 @@ def write_sl_script_winbin_aio(lf_sim_dir, sim_dir, mgmt_db_location, rup_mod, r
 
 
 def update_db(process, status, mgmt_db_location, srf_name, jobid):
-    db = db_helper.connect_db(mgmt_db_location)
-    update_mgmt_db.update_db(db, process, status, job=jobid, run_name=srf_name)
-    db.connection.commit()
+    db_queue_path = os.path.join(mgmt_db_location,"mgmt_db_queue")
+    cmd_name = os.path.join(db_queue_path, "%s_%s_q"%(timestamp,jobid))
+    #TODO: change this to use python3's format()
+    cmd = "python $gmsim/workflow/scripts/management/update_mgmt_db.py %s %s %s --run_name %s  --job %s"%(mgmt_db_location, process, status, srf_name, jobid)
+    with open(cmd_name, 'w+') as f:
+        f.write(cmd)
+        f.close()
+    #db = db_helper.connect_db(mgmt_db_location)
+    #while True:
+    #    try:
+    #        print("trying to update db")
+    #        update_mgmt_db.update_db(db, process, status, job=jobid, run_name=srf_name)
+    #    except:
+    #        print("en error occured while trying to update DB, re-trying")
+    #        sleep(10)
+    #    else:
+    #        break
+    #db.connection.commit()
+    #db.connection.close()
 
 
 if __name__ == '__main__':

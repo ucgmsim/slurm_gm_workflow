@@ -7,6 +7,7 @@ sys.path.append(os.path.abspath(os.path.curdir))
 import fnmatch
 from math import ceil
 from math import log
+from time import sleep
 import argparse
 
 import qcore.srf
@@ -90,10 +91,25 @@ def est_wct(est_core_hours, ncore, scale):
     return estimated_wct, str(ncore)
 
 
-def update_db(process, status, mgmt_db_location, srf_name, jobid):
-    db = db_helper.connect_db(mgmt_db_location)
-    update_mgmt_db.update_db(db, process, status, job=jobid, run_name=srf_name)
-    db.connection.commit()
+def update_db(process, status, mgmt_db_location, srf_name, jobid,timestamp):
+    db_queue_path = os.path.join(mgmt_db_location,"mgmt_db_queue")
+    cmd_name = os.path.join(db_queue_path, "%s_%s_q"%(timestamp,jobid))
+    #TODO: change this to use python3's format()
+    cmd = "python $gmsim/workflow/scripts/management/update_mgmt_db.py %s %s %s --run_name %s  --job %s"%(mgmt_db_location, process, status, srf_name, jobid)
+    with open(cmd_name, 'w+') as f:
+        f.write(cmd)
+        f.close()
+#    db = db_helper.connect_db(mgmt_db_location)
+#    while True:
+#        try:
+#            update_mgmt_db.update_db(db, process, status, job=jobid, run_name=srf_name)
+#        except:
+#            print("en error occured while trying to update DB, re-trying")
+#            sleep(10)
+#        else:
+#            break
+#    db.connection.commit()
+#    db.connection.close()
 
 
 def write_sl_script(hf_sim_dir, sim_dir, stoch_name, sl_template_prefix, hf_option, nb_cpus=default_core,
@@ -259,5 +275,7 @@ if __name__ == '__main__':
         created_script = write_sl_script(hf_sim_dir, params.sim_dir, srf_name, ll_name_prefix, hf_option, ncore,
                                          run_time, account=args.account, binary=args.binary, seed=args.seed)
         jobid = submit_sl_script(created_script, submit_yes)
+
         if jobid is not None:
-            update_db("HF", "queued", params.mgmt_db_location, srf_name, jobid)
+
+            update_db("HF", "queued", params.mgmt_db_location, srf_name, jobid, timestamp)

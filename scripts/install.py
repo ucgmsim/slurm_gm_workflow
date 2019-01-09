@@ -233,7 +233,7 @@ def q_final_confirm(run_name, yes_statcords, yes_model_params):
     return show_yes_no_question()
 
 
-def create_params_dict(version, sim_dir, event_name, run_name, run_dir, vel_mod_dir, srf_dir, srf_file, stoch_file,
+def action(version, sim_dir, event_name, run_name, run_dir, vel_mod_dir, srf_dir, srf_file, stoch_file,
                        params_vel_path, stat_file_path, vs30_file_path, vs30ref_file_path, MODEL_LAT, MODEL_LON,
                        MODEL_ROT, hh, nx, ny, nz, sufx, sim_duration, vel_mod_params_dir, yes_statcords,
                        yes_model_params, dt=default_dt):
@@ -514,7 +514,7 @@ def main_local():
     #    vel_mod_params_dir = os.path.join(global_root, "VelocityModel/SthIsland/ModelParams")
 
     event_name = ""
-    root_params_dict, fault_params_dict, sim_params_dict, vm_params_dict = create_params_dict(args.version, sim_dir,
+    root_params_dict, fault_params_dict, sim_params_dict, vm_params_dict = action(args.version, sim_dir,
                                                                                               event_name, run_name,
                                                                                               run_dir, vel_mod_dir_full,
                                                                                               srf_dir, srf_file, stoch_file,
@@ -578,7 +578,10 @@ def main_remote(cfg):
     vel_mod_params_dir = vel_mod_dir
 
     srf_dir = srf_default_dir  # the above is perhaps unnecessary
-    create_params_dict(args.version, sim_dir, event_name, run_name, run_dir, vel_mod_dir, srf_dir, srf_file, stoch_file,
+
+    #TODO action will return 4 params dict and they will be dumped into yamls.
+    #TODO to implement when install_manual is merged
+    action(args.version, sim_dir, event_name, run_name, run_dir, vel_mod_dir, srf_dir, srf_file, stoch_file,
                        params_vel_path, stat_file_path, vs30_file_path, vs30ref_file_path, MODEL_LAT, MODEL_LON,
                        MODEL_ROT, hh, nx,
                        ny, nz, sufx, sim_duration, vel_mod_params_dir, yes_statcords, yes_model_params, dt=dt)

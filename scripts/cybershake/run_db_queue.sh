@@ -18,6 +18,7 @@ then
             rm $f
         else
             echo "Error while executing $f"
+            sleep 10
         fi
     done
 else

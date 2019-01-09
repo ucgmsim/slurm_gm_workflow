@@ -8,6 +8,7 @@ import os
 import glob
 import getpass
 import time
+from time import sleep
 from datetime import datetime
 import im_calc_checkpoint as checkpoint
 from qcore import utils
@@ -83,10 +84,24 @@ def generate_sl(sim_dirs, obs_dirs, station_file, rrup_files, output_dir, prefix
     return sl_name, "{}\n{}".format(header, context)
 
 def update_db(process, status, mgmt_db_location, srf_name, jobid):
-    db = db_helper.connect_db(mgmt_db_location)
-    update_mgmt_db.update_db(db, process, status, job=jobid, run_name=srf_name)
-    db.connection.commit()
-
+    db_queue_path = os.path.join(mgmt_db_location,"mgmt_db_queue")
+    cmd_name = os.path.join(db_queue_path, "%s_%s_q"%(timestamp,jobid))
+    #TODO: change this to use python3's format()
+    cmd = "python $gmsim/workflow/scripts/management/update_mgmt_db.py %s %s %s --run_name %s  --job %s"%(mgmt_db_location, process, status, srf_name, jobid)
+    with open(cmd_name, 'w+') as f:
+        f.write(cmd)
+        f.close()
+#    db = db_helper.connect_db(mgmt_db_location)
+#    while True:
+#        try:
+#            update_mgmt_db.update_db(db, process, status, job=jobid, run_name=srf_name)
+#        except:
+#            print("en error occured while trying to update DB, re-trying")
+#            sleep(10)
+#        else:
+#            break
+#    db.connection.commit()
+#    db.connection.close()
 
 def write_sl(name_context_list, submit=False, mgmt_db_location=None):
     for sl_name, context,srf_list in name_context_list:

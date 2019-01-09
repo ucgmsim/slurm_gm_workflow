@@ -6,6 +6,7 @@ Combines low frequency and high frequency seismograms.
 from argparse import ArgumentParser
 import os
 import sys
+import json
 
 from mpi4py import MPI
 import numpy as np
@@ -41,6 +42,7 @@ if is_master:
     arg("--fmin", help="fmin for site amplification", type=float, default=0.2)
     arg("--fmidbot", help="fmidbot for site amplification", type=float, default=0.5)
     arg("--lfvsref", help="Override LF Vs30 reference value (m/s)", type=float, default=500.)
+
     try:
         args = parser.parse_args()
     except SystemExit:
