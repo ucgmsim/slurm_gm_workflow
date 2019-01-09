@@ -530,10 +530,9 @@ def main_local():
                                                                                               yes_statcords,
                                                                                               yes_model_params)
 
-    fault_dir = os.path.abspath(os.path.join(sim_dir, os.pardir))
-    create_mgmt_db.create_mgmt_db([], fault_dir, srf_files=srf_file)
+    create_mgmt_db.create_mgmt_db([], sim_dir, srf_files=srf_file)
 
-    root_params_dict['mgmt_db_location'] = fault_dir
+    root_params_dict['mgmt_db_location'] = sim_dir
     utils.dump_yaml(root_params_dict, os.path.join(sim_dir, 'root_params.yaml'))
     utils.dump_yaml(fault_params_dict, os.path.join(sim_dir, 'fault_params.yaml'))
     utils.dump_yaml(sim_params_dict, os.path.join(sim_dir, 'sim_params.yaml'))
