@@ -178,33 +178,6 @@ def main():
 
     # root_dict['v_mod_1d_name']=v_mod_1d_name
 
-    if old_params:
-        # hf_kappa_list = [params.hf.hf_kappa]
-        # hf_sdrop_list = [params.hf.hf_sdrop]
-        if len([params.srf_file]) > 1:
-            print "Info: You have specified multiple SRF files."
-            print "      A single hf_kappa(=%s) and hf_sdrop(=%s) specified in params.py will be used for all SRF files." % (
-                params.hf.hf_kappa, params.hf.hf_sdrop)
-            print"       If you need to specific hf_kappa and hf_sdrop value for each SRF, add hf_kappa_list and hf_sdrop_list to params_base.py"
-
-    #dunno what the following does, old_prams always=True
-    # else:
-    #     print "hf_kappa_list: ", hf_kappa_list
-    #     print "hf_sdrop_list: ", hf_sdrop_list
-    #     print "srf_files:", params.srf_file
-    #     if len(hf_kappa_list) != len(hf_sdrop_list) or len(hf_kappa_list) != len([params.srf_file]):
-    #         print "Error: hf_kappa_list (len=%d), hf_sdrop_list (len=%d) and srf_files (len=%d) should be of the same length." % (
-    #             len(hf_kappa_list), len(hf_sdrop_list), len([params.srf_file]))
-    #         sys.exit()
-
-            # #TODO:add_name_suffix return the exact same name, seems to be legacy and doing nothing here
-            # hf_run_name = add_name_suffix(hf_run_name,yes)
-            # #append the hf_run_name to a list for later purpose
-            # hf_run_names_list.append(hf_run_name)
-
-            # hf_sim_basedir, bb_sim_basedir = os.path.join(params.sim_dir, 'HF', hf_run_name), os.path.join(params.sim_dir, 'BB', hf_run_name)
-            # hf_sim_dir, bb_sim_dir = action_for_uncertainties(hf_sim_basedir,bb_sim_basedir, srf, slip, kappa, sdrop)
-
     utils.dump_yaml(root_dict, os.path.join(params.sim_dir, 'root_params.yaml'))
 
 
