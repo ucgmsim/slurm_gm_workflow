@@ -278,7 +278,6 @@ def action(version, sim_dir, event_name, run_name, run_dir, vel_mod_dir, srf_dir
     root_params_dict['version'] = version
 
     root_params_dict['stat_file'] = stat_file_path
-    root_params_dict['dt'] = dt
     # potential remove
     sim_params_dict['user_root'] = user_root
     sim_params_dict['run_dir'] = run_dir
@@ -528,7 +527,7 @@ def main_local():
                                                                                               sim_duration,
                                                                                               vel_mod_params_dir,
                                                                                               yes_statcords,
-                                                                                              yes_model_params, dt=dt)
+                                                                                              yes_model_params)
 
     fault_dir = os.path.abspath(os.path.join(sim_dir, os.pardir))
     create_mgmt_db.create_mgmt_db([], fault_dir, srf_files=srf_file)
@@ -584,7 +583,7 @@ def main_remote(cfg):
     action(args.version, sim_dir, event_name, run_name, run_dir, vel_mod_dir, srf_dir, srf_file, stoch_file,
                        params_vel_path, stat_file_path, vs30_file_path, vs30ref_file_path, MODEL_LAT, MODEL_LON,
                        MODEL_ROT, hh, nx,
-                       ny, nz, sufx, sim_duration, vel_mod_params_dir, yes_statcords, yes_model_params, dt=dt)
+                       ny, nz, sufx, sim_duration, vel_mod_params_dir, yes_statcords, yes_model_params)
     print "Installation completed"
     show_instruction(sim_dir)
 

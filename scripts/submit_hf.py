@@ -212,7 +212,6 @@ if __name__ == '__main__':
     # if auto flag is set to true, auto estimate the WCT and use default cores(or get from --ncore)
 
     # check rand_reset
-    print(args.site_specific, params.bb.site_specific, args.rand_reset, params.bb.rand_reset)
     if args.site_specific is not None or params.bb.site_specific:
         print "Note: site_specific = True, rand_reset = True"
         hf_option = 2
@@ -225,7 +224,6 @@ if __name__ == '__main__':
         except:
             hf_option = 0
             print "Note: rand_reset is not defined in params_base_bb.py. We assume rand_reset=%s" % bool(hf_option)
-    print("hf_option", hf_option)
 
     # est_wct and submit, if --auto used
     if args.auto is not None:
@@ -234,7 +232,6 @@ if __name__ == '__main__':
     else:
         # None: ask user if want to submit; False: dont submit
         submit_yes = confirm("Also submit the job for you?")
-    print("hf_option", hf_option)
     print "account:", args.account
 
     # modify the logic to use the same as in install_bb:
