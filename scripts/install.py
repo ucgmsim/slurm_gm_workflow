@@ -344,6 +344,7 @@ def action(version, sim_dir, event_name, run_name, run_dir, vel_mod_dir, srf_dir
     #     from gen_coords import gen_coords
     #     gen_coords()
     #     print "Done"
+    show_horizontal_line(c='*')
 
     if yes_statcords:
         print "Producing statcords and FD_STATLIST. It may take a minute or two"
