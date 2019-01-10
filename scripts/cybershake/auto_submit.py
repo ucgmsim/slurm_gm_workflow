@@ -6,13 +6,14 @@ from subprocess import call
 import shared_workflow.load_config as ldcfg
 
 from datetime import datetime
+import time
 
 import argparse
 import os
 import sys
 
 default_binary_mode = True
-default_n_runs = 10 
+default_n_runs = 12 
 default_1d_mod = "/nesi/transit/nesi00213/VelocityModel/Mod-1D/Cant1D_v2-midQ_leer.1d"
 default_hf_vs30_ref = None
 default_hf_seed = None
@@ -21,6 +22,13 @@ default_extended_period = False
 
 def submit_task(sim_dir, proc_type, run_name, db, mgmt_db_location ,binary_mode=True, rand_reset=default_rand_reset, hf_seed=None, extended_period=default_extended_period):
     #TODO: using shell call is EXTREMELY undesirable. fix this in near future(fundamentally)
+
+    #create the tmp folder 
+    #TODO: fix this issue
+    sqlite_tmpdir='/tmp/cer'
+    if not os.path.exists(sqlite_tmpdir):
+        os.makedirs(sqlite_tmpdir)
+
     #change the working directory to the sim_dir
     os.chdir(sim_dir)
     ch_log_dir = os.path.join(sim_dir,'ch_log')
@@ -111,6 +119,7 @@ def main():
     parser.add_argument('--single_sim', nargs="?", type=str,const=True)
     parser.add_argument('--config',type=str,default=None,help="a path to a config file that constains all the required values.")
     parser.add_argument('--no_im', action="store_true")
+    parser.add_argument('--user', type=str, default=None)
 
     args = parser.parse_args()
     mgmt_db_location = args.run_folder
@@ -158,13 +167,15 @@ def main():
         
     print("hf_seed",hf_seed)
     queued_tasks = slurm_query_status.get_queued_tasks()
+    user_queued_tasks = slurm_query_status.get_queued_tasks(user=args.user).split('\n')
     db_tasks = slurm_query_status.get_submitted_db_tasks(db)
     print 'queued task:', queued_tasks
     print 'subbed task:',db_tasks
     slurm_query_status.update_tasks(db, queued_tasks, db_tasks)
     db_tasks = slurm_query_status.get_submitted_db_tasks(db)
     #submitted_tasks = slurm_query_status.get_submitted_db_tasks(db)
-    ntask_to_run = n_runs_max - len(db_tasks)
+    #ntask_to_run = n_runs_max - len(db_tasks)
+    ntask_to_run = n_runs_max - len(user_queued_tasks)
 
     runnable_tasks = slurm_query_status.get_runnable_tasks(db, ntask_to_run)
     
@@ -191,14 +202,15 @@ def main():
             sim_dir = mgmt_db_location 
         else:
             #non-cybershake, db is the same loc as sim_dir
-            sim_dir = os.path.join(os.path.join(mgmt_db_location,"Runs"), vm_name)
+            sim_dir = os.path.join(mgmt_db_location,"Runs", vm_name, run_name)
         #submit the job
         submit_task(sim_dir, proc_type, run_name, db, mgmt_db_location, binary_mode, rand_reset, hf_seed, extended_period)
        
         submit_task_count = submit_task_count + 1
         task_num = task_num + 1
-        
-
+        #a sleep between cmds
+        #time.sleep(5)
+    db.connection.close()
 if __name__ == '__main__':
    main() 
 

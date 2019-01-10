@@ -164,7 +164,13 @@ if is_master:
         print("seed generated: %d" % (args.seed))
     else:
         print("seed from command line: %d" % (args.seed))
-args = comm.bcast(args, root=master)
+
+args = comm.bcast(args, root = master)
+
+# if not args.independent:
+#     args.seed += rank
+
+print ("Rank %d seed: %d" %(rank, args.seed))
 
 nt = int(round(args.duration / args.dt))
 stations = np.loadtxt(

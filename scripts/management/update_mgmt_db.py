@@ -110,7 +110,7 @@ def main():
         update_db(db, process, status, job=job_id, run_name=run_name, error=error)
 
     db.connection.commit()
-
+    db.connection.close()
 
 if __name__ == '__main__':
     main()

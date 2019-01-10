@@ -8,6 +8,7 @@ import os
 import glob
 import getpass
 import time
+from time import sleep
 from datetime import datetime
 import im_calc_checkpoint as checkpoint
 from qcore import utils
@@ -83,10 +84,24 @@ def generate_sl(sim_dirs, obs_dirs, station_file, rrup_files, output_dir, prefix
     return sl_name, "{}\n{}".format(header, context)
 
 def update_db(process, status, mgmt_db_location, srf_name, jobid):
-    db = db_helper.connect_db(mgmt_db_location)
-    update_mgmt_db.update_db(db, process, status, job=jobid, run_name=srf_name)
-    db.connection.commit()
-
+    db_queue_path = os.path.join(mgmt_db_location,"mgmt_db_queue")
+    cmd_name = os.path.join(db_queue_path, "%s_%s_q"%(timestamp,jobid))
+    #TODO: change this to use python3's format()
+    cmd = "python $gmsim/workflow/scripts/management/update_mgmt_db.py %s %s %s --run_name %s  --job %s"%(mgmt_db_location, process, status, srf_name, jobid)
+    with open(cmd_name, 'w+') as f:
+        f.write(cmd)
+        f.close()
+#    db = db_helper.connect_db(mgmt_db_location)
+#    while True:
+#        try:
+#            update_mgmt_db.update_db(db, process, status, job=jobid, run_name=srf_name)
+#        except:
+#            print("en error occured while trying to update DB, re-trying")
+#            sleep(10)
+#        else:
+#            break
+#    db.connection.commit()
+#    db.connection.close()
 
 def write_sl(name_context_list, submit=False, mgmt_db_location=None):
     for sl_name, context,srf_list in name_context_list:
@@ -171,11 +186,12 @@ def get_dirs(run_folder, arg_identifiers, com_pattern):
     dirs = []
     for identifier in arg_identifiers:
         fault_name = get_fault_name(identifier)
-        dir_path = glob.glob(os.path.join(run_folder, com_pattern.format(fault_name, identifier)))
-        if dir_path == []:
-            print("{} does not exists".format(identifier))
+        #dir_path = glob.glob(os.path.join(run_folder, com_pattern.format(fault_name, identifier)))
+        dir_path = os.path.join(run_folder, com_pattern.format(fault_name, identifier))
+        if glob.glob(dir_path) == []:
+            print("{} does not exists".format(dir_path))
         else:
-            dirs += dir_path
+            dirs.append(dir_path)
     return dirs
 
 
@@ -233,10 +249,10 @@ def main():
 
     # sim_dir = /nesi/nobackup/nesi00213/RunFolder/Cybershake/v18p5/Runs
     if args.sim_dir is not None:
-        sim_waveform_dirs = get_dirs(args.sim_dir, args.identifiers, '{}/BB/*/{}')
+        sim_waveform_dirs = get_dirs(args.sim_dir, args.identifiers, '{}/{}/BB')
        # sim_waveform_dirs = checkpoint.checkpoint_sim_obs(sim_waveform_dirs, '../../../IM_calc/')  # return dirs that are not calculated yet
         sim_waveform_dirs = checkpoint.checkpoint_wrapper(args.sim_dir, sim_waveform_dirs,'s')
-        sim_run_names = map(os.path.basename, sim_waveform_dirs)
+        sim_run_names = map(os.path.basename, map(os.path.dirname, sim_waveform_dirs))
         sim_faults = map(get_fault_name, sim_run_names)
         sim_dirs = zip(sim_waveform_dirs, sim_run_names, sim_faults)
         # sim

@@ -9,15 +9,11 @@ fi
 
 sim_dir=$1
 srf_name=$2
-run_name=`python -c "from params_base import *; print run_name"`
-lf_sim_dir=`python -c "import os; print os.path.join(os.path.join('$sim_dir','LF'), '$srf_name')"`
+run_name=`python -c "from qcore import utils; p = utils.load_yaml('sim_params.yaml'); print p['run_name']"`
+lf_sim_dir=$sim_dir/LF
 
 cd $sim_dir
 
-run_name=`python -c "from params_base import *; print run_name"`
-fd_ll=`python -c "from params_base import *; print FD_STATLIST"`
-
-    
 #check if $run_name_xyts.e3d is there
 #TODO: add in test that xyts.e3d does not contains too much 0 (which means binrary failed)
 

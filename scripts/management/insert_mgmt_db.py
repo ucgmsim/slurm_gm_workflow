@@ -26,7 +26,7 @@ def main():
     create_mgmt_db.insert_task(db, run_name, process)
 
     db.connection.commit()
-
+    db.connection.close()
 
 if __name__ == '__main__':
     main()

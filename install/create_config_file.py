@@ -19,7 +19,8 @@ config_dictionary = {
   "qcore_lib_path" : qcore_path,
   "install_bb_name" : "install_bb.py",
   "params_vel" : "params_vel.py",
-  "tools_path" : tools_path
+  "tools_dir" : "/nesi/project/nesi00213/opt/maui/emod3d/3.0.4-gcc/bin",
+  "runfolder_path" : "/nesi/nobackup/nesi00213/RunFolder/"
 }
 
 with open(os.path.join(bin_process_path, "workflow_config.json"), "w") as f:
