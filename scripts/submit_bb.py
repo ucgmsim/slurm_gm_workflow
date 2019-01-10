@@ -96,7 +96,6 @@ def write_sl_script(bb_sim_dir, sim_dir, srf_name, sl_template_prefix, nb_cpus=d
 
     txt = txt.replace("$rup_mod", variation)
     txt = txt.replace("{{mgmt_db_location}}", params.mgmt_db_location)
-    print("sim dir, srf_name", sim_dir, srf_name)
     # txt = txt.replace("{{sim_dir}}", sim_dir).replace("{{hf_run_name}}", hf_run_name).replace("{{srf_name}}", srf_name)
     # get rid of hf_run_name
     txt = txt.replace("{{sim_dir}}", sim_dir).replace("{{srf_name}}", srf_name)

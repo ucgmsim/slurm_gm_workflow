@@ -467,10 +467,10 @@ def wallclock(sim_dir):
             return user_input_wc
 
 
-def dump_all_yamls(root_params_dict, fault_params_dict, sim_params_dict, vm_params_dict):
+def dump_all_yamls(sim_dir, root_params_dict, fault_params_dict, sim_params_dict, vm_params_dict):
     utils.dump_yaml(sim_params_dict, os.path.join(sim_dir, 'sim_params.yaml'))
-    utils.dump_yaml(fault_params_dict, os.path.join(sim_params_dict['fault_yaml_path'], 'fault_params.yaml'))
-    utils.dump_yaml(root_params_dict, os.path.join(fault_params_dict['root_yaml_path'], 'root_params.yaml'))
+    utils.dump_yaml(fault_params_dict, os.path.join(sim_params_dict['fault_yaml_path']))
+    utils.dump_yaml(root_params_dict, os.path.join(fault_params_dict['root_yaml_path']))
     utils.dump_yaml(vm_params_dict, os.path.join(fault_params_dict['vel_mod_dir'], 'vm_params.yaml'))
 
 
@@ -546,7 +546,7 @@ def main_local():
 
     root_params_dict['mgmt_db_location'] = sim_dir
 
-    dump_all_yamls(root_params_dict, fault_params_dict, sim_params_dict, vm_params_dict)
+    dump_all_yamls(sim_dir, root_params_dict, fault_params_dict, sim_params_dict, vm_params_dict)
     print "Installation completed"
     show_instruction(sim_dir)
 
@@ -595,7 +595,7 @@ def main_remote(cfg):
     #TODO to implement when install_manual is merged
     root_params_dict, fault_params_dict, sim_params_dict, vm_params_dict = action(args.version, sim_dir, event_name, run_name, run_dir, vel_mod_dir, srf_dir, srf_file, stoch_file, params_vel_path, stat_file_path, vs30_file_path, vs30ref_file_path, MODEL_LAT, MODEL_LON, MODEL_ROT, hh, nx, ny, nz, sufx, sim_duration, vel_mod_params_dir, yes_statcords, yes_model_params, fault_yaml_path, root_yaml_path)
 
-    dump_all_yamls(root_params_dict, fault_params_dict, sim_params_dict, vm_params_dict)
+    dump_all_yamls(sim_dir, root_params_dict, fault_params_dict, sim_params_dict, vm_params_dict)
 
     print "Installation completed"
     show_instruction(sim_dir)
