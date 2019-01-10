@@ -469,8 +469,8 @@ def wallclock(sim_dir):
 
 def dump_all_yamls(sim_dir, root_params_dict, fault_params_dict, sim_params_dict, vm_params_dict):
     utils.dump_yaml(sim_params_dict, os.path.join(sim_dir, 'sim_params.yaml'))
-    utils.dump_yaml(fault_params_dict, os.path.join(sim_params_dict['fault_yaml_path']))
-    utils.dump_yaml(root_params_dict, os.path.join(fault_params_dict['root_yaml_path']))
+    utils.dump_yaml(fault_params_dict, sim_params_dict['fault_yaml_path'])
+    utils.dump_yaml(root_params_dict, fault_params_dict['root_yaml_path'])
     utils.dump_yaml(vm_params_dict, os.path.join(fault_params_dict['vel_mod_dir'], 'vm_params.yaml'))
 
 
