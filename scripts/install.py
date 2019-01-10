@@ -236,7 +236,7 @@ def q_final_confirm(run_name, yes_statcords, yes_model_params):
 def action(version, sim_dir, event_name, run_name, run_dir, vel_mod_dir, srf_dir, srf_file, stoch_file,
                        params_vel_path, stat_file_path, vs30_file_path, vs30ref_file_path, MODEL_LAT, MODEL_LON,
                        MODEL_ROT, hh, nx, ny, nz, sufx, sim_duration, vel_mod_params_dir, yes_statcords,
-                       yes_model_params, dt=default_dt):
+                       yes_model_params, fault_yaml_path, root_yaml_path, dt=default_dt):
     lf_sim_root_dir = os.path.join(sim_dir, "LF")
     hf_dir = os.path.join(sim_dir, "HF")
     bb_dir = os.path.join(sim_dir, 'BB')
@@ -272,8 +272,10 @@ def action(version, sim_dir, event_name, run_name, run_dir, vel_mod_dir, srf_dir
     sim_params_dict = {}
     vm_params_dict = {}
 
-    sim_params_dict['run_name'] = run_name
+    sim_params_dict['fault_yaml_path'] = fault_yaml_path
+    fault_params_dict['root_yaml_path'] = root_yaml_path
 
+    sim_params_dict['run_name'] = run_name
     # select during install
     root_params_dict['version'] = version
 
@@ -465,6 +467,13 @@ def wallclock(sim_dir):
             return user_input_wc
 
 
+def dump_all_yamls(root_params_dict, fault_params_dict, sim_params_dict, vm_params_dict):
+    utils.dump_yaml(sim_params_dict, os.path.join(sim_dir, 'sim_params.yaml'))
+    utils.dump_yaml(fault_params_dict, os.path.join(sim_params_dict['fault_yaml_path'], 'fault_params.yaml'))
+    utils.dump_yaml(root_params_dict, os.path.join(fault_params_dict['root_yaml_path'], 'root_params.yaml'))
+    utils.dump_yaml(vm_params_dict, os.path.join(fault_params_dict['vel_mod_dir'], 'vm_params.yaml'))
+
+
 def main_local():
     show_horizontal_line(c="*")
     print " " * 37 + "EMOD3D Job Preparation Ver. Slurm"
@@ -514,6 +523,9 @@ def main_local():
     #    vel_mod_params_dir = os.path.join(global_root, "VelocityModel/SthIsland/ModelParams")
 
     event_name = ""
+    fault_yaml_path = os.path.join(sim_dir, 'fault_params.yaml')
+    root_yaml_path = os.path.join(sim_dir, 'root_params.yaml')
+
     root_params_dict, fault_params_dict, sim_params_dict, vm_params_dict = action(args.version, sim_dir,
                                                                                               event_name, run_name,
                                                                                               run_dir, vel_mod_dir_full,
@@ -528,15 +540,13 @@ def main_local():
                                                                                               sim_duration,
                                                                                               vel_mod_params_dir,
                                                                                               yes_statcords,
-                                                                                              yes_model_params)
+                                                                                              yes_model_params, fault_yaml_path, root_yaml_path)
 
     create_mgmt_db.create_mgmt_db([], sim_dir, srf_files=srf_file)
 
     root_params_dict['mgmt_db_location'] = sim_dir
-    utils.dump_yaml(root_params_dict, os.path.join(sim_dir, 'root_params.yaml'))
-    utils.dump_yaml(fault_params_dict, os.path.join(sim_dir, 'fault_params.yaml'))
-    utils.dump_yaml(sim_params_dict, os.path.join(sim_dir, 'sim_params.yaml'))
-    utils.dump_yaml(vm_params_dict, os.path.join(fault_params_dict['vel_mod_dir'], 'vm_params.yaml'))
+
+    dump_all_yamls(root_params_dict, fault_params_dict, sim_params_dict, vm_params_dict)
     print "Installation completed"
     show_instruction(sim_dir)
 
@@ -578,12 +588,15 @@ def main_remote(cfg):
 
     srf_dir = srf_default_dir  # the above is perhaps unnecessary
 
+    fault_yaml_path = os.path.join(sim_dir, 'fault_params.yaml')
+    root_yaml_path = os.path.join(sim_dir, 'root_params.yaml')
+
     #TODO action will return 4 params dict and they will be dumped into yamls.
     #TODO to implement when install_manual is merged
-    action(args.version, sim_dir, event_name, run_name, run_dir, vel_mod_dir, srf_dir, srf_file, stoch_file,
-                       params_vel_path, stat_file_path, vs30_file_path, vs30ref_file_path, MODEL_LAT, MODEL_LON,
-                       MODEL_ROT, hh, nx,
-                       ny, nz, sufx, sim_duration, vel_mod_params_dir, yes_statcords, yes_model_params)
+    root_params_dict, fault_params_dict, sim_params_dict, vm_params_dict = action(args.version, sim_dir, event_name, run_name, run_dir, vel_mod_dir, srf_dir, srf_file, stoch_file, params_vel_path, stat_file_path, vs30_file_path, vs30ref_file_path, MODEL_LAT, MODEL_LON, MODEL_ROT, hh, nx, ny, nz, sufx, sim_duration, vel_mod_params_dir, yes_statcords, yes_model_params, fault_yaml_path, root_yaml_path)
+
+    dump_all_yamls(root_params_dict, fault_params_dict, sim_params_dict, vm_params_dict)
+
     print "Installation completed"
     show_instruction(sim_dir)
 

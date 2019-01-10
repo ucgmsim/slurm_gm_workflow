@@ -12,8 +12,7 @@ from shared_workflow.shared import *
 
 sys.path.append(os.path.abspath(os.path.curdir))
 
-params = utils.load_params('root_params.yaml', 'fault_params.yaml', 'sim_params.yaml')
-utils.update(params, utils.load_params(os.path.join(params.vel_mod_dir, 'vm_params.yaml')))
+params = utils.load_sim_params('sim_params.yaml')
 
 workflow_config = load_config.load(os.path.dirname(os.path.realpath(__file__)), "workflow_config.json")
 global_root = workflow_config["global_root"]
@@ -139,7 +138,7 @@ def main():
     print " " * 37 + "EMOD3D HF/BB Preparationi Ver.slurm"
     show_horizontal_line(c="*")
 
-    root_dict = utils.load_yaml('root_params.yaml')
+    root_dict = utils.load_yaml(params.root_yaml_path)
     root_dict['bb'] = {}
     # root_dict['rand_reset']=False #by default. But it may give less deterministic
     if args.v1d is not None:
@@ -178,7 +177,7 @@ def main():
 
     # root_dict['v_mod_1d_name']=v_mod_1d_name
 
-    utils.dump_yaml(root_dict, os.path.join(params.sim_dir, 'root_params.yaml'))
+    utils.dump_yaml(root_dict, params.root_yaml_path)
 
 
 if __name__ == "__main__":

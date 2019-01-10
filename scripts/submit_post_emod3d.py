@@ -181,7 +181,7 @@ if __name__ == '__main__':
 
     created_scripts = []
     try:
-        params = utils.load_params('root_params.yaml', 'sim_params.yaml')
+        params = utils.load_sim_params('sim_params.yaml')
     except:
         print "load params failed."
         sys.exit()

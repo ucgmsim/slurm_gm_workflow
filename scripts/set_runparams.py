@@ -28,8 +28,7 @@ emod3d_version = workflow_config["emod3d_version"]
 
 def create_run_params(sim_dir, srf_name=None):
     sys.path.append(sim_dir)
-    params = utils.load_params('root_params.yaml', 'fault_params.yaml', 'sim_params.yaml')
-    utils.update(params, utils.load_params(os.path.join(params.vel_mod_dir, 'vm_params.yaml')))
+    params = utils.load_sim_params('sim_params.yaml')
     e3d_yaml = os.path.join(workflow_config['templates_dir'], 'gmsim', params.version, 'emod3d_defaults.yaml')
     e3d_dict = utils.load_yaml(e3d_yaml)
     # skip all logic if a specific srf_name is provided
