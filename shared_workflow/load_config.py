@@ -4,7 +4,6 @@ import json
 # Shouldn't this be in shared or qcore?
 def load(directory=os.path.dirname(os.path.abspath(__file__)),
          cfg_name="workflow_config.json"):
-    print(directory)
     config_file = os.path.join(directory, cfg_name)
     try:
         with open(config_file) as f:

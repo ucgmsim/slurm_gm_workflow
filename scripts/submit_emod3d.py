@@ -26,11 +26,6 @@ default_run_time = "02:00:00"
 default_memory = "16G"
 default_account = 'nesi00213'
 
-workflow_config = load_config.load(
-    os.path.dirname(os.path.realpath(__file__)), "workflow_config.json")
-global_root = workflow_config["global_root"]
-tools_dir = os.path.join(global_root, 'opt/maui/emod3d/3.0.4-gcc/bin')
-
 
 def write_sl_script(
         lf_sim_dir, sim_dir, srf_name, mgmt_db_location, run_time=default_run_time,
@@ -78,6 +73,11 @@ if __name__ == '__main__':
     parser.add_argument('--srf', type=str, default=None)
     parser.add_argument('--set_params_only', nargs="?", type=str, const=True)
     args = parser.parse_args()
+
+    workflow_config = load_config.load(
+        os.path.dirname(os.path.realpath(__file__)), "workflow_config.json")
+    global_root = workflow_config["global_root"]
+    tools_dir = os.path.join(global_root, 'opt/maui/emod3d/3.0.4-gcc/bin')
 
     try:
         params = utils.load_params(

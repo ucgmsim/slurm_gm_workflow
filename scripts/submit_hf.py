@@ -10,7 +10,7 @@ from datetime import datetime
 
 import qcore
 import install
-import estimation.estimate_WC as wc
+from estimation import estimate_WC as wc
 
 from qcore import utils, shared, srf
 
@@ -31,11 +31,6 @@ default_scale = 1.2
 # Timestamping
 timestamp_format = "%Y%m%d_%H%M%S"
 timestamp = datetime.now().strftime(timestamp_format)
-
-params = utils.load_params('root_params.yaml', 'fault_params.yaml',
-                           'sim_params.yaml')
-utils.update(params, utils.load_params(
-    os.path.join(params.vel_mod_dir, 'vm_params.yaml')))
 
 
 def write_sl_script(hf_sim_dir, sim_dir, stoch_name, sl_template_prefix,
@@ -121,6 +116,11 @@ if __name__ == '__main__':
     parser.add_argument('--seed', type=int, default=None,
                         help="random seed number(0 for randomized seed)")
     args = parser.parse_args()
+
+    params = utils.load_params('root_params.yaml', 'fault_params.yaml',
+                               'sim_params.yaml')
+    utils.update(params, utils.load_params(
+        os.path.join(params.vel_mod_dir, 'vm_params.yaml')))
 
     # check if the args is none, if not, change the version
     ncore = args.ncore

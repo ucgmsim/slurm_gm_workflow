@@ -3,7 +3,7 @@
 import argparse
 
 import install
-import estimation.estimate_WC as wc
+from estimation import estimate_WC as wc
 
 from datetime import datetime
 
@@ -23,11 +23,6 @@ default_version = 'run_bb_mpi'
 default_core = 80
 default_wct = "00:30:00"
 default_memory = "16G"
-
-params = utils.load_params('root_params.yaml', 'fault_params.yaml',
-                           'sim_params.yaml')
-utils.update(params, utils.load_params(
-    os.path.join(params.vel_mod_dir, 'vm_params.yaml')))
 
 
 def write_sl_script(bb_sim_dir, sim_dir, srf_name, sl_template_prefix,
@@ -90,6 +85,11 @@ if __name__ == '__main__':
     parser.add_argument('--srf', type=str, default=None)
     parser.add_argument('--ascii', action="store_true", default=False)
     args = parser.parse_args()
+
+    params = utils.load_params('root_params.yaml', 'fault_params.yaml',
+                               'sim_params.yaml')
+    utils.update(params, utils.load_params(
+        os.path.join(params.vel_mod_dir, 'vm_params.yaml')))
 
     ncores = default_core
     if args.version is not None:

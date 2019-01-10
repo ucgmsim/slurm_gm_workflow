@@ -9,6 +9,8 @@ import pickle
 import numpy as np
 
 from estimation.model import NNWcEstModel
+from submit_hf import default_core as HF_DEFAULT_NCORES
+from submit_bb import default_core as BB_DEFAULT_NCORES
 
 # Better solution for these locations?
 LF_MODEL_DIR = "/nesi/project/nesi00213/estimation/models/LF/"
@@ -19,9 +21,6 @@ MODEL_PREFIX = "model_"
 SCALER_PREFIX = "scaler_"
 
 DEFAULT_NCORES_PER_NODE = 40
-
-HF_DEFAULT_NCORES = 80
-BB_DEFAULT_NCORES = 80
 
 
 def get_wct(run_time, overestimate_factor=0.1):
@@ -69,7 +68,6 @@ def estimate_LF_WC_single(
     n_cores: int
         The number of cores to use, returns the argument n_cores
         if scale_ncores is not set. Otherwise returns the updated ncores.
-
     """
     # Make a numpy array of the input data in the right shape.
     # The order of the features has to the same as for training!!
@@ -79,29 +77,71 @@ def estimate_LF_WC_single(
                      float(nt),
                      float(ncores)]).reshape(1, 5)
 
+    core_hours, run_time, ncores = estimate_LF_WC(
+        data, scale_ncores, node_time_th_factor, model_dir, model_prefix,
+        scaler_prefix)
+
+    return core_hours[0], run_time[0], ncores[0]
+
+
+def estimate_LF_WC(
+        data: np.ndarray, scale_ncores: bool, node_time_th_factor: float = 0.5,
+        model_dir: str = LF_MODEL_DIR, model_prefix: str = MODEL_PREFIX,
+        scaler_prefix: str = SCALER_PREFIX):
+    """
+    Make bulk LF estimations, requires the input data to be in the right
+    order!
+
+    Params
+    ------
+    data: np.ndarray of float, int
+        Input data for the model in the order nx, ny, nz, nt, n_cores
+        Has to have a shape of [-1, 5]
+    scale_ncores: bool
+        If True then the number of cores is adjusted until
+        n_nodes * node_time_th == run_time
+    node_time_th: float
+        Node time threshold factor, does nothing if scale_ncores is not set
+
+    Returns
+    -------
+    core_hours: np.ndarray of floats
+        Estimated number of core hours
+    run time: np.ndarray of floats
+        Estimated run time (hours)
+    n_cores: np.ndarray of ints
+        The number of cores to use, returns the argument n_cores
+        if scale_ncores is not set. Otherwise returns the updated ncores.
+    """
+    if data.shape[1] != 5:
+        raise Exception("Invalid input data, has to 5 columns. "
+                        "One for each feature.")
+
     core_hours = estimate(
         data, model_dir=model_dir, model_prefix=model_prefix,
-        scaler_prefix=scaler_prefix)[0][0]
+        scaler_prefix=scaler_prefix).ravel()
+
 
     # Just estimate, no number of cores scaling
     if not scale_ncores:
-        return core_hours, core_hours / ncores, ncores
+        return core_hours, core_hours / data[:, -1], data[:, -1]
     # Estimate and iteratively update the number of cores until
     # the threshold is meet
     else:
-        run_time = core_hours / ncores
-        time_th = node_time_th_factor * (ncores / DEFAULT_NCORES_PER_NODE)
-        while run_time > time_th:
-            ncores += DEFAULT_NCORES_PER_NODE
-            time_th = node_time_th_factor * (ncores / DEFAULT_NCORES_PER_NODE)
+        run_time = core_hours / data[:, -1]
+        time_th = node_time_th_factor * (data[:, -1] / DEFAULT_NCORES_PER_NODE)
+        mask = run_time > time_th
+        while np.any(mask):
+            data[mask, -1] += float(DEFAULT_NCORES_PER_NODE)
+            time_th[mask] = node_time_th_factor \
+                            * (data[mask, -1] / DEFAULT_NCORES_PER_NODE)
 
-            data[-1] = float(ncores)
             core_hours = estimate(
                 data, model_dir=model_dir, model_prefix=model_prefix,
                 scaler_prefix=scaler_prefix)[0][0]
-            run_time = core_hours / ncores
+            run_time = core_hours / data[:, -1]
 
-        return core_hours, run_time, ncores
+        return core_hours, run_time, data[:, -1]
 
 
 def estimate_HF_WC_single(
@@ -138,10 +178,39 @@ def estimate_HF_WC_single(
                      float(nt),
                      float(n_cores)]).reshape(1, 4)
 
+    core_hours, run_time = estimate_HF_WC(
+        data, model_dir, model_prefix, scaler_prefix)
+
+    return core_hours[0], run_time[0]
+
+
+def estimate_HF_WC(
+        data: np.ndarray, model_dir: str = HF_MODEL_DIR,
+        model_prefix: str = MODEL_PREFIX, scaler_prefix: str = SCALER_PREFIX):
+    """Make bulk HF estimations, requires data to be in the corret
+    order (see above).
+
+    Params
+    ------
+    data: np.ndarray of int, float
+        Input data for the model in order fd_count, nsub_stoch, nt, n_cores
+        Has to have shape [-1, 4]
+
+    Returns
+    -------
+    core_hours: np.ndarray of floats
+        Estimated number of core hours
+    run_time: np.ndarray of floats
+        Estimated run time (hours)
+    """
+    if data.shape[1] != 4:
+        raise Exception("Invalid input data, has to 4 columns. "
+                        "One for each feature.")
+
     core_hours = estimate(data, model_dir=model_dir, model_prefix=model_prefix,
                     scaler_prefix=scaler_prefix)[0][0]
 
-    return core_hours, core_hours / n_cores
+    return core_hours, core_hours / data[:, -1]
 
 
 def estimate_BB_WC_single(
@@ -154,7 +223,7 @@ def estimate_BB_WC_single(
 
     Params
     ------
-    fd_count, nt, n_cores: int, float
+    fd_count, hf_nt, n_cores: int, float
         Input features for the model
         Where nt is the nt from HF
 
@@ -175,10 +244,39 @@ def estimate_BB_WC_single(
     # The order of the features has to the same as for training!!
     data = np.array([float(fd_count), float(nt), float(n_cores)]).reshape(1, 3)
 
-    core_hours = estimate(data, model_dir=model_dir, model_prefix=model_prefix,
-                    scaler_prefix=scaler_prefix)[0][0]
+    core_hours, run_time = estimate_BB_WC(
+        data, model_dir, model_prefix, scaler_prefix)
 
-    return core_hours, core_hours / n_cores
+    return core_hours[0], run_time[0]
+
+
+def estimate_BB_WC(
+        data: np.ndarray, model_dir: str = BB_MODEL_DIR,
+        model_prefix: str = MODEL_PREFIX, scaler_prefix: str = SCALER_PREFIX):
+    """Make bulk BB estimations, requires data to be
+    in the correct order (see above)
+
+    Params
+    ------
+    data: np.ndarray of int, float
+        Input data for the model in order fd_count, hf_nt, n_cores
+        Has to have shape [-1, 3]
+
+    Returns
+    -------
+    core_hours: np.ndarray of floats
+        Estimated number of core hours
+    run_time: np.ndarray of float
+        Estimated run time (hours)
+    """
+    if data.shape[1] != 3:
+        raise Exception("Invalid input data, has to 3 columns. "
+                        "One for each feature.")
+
+    core_hours = estimate(data, model_dir=model_dir, model_prefix=model_prefix,
+                          scaler_prefix=scaler_prefix)[0][0]
+
+    return core_hours, core_hours / data[:, -1]
 
 
 def estimate(input_data: np.ndarray, model_dir: str,

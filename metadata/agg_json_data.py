@@ -37,6 +37,7 @@ class SimTypeConst(Enum):
     BB = "BB"
     HF = "HF"
     LF = "LF"
+    IM_calc = "IM_calc"
 
 
 def create_dataframe(json_file):
@@ -95,7 +96,7 @@ def get_row_data(data_dict, column_paths):
     for rel_key in data_dict.keys():
         cur_row_data = []
         for sim_key, val_key in column_paths:
-            # Check that the sim type (HF, BB, LF) exists for this realisation
+            # Check that the sim type (HF, BB, LF, IM_calc) exists for this realisation
             if sim_key in data_dict[rel_key].keys():
                 # Check that this value key exists and save
                 if val_key in data_dict[rel_key][sim_key]:
