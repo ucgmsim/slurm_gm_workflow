@@ -15,7 +15,7 @@ from os.path import basename
 
 sys.path.append(os.path.abspath(os.path.curdir))
 from shutil import copyfile
-from shared_workflow import shared, write_template
+from shared_workflow import shared
 from qcore import utils
 
 from shared_workflow import load_config
