@@ -14,8 +14,6 @@ from shared_workflow.shared import *
 
 from qcore import utils
 
-sys.path.append(os.path.abspath(os.path.curdir))
-
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
 default_account = 'nesi00213'
@@ -23,11 +21,6 @@ default_version = 'run_bb_mpi'
 default_core = 80
 default_wct = "00:30:00"
 default_memory = "16G"
-
-params = utils.load_params('root_params.yaml', 'fault_params.yaml',
-                           'sim_params.yaml')
-utils.update(params, utils.load_params(
-    os.path.join(params.vel_mod_dir, 'vm_params.yaml')))
 
 
 def write_sl_script(bb_sim_dir, sim_dir, srf_name, sl_template_prefix,
@@ -58,7 +51,8 @@ def write_sl_script(bb_sim_dir, sim_dir, srf_name, sl_template_prefix,
     print("sim dir, srf_name", sim_dir, srf_name)
     replace_t = [("$rup_mod", variation),
                  ("{{mgmt_db_location}}", params.mgmt_db_location),
-                 ("{{sim_dir}}", sim_dir), ("{{srf_name}}", srf_name),
+                 ("{{sim_dir}}", sim_dir),
+                 ("{{srf_name}}", srf_name),
                  ("{{test_bb_script}}",
                   "test_bb_binary.sh" if binary else "test_bb_ascii.sh")]
 
@@ -90,6 +84,8 @@ if __name__ == '__main__':
     parser.add_argument('--srf', type=str, default=None)
     parser.add_argument('--ascii', action="store_true", default=False)
     args = parser.parse_args()
+
+    params = utils.load_sim_params('sim_params.yaml')
 
     ncores = default_core
     if args.version is not None:
@@ -154,4 +150,5 @@ if __name__ == '__main__':
             run_time=wct)
 
         # Submit the script
-        submit_sl_script(script_file, "BB", 'queued', srf_name, submit_yes)
+        submit_sl_script(script_file, "BB", 'queued', params.mgmt_db_location,
+                         srf_name, timestamp, submit_yes=submit_yes)

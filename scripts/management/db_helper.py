@@ -4,10 +4,13 @@ from enum import Enum
 
 
 def connect_db(path):
-    db_location = os.path.join(path, 'slurm_mgmt.db')
+    db_location = os.path.abspath(os.path.join(path, 'slurm_mgmt.db'))
     conn = sqlite3.connect(db_location)
     db = conn.cursor()
-    db.execute("PRAGMA synchronous = OFF")
+    db.execute("PRAGMA synchronous = EXTRA")
+    #db.execute("PRAGMA synchronous = OFF")
+    db.execute("PRAGMA integrity_check")
+
     return db
 
 

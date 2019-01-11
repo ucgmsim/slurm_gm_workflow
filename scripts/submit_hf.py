@@ -4,8 +4,6 @@ import sys
 import os.path
 import argparse
 
-sys.path.append(os.path.abspath(os.path.curdir))
-
 from datetime import datetime
 
 import qcore
@@ -25,17 +23,7 @@ default_wct = "00:30:00"
 default_memory = "16G"
 default_account = 'nesi00213'
 
-# standard deviation (doesn't appear to be used anywhere?)
-default_scale = 1.2
-
-# Timestamping
-timestamp_format = "%Y%m%d_%H%M%S"
-timestamp = datetime.now().strftime(timestamp_format)
-
-params = utils.load_params('root_params.yaml', 'fault_params.yaml',
-                           'sim_params.yaml')
-utils.update(params, utils.load_params(
-    os.path.join(params.vel_mod_dir, 'vm_params.yaml')))
+timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
 
 def write_sl_script(hf_sim_dir, sim_dir, stoch_name, sl_template_prefix,
@@ -122,6 +110,8 @@ if __name__ == '__main__':
                         help="random seed number(0 for randomized seed)")
     args = parser.parse_args()
 
+    params = utils.load_sim_params('sim_params.yaml')
+
     # check if the args is none, if not, change the version
     ncore = args.ncore
     if args.version is not None:
@@ -144,8 +134,6 @@ if __name__ == '__main__':
     print("version:", version)
 
     # check rand_reset
-    print(args.site_specific, params.bb.site_specific, args.rand_reset,
-          params.bb.rand_reset)
     if args.site_specific is not None or params.bb.site_specific:
         print("Note: site_specific = True, rand_reset = True")
         hf_option = 2
@@ -157,15 +145,11 @@ if __name__ == '__main__':
                 hf_option = 0
         except:
             hf_option = 0
-            print("Note: rand_reset is not defined in params_base_bb.py."
-                  " We assume rand_reset=%s" % bool(hf_option))
-    print("hf_option", hf_option)
+            print("Note: rand_reset is not defined in params_base_bb.py. "
+                  "We assume rand_reset=%s" % bool(hf_option))
 
     # est_wct and submit, if --auto used
     submit_yes = True if args.auto else confirm("Also submit the job for you?")
-
-    print("hf_option", hf_option)
-    print("account:", args.account)
 
     # modify the logic to use the same as in install_bb:
     # sniff through params_base to get the names of srf,
@@ -220,7 +204,6 @@ if __name__ == '__main__':
             seed=args.seed)
 
         # Submit the script
-        submit_sl_script(
-            "HF", "queued", params.mgmt_db_location, srf_name, submit_yes)
-
+        submit_sl_script(script_file, "HF", "queued", params.mgmt_db_location,
+                         srf_name, timestamp, submit_yes=submit_yes)
 

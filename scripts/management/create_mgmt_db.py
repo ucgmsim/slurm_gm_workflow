@@ -42,7 +42,7 @@ def create_mgmt_db(realisations, f, srf_files=[]):
             insert_task(db, run_name, proc[0])
 
     db.connection.commit()
-
+    return db
 
 def insert_task(db, run_name, proc):
     db.execute('''INSERT OR IGNORE INTO
@@ -62,8 +62,9 @@ def main():
     f = args.run_folder
     realisations = args.realisations
     
-    create_mgmt_db(realisations, f)
-
+    db = create_mgmt_db(realisations, f)
+    db.connection.close()
+    
 
 if __name__ == '__main__':
     main()

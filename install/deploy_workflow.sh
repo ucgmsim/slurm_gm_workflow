@@ -35,7 +35,7 @@ cat $script_dir/load_default_modules.sh >> ${ROOT}/share/bashrc.uceq
 echo "export gmsim='$ROOT'" >> ${ROOT}/share/bashrc.uceq
 echo "export nobackup='/nesi/nobackup/nesi00213'" >> ${ROOT}/share/bashrc.uceq
 echo 'export PATH=$PATH:'${ROOT}/workflow/scripts >> ${ROOT}/share/bashrc.uceq
-echo "export PYTHONPATH=$ROOT/qcore:$ROOT/workflow:"'$PYTHONPATH' >> ${ROOT}/share/bashrc.uceq
+echo "export PYTHONPATH=$ROOT/workflow:"'$PYTHONPATH' >> ${ROOT}/share/bashrc.uceq
 
 print_message "Add source $ROOT/share/bashrc.uceq to your .bashrc"
 

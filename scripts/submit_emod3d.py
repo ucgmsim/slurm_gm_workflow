@@ -16,9 +16,7 @@ from shared_workflow import load_config
 # TODO: remove this once temp_shared is gone
 from temp_shared import resolve_header
 
-# Timestamp
-timestamp_format = "%Y%m%d_%H%M%S"
-timestamp = datetime.now().strftime(timestamp_format)
+timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
 # Default values
 default_core = 160
@@ -27,11 +25,6 @@ default_memory = "16G"
 default_account = 'nesi00213'
 default_ch_scale = 1.1
 default_wct_scale = 1.2
-
-workflow_config = load_config.load(
-    os.path.dirname(os.path.realpath(__file__)), "workflow_config.json")
-global_root = workflow_config["global_root"]
-tools_dir = os.path.join(global_root, 'opt/maui/emod3d/3.0.4-gcc/bin')
 
 
 def write_sl_script(
@@ -81,67 +74,65 @@ if __name__ == '__main__':
     parser.add_argument('--set_params_only', nargs="?", type=str, const=True)
     args = parser.parse_args()
 
-    try:
-        params = utils.load_params(
-            'root_params.yaml', 'fault_params.yaml', 'sim_params.yaml')
-        utils.update(params, utils.load_params(
-            os.path.join(params.vel_mod_dir, 'vm_params.yaml')))
-    except Exception as e:
-        print("Load params failed with exception: ", e)
-        sys.exit(1)
+    workflow_config = load_config.load(
+        os.path.dirname(os.path.realpath(__file__)), "workflow_config.json")
+    global_root = workflow_config["global_root"]
+    tools_dir = os.path.join(global_root, 'opt/maui/emod3d/3.0.4-gcc/bin')
+
+    params = utils.load_sim_params('sim_params.yaml')
+
+    if args.auto:
+        submit_yes = True
+    elif args.set_params_only:
+        submit_yes = False
     else:
-        script = []
+        submit_yes = confirm("Also submit the job for you?")
+
+    print("params.srf_file", params.srf_file)
+    wall_clock_limit = None
+    # Get the srf(rup) name without extensions
+    srf_name = os.path.splitext(os.path.basename(params.srf_file))[0]
+    if args.set_params_only:
+        set_runparams.create_run_params(srf_name)
+    elif args.srf is None or srf_name == args.srf:
+        print("not set_params_only")
+        # get lf_sim_dir
+        lf_sim_dir = os.path.join(params.sim_dir, 'LF')
+        sim_dir = params.sim_dir
+
+        # default_core will be changed is user passes ncore
+        n_cores = args.ncore
+        if n_cores != default_core:
+            print("Number of cores is different from default "
+                  "number of cores. Estimation will be less accurate.")
+
+        est_core_hours, est_run_time = wc.estimate_LF_WC_single(
+            int(params.nx), int(params.ny), int(params.nz),
+            int(float(params.sim_duration) / float(params.dt)), n_cores)
+        print("Estimated WCT {}".format(
+            wc.convert_to_wct(est_run_time)))
+
         if args.auto:
-            submit_yes = True
-        elif args.set_params_only:
-            submit_yes = False
+            script = write_sl_script(
+                lf_sim_dir, sim_dir, srf_name, params.mgmt_db_location,
+                run_time=wc.get_wct(est_run_time), nb_cpus=n_cores)
         else:
-            submit_yes = confirm("Also submit the job for you?")
+            # Get the wall clock time from the user
+            if wall_clock_limit is None:
+                print("Use the estimated wall clock time? (Minimum of "
+                      "5 mins, otherwise adds a 10% overestimation to "
+                      "ensure the job completes)")
+                use_estimation = show_yes_no_question()
+                if use_estimation:
+                    wall_clock_limit = wc.get_wct(est_run_time)
+                else:
+                    wall_clock_limit = str(install.get_input_wc())
+                print("WCT set to: %s" % wall_clock_limit)
 
-        print("params.srf_file", params.srf_file)
-        wall_clock_limit = None
-        # Get the srf(rup) name without extensions
-        srf_name = os.path.splitext(os.path.basename(params.srf_file))[0]
-        if args.set_params_only:
-            set_runparams.create_run_params(srf_name)
-        elif args.srf is None or srf_name == args.srf:
-            print("not set_params_only")
-            # get lf_sim_dir
-            lf_sim_dir = os.path.join(params.sim_dir, 'LF')
-            sim_dir = params.sim_dir
+            script = write_sl_script(
+                lf_sim_dir, sim_dir, srf_name, params.mgmt_db_location,
+                run_time=wall_clock_limit, nb_cpus=n_cores)
 
-            # default_core will be changed is user passes ncore
-            n_cores = args.ncore
-            if n_cores != default_core:
-                print("Number of cores is different from default "
-                      "number of cores. Estimation will be less accurate.")
+        submit_sl_script(script, 'EMOD3D', 'queued', params.mgmt_db_location,
+                         srf_name, timestamp, submit_yes=submit_yes)
 
-            est_core_hours, est_run_time = wc.estimate_LF_WC_single(
-                int(params.nx), int(params.ny), int(params.nz),
-                int(float(params.sim_duration) / float(params.dt)), n_cores)
-            print("Estimated WCT {}".format(
-                wc.convert_to_wct(est_run_time)))
-
-            if args.auto:
-                script = write_sl_script(
-                    lf_sim_dir, sim_dir, srf_name, params.mgmt_db_location,
-                    run_time=wc.get_wct(est_run_time), nb_cpus=n_cores)
-            else:
-                # Get the wall clock time from the user
-                if wall_clock_limit is None:
-                    print("Use the estimated wall clock time? (Minimum of "
-                          "5 mins, otherwise adds a 10% overestimation to "
-                          "ensure the job completes)")
-                    use_estimation = show_yes_no_question()
-                    if use_estimation:
-                        wall_clock_limit = wc.get_wct(est_run_time)
-                    else:
-                        wall_clock_limit = str(install.get_input_wc())
-                    print("WCT set to: %s" % wall_clock_limit)
-
-                script = write_sl_script(
-                    lf_sim_dir, sim_dir, srf_name, params.mgmt_db_location,
-                    run_time=wall_clock_limit, nb_cpus=n_cores)
-
-        submit_sl_script(script, 'EMOD3D', 'queued',
-                         params.mgmt_db_location, srf_name, submit_yes)

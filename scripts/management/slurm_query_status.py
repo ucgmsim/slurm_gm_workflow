@@ -20,12 +20,15 @@ RETRY_MAX = 2
 t_status = {'R': 'running', 'PD': 'queued'}
 
 
-def get_queued_tasks():
-    cmd = "squeue -A nesi00213 -o '%A %t' -h"
+def get_queued_tasks(user=None):
+    if user != None:
+        cmd = "squeue -A nesi00213 -o '%A %t' -h" + " -u " + user
+    else:
+        cmd = "squeue -A nesi00213 -o '%A %t' -h"
     process = Popen(shlex.split(cmd), stdout=PIPE)
     (output, err) = process.communicate()
     exit_code = process.wait()
-
+    
     return output
 
 

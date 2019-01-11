@@ -12,8 +12,6 @@ from shared_workflow import load_config
 # TODO: remove this once temp_shared is gone
 from temp_shared import resolve_header
 
-sys.path.append(os.getcwd())
-
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
 merge_ts_name_prefix = "post_emod3d_merge_ts"
@@ -32,11 +30,6 @@ default_account = 'nesi00213'
 # TODO:the max number of cpu per node may need update when migrate machines
 # this variable is critical to prevent crashes for winbin-aio
 max_tasks_per_node = "80"
-
-workflow_config = load_config.load(
-    os.path.dirname(os.path.realpath(__file__)), "workflow_config.json")
-global_root = workflow_config["global_root"]
-tools_dir = os.path.join(global_root, 'opt/maui/emod3d/3.0.4-gcc/bin')
 
 
 def get_seis_len(seis_path):
@@ -87,6 +80,7 @@ def write_sl_script_winbin_aio(
         lf_sim_dir, sim_dir, mgmt_db_location, rup_mod,
         run_time=default_run_time_winbin_aio, memory=default_memory,
         account=default_account):
+    """Populates the template and writes the resulting slurm script to file"""
     # Read template
     with open('%s.sl.template' % winbin_aio_name_prefix) as f:
         template = f.read()
@@ -139,13 +133,13 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    created_scripts = []
-    try:
-        params = utils.load_params('root_params.yaml', 'sim_params.yaml')
-    except Exception as ex:
-        print("Failed to load params with exception\n", ex)
-        sys.exit(1)
+    workflow_config = load_config.load(
+        os.path.dirname(os.path.realpath(__file__)), "workflow_config.json")
+    global_root = workflow_config["global_root"]
+    tools_dir = os.path.join(global_root, 'opt/maui/emod3d/3.0.4-gcc/bin')
 
+    created_scripts = []
+    params = utils.load_sim_params('sim_params.yaml')
     submit_yes = True if args.auto else \
         confirm("Also submit the job for you?")
 
@@ -154,8 +148,6 @@ if __name__ == '__main__':
     # if srf(variation) is provided as args, only create the slurm
     # with same name provided
     if args.srf is None or srf_name == args.srf:
-        # get lf_sim_dir
-
         # get lf_sim_dir
         lf_sim_dir = os.path.join(params.sim_dir, 'LF')
 
@@ -180,5 +172,3 @@ if __name__ == '__main__':
             submit_sl_script(
                 script, "winbin_aio", "queued", params.mgmt_db_location,
                 srf_name, submit_yes)
-
-

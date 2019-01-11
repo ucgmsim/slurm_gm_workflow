@@ -355,7 +355,7 @@ def exe(cmd, debug=True,shell=False, stdout=subprocess.PIPE,
 
 
 def submit_sl_script(script, process, status, mgmt_db_location, srf_name,
-                     submit_yes=False):
+                     timestamp, submit_yes=False):
     """Submits the slurm script and udpates the management db"""
     if submit_yes:
         print("Submitting %s" % script)
@@ -372,10 +372,15 @@ def submit_sl_script(script, process, status, mgmt_db_location, srf_name,
                 sys.exit()
 
             # Update the db
-            db = db_helper.connect_db(mgmt_db_location)
-            update_mgmt_db.update_db(db, process, status, job=jobid,
-                                     run_name=srf_name)
-            db.connection.commit()
+            db_queue_path = os.path.join(mgmt_db_location, "mgmt_db_queue")
+            cmd_name = os.path.join(db_queue_path, "%s_%s_q" % (timestamp, jobid))
+            # TODO: change this to use python3's format()
+            cmd = "python $gmsim/workflow/scripts/management/" \
+                  "update_mgmt_db.py {} {} {} --run_name {}  --job {}".format(
+                    mgmt_db_location, process, status, srf_name, jobid)
+            with open(cmd_name, 'w+') as f:
+                f.write(cmd)
+                f.close()
     else:
         print("User chose to submit the job manually")
 

@@ -34,7 +34,7 @@ def main():
     update_job_time(db, job_id, status)
 
     db.connection.commit()
-
+    db.connection.close()
 
 if __name__ == '__main__':
     main()
