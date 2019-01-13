@@ -26,9 +26,11 @@ def get_procs(db):
 
 
 def create_mgmt_db(realisations, f, srf_files=[]):
-    additonal_realisations = [os.path.splitext(
-        os.path.basename(srf))[0] for srf in srf_files]
+    # for manual install, only one srf will be passed to srf_files as a string
+    if isinstance(srf_files, str):
+        srf_files = [srf_files]
 
+    additonal_realisations = [os.path.splitext(os.path.basename(srf))[0] for srf in srf_files]
     realisations.extend(additonal_realisations)
 
     if len(realisations) == 0:
