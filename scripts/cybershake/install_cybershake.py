@@ -21,6 +21,7 @@ def main():
     parser.add_argument("config", type=str, default=None,
                         help="a path to a config file that constains all the required values.")
     parser.add_argument("vm", type=str, default=None, help="the name of the Velocity Model.")
+    parser.add_argument('--version', type=str, default='16.1', help="version of simulation. eg.16.1")
 
     args = parser.parse_args()
     try:
@@ -47,16 +48,17 @@ def main():
 
     params_vel = 'params_vel.py'
 
+    # commented out because we now get dt and hf_dt from templated/gmsim/version/root_defaults.yaml
     # vars
-    if 'dt' in qcore_cfg:
-        dt = qcore_cfg['dt']
-    else:
-        dt = default_dt
-
-    if 'hf_dt' in qcore_cfg:
-        hf_dt = qcore_cfg['hf_dt']
-    else:
-        hf_dt = default_hf_dt
+    # if 'dt' in qcore_cfg:
+    #     dt = qcore_cfg['dt']
+    # else:
+    #     dt = default_dt
+    #
+    # if 'hf_dt' in qcore_cfg:
+    #     hf_dt = qcore_cfg['hf_dt']
+    # else:
+    #     hf_dt = default_hf_dt
 
     source = args.vm
 
@@ -81,7 +83,9 @@ def main():
     srf_dir = os.path.join(os.path.join(srf_root_dir, source), "Srf")
     stoch_dir = os.path.join(os.path.join(srf_root_dir, source), "Stoch")
     list_srf = glob.glob(os.path.join(srf_dir, '*.srf'))
-
+    
+    fault_yaml_path = os.path.join(sim_root_dir, 'fault_params.yaml')
+    root_yaml_path = os.path.join(path_cybershake, 'root_params.yaml')
     for srf in list_srf:
         # try to match find the stoch with same basename
         srf_name = os.path.splitext(os.path.basename(srf))[0]
@@ -93,36 +97,26 @@ def main():
             # install pairs one by one to fit the new structure
             sim_dir = os.path.join(os.path.join(sim_root_dir, source), srf_name)
             print "!!!!SIM_DIR:%s" % sim_dir
-            srf_files = []
-            stoch_files = []
-            srf_files.append(srf)
-            stoch_files.append(stoch_file_path)
-
-            srf_stoch_pairs = zip(srf_files, stoch_files)
+            # srf_files = []
+            # stoch_files = []
+            # srf_files.append(srf)
+            # stoch_files.append(stoch_file_path)
+            #
+            # srf_stoch_pairs = zip(srf_files, stoch_files)
             # print srf_stoch_pairs
             # print list_srf
+            root_params_dict, fault_params_dict, sim_params_dict, vm_params_dict = install.action(args.version, sim_dir, event_name, run_name, run_dir, vel_mod_dir, srf_dir, srf, stoch_file_path,
+                       params_vel_path, stat_file_path, vs30_file_path, vs30ref_file_path, MODEL_LAT, MODEL_LON,
+                       MODEL_ROT, hh, nx, ny, nz, sufx, sim_duration, vel_mod_params_dir, yes_statcords,
+                       yes_model_params, fault_yaml_path, root_yaml_path)
 
-            install.action(sim_dir, event_name, run_name, run_dir, vel_mod_dir, srf_root_dir, srf_stoch_pairs,
-                           params_vel_path, stat_file_path, vs30_file_path, vs30ref_file_path, MODEL_LAT, MODEL_LON,
-                           MODEL_ROT, hh, nx, ny, nz, sufx, sim_duration, flo, vel_mod_params_dir, yes_statcords,
-                           yes_model_params, dt)
-
-            create_mgmt_db.create_mgmt_db([], path_cybershake, srf_files=srf_files)
-            with open(os.path.join(sim_dir, "params_base.py"), "a") as f:
-                f.write("mgmt_db_location='%s'\n" % path_cybershake)
-
+            create_mgmt_db.create_mgmt_db([], path_cybershake, srf_files=srf)
+            root_params_dict['mgmt_db_location'] = path_cybershake
             # store extra params provided
             if 'hf_stat_vs_ref' in qcore_cfg:
-                with open(os.path.join(sim_dir, "params_base.py"), "a") as f:
-                    f.write("hf_stat_vs_ref='%s'\n" % qcore_cfg['hf_stat_vs_ref'])
+                root_params_dict['hf_stat_vs_ref'] = qcore_cfg['hf_stat_vs_ref']
 
-            # remove old params_base.pyc
-            try:
-                print "Removing probably incomplete " + os.path.join(sim_dir, "params_base.pyc")
-                os.remove(os.path.join(sim_dir, "params_base.pyc"))
-            except Exception, e:
-                print e.args
-                print "Could not remove params_base.pyc"
+            install.dump_all_yamls(sim_dir, root_params_dict, fault_params_dict, sim_params_dict, vm_params_dict)
 
             # make symbolic link after install sim folder
             cmd = "ln -s %s %s" % (srf_root_dir, os.path.join(sim_dir, 'Src'))
