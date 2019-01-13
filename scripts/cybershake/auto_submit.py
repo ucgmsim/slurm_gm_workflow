@@ -20,6 +20,7 @@ default_hf_seed = None
 default_rand_reset = True
 default_extended_period = False
 
+
 def submit_task(sim_dir, proc_type, run_name, db, mgmt_db_location ,binary_mode=True, rand_reset=default_rand_reset, hf_seed=None, extended_period=default_extended_period):
     #TODO: using shell call is EXTREMELY undesirable. fix this in near future(fundamentally)
 
@@ -41,10 +42,8 @@ def submit_task(sim_dir, proc_type, run_name, db, mgmt_db_location ,binary_mode=
     lf_sim_dir = os.path.join(sim_dir,"LF/%s"%run_name)
     if proc_type == 1:
         #EMOD 3D
-        if not os.path.isfile(os.path.join(lf_sim_dir,"params_uncertain.py")):
-            print os.path.join(lf_sim_dir,"params_uncertain.py")," missing, creating"
-            call("python $gmsim/workflow/scripts/submit_emod3d.py --set_params_only", shell=True)
-            print "python $gmsim/workflow/scripts/submit_emod3d.py --set_params_only"
+        call("python $gmsim/workflow/scripts/submit_emod3d.py --set_params_only", shell=True)
+        print "python $gmsim/workflow/scripts/submit_emod3d.py --set_params_only"
         print "python $gmsim/workflow/scripts/submit_emod3d.py --auto --srf %s"%run_name
         call("python $gmsim/workflow/scripts/submit_emod3d.py --auto --srf %s"%run_name, shell=True)
         #save meta, TODO:replace proper db update when merge
@@ -65,11 +64,9 @@ def submit_task(sim_dir, proc_type, run_name, db, mgmt_db_location ,binary_mode=
     if proc_type == 4:
         #run the submit_post_emod3d before install_bb and submit_hf
         #TODO: fix this strange logic in the actual workflow
-        #see if params_uncertain.py exsist
-        if not os.path.isfile(os.path.join(lf_sim_dir,"params_uncertain.py")):
-            print os.path.join(lf_sim_dir,"params_uncertain.py")," missing, creating"
-            call("python $gmsim/workflow/scripts/submit_emod3d.py --set_params_only", shell=True)
-            print "python $gmsim/workflow/scripts/submit_emod3d.py --set_params_only"
+
+        call("python $gmsim/workflow/scripts/submit_emod3d.py --set_params_only", shell=True)
+        print "python $gmsim/workflow/scripts/submit_emod3d.py --set_params_only"
         if not os.path.isfile(os.path.join(sim_dir,"params_base_bb.py")):
             if default_hf_vs30_ref != None:
                 print "python $gmsim/workflow/scripts/install_bb.py --v1d %s --hf_stat_vs_ref %s"%(default_1d_mod,default_hf_vs30_ref)
@@ -100,6 +97,7 @@ def submit_task(sim_dir, proc_type, run_name, db, mgmt_db_location ,binary_mode=
         call(cmd, shell=True)
         #save the job meta data
         call("echo 'submitted time: %s' >> %s"%(submitted_time,os.path.join(ch_log_dir,'IM_calc.%s.log'%run_name)), shell=True)
+
 
 def get_vmname(srf_name):
     """
@@ -132,35 +130,35 @@ def main():
         #parse and check for variables in config
         try:
             print "!!!!!!!!!!!!!", args.config
-            qcore_cfg = ldcfg.load(directory=os.path.dirname(args.config), cfg_name=os.path.basename(args.config))
-            print qcore_cfg
+            cybershake_cfg = ldcfg.load(directory=os.path.dirname(args.config), cfg_name=os.path.basename(args.config))
+            print cybershake_cfg
         except Exception as e:
             print e
             print "Error while parsing the config file, please double check inputs."
             sys.exit()
-        if 'v_1d_mod' in qcore_cfg:
+        if 'v_1d_mod' in cybershake_cfg:
             #TODO:bad hack, fix this when possible (with parsing)
             global default_1d_mod
-            default_1d_mod = qcore_cfg['v_1d_mod']
-        if 'hf_stat_vs_ref' in qcore_cfg:
+            default_1d_mod = cybershake_cfg['v_1d_mod']
+        if 'hf_stat_vs_ref' in cybershake_cfg:
             #TODO:bad hack, fix this when possible (with parsing)
             global default_hf_vs30_ref
-            default_hf_vs30_ref = qcore_cfg['hf_stat_vs_ref']
-        if 'binary_mode' in qcore_cfg:
-            binary_mode = qcore_cfg['binary_mode']
+            default_hf_vs30_ref = cybershake_cfg['hf_stat_vs_ref']
+        if 'binary_mode' in cybershake_cfg:
+            binary_mode = cybershake_cfg['binary_mode']
         else:
             binary_mode = default_binary_mode
 
-        if 'hf_seed' in qcore_cfg:
-            hf_seed = qcore_cfg['hf_seed']
+        if 'hf_seed' in cybershake_cfg:
+            hf_seed = cybershake_cfg['hf_seed']
       
-        if 'rand_reset' in qcore_cfg:
-            rand_reset = qcore_cfg['rand_reset']
+        if 'rand_reset' in cybershake_cfg:
+            rand_reset = cybershake_cfg['rand_reset']
         else:
             rand_reset = default_rand_reset
 
-        if 'extended_period' in qcore_cfg:
-            extended_period = qcore_cfg['extended_period']
+        if 'extended_period' in cybershake_cfg:
+            extended_period = cybershake_cfg['extended_period']
         else:
             extended_period = default_extended_period
         #append more logic here if more variables are requested 
@@ -211,6 +209,8 @@ def main():
         #a sleep between cmds
         #time.sleep(5)
     db.connection.close()
+
+
 if __name__ == '__main__':
    main() 
 
