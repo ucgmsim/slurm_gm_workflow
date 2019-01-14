@@ -22,7 +22,7 @@ do
             mkdir /tmp/cer
             chmod 777 /tmp/cer
         fi
-        cmd="$gmsim/workflow/scripts/cybershake/run_db_queue.sh $path_sim_root"
+        cmd="/home/melody.zhu/slurm_gm_workflow/scripts/cybershake/run_db_queue.sh $path_sim_root"
         echo $cmd
         $cmd
     done
@@ -32,7 +32,7 @@ do
         mkdir /tmp/cer
         chmod 777 /tmp/cer/
     fi
-    cmd="python $gmsim/workflow/scripts/cybershake/auto_submit.py $path_sim_root --config $cybershake_cfg "
+    cmd="python /home/melody.zhu/slurm_gm_workflow/scripts/cybershake/auto_submit.py $path_sim_root --config $cybershake_cfg "
     echo $cmd
     $cmd
     sleep $interval
