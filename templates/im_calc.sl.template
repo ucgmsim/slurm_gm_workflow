@@ -40,7 +40,10 @@ echo ___calculating simulations___
         
         run_time=`python -c "from datetime import datetime; tdelta= datetime.strptime('$end_time', '$runtime_fmt') - datetime.strptime('$start_time', '$runtime_fmt'); print tdelta.total_seconds()/3600"`
 
-        echo "{{sim_name}} IM_calc $SLURM_JOBID {{np}} $fd_count $nt $run_time $runtime_start $runtime_end" >> {{mgmt_db_location}}/Runs/{{fault_name}}/ch_log/IM_calc.$timestamp.$SLURM_JOBID.log
+        # Get the number of pSA IMs and components out of the result csv file
+        psa_count=`python -c "with open({{sim_dir}}/../IM_calc/{{faul_name}}/{{fault_name}}.csv, 'r') as f: print(sum([1 for header in f.readline().rstrip().split(',') if 'pSA' in header]))"
+        components=`python -c "import pandas as pd; print(list(pd.read_csv({{sim_dir}}/../IM_calc/{{faul_name}}/{{fault_name}}.csv).component.unique().astype('U')))"`
+        echo "{{sim_name}} IM_calc $SLURM_JOBID {{np}} $fd_count $nt $run_time $start_time $end_time $psa_count $components" >> {{mgmt_db_location}}/Runs/{{fault_name}}/ch_log/IM_calc.$timestamp.$SLURM_JOBID.log
         #
     else
         #failed
