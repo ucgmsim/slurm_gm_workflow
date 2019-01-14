@@ -1,9 +1,10 @@
 import os
 import sys
 import glob
-import shared_workflow.load_config as ldcfg
-
 import argparse
+
+import shared_workflow.load_config as ldcfg
+from qcore import utils
 
 from scripts import install
 from scripts.management import create_mgmt_db
@@ -111,6 +112,7 @@ def main():
                        yes_model_params, fault_yaml_path, root_yaml_path)
 
             create_mgmt_db.create_mgmt_db([], path_cybershake, srf_files=srf)
+            utils.setup_dir(os.path.join(path_cybershake, 'mgmt_db_queue'))
             root_params_dict['mgmt_db_location'] = path_cybershake
             # store extra params provided
             if 'hf_stat_vs_ref' in cybershake_cfg:
@@ -125,3 +127,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+

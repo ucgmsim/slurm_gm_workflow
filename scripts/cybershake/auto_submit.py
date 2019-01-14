@@ -42,15 +42,15 @@ def submit_task(sim_dir, proc_type, run_name, db, mgmt_db_location ,binary_mode=
     lf_sim_dir = os.path.join(sim_dir,"LF/%s"%run_name)
     if proc_type == 1:
         #EMOD 3D
-        call("python $gmsim/workflow/scripts/submit_emod3d.py --set_params_only", shell=True)
-        print "python $gmsim/workflow/scripts/submit_emod3d.py --set_params_only"
-        print "python $gmsim/workflow/scripts/submit_emod3d.py --auto --srf %s"%run_name
-        call("python $gmsim/workflow/scripts/submit_emod3d.py --auto --srf %s"%run_name, shell=True)
+        call("python /home/melody.zhu/slurm_gm_workflow/scripts/submit_emod3d.py --set_params_only", shell=True)
+        print "python /home/melody.zhu/slurm_gm_workflow/scripts/submit_emod3d.py --set_params_only"
+        print "python /home/melody.zhu/slurm_gm_workflow/scripts/submit_emod3d.py --auto --srf %s"%run_name
+        call("python /home/melody.zhu/slurm_gm_workflow/scripts/submit_emod3d.py --auto --srf %s"%run_name, shell=True)
         #save meta, TODO:replace proper db update when merge
         call("echo 'submitted time: %s' >> %s"%(submitted_time,os.path.join(ch_log_dir,'EMOD3D.%s.log'%run_name)), shell=True)
     if proc_type == 2:
-        print "python $gmsim/workflow/scripts/submit_post_emod3d.py --auto --merge_ts --srf %s"%run_name
-        call("python $gmsim/workflow/scripts/submit_post_emod3d.py --auto --merge_ts --srf %s"%run_name, shell=True)
+        print "python /home/melody.zhu/slurm_gm_workflow/scripts/submit_post_emod3d.py --auto --merge_ts --srf %s"%run_name
+        call("python /home/melody.zhu/slurm_gm_workflow/scripts/submit_post_emod3d.py --auto --merge_ts --srf %s"%run_name, shell=True)
         call("echo 'submitted time: %s' >> %s"%(submitted_time,os.path.join(ch_log_dir,'post_emod.%s.log'%run_name)), shell=True)
     if proc_type == 3:
         #skipping winbin_aio if running binary mode
@@ -58,23 +58,21 @@ def submit_task(sim_dir, proc_type, run_name, db, mgmt_db_location ,binary_mode=
             #update the mgmt_db
             update_mgmt_db.update_db(db,'winbin_aio','completed',run_name=run_name)    
         else:
-            print "python $gmsim/workflow/scripts/submit_post_emod3d.py --auto --winbin_aio --srf %s"%run_name
-            call("python $gmsim/workflow/scripts/submit_post_emod3d.py --auto --winbin_aio --srf %s"%run_name, shell=True)
+            print "python /home/melody.zhu/slurm_gm_workflow/scripts/submit_post_emod3d.py --auto --winbin_aio --srf %s"%run_name
+            call("python /home/melody.zhu/slurm_gm_workflow/scripts/submit_post_emod3d.py --auto --winbin_aio --srf %s"%run_name, shell=True)
             call("echo 'submitted time: %s' >> %s"%(submitted_time,os.path.join(ch_log_dir,'winbin.%s.log'%run_name)), shell=True)
     if proc_type == 4:
         #run the submit_post_emod3d before install_bb and submit_hf
         #TODO: fix this strange logic in the actual workflow
 
-        call("python $gmsim/workflow/scripts/submit_emod3d.py --set_params_only", shell=True)
-        print "python $gmsim/workflow/scripts/submit_emod3d.py --set_params_only"
-        if not os.path.isfile(os.path.join(sim_dir,"params_base_bb.py")):
-            if default_hf_vs30_ref != None:
-                print "python $gmsim/workflow/scripts/install_bb.py --v1d %s --hf_stat_vs_ref %s"%(default_1d_mod,default_hf_vs30_ref)
-                call("python $gmsim/workflow/scripts/install_bb.py --v1d %s --hf_stat_vs_ref %s"%(default_1d_mod,default_hf_vs30_ref), shell=True)
-            else:
-                print "python $gmsim/workflow/scripts/install_bb.py --v1d %s"%default_1d_mod
-                call("python $gmsim/workflow/scripts/install_bb.py --v1d %s"%default_1d_mod, shell=True)
-        hf_cmd = "python $gmsim/workflow/scripts/submit_hf.py --binary --auto --srf %s"%run_name
+        call("python /home/melody.zhu/slurm_gm_workflow/scripts/submit_emod3d.py --set_params_only", shell=True)
+        if default_hf_vs30_ref != None:
+            print "python /home/melody.zhu/slurm_gm_workflow/scripts/install_bb.py --v1d %s --hf_stat_vs_ref %s"%(default_1d_mod,default_hf_vs30_ref)
+            call("python /home/melody.zhu/slurm_gm_workflow/scripts/install_bb.py --v1d %s --hf_stat_vs_ref %s"%(default_1d_mod,default_hf_vs30_ref), shell=True)
+        else:
+            print "python /home/melody.zhu/slurm_gm_workflow/scripts/install_bb.py --v1d %s"%default_1d_mod
+            call("python /home/melody.zhu/slurm_gm_workflow/scripts/install_bb.py --v1d %s"%default_1d_mod, shell=True)
+        hf_cmd = "python /home/melody.zhu/slurm_gm_workflow/scripts/submit_hf.py --binary --auto --srf %s"%run_name
         if hf_seed is not None:
             hf_cmd = "{} --seed {}".format(hf_cmd, hf_seed)
         if rand_reset:
@@ -83,14 +81,14 @@ def submit_task(sim_dir, proc_type, run_name, db, mgmt_db_location ,binary_mode=
         call(hf_cmd, shell=True)
         call("echo 'submitted time: %s' >> %s"%(submitted_time,os.path.join(ch_log_dir,'HF.%s.log'%run_name)), shell=True)
     if proc_type == 5:
-        print "python $gmsim/workflow/scripts/submit_bb.py --binary --auto --srf %s"%run_name
-        call("python $gmsim/workflow/scripts/submit_bb.py --binary --auto --srf %s"%run_name, shell=True)
+        print "python /home/melody.zhu/slurm_gm_workflow/scripts/submit_bb.py --binary --auto --srf %s"%run_name
+        call("python /home/melody.zhu/slurm_gm_workflow/scripts/submit_bb.py --binary --auto --srf %s"%run_name, shell=True)
         call("echo 'submitted time: %s' >> %s"%(submitted_time,os.path.join(ch_log_dir,'BB.%s.log'%run_name)), shell=True)
     if proc_type == 6:
         #TODO: fix inconsistant naming in sub_imcalc.py
         tmp_path = os.path.join(mgmt_db_location,'Runs')
             
-        cmd = "python $gmsim/workflow/scripts/submit_imcalc.py --auto --sim_dir %s --i %s --mgmt_db %s --simple_output"%(tmp_path,run_name, mgmt_db_location)
+        cmd = "python /home/melody.zhu/slurm_gm_workflow/scripts/submit_imcalc.py --auto --sim_dir %s --i %s --mgmt_db %s --simple_output"%(tmp_path,run_name, mgmt_db_location)
         if extended_period == True:
             cmd = cmd + ' -e'
         print cmd

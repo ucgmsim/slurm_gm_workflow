@@ -21,7 +21,7 @@ echo $end_time
 #run test script and update mgmt_db
 #test before update
 timestamp=`date +%Y%m%d_%H%M%S`
-res=`$gmsim/workflow/scripts/test_emod3d.sh {{sim_dir}} {{srf_name}}`
+res=`/home/melody.zhu/slurm_gm_workflow/scripts/test_emod3d.sh {{sim_dir}} {{srf_name}}`
 if [[ $? == 0 ]]; then
     #passed
     echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} EMOD3D completed --run_name {{srf_name}} --force " >> {{mgmt_db_location}}/mgmt_db_queue/$timestamp\_$SLURM_JOBID
