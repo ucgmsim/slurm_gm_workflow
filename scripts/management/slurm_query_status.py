@@ -45,8 +45,9 @@ def get_db_tasks_to_be_run(db, retry_max=RETRY_MAX):
     db.execute('''SELECT proc_type, run_name, status_enum.state 
                   FROM status_enum, state 
                   WHERE state.status = status_enum.id
-                   AND status_enum.state IN ('created', 'completed') 
-                   AND state.retries < ?''', (retry_max,))
+                   AND ((status_enum.state = 'created' 
+                         AND state.retries < ?)
+                    OR status_enum.state = 'completed')''', (retry_max,))
     return db.fetchall()
 
 
