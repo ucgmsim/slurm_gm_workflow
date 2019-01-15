@@ -34,9 +34,9 @@ echo ___calculating simulations___
         fi
         #TODO: adjust this temporary code to use the update_db once merged
         cd {{mgmt_db_location}}/Runs/{{fault_name}}/{{sim_name}}
-        fd_name=`python -c "import params_base as pb; print pb.FD_STATLIST"`
+        fd_name=`python -c "from qcore import utils; p = utils.load_yaml('sim_params.yaml'); print p['FD_STATLIST']"`
         fd_count=`cat $fd_name | wc -l`
-        nt=`python -c "import params_base as pb; nt = float(pb.sim_duration)/float(pb.hf_dt);print int(nt)"`
+        nt=`python -c "from qcore import utils; d = utils.load_sim_params('sim_params.yaml', load_vm=False); print int(float(d.sim_duration) / float(d.hf.hf_dt))"`
         
         run_time=`python -c "from datetime import datetime; tdelta= datetime.strptime('$end_time', '$runtime_fmt') - datetime.strptime('$start_time', '$runtime_fmt'); print tdelta.total_seconds()/3600"`
 
@@ -66,3 +66,4 @@ echo ___calculating rrups___
 {% endif %}
 
 date
+

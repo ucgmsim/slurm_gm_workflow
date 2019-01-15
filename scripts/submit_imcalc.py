@@ -31,7 +31,6 @@ TIME = '00:30:00'
 DEFAULT_N_PROCESSES = 40
 DEFAULT_RRUP_OUTDIR = os.path.join('/home', getpass.getuser(), 'imcalc_rrup_out_{}'.format(
     datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d-%H-%M-%S')))
-PARAMS_BASE = 'params_base.py'
 VERSION = 'slurm'
 JOB = 'im_calc'
 ACCOUNT = 'nesi00213'
@@ -173,9 +172,8 @@ def get_fd_path(srf_filepath, sim_dir):
     run_name = get_fault_name(get_basename_without_ext(srf_filepath))
     if sim_dir is not None:
         fault_dir = os.path.join(sim_dir, run_name)
-        params_base = os.path.join(fault_dir, PARAMS_BASE)
         try:
-            fd_path = utils.load_py_cfg(params_base)['FD_STATLIST']
+            fd_path = utils.load_yaml(os.path.join(fault_dir, 'sim_params.yaml'))['FD_STATLIST']
             fd = "-fd {}".format(fd_path)
         except Exception as e:
             fd = SKIP
@@ -300,4 +298,5 @@ def main():
 
 if __name__ == '__main__':
     main()
+
 
