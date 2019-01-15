@@ -40,7 +40,7 @@ echo ___calculating simulations___
         
         run_time=`python -c "from datetime import datetime; tdelta= datetime.strptime('$end_time', '$runtime_fmt') - datetime.strptime('$start_time', '$runtime_fmt'); print tdelta.total_seconds()/3600"`
 
-        echo "{{sim_name}} IM_calc $SLURM_JOBID {{np}} $fd_count $nt $run_time $runtime_start $runtime_end" >> {{mgmt_db_location}}/Runs/{{fault_name}}/ch_log/IM_calc.$timestamp.$SLURM_JOBID.log
+        echo "{{sim_name}} IM_calc $SLURM_JOBID {{np}} $fd_count $nt $run_time $start_time $end_time" >> {{mgmt_db_location}}/Runs/{{fault_name}}/ch_log/IM_calc.$timestamp.$SLURM_JOBID.log
         #
     else
         #failed
