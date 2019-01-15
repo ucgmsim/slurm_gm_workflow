@@ -42,8 +42,6 @@ def submit_task(sim_dir, proc_type, run_name, db, mgmt_db_location ,binary_mode=
     lf_sim_dir = os.path.join(sim_dir,"LF/%s"%run_name)
     if proc_type == 1:
         #EMOD 3D
-        call("python $gmsim/workflow/scripts/submit_emod3d.py --set_params_only", shell=True)
-        print "python $gmsim/workflow/scripts/submit_emod3d.py --set_params_only"
         print "python $gmsim/workflow/scripts/submit_emod3d.py --auto --srf %s"%run_name
         call("python $gmsim/workflow/scripts/submit_emod3d.py --auto --srf %s"%run_name, shell=True)
         #save meta, TODO:replace proper db update when merge
@@ -64,8 +62,6 @@ def submit_task(sim_dir, proc_type, run_name, db, mgmt_db_location ,binary_mode=
     if proc_type == 4:
         #run the submit_post_emod3d before install_bb and submit_hf
         #TODO: fix this strange logic in the actual workflow
-
-        call("python $gmsim/workflow/scripts/submit_emod3d.py --set_params_only", shell=True)
         if default_hf_vs30_ref != None:
             print "python $gmsim/workflow/scripts/install_bb.py --v1d %s --hf_stat_vs_ref %s"%(default_1d_mod,default_hf_vs30_ref)
             call("python $gmsim/workflow/scripts/install_bb.py --v1d %s --hf_stat_vs_ref %s"%(default_1d_mod,default_hf_vs30_ref), shell=True)
