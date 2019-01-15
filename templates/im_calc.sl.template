@@ -29,8 +29,8 @@ echo ___calculating simulations___
         echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} IM_calculation completed --run_name {{sim_name}} --force" >> {{mgmt_db_location}}/mgmt_db_queue/$timestamp\_$SLURM_JOBID
         #save metadata for collection
         #TODO:fix the weird naming
-        if [[ ! -d {{mgmt_db_location}}/Runs/{{fault_name}}/ch_log ]]; then
-            mkdir {{mgmt_db_location}}/Runs/{{fault_name}}/ch_log
+        if [[ ! -d {{mgmt_db_location}}/Runs/{{fault_name}}/{{sim_name}}/ch_log ]]; then
+            mkdir {{mgmt_db_location}}/Runs/{{fault_name}}/{{sim_name}}/ch_log
         fi
         #TODO: adjust this temporary code to use the update_db once merged
         cd {{mgmt_db_location}}/Runs/{{fault_name}}/{{sim_name}}
@@ -40,7 +40,7 @@ echo ___calculating simulations___
         
         run_time=`python -c "from datetime import datetime; tdelta= datetime.strptime('$end_time', '$runtime_fmt') - datetime.strptime('$start_time', '$runtime_fmt'); print tdelta.total_seconds()/3600"`
 
-        echo "{{sim_name}} IM_calc $SLURM_JOBID {{np}} $fd_count $nt $run_time $start_time $end_time" >> {{mgmt_db_location}}/Runs/{{fault_name}}/ch_log/IM_calc.$timestamp.$SLURM_JOBID.log
+        echo "{{sim_name}} IM_calc $SLURM_JOBID {{np}} $fd_count $nt $run_time $start_time $end_time" >> {{mgmt_db_location}}/Runs/{{fault_name}}/{{sim_name}}/ch_log/IM_calc.$timestamp.$SLURM_JOBID.log
         #
     else
         #failed
