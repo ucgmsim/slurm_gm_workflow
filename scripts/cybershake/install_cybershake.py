@@ -32,6 +32,8 @@ def main():
         print "Error while parsing the config file, please double check inputs."
         sys.exit()
 
+    ldcfg.check_cfg_params_path(cybershake_cfg, 'dt', 'hf_dt')
+
     path_cybershake = args.path_cybershake
 
     sim_root_dir = os.path.join(path_cybershake, 'Runs/')
