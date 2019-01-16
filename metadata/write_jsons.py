@@ -92,7 +92,8 @@ def get_all_sims_dict(fault_dir):
                         result_dict[realization][sim_type].get('total_memory_usage') is None:
                     # Get the rlog dir for the current realization
                     cur_rlog_dir = [rlog_dir for rlog_dir in rlog_dirs if
-                                    realization in rlog_dir.split("/")][0]
+                                    realization in rlog_dir.split("/")]
+                    cur_rlog_dir = None if len(cur_rlog_dir) == 0 else cur_rlog_dir[0]
 
                     result_dict[realization][sim_type]['total_memory_usage'] = \
                         get_one_realization_memo_cores(cur_rlog_dir)
@@ -173,12 +174,10 @@ def write_json(data_dict, out_dir, out_name):
     :param out_name: output json file name
     :return:
     """
-    json_data = json.dumps(data_dict)
     abs_outpath = os.path.join(out_dir, out_name)
-
     try:
         with open(abs_outpath, 'w') as out_file:
-            out_file.write(json_data)
+            json.dump(data_dict, out_file)
     except Exception as e:
         sys.exit(e)
 
@@ -191,7 +190,7 @@ def write_fault_jsons(fault_dir, single_json):
     :return:
     """
     all_sims_dict = get_all_sims_dict(fault_dir)
-    if all_sims_dict != None:
+    if all_sims_dict is not None:
         out_dir = os.path.join(fault_dir, JSON_DIR)
         setup_dir(out_dir)
 
