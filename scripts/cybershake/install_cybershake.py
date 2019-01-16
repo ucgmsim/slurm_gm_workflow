@@ -5,6 +5,7 @@ import shared_workflow.load_config as ldcfg
 
 import argparse
 
+from qcore import validate_vm
 from scripts import install
 from scripts.management import create_mgmt_db
 # from shared_workflow.shared import *
@@ -21,6 +22,7 @@ def main():
     parser.add_argument("config", type=str, default=None,
                         help="a path to a config file that constains all the required values.")
     parser.add_argument("vm", type=str, default=None, help="the name of the Velocity Model.")
+    parser.add_argument("--n_rel", type=int, default=None, help="the number of realisations expected")
 
     args = parser.parse_args()
     try:
@@ -45,6 +47,8 @@ def main():
     vs30_file_path = stat_file_path.replace('.ll', '.vs30')
     vs30ref_file_path = stat_file_path.replace('.ll', '.vs30ref')
 
+    error_log = os.path.join(path_cybershake, "install_error.log")
+    error_fp = open(error_log, 'a')
     params_vel = 'params_vel.py'
 
     # vars
@@ -67,6 +71,13 @@ def main():
     run_name = source
     vel_mod_dir = os.path.join(vm_root_dir, source)
     # print vel_mod_dir
+    valid_vm, message = validate_vm.validate_vm(vel_mod_dir)
+    if not valid_vm:
+        message = "Error: VM {} failed {}".format(source, message)
+        print message
+        error_fp.write(message)
+        exit()
+
 
     params_vel_path = os.path.join(vel_mod_dir, params_vel)
 
@@ -76,18 +87,24 @@ def main():
     yes_model_params = False  # statgrid should normally be already generated with Velocity Model
     vel_mod_params_dir = vel_mod_dir
 
-    # srf_dir = srf_root_dir
     # get all srf from source
     srf_dir = os.path.join(os.path.join(srf_root_dir, source), "Srf")
     stoch_dir = os.path.join(os.path.join(srf_root_dir, source), "Stoch")
     list_srf = glob.glob(os.path.join(srf_dir, '*.srf'))
+    if args.n_rel is not None and len(list_srf) != args.n_rel:
+        message = "Error: fault {} failed. Number of realisations do not match number of SRF files".format(source)
+        print message
+        error_fp.write(message)
+        sys.exit()
 
     for srf in list_srf:
         # try to match find the stoch with same basename
         srf_name = os.path.splitext(os.path.basename(srf))[0]
         stoch_file_path = os.path.join(stoch_dir, srf_name + '.stoch')
         if not os.path.isfile(stoch_file_path):
-            print "Error: Corresponding Stock file is not found:\n%s" % stoch_file_path
+            message = "Error: Corresponding Stoch file is not found:\n{}".format(stoch_file_path)
+            print message
+            error_fp.write(message)
             sys.exit()
         else:
             # install pairs one by one to fit the new structure
