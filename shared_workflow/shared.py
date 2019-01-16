@@ -354,7 +354,7 @@ def exe(cmd, debug=True,shell=False, stdout=subprocess.PIPE,
     return out, err
 
 
-def submit_sl_script(script, process, status, mgmt_db_location, srf_name,
+def submit_sl_script(script, process, status, mgmt_db_loc, srf_name,
                      timestamp, submit_yes=False):
     """Submits the slurm script and udpates the management db"""
     if submit_yes:
@@ -371,19 +371,26 @@ def submit_sl_script(script, process, status, mgmt_db_location, srf_name,
                       "job most likely failed".format(jobid))
                 sys.exit()
 
-            # Update the db
-            db_queue_path = os.path.join(mgmt_db_location, "mgmt_db_queue")
-            cmd_name = os.path.join(db_queue_path, "%s_%s_q" % (timestamp, jobid))
-            # TODO: change this to use python3's format()
-            cmd = "python $gmsim/workflow/scripts/management/" \
-                  "update_mgmt_db.py {} {} {} --run_name {}  --job {}".format(
-                    mgmt_db_location, process, status, srf_name, jobid)
-            with open(cmd_name, 'w+') as f:
-                f.write(cmd)
-                f.close()
+            update_db_cmd(process, status, mgmt_db_loc, srf_name, jobid, timestamp)
+            return jobid
     else:
         print("User chose to submit the job manually")
 
+def update_db_cmd(process, status, mgmt_db_loc, srf_name, jobid, timestamp):
+    """Adds the command to update the mgmt db to the queue"""
+    # Update the db
+    if mgmt_db_loc is not None and os.path.isdir(mgmt_db_loc):
+        db_queue_path = os.path.join(mgmt_db_loc, "mgmt_db_queue")
+        cmd_name = os.path.join(db_queue_path, "%s_%s_q" % (timestamp, jobid))
+        cmd = "python $gmsim/workflow/scripts/management/" \
+              "update_mgmt_db.py {} {} {} --run_name {}  --job {}".format(
+            mgmt_db_loc, process, status, srf_name, jobid)
+        with open(cmd_name, 'w+') as f:
+            f.write(cmd)
+            f.close()
+    else:
+        print("{} is not a valid mgmt db location. No update cmd was created.".format(
+            mgmt_db_loc))
 
 ### functions mostly used in regression_test
 

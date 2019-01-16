@@ -1,5 +1,3 @@
-source machine_env.sh
-
 export IMPATH=$gmsim/IM_calculation
 export PYTHONPATH=$gmsim/qcore:/$PYTHONPATH:$IMPATH
 
@@ -23,27 +21,27 @@ echo ___calculating simulations___
     timestamp=`date +%Y%m%d_%H%M%S`
     end_time=`date +$runtime_fmt`
     res=`python $gmsim/workflow/scripts/im_calc_checkpoint.py {{mgmt_db_location}}/Runs {{sim_name}} --t s --v `
-#update mgmt_db
+    #update mgmt_db
     if [[ $? == 0 ]]; then
         #passed
         echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} IM_calculation completed --run_name {{sim_name}} --force" >> {{mgmt_db_location}}/mgmt_db_queue/$timestamp\_$SLURM_JOBID
         #save metadata for collection
         #TODO:fix the weird naming
-        if [[ ! -d {{mgmt_db_location}}/Runs/{{fault_name}}/ch_log ]]; then
-            mkdir {{mgmt_db_location}}/Runs/{{fault_name}}/ch_log
+        if [[ ! -d {{mgmt_db_location}}/Runs/{{fault_name}}/{{sim_name}}/ch_log ]]; then
+            mkdir {{mgmt_db_location}}/Runs/{{fault_name}}/{{sim_name}}/ch_log
         fi
         #TODO: adjust this temporary code to use the update_db once merged
         cd {{mgmt_db_location}}/Runs/{{fault_name}}/{{sim_name}}
-        fd_name=`python -c "import params_base as pb; print pb.FD_STATLIST"`
+        fd_name=`python -c "from qcore import utils; params = utils.load_sim_params('{{sim_dir}}/../sim_params.yaml'); print(params.FD_STATLIST)"`
         fd_count=`cat $fd_name | wc -l`
-        nt=`python -c "import params_base as pb; nt = float(pb.sim_duration)/float(pb.hf_dt);print int(nt)"`
+        nt=`python -c "from qcore import utils; params = utils.load_sim_params('{{sim_dir}}/../sim_params.yaml'); nt = float(params.sim_duration)/float(params.hf_dt); print(int(nt))"`
         
         run_time=`python -c "from datetime import datetime; tdelta= datetime.strptime('$end_time', '$runtime_fmt') - datetime.strptime('$start_time', '$runtime_fmt'); print tdelta.total_seconds()/3600"`
 
         # Get the number of pSA IMs and components out of the result csv file
-        psa_count=`python -c "with open({{sim_dir}}/../IM_calc/{{faul_name}}/{{fault_name}}.csv, 'r') as f: print(sum([1 for header in f.readline().rstrip().split(',') if 'pSA' in header]))"
-        components=`python -c "import pandas as pd; print(list(pd.read_csv({{sim_dir}}/../IM_calc/{{faul_name}}/{{fault_name}}.csv).component.unique().astype('U')))"`
-        echo "{{sim_name}} IM_calc $SLURM_JOBID {{np}} $fd_count $nt $run_time $start_time $end_time $psa_count $components" >> {{mgmt_db_location}}/Runs/{{fault_name}}/ch_log/IM_calc.$timestamp.$SLURM_JOBID.log
+        psa_count=`python -c "with open('{{sim_dir}}/../IM_calc/{{sim_name}}/{{sim_name}}.csv', 'r') as f: print(sum([1 for header in f.readline().rstrip().split(',') if 'pSA' in header]))"`
+        components=`python -c "import pandas as pd; print(list(pd.read_csv('{{sim_dir}}/../IM_calc/{{sim_name}}/{{sim_name}}.csv').component.unique().astype('U')))"`
+        echo "{{sim_name}} IM_calc $SLURM_JOBID {{np}} $fd_count $nt $run_time $start_time $end_time $psa_count $components" >> {{mgmt_db_location}}/Runs/{{fault_name}}/{{sim_name}}/ch_log/IM_calc.$timestamp.$SLURM_JOBID.{{sim_name}}.log
         #
     else
         #failed

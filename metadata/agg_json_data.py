@@ -32,6 +32,10 @@ class MetaConst(Enum):
     ny = "ny"
     nz = "nz"
 
+    im_pSA_count = "pSA_count"
+    im_components = "im_components"
+    im_components_count = "im_components_count"
+
 
 class SimTypeConst(Enum):
     BB = "BB"
@@ -123,6 +127,7 @@ def clean_df(df):
                 if MetaConst.run_time.value == meta_col:
                     rt_param = MetaConst.run_time.value
 
+                    # Convert column type to float
                     df[sim_type, rt_param] = np.asarray(
                         [(value.split(" ")[0] if type(value) is str else value)     # Handle np.nan values
                             for value in df[sim_type, rt_param].values],

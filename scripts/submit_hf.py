@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 """Script to create and submit a slurm script for HF"""
-import sys
 import os.path
 import argparse
 
