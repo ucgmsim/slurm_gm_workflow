@@ -71,7 +71,6 @@ if __name__ == '__main__':
     parser.add_argument("--auto", nargs="?", type=str, const=True)
     parser.add_argument('--account', type=str, default=default_account)
     parser.add_argument('--srf', type=str, default=None)
-    parser.add_argument('--set_params_only', nargs="?", type=str, const=True)
     args = parser.parse_args()
 
     workflow_config = load_config.load(
@@ -91,9 +90,7 @@ if __name__ == '__main__':
     wall_clock_limit = None
     # Get the srf(rup) name without extensions
     srf_name = os.path.splitext(os.path.basename(params.srf_file))[0]
-    if args.set_params_only:
-        set_runparams.create_run_params(srf_name)
-    elif args.srf is None or srf_name == args.srf:
+    if args.srf is None or srf_name == args.srf:
         print("not set_params_only")
         # get lf_sim_dir
         lf_sim_dir = os.path.join(params.sim_dir, 'LF')

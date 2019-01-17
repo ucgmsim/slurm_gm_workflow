@@ -29,18 +29,18 @@ echo ___calculating simulations___
         echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} IM_calculation completed --run_name {{sim_name}} --force" >> {{mgmt_db_location}}/mgmt_db_queue/$timestamp\_$SLURM_JOBID
         #save metadata for collection
         #TODO:fix the weird naming
-        if [[ ! -d {{mgmt_db_location}}/Runs/{{fault_name}}/ch_log ]]; then
-            mkdir {{mgmt_db_location}}/Runs/{{fault_name}}/ch_log
+        if [[ ! -d {{mgmt_db_location}}/Runs/{{fault_name}}/{{sim_name}}/ch_log ]]; then
+            mkdir {{mgmt_db_location}}/Runs/{{fault_name}}/{{sim_name}}/ch_log
         fi
         #TODO: adjust this temporary code to use the update_db once merged
         cd {{mgmt_db_location}}/Runs/{{fault_name}}/{{sim_name}}
-        fd_name=`python -c "import params_base as pb; print pb.FD_STATLIST"`
+        fd_name=`python -c "from qcore import utils; p = utils.load_yaml('sim_params.yaml'); print p['FD_STATLIST']"`
         fd_count=`cat $fd_name | wc -l`
-        nt=`python -c "import params_base as pb; nt = float(pb.sim_duration)/float(pb.hf_dt);print int(nt)"`
+        nt=`python -c "from qcore import utils; d = utils.load_sim_params('sim_params.yaml', load_vm=False); print int(float(d.sim_duration) / float(d.hf.hf_dt))"`
         
         run_time=`python -c "from datetime import datetime; tdelta= datetime.strptime('$end_time', '$runtime_fmt') - datetime.strptime('$start_time', '$runtime_fmt'); print tdelta.total_seconds()/3600"`
 
-        echo "{{sim_name}} IM_calc $SLURM_JOBID {{np}} $fd_count $nt $run_time $runtime_start $runtime_end" >> {{mgmt_db_location}}/Runs/{{fault_name}}/ch_log/IM_calc.$timestamp.$SLURM_JOBID.log
+        echo "{{sim_name}} IM_calc $SLURM_JOBID {{np}} $fd_count $nt $run_time $start_time $end_time" >> {{mgmt_db_location}}/Runs/{{fault_name}}/{{sim_name}}/ch_log/IM_calc.$timestamp.$SLURM_JOBID.log
         #
     else
         #failed
@@ -66,3 +66,4 @@ echo ___calculating rrups___
 {% endif %}
 
 date
+

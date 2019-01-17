@@ -82,7 +82,7 @@ def check_data(s1, s2):
     utils.setup_dir(TXT_DIR_2)
     s1.all2txt(prefix='./{}/'.format(TXT_DIR_1))
     s2.all2txt(prefix='./{}/'.format(TXT_DIR_2))
-    for f in os.listdir(TXT_DIR_1)[:50]:
+    for f in os.listdir(TXT_DIR_1)[:200]:
         out, err = shared.exe('diff {} {}'.format(os.path.join(TXT_DIR_1, f), os.path.join(TXT_DIR_2, f)))
         
     shutil.rmtree(TXT_DIR_1)
