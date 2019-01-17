@@ -1,7 +1,7 @@
-
 import sys
 import os
 import json
+
 
 def load(directory=os.path.dirname(os.path.abspath(__file__)), cfg_name="workflow_config.json"):
     #directory = os.path.dirname(os.path.abspath(__file__))
@@ -19,4 +19,8 @@ def load(directory=os.path.dirname(os.path.abspath(__file__)), cfg_name="workflo
         exit(1)
 
 
-
+def check_cfg_params_path(config_dict, *excludes):
+    for param in config_dict.keys():
+        if param not in excludes:
+            assert os.path.exists(config_dict[param])
+~                                                                        

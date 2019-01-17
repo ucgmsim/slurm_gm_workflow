@@ -109,7 +109,6 @@ if __name__ == '__main__':
     parser.add_argument("--auto", nargs="?", type=str,const=True)
     parser.add_argument('--account', type=str, default=default_account)
     parser.add_argument('--srf',type=str,default=None)
-    parser.add_argument('--set_params_only', nargs="?",type=str,const=True)
     args = parser.parse_args()
 
     try:
@@ -126,71 +125,66 @@ if __name__ == '__main__':
             submit_yes = False
         else:
             submit_yes = confirm("Also submit the job for you?")
-        print("params.srf_file", params.srf_file)
             #get the srf(rup) name without extensions
 
         srf_name = os.path.splitext(os.path.basename(params.srf_file))[0]
-        if args.set_params_only == True:
-            set_runparams.create_run_params(srf_name)
-        else:
         #if srf(variation) is provided as args, only create the slurm with same name provided
-            if args.srf is None or srf_name == args.srf:
-                print("not set_params_only")
-                #get lf_sim_dir
-                lf_sim_dir = os.path.join(params.sim_dir, 'LF')
-                sim_dir = params.sim_dir
-                nx = int(params.nx)
-                ny = int(params.ny)
-                nz = int(params.nz)
-                dt = float(params.dt)
-                sim_duration = float(params.sim_duration)
-                #default_core will be changed is user pars ncore
+        if args.srf is None or srf_name == args.srf:
+            #get lf_sim_dir
+            lf_sim_dir = os.path.join(params.sim_dir, 'LF')
+            sim_dir = params.sim_dir
+            nx = int(params.nx)
+            ny = int(params.ny)
+            nz = int(params.nz)
+            dt = float(params.dt)
+            sim_duration = float(params.sim_duration)
+            #default_core will be changed is user pars ncore
 
-                num_procs = args.ncore
-                total_est_core_hours = est_e3d.est_core_hours_emod3d(nx, ny, nz, dt, sim_duration)
-                estimated_wct, num_procs = est_e3d.est_wct(total_est_core_hours, num_procs, default_wct_scale)
-                print "Estimated WCT (scaled and rounded up):%s" % estimated_wct
+            num_procs = args.ncore
+            total_est_core_hours = est_e3d.est_core_hours_emod3d(nx, ny, nz, dt, sim_duration)
+            estimated_wct, num_procs = est_e3d.est_wct(total_est_core_hours, num_procs, default_wct_scale)
+            print "Estimated WCT (scaled and rounded up):%s" % estimated_wct
 
-            if args.auto == True:
-                created_scripts = write_sl_script(lf_sim_dir, sim_dir, srf_name, params.mgmt_db_location, run_time=estimated_wct, nb_cpus = num_procs)
-                jobid = submit_sl_script(created_scripts, submit_yes)
-            else:
-                if wct_set == False:
-                    wall_clock_limit = str(install.get_input_wc())
-                    wct_set = True
-                if wct_set == True:
-                    print "WCT set to: %s" % wall_clock_limit
-                created_scripts = write_sl_script(lf_sim_dir, sim_dir, srf_name, params.mgmt_db_location, run_time=wall_clock_limit, nb_cpus = num_procs)
-                jobid = submit_sl_script(created_scripts, submit_yes)
+        if args.auto == True:
+            created_scripts = write_sl_script(lf_sim_dir, sim_dir, srf_name, params.mgmt_db_location, run_time=estimated_wct, nb_cpus = num_procs)
+            jobid = submit_sl_script(created_scripts, submit_yes)
+        else:
+            if wct_set == False:
+                wall_clock_limit = str(install.get_input_wc())
+                wct_set = True
+            if wct_set == True:
+                print "WCT set to: %s" % wall_clock_limit
+            created_scripts = write_sl_script(lf_sim_dir, sim_dir, srf_name, params.mgmt_db_location, run_time=wall_clock_limit, nb_cpus = num_procs)
+            jobid = submit_sl_script(created_scripts, submit_yes)
 
-            #update the db if
-            if jobid != None:
-                try:
-                    int(jobid)
-                except:
-                    print "error while parsing the jobid, please check the scipt"
-                    sys.exit()
-                #cmd = "python $gmsim/workflow/scripts/management/update_mgmt_db.py %s EMOD3D queued --run_name %s --j %s"%(params.mgmt_db_location, srf_name,jobid)
-                #exe(cmd, debug=False)
+        #update the db if
+        if jobid != None:
+            try:
+                int(jobid)
+            except:
+                print "error while parsing the jobid, please check the scipt"
+                sys.exit()
+            #cmd = "python $gmsim/workflow/scripts/management/update_mgmt_db.py %s EMOD3D queued --run_name %s --j %s"%(params.mgmt_db_location, srf_name,jobid)
+            #exe(cmd, debug=False)
 
-                process = 'EMOD3D'
-                status = 'queued'
-                #echo to a queue instead of updating
-                #get queue location
-                db_queue_path = os.path.join(params.mgmt_db_location,"mgmt_db_queue")
-                cmd_name = os.path.join(db_queue_path, "%s_%s_q"%(timestamp,jobid))
-                cmd = "python $gmsim/workflow/scripts/management/update_mgmt_db.py " + params.mgmt_db_location + " EMOD3D " + " queued " + " --run_name " + srf_name + " --job " + jobid
-                with open(cmd_name, 'w+') as f:
-                    f.write(cmd)
-                    f.close()
-                #db = db_helper.connect_db(params.mgmt_db_location)
-                #while True:
-                #    try:
-                #        update_mgmt_db.update_db(db, process, status, job=jobid, run_name=srf_name)
-                #    except:
-                #        print("en error occured while trying to update DB, re-trying")
-                #        sleep(10)
-                #    else:
-                #        break
-                #db.connection.commit()
-                #db.connection.close()
+            process = 'EMOD3D'
+            status = 'queued'
+            #echo to a queue instead of updating
+            #get queue location
+            db_queue_path = os.path.join(params.mgmt_db_location,"mgmt_db_queue")
+            cmd_name = os.path.join(db_queue_path, "%s_%s_q"%(timestamp,jobid))
+            cmd = "python $gmsim/workflow/scripts/management/update_mgmt_db.py " + params.mgmt_db_location + " EMOD3D " + " queued " + " --run_name " + srf_name + " --job " + jobid
+            with open(cmd_name, 'w+') as f:
+                f.write(cmd)
+                f.close()
+            #db = db_helper.connect_db(params.mgmt_db_location)
+            #while True:
+            #    try:
+            #        update_mgmt_db.update_db(db, process, status, job=jobid, run_name=srf_name)
+            #    except:
+            #        print("en error occured while trying to update DB, re-trying")
+            #        sleep(10)
+            #    else:
+            #        break
+            #db.connection.commit()
+            #db.connection.close()

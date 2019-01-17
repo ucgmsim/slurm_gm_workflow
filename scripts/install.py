@@ -361,6 +361,7 @@ def action(version, sim_dir, event_name, run_name, run_dir, vel_mod_dir, srf_dir
         sim_params_dict['FD_STATLIST'] = fd_statlist
     else:
         print "Generation of statcords is skipped. You need to fix params_base.py manually"
+
     return root_params_dict, fault_params_dict, sim_params_dict, vm_params_dict
 
 
@@ -543,6 +544,7 @@ def main_local():
                                                                                               yes_model_params, fault_yaml_path, root_yaml_path)
 
     create_mgmt_db.create_mgmt_db([], sim_dir, srf_files=srf_file)
+    utils.setup_dir(os.path.join(sim_dir, 'mgmt_db_queue'))
 
     root_params_dict['mgmt_db_location'] = sim_dir
 
@@ -595,6 +597,7 @@ def main_remote(cfg):
     #TODO to implement when install_manual is merged
     root_params_dict, fault_params_dict, sim_params_dict, vm_params_dict = action(args.version, sim_dir, event_name, run_name, run_dir, vel_mod_dir, srf_dir, srf_file, stoch_file, params_vel_path, stat_file_path, vs30_file_path, vs30ref_file_path, MODEL_LAT, MODEL_LON, MODEL_ROT, hh, nx, ny, nz, sufx, sim_duration, vel_mod_params_dir, yes_statcords, yes_model_params, fault_yaml_path, root_yaml_path)
 
+    utils.setup_dir(os.path.join(sim_dir, 'mgmt_db_queue'))
     dump_all_yamls(sim_dir, root_params_dict, fault_params_dict, sim_params_dict, vm_params_dict)
 
     print "Installation completed"
@@ -663,3 +666,4 @@ if __name__ == '__main__':
             main_remote(cfg)
     else:
         main_local()
+
