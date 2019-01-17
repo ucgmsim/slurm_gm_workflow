@@ -194,9 +194,10 @@ def get_fd_path(srf_filepath, sim_dir):
     run_name = get_fault_name(get_basename_without_ext(srf_filepath))
     if sim_dir is not None:
         fault_dir = os.path.join(sim_dir, run_name)
-        params_base = os.path.join(fault_dir, PARAMS_BASE)
         try:
-            fd_path = utils.load_py_cfg(params_base)["FD_STATLIST"]
+            fd_path = utils.load_yaml(os.path.join(fault_dir, "sim_params.yaml"))[
+                "FD_STATLIST"
+            ]
             fd = "-fd {}".format(fd_path)
         except Exception as e:
             fd = SKIP

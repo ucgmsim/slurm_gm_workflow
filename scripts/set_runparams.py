@@ -80,7 +80,7 @@ if __name__ == '__main__':
     workflow_config = load_config.load(
         os.path.dirname(os.path.realpath(__file__)), "workflow_config.json")
     global_root = workflow_config["global_root"]
-    tools_dir = os.path.join(global_root, 'opt/maui/emod3d/3.0.4-gcc/bin')
+    tools_dir = workflow_config["bin_process_path"]
     emod3d_version = workflow_config["emod3d_version"]
 
     sim_dir = os.getcwd()

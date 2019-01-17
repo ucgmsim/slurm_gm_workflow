@@ -1,8 +1,8 @@
 #!/bin/bash
 
-if [[ $# -lt 3 ]];then
-    echo "please provide the list of vms to install, and path to cybershake folder"
-    echo "install_cybershake.sh /path/to/cybershake/root/ /path/to/cybershake/config /path/to/list_vms"
+if [[ $# -lt 4 ]];then
+    echo "please provide the list of vms to install, path to cybershake folder, and gmsim version"
+    echo "install_cybershake.sh /path/to/cybershake/root/ /path/to/cybershake/config /path/to/list_vms version"
     exit 1
 fi
 
@@ -20,10 +20,14 @@ cybershake_cfg=$2
 list_vm=`cat $3`
 echo $list_vm
 
+#gmsim version,eg.16.1
+version=$4
+echo $version
+
 #each vm match with multiple srf
 for vm in $list_vm;
 do
-    python $script_location/install_cybershake.py $cybershake_root $cybershake_cfg $vm
+    python $script_location/install_cybershake.py $cybershake_root $cybershake_cfg $vm --version $version
 done
 
 #list_source='ls 

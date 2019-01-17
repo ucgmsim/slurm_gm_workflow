@@ -2,8 +2,10 @@ import os
 import json
 
 # Shouldn't this be in shared or qcore?
-def load(directory=os.path.dirname(os.path.abspath(__file__)),
-         cfg_name="workflow_config.json"):
+def load(
+    directory=os.path.dirname(os.path.abspath(__file__)),
+    cfg_name="workflow_config.json",
+):
     print(directory)
     config_file = os.path.join(directory, cfg_name)
     try:
@@ -13,6 +15,13 @@ def load(directory=os.path.dirname(os.path.abspath(__file__)),
 
     except IOError:
         print("No %s available on %s" % (cfg_name, directory))
-        print("This is a fatal error. Please contact someone "
-              "from the software team.")
+        print(
+            "This is a fatal error. Please contact someone " "from the software team."
+        )
         exit(1)
+
+
+def check_cfg_params_path(config_dict, *excludes):
+    for param in config_dict.keys():
+        if param not in excludes:
+            assert os.path.exists(config_dict[param])

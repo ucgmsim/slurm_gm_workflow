@@ -508,6 +508,7 @@ def main_local():
         yes_model_params, fault_yaml_path, root_yaml_path)
 
     create_mgmt_db.create_mgmt_db([], sim_dir, srf_files=srf_file)
+    utils.setup_dir(os.path.join(sim_dir, 'mgmt_db_queue'))
 
     root_params_dict['mgmt_db_location'] = sim_dir
 
@@ -562,8 +563,8 @@ def main_remote(cfg):
         sim_duration, vel_mod_params_dir, yes_statcords, yes_model_params,
         fault_yaml_path, root_yaml_path)
 
-    dump_all_yamls(sim_dir, root_params_dict, fault_params_dict, sim_params_dict,
-                   vm_params_dict)
+    utils.setup_dir(os.path.join(sim_dir, 'mgmt_db_queue'))
+    dump_all_yamls(sim_dir, root_params_dict, fault_params_dict, sim_params_dict, vm_params_dict)
 
     print("Installation completed")
     show_instruction(sim_dir)
@@ -637,3 +638,4 @@ if __name__ == '__main__':
             main_remote(cfg)
     else:
         main_local()
+
