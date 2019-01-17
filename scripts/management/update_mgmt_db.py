@@ -5,7 +5,7 @@ A script that updates a slurm mgmt db and updates the status of a task
 """
 
 import argparse
-import db_helper
+from management import db_helper
 
 
 def update_db(db, process, status, job=None, run_name=None, error=None):

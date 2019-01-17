@@ -1,8 +1,4 @@
-#!/usr/bin/env python2
-
-import sys
-import os
-
+#!/usr/bin/env python
 from qcore.geo import *
 from shared_workflow.shared import *
 
@@ -23,7 +19,7 @@ def main(sim_params_dict, vm_params_dict, stat_file='default.ll', debug=False):
     outpath = sim_dir
     filename = 'fd%s' % sufx
 
-    print stat_file
+    print(stat_file)
 
     # arbitrary longlat station input
     ll_in = stat_file
@@ -31,10 +27,10 @@ def main(sim_params_dict, vm_params_dict, stat_file='default.ll', debug=False):
     gp_out = os.path.join(outpath, '%s.statcords' % filename)
     ll_out = os.path.join(outpath, '%s.ll' % filename)
 
-    print "From: %s" % stat_file
-    print "To:"
-    print "  %s" % gp_out
-    print "  %s" % ll_out
+    print("From: %s" % stat_file)
+    print("To:")
+    print("  %s" % gp_out)
+    print("  %s" % ll_out)
 
     # velocity model parameters
     nx = int(nx)
@@ -46,17 +42,17 @@ def main(sim_params_dict, vm_params_dict, stat_file='default.ll', debug=False):
 
     # retrieve in station names, latitudes and longitudes
     sname, slat, slon = get_stations(ll_in, locations=True)
-    slon = map(float, slon)
-    slat = map(float, slat)
+    slon = list(map(float, slon))
+    slat = list(map(float, slat))
 
     # convert ll to grid points
-    xy = ll2gp_multi(map(list, zip(slon, slat)), \
+    xy = ll2gp_multi(list(map(list, zip(slon, slat))),
                      mlon, mlat, mrot, nx, ny, hh, keep_outside=True)
 
     # store gridpoints and names if unique position
     sxy = []
     suname = []
-    for i in xrange(len(xy)):
+    for i in range(len(xy)):
         if xy[i] is None:
             if debug:
                 print('Station outside domain: %s' % (sname[i]))

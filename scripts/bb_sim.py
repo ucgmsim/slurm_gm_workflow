@@ -86,9 +86,9 @@ if args.lfvsref is None:
     # vs30ref from velocity model
     with open('%s/params_vel.json' % (args.lf_vm), 'r') as j:
         vm_conf = json.load(j)
-    lfvs = np.memmap('%s/vs3dfile.s' % (args.lf_vm), dtype = '<f4', \
-                     shape = (vm_conf['ny'], vm_conf['nz'], vm_conf['nx'])) \
-                    [lf.stations.y, 0, lf.stations.x] * 1000.0
+    lfvs = np.memmap('%s/vs3dfile.s' % (args.lf_vm), dtype='<f4',
+                     shape=(vm_conf['ny'], vm_conf['nz'], vm_conf['nx'])) \
+               [lf.stations.y, 0, lf.stations.x] * 1000.0
 else:
     # fixed vs30ref
     lfvs = np.ones(lf.stations.size, dtype=np.float32) * args.lfvsref
@@ -110,6 +110,7 @@ except AssertionError:
     if is_master:
         print("vsite file is missing stations")
         comm.Abort()
+
 
 # initialise output with general metadata
 def initialise(check_only=False):
@@ -243,7 +244,7 @@ for i, stat in enumerate(stations_todo):
     hf_acc = np.copy(hf.acc(stat.name, dt=bb_dt))
     pga = np.max(np.abs(hf_acc), axis=0) / 981.0
     # ideally remove loop
-    for c in xrange(3):
+    for c in range(3):
         hf_acc[:, c] = bwfilter(
             ampdeamp(
                 hf_acc[:, c],

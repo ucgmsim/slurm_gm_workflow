@@ -16,10 +16,10 @@ hf_run_name=$2
 srf_name=$3
 
 
-run_name=`python -c "from params_base import *; print run_name"`
-fd_ll_dir=`python -c "from params_base import *; print FD_STATLIST"`
+run_name=`python -c "from params_base import *; print(run_name)"`
+fd_ll_dir=`python -c "from params_base import *; print(FD_STATLIST)"`
 fd_ll=`basename $fd_ll_dir`
-hf_sim_dir=`python -c "import os; print os.path.join(os.path.join(os.path.join('$sim_dir','HF'), '$hf_run_name'), '$srf_name')"`
+hf_sim_dir=`python -c "import os; print(os.path.join(os.path.join(os.path.join('$sim_dir','HF'), '$hf_run_name'), '$srf_name'))"`
 hf_acc_dir=$hf_sim_dir/Acc
 
 cd $hf_acc_dir 2> /dev/null

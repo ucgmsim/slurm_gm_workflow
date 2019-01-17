@@ -11,8 +11,8 @@ node_size=80
 
 sim_dir=$1
 srf_name=$2
-run_name=`python -c "from params_base import *; print run_name"`
-lf_sim_dir=`python -c "import os; print os.path.join(os.path.join('$sim_dir','LF'), '$srf_name')"`
+run_name=`python -c "from params_base import *; print(run_name)"`
+lf_sim_dir=`python -c "import os; print(os.path.join(os.path.join('$sim_dir','LF'), '$srf_name'))"`
 lf_vel_dir=$lf_sim_dir/Vel
 
 cd $lf_vel_dir 2> /dev/null
@@ -24,8 +24,8 @@ fi
 
 cd $sim_dir
 
-run_name=`python -c "from params_base import *; print run_name"`
-fd_ll=`python -c "from params_base import *; print FD_STATLIST"`
+run_name=`python -c "from params_base import *; print(run_name)"`
+fd_ll=`python -c "from params_base import *; print(FD_STATLIST)"`
 
 #check for vel matches fd count
 fd_count=$(expr `cat $fd_ll | wc | awk '{print $1}'` \* 3)

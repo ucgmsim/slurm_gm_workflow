@@ -1,0 +1,12 @@
+{
+  "input_cols": [["BB","fd_count"], ["HF","nt"], ["BB", "cores"]],
+  "target_col": ["BB","core_hours"],
+
+  "units": [32, 32],
+  "dropout": 0.1,
+  "activation": "relu",
+
+  "n_epochs": 10,
+  "loss": "mae",
+  "metrics": ["mse", "mae"]
+}

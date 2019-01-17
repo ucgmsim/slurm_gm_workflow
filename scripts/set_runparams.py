@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 """
 Generates 'e3d.par' from the default set, appending new key value pairs of parameters.
 @author Viktor Polak, Sung Bae
@@ -13,17 +13,12 @@ import sys
 import os.path
 from os.path import basename
 
-sys.path.append(os.path.abspath(os.path.curdir))
-from shutil import copyfile
 from shared_workflow import shared
 from qcore import utils
 
 from shared_workflow import load_config
 
-workflow_config = load_config.load(os.path.dirname(os.path.realpath(__file__)), "workflow_config.json")
-global_root = workflow_config["global_root"]
-tools_dir = os.path.join(global_root, 'opt/maui/emod3d/3.0.4-gcc/bin')
-emod3d_version = workflow_config["emod3d_version"]
+sys.path.append(os.path.abspath(os.path.curdir))
 
 
 def create_run_params(sim_dir, srf_name=None):
@@ -82,5 +77,11 @@ def create_run_params(sim_dir, srf_name=None):
 
 
 if __name__ == '__main__':
+    workflow_config = load_config.load(
+        os.path.dirname(os.path.realpath(__file__)), "workflow_config.json")
+    global_root = workflow_config["global_root"]
+    tools_dir = workflow_config["bin_process_path"]
+    emod3d_version = workflow_config["emod3d_version"]
+
     sim_dir = os.getcwd()
     create_run_params(sim_dir)
