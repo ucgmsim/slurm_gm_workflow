@@ -1,20 +1,25 @@
 #!/usr/bin/env python3
 import json
+from typing import Tuple
+
 import numpy as np
 import keras
-
-from typing import Tuple
+import h5py
 from sklearn.model_selection import train_test_split
 
 
 class WCEstModel(object):
-
     def __init__(self, model_config: str = None):
         self.is_trained = False
         self._model_config = model_config
 
-    def train(self, X: np.ndarray, y: np.ndarray, val_split: float = None,
-              val_data: Tuple[np.ndarray, np.ndarray] = None):
+    def train(
+        self,
+        X: np.ndarray,
+        y: np.ndarray,
+        val_split: float = None,
+        val_data: Tuple[np.ndarray, np.ndarray] = None,
+    ):
         """Performs training of the model, if either val_split or val_data
         then validation is also performed and displayed (i.e. validation loss)
 
@@ -96,19 +101,31 @@ class NNWcEstModel(WCEstModel):
         self._model, self.hist = None, None
         self.train_data, self.val_data = None, None
 
-    def train(self, X: np.ndarray, y: np.ndarray, val_split: float = None,
-              val_data: Tuple[np.ndarray, np.ndarray] = None):
+        self._train_min, self._train_max = None, None
+
+    def train(
+        self,
+        X: np.ndarray,
+        y: np.ndarray,
+        val_split: float = None,
+        val_data: Tuple[np.ndarray, np.ndarray] = None,
+    ):
         """Trains the model, see WCEstModel.train for full doc"""
         if self.is_trained:
-            raise Exception("This model has already been trained. "
-                            "Each instance can only be trained once.")
+            raise Exception(
+                "This model has already been trained. "
+                "Each instance can only be trained once."
+            )
 
         X_train, y_train = X, y
 
+        # Save the min/max for each feature
+        self._train_min = X_train.min(axis=0)
+        self._train_max = X_train.max(axis=0)
+
         # Check if input data needs to be split into train/val set
         if val_split is not None and val_data is None:
-            X_train, X_val, y_train, y_val = train_test_split(
-                X, y, test_size=val_split)
+            X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=val_split)
             val_data = (X_val, y_val)
 
         # Build the model architecture
@@ -116,23 +133,34 @@ class NNWcEstModel(WCEstModel):
 
         # Optimizer
         loss_name = self._config_dict[self.loss_const]
-        model.compile(optimizer="adam", loss=loss_name,
-                      metrics=self._config_dict[self.metrics_const])
+        model.compile(
+            optimizer="adam",
+            loss=loss_name,
+            metrics=self._config_dict[self.metrics_const],
+        )
 
         # Train the model
-        self.hist = model.fit(X_train, y_train,
-                              epochs=self._config_dict[self.n_epochs_const],
-                              validation_data=val_data)
+        self.hist = model.fit(
+            X_train,
+            y_train,
+            epochs=self._config_dict[self.n_epochs_const],
+            validation_data=val_data,
+        )
 
-        print("Trained the model using {} samples giving a "
-              "{} loss of {:.5f} for the final epoch.".format(
-            X_train.shape[0], loss_name, self.hist.history['loss'][-1]))
+        print(
+            "Trained the model using {} samples giving a "
+            "{} loss of {:.5f} for the final epoch.".format(
+                X_train.shape[0], loss_name, self.hist.history["loss"][-1]
+            )
+        )
 
         if val_data is not None:
-            print("Validated the model using {} samples giving a "
-                  "{} loss of {:.5f} for the final epoch.".format(
-                val_data[0].shape[0], loss_name,
-                self.hist.history['val_loss'][-1]))
+            print(
+                "Validated the model using {} samples giving a "
+                "{} loss of {:.5f} for the final epoch.".format(
+                    val_data[0].shape[0], loss_name, self.hist.history["val_loss"][-1]
+                )
+            )
 
         self.train_data, self.val_data = (X_train, y_train), val_data
         self._model, self.is_trained = model, True
@@ -141,9 +169,11 @@ class NNWcEstModel(WCEstModel):
         """Builds the keras model architecture"""
         # Load the model specifications
         if self._model_config is None:
-            raise Exception("A model configuration has to be specified,"
-                            "unless loading from an existing save model, "
-                            "in which case from_saved_model should be used.")
+            raise Exception(
+                "A model configuration has to be specified,"
+                "unless loading from an existing save model, "
+                "in which case from_saved_model should be used."
+            )
 
         units = self._config_dict[self.units_const]
         dropout = self._config_dict[self.dropout_const]
@@ -154,12 +184,13 @@ class NNWcEstModel(WCEstModel):
 
         for ix, cur_n_unit in enumerate(units):
             if ix == 0:
-                model.add(keras.layers.Dense(cur_n_unit,
-                                             activation=activation,
-                                             input_dim=input_dim))
+                model.add(
+                    keras.layers.Dense(
+                        cur_n_unit, activation=activation, input_dim=input_dim
+                    )
+                )
             else:
-                model.add(keras.layers.Dense(cur_n_unit,
-                                             activation=activation))
+                model.add(keras.layers.Dense(cur_n_unit, activation=activation))
 
             # Add dropout
             if dropout is not None:
@@ -178,6 +209,13 @@ class NNWcEstModel(WCEstModel):
         if not self.is_trained:
             raise Exception("This model has not been trained!")
 
+        if np.any(X > self._train_max) or np.any(X < self._train_min):
+            print(
+                "WARNING: Some of the data specified for estimation exceeds the "
+                "limits of the data the model was trained. This will result in "
+                "incorrect estimation!"
+            )
+
         return self._model.predict(X)
 
     def save_model(self, output_file: str):
@@ -186,6 +224,11 @@ class NNWcEstModel(WCEstModel):
             raise Exception("This model has not been trained!")
 
         self._model.save(output_file)
+
+        with h5py.File(output_file, "r+") as f:
+            f["custom"] = np.concatenate(
+                (self._train_min[None, :], self._train_max[None, :]), axis=0
+            )
 
     def load_model(self, model_file: str):
         """Loads the full keras model (architecture + weights) from
@@ -197,4 +240,7 @@ class NNWcEstModel(WCEstModel):
         self._model = keras.models.load_model(model_file)
         self.is_trained = True
 
+        with h5py.File(model_file, "r+") as f:
+            self._train_min = f["custom"][0, :]
+            self._train_max = f["custom"][1, :]
 

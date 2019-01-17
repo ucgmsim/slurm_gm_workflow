@@ -12,9 +12,9 @@ import shutil
 import subprocess
 import sys
 import re
+import datetime
 
-from management import db_helper
-from management import update_mgmt_db
+import estimation.estimate_WC as wc
 
 if sys.version_info.major == 3:
     basestring = str
@@ -314,6 +314,39 @@ def confirm_name(name):
     show_horizontal_line()
     print("Do you wish to proceed?")
     return show_yes_no_question()
+
+
+def get_input_wc():
+    show_horizontal_line()
+    try:
+        user_input_wc = datetime.datetime.strptime(str(input(
+            "Enter the WallClock time limit you "
+            "would like to use: ")), "%H:%M:%S").time()
+    except ValueError:
+        print(r'Input value error. Input does not match format : %H:%M:%S')
+        print(r'Must not exceed the limit where: %H <= 23, %M <= 59, %S <= 59')
+        user_input_wc = get_input_wc()
+    show_horizontal_line()
+
+    return user_input_wc
+
+def set_wct(est_run_time, ncores, auto=False):
+    print("Estimated time: {} with {} number of cores".format(
+        wc.convert_to_wct(est_run_time), ncores))
+    if not auto:
+        print("Use the estimated wall clock time? (Minimum of 5 mins, "
+              "otherwise adds a 10% overestimation to ensure "
+              "the job completes)")
+        use_estimation = show_yes_no_question()
+    else:
+        use_estimation = True
+
+    if use_estimation:
+        wct = wc.get_wct(est_run_time)
+    else:
+        wct = str(get_input_wc())
+    print("WCT set to: %s" % wct)
+    return wct
 
 
 def add_name_suffix(name, yes):

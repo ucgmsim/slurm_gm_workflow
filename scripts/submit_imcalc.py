@@ -22,8 +22,9 @@ from datetime import datetime
 from jinja2 import Template, Environment, FileSystemLoader
 
 import im_calc_checkpoint as checkpoint
-from qcore import utils
-from shared_workflow.shared import exe, submit_sl_script, update_db_cmd
+from qcore import utils, shared
+from estimation.estimate_WC import get_IM_comp_count, est_IM_chours_single
+from shared_workflow.shared import exe, submit_sl_script, update_db_cmd, set_wct
 
 timestamp_format = "%Y%m%d_%H%M%S"
 timestamp = datetime.now().strftime(timestamp_format)
@@ -62,6 +63,7 @@ COMPS = ["geom", "000", "090", "ver", "ellipsis"]
 # TODO: rrup output_dir the csv to each individual simulation folder
 # TODO: one rupture distance calc per fault
 # TODO: remove relative paths on sl.template
+
 
 def write_sl(name_context_list, submit=False, mgmt_db_loc=None):
     """Writes the slrum script to file and submits if specifed"""
@@ -265,8 +267,8 @@ def main():
         const="-s",
         default="",
         help="Please add '-s' to indicate if you want to output the big summary csv "
-             "only(no single station csvs). Default outputting both single station and "
-             "the big summary csvs",
+        "only(no single station csvs). Default outputting both single station and "
+        "the big summary csvs",
     )
     parser.add_argument(
         "-o",
@@ -344,7 +346,7 @@ def main():
     args = parser.parse_args()
 
     # Load the yaml params
-    params = utils.load_sim_params('sim_params.yaml')
+    params = utils.load_sim_params("sim_params.yaml")
 
     if args.srf_dir is not None:
         utils.setup_dir(args.rrup_out_dir)
@@ -373,7 +375,18 @@ def main():
         sim_faults = map(get_fault_name, sim_run_names)
         sim_dirs = zip(sim_waveform_dirs, sim_run_names, sim_faults)
 
-
+        # Does not overwrite user-specified time
+        wct = args.time
+        if args.auto or args.time == TIME:
+            print("Running wall clock estimation for IM sim")
+            est_core_hours, est_run_time = est_IM_chours_single(
+                len(shared.get_stations(params.FD_STATLIST)),
+                int(float(params.sim_duration) / float(params.hf_dt)),
+                [args.comp],
+                100 if args.extended_period else 15,
+                DEFAULT_N_PROCESSES,
+            )
+            wct = set_wct(est_run_time, DEFAULT_N_PROCESSES, args.auto)
 
         # sim
         name_context_list = split_and_generate_slurms(
@@ -393,7 +406,7 @@ def main():
             job_name=args.job_name,
             account=args.account,
             nb_cpus=args.ntasks,
-            wallclock_limit=args.time,
+            wallclock_limit=wct,
             exe_time=args.exe_time,
             mail=args.mail,
             memory=args.memory,
