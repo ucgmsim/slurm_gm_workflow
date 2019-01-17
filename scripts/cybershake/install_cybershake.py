@@ -29,7 +29,7 @@ def main():
         # try to read the config file
         cybershake_cfg = ldcfg.load(os.path.dirname(args.config), os.path.basename(args.config))
     except:
-        print "Error while parsing the config file, please double check inputs."
+        print("Error while parsing the config file, please double check inputs.")
         sys.exit()
 
     ldcfg.check_cfg_params_path(cybershake_cfg, 'dt', 'hf_dt')
@@ -94,12 +94,11 @@ def main():
         srf_name = os.path.splitext(os.path.basename(srf))[0]
         stoch_file_path = os.path.join(stoch_dir, srf_name + '.stoch')
         if not os.path.isfile(stoch_file_path):
-            print "Error: Corresponding Stock file is not found:\n%s" % stoch_file_path
+            print("Error: Corresponding Stock file is not found:\n%s" % stoch_file_path)
             sys.exit()
         else:
             # install pairs one by one to fit the new structure
             sim_dir = os.path.join(os.path.join(sim_root_dir, source), srf_name)
-            print "!!!!SIM_DIR:%s" % sim_dir
             # srf_files = []
             # stoch_files = []
             # srf_files.append(srf)
@@ -123,7 +122,7 @@ def main():
             install.dump_all_yamls(sim_dir, root_params_dict, fault_params_dict, sim_params_dict, vm_params_dict)
 
             # make symbolic link after install sim folder
-            cmd = "ln -s %s %s" % (srf_root_dir, os.path.join(sim_dir, 'Src'))
+            # cmd = "ln -s %s %s" % (srf_root_dir, os.path.join(sim_dir, 'Src'))
             # print cmd
 
 
