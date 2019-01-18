@@ -15,7 +15,7 @@ echo ___calculating simulations___
     start_time=`date +$runtime_fmt`
     echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} IM_calculation running --run_name {{sim_name}} --j $SLURM_JOBID" >> {{mgmt_db_location}}/mgmt_db_queue/$timestamp\_$SLURM_JOBID
     #run the script
-    time python2 $IMPATH/calculate_ims.py {{sim_dir}}/Acc/BB.bin b -o {{sim_dir}}/../IM_calc/ -np {{np}} -i {{sim_name}} -r {{fault_name}} -c {{comp}} -t s {{extended}} {{simple}}
+    time python $IMPATH/calculate_ims.py {{sim_dir}}/Acc/BB.bin b -o {{sim_dir}}/../IM_calc/ -np {{np}} -i {{sim_name}} -r {{fault_name}} -c {{comp}} -t s {{extended}} {{simple}}
 
 #test before update mgmt_db
     timestamp=`date +%Y%m%d_%H%M%S`
@@ -55,14 +55,14 @@ echo ___calculating simulations___
 echo ___calculating observed____
 {% for obs_dir, obs_name, fault_name in obs_dirs %}
     echo {{obs_dir}}
-	time python2 $IMPATH/calculate_ims.py {{obs_dir}}/*/*/accBB a -o {{obs_dir}}/../IM_calc/ -np {{np}} -i {{obs_name}} -r {{fault_name}} -c {{comp}} -t o {{extended}} {{simple}}
+	time python $IMPATH/calculate_ims.py {{obs_dir}}/*/*/accBB a -o {{obs_dir}}/../IM_calc/ -np {{np}} -i {{obs_name}} -r {{fault_name}} -c {{comp}} -t o {{extended}} {{simple}}
 {% endfor %}
 {% endif %}
 
 {% if rrup_files %}
 echo ___calculating rrups___
 {% for srf_file, srf_output, fd in rrup_files %}
-	time python2 $IMPATH/calculate_rrups.py -np {{np}} -o {{output_dir}}/{{srf_output}}.csv {{station_file}} {{srf_file}} {{fd}} 
+	time python $IMPATH/calculate_rrups.py -np {{np}} -o {{output_dir}}/{{srf_output}}.csv {{station_file}} {{srf_file}} {{fd}}
 {% endfor %}
 {% endif %}
 
