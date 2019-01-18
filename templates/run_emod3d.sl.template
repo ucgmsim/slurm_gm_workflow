@@ -1,7 +1,3 @@
-
-#
-source machine_env.sh
-
 #updating the stats in managementDB
 if [[ ! -d {{mgmt_db_location}}/mgmt_db_queue ]]; then
     #create the queue folder if not exist
@@ -28,18 +24,15 @@ if [[ $? == 0 ]]; then
     if [[ ! -d {{sim_dir}}/ch_log ]]; then
         mkdir {{sim_dir}}/ch_log
     fi  
-    run_time=`python -c "from datetime import datetime; tdelta= datetime.strptime('$end_time', '$runtime_fmt') - datetime.strptime('$start_time', '$runtime_fmt'); print tdelta.total_seconds()/3600"`
-    nt=`python -c "from qcore import utils; d = utils.load_sim_params('sim_params.yaml', load_vm=False); print int(float(d.sim_duration) / float(d.dt))"`
-    nx=`python -c "import os; from qcore import utils; d = utils.load_sim_params('sim_params.yaml'); print d.nx"`
-    ny=`python -c "import os; from qcore import utils; d = utils.load_sim_params('sim_params.yaml'); print d.ny"`
-    nz=`python -c "import os; from qcore import utils; d = d = utils.load_sim_params('sim_params.yaml'); print d.nz"`
+    run_time=`python -c "from datetime import datetime; tdelta= datetime.strptime('$end_time', '$runtime_fmt') - datetime.strptime('$start_time', '$runtime_fmt'); print(tdelta.total_seconds()/3600)"`
+    nt=`python -c "from qcore import utils; d = utils.load_sim_params('sim_params.yaml', load_vm=False); print(int(float(d.sim_duration) / float(d.dt)))"`
+    nx=`python -c "import os; from qcore import utils; d = utils.load_sim_params('sim_params.yaml'); print(d.nx)"`
+    ny=`python -c "import os; from qcore import utils; d = utils.load_sim_params('sim_params.yaml'); print(d.ny)"`
+    nz=`python -c "import os; from qcore import utils; d = d = utils.load_sim_params('sim_params.yaml'); print(d.nz)"`
     #save meta data
     echo "{{srf_name}} LF $SLURM_NTASKS $run_time $nt $nx $ny $nz $start_time $end_time" >> {{sim_dir}}/ch_log/LF.$timestamp.$SLURM_JOBID.log
 else
     echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} EMOD3D failed --run_name {{srf_name}} --error '$res' --force " >> {{mgmt_db_location}}/mgmt_db_queue/$timestamp\_$SLURM_JOBID   
 fi
-##source ./version
-##TODO:re-enable wct after proper fix
-##echo "Saving execution time"
-##python $BINPROCESS/wct.py -a $start_time $end_time
+
 

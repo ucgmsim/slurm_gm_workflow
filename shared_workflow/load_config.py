@@ -1,12 +1,12 @@
-
-import sys
 import os
 import json
 
-def load(directory=os.path.dirname(os.path.abspath(__file__)), cfg_name="workflow_config.json"):
-    #directory = os.path.dirname(os.path.abspath(__file__))
-    print directory
-    #config_file = os.path.join(directory, "workflow_config.json")
+# Shouldn't this be in shared or qcore?
+def load(
+    directory=os.path.dirname(os.path.abspath(__file__)),
+    cfg_name="workflow_config.json",
+):
+    print(directory)
     config_file = os.path.join(directory, cfg_name)
     try:
         with open(config_file) as f:
@@ -14,9 +14,14 @@ def load(directory=os.path.dirname(os.path.abspath(__file__)), cfg_name="workflo
             return config_dict
 
     except IOError:
-        print "No %s available on %s" %(cfg_name,directory)
-        print "This is a fatal error. Please contact someone from the software team."
+        print("No %s available on %s" % (cfg_name, directory))
+        print(
+            "This is a fatal error. Please contact someone " "from the software team."
+        )
         exit(1)
 
 
-
+def check_cfg_params_path(config_dict, *excludes):
+    for param in config_dict.keys():
+        if param not in excludes:
+            assert os.path.exists(config_dict[param])

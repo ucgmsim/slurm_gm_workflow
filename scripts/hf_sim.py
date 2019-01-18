@@ -170,7 +170,7 @@ args = comm.bcast(args, root = master)
 # if not args.independent:
 #     args.seed += rank
 
-print ("Rank %d seed: %d" %(rank, args.seed))
+print("Rank %d seed: %d" % (rank, args.seed))
 
 nt = int(round(args.duration / args.dt))
 stations = np.loadtxt(
@@ -241,7 +241,7 @@ def initialise(check_only=False):
             vm = args.site_vm_dir
         else:
             vm = args.velocity_model
-        s64 = np.array(map(os.path.basename, [args.stoch_file, vm]), dtype="|S64")
+        s64 = np.array(list(map(os.path.basename, [args.stoch_file, vm])), dtype="|S64")
         # station metadata
         stat_head = np.zeros(
             stations.size,
@@ -372,7 +372,7 @@ def run_hf(local_statfile, n_stat, idx_0, velocity_model=args.velocity_model):
     )
 
     # run HF binary
-    p = Popen([args.sim_bin], stdin=PIPE, stderr=PIPE)
+    p = Popen([args.sim_bin], stdin=PIPE, stderr=PIPE, universal_newlines=True)
     stderr = p.communicate(stdin)[1]
 
     # load vs
@@ -394,7 +394,7 @@ def run_hf(local_statfile, n_stat, idx_0, velocity_model=args.velocity_model):
     # write e_dist and vs to file
     with open(args.out_file, "r+b") as out:
         out.seek(HEAD_SIZE + idx_0 * HEAD_STAT)
-        for i in xrange(n_stat):
+        for i in range(n_stat):
             out.seek(HEAD_STAT - 2 * FLOAT_SIZE, 1)
             e_dist[i].tofile(out)
             vs.tofile(out)
@@ -433,7 +433,7 @@ t0 = MPI.Wtime()
 in_stats = mkstemp()[1]
 if args.seed >= 0:
     vm = args.velocity_model
-    for s in xrange(work.size):
+    for s in range(work.size):
         if args.site_vm_dir != None:
             vm = os.path.join(args.site_vm_dir, "%s.1d" % (stations_todo[s]["name"]))
         np.savetxt(in_stats, work[s : s + 1], fmt="%f %f %s")
@@ -444,7 +444,7 @@ elif args.seed == -1:
     # have to be careful if checkpointing, work is not always consecutive
     c0 = 0
     for c_work_idx in np.split(work_idx, np.where(np.diff(work_idx) != 1)[0] + 1):
-        for s in xrange(0, c_work_idx.size, MAX_STATLIST):
+        for s in range(0, c_work_idx.size, MAX_STATLIST):
             n_stat = min(MAX_STATLIST, c_work_idx.size - s)
             np.savetxt(in_stats, work[c0 + s : c0 + s + n_stat], fmt="%f %f %s")
             run_hf(in_stats, n_stat, c_work_idx[s])
