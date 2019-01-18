@@ -182,7 +182,7 @@ def split_and_generate_slurms(
         if not sim_dirs:
             srf_name = None
         else:
-            srf_name = zip(*sim_dirs)[1][i:last_line_index]
+            srf_name = list(zip(*sim_dirs))[1][i:last_line_index]
         name_context_list.append((name, context, srf_name))
         i += max_lines
 
@@ -372,9 +372,9 @@ def main():
         sim_waveform_dirs = checkpoint.checkpoint_wrapper(
             args.sim_dir, sim_waveform_dirs, "s"
         )
-        sim_run_names = map(os.path.basename, map(os.path.dirname, sim_waveform_dirs))
-        sim_faults = map(get_fault_name, sim_run_names)
-        sim_dirs = zip(sim_waveform_dirs, sim_run_names, sim_faults)
+        sim_run_names = list(map(os.path.basename, map(os.path.dirname, sim_waveform_dirs)))
+        sim_faults = list(map(get_fault_name, sim_run_names))
+        sim_dirs = list(zip(sim_waveform_dirs, sim_run_names, sim_faults))
 
         # Does not overwrite user-specified time
         wct = args.time
@@ -382,7 +382,7 @@ def main():
             print("Running wall clock estimation for IM sim")
             est_core_hours, est_run_time = est_IM_chours_single(
                 len(shared.get_stations(params.FD_STATLIST)),
-                int(float(params.sim_duration) / float(params.hf_dt)),
+                int(float(params.sim_duration) / float(params.hf.hf_dt)),
                 [args.comp],
                 100 if args.extended_period else 15,
                 DEFAULT_N_PROCESSES,
@@ -454,9 +454,9 @@ def main():
         obs_waveform_dirs = checkpoint.checkpoint_wrapper(
             args.obs_dir, obs_waveform_dirs, "o"
         )
-        obs_run_names = map(os.path.basename, obs_waveform_dirs)
-        obs_faults = map(get_fault_name, obs_run_names)
-        obs_dirs = zip(obs_waveform_dirs, obs_run_names, obs_faults)
+        obs_run_names = list(map(os.path.basename, obs_waveform_dirs))
+        obs_faults = list(map(get_fault_name, obs_run_names))
+        obs_dirs = list(zip(obs_waveform_dirs, obs_run_names, obs_faults))
         # obs
         name_context_list = split_and_generate_slurms(
             [],

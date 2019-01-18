@@ -34,7 +34,7 @@ echo ___calculating simulations___
         cd {{mgmt_db_location}}/Runs/{{fault_name}}/{{sim_name}}
         fd_name=`python -c "from qcore import utils; params = utils.load_sim_params('{{sim_dir}}/../sim_params.yaml'); print(params.FD_STATLIST)"`
         fd_count=`cat $fd_name | wc -l`
-        nt=`python -c "from qcore import utils; params = utils.load_sim_params('{{sim_dir}}/../sim_params.yaml'); nt = float(params.sim_duration)/float(params.hf_dt); print(int(nt))"`
+        nt=`python -c "from qcore import utils; params = utils.load_sim_params('{{sim_dir}}/../sim_params.yaml'); nt = float(params.sim_duration)/float(params.hf.hf_dt); print(int(nt))"`
         
         run_time=`python -c "from datetime import datetime; tdelta= datetime.strptime('$end_time', '$runtime_fmt') - datetime.strptime('$start_time', '$runtime_fmt'); print tdelta.total_seconds()/3600"`
 
