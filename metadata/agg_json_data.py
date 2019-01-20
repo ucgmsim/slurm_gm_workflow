@@ -143,7 +143,7 @@ def clean_df(df):
                 # Count the number of components calculated
                 elif meta_col == MetaConst.im_comp.value:
                     df.loc[:, (sim_type, meta_col)] = [
-                        get_IM_comp_count(str_list, real)
+                        get_IM_comp_count_from_str(str_list, real)
                         for real, str_list in df.loc[
                             :, (sim_type, meta_col)
                         ].iteritems()
