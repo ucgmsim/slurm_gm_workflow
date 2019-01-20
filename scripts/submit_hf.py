@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 """Script to create and submit a slurm script for HF"""
-import sys
 import os.path
 import argparse
 
@@ -178,22 +177,9 @@ if __name__ == '__main__':
                   "Using default WCT {}".format(default_wct))
             wct = default_wct
         else:
-            est_core_hours, est_run_time = wc.estimate_HF_WC_single(
+            est_core_hours, est_run_time = wc.est_HF_chours_single(
                 fd_count, nsub_stoch, nt, ncore)
-            wct = wc.get_wct(est_run_time)
-            print("Estimated time: {} with {} number of cores".format(
-                wc.convert_to_wct(est_run_time), ncore))
-
-            print("Use the estimated wall clock time? (Minimum of 5 mins, "
-                  "otherwise adds a 10% overestimation to ensure "
-                  "the job completes)")
-            use_estimation = show_yes_no_question()
-
-            if use_estimation:
-                wct = wc.get_wct(est_run_time)
-            else:
-                wct = str(install.get_input_wc())
-            print("WCT set to: %s" % wct)
+            wct = set_wct(est_run_time, ncore, args.auto)
 
         hf_sim_dir = os.path.join(params.sim_dir, 'HF')
 

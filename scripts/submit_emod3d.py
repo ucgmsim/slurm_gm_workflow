@@ -102,32 +102,14 @@ if __name__ == '__main__':
             print("Number of cores is different from default "
                   "number of cores. Estimation will be less accurate.")
 
-        est_core_hours, est_run_time = wc.estimate_LF_WC_single(
+        est_core_hours, est_run_time = wc.est_LF_chours_single(
             int(params.nx), int(params.ny), int(params.nz),
             int(float(params.sim_duration) / float(params.dt)), n_cores)
-        print("Estimated WCT {}".format(
-            wc.convert_to_wct(est_run_time)))
+        wc = set_wct(est_run_time, n_cores, args.auto)
 
-        if args.auto:
-            script = write_sl_script(
-                lf_sim_dir, sim_dir, srf_name, params.mgmt_db_location,
-                run_time=wc.get_wct(est_run_time), nb_cpus=n_cores)
-        else:
-            # Get the wall clock time from the user
-            if wall_clock_limit is None:
-                print("Use the estimated wall clock time? (Minimum of "
-                      "5 mins, otherwise adds a 10% overestimation to "
-                      "ensure the job completes)")
-                use_estimation = show_yes_no_question()
-                if use_estimation:
-                    wall_clock_limit = wc.get_wct(est_run_time)
-                else:
-                    wall_clock_limit = str(install.get_input_wc())
-                print("WCT set to: %s" % wall_clock_limit)
-
-            script = write_sl_script(
-                lf_sim_dir, sim_dir, srf_name, params.mgmt_db_location,
-                run_time=wall_clock_limit, nb_cpus=n_cores)
+        script = write_sl_script(
+            lf_sim_dir, sim_dir, srf_name, params.mgmt_db_location,
+            run_time=wc, nb_cpus=n_cores)
 
         submit_sl_script(script, 'EMOD3D', 'queued', params.mgmt_db_location,
                          srf_name, timestamp, submit_yes=submit_yes)
