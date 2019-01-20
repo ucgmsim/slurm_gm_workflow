@@ -217,21 +217,21 @@ def write_json(data_dict, out_dir, out_name):
 
 def write_fault_jsons(fault_dir, args):
     """write json file(s) for a single fault"""
-    all_sims_dict = get_all_sims_dict(fault_dir, args)
-    if all_sims_dict is not None:
-        out_dir = os.path.join(fault_dir, JSON_DIR)
-        setup_dir(out_dir)
-
-        # Single JSON file per fault and it already exists,
-        # skip the fault if --ignore_existing is set
-        if (
+    # Single JSON file per fault and it already exists,
+    # skip the fault if --ignore_existing is set
+    out_dir = os.path.join(fault_dir, JSON_DIR)
+    if (
             args.single_json
             and args.ignore_existing
             and os.path.isfile(os.path.join(out_dir, ALL_META_JSON))
-        ):
-            if args.verbose:
-                print("Skipped metadata collection " "for fault {}".format(fault_dir))
-            return
+    ):
+        if args.verbose:
+            print("Skipped metadata collection " "for fault {}".format(fault_dir))
+        return
+
+    all_sims_dict = get_all_sims_dict(fault_dir, args)
+    if all_sims_dict is not None:
+        setup_dir(out_dir)
 
         if args.single_json:
             write_json(all_sims_dict, out_dir, ALL_META_JSON)
