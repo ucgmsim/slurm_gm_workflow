@@ -9,6 +9,16 @@ from shared_workflow import load_config
 from shared_workflow.shared import *
 
 
+sys.path.append(os.path.abspath(os.path.curdir))
+
+workflow_config = load_config.load(os.path.dirname(os.path.realpath(__file__)), "workflow_config.json")
+global_root = workflow_config["global_root"]
+tools_dir = os.path.join(global_root, 'opt/maui/emod3d/3.0.4-gcc/bin')
+emod3d_version = workflow_config["emod3d_version"]
+V_MOD_1D_DIR = os.path.join(global_root, 'VelocityModel', 'Mod-1D')
+params = utils.load_sim_params('sim_params.yaml')
+root_dict = utils.load_yaml(params.root_yaml_path)
+
 def q0():
     show_horizontal_line()
     print("Do you want site-specific computation? "
@@ -94,35 +104,23 @@ def store_params(root_dict):
         f.write("%s=%s\n" % (k, val))
     f.close()
 
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--v1d', default=None, type=str,
-                        help="the full path pointing to the generic v1d file")
-    parser.add_argument('--site_v1d_dir', default=None, type=str,
-                        help="the to the directory containing site specific "
-                             "files, hf_stat_vs_ref must be provied as well if "
-                             "this is provided")
-    parser.add_argument('--hf_stat_vs_ref', default=None, type=str,
-                        help="site_v1d_dir must be provied as well "
-                             "if this is provided")
-    args = parser.parse_args()
 
+def install_bb(v1d, site_v1d_dir, hf_stat_vs_ref):
     show_horizontal_line(c="*")
     print(" " * 37 + "EMOD3D HF/BB Preparationi Ver.slurm")
     show_horizontal_line(c="*")
 
-    root_dict = utils.load_yaml(params.root_yaml_path)
     root_dict['bb'] = {}
 
-    if args.v1d is not None:
-        v_mod_1d_selected = args.v1d
+    if v1d is not None:
+        v_mod_1d_selected = v1d
         root_dict['bb']['site_specific'] = False
         root_dict['v_mod_1d_name'] = v_mod_1d_selected
     # TODO:add in logic for site specific as well, if the user provided as args
-    elif args.site_v1d_dir is not None and args.hf_stat_vs_ref is not None:
+    elif site_v1d_dir is not None and hf_stat_vs_ref is not None:
         v_mod_1d_path, hf_stat_vs_ref = q1_site_specific(
             os.path.dirname(params.stat_file),
-            hf_stat_vs_ref=args.hf_stat_vs_ref, v1d_mod_dir=args.site_v1d_dir)
+            hf_stat_vs_ref=hf_stat_vs_ref, v1d_mod_dir=site_v1d_dir)
 
         root_dict['bb']['site_specific'] = True
         root_dict['v_mod_1d_name'] = v_mod_1d_path
@@ -145,19 +143,21 @@ def main():
     utils.dump_yaml(root_dict, params.root_yaml_path)
 
 
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--v1d', default=None, type=str,
+                        help="the full path pointing to the generic v1d file")
+    parser.add_argument('--site_v1d_dir', default=None, type=str,
+                        help="the to the directory containing site specific "
+                             "files, hf_stat_vs_ref must be provied as well if "
+                             "this is provided")
+    parser.add_argument('--hf_stat_vs_ref', default=None, type=str,
+                        help="site_v1d_dir must be provied as well "
+                             "if this is provided")
+    args = parser.parse_args()
+
+    install_bb(args.v1d, args.site_v1d_dir, args.hf_stat_vs_ref)
+
+
 if __name__ == "__main__":
-    sys.path.append(os.path.abspath(os.path.curdir))
-
-    params = utils.load_sim_params('sim_params.yaml')
-
-    workflow_config = load_config.load(
-        os.path.dirname(os.path.realpath(__file__)),
-        "workflow_config.json")
-    global_root = workflow_config["global_root"]
-    tools_dir = os.path.join(global_root, 'opt/maui/emod3d/3.0.4-gcc/bin')
-    emod3d_version = workflow_config["emod3d_version"]
-    V_MOD_1D_DIR = os.path.join(global_root, 'VelocityModel', 'Mod-1D')
-
-    old_params = True
-
     main()
