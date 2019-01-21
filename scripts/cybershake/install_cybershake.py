@@ -52,7 +52,6 @@ def main():
     vs30ref_file_path = stat_file_path.replace('.ll', '.vs30ref')
 
     error_log = os.path.join(path_cybershake, "install_error.log")
-    error_fp = open(error_log, 'a')
     params_vel = 'params_vel.py'
 
     source = args.vm
@@ -68,7 +67,8 @@ def main():
     if not valid_vm:
         message = "Error: VM {} failed {}".format(source, message)
         print message
-        error_fp.write(message)
+        with open(error_log, 'a') as error_fp:
+            error_fp.write(message)
         exit()
 
 
@@ -86,8 +86,9 @@ def main():
     list_srf = glob.glob(os.path.join(srf_dir, '*.srf'))
     if args.n_rel is not None and len(list_srf) != args.n_rel:
         message = "Error: fault {} failed. Number of realisations do not match number of SRF files".format(source)
-        print message
-        error_fp.write(message)
+        print(message)
+        with open(error_log, 'a') as error_fp:
+            error_fp.write(message)
         sys.exit()
     
     fault_yaml_path = os.path.join(sim_root_dir, 'fault_params.yaml')
@@ -99,7 +100,8 @@ def main():
         if not os.path.isfile(stoch_file_path):
             message = "Error: Corresponding Stoch file is not found:\n{}".format(stoch_file_path)
             print message
-            error_fp.write(message)
+            with open(error_log, 'a') as error_fp:
+                error_fp.write(message)
             sys.exit()
         else:
             # install pairs one by one to fit the new structure
