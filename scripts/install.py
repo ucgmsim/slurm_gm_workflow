@@ -525,9 +525,10 @@ def action(version, sim_dir, event_name, run_name, run_dir, vel_mod_dir,
     else:
         print("Generation of statcords is skipped. "
               "You need to fix params_base.py manually")
+    print("installing bb")
 
     install_bb(vel_mod_dir, site_v1d_dir, hf_stat_vs_ref, stat_file_path, root_params_dict)
-
+    print("installing bb finished")
     return root_params_dict, fault_params_dict, sim_params_dict, vm_params_dict
 
 
@@ -571,9 +572,7 @@ def q_wallclock():
 def get_input_wc():
     show_horizontal_line()
     try:
-        user_input_wc = datetime.datetime.strptime(str(input(
-            "Enter the WallClock time limit you "
-            "would like to use: ")), "%H:%M:%S").time()
+        user_input_wc = datetime.datetime.strptime(str(input("Enter the WallClock time limit you would like to use: ")), "%H:%M:%S").time()
     except ValueError:
         print(r'Input value error. Input does not match format : %H:%M:%S')
         print(r'Must not exceed the limit where: %H <= 23, %M <= 59, %S <= 59')
