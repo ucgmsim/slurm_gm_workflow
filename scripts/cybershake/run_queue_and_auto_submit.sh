@@ -14,11 +14,25 @@ trap "echo Exited!; exit;" SIGINT SIGTERM
 while [ 1 ];
 do
     #run the commands queued up first, before submit
-    cmd="$gmsim/workflow/scripts/cybershake/run_db_queue.sh $path_sim_root"
-    echo $cmd
-    $cmd
-
-    cmd="python $gmsim/workflow/scripts/cybershake/auto_submit.py $path_sim_root --config $cybershake_cfg "
+    while [[ `ls $path_sim_root/mgmt_db_queue/*` ]]
+    do
+        #if folder not exsist, create
+        if [[ ! -d /tmp/cer ]];then
+            echo "creating /tmp/cer/"
+            mkdir /tmp/cer
+            chmod 777 /tmp/cer
+        fi
+        cmd="$gmsim/workflow/scripts/cybershake/run_db_queue.sh $path_sim_root"
+        echo $cmd
+        $cmd
+    done
+    
+    if [[ ! -d /tmp/cer ]];then
+        echo "creating /tmp/cer/"
+        mkdir /tmp/cer
+        chmod 777 /tmp/cer/
+    fi
+    cmd="python $gmsim/workflow/scripts/cybershake/auto_submit.py $path_sim_root --config $cybershake_cfg --user `whoami`"
     echo $cmd
     $cmd
     sleep $interval

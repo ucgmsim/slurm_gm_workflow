@@ -20,12 +20,15 @@ RETRY_MAX = 2
 t_status = {'R': 'running', 'PD': 'queued'}
 
 
-def get_queued_tasks():
-    cmd = "squeue -A nesi00213 -o '%A %t' -h"
+def get_queued_tasks(user=None):
+    if user != None:
+        cmd = "squeue -A nesi00213 -o '%A %t' -h" + " -u " + user
+    else:
+        cmd = "squeue -A nesi00213 -o '%A %t' -h"
     process = Popen(shlex.split(cmd), stdout=PIPE)
     (output, err) = process.communicate()
     exit_code = process.wait()
-
+    
     return output
 
 
@@ -42,8 +45,9 @@ def get_db_tasks_to_be_run(db, retry_max=RETRY_MAX):
     db.execute('''SELECT proc_type, run_name, status_enum.state 
                   FROM status_enum, state 
                   WHERE state.status = status_enum.id
-                   AND status_enum.state IN ('created', 'completed') 
-                   AND state.retries < ?''', (retry_max,))
+                   AND ((status_enum.state = 'created' 
+                         AND state.retries < ?)
+                    OR status_enum.state = 'completed')''', (retry_max,))
     return db.fetchall()
 
 

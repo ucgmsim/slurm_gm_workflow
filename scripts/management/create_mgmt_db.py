@@ -26,9 +26,11 @@ def get_procs(db):
 
 
 def create_mgmt_db(realisations, f, srf_files=[]):
-    additonal_realisations = [os.path.splitext(
-        os.path.basename(srf))[0] for srf in srf_files]
+    # for manual install, only one srf will be passed to srf_files as a string
+    if isinstance(srf_files, str):
+        srf_files = [srf_files]
 
+    additonal_realisations = [os.path.splitext(os.path.basename(srf))[0] for srf in srf_files]
     realisations.extend(additonal_realisations)
 
     if len(realisations) == 0:
@@ -42,7 +44,7 @@ def create_mgmt_db(realisations, f, srf_files=[]):
             insert_task(db, run_name, proc[0])
 
     db.connection.commit()
-
+    return db
 
 def insert_task(db, run_name, proc):
     db.execute('''INSERT OR IGNORE INTO
@@ -62,8 +64,9 @@ def main():
     f = args.run_folder
     realisations = args.realisations
     
-    create_mgmt_db(realisations, f)
-
+    db = create_mgmt_db(realisations, f)
+    db.connection.close()
+    
 
 if __name__ == '__main__':
     main()

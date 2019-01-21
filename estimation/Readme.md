@@ -14,42 +14,71 @@ or a model directory has to be specified manually
 Estimation of wall clock is already included in the 
 slurm script creation for simulation  
   
-For once off estimation the *estimate_LF_WC_single*, *estimate_HF_WC_single* 
-and *estimate_BB_WC_single* functions from estimate_WC.py can be used  
+For one off estimation the *est_LF_chours_single*, *est_HF_chours_single*, *est_BB_chours_single* 
+and *est_IM_chours_single* functions from estimate_WC.py can be used  
 ```
 import estimation.estimate_WC as wc
-print(wc.estimate_LF_WC_single(1000, 1000, 100, 2500, 160))
+print(wc.est_LF_chours_single(1000, 1000, 100, 2500, 160))
 ```
 
 The signatures for the estimation functions are:
 
 ```
-def estimate_LF_WC_single(
-        nx: int, ny: int, nz: int, nt: int, n_cores: int,
-        model_dir: str = LF_MODEL_DIR, model_prefix: str = MODEL_PREFIX,
-        scaler_prefix: str = SCALER_PREFIX):
+def est_LF_chours_single(
+    nx: int,
+    ny: int,
+    nz: int,
+    nt: int,
+    n_cores: int,
+    model_dir: str = LF_MODEL_DIR,
+    model_prefix: str = MODEL_PREFIX,
+    scaler_prefix: str = SCALER_PREFIX,
+):
         pass
         
-def estimate_HF_WC_single(
-        fd_count: int, nsub_stoch: float, nt: int, model_dir: str = HF_MODEL_DIR,
-        model_prefix: str = MODEL_PREFIX, scaler_prefix: str = SCALER_PREFIX):
+def est_HF_chours_single(
+    fd_count: int,
+    nsub_stoch: float,
+    nt: int,
+    n_cores: int,
+    model_dir: str = HF_MODEL_DIR,
+    model_prefix: str = MODEL_PREFIX,
+    scaler_prefix: str = SCALER_PREFIX,
+):
         pass
         
-def estimate_BB_WC_single(
-        fd_count: int, nt: int, model_dir: str = BB_MODEL_DIR,
-        model_prefix: str = MODEL_PREFIX, scaler_prefix: str = SCALER_PREFIX):
+def est_BB_chours_single(
+    fd_count: int,
+    nt: int,
+    n_cores: int,
+    model_dir: str = BB_MODEL_DIR,
+    model_prefix: str = MODEL_PREFIX,
+    scaler_prefix: str = SCALER_PREFIX,
+):
         pass
+
+def est_IM_chours_single(
+    fd_count: int,
+    nt: int,
+    comp: List[str],
+    pSA_count: int,
+    n_cores: int,
+    model_dir: str = IM_MODEL_DIR,
+    model_prefix: str = MODEL_PREFIX,
+    scaler_prefix: str = SCALER_PREFIX,
+):
+    pass
 ```
 
-These all return the number of core hours, to convert that to the wall clock 
-time format use the *convert_to_wct* function. To convert and add some extra buffer,
-use the *get_wct* function.
+These all return the number of estimated core hours and run time (core house/number of cores), 
+to convert that to the wall clock time format use the *convert_to_wct* function. 
+To convert and add some extra buffer, use the *get_wct* function.
 
 ```
-def convert_to_wct(core_hours):
+def convert_to_wct(run_time):
     pass
     
-def get_wct(core_hours, overestimate_factor=0.1):
+def get_wct(run_time, overestimate_factor=0.1):
     pass
 ``` 
 
@@ -64,7 +93,7 @@ which will create a folder names "jsons" in each fault simulation folder. This j
 then contains a "all_sims.json" file, which has all the metadata for the faults realisations runs.
 E.g.
 ```
-python2 write_jsons.py /nesi/nobackup/nesi00213/RunFolder/Cybershake/v18p6_batched/v18p6_exclude_1k_batch_2/Runs/ -sj
+python3 write_jsons.py -sj --n_procs 4 /nesi/nobackup/nesi00213/RunFolder/Cybershake/v18p6_batched/v18p6_exclude_1k_batch_2/Runs/
 ```
 
 2) Combine all the "all_sims.json" files using the *agg_json_data.py* script, which for a given run
@@ -74,7 +103,7 @@ then these are either filled with np.nan for numerical columns or None.
 The resulting dataframe is then saved as a .csv file
 E.g.
 ```
-python3 agg_json_data.py /nesi/nobackup/nesi00213/RunFolder/Cybershake/v18p6/Runs/ /home/cbs51/code/tmp/output.csv
+python3 agg_json_data.py --n_procs 4 /nesi/nobackup/nesi00213/RunFolder/Cybershake/v18p6/Runs/ /home/cbs51/code/tmp/output.csv
 ```
 
 It is worth noting that loading that .csv into a dataframe requires some changes from the default arguments
@@ -93,7 +122,11 @@ df = pd.read_csv(input_file, index_col=[0], header=[0, 1])
 #### Training the model
 
 The training of the different models (LF, HF, BB) is done using the *train_model.py* script, which takes a
-**config file** and the input data (either as directory or single input files). 
+**config file** and the input data (either as directory or single input files). E.g.
+```
+./train_model.py --config ./configs/nn_model_config_IM.json -i ./labelled_data/latest_data/cybershake_v18p6_rerun.csv -od ./models/IM/ --show_loss -v
+```
+
 The input data is the saved dataframes from the previous step.   
 The config file determines the architecture of the neural network, i.e. the columns used for training, target column, number of layers and units, activation function and dropout. 
 It also specifies how to train the model, i.e. number of epochs, loss function and metrics to record. 

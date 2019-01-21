@@ -8,22 +8,6 @@ from qcore import utils
 from shared_workflow import load_config
 from shared_workflow.shared import *
 
-sys.path.append(os.path.abspath(os.path.curdir))
-
-params = utils.load_params('root_params.yaml', 'fault_params.yaml',
-                           'sim_params.yaml')
-utils.update(params, utils.load_params(
-    os.path.join(params.vel_mod_dir, 'vm_params.yaml')))
-
-workflow_config = load_config.load(os.path.dirname(os.path.realpath(__file__)),
-                                   "workflow_config.json")
-global_root = workflow_config["global_root"]
-tools_dir = os.path.join(global_root, 'opt/maui/emod3d/3.0.4-gcc/bin')
-emod3d_version = workflow_config["emod3d_version"]
-V_MOD_1D_DIR = os.path.join(global_root, 'VelocityModel', 'Mod-1D')
-
-old_params = True
-
 
 def q0():
     show_horizontal_line()
@@ -127,7 +111,7 @@ def main():
     print(" " * 37 + "EMOD3D HF/BB Preparationi Ver.slurm")
     show_horizontal_line(c="*")
 
-    root_dict = utils.load_yaml('root_params.yaml')
+    root_dict = utils.load_yaml(params.root_yaml_path)
     root_dict['bb'] = {}
 
     if args.v1d is not None:
@@ -158,18 +142,22 @@ def main():
             root_dict['bb']['site_specific'] = False
             root_dict['v_mod_1d_name'] = v_mod_1d_selected
 
-    if old_params:
-        if len([params.srf_file]) > 1:
-            print("Info: You have specified multiple SRF files.")
-            print("      A single hf_kappa(=%s) and hf_sdrop(=%s) specified "
-                  "in params.py will be used for all "
-                  "SRF files." % (params.hf.hf_kappa, params.hf.hf_sdrop))
-            print("       If you need to specific hf_kappa and hf_sdrop value "
-                  "for each SRF, add hf_kappa_list and hf_sdrop_list to "
-                  "params_base.py")
-
-    utils.dump_yaml(root_dict, os.path.join(params.sim_dir, 'root_params.yaml'))
+    utils.dump_yaml(root_dict, params.root_yaml_path)
 
 
 if __name__ == "__main__":
+    sys.path.append(os.path.abspath(os.path.curdir))
+
+    params = utils.load_sim_params('sim_params.yaml')
+
+    workflow_config = load_config.load(
+        os.path.dirname(os.path.realpath(__file__)),
+        "workflow_config.json")
+    global_root = workflow_config["global_root"]
+    tools_dir = os.path.join(global_root, 'opt/maui/emod3d/3.0.4-gcc/bin')
+    emod3d_version = workflow_config["emod3d_version"]
+    V_MOD_1D_DIR = os.path.join(global_root, 'VelocityModel', 'Mod-1D')
+
+    old_params = True
+
     main()

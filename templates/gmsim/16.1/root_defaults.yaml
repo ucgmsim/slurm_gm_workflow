@@ -9,3 +9,4 @@ bb:
   fmin: 0.2
   fmidbot: 0.5
 flo: 0.25
+dt: 0.02

@@ -13,17 +13,16 @@ import sys
 import os.path
 from os.path import basename
 
-sys.path.append(os.path.abspath(os.path.curdir))
 from shared_workflow import shared
 from qcore import utils
 
 from shared_workflow import load_config
 
+sys.path.append(os.path.abspath(os.path.curdir))
 
 def create_run_params(sim_dir, srf_name=None):
     sys.path.append(sim_dir)
-    params = utils.load_params('root_params.yaml', 'fault_params.yaml', 'sim_params.yaml')
-    utils.update(params, utils.load_params(os.path.join(params.vel_mod_dir, 'vm_params.yaml')))
+    params = utils.load_sim_params('sim_params.yaml')
     e3d_yaml = os.path.join(workflow_config['templates_dir'], 'gmsim', params.version, 'emod3d_defaults.yaml')
     e3d_dict = utils.load_yaml(e3d_yaml)
     # skip all logic if a specific srf_name is provided
@@ -80,7 +79,7 @@ if __name__ == '__main__':
     workflow_config = load_config.load(
         os.path.dirname(os.path.realpath(__file__)), "workflow_config.json")
     global_root = workflow_config["global_root"]
-    tools_dir = os.path.join(global_root, 'opt/maui/emod3d/3.0.4-gcc/bin')
+    tools_dir = workflow_config["bin_process_path"]
     emod3d_version = workflow_config["emod3d_version"]
 
     sim_dir = os.getcwd()
