@@ -6,6 +6,7 @@ import argparse
 import shared_workflow.load_config as ldcfg
 from qcore import utils
 
+from qcore import validate_vm
 from scripts import install
 from scripts.management import create_mgmt_db
 # from shared_workflow.shared import *
@@ -22,6 +23,7 @@ def main():
     parser.add_argument("config", type=str, default=None,
                         help="a path to a config file that constains all the required values.")
     parser.add_argument("vm", type=str, default=None, help="the name of the Velocity Model.")
+    parser.add_argument("--n_rel", type=int, default=None, help="the number of realisations expected")
 
     args = parser.parse_args()
     try:
@@ -57,19 +59,8 @@ def main():
     vs30_file_path = stat_file_path.replace('.ll', '.vs30')
     vs30ref_file_path = stat_file_path.replace('.ll', '.vs30ref')
 
+    error_log = os.path.join(path_cybershake, "install_error.log")
     params_vel = 'params_vel.py'
-
-    # commented out because we now get dt and hf_dt from templated/gmsim/version/root_defaults.yaml
-    # vars
-    # if 'dt' in cybershake_cfg:
-    #     dt = cybershake_cfg['dt']
-    # else:
-    #     dt = default_dt
-    #
-    # if 'hf_dt' in cybershake_cfg:
-    #     hf_dt = cybershake_cfg['hf_dt']
-    # else:
-    #     hf_dt = default_hf_dt
 
     source = args.vm
 
@@ -80,6 +71,14 @@ def main():
     run_name = source
     vel_mod_dir = os.path.join(vm_root_dir, source)
     # print vel_mod_dir
+    valid_vm, message = validate_vm.validate_vm(vel_mod_dir)
+    if not valid_vm:
+        message = "Error: VM {} failed {}".format(source, message)
+        print message
+        with open(error_log, 'a') as error_fp:
+            error_fp.write(message)
+        exit()
+
 
     params_vel_path = os.path.join(vel_mod_dir, params_vel)
 
@@ -89,11 +88,16 @@ def main():
     yes_model_params = False  # statgrid should normally be already generated with Velocity Model
     vel_mod_params_dir = vel_mod_dir
 
-    # srf_dir = srf_root_dir
     # get all srf from source
     srf_dir = os.path.join(os.path.join(srf_root_dir, source), "Srf")
     stoch_dir = os.path.join(os.path.join(srf_root_dir, source), "Stoch")
     list_srf = glob.glob(os.path.join(srf_dir, '*.srf'))
+    if args.n_rel is not None and len(list_srf) != args.n_rel:
+        message = "Error: fault {} failed. Number of realisations do not match number of SRF files".format(source)
+        print(message)
+        with open(error_log, 'a') as error_fp:
+            error_fp.write(message)
+        sys.exit()
     
     fault_yaml_path = os.path.join(sim_root_dir, 'fault_params.yaml')
     root_yaml_path = os.path.join(path_cybershake, 'root_params.yaml')
@@ -102,19 +106,14 @@ def main():
         srf_name = os.path.splitext(os.path.basename(srf))[0]
         stoch_file_path = os.path.join(stoch_dir, srf_name + '.stoch')
         if not os.path.isfile(stoch_file_path):
-            print("Error: Corresponding Stock file is not found:\n%s" % stoch_file_path)
+            message = "Error: Corresponding Stoch file is not found:\n{}".format(stoch_file_path)
+            print message
+            with open(error_log, 'a') as error_fp:
+                error_fp.write(message)
             sys.exit()
         else:
             # install pairs one by one to fit the new structure
             sim_dir = os.path.join(os.path.join(sim_root_dir, source), srf_name)
-            # srf_files = []
-            # stoch_files = []
-            # srf_files.append(srf)
-            # stoch_files.append(stoch_file_path)
-            #
-            # srf_stoch_pairs = zip(srf_files, stoch_files)
-            # print srf_stoch_pairs
-            # print list_srf
             root_params_dict, fault_params_dict, sim_params_dict, vm_params_dict = install.action(version, sim_dir, event_name, run_name, run_dir, vel_mod_dir, srf_dir, srf, stoch_file_path,
                        params_vel_path, stat_file_path, vs30_file_path, vs30ref_file_path, MODEL_LAT, MODEL_LON,
                        MODEL_ROT, hh, nx, ny, nz, sufx, sim_duration, vel_mod_params_dir, yes_statcords,

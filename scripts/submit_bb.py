@@ -123,22 +123,9 @@ if __name__ == '__main__':
             nt = int(float(params.sim_duration) / float(params.hf.hf_dt))
             fd_count = len(shared.get_stations(params.FD_STATLIST))
 
-            est_core_hours, est_run_time = wc.estimate_BB_WC_single(
+            est_core_hours, est_run_time = wc.est_BB_chours_single(
                 fd_count, nt, ncores)
-            wct = wc.get_wct(est_run_time)
-            print("Estimated time: {} with {} number of cores".format(
-                wc.convert_to_wct(est_run_time), ncores))
-
-            print("Use the estimated wall clock time? (Minimum of 5 mins, "
-                  "otherwise adds a 10% overestimation to ensure "
-                  "the job completes)")
-            use_estimation = show_yes_no_question()
-
-            if use_estimation:
-                wct = wc.get_wct(est_run_time)
-            else:
-                wct = str(install.get_input_wc())
-            print("WCT set to: %s" % wct)
+            wct = set_wct(est_run_time, ncores, args.auto)
 
         bb_sim_dir = os.path.join(params.sim_dir, 'BB')
         # TODO: save status as HF. refer to submit_hf

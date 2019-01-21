@@ -1,0 +1,16 @@
+{
+  "input_cols": [["IM_calc","fd_count"],
+                ["IM_calc","nt"],
+                ["IM_calc","im_components_count"],
+                ["IM_calc","pSA_count"],
+                ["IM_calc", "cores"]],
+  "target_col": ["IM_calc","core_hours"],
+
+  "units": [32, 32],
+  "dropout": null,
+  "activation": "relu",
+
+  "n_epochs": 15,
+  "loss": "mae",
+  "metrics": ["mse", "mae"]
+}
