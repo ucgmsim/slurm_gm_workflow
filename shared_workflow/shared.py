@@ -375,7 +375,7 @@ def exe(cmd, debug=True,shell=False, stdout=subprocess.PIPE,
     if debug:
         print(' '.join(cmd))
 
-    p=subprocess.Popen(cmd, shell=shell, stdout=stdout, stderr=stderr)
+    p=subprocess.Popen(cmd, shell=shell, stdout=stdout, stderr=stderr, encoding='utf-8')
     out, err = p.communicate()
     if debug:
         if out:
@@ -396,6 +396,7 @@ def submit_sl_script(script, process, status, mgmt_db_loc, srf_name,
         if len(res[1]) == 0:
             # no errors, return the job id
             jobid = res[0].split()[-1]
+            print("jobid is", jobid)
 
             try:
                 int(jobid)

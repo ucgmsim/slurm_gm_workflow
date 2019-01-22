@@ -80,8 +80,10 @@ def submit_task(sim_dir, proc_type, run_name, db, mgmt_db_location, binary_mode=
     #     else:
     #         cmd = "python $gmsim/workflow/scripts/install_bb.py --v1d %s" % default_1d_mod
     #         print(cmd)
-    #         call(cmd, shell=True)
-        hf_cmd = "python $gmsim/workflow/scripts/submit_hf.py --binary --auto --srf %s" % run_name
+    #         call(cmd, shell=True)      
+        hf_cmd = "python $gmsim/workflow/scripts/submit_hf.py --auto --srf %s" % run_name
+        if not binary_mode:
+            hf_cmd += ' -- ascii'
         if hf_seed is not None:
             hf_cmd = "{} --seed {}".format(hf_cmd, hf_seed)
         if rand_reset:
@@ -92,7 +94,9 @@ def submit_task(sim_dir, proc_type, run_name, db, mgmt_db_location, binary_mode=
              shell=True)
 
     if proc_type == 5:
-        cmd = "python $gmsim/workflow/scripts/submit_bb.py --binary --auto --srf %s" % run_name
+        cmd = "python $gmsim/workflow/scripts/submit_bb.py --auto --srf %s" % run_name
+        if not binary_mode:
+            cmd += ' -- ascii'
         print(cmd)
         call(cmd, shell=True)
         call("echo 'submitted time: %s' >> %s" % (submitted_time, os.path.join(ch_log_dir, 'BB.%s.log' % run_name)),
@@ -229,3 +233,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
