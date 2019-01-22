@@ -8,7 +8,9 @@ import argparse
 from scripts.management import update_mgmt_db
 from subprocess import Popen, PIPE
 import shlex
-from scripts.management.db_helper import Process
+from scripts.management import db_helper
+
+Process =  db_helper.Process
 
 N_TASKS_TO_RUN = 20
 RETRY_MAX = 2
@@ -21,13 +23,15 @@ t_status = {'R': 'running', 'PD': 'queued'}
 
 def get_queued_tasks(user=None):
     if user != None:
+        print("user", user)
         cmd = "squeue -A nesi00213 -o '%A %t' -h" + " -u " + user
+        print(cmd)
     else:
         cmd = "squeue -A nesi00213 -o '%A %t' -h"
-    process = Popen(shlex.split(cmd), stdout=PIPE)
+    process = Popen(shlex.split(cmd), stdout=PIPE, encoding='utf-8')
     (output, err) = process.communicate()
     exit_code = process.wait()
-    
+    print("home output", output, type(output))
     return output
 
 
