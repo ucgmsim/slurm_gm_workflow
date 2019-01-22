@@ -26,12 +26,8 @@ def main():
     parser.add_argument("--n_rel", type=int, default=None, help="the number of realisations expected")
 
     args = parser.parse_args()
-    try:
-        # try to read the config file
-        cybershake_cfg = ldcfg.load(os.path.dirname(args.config), os.path.basename(args.config))
-    except:
-        print("Error while parsing the config file, please double check inputs.")
-        sys.exit()
+    
+    cybershake_cfg = ldcfg.load(os.path.dirname(args.config), os.path.basename(args.config))
 
     ldcfg.check_cfg_params_path(cybershake_cfg, 'dt', 'hf_dt', 'version')
 
@@ -43,7 +39,8 @@ def main():
     vm_root_dir = os.path.join(path_cybershake, 'Data/VMs/')
 
     global_root = cybershake_cfg['global_root']
-    version = cybershake_cfg['verison']
+    version = cybershake_cfg['version']
+    v1d_dir = cybershake_cfg['v_1d_mod']
 
     site_v1d_dir = None
     hf_stat_vs_ref = None
@@ -74,7 +71,7 @@ def main():
     valid_vm, message = validate_vm.validate_vm(vel_mod_dir)
     if not valid_vm:
         message = "Error: VM {} failed {}".format(source, message)
-        print message
+        print(message)
         with open(error_log, 'a') as error_fp:
             error_fp.write(message)
         exit()
@@ -82,7 +79,7 @@ def main():
 
     params_vel_path = os.path.join(vel_mod_dir, params_vel)
 
-    execfile(params_vel_path, globals())
+    exec(open(params_vel_path).read(), globals())
 
     yes_statcords = True  # always has to be true to get the fd_stat
     yes_model_params = False  # statgrid should normally be already generated with Velocity Model
@@ -107,7 +104,7 @@ def main():
         stoch_file_path = os.path.join(stoch_dir, srf_name + '.stoch')
         if not os.path.isfile(stoch_file_path):
             message = "Error: Corresponding Stoch file is not found:\n{}".format(stoch_file_path)
-            print message
+            print(message)
             with open(error_log, 'a') as error_fp:
                 error_fp.write(message)
             sys.exit()
@@ -117,7 +114,7 @@ def main():
             root_params_dict, fault_params_dict, sim_params_dict, vm_params_dict = install.action(version, sim_dir, event_name, run_name, run_dir, vel_mod_dir, srf_dir, srf, stoch_file_path,
                        params_vel_path, stat_file_path, vs30_file_path, vs30ref_file_path, MODEL_LAT, MODEL_LON,
                        MODEL_ROT, hh, nx, ny, nz, sufx, sim_duration, vel_mod_params_dir, yes_statcords,
-                       yes_model_params, fault_yaml_path, root_yaml_path, site_v1d_dir, hf_stat_vs_ref)
+                       yes_model_params, fault_yaml_path, root_yaml_path, v1d_dir, site_v1d_dir, hf_stat_vs_ref)
 
             create_mgmt_db.create_mgmt_db([], path_cybershake, srf_files=srf)
             utils.setup_dir(os.path.join(path_cybershake, 'mgmt_db_queue'))

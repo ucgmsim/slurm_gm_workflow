@@ -385,13 +385,13 @@ def action(version, sim_dir, event_name, run_name, run_dir, vel_mod_dir,
            srf_dir, srf_file, stoch_file, params_vel_path, stat_file_path,
            vs30_file_path, vs30ref_file_path, MODEL_LAT, MODEL_LON,
            MODEL_ROT, hh, nx, ny, nz, sufx, sim_duration, vel_mod_params_dir,
-           yes_statcords, yes_model_params, fault_yaml_path, root_yaml_path, site_v1d_dir, hf_stat_vs_ref,
+           yes_statcords, yes_model_params, fault_yaml_path, root_yaml_path, v1d_dir, site_v1d_dir, hf_stat_vs_ref,
            dt=default_dt):
     lf_sim_root_dir = os.path.join(sim_dir, "LF")
     hf_dir = os.path.join(sim_dir, "HF")
     bb_dir = os.path.join(sim_dir, 'BB')
     dir_list = [sim_dir, lf_sim_root_dir, hf_dir, bb_dir]
-
+    version = str(version)
     if not os.path.isdir(user_root):
         dir_list.insert(0, user_root)
 
@@ -527,7 +527,7 @@ def action(version, sim_dir, event_name, run_name, run_dir, vel_mod_dir,
               "You need to fix params_base.py manually")
     print("installing bb")
 
-    install_bb(vel_mod_dir, site_v1d_dir, hf_stat_vs_ref, stat_file_path, root_params_dict)
+    install_bb(v1d_dir, site_v1d_dir, hf_stat_vs_ref, stat_file_path, root_params_dict)
     print("installing bb finished")
     return root_params_dict, fault_params_dict, sim_params_dict, vm_params_dict
 
@@ -549,8 +549,7 @@ def show_instruction(sim_dir):
     print("    2.   Edit params.py and run_emod3d.sl.template as needed")
     print("    3.   python $gmsim/workflow/scripts/submit_emod3d.py")
     print("    4.   python $gmsim/workflow/scripts/submit_post_emod3d.py")
-    print("    5.   python $gmsim/workflow/scripts/install_bb.py")
-    print("    6.   python $gmsim/workflow/scripts/submit_hf.py "
+    print("    5.   python $gmsim/workflow/scripts/submit_hf.py "
           "and python $gmsim/workflow/scripts/submit_bb.py")
     print("    Note: If you did not submit one or more .sl scripts, "
           "just do 'sbatch slurm_script.sl")
@@ -638,7 +637,7 @@ def main_local():
         srf_dir, srf_file, stoch_file, params_vel_path, stat_file_path,
         vs30_file_path, vs30ref_file_path, MODEL_LAT, MODEL_LON, MODEL_ROT, hh,
         nx, ny, nz, sufx, sim_duration, vel_mod_params_dir, yes_statcords,
-        yes_model_params, fault_yaml_path, root_yaml_path, site_v1d_dir, hf_stat_vs_ref)
+        yes_model_params, fault_yaml_path, root_yaml_path, args.v1d_dir, site_v1d_dir, hf_stat_vs_ref)
 
     create_mgmt_db.create_mgmt_db([], sim_dir, srf_files=srf_file)
     utils.setup_dir(os.path.join(sim_dir, 'mgmt_db_queue'))
@@ -695,7 +694,7 @@ def main_remote(cfg):
         srf_file, stoch_file, params_vel_path, stat_file_path, vs30_file_path,
         vs30ref_file_path, MODEL_LAT, MODEL_LON, MODEL_ROT, hh, nx, ny, nz, sufx,
         sim_duration, vel_mod_params_dir, yes_statcords, yes_model_params,
-        fault_yaml_path, root_yaml_path, site_v1d_dir, hf_stat_vs_ref)
+        fault_yaml_path, root_yaml_path, args.v1d_dir, site_v1d_dir, hf_stat_vs_ref)
 
     utils.setup_dir(os.path.join(sim_dir, 'mgmt_db_queue'))
     dump_all_yamls(sim_dir, root_params_dict, fault_params_dict, sim_params_dict, vm_params_dict)
@@ -718,7 +717,7 @@ if __name__ == '__main__':
     parser.add_argument('--vm_dir', type=str, default=None,
                         help="path that contains VMs, params_vel must "
                              "be present")
-    parser.add_argument('--v1d_dir', type=str, default=None)
+    parser.add_argument('--v1d_dir', type=str, default=v_mod_1d_dir)
     parser.add_argument('--station_dir', type=str, default=None)
     parser.add_argument('--version', type=str, default='16.1',
                         help="version of simulation. eg.16.1")
@@ -759,9 +758,9 @@ if __name__ == '__main__':
         # TODO:bad hack, fix this with parsing
         vel_mod_dir = args.vm_dir
 
-    if args.v1d_dir is not None:
+    #if args.v1d_dir is not None:
         # TODO:bad hack, fix this with parsing
-        v_mod_1d_dir = args.v1d_dir
+     #   v_mod_1d_dir = args.v1d_dir
 
     if args.station_dir is not None:
         # TODO:bad hack, fix this with parsing

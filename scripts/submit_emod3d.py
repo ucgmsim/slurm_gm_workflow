@@ -4,7 +4,6 @@
 # Section for parser to determine if using automate wct
 import install
 import argparse
-from datetime import datetime
 
 import set_runparams
 import estimation.estimate_WC as wc
@@ -15,6 +14,7 @@ from shared_workflow import load_config
 
 # TODO: remove this once temp_shared is gone
 from temp_shared import resolve_header
+from datetime import datetime
 
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
@@ -81,8 +81,6 @@ if __name__ == '__main__':
 
     if args.auto:
         submit_yes = True
-   # elif args.set_params_only:
-   #     submit_yes = False
     else:
         submit_yes = confirm("Also submit the job for you?")
 

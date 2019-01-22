@@ -105,7 +105,7 @@ def submit_task(sim_dir, proc_type, run_name, db, mgmt_db_location, binary_mode=
         tmp_path, run_name, mgmt_db_location)
         if extended_period == True:
             cmd = cmd + ' -e'
-        print cmd
+        print(cmd)
         call(cmd, shell=True)
         # save the job meta data
         call(

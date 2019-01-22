@@ -5,11 +5,10 @@ A script that queries slurm and updates the status of a task in a slurm db
 """
 
 import argparse
-import update_mgmt_db
+from scripts.management import update_mgmt_db
 from subprocess import Popen, PIPE
 import shlex
-import db_helper
-from db_helper import Process
+from scripts.management.db_helper import Process
 
 N_TASKS_TO_RUN = 20
 RETRY_MAX = 2
@@ -41,7 +40,7 @@ def get_submitted_db_tasks(db):
 
 
 def get_db_tasks_to_be_run(db, retry_max=RETRY_MAX):
-    print 'retry_max',retry_max
+    print('retry_max',retry_max)
     db.execute('''SELECT proc_type, run_name, status_enum.state 
                   FROM status_enum, state 
                   WHERE state.status = status_enum.id
@@ -64,15 +63,15 @@ def update_tasks(db, tasks, db_tasks):
                 try:
                     t_state_str = t_status[t_state]
                 except KeyError:
-                    print "failed to recogize state code %s",t_state
+                    print("failed to recogize state code %s",t_state)
                     t_state_str == ''
                 if t_state_str == db_state:
-                    print "not updating status ({}) of '{}' on '{}' ({})".format(t_state_str, proc_type, run_name, job_id)
+                    print("not updating status ({}) of '{}' on '{}' ({})".format(t_state_str, proc_type, run_name, job_id))
                 else:
-                    print "updating '{}' on '{}' to the status of '{}' from '{}' ({})".format(proc_type, run_name, t_state_str, db_state, job_id)
+                    print("updating '{}' on '{}' to the status of '{}' from '{}' ({})".format(proc_type, run_name, t_state_str, db_state, job_id))
                     update_mgmt_db.update_db(db, proc_type, t_state_str, job_id, run_name)
         if not found:
-            print "Task '{}' on '{}' not found on squeue; resetting the status to 'created' for resubmission".format(proc_type, run_name)
+            print("Task '{}' on '{}' not found on squeue; resetting the status to 'created' for resubmission".format(proc_type, run_name))
             update_mgmt_db.force_update_db(db, proc_type, 'created', job_id, run_name, error='Task removed from squeue without completion', retry=True)
         db.connection.commit()
 
@@ -124,7 +123,7 @@ def get_runnable_tasks(db, n_runs=N_TASKS_TO_RUN, retry_max=RETRY_MAX):
 def run_new_task(db, n_runs):
     tasks = get_runnable_tasks(db, n_runs)
     if len(tasks) > 0:
-        print tasks[0], len(tasks)
+        print(tasks[0], len(tasks))
         
         """####
             <insert code to run/submit a new task>

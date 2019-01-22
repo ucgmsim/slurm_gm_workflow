@@ -3,7 +3,6 @@
 import os.path
 import argparse
 
-from datetime import datetime
 
 import qcore
 import install
@@ -14,6 +13,7 @@ from qcore import utils, shared, srf
 # TODO: move this to qcore library
 from temp_shared import resolve_header
 from shared_workflow.shared import *
+from datetime import datetime
 
 # default values
 default_version = 'run_hf_mpi'

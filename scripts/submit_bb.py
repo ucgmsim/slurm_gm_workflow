@@ -5,14 +5,14 @@ import argparse
 import install
 import estimation.estimate_WC as wc
 
-from datetime import datetime
-
 # TODO: move this to qcore library
 from qcore import shared
 from temp_shared import resolve_header
 from shared_workflow.shared import *
 
 from qcore import utils
+
+from datetime import datetime
 
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
