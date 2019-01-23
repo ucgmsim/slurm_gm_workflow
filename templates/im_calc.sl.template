@@ -1,8 +1,8 @@
 export IMPATH=$gmsim/IM_calculation
 export PYTHONPATH=$gmsim/qcore:/$PYTHONPATH:$IMPATH
 
-start_time=`date +$runtime_fmt`
-echo "script started running at: $start_time"
+script_start=`date`
+echo "script started running at: $script_start"
 
 runtime_fmt="%Y-%m-%d_%H:%M:%S"
 
