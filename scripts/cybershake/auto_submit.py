@@ -70,17 +70,6 @@ def submit_task(sim_dir, proc_type, run_name, db, mgmt_db_location, binary_mode=
             submitted_time, os.path.join(ch_log_dir, 'winbin.%s.log' % run_name)), shell=True)
 
     if proc_type == 4:
-    #     # run the submit_post_emod3d before install_bb and submit_hf
-    #     # TODO: fix this strange logic in the actual workflow
-    #     if default_hf_vs30_ref != None:
-    #         cmd = "python $gmsim/workflow/scripts/install_bb.py --v1d %s --hf_stat_vs_ref %s" % (
-    #         default_1d_mod, default_hf_vs30_ref)
-    #         print(cmd)
-    #         call(cmd, shell=True)
-    #     else:
-    #         cmd = "python $gmsim/workflow/scripts/install_bb.py --v1d %s" % default_1d_mod
-    #         print(cmd)
-    #         call(cmd, shell=True)      
         hf_cmd = "python $gmsim/workflow/scripts/submit_hf.py --auto --srf %s" % run_name
         if not binary_mode:
             hf_cmd += ' -- ascii'

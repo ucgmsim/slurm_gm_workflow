@@ -277,81 +277,12 @@ def q1_generic(v_mod_1d_dir):
     return v_mod_1d_name, v_mod_1d_selected
 
 
-def q1_site_specific(stat_file_path, hf_stat_vs_ref=None, v1d_mod_dir=None):
-    show_horizontal_line()
-    print("Auto-detecting site-specific info")
-    show_horizontal_line()
-    print("- Station file path: %s" % stat_file_path)
-
-    if v1d_mod_dir is not None:
-        v_mod_1d_path = v1d_mod_dir
-    else:
-        v_mod_1d_path = os.path.join(os.path.dirname(stat_file_path), "1D")
-    if os.path.exists(v_mod_1d_path):
-        print("- 1D profiles found at %s" % v_mod_1d_path)
-    else:
-        print("Error: No such path exists: %s" % v_mod_1d_path)
-        sys.exit()
-    if hf_stat_vs_ref is None:
-        hf_stat_vs_ref_options = glob.glob(
-            os.path.join(stat_file_path, '*.hfvs30ref'))
-        if len(hf_stat_vs_ref_options) == 0:
-            print("Error: No HF Vsref file was found at %s" % stat_file_path)
-            sys.exit()
-        hf_stat_vs_ref_options.sort()
-
-        show_horizontal_line()
-        print("Select one of HF Vsref files")
-        show_horizontal_line()
-        hf_stat_vs_ref_selected = show_multiple_choice(hf_stat_vs_ref_options)
-        print(" - HF Vsref tp be used: %s" % hf_stat_vs_ref_selected)
-    else:
-        hf_stat_vs_ref_selected = hf_stat_vs_ref
-    return v_mod_1d_path, hf_stat_vs_ref_selected
-
-
-def q2(v_mod_1d_name, srf, root_dict):
-    hf_sim_bin = os.path.join(tools_dir, 'hb_high_v5.4.5_np2mm+')
-    hfVString = 'hf' + os.path.basename(hf_sim_bin).split('_')[-1]
-    hf_run_name = "{}_{}_rvf{}_sd{}_k{}".format(
-        v_mod_1d_name, hfVString, str(root_dict['hf']['hf_rvfac']),
-        str(root_dict['hf']['sdrop']), str(root_dict['hf']['kappa']))
-    hf_run_name = hf_run_name.replace('.', 'p')
-    show_horizontal_line()
-    print("- Vel. Model 1D: %s" % v_mod_1d_name)
-    print("- hf_sim_bin: %s" % os.path.basename(hf_sim_bin))
-    print("- hf_rvfac: %s" % root_dict['hf']['hf_rvfac'])
-    print("- hf_sdrop: %s" % root_dict['hf']['sdrop'])
-    print("- hf_kappa: %s" % root_dict['hf']['kappa'])
-    print("- srf file: %s" % srf)
-    #    yes = confirm_name(hf_run_name)
-    yes = True
-    return yes, hf_run_name
-
-
-def store_params(sim_dir, root_dict):
-    f = open(os.path.join(sim_dir, "params_base_bb.py"), "w")
-    keys = list(root_dict.keys())
-    for k in keys:
-        val = root_dict[k]
-        if type(val) == str:
-            val = "'%s'" % val
-        f.write("%s=%s\n" % (k, val))
-    f.close()
-
-
-def install_bb(v1d, site_v1d_dir, hf_stat_vs_ref, stat_file, root_dict):
+def install_bb(v1d, stat_file, root_dict, site_v1d_dir=None, hf_stat_vs_ref=None):
     show_horizontal_line(c="*")
-    print(" " * 37 + "EMOD3D HF/BB Preparationi Ver.slurm")
+    print(" " * 37 + "EMOD3D HF/BB Preparation Ver.slurm")
     show_horizontal_line(c="*")
 
     root_dict['bb'] = {}
-
-    if site_v1d_dir is not None:
-        root_dict['bb']['site_v1d_dir'] = site_v1d_dir
-
-    if hf_stat_vs_ref is not None:
-        root_dict['hf_stat_vs_ref'] = hf_stat_vs_ref
 
     if v1d is not None:
         v_mod_1d_selected = v1d
@@ -359,7 +290,7 @@ def install_bb(v1d, site_v1d_dir, hf_stat_vs_ref, stat_file, root_dict):
         root_dict['v_mod_1d_name'] = v_mod_1d_selected
     # TODO:add in logic for site specific as well, if the user provided as args
     elif site_v1d_dir is not None and hf_stat_vs_ref is not None:
-        v_mod_1d_path, hf_stat_vs_ref = q1_site_specific(
+        v_mod_1d_path, hf_stat_vs_ref = get_site_specific_path(
             os.path.dirname(stat_file),
             hf_stat_vs_ref=hf_stat_vs_ref, v1d_mod_dir=site_v1d_dir)
         root_dict['bb']['site_specific'] = True
@@ -369,7 +300,7 @@ def install_bb(v1d, site_v1d_dir, hf_stat_vs_ref, stat_file, root_dict):
     else:
         is_site_specific_id = q0()
         if is_site_specific_id:
-            v_mod_1d_path, hf_stat_vs_ref = q1_site_specific(
+            v_mod_1d_path, hf_stat_vs_ref = get_site_specific_path(
                 os.path.dirname(stat_file))
             root_dict['bb']['site_specific'] = True
             root_dict['v_mod_1d_name'] = v_mod_1d_path
@@ -527,7 +458,7 @@ def action(version, sim_dir, event_name, run_name, run_dir, vel_mod_dir,
               "You need to fix params_base.py manually")
     print("installing bb")
 
-    install_bb(v1d_dir, site_v1d_dir, hf_stat_vs_ref, stat_file_path, root_params_dict)
+    install_bb(v1d_dir, stat_file_path, root_params_dict, site_v1d_dir=site_v1d_dir, hf_stat_vs_ref=hf_stat_vs_ref)
     print("installing bb finished")
     return root_params_dict, fault_params_dict, sim_params_dict, vm_params_dict
 
@@ -637,7 +568,7 @@ def main_local():
         srf_dir, srf_file, stoch_file, params_vel_path, stat_file_path,
         vs30_file_path, vs30ref_file_path, MODEL_LAT, MODEL_LON, MODEL_ROT, hh,
         nx, ny, nz, sufx, sim_duration, vel_mod_params_dir, yes_statcords,
-        yes_model_params, fault_yaml_path, root_yaml_path, args.v1d_dir, site_v1d_dir, hf_stat_vs_ref)
+        yes_model_params, fault_yaml_path, root_yaml_path, args.v1d_dir, args.site_v1d_dir, args.hf_stat_vs_ref)
 
     create_mgmt_db.create_mgmt_db([], sim_dir, srf_files=srf_file)
     utils.setup_dir(os.path.join(sim_dir, 'mgmt_db_queue'))
@@ -694,7 +625,7 @@ def main_remote(cfg):
         srf_file, stoch_file, params_vel_path, stat_file_path, vs30_file_path,
         vs30ref_file_path, MODEL_LAT, MODEL_LON, MODEL_ROT, hh, nx, ny, nz, sufx,
         sim_duration, vel_mod_params_dir, yes_statcords, yes_model_params,
-        fault_yaml_path, root_yaml_path, args.v1d_dir, site_v1d_dir, hf_stat_vs_ref)
+        fault_yaml_path, root_yaml_path, args.v1d_dir, args.site_v1d_dir, args.hf_stat_vs_ref)
 
     utils.setup_dir(os.path.join(sim_dir, 'mgmt_db_queue'))
     dump_all_yamls(sim_dir, root_params_dict, fault_params_dict, sim_params_dict, vm_params_dict)
@@ -765,9 +696,6 @@ if __name__ == '__main__':
     if args.station_dir is not None:
         # TODO:bad hack, fix this with parsing
         stat_dir = args.station_dir
-
-    site_v1d_dir = args.site_v1d_dir
-    hf_stat_vs_ref = args.hf_stat_vs_ref
 
     # if sim_cfg parsed, run main_remote(which has no selection)
     if args.sim_cfg is not None:

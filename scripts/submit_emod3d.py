@@ -109,5 +109,6 @@ if __name__ == '__main__':
             lf_sim_dir, sim_dir, srf_name, params.mgmt_db_location,
             run_time=wc, nb_cpus=n_cores)
 
-        submit_sl_script(script, 'EMOD3D', 'queued', params.mgmt_db_location,
+        submit_sl_s
+        cript(script, 'EMOD3D', 'queued', params.mgmt_db_location,
                          srf_name, timestamp, submit_yes=submit_yes)

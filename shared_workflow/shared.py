@@ -544,3 +544,56 @@ def params_to_dict(params_base_path):
                 params_dict[key] = contents
 
     return params_dict
+
+
+def get_site_specific_path(stat_file_path, hf_stat_vs_ref=None, v1d_mod_dir=None):
+    show_horizontal_line()
+    print("Auto-detecting site-specific info")
+    show_horizontal_line()
+    print("- Station file path: %s" % stat_file_path)
+
+    if v1d_mod_dir is not None:
+        v_mod_1d_path = v1d_mod_dir
+    else:
+        v_mod_1d_path = os.path.join(os.path.dirname(stat_file_path), "1D")
+    if os.path.exists(v_mod_1d_path):
+        print("- 1D profiles found at %s" % v_mod_1d_path)
+    else:
+        print("Error: No such path exists: %s" % v_mod_1d_path)
+        sys.exit()
+    if hf_stat_vs_ref is None:
+        hf_stat_vs_ref_options = glob.glob(
+            os.path.join(stat_file_path, '*.hfvs30ref'))
+        if len(hf_stat_vs_ref_options) == 0:
+            print("Error: No HF Vsref file was found at %s" % stat_file_path)
+            sys.exit()
+        hf_stat_vs_ref_options.sort()
+
+        show_horizontal_line()
+        print("Select one of HF Vsref files")
+        show_horizontal_line()
+        hf_stat_vs_ref_selected = show_multiple_choice(hf_stat_vs_ref_options)
+        print(" - HF Vsref tp be used: %s" % hf_stat_vs_ref_selected)
+    else:
+        hf_stat_vs_ref_selected = hf_stat_vs_ref
+    return v_mod_1d_path, hf_stat_vs_ref_selected
+
+
+def get_hf_run_name(v_mod_1d_name, srf, root_dict):
+    hf_sim_bin = os.path.join(tools_dir, 'hb_high_v5.4.5_np2mm+')
+    hfVString = 'hf' + os.path.basename(hf_sim_bin).split('_')[-1]
+    hf_run_name = "{}_{}_rvf{}_sd{}_k{}".format(
+        v_mod_1d_name, hfVString, str(root_dict['hf']['hf_rvfac']),
+        str(root_dict['hf']['sdrop']), str(root_dict['hf']['kappa']))
+    hf_run_name = hf_run_name.replace('.', 'p')
+    show_horizontal_line()
+    print("- Vel. Model 1D: %s" % v_mod_1d_name)
+    print("- hf_sim_bin: %s" % os.path.basename(hf_sim_bin))
+    print("- hf_rvfac: %s" % root_dict['hf']['hf_rvfac'])
+    print("- hf_sdrop: %s" % root_dict['hf']['sdrop'])
+    print("- hf_kappa: %s" % root_dict['hf']['kappa'])
+    print("- srf file: %s" % srf)
+    #    yes = confirm_name(hf_run_name)
+    yes = True
+    return yes, hf_run_name
+

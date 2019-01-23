@@ -76,7 +76,6 @@ def main():
             error_fp.write(message)
         exit()
 
-
     params_vel_path = os.path.join(vel_mod_dir, params_vel)
 
     exec(open(params_vel_path).read(), globals())
