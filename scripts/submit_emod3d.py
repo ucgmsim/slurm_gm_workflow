@@ -7,7 +7,7 @@ import argparse
 from datetime import datetime
 
 import set_runparams
-import estimation.estimate_WC as wc
+import estimation.estimate_wct as wc
 
 from qcore import utils
 from shared_workflow.shared import *

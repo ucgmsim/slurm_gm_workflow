@@ -3,7 +3,7 @@
 import argparse
 
 import install
-from estimation import estimate_WC as wc
+from estimation import estimate_wct as wc
 
 from datetime import datetime
 

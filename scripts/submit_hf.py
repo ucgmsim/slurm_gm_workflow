@@ -7,7 +7,7 @@ from datetime import datetime
 
 import qcore
 import install
-from estimation import estimate_WC as wc
+from estimation import estimate_wct as wc
 
 from qcore import utils, shared, srf
 

@@ -19,7 +19,7 @@ from enum import Enum
 from multiprocessing import Pool
 from argparse import ArgumentParser
 
-from estimation.estimate_WC import get_IM_comp_count
+from estimation.estimate_wct import get_IM_comp_count
 
 DATE_COLUMNS = ["end_time", "start_time", "submit_time"]
 DATETIME_FMT = "%Y-%m-%d_%H:%M:%S"
@@ -142,7 +142,7 @@ def clean_df(df):
                     )
                 # Count the number of components calculated
                 elif meta_col == MetaConst.im_comp.value:
-                    df.loc[:, (sim_type, meta_col)] = [
+                    df.loc[:, (sim_type, MetaConst.im_comp_count.value)] = [
                         get_IM_comp_count_from_str(str_list, real)
                         for real, str_list in df.loc[
                             :, (sim_type, meta_col)

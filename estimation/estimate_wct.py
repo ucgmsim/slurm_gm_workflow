@@ -2,7 +2,6 @@
 """
 Functions for easy estimation of WC, uses pre-trained models.
 """
-import ast
 import os
 import glob
 import pickle
@@ -11,17 +10,19 @@ from typing import List
 import numpy as np
 
 from estimation.model import NNWcEstModel
-from submit_hf import default_core as HF_DEFAULT_NCORES
-from submit_bb import default_core as BB_DEFAULT_NCORES
 
 # Better solution for these locations?
-LF_MODEL_DIR = "/nesi/project/nesi00213/estimation/models/LF/"
-HF_MODEL_DIR = "/nesi/project/nesi00213/estimation/models/HF/"
-BB_MODEL_DIR = "/nesi/project/nesi00213/estimation/models/BB/"
-IM_MODEL_DIR = "/nesi/project/nesi00213/estimation/models/IM/"
+LF_MODEL_DIR = "/home/cbs51/code/slurm_gm_workflow/estimation/models/LF/"
+HF_MODEL_DIR = "/home/cbs51/code/slurm_gm_workflow/estimation/models/HF/"
+BB_MODEL_DIR = "/home/cbs51/code/slurm_gm_workflow/estimation/models/BB/"
+IM_MODEL_DIR = "/home/cbs51/code/slurm_gm_workflow/estimation/models/IM/"
 
 MODEL_PREFIX = "model_"
 SCALER_PREFIX = "scaler_"
+
+HF_DEFAULT_NCORES = 80
+BB_DEFAULT_NCORES = 80
+LF_DEFAULT_NCORES = 160
 
 DEFAULT_NCORES_PER_NODE = 40
 
@@ -121,7 +122,7 @@ def estimate_LF_WC(
 
     core_hours = estimate(
         data, model_dir=model_dir, model_prefix=model_prefix,
-        scaler_prefix=scaler_prefix).ravel()
+        scaler_prefix=scaler_prefix)
 
 
     # Just estimate, no number of cores scaling
@@ -140,7 +141,7 @@ def estimate_LF_WC(
 
             core_hours = estimate(
                 data, model_dir=model_dir, model_prefix=model_prefix,
-                scaler_prefix=scaler_prefix)[0][0]
+                scaler_prefix=scaler_prefix)
             run_time = core_hours / data[:, -1]
 
         return core_hours, run_time, data[:, -1]
@@ -208,7 +209,7 @@ def estimate_HF_WC(
                         "One for each feature.")
 
     core_hours = estimate(data, model_dir=model_dir, model_prefix=model_prefix,
-                    scaler_prefix=scaler_prefix)[0][0]
+                    scaler_prefix=scaler_prefix)
     return core_hours, core_hours / data[:, -1]
 
 
@@ -272,7 +273,7 @@ def estimate_BB_WC(
                         "One for each feature.")
 
     core_hours = estimate(data, model_dir=model_dir, model_prefix=model_prefix,
-                          scaler_prefix=scaler_prefix)[0][0]
+                          scaler_prefix=scaler_prefix)
 
     return core_hours, core_hours / data[:, -1]
 
@@ -383,7 +384,7 @@ def estimate(
     data = scaler.transform(input_data)
     wc = model.predict(data)
 
-    return wc
+    return wc.reshape(-1)
 
 
 def load_model(dir: str, model_prefix: str, scaler_prefix: str):
@@ -398,7 +399,7 @@ def load_model(dir: str, model_prefix: str, scaler_prefix: str):
     model_file, scaler_file = None, None
     if len(model_files) == 0:
         raise Exception(
-            "No valid model was found with " "file pattern {}".format(file_pattern)
+            "No valid model was found with file pattern {}".format(file_pattern)
         )
     elif len(model_files) == 0:
         model_file = model_files[0]

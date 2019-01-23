@@ -23,7 +23,7 @@ from jinja2 import Template, Environment, FileSystemLoader
 
 import im_calc_checkpoint as checkpoint
 from qcore import utils, shared
-from estimation.estimate_WC import get_IM_comp_count, est_IM_chours_single
+from estimation.estimate_wct import get_IM_comp_count, est_IM_chours_single
 from shared_workflow.shared import exe, submit_sl_script, update_db_cmd, set_wct
 
 timestamp_format = "%Y%m%d_%H%M%S"
