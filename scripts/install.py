@@ -21,28 +21,7 @@ from management import create_mgmt_db
 
 # TODO: namespacing
 from shared_workflow.shared import *
-
-
-workflow_config = ldcfg.load(os.path.dirname(os.path.realpath(__file__)), "workflow_config.json")
-workflow_root = workflow_config['gm_sim_workflow_root']
-global_root = workflow_config["global_root"]
-bin_process_dir = os.path.join(global_root, 'workflow/scripts')
-emod3d_version = workflow_config["emod3d_version"]
-params_vel = workflow_config['params_vel']
-
-run_dir = workflow_config['runfolder_path']
-user = getpass.getuser()
-user_root = os.path.join(run_dir, user)  # global_root
-srf_default_dir = os.path.join(global_root, 'RupModel')
-vel_mod_dir = os.path.join(global_root, 'VelocityModels')
-recipe_dir = workflow_config['templates_dir']
-v_mod_1d_dir = os.path.join(global_root, 'VelocityModel', 'Mod-1D')
-gmsa_dir = os.path.join(global_root, 'groundMotionStationAnalysis')
-stat_dir = os.path.join(global_root, 'StationInfo')
-tools_dir = os.path.join(global_root, 'opt/maui/emod3d/3.0.4-gcc/bin')
-
-latest_ll_dir = os.path.join(global_root, 'StationInfo/grid')
-latest_ll = 'non_uniform_with_real_stations_latest'
+from shared_workflow.shared_defaults import *
 
 # default values
 # TODO: after enabling different dt for LF and HF, this might need to change
@@ -253,76 +232,17 @@ def q_final_confirm(run_name, yes_statcords, yes_model_params):
     return show_yes_no_question()
 
 
-#=======install_bb_related==============================================================================================
-def q0():
-    show_horizontal_line()
-    print("Do you want site-specific computation? "
-          "(To use a universal 1D profile, Select 'No')")
-    show_horizontal_line()
-    return show_yes_no_question()
-
-
-def q1_generic(v_mod_1d_dir):
-    show_horizontal_line()
-    print("Select one of 1D Velocity models (from %s)" % v_mod_1d_dir)
-    show_horizontal_line()
-
-    v_mod_1d_options = glob.glob(os.path.join(v_mod_1d_dir, '*.1d'))
-    v_mod_1d_options.sort()
-
-    v_mod_1d_selected = show_multiple_choice(v_mod_1d_options)
-    print(v_mod_1d_selected)  # full path
-    v_mod_1d_name = os.path.basename(v_mod_1d_selected).replace('.1d', '')
-
-    return v_mod_1d_name, v_mod_1d_selected
-
-
-def install_bb(v1d, stat_file, root_dict, site_v1d_dir=None, hf_stat_vs_ref=None):
-    show_horizontal_line(c="*")
-    print(" " * 37 + "EMOD3D HF/BB Preparation Ver.slurm")
-    show_horizontal_line(c="*")
-
-    root_dict['bb'] = {}
-
-    if v1d is not None:
-        v_mod_1d_selected = v1d
-        root_dict['bb']['site_specific'] = False
-        root_dict['v_mod_1d_name'] = v_mod_1d_selected
-    # TODO:add in logic for site specific as well, if the user provided as args
-    elif site_v1d_dir is not None and hf_stat_vs_ref is not None:
-        v_mod_1d_path, hf_stat_vs_ref = get_site_specific_path(
-            os.path.dirname(stat_file),
-            hf_stat_vs_ref=hf_stat_vs_ref, v1d_mod_dir=site_v1d_dir)
-        root_dict['bb']['site_specific'] = True
-        root_dict['v_mod_1d_name'] = v_mod_1d_path
-        root_dict['hf_stat_vs_ref'] = hf_stat_vs_ref
-        root_dict['bb']['rand_reset'] = True
-    else:
-        is_site_specific_id = q0()
-        if is_site_specific_id:
-            v_mod_1d_path, hf_stat_vs_ref = get_site_specific_path(
-                os.path.dirname(stat_file))
-            root_dict['bb']['site_specific'] = True
-            root_dict['v_mod_1d_name'] = v_mod_1d_path
-            root_dict['hf_stat_vs_ref'] = hf_stat_vs_ref
-            root_dict['bb']['rand_reset'] = True
-        else:
-            v_mod_1d_name, v_mod_1d_selected = q1_generic(v1d)
-            root_dict['bb']['site_specific'] = False
-            root_dict['v_mod_1d_name'] = v_mod_1d_selected
-
-
 def action(version, sim_dir, event_name, run_name, run_dir, vel_mod_dir,
            srf_dir, srf_file, stoch_file, params_vel_path, stat_file_path,
            vs30_file_path, vs30ref_file_path, MODEL_LAT, MODEL_LON,
            MODEL_ROT, hh, nx, ny, nz, sufx, sim_duration, vel_mod_params_dir,
-           yes_statcords, yes_model_params, fault_yaml_path, root_yaml_path, v1d_dir, site_v1d_dir, hf_stat_vs_ref,
+           yes_statcords, yes_model_params, fault_yaml_path, root_yaml_path,
            dt=default_dt):
     lf_sim_root_dir = os.path.join(sim_dir, "LF")
     hf_dir = os.path.join(sim_dir, "HF")
     bb_dir = os.path.join(sim_dir, 'BB')
     dir_list = [sim_dir, lf_sim_root_dir, hf_dir, bb_dir]
-    version = str(version)
+
     if not os.path.isdir(user_root):
         dir_list.insert(0, user_root)
 
@@ -456,10 +376,6 @@ def action(version, sim_dir, event_name, run_name, run_dir, vel_mod_dir,
     else:
         print("Generation of statcords is skipped. "
               "You need to fix params_base.py manually")
-    print("installing bb")
-
-    install_bb(v1d_dir, stat_file_path, root_params_dict, site_v1d_dir=site_v1d_dir, hf_stat_vs_ref=hf_stat_vs_ref)
-    print("installing bb finished")
     return root_params_dict, fault_params_dict, sim_params_dict, vm_params_dict
 
 
@@ -480,7 +396,8 @@ def show_instruction(sim_dir):
     print("    2.   Edit params.py and run_emod3d.sl.template as needed")
     print("    3.   python $gmsim/workflow/scripts/submit_emod3d.py")
     print("    4.   python $gmsim/workflow/scripts/submit_post_emod3d.py")
-    print("    5.   python $gmsim/workflow/scripts/submit_hf.py "
+    print("    5.   python $gmsim/workflow/scripts/install_bb.py")
+    print("    6.   python $gmsim/workflow/scripts/submit_hf.py "
           "and python $gmsim/workflow/scripts/submit_bb.py")
     print("    Note: If you did not submit one or more .sl scripts, "
           "just do 'sbatch slurm_script.sl")
@@ -568,7 +485,7 @@ def main_local():
         srf_dir, srf_file, stoch_file, params_vel_path, stat_file_path,
         vs30_file_path, vs30ref_file_path, MODEL_LAT, MODEL_LON, MODEL_ROT, hh,
         nx, ny, nz, sufx, sim_duration, vel_mod_params_dir, yes_statcords,
-        yes_model_params, fault_yaml_path, root_yaml_path, args.v1d_dir, args.site_v1d_dir, args.hf_stat_vs_ref)
+        yes_model_params, fault_yaml_path, root_yaml_path)
 
     create_mgmt_db.create_mgmt_db([], sim_dir, srf_files=srf_file)
     utils.setup_dir(os.path.join(sim_dir, 'mgmt_db_queue'))
@@ -577,7 +494,6 @@ def main_local():
 
     dump_all_yamls(sim_dir, root_params_dict, fault_params_dict,
                    sim_params_dict, vm_params_dict)
-
     print("Installation completed")
     show_instruction(sim_dir)
 
@@ -625,7 +541,7 @@ def main_remote(cfg):
         srf_file, stoch_file, params_vel_path, stat_file_path, vs30_file_path,
         vs30ref_file_path, MODEL_LAT, MODEL_LON, MODEL_ROT, hh, nx, ny, nz, sufx,
         sim_duration, vel_mod_params_dir, yes_statcords, yes_model_params,
-        fault_yaml_path, root_yaml_path, args.v1d_dir, args.site_v1d_dir, args.hf_stat_vs_ref)
+        fault_yaml_path, root_yaml_path)
 
     utils.setup_dir(os.path.join(sim_dir, 'mgmt_db_queue'))
     dump_all_yamls(sim_dir, root_params_dict, fault_params_dict, sim_params_dict, vm_params_dict)
@@ -648,17 +564,10 @@ if __name__ == '__main__':
     parser.add_argument('--vm_dir', type=str, default=None,
                         help="path that contains VMs, params_vel must "
                              "be present")
-    parser.add_argument('--v1d_dir', type=str, default=v_mod_1d_dir)
+    parser.add_argument('--v1d_dir', type=str, default=None)
     parser.add_argument('--station_dir', type=str, default=None)
     parser.add_argument('--version', type=str, default='16.1',
                         help="version of simulation. eg.16.1")
-    parser.add_argument('--site_v1d_dir', default=None, type=str,
-                        help="the to the directory containing site specific "
-                             "files, hf_stat_vs_ref must be provied as well if "
-                             "this is provided")
-    parser.add_argument('--hf_stat_vs_ref', default=None, type=str,
-                        help="site_v1d_dir must be provied as well "
-                             "if this is provided")
 
     args = parser.parse_args()
 
@@ -689,13 +598,14 @@ if __name__ == '__main__':
         # TODO:bad hack, fix this with parsing
         vel_mod_dir = args.vm_dir
 
-    #if args.v1d_dir is not None:
+    if args.v1d_dir is not None:
         # TODO:bad hack, fix this with parsing
-     #   v_mod_1d_dir = args.v1d_dir
+        v_mod_1d_dir = args.v1d_dir
 
     if args.station_dir is not None:
         # TODO:bad hack, fix this with parsing
         stat_dir = args.station_dir
+    print('test')
 
     # if sim_cfg parsed, run main_remote(which has no selection)
     if args.sim_cfg is not None:

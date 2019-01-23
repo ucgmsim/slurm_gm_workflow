@@ -19,10 +19,7 @@ from qcore import utils
 from shared_workflow import load_config
 
 sys.path.append(os.path.abspath(os.path.curdir))
-workflow_config = load_config.load(os.path.dirname(os.path.realpath(__file__)), "workflow_config.json")
-global_root = workflow_config["global_root"]
-tools_dir = workflow_config["bin_process_path"]
-emod3d_version = workflow_config["emod3d_version"]
+from shared_workflow.shared_defaults import workflow_config, global_root,tools_dir, emod3d_version
 
 
 def create_run_params(sim_dir, srf_name=None):

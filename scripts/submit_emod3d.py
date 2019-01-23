@@ -10,7 +10,7 @@ import estimation.estimate_WC as wc
 
 from qcore import utils
 from shared_workflow.shared import *
-from shared_workflow import load_config
+from shared_workflow.shared_defaults import tools_dir
 
 # TODO: remove this once temp_shared is gone
 from temp_shared import resolve_header
@@ -26,8 +26,6 @@ default_account = 'nesi00213'
 default_ch_scale = 1.1
 default_wct_scale = 1.2
 
-workflow_config = load_config.load(os.path.dirname(os.path.realpath(__file__)), "workflow_config.json")
-tools_dir = workflow_config["bin_process_path"]
 params = utils.load_sim_params('sim_params.yaml')
 
 
@@ -76,12 +74,6 @@ if __name__ == '__main__':
     parser.add_argument('--account', type=str, default=default_account)
     parser.add_argument('--srf', type=str, default=None)
     args = parser.parse_args()
-
-    workflow_config = load_config.load(
-        os.path.dirname(os.path.realpath(__file__)), "workflow_config.json")
-    tools_dir = workflow_config["bin_process_path"]
-
-    params = utils.load_sim_params('sim_params.yaml')
 
     if args.auto:
         submit_yes = True

@@ -6,7 +6,7 @@ import argparse
 
 from qcore import utils
 from shared_workflow.shared import *
-from shared_workflow import load_config
+from shared_workflow.shared_defaults import tools_dir
 
 # TODO: remove this once temp_shared is gone
 from temp_shared import resolve_header
@@ -133,11 +133,6 @@ if __name__ == '__main__':
     parser.add_argument('--pre_hf', nargs="?", type=str, const=True)
 
     args = parser.parse_args()
-
-    workflow_config = load_config.load(
-        os.path.dirname(os.path.realpath(__file__)), "workflow_config.json")
-    global_root = workflow_config["global_root"]
-    tools_dir = os.path.join(global_root, 'opt/maui/emod3d/3.0.4-gcc/bin')
 
     created_scripts = []
     params = utils.load_sim_params('sim_params.yaml')
