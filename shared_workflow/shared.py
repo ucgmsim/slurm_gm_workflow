@@ -330,6 +330,7 @@ def get_input_wc():
 
     return user_input_wc
 
+
 def set_wct(est_run_time, ncores, auto=False):
     print("Estimated time: {} with {} number of cores".format(
         wc.convert_to_wct(est_run_time), ncores))
@@ -375,7 +376,7 @@ def exe(cmd, debug=True,shell=False, stdout=subprocess.PIPE,
     if debug:
         print(' '.join(cmd))
 
-    p=subprocess.Popen(cmd, shell=shell, stdout=stdout, stderr=stderr, encoding='utf-8')
+    p = subprocess.Popen(cmd, shell=shell, stdout=stdout, stderr=stderr, encoding='utf-8')
     out, err = p.communicate()
     if debug:
         if out:
@@ -396,8 +397,6 @@ def submit_sl_script(script, process, status, mgmt_db_loc, srf_name,
         if len(res[1]) == 0:
             # no errors, return the job id
             jobid = res[0].split()[-1]
-            print("jobid is", jobid)
-
             try:
                 int(jobid)
             except ValueError:
@@ -409,6 +408,7 @@ def submit_sl_script(script, process, status, mgmt_db_loc, srf_name,
             return jobid
     else:
         print("User chose to submit the job manually")
+
 
 def update_db_cmd(process, status, mgmt_db_loc, srf_name, jobid, timestamp):
     """Adds the command to update the mgmt db to the queue"""
@@ -426,8 +426,8 @@ def update_db_cmd(process, status, mgmt_db_loc, srf_name, jobid, timestamp):
         print("{} is not a valid mgmt db location. No update cmd was created.".format(
             mgmt_db_loc))
 
-### functions mostly used in regression_test
 
+### functions mostly used in regression_test
 def get_list_of_files(folder_dir):
     # make sure folder_dir ends with /
     folder_dir = os.path.join(folder_dir, '')
