@@ -256,7 +256,7 @@ def main(args):
     nt = fault_sim_durations / dt
 
     lf_ncores = (
-            np.ones(fault_names.shape[0], dtype=np.float32) * estimate_wct.LF_DEFAULT_NCORES
+        np.ones(fault_names.shape[0], dtype=np.float32) * estimate_wct.LF_DEFAULT_NCORES
     )
     lf_input_data = np.concatenate(
         (vm_params[:, :3], nt.reshape(-1, 1), lf_ncores.reshape(-1, 1)), axis=1
@@ -268,8 +268,8 @@ def main(args):
     if args.runs_dir is not None:
         print("Preparing HF estimation input data")
         hf_ncores = (
-                np.ones(realisations.shape[0], dtype=np.float32)
-                * estimate_wct.HF_DEFAULT_NCORES
+            np.ones(realisations.shape[0], dtype=np.float32)
+            * estimate_wct.HF_DEFAULT_NCORES
         )
 
         # Assumes that all realisations of a fault have the
@@ -317,8 +317,8 @@ def main(args):
 
         print("Preparing BB estimation input data")
         bb_ncores = (
-                np.ones(realisations.shape[0], dtype=np.float32)
-                * estimate_wct.BB_DEFAULT_NCORES
+            np.ones(realisations.shape[0], dtype=np.float32)
+            * estimate_wct.BB_DEFAULT_NCORES
         )
 
         bb_input_data = np.concatenate(
