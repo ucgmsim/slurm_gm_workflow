@@ -1,8 +1,9 @@
 import os
+import getpass
 from shared_workflow import load_config as ldcfg
 import scripts
 
-workflow_config = ldcfg.load(os.path.realpath(scripts.__file__), "workflow_config.json")
+workflow_config = ldcfg.load(os.path.dirname(os.path.realpath(scripts.__file__)), "workflow_config.json")
 workflow_root = workflow_config['gm_sim_workflow_root']
 global_root = workflow_config["global_root"]
 bin_process_dir = os.path.join(global_root, 'workflow/scripts')
