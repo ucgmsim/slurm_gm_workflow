@@ -13,10 +13,10 @@ import numpy as np
 from estimation.model import NNWcEstModel
 
 # Better solution for these locations?
-LF_MODEL_DIR = "/home/melody.zhu/models/LF/"
-HF_MODEL_DIR = "/home/melody.zhu/models/HF/"
-BB_MODEL_DIR = "/home/melody.zhu/models/BB/"
-IM_MODEL_DIR = "/home/melody.zhu/models/IM/"
+LF_MODEL_DIR = "/nesi/project/nesi00213/estimation/models/LF/"
+HF_MODEL_DIR = "/nesi/project/nesi00213/estimation/models/HF/"
+BB_MODEL_DIR = "/nesi/project/nesi00213/estimation/models/BB/"
+IM_MODEL_DIR = "/nesi/project/nesi00213/estimation/models/IM/"
 
 MODEL_PREFIX = "model_"
 SCALER_PREFIX = "scaler_"
