@@ -26,6 +26,10 @@ default_account = 'nesi00213'
 default_ch_scale = 1.1
 default_wct_scale = 1.2
 
+workflow_config = load_config.load(os.path.dirname(os.path.realpath(__file__)), "workflow_config.json")
+tools_dir = workflow_config["bin_process_path"]
+params = utils.load_sim_params('sim_params.yaml')
+
 
 def write_sl_script(
         lf_sim_dir, sim_dir, srf_name, mgmt_db_location, run_time=default_run_time,
@@ -109,6 +113,5 @@ if __name__ == '__main__':
             lf_sim_dir, sim_dir, srf_name, params.mgmt_db_location,
             run_time=wc, nb_cpus=n_cores)
 
-        submit_sl_s
-        cript(script, 'EMOD3D', 'queued', params.mgmt_db_location,
+        submit_sl_script(script, 'EMOD3D', 'queued', params.mgmt_db_location,
                          srf_name, timestamp, submit_yes=submit_yes)
