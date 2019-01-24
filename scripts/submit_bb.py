@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 """Script to create and submit a slurm script for BB"""
+import os
 import argparse
 
-import install
 import estimation.estimate_WC as wc
 
 # TODO: move this to qcore library
-from qcore import shared
-from temp_shared import resolve_header
-from shared_workflow.shared import *
-
+from qcore import shared as qshared
 from qcore import utils
+
+from temp_shared import resolve_header
+from shared_workflow import shared
 
 from datetime import datetime
 
@@ -108,7 +108,7 @@ if __name__ == '__main__':
     print(version)
 
     # est_wct and submit, if --auto used
-    submit_yes = True if args.auto else confirm("Also submit the job for you?")
+    submit_yes = True if args.auto else shared.confirm("Also submit the job for you?")
 
     srf_name = os.path.splitext(os.path.basename(params.srf_file))[0]
     if args.srf is None or srf_name == args.srf:
@@ -121,11 +121,11 @@ if __name__ == '__main__':
         else:
             # Use HF nt for wct estimation
             nt = int(float(params.sim_duration) / float(params.hf.hf_dt))
-            fd_count = len(shared.get_stations(params.FD_STATLIST))
+            fd_count = len(qshared.get_stations(params.FD_STATLIST))
 
             est_core_hours, est_run_time = wc.est_BB_chours_single(
                 fd_count, nt, ncores)
-            wct = set_wct(est_run_time, ncores, args.auto)
+            wct = shared.set_wct(est_run_time, ncores, args.auto)
 
         bb_sim_dir = os.path.join(params.sim_dir, 'BB')
         # TODO: save status as HF. refer to submit_hf
@@ -137,5 +137,5 @@ if __name__ == '__main__':
             run_time=wct)
 
         # Submit the script
-        submit_sl_script(script_file, "BB", 'queued', params.mgmt_db_location,
+        shared.submit_sl_script(script_file, "BB", 'queued', params.mgmt_db_location,
                          srf_name, timestamp, submit_yes=submit_yes)

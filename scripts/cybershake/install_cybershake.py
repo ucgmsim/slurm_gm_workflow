@@ -9,11 +9,6 @@ from qcore import utils
 from qcore import validate_vm
 from scripts import install
 from scripts.management import create_mgmt_db
-# from shared_workflow.shared import *
-from shared_workflow.shared import verify_user_dirs
-
-default_dt = 0.005
-default_hf_dt = 0.005
 
 
 def main():
@@ -110,10 +105,10 @@ def main():
         else:
             # install pairs one by one to fit the new structure
             sim_dir = os.path.join(os.path.join(sim_root_dir, source), srf_name)
-            root_params_dict, fault_params_dict, sim_params_dict, vm_params_dict = install.action(version, sim_dir, event_name, run_name, run_dir, vel_mod_dir, srf_dir, srf, stoch_file_path,
+            root_params_dict, fault_params_dict, sim_params_dict, vm_params_dict = install.action(version, sim_dir, event_name, run_name, run_dir, vel_mod_dir, srf, stoch_file_path,
                        params_vel_path, stat_file_path, vs30_file_path, vs30ref_file_path, MODEL_LAT, MODEL_LON,
                        MODEL_ROT, hh, nx, ny, nz, sufx, sim_duration, vel_mod_params_dir, yes_statcords,
-                       yes_model_params, fault_yaml_path, root_yaml_path, v1d_dir, site_v1d_dir, hf_stat_vs_ref)
+                       yes_model_params, fault_yaml_path, root_yaml_path, v1d_dir, site_v1d_dir, hf_stat_vs_ref, user_root)
 
             create_mgmt_db.create_mgmt_db([], path_cybershake, srf_files=srf)
             utils.setup_dir(os.path.join(path_cybershake, 'mgmt_db_queue'))

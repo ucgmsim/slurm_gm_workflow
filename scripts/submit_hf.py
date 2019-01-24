@@ -1,18 +1,15 @@
 #!/usr/bin/env python3
 """Script to create and submit a slurm script for HF"""
-import os.path
+import os
 import argparse
 
-
-import qcore
-import install
 import estimation.estimate_WC as wc
 
-from qcore import utils, shared, srf
+import qcore
 
 # TODO: move this to qcore library
 from temp_shared import resolve_header
-from shared_workflow.shared import *
+from shared_workflow import shared
 from datetime import datetime
 
 # default values
@@ -109,7 +106,7 @@ if __name__ == '__main__':
                         help="random seed number(0 for randomized seed)")
     args = parser.parse_args()
 
-    params = utils.load_sim_params('sim_params.yaml')
+    params = qcore.utils.load_sim_params('sim_params.yaml')
 
     # check if the args is none, if not, change the version
     ncore = args.ncore
@@ -148,7 +145,7 @@ if __name__ == '__main__':
                   "We assume rand_reset=%s" % bool(hf_option))
 
     # est_wct and submit, if --auto used
-    submit_yes = True if args.auto else confirm("Also submit the job for you?")
+    submit_yes = True if args.auto else shared.confirm("Also submit the job for you?")
 
     # modify the logic to use the same as in install_bb:
     # sniff through params_base to get the names of srf,
@@ -179,7 +176,7 @@ if __name__ == '__main__':
         else:
             est_core_hours, est_run_time = wc.est_HF_chours_single(
                 fd_count, nsub_stoch, nt, ncore)
-            wct = set_wct(est_run_time, ncore, args.auto)
+            wct = shared.set_wct(est_run_time, ncore, args.auto)
 
         hf_sim_dir = os.path.join(params.sim_dir, 'HF')
 
@@ -190,6 +187,6 @@ if __name__ == '__main__':
             seed=args.seed)
 
         # Submit the script
-        submit_sl_script(script_file, "HF", "queued", params.mgmt_db_location,
+        shared.submit_sl_script(script_file, "HF", "queued", params.mgmt_db_location,
                          srf_name, timestamp, submit_yes=submit_yes)
 

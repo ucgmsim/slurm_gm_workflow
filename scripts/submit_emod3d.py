@@ -2,14 +2,14 @@
 """Script to create and submit a slurm script for LF"""
 # TODO: import the CONFIG here
 # Section for parser to determine if using automate wct
-import install
+import os
 import argparse
 
 import set_runparams
 import estimation.estimate_WC as wc
 
 from qcore import utils
-from shared_workflow.shared import *
+from shared_workflow import shared
 from shared_workflow.shared_defaults import tools_dir
 
 # TODO: remove this once temp_shared is gone
@@ -78,7 +78,7 @@ if __name__ == '__main__':
     if args.auto:
         submit_yes = True
     else:
-        submit_yes = confirm("Also submit the job for you?")
+        submit_yes = shared.confirm("Also submit the job for you?")
 
     print("params.srf_file", params.srf_file)
     wall_clock_limit = None
@@ -99,11 +99,11 @@ if __name__ == '__main__':
         est_core_hours, est_run_time = wc.est_LF_chours_single(
             int(params.nx), int(params.ny), int(params.nz),
             int(float(params.sim_duration) / float(params.dt)), n_cores)
-        wc = set_wct(est_run_time, n_cores, args.auto)
+        wc = shared.set_wct(est_run_time, n_cores, args.auto)
 
         script = write_sl_script(
             lf_sim_dir, sim_dir, srf_name, params.mgmt_db_location,
             run_time=wc, nb_cpus=n_cores)
 
-        submit_sl_script(script, 'EMOD3D', 'queued', params.mgmt_db_location,
+        shared.submit_sl_script(script, 'EMOD3D', 'queued', params.mgmt_db_location,
                          srf_name, timestamp, submit_yes=submit_yes)
