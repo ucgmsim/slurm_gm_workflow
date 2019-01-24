@@ -10,9 +10,9 @@ import numpy as np
 
 from enum import Enum
 from argparse import ArgumentParser
+from typing import List
 
 from qcore import shared, srf, utils
-
 from estimation import estimate_wct
 
 PARAMS_VEL_FILENAME = "params_vel.json"
@@ -144,18 +144,24 @@ def run_estimations(
     if hf_input_data is not None:
         print("Running HF estimation")
         hf_core_hours, hf_run_time = estimate_wct.estimate_HF_WC(hf_input_data)
+        hf_cores = hf_input_data[:, -1]
+    else:
+        hf_core_hours, hf_run_time, hf_cores = np.nan, np.nan, np.nan
 
-        results_df[("HF", ResultColsConst.core_hours.value)] = hf_core_hours
-        results_df[("HF", ResultColsConst.run_time.value)] = hf_run_time
-        results_df[("HF", ResultColsConst.ncores.value)] = hf_input_data[:, -1]
+    results_df[("HF", ResultColsConst.core_hours.value)] = hf_core_hours
+    results_df[("HF", ResultColsConst.run_time.value)] = hf_run_time
+    results_df[("HF", ResultColsConst.ncores.value)] = hf_cores
 
     if bb_input_data is not None:
         print("Running BB estimation")
         bb_core_hours, bb_run_time = estimate_wct.estimate_BB_WC(bb_input_data)
+        bb_cores = bb_input_data[:, -1]
+    else:
+        bb_core_hours, bb_run_time, bb_cores = np.nan, np.nan, np.nan
 
-        results_df[("BB", ResultColsConst.core_hours.value)] = bb_core_hours
-        results_df[("BB", ResultColsConst.run_time.value)] = bb_run_time
-        results_df[("BB", ResultColsConst.ncores.value)] = bb_input_data[:, -1]
+    results_df[("BB", ResultColsConst.core_hours.value)] = bb_core_hours
+    results_df[("BB", ResultColsConst.run_time.value)] = bb_run_time
+    results_df[("BB", ResultColsConst.ncores.value)] = bb_cores
 
     return results_df
 
@@ -204,6 +210,33 @@ def display_results(df: pd.DataFrame, verbose: bool = False):
     )
 
 
+def get_runs_dir_params(
+    runs_dir: str, fault_names: List[str], realisations: np.ndarray
+):
+    """Gets the parameters from the runs directory. Assumes that all realisations of a
+    fault have the same parameters
+    """
+    data = []
+    for ix, fault_name in enumerate(fault_names):
+        r = realisations[ix][0]
+
+        params = utils.load_sim_params(
+            os.path.join(runs_dir, fault_name, r, "sim_params.yaml")
+        )
+
+        data.append((params.dt, params.hf.hf_dt, params.FD_STATLIST, params.hf.hf_slip))
+
+    return np.rec.array(
+        data,
+        dtype=[
+            ("dt", np.float32),
+            ("hf_dt", np.float32),
+            ("fd_statlist", np.object),
+            ("hf_slip", np.object),
+        ],
+    )
+
+
 def main(args):
     fault_names, realisations = get_faults(
         args.vms_dir, args.sources_dir, args.runs_dir, args
@@ -230,11 +263,30 @@ def main(args):
         config_dt = cybershake_config.get("dt")
         config_hf_dt = cybershake_config.get("hf_dt")
 
-    dt = (
-        vm_params[:, 4]
-        if config_dt is None
-        else np.ones(fault_names.shape[0]) * config_dt
+    # Get the params from the Runs directory
+    # These are on a per fault basis, i.e. assuming that all realisations
+    # of a fault have the same parameters!
+    runs_params = (
+        None
+        if args.runs_dir is None
+        else get_runs_dir_params(args.runs_dir, fault_names, realisations)
     )
+
+    # Set dt
+    if runs_params is not None:
+        dt = runs_params.dt
+        if config_dt is not None and np.any(dt != config_dt):
+            print(
+                "One of the fault dt's does not match the config dt. "
+                "Something went wrong during install."
+            )
+    else:
+        dt = (
+            vm_params[:, 4]
+            if config_dt is None
+            else np.ones(fault_names.shape[0]) * config_dt
+        )
+
     nan_mask = np.any(np.isnan(vm_params[:, :4]), axis=1) | np.isnan(dt)
     if np.any(nan_mask):
         print(
@@ -272,38 +324,26 @@ def main(args):
             * estimate_wct.HF_DEFAULT_NCORES
         )
 
-        # Assumes that all realisations of a fault have the
-        # same FD_STATLIST and hf.hf_slip
-        fd_statlist, hf_slip = [], []
-        for ix, fault_name in enumerate(fault_names):
-            r = realisations[ix][0]
-
-            params = utils.load_sim_params(
-                os.path.join(args.runs_dir, fault_name, r, "sim_params.yaml")
-            )
-
-            hf_dt = params.hf.hf_dt
-            fd_statlist.append(params.FD_STATLIST)
-            hf_slip.append(params.hf.hf_slip)
-
-            # Sanity check
-            if config_hf_dt is not None and hf_dt != config_hf_dt:
-                raise Exception("Different hf dt values, something went wrong!")
-
         # Get fd_count and nsub_stoch for each fault
         fd_counts = np.asarray(
-            [len(shared.get_stations(fd_statlist)) for fd_statlist in fd_statlist]
+            [
+                len(shared.get_stations(fd_statlist))
+                for fd_statlist in runs_params.fd_statlist
+            ]
         )
 
         nsub_stochs = np.asarray(
-            [srf.get_nsub_stoch(hf_slip, get_area=False) for hf_slip in hf_slip]
+            [
+                srf.get_nsub_stoch(hf_slip, get_area=False)
+                for hf_slip in runs_params.hf_slip
+            ]
         )
 
         # Have to repeat/extend the fault sim_durations to per realisation
         r_sim_durations = np.repeat(fault_sim_durations, r_counts)
         r_fd_counts = np.repeat(fd_counts, r_counts)
         r_nsub_stochs = np.repeat(nsub_stochs, r_counts)
-        r_hf_nt = r_sim_durations / hf_dt
+        r_hf_nt = r_sim_durations / runs_params.hf_dt
 
         hf_input_data = np.concatenate(
             (
