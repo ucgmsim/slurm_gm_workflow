@@ -16,6 +16,8 @@ import datetime
 
 import estimation.estimate_WC as wc
 
+from shared_workflow.shared_defaults import tools_dir
+
 if sys.version_info.major == 3:
     basestring = str
 
@@ -176,6 +178,7 @@ def verify_user_dirs(dir_list, reset=False):
         if not os.path.isdir(dir_path):
             print("dir_path",dir_path)
             os.makedirs(dir_path)
+            print("maded dir,", dir_path)
         elif reset:
             # empty directory
             shutil.rmtree(dir_path)
@@ -596,4 +599,5 @@ def get_hf_run_name(v_mod_1d_name, srf, root_dict):
     #    yes = confirm_name(hf_run_name)
     yes = True
     return yes, hf_run_name
+
 
