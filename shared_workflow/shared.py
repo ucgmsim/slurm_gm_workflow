@@ -14,7 +14,7 @@ import sys
 import re
 import datetime
 
-import estimation.estimate_WC as wc
+import estimation.estimate_wct as wc
 
 if sys.version_info.major == 3:
     basestring = str

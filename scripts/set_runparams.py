@@ -20,7 +20,6 @@ from shared_workflow import load_config
 
 sys.path.append(os.path.abspath(os.path.curdir))
 
-
 def create_run_params(sim_dir, srf_name=None):
     sys.path.append(sim_dir)
     params = utils.load_sim_params('sim_params.yaml')

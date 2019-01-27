@@ -7,7 +7,7 @@ from datetime import datetime
 
 import qcore
 import install
-import estimation.estimate_WC as wc
+from estimation import estimate_wct as wc
 
 from qcore import utils, shared, srf
 
@@ -147,9 +147,6 @@ if __name__ == '__main__':
             print("Note: rand_reset is not defined in params_base_bb.py. "
                   "We assume rand_reset=%s" % bool(hf_option))
 
-    # est_wct and submit, if --auto used
-    submit_yes = True if args.auto else confirm("Also submit the job for you?")
-
     # modify the logic to use the same as in install_bb:
     # sniff through params_base to get the names of srf,
     # instead of running through file directories.
@@ -190,6 +187,8 @@ if __name__ == '__main__':
             seed=args.seed)
 
         # Submit the script
-        submit_sl_script(script_file, "HF", "queued", params.mgmt_db_location,
-                         srf_name, timestamp, submit_yes=submit_yes)
-
+        submit_yes = True if args.auto \
+            else confirm("Also submit the job for you?")
+        submit_sl_script(
+            "HF", "queued", params.mgmt_db_location, srf_name, timestamp,
+            submit_yes=submit_yes)
