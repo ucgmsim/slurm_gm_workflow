@@ -120,25 +120,12 @@ def write_sl_script_winbin_aio(
     return script_name_abs
 
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(
-        description="Create (and submit if specified) the slurm script for HF")
-
-    parser.add_argument("--auto", nargs="?", type=str, const=True)
-    parser.add_argument('--account', type=str, default=default_account)
-    parser.add_argument('--merge_ts', nargs="?", type=str, const=True)
-    parser.add_argument('--winbin_aio', nargs="?", type=str, const=True)
-    parser.add_argument('--srf', type=str, default=None)
-    parser.add_argument('--pre_hf', nargs="?", type=str, const=True)
-
-    args = parser.parse_args()
-
+def main(args):
     workflow_config = load_config.load(
         os.path.dirname(os.path.realpath(__file__)), "workflow_config.json")
     global_root = workflow_config["global_root"]
     tools_dir = os.path.join(global_root, 'opt/maui/emod3d/3.0.4-gcc/bin')
 
-    created_scripts = []
     params = utils.load_sim_params('sim_params.yaml')
     submit_yes = True if args.auto else \
         confirm("Also submit the job for you?")
@@ -172,3 +159,20 @@ if __name__ == '__main__':
             submit_sl_script(
                 script, "winbin_aio", "queued", params.mgmt_db_location,
                 srf_name, submit_yes)
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(
+        description="Create (and submit if specified) the slurm script for HF")
+
+    parser.add_argument("--auto", nargs="?", type=str, const=True)
+    parser.add_argument('--account', type=str, default=default_account)
+    parser.add_argument('--merge_ts', nargs="?", type=str, const=True)
+    parser.add_argument('--winbin_aio', nargs="?", type=str, const=True)
+    parser.add_argument('--srf', type=str, default=None)
+    parser.add_argument('--pre_hf', nargs="?", type=str, const=True)
+
+    args = parser.parse_args()
+
+    main(args)
+
