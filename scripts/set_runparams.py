@@ -21,7 +21,6 @@ from shared_workflow import load_config
 sys.path.append(os.path.abspath(os.path.curdir))
 from shared_workflow.shared_defaults import workflow_config, global_root,tools_dir, emod3d_version
 
-
 def create_run_params(sim_dir, srf_name=None):
     sys.path.append(sim_dir)
     params = utils.load_sim_params('sim_params.yaml')

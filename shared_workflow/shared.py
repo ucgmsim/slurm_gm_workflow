@@ -14,7 +14,7 @@ import sys
 import re
 import datetime
 
-import estimation.estimate_WC as wc
+import estimation.estimate_wct as wc
 
 from shared_workflow.shared_defaults import tools_dir
 

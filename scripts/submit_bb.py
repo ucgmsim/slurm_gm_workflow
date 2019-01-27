@@ -3,7 +3,7 @@
 import argparse
 
 import install
-import estimation.estimate_WC as wc
+from estimation import estimate_wct as wc
 
 # TODO: move this to qcore library
 from qcore import shared
@@ -107,9 +107,6 @@ if __name__ == '__main__':
         sl_name_prefix = default_version
     print(version)
 
-    # est_wct and submit, if --auto used
-    submit_yes = True if args.auto else confirm("Also submit the job for you?")
-
     srf_name = os.path.splitext(os.path.basename(params.srf_file))[0]
     if args.srf is None or srf_name == args.srf:
 
@@ -137,5 +134,7 @@ if __name__ == '__main__':
             run_time=wct)
 
         # Submit the script
+        submit_yes = True if args.auto \
+            else confirm("Also submit the job for you?")
         submit_sl_script(script_file, "BB", 'queued', params.mgmt_db_location,
                          srf_name, timestamp, submit_yes=submit_yes)

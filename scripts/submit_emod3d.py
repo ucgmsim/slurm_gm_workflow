@@ -6,7 +6,7 @@ import install
 import argparse
 
 import set_runparams
-import estimation.estimate_WC as wc
+import estimation.estimate_wct as wc
 
 from qcore import utils
 from shared_workflow.shared import *
@@ -23,8 +23,6 @@ default_core = 160
 default_run_time = "02:00:00"
 default_memory = "16G"
 default_account = 'nesi00213'
-default_ch_scale = 1.1
-default_wct_scale = 1.2
 
 params = utils.load_sim_params('sim_params.yaml')
 
