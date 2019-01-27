@@ -20,11 +20,15 @@ IM_MODEL_DIR = "/nesi/project/nesi00213/estimation/models/IM/"
 MODEL_PREFIX = "model_"
 SCALER_PREFIX = "scaler_"
 
+# HF and BB use hyperthreading, hence they use a single node each on maui
+# There is no number of nodes scaling.
 HF_DEFAULT_NCORES = 80
 BB_DEFAULT_NCORES = 80
-LF_DEFAULT_NCORES = 160
 
-DEFAULT_NCORES_PER_NODE = 40
+# LF does not use hyperthreading, hence it uses 4 nodes by default with additional
+# nodes added by scaling, explained in estimate_LF_chours
+LF_DEFAULT_NCORES = 160
+LF_DEFAULT_NCORES_PER_NODE = 40
 
 
 def get_wct(run_time, overestimate_factor=0.1):
@@ -87,14 +91,14 @@ def est_LF_chours_single(
         [float(nx), float(ny), float(nz), float(nt), float(ncores)]
     ).reshape(1, 5)
 
-    core_hours, run_time, ncores = estimate_LF_WC(
+    core_hours, run_time, ncores = estimate_LF_chours(
         data, scale_ncores, node_time_th_factor, model_dir, model_prefix, scaler_prefix
     )
 
     return core_hours[0], run_time[0], ncores[0]
 
 
-def estimate_LF_WC(
+def estimate_LF_chours(
     data: np.ndarray,
     scale_ncores: bool,
     node_time_th_factor: float = 0.5,
@@ -113,7 +117,7 @@ def estimate_LF_WC(
         Has to have a shape of [-1, 5]
     scale_ncores: bool
         If True then the number of cores is adjusted until
-        n_nodes * node_time_th == run_time
+        n_nodes * node_time_th >= run_time
     node_time_th: float
         Node time threshold factor, does nothing if scale_ncores is not set
 
@@ -146,12 +150,12 @@ def estimate_LF_WC(
     # the threshold is meet
     else:
         run_time = core_hours / data[:, -1]
-        time_th = node_time_th_factor * (data[:, -1] / DEFAULT_NCORES_PER_NODE)
+        time_th = node_time_th_factor * (data[:, -1] / LF_DEFAULT_NCORES_PER_NODE)
         mask = run_time > time_th
         while np.any(mask):
-            data[mask, -1] += float(DEFAULT_NCORES_PER_NODE)
+            data[mask, -1] += float(LF_DEFAULT_NCORES_PER_NODE)
             time_th[mask] = node_time_th_factor * (
-                data[mask, -1] / DEFAULT_NCORES_PER_NODE
+                    data[mask, -1] / LF_DEFAULT_NCORES_PER_NODE
             )
 
             core_hours = estimate(
@@ -197,18 +201,18 @@ def est_HF_chours_single(
         [float(fd_count), float(nsub_stoch), float(nt), float(n_cores)]
     ).reshape(1, 4)
 
-    core_hours, run_time = estimate_HF_WC(data, model_dir, model_prefix, scaler_prefix)
+    core_hours, run_time = estimate_HF_chours(data, model_dir, model_prefix, scaler_prefix)
 
     return core_hours[0], run_time[0]
 
 
-def estimate_HF_WC(
+def estimate_HF_chours(
     data: np.ndarray,
     model_dir: str = HF_MODEL_DIR,
     model_prefix: str = MODEL_PREFIX,
     scaler_prefix: str = SCALER_PREFIX,
 ):
-    """Make bulk HF estimations, requires data to be in the corret
+    """Make bulk HF estimations, requires data to be in the correct
     order (see above).
 
     Params
@@ -268,12 +272,12 @@ def est_BB_chours_single(
     # The order of the features has to the same as for training!!
     data = np.array([float(fd_count), float(nt), float(n_cores)]).reshape(1, 3)
 
-    core_hours, run_time = estimate_BB_WC(data, model_dir, model_prefix, scaler_prefix)
+    core_hours, run_time = estimate_BB_chours(data, model_dir, model_prefix, scaler_prefix)
 
     return core_hours[0], run_time[0]
 
 
-def estimate_BB_WC(
+def estimate_BB_chours(
     data: np.ndarray,
     model_dir: str = BB_MODEL_DIR,
     model_prefix: str = MODEL_PREFIX,

@@ -116,7 +116,7 @@ def run_estimations(
     each fault/realisation combination.
     """
     print("Running estimation for LF")
-    lf_core_hours, lf_run_time, lf_ncores = estimate_wct.estimate_LF_WC(
+    lf_core_hours, lf_run_time, lf_ncores = estimate_wct.estimate_LF_chours(
         lf_input_data, True
     )
     lf_result_data = np.concatenate(
@@ -143,7 +143,7 @@ def run_estimations(
 
     if hf_input_data is not None:
         print("Running HF estimation")
-        hf_core_hours, hf_run_time = estimate_wct.estimate_HF_WC(hf_input_data)
+        hf_core_hours, hf_run_time = estimate_wct.estimate_HF_chours(hf_input_data)
         hf_cores = hf_input_data[:, -1]
     else:
         hf_core_hours, hf_run_time, hf_cores = np.nan, np.nan, np.nan
@@ -154,7 +154,7 @@ def run_estimations(
 
     if bb_input_data is not None:
         print("Running BB estimation")
-        bb_core_hours, bb_run_time = estimate_wct.estimate_BB_WC(bb_input_data)
+        bb_core_hours, bb_run_time = estimate_wct.estimate_BB_chours(bb_input_data)
         bb_cores = bb_input_data[:, -1]
     else:
         bb_core_hours, bb_run_time, bb_cores = np.nan, np.nan, np.nan
