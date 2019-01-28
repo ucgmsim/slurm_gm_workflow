@@ -42,11 +42,15 @@ class MetaConst(Enum):
     im_comp_count = "im_components_count"
 
 
-class SimTypeConst(Enum):
+class ProcTypeConst(Enum):
     BB = "BB"
     HF = "HF"
     LF = "LF"
     IM = "IM_calc"
+
+    @classmethod
+    def has_value(cls, value):
+        return any(value == item.value for item in cls)
 
 
 def create_dataframe(json_file):
@@ -120,7 +124,7 @@ def clean_df(df):
     """Cleans column of interests,
     and attempts to convert columns to numeric data type (float)"""
     # Iterate BB, HF, LF
-    for sim_type_const in SimTypeConst:
+    for sim_type_const in ProcTypeConst:
         sim_type = sim_type_const.value
 
         if sim_type in df.columns.levels[0].values:
@@ -224,7 +228,7 @@ def main(args):
 
         # Calculate the core hours for each simulation type
         if args.calc_core_hours:
-            for sim_type in SimTypeConst:
+            for sim_type in ProcTypeConst:
                 if sim_type.value in result_df.columns.levels[0].values:
                     cur_df = result_df.loc[:, sim_type.value]
 
