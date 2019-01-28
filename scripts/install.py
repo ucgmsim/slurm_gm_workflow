@@ -15,6 +15,7 @@ import configparser
 import datetime
 import argparse
 
+import yaml
 from qcore import utils
 from shared_workflow import load_config as ldcfg
 from management import create_mgmt_db
@@ -257,7 +258,7 @@ def action(version, sim_dir, event_name, run_name, run_dir, vel_mod_dir,
            vs30_file_path, vs30ref_file_path, MODEL_LAT, MODEL_LON,
            MODEL_ROT, hh, nx, ny, nz, sufx, sim_duration, vel_mod_params_dir,
            yes_statcords, yes_model_params, fault_yaml_path, root_yaml_path,
-           dt=default_dt):
+           sim_params_file='', dt=default_dt):
     lf_sim_root_dir = os.path.join(sim_dir, "LF")
     hf_dir = os.path.join(sim_dir, "HF")
     bb_dir = os.path.join(sim_dir, 'BB')
@@ -396,6 +397,13 @@ def action(version, sim_dir, event_name, run_name, run_dir, vel_mod_dir,
     else:
         print("Generation of statcords is skipped. "
               "You need to fix params_base.py manually")
+
+    if sim_params_file and os.path.isfile(sim_params_file):
+        with open(sim_params_file) as spf:
+            extra_sims_params = yaml.load(spf)
+        for key in extra_sims_params.keys():
+            sim_params_dict.update({key: extra_sims_params[key]})
+
     return root_params_dict, fault_params_dict, sim_params_dict, vm_params_dict
 
 

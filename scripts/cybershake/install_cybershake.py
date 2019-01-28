@@ -3,7 +3,7 @@ import sys
 import glob
 import argparse
 
-import shared_workflow.load_config as ldcfg
+from shared_workflow import load_config as ldcfg
 from qcore import utils
 
 from qcore import validate_vm
@@ -66,7 +66,7 @@ def main():
     valid_vm, message = validate_vm.validate_vm(vel_mod_dir)
     if not valid_vm:
         message = "Error: VM {} failed {}".format(source, message)
-        print message
+        print(message)
         with open(error_log, 'a') as error_fp:
             error_fp.write(message)
         exit()
@@ -83,6 +83,7 @@ def main():
     # get all srf from source
     srf_dir = os.path.join(os.path.join(srf_root_dir, source), "Srf")
     stoch_dir = os.path.join(os.path.join(srf_root_dir, source), "Stoch")
+    sim_params_dir = os.path.join(os.path.join(srf_root_dir, source), "Sim_params")
     list_srf = glob.glob(os.path.join(srf_dir, '*.srf'))
     if args.n_rel is not None and len(list_srf) != args.n_rel:
         message = "Error: fault {} failed. Number of realisations do not match number of SRF files".format(source)
@@ -97,9 +98,10 @@ def main():
         # try to match find the stoch with same basename
         srf_name = os.path.splitext(os.path.basename(srf))[0]
         stoch_file_path = os.path.join(stoch_dir, srf_name + '.stoch')
+        sim_params_file = os.path.join(sim_params_dir, srf_name + '.yaml')
         if not os.path.isfile(stoch_file_path):
             message = "Error: Corresponding Stoch file is not found:\n{}".format(stoch_file_path)
-            print message
+            print(message)
             with open(error_log, 'a') as error_fp:
                 error_fp.write(message)
             sys.exit()
@@ -109,7 +111,7 @@ def main():
             root_params_dict, fault_params_dict, sim_params_dict, vm_params_dict = install.action(args.version, sim_dir, event_name, run_name, run_dir, vel_mod_dir, srf_dir, srf, stoch_file_path,
                        params_vel_path, stat_file_path, vs30_file_path, vs30ref_file_path, MODEL_LAT, MODEL_LON,
                        MODEL_ROT, hh, nx, ny, nz, sufx, sim_duration, vel_mod_params_dir, yes_statcords,
-                       yes_model_params, fault_yaml_path, root_yaml_path)
+                       yes_model_params, fault_yaml_path, root_yaml_path, sim_params_file)
 
             create_mgmt_db.create_mgmt_db([], path_cybershake, srf_files=srf)
             utils.setup_dir(os.path.join(path_cybershake, 'mgmt_db_queue'))
