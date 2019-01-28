@@ -17,7 +17,6 @@ srf_default_dir = os.path.join(global_root, 'RupModel')
 vel_mod_dir = os.path.join(global_root, 'VelocityModel')
 recipe_dir = workflow_config['templates_dir']
 v_mod_1d_dir = os.path.join(global_root, 'VelocityModel', 'Mod-1D')
-gmsa_dir = os.path.join(global_root, 'groundMotionStationAnalysis')
 stat_dir = os.path.join(global_root, 'StationInfo')
 tools_dir = os.path.join(global_root, 'opt/maui/emod3d/3.0.4-gcc/bin')
 
