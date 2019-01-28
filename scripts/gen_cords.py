@@ -1,11 +1,9 @@
 #!/usr/bin/env python
 import os
-from subprocess import check_call
 import sys
-import os.path
+from subprocess import check_call
 
 sys.path.append(os.path.abspath(os.path.curdir))
-from shared_workflow.shared import *
 from shared_workflow.shared_defaults import tools_dir
 
 

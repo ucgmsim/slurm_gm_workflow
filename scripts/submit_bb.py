@@ -138,3 +138,4 @@ if __name__ == '__main__':
             else confirm("Also submit the job for you?")
         submit_sl_script(script_file, "BB", 'queued', params.mgmt_db_location,
                          srf_name, timestamp, submit_yes=submit_yes)
+
