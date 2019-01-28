@@ -74,7 +74,7 @@ def main():
 
     params_vel_path = os.path.join(vel_mod_dir, params_vel)
 
-    execfile(params_vel_path, globals())
+    exec(open(params_vel_path).read(), globals())
 
     yes_statcords = True  # always has to be true to get the fd_stat
     yes_model_params = False  # statgrid should normally be already generated with Velocity Model
