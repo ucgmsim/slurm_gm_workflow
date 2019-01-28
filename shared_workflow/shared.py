@@ -176,9 +176,7 @@ def verify_user_dirs(dir_list, reset=False):
     """
     for dir_path in dir_list:
         if not os.path.isdir(dir_path):
-            print("dir_path",dir_path)
             os.makedirs(dir_path)
-            print("maded dir,", dir_path)
         elif reset:
             # empty directory
             shutil.rmtree(dir_path)

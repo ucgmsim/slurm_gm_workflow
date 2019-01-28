@@ -109,20 +109,14 @@ def q_select_vel_model(vel_mod_dir):
 
     v_mod_ver_options = []
     for root, dirnames, filenames in os.walk(vel_mod_dir):
-        print("root,dirname,filename",root, dirnames, filenames)
         # returns the folder that contains params_vel.py
-        print("params_Vel",defaults.params_vel)
         for filename in fnmatch.filter(filenames, defaults.params_vel):
-            print("matching filename",filename)
             v_mod_ver_options.append(root)
 
     v_mod_ver_options.sort()
-    print("vel_mod_ver_iotuibs",v_mod_ver_options.sort())
     v_mod_ver = shared.show_multiple_choice(v_mod_ver_options)
-    print(v_mod_ver)
 
     vel_mod_dir = os.path.join(vel_mod_dir, v_mod_ver)
-    print(vel_mod_dir, defaults.params_vel)
 
     params_vel_path = os.path.join(vel_mod_dir, defaults.params_vel)
     if not os.path.exists(params_vel_path):
@@ -260,7 +254,6 @@ def install_bb(stat_file, root_dict, v1d_dir=defaults.vel_mod_dir, v1d_full_path
     shared.show_horizontal_line(c="*")
     print(" " * 37 + "EMOD3D HF/BB Preparation Ver.slurm")
     shared.show_horizontal_line(c="*")
-    print("v1d_full_path is", v1d_full_path, "v1d_dir is",v1d_dir)
     root_dict['bb'] = {}
     if v1d_full_path is not None:
         v_mod_1d_selected = v1d_full_path
@@ -508,11 +501,9 @@ def main_local(args):
     while True:
         run_name = shared.add_name_suffix(run_name, yes_flag)
         sim_dir = os.path.join(args.user_root, run_name)
-        print("sim_dir is", sim_dir)
 
         # sim_dir is new
         if not os.path.exists(sim_dir):
-            print("doesn exits")
             os.mkdir(sim_dir)
             break
 
