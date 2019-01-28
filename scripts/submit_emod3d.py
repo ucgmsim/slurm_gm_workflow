@@ -94,9 +94,7 @@ if __name__ == '__main__':
             print("Number of cores is different from default "
                   "number of cores. Estimation will be less accurate.")
 
-        est_core_hours, est_run_time = wc.est_LF_chours_single(
-            int(params.nx), int(params.ny), int(params.nz),
-            int(float(params.sim_duration) / float(params.dt)), n_cores)
+        est_core_hours, est_run_time, n_cores = wc.est_LF_chours_single(int(params.nx), int(params.ny), int(params.nz), int(float(params.sim_duration) / float(params.dt)), n_cores, True)
         wc = set_wct(est_run_time, n_cores, args.auto)
 
         script = write_sl_script(

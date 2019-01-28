@@ -95,7 +95,7 @@ def est_LF_chours_single(
         data, scale_ncores, node_time_th_factor, model_dir, model_prefix, scaler_prefix
     )
 
-    return core_hours[0], run_time[0], ncores[0]
+    return core_hours[0], run_time[0], int(ncores[0])
 
 
 def estimate_LF_chours(
