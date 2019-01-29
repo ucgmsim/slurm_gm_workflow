@@ -12,6 +12,8 @@ import argparse
 from typing import Dict, List
 from datetime import datetime
 
+import pandas as pd
+
 from metadata.agg_json_data import ProcTypeConst, MetaConst
 from qcore import utils
 from qcore.srf import get_nsub_stoch
@@ -165,11 +167,13 @@ def main(args):
         ) - datetime.strptime(metadata_dict[MetaConst.start_time.value], TIMESTAMP_FMT)
         metadata_dict[MetaConst.run_time.value] = tdelta.total_seconds() / 3600
 
+    # Load the params
+    params = utils.load_sim_params(
+        os.path.join(args.sim_dir, "sim_params.yaml"), load_vm=True
+    )
+
     # params metadata for LF
     if args.proc_type == ProcTypeConst.LF.value:
-        params = utils.load_sim_params(
-            os.path.join(args.sim_dir, "sim_params.yaml"), load_vm=True
-        )
         metadata_dict[MetaConst.nt.value] = int(
             float(params.sim_duration) / float(params.dt)
         )
@@ -178,9 +182,6 @@ def main(args):
         metadata_dict[MetaConst.nz.value] = params.nz
     # HF
     elif args.proc_type == ProcTypeConst.HF.value:
-        params = utils.load_sim_params(
-            os.path.join(args.sim_dir, "sim_params.yaml"), load_vm=False
-        )
         metadata_dict[MetaConst.nt.value] = int(
             float(params.sim_duration) / float(params.hf.hf_dt)
         )
@@ -189,10 +190,17 @@ def main(args):
         )
     # BB
     elif args.proc_type == ProcTypeConst.BB.value:
-        params = utils.load_sim_params(
-            os.path.join(args.sim_dir, "sim_params.yaml"), load_vm=False
-        )
         metadata_dict[MetaConst.dt.value] = params.hf.hf_dt
+    # IM_calc
+    elif args.proc_type == ProcTypeConst.IM.value:
+        metadata_dict[MetaConst.nt.value] = int(float(params.sim_duration)/float(params.hf.hf_dt))
+
+        # This should come from a constants file
+        im_calc_csv_file = os.path.join(args.sim_dir, "IM_calc", "{}.csv".format(os.path.basename(args.sim_dir)))
+        im_comp = list(pd.read_csv(im_calc_csv_file).component.unique().astype('U'))
+
+        metadata_dict[MetaConst.im_comp.value] = im_comp
+        metadata_dict[MetaConst.im_comp_count] = len(im_comp)
 
     store_metadata(log_dir, args.proc_type, metadata_dict)
 
