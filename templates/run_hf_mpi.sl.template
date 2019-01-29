@@ -23,13 +23,11 @@ if [[ $? == 0 ]]; then
     if [[ ! -d {{sim_dir}}/ch_log ]]; then
         mkdir {{sim_dir}}/ch_log
     fi
-    run_time=`python -c "from datetime import datetime; tdelta= datetime.strptime('$end_time', '$runtime_fmt') - datetime.strptime('$start_time', '$runtime_fmt'); print(tdelta.total_seconds()/3600)"`
     fd_name=`python -c "from qcore import utils; p = utils.load_yaml('sim_params.yaml'); print(p['FD_STATLIST'])"`
     fd_count=`cat $fd_name | wc -l`
-    nt=`python -c "from qcore import utils; d = utils.load_sim_params('sim_params.yaml', load_vm=False); print(int(float(d.sim_duration) / float(d.hf.hf_dt)))"`
-    nsub_stoch=`python -c "from qcore import utils; params = utils.load_yaml('sim_params.yaml'); from qcore.srf import get_nsub_stoch; sub_fault_count,sub_fault_area=get_nsub_stoch(params['hf']['hf_slip'],get_area=True);print(sub_fault_count)"`
-    #save meta data
-    echo "{{srf_name}} HF $SLURM_NTASKS $run_time $fd_count $nt $nsub_stoch $start_time $end_time" >> {{sim_dir}}/ch_log/HF.$timestamp.$SLURM_JOBID.log
+
+    # Save meta data
+    python $gmsim/workflow/metadata/log_metadata.py {{sim_dir}}/ch_log HF cores=$SLURM_NTASKS fd_count=$fd_count start_time=$start_time end_time=$end_time"
 else
     echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} HF created --run_name {{srf_name}} --error '$res' --force --is_retry" >> {{mgmt_db_location}}/mgmt_db_queue/$timestamp\_$SLURM_JOBID
 fi

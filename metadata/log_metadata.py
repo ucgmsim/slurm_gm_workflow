@@ -10,13 +10,17 @@ import sys
 import json
 import argparse
 from typing import Dict, List
+from datetime import datetime
 
 from metadata.agg_json_data import ProcTypeConst, MetaConst
+from qcore import utils
+from qcore.srf import get_nsub_stoch
 
 METADATA_VALUES = "metadata_values"
 LOG_FILENAME = "metadata_log.json"
 
 METACONST_TO_ADD = [MetaConst.run_time.value]
+TIMESTAMP_FMT = "%Y-%m-%d_%H:%M:%S"
 
 
 class KeyValuePairsAction(argparse.Action):
@@ -57,8 +61,12 @@ def convert_to_numeric(str_value):
     return str_value
 
 
-def store_metadata(log_file: str, proc_type: str, metadata_dict: Dict[str, str],
-                   metaconst_to_add: List[str] = METACONST_TO_ADD):
+def store_metadata(
+    log_file: str,
+    proc_type: str,
+    metadata_dict: Dict[str, str],
+    metaconst_to_add: List[str] = METACONST_TO_ADD,
+):
     """Store metadata values in the specified json log file for a specific process type.
 
     Metadata values are stored as key, value pairs if a key already exists,
@@ -141,17 +149,57 @@ def store_metadata(log_file: str, proc_type: str, metadata_dict: Dict[str, str],
 
 
 def main(args):
-    store_metadata(
-        os.path.join(args.log_dir, LOG_FILENAME),
-        args.proc_type,
-        getattr(args, METADATA_VALUES),
-    )
+    # This should come from constants
+    log_dir = os.path.join(args.sim_dir, LOG_FILENAME)
+
+    metadata_dict = getattr(args, METADATA_VALUES)
+
+    # Determine run_time from start and end time
+    if (
+        MetaConst.start_time.value in metadata_dict.keys()
+        and MetaConst.end_time.value in metadata_dict.keys()
+    ):
+        tdelta = datetime.strptime(
+            metadata_dict[MetaConst.end_time.value], TIMESTAMP_FMT
+        ) - datetime.strptime(metadata_dict[MetaConst.start_time.value], TIMESTAMP_FMT)
+        metadata_dict[MetaConst.run_time.value] = tdelta.total_seconds() / 3600
+
+    # params metadata for LF
+    if args.proc_type == ProcTypeConst.LF.value:
+        params = utils.load_sim_params(
+            os.path.join(args.sim_dir, "sim_params.yaml"), load_vm=False
+        )
+        metadata_dict[MetaConst.nt.value] = int(
+            float(params.sim_duration) / float(params.dt)
+        )
+        metadata_dict[MetaConst.nx.value] = params.nx
+        metadata_dict[MetaConst.ny.value] = params.ny
+        metadata_dict[MetaConst.nz.value] = params.nz
+    # HF
+    elif args.proc_type == ProcTypeConst.HF.value:
+        params = utils.load_sim_params(
+            os.path.join(args.sim_dir, "sim_params.yaml"), load_vm=False
+        )
+        metadata_dict[MetaConst.nt.value] = int(
+            float(params.sim_duration) / float(params.hf.hf_dt)
+        )
+        metadata_dict[MetaConst.nsub_stoch.value] = get_nsub_stoch(
+            params["hf"]["hf_slip"], get_area=False
+        )
+    # BB
+    elif args.proc_type == ProcTypeConst.BB.value:
+        params = utils.load_sim_params(
+            os.path.join(args.sim_dir, "sim_params.yaml"), load_vm=False
+        )
+        metadata_dict[MetaConst.dt.value] = params.hf.hf_dt
+
+    store_metadata(log_dir, args.proc_type, metadata_dict)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("log_dir", type=str, help="The log directory")
+    parser.add_argument("sim_dir", type=str, help="The log directory")
     parser.add_argument(
         "proc_type",
         type=str,

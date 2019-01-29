@@ -1,4 +1,6 @@
-"""Unit tests for log_metadata.py"""
+"""Unit tests for log_metadata.py, only the storing of metadata logic.
+Does not test retrieval of metadata.
+"""
 
 import os
 import json

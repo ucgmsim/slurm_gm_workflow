@@ -36,6 +36,8 @@ class MetaConst(Enum):
     nx = "nx"
     ny = "ny"
     nz = "nz"
+    start_time = "start_time"
+    end_time = "end_time"
 
     im_pSA_count = "pSA_count"
     im_comp = "im_components"
@@ -47,6 +49,7 @@ class ProcTypeConst(Enum):
     HF = "HF"
     LF = "LF"
     IM = "IM_calc"
+    POST_EMOD3D = "POST_EMOD3D"
 
     @classmethod
     def has_value(cls, value):
