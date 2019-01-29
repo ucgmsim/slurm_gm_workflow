@@ -150,7 +150,7 @@ def store_metadata(
 
 def main(args):
     # This should come from constants
-    log_dir = os.path.join(args.sim_dir, LOG_FILENAME)
+    log_dir = os.path.join(args.sim_dir, "ch_log", LOG_FILENAME)
 
     metadata_dict = getattr(args, METADATA_VALUES)
 
@@ -167,7 +167,7 @@ def main(args):
     # params metadata for LF
     if args.proc_type == ProcTypeConst.LF.value:
         params = utils.load_sim_params(
-            os.path.join(args.sim_dir, "sim_params.yaml"), load_vm=False
+            os.path.join(args.sim_dir, "sim_params.yaml"), load_vm=True
         )
         metadata_dict[MetaConst.nt.value] = int(
             float(params.sim_duration) / float(params.dt)
