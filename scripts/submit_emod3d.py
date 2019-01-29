@@ -2,7 +2,7 @@
 """Script to create and submit a slurm script for LF"""
 # TODO: import the CONFIG here
 # Section for parser to determine if using automate wct
-import install
+import os
 import argparse
 from datetime import datetime
 
@@ -10,8 +10,9 @@ import set_runparams
 import estimation.estimate_wct as wc
 
 from qcore import utils
-from shared_workflow.shared import *
 from shared_workflow import load_config
+from shared_workflow.shared import confirm, set_wct, submit_sl_script
+
 
 # TODO: remove this once temp_shared is gone
 from temp_shared import resolve_header
@@ -22,21 +23,32 @@ timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 default_core = 160
 default_run_time = "02:00:00"
 default_memory = "16G"
-default_account = 'nesi00213'
+default_account = "nesi00213"
 
 
 def write_sl_script(
-        lf_sim_dir, sim_dir, srf_name, mgmt_db_location, run_time=default_run_time,
-        nb_cpus=default_core, memory=default_memory, account=default_account):
+    lf_sim_dir,
+    sim_dir,
+    srf_name,
+    mgmt_db_location,
+    run_time=default_run_time,
+    nb_cpus=default_core,
+    memory=default_memory,
+    account=default_account,
+):
     set_runparams.create_run_params(srf_name)
     """Populates the template and writes the resulting slurm script to file"""
 
-    with open('run_emod3d.sl.template', 'r') as f:
+    with open("run_emod3d.sl.template", "r") as f:
         template = f.read()
 
-    replace_t = [("{{lf_sim_dir}}", lf_sim_dir), ("{{tools_dir}}", tools_dir),
-                 ("{{mgmt_db_location}}", mgmt_db_location),
-                 ("{{sim_dir}}", sim_dir), ("{{srf_name}}", srf_name)]
+    replace_t = [
+        ("{{lf_sim_dir}}", lf_sim_dir),
+        ("{{tools_dir}}", tools_dir),
+        ("{{mgmt_db_location}}", mgmt_db_location),
+        ("{{sim_dir}}", sim_dir),
+        ("{{srf_name}}", srf_name),
+    ]
 
     for pattern, value in replace_t:
         template = template.replace(pattern, value)
@@ -44,38 +56,48 @@ def write_sl_script(
     # slurm header
     job_name = "run_emod3d.%s" % srf_name
     header = resolve_header(
-        account, str(nb_cpus), run_time, job_name, "slurm", memory, timestamp,
+        account,
+        str(nb_cpus),
+        run_time,
+        job_name,
+        "slurm",
+        memory,
+        timestamp,
         job_description="emod3d slurm script",
-        additional_lines="#SBATCH --hint=nomultithread")
+        additional_lines="#SBATCH --hint=nomultithread",
+    )
 
-    fname_slurm_script = 'run_emod3d_%s_%s.sl' % (srf_name, timestamp)
-    with open(fname_slurm_script, 'w') as f:
+    fname_slurm_script = "run_emod3d_%s_%s.sl" % (srf_name, timestamp)
+    with open(fname_slurm_script, "w") as f:
         f.write(header)
         f.write(template)
 
-    fname_sl_abs_path = os.path.join(os.path.abspath(os.path.curdir),
-                                     fname_slurm_script)
+    fname_sl_abs_path = os.path.join(
+        os.path.abspath(os.path.curdir), fname_slurm_script
+    )
     print("Slurm script %s written" % fname_sl_abs_path)
 
     return fname_sl_abs_path
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # Start of main function
     parser = argparse.ArgumentParser(
-        description="Create (and submit if specified) the slurm script for LF")
+        description="Create (and submit if specified) the slurm script for LF"
+    )
 
     parser.add_argument("--ncore", type=int, default=default_core)
     parser.add_argument("--auto", nargs="?", type=str, const=True)
-    parser.add_argument('--account', type=str, default=default_account)
-    parser.add_argument('--srf', type=str, default=None)
+    parser.add_argument("--account", type=str, default=default_account)
+    parser.add_argument("--srf", type=str, default=None)
     args = parser.parse_args()
 
     workflow_config = load_config.load(
-        os.path.dirname(os.path.realpath(__file__)), "workflow_config.json")
+        os.path.dirname(os.path.realpath(__file__)), "workflow_config.json"
+    )
     tools_dir = workflow_config["bin_process_path"]
 
-    params = utils.load_sim_params('sim_params.yaml')
+    params = utils.load_sim_params("sim_params.yaml")
 
     if args.auto:
         submit_yes = True
@@ -91,23 +113,41 @@ if __name__ == '__main__':
     if args.srf is None or srf_name == args.srf:
         print("not set_params_only")
         # get lf_sim_dir
-        lf_sim_dir = os.path.join(params.sim_dir, 'LF')
+        lf_sim_dir = os.path.join(params.sim_dir, "LF")
         sim_dir = params.sim_dir
 
         # default_core will be changed is user passes ncore
         n_cores = args.ncore
         if n_cores != default_core:
-            print("Number of cores is different from default "
-                  "number of cores. Estimation will be less accurate.")
+            print(
+                "Number of cores is different from default "
+                "number of cores. Estimation will be less accurate."
+            )
 
         est_core_hours, est_run_time = wc.est_LF_chours_single(
-            int(params.nx), int(params.ny), int(params.nz),
-            int(float(params.sim_duration) / float(params.dt)), n_cores)
+            int(params.nx),
+            int(params.ny),
+            int(params.nz),
+            int(float(params.sim_duration) / float(params.dt)),
+            n_cores,
+        )
         wc = set_wct(est_run_time, n_cores, args.auto)
 
         script = write_sl_script(
-            lf_sim_dir, sim_dir, srf_name, params.mgmt_db_location,
-            run_time=wc, nb_cpus=n_cores)
+            lf_sim_dir,
+            sim_dir,
+            srf_name,
+            params.mgmt_db_location,
+            run_time=wc,
+            nb_cpus=n_cores,
+        )
 
-        submit_sl_script(script, 'EMOD3D', 'queued', params.mgmt_db_location,
-                         srf_name, timestamp, submit_yes=submit_yes)
+        submit_sl_script(
+            script,
+            "EMOD3D",
+            "queued",
+            params.mgmt_db_location,
+            srf_name,
+            timestamp,
+            submit_yes=submit_yes,
+        )

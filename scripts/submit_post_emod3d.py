@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """Script to create and submit a slurm script for LF"""
+import os
 import glob
 import argparse
-
 from datetime import datetime
 
 from qcore import utils
-from shared_workflow.shared import *
 from shared_workflow import load_config
+from shared_workflow.shared import confirm, submit_sl_script
 
 # TODO: remove this once temp_shared is gone
 from temp_shared import resolve_header
