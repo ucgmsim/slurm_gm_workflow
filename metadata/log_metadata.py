@@ -106,7 +106,8 @@ def store_metadata(
         json_data[proc_type] = proc_data
 
     for k, v in metadata_dict.items():
-        v = convert_to_numeric(v)
+        if type(v) is str:
+            v = convert_to_numeric(v)
 
         # Key doesn't exists yet
         if k not in proc_data.keys():
@@ -203,7 +204,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "proc_type",
         type=str,
-        help="The process type to log metadata for. " "Has to be one of LF/HF/BB/IM",
+        help="The process type to log metadata for. Has to be one of LF/HF/BB/IM",
     )
     parser.add_argument(
         METADATA_VALUES,

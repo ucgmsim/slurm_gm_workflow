@@ -27,7 +27,7 @@ if [[ $? == 0 ]]; then
     fd_count=`cat $fd_name | wc -l`
 
     # Save meta data
-    python $gmsim/workflow/metadata/log_metadata.py {{sim_dir}} HF cores=$SLURM_NTASKS fd_count=$fd_count start_time=$start_time end_time=$end_time"
+    python $gmsim/workflow/metadata/log_metadata.py {{sim_dir}} HF cores=$SLURM_NTASKS fd_count=$fd_count start_time=$start_time end_time=$end_time
 else
     echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} HF created --run_name {{srf_name}} --error '$res' --force --is_retry" >> {{mgmt_db_location}}/mgmt_db_queue/$timestamp\_$SLURM_JOBID
 fi
