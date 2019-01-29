@@ -12,7 +12,6 @@ import glob
 import getpass
 import fnmatch
 import configparser
-import datetime
 import argparse
 
 from qcore import utils

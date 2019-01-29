@@ -42,7 +42,7 @@ def write_sl_script(
     )
     tools_dir = workflow_config["bin_process_path"]
 
-    set_runparams.create_run_params(srf_name, workflow_config)
+    set_runparams.create_run_params(srf_name, workflow_config=workflow_config)
 
     with open("run_emod3d.sl.template", "r") as f:
         template = f.read()
@@ -113,12 +113,6 @@ if __name__ == "__main__":
 
         # default_core will be changed is user passes ncore
         n_cores = args.ncore
-        if n_cores != default_core:
-            print(
-                "Number of cores is different from default "
-                "number of cores. Estimation will be less accurate."
-            )
-
         est_core_hours, est_run_time, n_cores = wc.est_LF_chours_single(
             int(params.nx),
             int(params.ny),
