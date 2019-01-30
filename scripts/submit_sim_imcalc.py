@@ -3,13 +3,14 @@
 import os
 import argparse
 from enum import Enum
+from datetime import datetime
 
-from jinja2 import Template, Environment, FileSystemLoader
+from jinja2 import Environment, FileSystemLoader
 
 from qcore import utils, shared
 from typing import Dict
 from estimation.estimate_wct import est_IM_chours_single
-from shared_workflow.shared import exe, submit_sl_script, update_db_cmd, set_wct
+from shared_workflow.shared import submit_sl_script, set_wct, confirm
 
 IM_CALC_DEFAULT_N_PROCESSES = 40
 IM_CALC_COMPONENTS = ["geom", "000", "090", "ver", "ellipsis"]
@@ -17,8 +18,9 @@ IM_CALC_COMPONENTS = ["geom", "000", "090", "ver", "ellipsis"]
 IM_CALC_TEMPLATE_NAME = "im_calc.sl.template"
 HEADER_TEMPLATE = "slurm_header.cfg"
 
+SL_SCRIPT_NAME = "im_calc_sim_{}.sl"
 
-# These things belong in a constants file
+
 class SlHdrOptConsts(Enum):
     job_name_prefix = "job_name_prefix"
     account = "account"
@@ -29,75 +31,133 @@ class SlHdrOptConsts(Enum):
     version = "version"
     description = "description"
 
-DEFAULT_SLURM_OPTIONS = {
+
+class SlBodyOptConsts(Enum):
+    component = "component"
+    n_procs = "np"
+    sim_dir = "sim_dir"
+    sim_name = "sim_name"
+    fault_name = "fault_name"
+    output_dir = "output_dir"
+    extended = "extended"
+    simple_out = "simple"
+    mgmt_db = "mgmt_db"
+
+
+DEFAULT_OPTIONS = {
+    # Header
     SlHdrOptConsts.job_name_prefix.value: "im_calc",
     SlHdrOptConsts.description.value: "Calculates intensity measures.",
     SlHdrOptConsts.account.value: "nesi00213",
     SlHdrOptConsts.additional.value: "#SBATCH --hint=nomultithread",
     SlHdrOptConsts.memory.value: "2G",
     SlHdrOptConsts.n_tasks.value: 1,
-    SlHdrOptConsts.version.value: "slurm"
+    SlHdrOptConsts.version.value: "slurm",
+    # Body
+    SlBodyOptConsts.component.value: IM_CALC_COMPONENTS[0],
+    SlBodyOptConsts.n_procs.value: IM_CALC_DEFAULT_N_PROCESSES,
+    SlBodyOptConsts.extended.value: False,
+    SlBodyOptConsts.simple_out.value: False,
+    "auto": False,
 }
 
 
-def create_im_calc_slurm(sim_dir: str, slurm_options: Dict = None):
-    # Load the yaml params
+def submi_im_calc_slurm(sim_dir: str, options_dict: Dict = None):
+    # Load the yaml params if they haven't been loaded already
     params = utils.load_sim_params(
-        os.path.join(sim_dir, "sim_params.yaml"),
-        load_vm=False,
+        os.path.join(sim_dir, "sim_params.yaml"), load_vm=False
     )
+
+    options_dict = {**DEFAULT_OPTIONS, **options_dict}
+    sim_name = os.path.basename(sim_dir)
+    fault_name = sim_name.split("_")[0]
 
     # Get wall clock estimation
     print("Running wall clock estimation for IM sim")
     est_core_hours, est_run_time = est_IM_chours_single(
         len(shared.get_stations(params.FD_STATLIST)),
         int(float(params.sim_duration) / float(params.hf.hf_dt)),
-        [args.comp],
-        100 if args.extended_period else 15,
-        args.processes,
+        [options_dict[SlBodyOptConsts.component.value]],
+        100 if options_dict[SlBodyOptConsts.extended.value] else 15,
+        options_dict[SlBodyOptConsts.n_procs.value],
     )
-    wct = set_wct(est_run_time, args.processes, args.auto)
-
-    slurm_options = {**DEFAULT_SLURM_OPTIONS, **slurm_options}
-    fault_name = os.path.basename(sim_dir).split("_")[0]
+    wct = set_wct(
+        est_run_time, options_dict[SlBodyOptConsts.n_procs.value], options_dict["auto"]
+    )
 
     # Header
-    j2_env = Environment(loader=FileSystemLoader(os.path.join(sim_dir, IM_CALC_TEMPLATE_NAME)), trim_blocks=True)
+    j2_env = Environment(
+        loader=FileSystemLoader(os.path.join(sim_dir, IM_CALC_TEMPLATE_NAME)),
+        trim_blocks=True,
+    )
     header = j2_env.get_template(HEADER_TEMPLATE).render(
-        version=slurm_options[SlHdrOptConsts.description.value],
-        job_description=slurm_options[SlHdrOptConsts.description.value],
-        job_name="{}_{}".format(slurm_options[SlHdrOptConsts.job_name_prefix.value], fault_name),
-        account=slurm_options[SlHdrOptConsts.account.value],
-        n_tasks= slurm_options[SlHdrOptConsts.n_tasks.value],
+        version=options_dict[SlHdrOptConsts.description.value],
+        job_description=options_dict[SlHdrOptConsts.description.value],
+        job_name="{}_{}".format(
+            options_dict[SlHdrOptConsts.job_name_prefix.value], fault_name
+        ),
+        account=options_dict[SlHdrOptConsts.account.value],
+        n_tasks=options_dict[SlHdrOptConsts.n_tasks.value],
         wallclock_limit=wct,
         exe_time="%j",
         mail="test@test.com",
-        memory=slurm_options[SlHdrOptConsts.memory.value],
-        additional_lines=slurm_options[SlHdrOptConsts.additionals.value],
+        memory=options_dict[SlHdrOptConsts.memory.value],
+        additional_lines=options_dict[SlHdrOptConsts.additionals.value],
     )
 
-    context = j2_env.get_template(os.path.join(sim_dir, IM_CALC_TEMPLATE_NAME)).render(
-        comp=comp,
-        sim_dirs=sim_dirs,
-        obs_dirs=obs_dirs,
-        rrup_files=rrup_files,
-        station_file=station_file,
-        output_dir=output_dir,
-        np=n_procs,
-        extended=extended,
-        simple=simple,
-        mgmt_db_location=mgmt_db,
+    body = j2_env.get_template(os.path.join(sim_dir, IM_CALC_TEMPLATE_NAME)).render(
+        comp=options_dict[SlBodyOptConsts.component.value],
+        sim_dir=sim_dir,
+        sim_name=sim_name,
+        fault_name=fault_name,
+        np=options_dict[SlBodyOptConsts.n_procs.value],
+        extended=options_dict[SlBodyOptConsts.extended.value],
+        simple=options_dict[SlBodyOptConsts.simple_out.value],
+        mgmt_db_location=params.mgmt_db_location,
     )
+
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    script = os.path.join(sim_dir, SL_SCRIPT_NAME.format(timestamp))
+
+    # Write the script
+    with open(script, "w") as f:
+        f.write(header)
+        f.write("\n")
+        f.write(body)
+
+    submit_yes = (
+        True if options_dict["auto"] else confirm("Also submit the job for you?")
+    )
+    submit_sl_script(
+        script,
+        "IM_calc",
+        "queued",
+        params.mgmt_db_location,
+        os.path.splitext(os.path.basename(params.srf_file))[0],
+        timestamp,
+        submit_yes=submit_yes,
+    )
+
+    return script
 
 
 def main(args):
     if not args.comp in IM_CALC_COMPONENTS:
         parser.error(
             "Velocity component must be in {}, where ellipsis means calculating "
-            "all compoents".format(IM_CALC_COMPONENTS)
+            "all components".format(IM_CALC_COMPONENTS)
         )
 
-
+    script = submi_im_calc_slurm(
+        args.sim_dir,
+        {
+            SlBodyOptConsts.n_procs.value: args.n_procs,
+            SlBodyOptConsts.extended.value: args.extended_period,
+            SlBodyOptConsts.simple_out.value: args.simple_output,
+            SlBodyOptConsts.component.value: args.comp,
+            "auto": args.auto,
+        },
+    )
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -106,7 +166,7 @@ if __name__ == "__main__":
         "sim_dir", type=str, help="The simulation directory to calculate the IMs for"
     )
     parser.add_argument(
-        "--n_proc",
+        "--n_procs",
         type=int,
         help="Number of processes to use",
         default=IM_CALC_DEFAULT_N_PROCESSES,
@@ -129,11 +189,16 @@ if __name__ == "__main__":
         "-c",
         "--comp",
         default=IM_CALC_COMPONENTS[0],
-        help="specify which verlocity compoent to calculate. choose from {}. Default is {}".format(
+        help="specify which velocity component to calculate. choose from {}. Default is {}".format(
             IM_CALC_COMPONENTS, IM_CALC_COMPONENTS[0]
         ),
     )
-
+    parser.add_argument(
+        "--auto",
+        action="store_true",
+        default=False,
+        help="Submit the slurm script automatically and use the "
+        "estimated wct. No prompts.",
+    )
 
     args = parser.parse_args()
-
