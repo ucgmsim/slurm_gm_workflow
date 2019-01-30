@@ -87,7 +87,7 @@ if args.lfvsref is None:
     with open('%s/params_vel.json' % (args.lf_vm), 'r') as j:
         vm_conf = json.load(j)
     lfvs = np.memmap('%s/vs3dfile.s' % (args.lf_vm), dtype='<f4',
-                     shape=(vm_conf['ny'], vm_conf['nz'], vm_conf['nx'])) \
+                     shape=(vm_conf['ny'], vm_conf['nz'], vm_conf['nx']), mod='r') \
                [lf.stations.y, 0, lf.stations.x] * 1000.0
 else:
     # fixed vs30ref
@@ -239,6 +239,7 @@ t0 = MPI.Wtime()
 bb_acc = np.empty((bb_nt, N_COMP), dtype="f4")
 for i, stat in enumerate(stations_todo):
     vsite = vsites[stations_todo_idx[i]]
+    print(vsite)
     stat_lfvs = lfvs[stations_todo_idx[i]]
     lf_acc = np.copy(lf.acc(stat.name, dt=bb_dt))
     hf_acc = np.copy(hf.acc(stat.name, dt=bb_dt))
