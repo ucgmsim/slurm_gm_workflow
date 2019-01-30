@@ -4,18 +4,17 @@
 # Section for parser to determine if using automate wct
 import os
 import argparse
-from datetime import datetime
+
 
 import set_runparams
-import estimation.estimate_wct as wc
-
 from qcore import utils
+import estimation.estimate_wct as wc
 from shared_workflow import load_config
 from shared_workflow.shared import confirm, set_wct, submit_sl_script
 
-
 # TODO: remove this once temp_shared is gone
 from temp_shared import resolve_header
+from datetime import datetime
 
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
@@ -24,7 +23,6 @@ default_core = 160
 default_run_time = "02:00:00"
 default_memory = "16G"
 default_account = "nesi00213"
-
 
 def write_sl_script(
     lf_sim_dir,
@@ -98,7 +96,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     params = utils.load_sim_params("sim_params.yaml")
-
     submit_yes = True if args.auto else confirm("Also submit the job for you?")
 
     print("params.srf_file", params.srf_file)
@@ -141,3 +138,4 @@ if __name__ == "__main__":
             timestamp,
             submit_yes=submit_yes,
         )
+

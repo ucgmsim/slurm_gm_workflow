@@ -9,8 +9,6 @@ import qcore
 import estimation.estimate_wct as est
 from qcore import utils, shared, srf
 from shared_workflow.shared import confirm, set_wct, submit_sl_script
-
-# TODO: move this to qcore library
 from temp_shared import resolve_header
 
 # default values

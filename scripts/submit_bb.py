@@ -11,6 +11,8 @@ from shared_workflow.shared import set_wct, confirm, submit_sl_script
 # TODO: move this to qcore library
 from temp_shared import resolve_header
 
+from datetime import datetime
+
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
 default_account = "nesi00213"

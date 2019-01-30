@@ -70,18 +70,9 @@ def submit_task(sim_dir, proc_type, run_name, db, mgmt_db_location, binary_mode=
             submitted_time, os.path.join(ch_log_dir, 'winbin.%s.log' % run_name)), shell=True)
 
     if proc_type == 4:
-        # run the submit_post_emod3d before install_bb and submit_hf
-        # TODO: fix this strange logic in the actual workflow
-        if default_hf_vs30_ref != None:
-            cmd = "python $gmsim/workflow/scripts/install_bb.py --v1d %s --hf_stat_vs_ref %s" % (
-            default_1d_mod, default_hf_vs30_ref)
-            print(cmd)
-            call(cmd, shell=True)
-        else:
-            cmd = "python $gmsim/workflow/scripts/install_bb.py --v1d %s" % default_1d_mod
-            print(cmd)
-            call(cmd, shell=True)
-        hf_cmd = "python $gmsim/workflow/scripts/submit_hf.py --binary --auto --srf %s" % run_name
+        hf_cmd = "python $gmsim/workflow/scripts/submit_hf.py --auto --srf %s" % run_name
+        if not binary_mode:
+            hf_cmd += ' -- ascii'
         if hf_seed is not None:
             hf_cmd = "{} --seed {}".format(hf_cmd, hf_seed)
         if rand_reset:
@@ -92,7 +83,9 @@ def submit_task(sim_dir, proc_type, run_name, db, mgmt_db_location, binary_mode=
              shell=True)
 
     if proc_type == 5:
-        cmd = "python $gmsim/workflow/scripts/submit_bb.py --binary --auto --srf %s" % run_name
+        cmd = "python $gmsim/workflow/scripts/submit_bb.py --auto --srf %s" % run_name
+        if not binary_mode:
+            cmd += ' -- ascii'
         print(cmd)
         call(cmd, shell=True)
         call("echo 'submitted time: %s' >> %s" % (submitted_time, os.path.join(ch_log_dir, 'BB.%s.log' % run_name)),
@@ -105,7 +98,7 @@ def submit_task(sim_dir, proc_type, run_name, db, mgmt_db_location, binary_mode=
         tmp_path, run_name, mgmt_db_location)
         if extended_period == True:
             cmd = cmd + ' -e'
-        print cmd
+        print(cmd)
         call(cmd, shell=True)
         # save the job meta data
         call(
@@ -229,3 +222,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
