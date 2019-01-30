@@ -4,17 +4,17 @@
 # Section for parser to determine if using automate wct
 import install
 import argparse
-from datetime import datetime
 
 import set_runparams
 import estimation.estimate_wct as wc
 
 from qcore import utils
 from shared_workflow.shared import *
-from shared_workflow import load_config
+from shared_workflow.shared_defaults import tools_dir
 
 # TODO: remove this once temp_shared is gone
 from temp_shared import resolve_header
+from datetime import datetime
 
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
@@ -23,6 +23,8 @@ default_core = 160
 default_run_time = "02:00:00"
 default_memory = "16G"
 default_account = 'nesi00213'
+
+params = utils.load_sim_params('sim_params.yaml')
 
 
 def write_sl_script(
@@ -71,16 +73,8 @@ if __name__ == '__main__':
     parser.add_argument('--srf', type=str, default=None)
     args = parser.parse_args()
 
-    workflow_config = load_config.load(
-        os.path.dirname(os.path.realpath(__file__)), "workflow_config.json")
-    tools_dir = workflow_config["bin_process_path"]
-
-    params = utils.load_sim_params('sim_params.yaml')
-
     if args.auto:
         submit_yes = True
-    elif args.set_params_only:
-        submit_yes = False
     else:
         submit_yes = confirm("Also submit the job for you?")
 
@@ -100,9 +94,7 @@ if __name__ == '__main__':
             print("Number of cores is different from default "
                   "number of cores. Estimation will be less accurate.")
 
-        est_core_hours, est_run_time = wc.est_LF_chours_single(
-            int(params.nx), int(params.ny), int(params.nz),
-            int(float(params.sim_duration) / float(params.dt)), n_cores)
+        est_core_hours, est_run_time, n_cores = wc.est_LF_chours_single(int(params.nx), int(params.ny), int(params.nz), int(float(params.sim_duration) / float(params.dt)), n_cores, True)
         wc = set_wct(est_run_time, n_cores, args.auto)
 
         script = write_sl_script(
@@ -111,3 +103,4 @@ if __name__ == '__main__':
 
         submit_sl_script(script, 'EMOD3D', 'queued', params.mgmt_db_location,
                          srf_name, timestamp, submit_yes=submit_yes)
+
