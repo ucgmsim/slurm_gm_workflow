@@ -15,10 +15,10 @@ from shared_workflow.shared import submit_sl_script, set_wct, confirm
 IM_CALC_DEFAULT_N_PROCESSES = 40
 IM_CALC_COMPONENTS = ["geom", "000", "090", "ver", "ellipsis"]
 
-IM_CALC_TEMPLATE_NAME = "im_calc.sl.template"
+IM_CALC_TEMPLATE_NAME = "sim_im_calc.sl.template"
 HEADER_TEMPLATE = "slurm_header.cfg"
 
-SL_SCRIPT_NAME = "im_calc_sim_{}.sl"
+SL_SCRIPT_NAME = "sim_im_calc_{}.sl"
 
 
 class SlHdrOptConsts(Enum):
@@ -46,7 +46,7 @@ class SlBodyOptConsts(Enum):
 
 DEFAULT_OPTIONS = {
     # Header
-    SlHdrOptConsts.job_name_prefix.value: "im_calc",
+    SlHdrOptConsts.job_name_prefix.value: "sim_im_calc",
     SlHdrOptConsts.description.value: "Calculates intensity measures.",
     SlHdrOptConsts.account.value: "nesi00213",
     SlHdrOptConsts.additional.value: "#SBATCH --hint=nomultithread",
@@ -62,7 +62,7 @@ DEFAULT_OPTIONS = {
 }
 
 
-def submi_im_calc_slurm(sim_dir: str, options_dict: Dict = None):
+def submit_im_calc_slurm(sim_dir: str, options_dict: Dict = None):
     # Load the yaml params if they haven't been loaded already
     params = utils.load_sim_params(
         os.path.join(sim_dir, "sim_params.yaml"), load_vm=False
@@ -87,7 +87,7 @@ def submi_im_calc_slurm(sim_dir: str, options_dict: Dict = None):
 
     # Header
     j2_env = Environment(
-        loader=FileSystemLoader(os.path.join(sim_dir, IM_CALC_TEMPLATE_NAME)),
+        loader=FileSystemLoader(sim_dir),
         trim_blocks=True,
     )
     header = j2_env.get_template(HEADER_TEMPLATE).render(
@@ -102,17 +102,17 @@ def submi_im_calc_slurm(sim_dir: str, options_dict: Dict = None):
         exe_time="%j",
         mail="test@test.com",
         memory=options_dict[SlHdrOptConsts.memory.value],
-        additional_lines=options_dict[SlHdrOptConsts.additionals.value],
+        additional_lines=options_dict[SlHdrOptConsts.additional.value],
     )
 
-    body = j2_env.get_template(os.path.join(sim_dir, IM_CALC_TEMPLATE_NAME)).render(
-        comp=options_dict[SlBodyOptConsts.component.value],
+    body = j2_env.get_template(IM_CALC_TEMPLATE_NAME).render(
+        component=options_dict[SlBodyOptConsts.component.value],
         sim_dir=sim_dir,
         sim_name=sim_name,
         fault_name=fault_name,
         np=options_dict[SlBodyOptConsts.n_procs.value],
-        extended=options_dict[SlBodyOptConsts.extended.value],
-        simple=options_dict[SlBodyOptConsts.simple_out.value],
+        extended="-e" if options_dict[SlBodyOptConsts.extended.value] else "",
+        simple="-s" if options_dict[SlBodyOptConsts.simple_out.value] else "",
         mgmt_db_location=params.mgmt_db_location,
     )
 
@@ -148,7 +148,7 @@ def main(args):
             "all components".format(IM_CALC_COMPONENTS)
         )
 
-    script = submi_im_calc_slurm(
+    script = submit_im_calc_slurm(
         args.sim_dir,
         {
             SlBodyOptConsts.n_procs.value: args.n_procs,
@@ -159,11 +159,15 @@ def main(args):
         },
     )
 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
     parser.add_argument(
-        "sim_dir", type=str, help="The simulation directory to calculate the IMs for"
+        "--sim_dir",
+        type=str,
+        help="The simulation directory to calculate the IMs for. Defaults to the current directory.",
+        default=os.getcwd(),
     )
     parser.add_argument(
         "--n_procs",
@@ -202,3 +206,5 @@ if __name__ == "__main__":
     )
 
     args = parser.parse_args()
+
+    main(args)

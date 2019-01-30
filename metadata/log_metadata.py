@@ -200,7 +200,7 @@ def main(args):
         im_comp = list(pd.read_csv(im_calc_csv_file).component.unique().astype('U'))
 
         metadata_dict[MetaConst.im_comp.value] = im_comp
-        metadata_dict[MetaConst.im_comp_count] = len(im_comp)
+        metadata_dict[MetaConst.im_comp_count.value] = len(im_comp)
 
     store_metadata(log_dir, args.proc_type, metadata_dict)
 
