@@ -185,7 +185,7 @@ def q_get_run_name(HH, srf_selected, v_mod_ver, emod3d_version):
     HF and BB come later after declaration of HF and BB parameters).
     """
     # additional string to customize (today's date for starters)
-    userString = datetime.now.strftime("%y%m%d")
+    userString = datetime.now().strftime("%y%m%d")
 
     # use full name of RupModel directory #srf_selected.split("_")[0]
     srfString = srf_selected

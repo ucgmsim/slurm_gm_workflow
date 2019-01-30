@@ -1,16 +1,16 @@
-from scripts.management import db_helper
-from scripts.management import slurm_query_status
-from scripts.management import update_mgmt_db
-from subprocess import call
-
-import shared_workflow.load_config as ldcfg
-
-from datetime import datetime
-import time
-
+#!/usr/bin/env python3
+"""Script for automatic submission of gm simulation jobs"""
 import argparse
 import os
 import sys
+from datetime import datetime
+from subprocess import call
+
+import shared_workflow.load_config as ldcfg
+from scripts.management import db_helper
+from scripts.management import slurm_query_status
+from scripts.management import update_mgmt_db
+from metadata.log_metadata import store_metadata, LOG_FILENAME, ProcTypeConst
 
 default_binary_mode = True
 default_n_runs = 12
@@ -34,29 +34,26 @@ def submit_task(sim_dir, proc_type, run_name, db, mgmt_db_location, binary_mode=
     # change the working directory to the sim_dir
     os.chdir(sim_dir)
     ch_log_dir = os.path.join(sim_dir, 'ch_log')
-    # create the folder if not exsist
+
+    # create the folder if not exist
     if not os.path.isdir(ch_log_dir):
         os.mkdir(ch_log_dir)
     submitted_time = datetime.now().strftime('%Y%m%d_%H%M%S')
-    #    print "sim_dir:%s"%sim_dir
-    # idenfity the proc_type, EMOD3D:1, merge_ts:2, winbin_aio:3, HF:4, BB:5
+    log_file = os.path.join(sim_dir, "ch_log", LOG_FILENAME)
 
+    # LF
     if proc_type == 1:
-        # EMOD 3D
         cmd = "python $gmsim/workflow/scripts/submit_emod3d.py --auto --srf %s" % run_name
         print(cmd)
         call(cmd, shell=True)
-        # save meta, TODO:replace proper db update when merge
-        call("echo 'submitted time: %s' >> %s" % (submitted_time, os.path.join(ch_log_dir, 'EMOD3D.%s.log' % run_name)),
-             shell=True)
-
+        store_metadata(log_file, ProcTypeConst.LF.value, {"submit_time": submitted_time})
+    # POST_EMOD3D
     if proc_type == 2:
         cmd = "python $gmsim/workflow/scripts/submit_post_emod3d.py --auto --merge_ts --srf %s" % run_name
         print(cmd)
         call(cmd, shell=True)
-        call("echo 'submitted time: %s' >> %s" % (
-        submitted_time, os.path.join(ch_log_dir, 'post_emod.%s.log' % run_name)), shell=True)
-
+        store_metadata(log_file, ProcTypeConst.POST_EMOD3D.value, {"submit_time": submitted_time})
+    # WINBIN
     if proc_type == 3:
         # skipping winbin_aio if running binary mode
         if binary_mode == True:
@@ -68,7 +65,7 @@ def submit_task(sim_dir, proc_type, run_name, db, mgmt_db_location, binary_mode=
             call(cmd, shell=True)
             call("echo 'submitted time: %s' >> %s" % (
             submitted_time, os.path.join(ch_log_dir, 'winbin.%s.log' % run_name)), shell=True)
-
+    # HF
     if proc_type == 4:
         hf_cmd = "python $gmsim/workflow/scripts/submit_hf.py --auto --srf %s" % run_name
         if not binary_mode:
@@ -79,32 +76,21 @@ def submit_task(sim_dir, proc_type, run_name, db, mgmt_db_location, binary_mode=
             hf_cmd = "{} --rand_reset".format(hf_cmd)
         print(hf_cmd)
         call(hf_cmd, shell=True)
-        call("echo 'submitted time: %s' >> %s" % (submitted_time, os.path.join(ch_log_dir, 'HF.%s.log' % run_name)),
-             shell=True)
-
+        store_metadata(log_file, ProcTypeConst.HF.value, {"submit_time": submitted_time})
+    # BB
     if proc_type == 5:
         cmd = "python $gmsim/workflow/scripts/submit_bb.py --auto --srf %s" % run_name
         if not binary_mode:
             cmd += ' -- ascii'
         print(cmd)
         call(cmd, shell=True)
-        call("echo 'submitted time: %s' >> %s" % (submitted_time, os.path.join(ch_log_dir, 'BB.%s.log' % run_name)),
-             shell=True)
-
+        store_metadata(log_file, ProcTypeConst.BB.value, {"submit_time": submitted_time})
+    # IM_calc
     if proc_type == 6:
-        # TODO: fix inconsistant naming in sub_imcalc.py
-        tmp_path = os.path.join(mgmt_db_location, 'Runs')
-        cmd = "python $gmsim/workflow/scripts/submit_imcalc.py --auto --sim_dir %s --i %s --mgmt_db %s --simple_output" % (
-        tmp_path, run_name, mgmt_db_location)
-        if extended_period == True:
-            cmd = cmd + ' -e'
+        cmd = "python $gmsim/workflow/scripts/submit_sim_imcalc.py --sim_dir {} --simple_output {}".format(sim_dir, "-e" if extended_period else "")
         print(cmd)
         call(cmd, shell=True)
-        # save the job meta data
-        call(
-            "echo 'submitted time: %s' >> %s" % (submitted_time, os.path.join(ch_log_dir, 'IM_calc.%s.log' % run_name)),
-            shell=True)
-
+        store_metadata(log_file, ProcTypeConst.IM.value, {"submit_time": submitted_time})
 
 def get_vmname(srf_name):
     """
@@ -118,8 +104,9 @@ def get_vmname(srf_name):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('run_folder', type=str, help="folder to the collection of runs on Kupe")
+    parser.add_argument('run_folder', type=str, help="folder to the collection of runs")
     parser.add_argument('--n_runs', default=default_n_runs, type=int)
+
     # cybershake-like simulations store mgmnt_db at different locations
     parser.add_argument('--single_sim', nargs="?", type=str, const=True)
     parser.add_argument('--config', type=str, default=None,
@@ -134,7 +121,7 @@ def main():
     db_tasks = []
     hf_seed = default_hf_seed
 
-    if args.config != None:
+    if args.config is not None:
         # parse and check for variables in config
         try:
             cybershake_cfg = ldcfg.load(directory=os.path.dirname(args.config), cfg_name=os.path.basename(args.config))
