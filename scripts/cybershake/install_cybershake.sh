@@ -1,8 +1,8 @@
 #!/bin/bash
 
-if [[ $# -lt 4 ]];then
-    echo "please provide the path to cybershake folder, cybershake config and the nhm selection file and gmsim version"
-    echo "install_cybershake.sh /path/to/cybershake/root/ /path/to/cybershake/config /path/to/cybershake/nhm_selection_file VERSION"
+if [[ $# -lt 3 ]];then
+    echo "please provide the path to cybershake folder, cybershake config and the nhm selection file"
+    echo "install_cybershake.sh /path/to/cybershake/root/ /path/to/cybershake/config /path/to/cybershake/nhm_selection_file"
     exit 1
 fi
 
@@ -19,17 +19,13 @@ cybershake_cfg=$2
 #cd $vm_root_dir
 fault_list=`cat $3`
 
-#gmsim version,eg.16.1
-version=$4
-echo $version
-
 #each vm match with multiple srf
 IFS=$'\n'
 for line in $fault_list;
 do
     fault=`echo $line | awk '{print $1}'`
     n_rel=`echo $line | awk '{print $2}'`
-    python3 $script_location/install_cybershake.py $cybershake_root $cybershake_cfg $fault --n_rel ${n_rel//[nkr]} --version $version
+    python $script_location/install_cybershake.py $cybershake_root $cybershake_cfg $fault --n_rel ${n_rel//[nkr]}
 done
 
 #list_source='ls 

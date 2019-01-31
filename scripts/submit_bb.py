@@ -5,14 +5,14 @@ import argparse
 import install
 from estimation import estimate_wct as wc
 
-from datetime import datetime
-
 # TODO: move this to qcore library
 from qcore import shared
 from temp_shared import resolve_header
 from shared_workflow.shared import *
 
 from qcore import utils
+
+from datetime import datetime
 
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
@@ -138,3 +138,4 @@ if __name__ == '__main__':
             else confirm("Also submit the job for you?")
         submit_sl_script(script_file, "BB", 'queued', params.mgmt_db_location,
                          srf_name, timestamp, submit_yes=submit_yes)
+

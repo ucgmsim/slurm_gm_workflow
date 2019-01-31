@@ -3,17 +3,13 @@ import sys
 import glob
 import argparse
 
-from shared_workflow import load_config as ldcfg
+import shared_workflow.load_config as ldcfg
 from qcore import utils
 
 from qcore import validate_vm
 from scripts import install
 from scripts.management import create_mgmt_db
-# from shared_workflow.shared import *
-from shared_workflow.shared import verify_user_dirs
-
-default_dt = 0.005
-default_hf_dt = 0.005
+from shared_workflow import shared_defaults
 
 
 def main():
@@ -23,7 +19,6 @@ def main():
     parser.add_argument("config", type=str, default=None,
                         help="a path to a config file that constains all the required values.")
     parser.add_argument("vm", type=str, default=None, help="the name of the Velocity Model.")
-    parser.add_argument('--version', type=str, default='16.1', help="version of simulation. eg.16.1")
     parser.add_argument("--n_rel", type=int, default=None, help="the number of realisations expected")
 
     args = parser.parse_args()
@@ -34,7 +29,7 @@ def main():
         print("Error while parsing the config file, please double check inputs.")
         sys.exit()
 
-    ldcfg.check_cfg_params_path(cybershake_cfg, 'dt', 'hf_dt')
+    ldcfg.check_cfg_params_path(cybershake_cfg, 'dt', 'hf_dt', 'version')
 
     path_cybershake = args.path_cybershake
 
@@ -44,6 +39,16 @@ def main():
     vm_root_dir = os.path.join(path_cybershake, 'Data/VMs/')
 
     global_root = cybershake_cfg['global_root']
+    version = cybershake_cfg['version']
+    v1d_full_path = cybershake_cfg['v_1d_mod']
+
+    site_v1d_dir = None
+    hf_stat_vs_ref = None
+    if cybershake_cfg.get('site_v1d_dir') is not None:
+        site_v1d_dir = cybershake_cfg['site_v1d_dir']
+    if cybershake_cfg.get('hf_stat_vs_ref') is not None:
+        hf_stat_vs_ref = cybershake_cfg['hf_stat_vs_ref']
+
     # this variable seems to not be used anywhere important.
     run_dir = sim_root_dir
     user_root = os.path.join(run_dir, 'Cybershake')
@@ -70,7 +75,6 @@ def main():
         with open(error_log, 'a') as error_fp:
             error_fp.write(message)
         exit()
-
 
     params_vel_path = os.path.join(vel_mod_dir, params_vel)
 
@@ -108,17 +112,20 @@ def main():
         else:
             # install pairs one by one to fit the new structure
             sim_dir = os.path.join(os.path.join(sim_root_dir, source), srf_name)
-            root_params_dict, fault_params_dict, sim_params_dict, vm_params_dict = install.action(args.version, sim_dir, event_name, run_name, run_dir, vel_mod_dir, srf_dir, srf, stoch_file_path,
+            root_params_dict, fault_params_dict, sim_params_dict, vm_params_dict = install.action(version, sim_dir,
+                       event_name, run_name, run_dir, vel_mod_dir, srf, stoch_file_path,
                        params_vel_path, stat_file_path, vs30_file_path, vs30ref_file_path, MODEL_LAT, MODEL_LON,
                        MODEL_ROT, hh, nx, ny, nz, sufx, sim_duration, vel_mod_params_dir, yes_statcords,
-                       yes_model_params, fault_yaml_path, root_yaml_path, sim_params_file)
+                       yes_model_params, fault_yaml_path, root_yaml_path,  user_root=user_root,
+                       site_v1d_dir=site_v1d_dir, hf_stat_vs_ref=hf_stat_vs_ref, v1d_full_path=v1d_full_path,
+                       sim_params_file)
 
             create_mgmt_db.create_mgmt_db([], path_cybershake, srf_files=srf)
             utils.setup_dir(os.path.join(path_cybershake, 'mgmt_db_queue'))
             root_params_dict['mgmt_db_location'] = path_cybershake
-            # store extra params provided
-            if 'hf_stat_vs_ref' in cybershake_cfg:
-                root_params_dict['hf_stat_vs_ref'] = cybershake_cfg['hf_stat_vs_ref']
+            # store extra params provided. This step has been moved into install_bb function
+            # if 'hf_stat_vs_ref' in cybershake_cfg:
+            #     root_params_dict['hf_stat_vs_ref'] = cybershake_cfg['hf_stat_vs_ref']
 
             install.dump_all_yamls(sim_dir, root_params_dict, fault_params_dict, sim_params_dict, vm_params_dict)
 
