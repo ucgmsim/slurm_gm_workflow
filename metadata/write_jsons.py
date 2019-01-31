@@ -312,6 +312,7 @@ def main():
                 [
                     (os.path.join(args.run_folder, fault), args)
                     for fault in os.listdir(args.run_folder)
+                    if os.path.isdir(os.path.join(args.run_folder, fault))
                 ],
             )
 

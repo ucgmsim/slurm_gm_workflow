@@ -5,10 +5,9 @@
 import os
 import argparse
 
-
 import set_runparams
 from qcore import utils
-import estimation.estimate_wct as wc
+import estimation.estimate_wct as est
 from shared_workflow import load_config
 from shared_workflow.shared import confirm, set_wct, submit_sl_script
 
@@ -83,23 +82,16 @@ def write_sl_script(
     return fname_sl_abs_path
 
 
-if __name__ == "__main__":
-    # Start of main function
-    parser = argparse.ArgumentParser(
-        description="Create (and submit if specified) the slurm script for LF"
-    )
+def main(args):
+    workflow_config = load_config.load(
+        os.path.dirname(os.path.realpath(__file__)), "workflow_config.json")
+    tools_dir = workflow_config["bin_process_path"]
 
-    parser.add_argument("--ncore", type=int, default=default_core)
-    parser.add_argument("--auto", nargs="?", type=str, const=True)
-    parser.add_argument("--account", type=str, default=default_account)
-    parser.add_argument("--srf", type=str, default=None)
-    args = parser.parse_args()
+    params = utils.load_sim_params('sim_params.yaml')
 
-    params = utils.load_sim_params("sim_params.yaml")
     submit_yes = True if args.auto else confirm("Also submit the job for you?")
 
     print("params.srf_file", params.srf_file)
-    wall_clock_limit = None
     # Get the srf(rup) name without extensions
     srf_name = os.path.splitext(os.path.basename(params.srf_file))[0]
     if args.srf is None or srf_name == args.srf:
@@ -110,7 +102,7 @@ if __name__ == "__main__":
 
         # default_core will be changed is user passes ncore
         n_cores = args.ncore
-        est_core_hours, est_run_time, n_cores = wc.est_LF_chours_single(
+        est_core_hours, est_run_time, n_cores = est.est_LF_chours_single(
             int(params.nx),
             int(params.ny),
             int(params.nz),
@@ -118,14 +110,14 @@ if __name__ == "__main__":
             n_cores,
             True
         )
-        wc = set_wct(est_run_time, n_cores, args.auto)
+        wct = set_wct(est_run_time, n_cores, args.auto)
 
         script = write_sl_script(
             lf_sim_dir,
             sim_dir,
             srf_name,
             params.mgmt_db_location,
-            run_time=wc,
+            run_time=wct,
             nb_cpus=n_cores,
         )
 
@@ -139,3 +131,15 @@ if __name__ == "__main__":
             submit_yes=submit_yes,
         )
 
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(
+        description="Create (and submit if specified) the slurm script for LF")
+
+    parser.add_argument("--ncore", type=int, default=default_core)
+    parser.add_argument("--auto", nargs="?", type=str, const=True)
+    parser.add_argument('--account', type=str, default=default_account)
+    parser.add_argument('--srf', type=str, default=None)
+    args = parser.parse_args()
+
+    main(args)

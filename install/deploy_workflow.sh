@@ -31,6 +31,7 @@ touch ${ROOT}/share/bashrc.uceq
 #TODO:tempory disabled chgrp because its breaking the remote daemon. fix this if possible
 #cat $script_dir/change_grp.sh >> ${ROOT}/share/bashrc.uceq
 cat $script_dir/load_default_modules.sh >> ${ROOT}/share/bashrc.uceq
+cat $script_dir/python3_load_functions.sh >> ${ROOT}/share/bashrc.uceq
 
 echo "export gmsim='$ROOT'" >> ${ROOT}/share/bashrc.uceq
 echo "export nobackup='/nesi/nobackup/nesi00213'" >> ${ROOT}/share/bashrc.uceq
