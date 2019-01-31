@@ -56,7 +56,7 @@ def submit_task(sim_dir, proc_type, run_name, db, mgmt_db_location, binary_mode=
     # WINBIN
     if proc_type == 3:
         # skipping winbin_aio if running binary mode
-        if binary_mode == True:
+        if binary_mode:
             # update the mgmt_db
             update_mgmt_db.update_db(db, 'winbin_aio', 'completed', run_name=run_name)
         else:
@@ -87,7 +87,7 @@ def submit_task(sim_dir, proc_type, run_name, db, mgmt_db_location, binary_mode=
         store_metadata(log_file, ProcTypeConst.BB.value, {"submit_time": submitted_time})
     # IM_calc
     if proc_type == 6:
-        cmd = "python $gmsim/workflow/scripts/submit_sim_imcalc.py --sim_dir {} --simple_output {}".format(sim_dir, "-e" if extended_period else "")
+        cmd = "python $gmsim/workflow/scripts/submit_sim_imcalc.py --auto --sim_dir {} --simple_output {}".format(sim_dir, "-e" if extended_period else "")
         print(cmd)
         call(cmd, shell=True)
         store_metadata(log_file, ProcTypeConst.IM.value, {"submit_time": submitted_time})

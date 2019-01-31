@@ -17,8 +17,7 @@ import argparse
 from datetime import datetime
 
 from qcore import utils
-from shared_workflow import load_config as ldcfg
-from management import create_mgmt_db
+from scripts.management import create_mgmt_db
 
 # TODO: namespacing
 from shared_workflow import shared
@@ -476,12 +475,12 @@ def action(
     shared.show_horizontal_line(c="*")
 
     if yes_statcords:
-        print("Producing statcords and FD_STATLIST. " "It may take a minute or two")
+        print("Producing statcords and FD_STATLIST. It may take a minute or two")
 
         # Create Stat_cord & statList
-        import statlist2gp
+        import scripts.statlist2gp as sl2gp
 
-        fd_statcords, fd_statlist = statlist2gp.main(
+        fd_statcords, fd_statlist = sl2gp.main(
             sim_params_dict, vm_params_dict, stat_file=stat_file_path
         )
         print("Done")
