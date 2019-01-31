@@ -105,7 +105,7 @@ def store_metadata(
 
     # Attempt to acquire the lock
     try:
-        lock.acquire(timeout=5)
+        lock.acquire(timeout=20)
     except Timeout:
         print(
             "Failed to acquire the lock for the metadata log file, "
