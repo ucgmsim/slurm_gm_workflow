@@ -5,7 +5,7 @@ A script that queries a slurm mgmt db and returns the status of a task
 """
 
 import argparse
-import db_helper
+import scripts.management.db_helper as db_helper
 
 
 def print_run_status(db, run_name, error=False):

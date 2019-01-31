@@ -156,7 +156,7 @@ if __name__ == '__main__':
                 params.mgmt_db_location, srf_name)
             shared.submit_sl_script(
                 script, "merge_ts", "queued", params.mgmt_db_location,
-                srf_name, submit_yes)
+                srf_name, timestamp, submit_yes=submit_yes)
 
         # run winbin_aio related scripts only
         if args.winbin_aio:
@@ -165,4 +165,4 @@ if __name__ == '__main__':
                 srf_name)
             shared.submit_sl_script(
                 script, "winbin_aio", "queued", params.mgmt_db_location,
-                srf_name, submit_yes)
+                srf_name, timestamp, submit_yes=submit_yes)

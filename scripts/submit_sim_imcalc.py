@@ -130,7 +130,7 @@ def submit_im_calc_slurm(sim_dir: str, options_dict: Dict = None):
     )
     submit_sl_script(
         script,
-        "IM_calc",
+        "IM_calculation",
         "queued",
         params.mgmt_db_location,
         os.path.splitext(os.path.basename(params.srf_file))[0],
