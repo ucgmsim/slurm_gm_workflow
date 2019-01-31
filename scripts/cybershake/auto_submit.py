@@ -7,7 +7,7 @@ from datetime import datetime
 from subprocess import call
 
 import shared_workflow.load_config as ldcfg
-from scripts.management import db_helper
+from scripts.management.db_helper import connect_db, Process
 from scripts.management import slurm_query_status
 from scripts.management import update_mgmt_db
 from metadata.log_metadata import store_metadata, LOG_FILENAME, ProcTypeConst
@@ -22,9 +22,8 @@ default_extended_period = False
 
 
 def submit_task(sim_dir, proc_type, run_name, db, mgmt_db_location, binary_mode=True, rand_reset=default_rand_reset,
-                hf_seed=None, extended_period=default_extended_period):
+                hf_seed=None, extended_period=default_extended_period, do_verification=False):
     # TODO: using shell call is EXTREMELY undesirable. fix this in near future(fundamentally)
-
     # create the tmp folder
     # TODO: fix this issue
     sqlite_tmpdir = '/tmp/cer'
@@ -41,20 +40,20 @@ def submit_task(sim_dir, proc_type, run_name, db, mgmt_db_location, binary_mode=
     submitted_time = datetime.now().strftime('%Y%m%d_%H%M%S')
     log_file = os.path.join(sim_dir, "ch_log", LOG_FILENAME)
 
-    # LF
-    if proc_type == 1:
+    #LF
+    params_uncertain_path = os.path.join(sim_dir, "LF", "params_uncertain.py")
+    if proc_type == Process.EMOD3D.value:
+        check_params_uncertain(params_uncertain_path)
         cmd = "python $gmsim/workflow/scripts/submit_emod3d.py --auto --srf %s" % run_name
         print(cmd)
         call(cmd, shell=True)
-        store_metadata(log_file, ProcTypeConst.LF.value, {"submit_time": submitted_time})
-    # POST_EMOD3D
-    if proc_type == 2:
+
+    if proc_type == Process.merge_ts.value:
         cmd = "python $gmsim/workflow/scripts/submit_post_emod3d.py --auto --merge_ts --srf %s" % run_name
         print(cmd)
         call(cmd, shell=True)
-        store_metadata(log_file, ProcTypeConst.POST_EMOD3D.value, {"submit_time": submitted_time})
-    # WINBIN
-    if proc_type == 3:
+
+    if proc_type == Process.winbin_aio.value:
         # skipping winbin_aio if running binary mode
         if binary_mode:
             # update the mgmt_db
@@ -63,10 +62,8 @@ def submit_task(sim_dir, proc_type, run_name, db, mgmt_db_location, binary_mode=
             cmd = "python $gmsim/workflow/scripts/submit_post_emod3d.py --auto --winbin_aio --srf %s" % run_name
             print(cmd)
             call(cmd, shell=True)
-            call("echo 'submitted time: %s' >> %s" % (
-            submitted_time, os.path.join(ch_log_dir, 'winbin.%s.log' % run_name)), shell=True)
     # HF
-    if proc_type == 4:
+    if proc_type == Process.HF.value:
         hf_cmd = "python $gmsim/workflow/scripts/submit_hf.py --auto --srf %s" % run_name
         if not binary_mode:
             hf_cmd += ' -- ascii'
@@ -78,19 +75,50 @@ def submit_task(sim_dir, proc_type, run_name, db, mgmt_db_location, binary_mode=
         call(hf_cmd, shell=True)
         store_metadata(log_file, ProcTypeConst.HF.value, {"submit_time": submitted_time})
     # BB
-    if proc_type == 5:
-        cmd = "python $gmsim/workflow/scripts/submit_bb.py --auto --srf %s" % run_name
-        if not binary_mode:
-            cmd += ' -- ascii'
+    if proc_type == Process.BB.value:
+        cmd = "python $gmsim/workflow/scripts/submit_bb.py --binary --auto --srf %s" % run_name
         print(cmd)
         call(cmd, shell=True)
         store_metadata(log_file, ProcTypeConst.BB.value, {"submit_time": submitted_time})
     # IM_calc
-    if proc_type == 6:
+    if proc_type == Process.IM_calculation.value:
         cmd = "python $gmsim/workflow/scripts/submit_sim_imcalc.py --auto --sim_dir {} --simple_output {}".format(sim_dir, "-e" if extended_period else "")
         print(cmd)
         call(cmd, shell=True)
         store_metadata(log_file, ProcTypeConst.IM.value, {"submit_time": submitted_time})
+
+    fault = run_name.split('_')[0]
+    source_path = os.path.join(mgmt_db_location, 'Data/Sources', fault, 'srf', run_name)
+    srf_path = source_path + '.srf'
+
+    if do_verification:
+        if proc_type == Process.rrup.value:
+            tmp_path = os.path.join(mgmt_db_location, 'Runs')
+            rrup_dir = os.path.join(mgmt_db_location, 'Runs', fault, 'verification')
+            cmd = "python $gmsim/workflow/scripts/submit_imcalc.py --auto -s --sim_dir %s --i %s --mgmt_db %s -srf %s -o %s" % (tmp_path, run_name, mgmt_db_location, srf_path, rrup_dir)
+            print(cmd)
+            call(cmd, shell=True)
+
+        if proc_type == Process.Empirical.value:
+            cmd = "$gmsim/workflow/scripts/submit_empirical.py -np 40 -i {} {}".format(run_name, mgmt_db_location)
+            print(cmd)
+            call(cmd, shell=True)
+
+        if proc_type == Process.Verification.value:
+            pass
+
+    # save the job meta data
+    call("echo 'submitted time: %s' >> %s" % (submitted_time, os.path.join(ch_log_dir, Process(proc_type).name + '.%s.log'%run_name)),
+         shell=True)
+
+
+def check_params_uncertain(params_uncertain_path):
+    if not os.path.isfile(params_uncertain_path):
+        print(params_uncertain_path, " missing, creating")
+        cmd = "python $gmsim/workflow/scripts/submit_emod3d.py --set_params_only"
+        call(cmd, shell=True)
+        print(cmd)
+
 
 def get_vmname(srf_name):
     """
@@ -106,7 +134,6 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('run_folder', type=str, help="folder to the collection of runs")
     parser.add_argument('--n_runs', default=default_n_runs, type=int)
-
     # cybershake-like simulations store mgmnt_db at different locations
     parser.add_argument('--single_sim', nargs="?", type=str, const=True)
     parser.add_argument('--config', type=str, default=None,
@@ -117,7 +144,7 @@ def main():
     args = parser.parse_args()
     mgmt_db_location = args.run_folder
     n_runs_max = args.n_runs
-    db = db_helper.connect_db(mgmt_db_location)
+    db = connect_db(mgmt_db_location)
     db_tasks = []
     hf_seed = default_hf_seed
 
@@ -130,6 +157,7 @@ def main():
             print(e)
             print("Error while parsing the config file, please double check inputs.")
             sys.exit()
+
         if 'v_1d_mod' in cybershake_cfg:
             # TODO:bad hack, fix this when possible (with parsing)
             global default_1d_mod
@@ -155,9 +183,10 @@ def main():
             extended_period = cybershake_cfg['extended_period']
         else:
             extended_period = default_extended_period
-            # append more logic here if more variables are requested
 
-    print("hf_seed:", hf_seed)
+        #append more logic here if more variables are requested 
+        
+    print("hf_seed", hf_seed)
     queued_tasks = slurm_query_status.get_queued_tasks()
     user_queued_tasks = slurm_query_status.get_queued_tasks(user=args.user).split('\n')
     db_tasks = slurm_query_status.get_submitted_db_tasks(db)
@@ -175,6 +204,7 @@ def main():
     task_num = 0
     print(submit_task_count)
     print(ntask_to_run)
+
     while submit_task_count < ntask_to_run and submit_task_count < len(runnable_tasks) and task_num < len(
             runnable_tasks):
         db_task_status = runnable_tasks[task_num]
@@ -205,7 +235,6 @@ def main():
         # a sleep between cmds
         # time.sleep(5)
     db.connection.close()
-
 
 if __name__ == '__main__':
     main()
