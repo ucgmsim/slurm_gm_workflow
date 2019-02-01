@@ -52,7 +52,7 @@ def write_sl_script_merge_ts(
         # TODO: the merge_ts binary needed to use relative path instead
         #  of absolute, maybe fix this
         ("{{lf_sim_dir}}", os.path.relpath(lf_sim_dir, sim_dir)),
-        ("{{tools_dir}}", tools_dir),
+        ("{{tools_dir}}", os.path.join(tools_dir, 'merge_tsP3_par')),
         ("{{mgmt_db_location}}", mgmt_db_location),
         ("{{sim_dir}}", sim_dir),
         ("{{srf_name}}", rup_mod)
@@ -138,7 +138,6 @@ if __name__ == '__main__':
     created_scripts = []
     params = utils.load_sim_params('sim_params.yaml')
     submit_yes = True if args.auto else shared.confirm("Also submit the job for you?")
-
     # get the srf(rup) name without extensions
     srf_name = os.path.splitext(os.path.basename(params.srf_file))[0]
     # if srf(variation) is provided as args, only create the slurm
@@ -158,7 +157,7 @@ if __name__ == '__main__':
                 params.mgmt_db_location, srf_name)
             shared.submit_sl_script(
                 script, "merge_ts", "queued", params.mgmt_db_location,
-                srf_name, submit_yes)
+                srf_name, timestamp, submit_yes)
 
         # run winbin_aio related scripts only
         if args.winbin_aio:
@@ -167,4 +166,4 @@ if __name__ == '__main__':
                 srf_name)
             shared.submit_sl_script(
                 script, "winbin_aio", "queued", params.mgmt_db_location,
-                srf_name, submit_yes)
+                srf_name, timestamp, submit_yes)

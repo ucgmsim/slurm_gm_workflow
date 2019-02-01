@@ -32,6 +32,8 @@ if [[ $? == 0 ]]; then
     dt=`python -c "from qcore import utils; pb = utils.load_sim_params('sim_params.yaml', load_vm=False); print(pb.hf.hf_dt)"`
     #save meta data
     echo "{{srf_name}} BB $SLURM_NTASKS $run_time $fd_count $dt $start_time $end_time" >> {{sim_dir}}/ch_log/BB.$timestamp.$SLURM_JOBID.log
+    echo "BB submission successful, start cleaning up"
+    python $gmsim/workflow/scripts/clean_up.py {{sim_dir}}
 else
     echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} BB created --run_name {{srf_name}} --error '$res' --force --is_retry" >> {{mgmt_db_location}}/mgmt_db_queue/$timestamp\_$SLURM_JOBID
 fi
