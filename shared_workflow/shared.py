@@ -16,7 +16,8 @@ import datetime
 
 import estimation.estimate_wct as wc
 
-from shared_workflow.shared_defaults import tools_dir
+from qcore import config
+from qcore import utils
 
 if sys.version_info.major == 3:
     basestring = str
@@ -580,7 +581,8 @@ def get_site_specific_path(stat_file_path, hf_stat_vs_ref=None, v1d_mod_dir=None
     return v_mod_1d_path, hf_stat_vs_ref_selected
 
 
-def get_hf_run_name(v_mod_1d_name, srf, root_dict):
+def get_hf_run_name(v_mod_1d_name, srf, root_dict, hf_version):
+    tools_dir = config.get_tools_dir(bin_name='hf', version=hf_version)
     hf_sim_bin = os.path.join(tools_dir, 'hb_high_v5.4.5_np2mm+')
     hfVString = 'hf' + os.path.basename(hf_sim_bin).split('_')[-1]
     hf_run_name = "{}_{}_rvf{}_sd{}_k{}".format(

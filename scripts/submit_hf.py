@@ -7,7 +7,7 @@ from datetime import datetime
 
 import qcore
 import estimation.estimate_wct as est
-from qcore import utils, shared, srf
+from qcore import utils, shared, srf, config
 from shared_workflow.shared import confirm, set_wct, submit_sl_script
 from temp_shared import resolve_header
 
@@ -53,6 +53,8 @@ def write_sl_script(
             params.sim_duration,
             "--dt",
             params.hf.hf_dt,
+            "--sim_bin",
+            os.path.join(config.get_tools_dir(bin_name='hf', version=params.hf.hf_version), "hb_high_v5.4.5_binmod"),
         ]
 
         hf_submit_command += " ".join(list(map(str, arguments_for_hf)))

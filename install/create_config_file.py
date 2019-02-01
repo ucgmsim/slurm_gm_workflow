@@ -10,7 +10,7 @@ shared_workflow_dir = os.path.join(global_root, "workflow/shared_workflow")
 bin_process_path = os.path.join(global_root, "workflow/scripts")
 qcore_path = os.path.join(global_root, "qcore")
 tools_path = os.path.join(global_root, "tools")
-templates_path = os.path.join(global_root, 'workflow','templates')
+templates_path = os.path.join(global_root, 'workflow', 'templates')
 config_dictionary = {
   "gm_sim_workflow_root": gm_sim_root,
   "emod3d_version": "3.0.4",
