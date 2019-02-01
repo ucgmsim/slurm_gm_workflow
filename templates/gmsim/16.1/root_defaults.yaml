@@ -1,10 +1,12 @@
 hf:
+  hf_version: 3.0.4
   hf_dt: 0.005
   hf_rvfac: 0.8
   hf_sdrop: 50
   hf_path_dur: 1
   hf_kappa: 0.045
 bb:
+  bb_verison: 3.0.4
   site_specific: false
   fmin: 0.2
   fmidbot: 0.5
