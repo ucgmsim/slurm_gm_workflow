@@ -121,7 +121,6 @@ if __name__ == "__main__":
         )
         wc = set_wct(est_run_time, n_cores, args.auto)
         tools_dir = config.get_tools_dir(bin_name='emod3d', version=params.emod3d.emod3d_version)
-
         script = write_sl_script(
             lf_sim_dir,
             sim_dir,
