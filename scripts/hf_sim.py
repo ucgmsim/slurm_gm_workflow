@@ -13,6 +13,7 @@ from mpi4py import MPI
 import numpy as np
 
 from shared_workflow import shared_defaults
+from qcore import config
 
 comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
@@ -59,7 +60,7 @@ if is_master:
     arg(
         "--sim_bin",
         help="high frequency binary (modified for binary out)",
-        default=os.path.join(shared_defaults.tools_dir, "hb_high_v5.4.5_binmod"),
+        default=os.path.join(config.get_tools_dir(bin_name='hf', version='3.0.4'), "hb_high_v5.4.5_binmod"),
     )
     arg("--t-sec", help="high frequency output start time", type=float, default=0.0)
     # HF IN, line 1
