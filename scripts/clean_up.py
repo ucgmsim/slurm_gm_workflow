@@ -97,7 +97,6 @@ def clean_up_submission_lf_files(sim_dir, submission_files_to_tar=[], lf_files_t
     make_tar(lf_dir, os.path.join(sim_dir, LF_TAR))
 
     # remove temporary submission and lf dir
-    print("lf_temp_dir", lf_dir)
     shutil.rmtree(lf_dir)
     shutil.rmtree(submission_dir)
 
