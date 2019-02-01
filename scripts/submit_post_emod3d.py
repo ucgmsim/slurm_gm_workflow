@@ -3,7 +3,7 @@
 import os
 import glob
 import argparse
-
+from datetime import datetime
 
 from qcore import utils
 from shared_workflow import shared
@@ -11,8 +11,6 @@ from shared_workflow.shared_defaults import tools_dir
 
 # TODO: remove this once temp_shared is gone
 from temp_shared import resolve_header
-
-from datetime import datetime
 
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
@@ -157,7 +155,7 @@ if __name__ == '__main__':
                 params.mgmt_db_location, srf_name)
             shared.submit_sl_script(
                 script, "merge_ts", "queued", params.mgmt_db_location,
-                srf_name, timestamp, submit_yes)
+                srf_name, timestamp, submit_yes=submit_yes)
 
         # run winbin_aio related scripts only
         if args.winbin_aio:
@@ -166,4 +164,4 @@ if __name__ == '__main__':
                 srf_name)
             shared.submit_sl_script(
                 script, "winbin_aio", "queued", params.mgmt_db_location,
-                srf_name, timestamp, submit_yes)
+                srf_name, timestamp, submit_yes=submit_yes)

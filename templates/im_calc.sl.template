@@ -34,15 +34,10 @@ echo ___calculating simulations___
         cd {{mgmt_db_location}}/Runs/{{fault_name}}/{{sim_name}}
         fd_name=`python -c "from qcore import utils; params = utils.load_sim_params('{{sim_dir}}/../sim_params.yaml'); print(params.FD_STATLIST)"`
         fd_count=`cat $fd_name | wc -l`
-        nt=`python -c "from qcore import utils; params = utils.load_sim_params('{{sim_dir}}/../sim_params.yaml'); nt = float(params.sim_duration)/float(params.hf.hf_dt); print(int(nt))"`
-        
-        run_time=`python -c "from datetime import datetime; tdelta= datetime.strptime('$end_time', '$runtime_fmt') - datetime.strptime('$start_time', '$runtime_fmt'); print(tdelta.total_seconds()/3600)"`
-
-        # Get the number of pSA IMs and components out of the result csv file
         psa_count=`cat {{sim_dir}}/../IM_calc/{{sim_name}}.csv | head -n 1 | grep -o pSA | wc -l`
-        components=`python -c "import pandas as pd; print(list(pd.read_csv('{{sim_dir}}/../IM_calc/{{sim_name}}.csv').component.unique().astype('U')))"`
-        echo "{{sim_name}} IM_calc $SLURM_JOBID {{np}} $fd_count $nt $run_time $start_time $end_time $psa_count $components" >> {{mgmt_db_location}}/Runs/{{fault_name}}/{{sim_name}}/ch_log/IM_calc.$timestamp.$SLURM_JOBID.{{sim_name}}.log
-        #
+
+        # log metadata
+        python $gmsim/workflow/metadata/log_metadata.py {{sim_dir}}/../ IM_calc cores={{np}} psa_count=$psa_count fd_count=$fd_count start_time=$start_time end_time=$end_time
     else
         #failed
         echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} IM_calculation failed --run_name {{sim_name}} --error '$res' --force"  >> {{mgmt_db_location}}/mgmt_db_queue/$timestamp\_$SLURM_JOBID
