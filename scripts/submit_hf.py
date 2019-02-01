@@ -7,7 +7,7 @@ from datetime import datetime
 
 import qcore
 import estimation.estimate_wct as est
-from qcore import utils, shared, srf
+from qcore import utils, shared, srf, simulation_structure
 from shared_workflow.shared import confirm, set_wct, submit_sl_script
 from temp_shared import resolve_header
 
@@ -22,7 +22,6 @@ timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
 
 def write_sl_script(
-    hf_sim_dir,
     sim_dir,
     stoch_name,
     sl_template_prefix,
@@ -34,19 +33,21 @@ def write_sl_script(
     binary=False,
     seed=None,
 ):
+
+    hf_sim_dir = simulation_structure.get_hf_dir(sim_dir)
     """Populates the template and writes the resulting slurm script to file"""
     with open("%s.sl.template" % sl_template_prefix, "r") as f:
         template = f.read()
 
     if binary:
-        create_dir = "mkdir -p " + os.path.join(hf_sim_dir, "Acc") + "\n"
+        create_dir = "mkdir -p {}\n".format(simulation_structure.get_hf_acc_dir(sim_dir))
         hf_submit_command = (
             create_dir + "srun python $gmsim/workflow" "/scripts/hf_sim.py "
         )
         arguments_for_hf = [
             params.hf.hf_slip,
             params.FD_STATLIST,
-            os.path.join(hf_sim_dir, "Acc/HF.bin"),
+            simulation_structure.get_hf_bin_path(sim_dir),
             "-m",
             params.v_mod_1d_name,
             "--duration",
@@ -59,7 +60,7 @@ def write_sl_script(
     else:
         hf_submit_command = (
             "srun python  $gmsim/workflow/scripts"
-            "/hfsims-stats-mpi.py " + hf_sim_dir + " " + str(hf_option)
+            "/hfsims-stats-mpi.py {} {}".format(hf_sim_dir, str(hf_option))
         )
 
     if seed is not None:
@@ -210,11 +211,9 @@ if __name__ == "__main__":
             )
             wct = set_wct(est_run_time, ncore, args.auto)
 
-        hf_sim_dir = os.path.join(params.sim_dir, "HF")
 
         # Create/write the script
         script_file = write_sl_script(
-            hf_sim_dir,
             params.sim_dir,
             srf_name,
             ll_name_prefix,

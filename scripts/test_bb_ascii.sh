@@ -18,7 +18,7 @@ srf_name=$3
 run_name=`python -c "from params_base import *; print(run_name)"`
 fd_ll=`python -c "from params_base import *; print(FD_STATLIST)"`
 
-bb_sim_dir=`python -c "import os; print(os.path.join(os.path.join(os.path.join('$sim_dir','BB'), '$hf_run_name'), '$srf_name'))"`
+bb_sim_dir=`python -c "import os; print(os.path.join('$sim_dir','BB', '$hf_run_name', '$srf_name'))"`
 bb_acc_dir=$bb_sim_dir/Acc
 bb_vel_dir=$bb_sim_dir/Vel
 

@@ -69,7 +69,7 @@ mag_prefix = "Mw"
 
 # getting Outbin and xyts dir
 srf_name = os.path.splitext(os.path.basename(srf_files[0]))[0]
-lf_outbin_dir = os.path.join(os.path.join(lf_sim_root_dir, srf_name), "OutBin")
+lf_outbin_dir = os.path.join(lf_sim_root_dir, srf_name, "OutBin")
 xyts_dir = os.path.join(lf_outbin_dir, run_name + "_xyts.e3d")
 # print "LF/OutBin directory: %s"%lf_outbin_dir
 # print "xyts: ",xyts_dir

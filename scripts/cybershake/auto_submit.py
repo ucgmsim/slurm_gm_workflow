@@ -67,6 +67,8 @@ def submit_task(sim_dir, proc_type, run_name, db, mgmt_db_location, binary_mode=
             submitted_time, os.path.join(ch_log_dir, 'winbin.%s.log' % run_name)), shell=True)
     # HF
     if proc_type == 4:
+        from scripts import submit_hf
+        submit_hf.write_sl_script(binary=binary_mode, seed=hf_seed)
         hf_cmd = "python $gmsim/workflow/scripts/submit_hf.py --auto --srf %s" % run_name
         if not binary_mode:
             hf_cmd += ' -- ascii'

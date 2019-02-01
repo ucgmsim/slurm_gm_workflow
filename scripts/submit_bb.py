@@ -5,7 +5,7 @@ import argparse
 from datetime import datetime
 
 from estimation import estimate_wct as wc
-from qcore import shared, utils
+from qcore import shared, utils, simulation_structure
 from shared_workflow.shared import set_wct, confirm, submit_sl_script
 
 # TODO: move this to qcore library
@@ -23,7 +23,6 @@ default_memory = "16G"
 
 
 def write_sl_script(
-    bb_sim_dir,
     sim_dir,
     srf_name,
     sl_template_prefix,
@@ -37,16 +36,16 @@ def write_sl_script(
         template = f.read()
 
     if binary:
-        create_directory = "mkdir -p " + os.path.join(bb_sim_dir, "Acc") + "\n"
+        create_directory = "mkdir -p {}\n".format(simulation_structure.get_bb_acc_dir(sim_dir))
         submit_command = (
             create_directory + "srun python $gmsim/workflow" "/scripts/bb_sim.py "
         )
         arguments = [
-            os.path.join(sim_dir, "LF", "OutBin"),
+            simulation_structure.get_lf_outbin_dir(sim_dir),
             params.vel_mod_dir,
-            os.path.join(sim_dir, "HF", "Acc/HF.bin"),
+            simulation_structure.get_hf_bin_path(sim_dir),
             params.stat_vs_est,
-            os.path.join(bb_sim_dir, "Acc/BB.bin"),
+            simulation_structure.get_bb_bin_path(sim_dir),
             "--flo",
             str(params.flo),
         ]
@@ -56,7 +55,7 @@ def write_sl_script(
     else:
         template = template.replace(
             "{{bb_submit_command}}",
-            "srun python  $gmsim/workflow/scripts" "/match_seismo-mpi.py " + bb_sim_dir,
+            "srun python  $gmsim/workflow/scripts" "/match_seismo-mpi.py " + simulation_structure.get_bb_dir(sim_dir),
         )
 
     variation = srf_name.replace("/", "__")
@@ -148,12 +147,10 @@ if __name__ == "__main__":
             est_core_hours, est_run_time = wc.est_BB_chours_single(fd_count, nt, ncores)
             wct = set_wct(est_run_time, ncores, args.auto)
 
-        bb_sim_dir = os.path.join(params.sim_dir, "BB")
         # TODO: save status as HF. refer to submit_hf
 
         # Create/write the script
         script_file = write_sl_script(
-            bb_sim_dir,
             params.sim_dir,
             srf_name,
             sl_name_prefix,
