@@ -38,7 +38,7 @@ def write_sl_script(
     workflow_config = load_config.load(
         os.path.dirname(os.path.realpath(__file__)), "workflow_config.json"
     )
-    tools_dir = workflow_config["bin_process_path"]
+    tools_dir = workflow_config["tools_dir"]
 
     set_runparams.create_run_params(srf_name, workflow_config=workflow_config)
 
