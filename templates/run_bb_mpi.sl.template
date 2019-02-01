@@ -26,12 +26,11 @@ if [[ $? == 0 ]]; then
     if [[ ! -d {{sim_dir}}/ch_log ]]; then
         mkdir {{sim_dir}}/ch_log
     fi
-    run_time=`python -c "from datetime import datetime; tdelta= datetime.strptime('$end_time', '$runtime_fmt') - datetime.strptime('$start_time', '$runtime_fmt'); print(tdelta.total_seconds()/3600)"`
     fd_name=`python -c "from qcore import utils; pb = utils.load_yaml('sim_params.yaml'); print(pb['FD_STATLIST'])"`
     fd_count=`cat $fd_name | wc -l`
-    dt=`python -c "from qcore import utils; pb = utils.load_sim_params('sim_params.yaml', load_vm=False); print(pb.hf.hf_dt)"`
-    #save meta data
-    echo "{{srf_name}} BB $SLURM_NTASKS $run_time $fd_count $dt $start_time $end_time" >> {{sim_dir}}/ch_log/BB.$timestamp.$SLURM_JOBID.log
+
+    # save meta data
+    python $gmsim/workflow/metadata/log_metadata.py {{sim_dir}} BB cores=$SLURM_NTASKS fd_count=$fd_count start_time=$start_time end_time=$end_time
 else
     echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} BB created --run_name {{srf_name}} --error '$res' --force --is_retry" >> {{mgmt_db_location}}/mgmt_db_queue/$timestamp\_$SLURM_JOBID
 fi

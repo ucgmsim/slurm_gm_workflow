@@ -1,0 +1,53 @@
+export IMPATH=$gmsim/IM_calculation
+export PYTHONPATH=$gmsim/qcore:/$PYTHONPATH:$IMPATH
+
+runtime_fmt="%Y-%m-%d_%H:%M:%S"
+
+script_start=`date`
+echo "script started running at: $script_start"
+
+# Update db to running
+timestamp=`date +%Y%m%d_%H%M%S`
+echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} IM_calculation running --run_name {{sim_name}} --j $SLURM_JOBID" >> {{mgmt_db_location}}/mgmt_db_queue/$timestamp\_$SLURM_JOBID
+
+# Create the results directory if required
+if [[ ! -d {{sim_dir}}/IM_calc ]]; then
+    mkdir {{sim_dir}}/IM_calc
+fi
+
+# Run the script
+start_time=`date +$runtime_fmt`
+time python $IMPATH/calculate_ims.py {{sim_dir}}/BB/Acc/BB.bin b -o {{sim_dir}}/IM_calc/ -np {{np}} -i {{sim_name}} -r {{fault_name}} -c {{component}} -t s {{extended}} {{simple}}
+end_time=`date +$runtime_fmt`
+
+# Check that the result files exist
+res=0
+if [ -f {{sim_dir}}/IM_calc/{{sim_name}}.csv ] && [ -f {{sim_dir}}/IM_calc/{{sim_name}}_im_calc.info ]; then
+    res=1
+    echo "IM calculation failed, result files do not exist."
+fi
+
+# Update mgmt_db
+# Passed
+if [[ $? == 0 ]]; then
+    timestamp=`date +%Y%m%d_%H%M%S`
+    echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} IM_calculation completed --run_name {{sim_name}} --force" >> {{mgmt_db_location}}/mgmt_db_queue/$timestamp\_$SLURM_JOBID
+
+    if [[ ! -d {{sim_dir}}/ch_log ]]; then
+        mkdir {{sim_dir}}/ch_log
+    fi
+
+    fd_name=`python -c "from qcore import utils; params = utils.load_sim_params('{{sim_dir}}/sim_params.yaml'); print(params.FD_STATLIST)"`
+    fd_count=`cat $fd_name | wc -l`
+    psa_count=`cat {{sim_dir}}/IM_calc/{{sim_name}}.csv | head -n 1 | grep -o pSA | wc -l`
+
+    # log metadata
+    python $gmsim/workflow/metadata/log_metadata.py {{sim_dir}} IM_calc cores={{np}} psa_count=$psa_count fd_count=$fd_count start_time=$start_time end_time=$end_time
+else
+    #failed
+    echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} IM_calculation failed --run_name {{sim_name}} --error '$res' --force"  >> {{mgmt_db_location}}/mgmt_db_queue/$timestamp\_$SLURM_JOBID
+fi
+
+
+
+
