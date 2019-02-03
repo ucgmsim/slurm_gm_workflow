@@ -8,6 +8,7 @@ import argparse
 
 import set_runparams
 from qcore import utils
+from qcore import config
 import estimation.estimate_wct as wc
 from shared_workflow import load_config
 from shared_workflow.shared import confirm, set_wct, submit_sl_script
@@ -29,6 +30,7 @@ def write_sl_script(
     sim_dir,
     srf_name,
     mgmt_db_location,
+    tools_dir,
     run_time=default_run_time,
     nb_cpus=default_core,
     memory=default_memory,
@@ -38,8 +40,7 @@ def write_sl_script(
     workflow_config = load_config.load(
         os.path.dirname(os.path.realpath(__file__)), "workflow_config.json"
     )
-    tools_dir = workflow_config["tools_dir"]
-
+    
     set_runparams.create_run_params(srf_name, workflow_config=workflow_config)
 
     with open("run_emod3d.sl.template", "r") as f:
@@ -119,12 +120,13 @@ if __name__ == "__main__":
             True
         )
         wc = set_wct(est_run_time, n_cores, args.auto)
-
+        tools_dir = config.get_tools_dir(bin_name='emod3d', version=params.emod3d.emod3d_version)
         script = write_sl_script(
             lf_sim_dir,
             sim_dir,
             srf_name,
             params.mgmt_db_location,
+            tools_dir,
             run_time=wc,
             nb_cpus=n_cores,
         )
