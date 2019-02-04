@@ -174,19 +174,6 @@ def submit_task(
         if proc_type == const.ProcessType.Verification.value:
             pass
 
-    # save the job meta data
-    call(
-        "echo 'submitted time: %s' >> %s"
-        % (
-            submitted_time,
-            os.path.join(
-                ch_log_dir, const.ProcessType(proc_type).name + ".%s.log" % run_name
-            ),
-        ),
-        shell=True,
-    )
-
-
 # TODO: Requires updating, currently not working
 # def check_params_uncertain(params_uncertain_path):
 #     if not os.path.isfile(params_uncertain_path):
