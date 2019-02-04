@@ -15,6 +15,7 @@ from datetime import datetime
 import pandas as pd
 from filelock import SoftFileLock, Timeout
 
+import qcore.constants as const
 from metadata.agg_json_data import MetaConst
 from qcore.constants import ProcessType
 from qcore import utils
@@ -25,7 +26,6 @@ LOG_FILENAME = "metadata_log.json"
 LOCK_FILENAME = "{}.lock".format(LOG_FILENAME)
 
 METACONST_TO_ADD = [MetaConst.run_time.value]
-TIMESTAMP_FMT = "%Y-%m-%d_%H:%M:%S"
 
 
 class KeyValuePairsAction(argparse.Action):
@@ -190,8 +190,10 @@ def main(args):
         and MetaConst.end_time.value in metadata_dict.keys()
     ):
         tdelta = datetime.strptime(
-            metadata_dict[MetaConst.end_time.value], TIMESTAMP_FMT
-        ) - datetime.strptime(metadata_dict[MetaConst.start_time.value], TIMESTAMP_FMT)
+            metadata_dict[MetaConst.end_time.value], const.METADATA_TIMESTAMP_FMT
+        ) - datetime.strptime(
+            metadata_dict[MetaConst.start_time.value], const.METADATA_TIMESTAMP_FMT
+        )
         metadata_dict[MetaConst.run_time.value] = tdelta.total_seconds() / 3600
 
     # Load the params

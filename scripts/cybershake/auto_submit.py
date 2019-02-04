@@ -34,7 +34,6 @@ def submit_task(
     extended_period=False,
     do_verification=False,
 ):
-    # TODO: using shell call is EXTREMELY undesirable. fix this in near future(fundamentally)
     # create the tmp folder
     # TODO: fix this issue
     sqlite_tmpdir = "/tmp/cer"
@@ -48,13 +47,13 @@ def submit_task(
     # create the folder if not exist
     if not os.path.isdir(ch_log_dir):
         os.mkdir(ch_log_dir)
-    submitted_time = datetime.now().strftime("%Y%m%d_%H%M%S")
+    submitted_time = datetime.now().strftime(const.METADATA_TIMESTAMP_FMT)
     log_file = os.path.join(sim_dir, "ch_log", LOG_FILENAME)
 
     # LF
-    params_uncertain_path = os.path.join(sim_dir, "LF", "params_uncertain.py")
+    # params_uncertain_path = os.path.join(sim_dir, "LF", "params_uncertain.py")
     if proc_type == const.ProcessType.EMOD3D.value:
-        check_params_uncertain(params_uncertain_path)
+        # check_params_uncertain(params_uncertain_path)
 
         # These have to include the default values (same for all other process types)!
         args = argparse.Namespace(
@@ -73,7 +72,11 @@ def submit_task(
 
     if proc_type == const.ProcessType.merge_ts.value:
         args = argparse.Namespace(
-            auto=True, merge_ts=True, srf=run_name, account=const.DEFAULT_ACCOUNT
+            auto=True,
+            merge_ts=True,
+            winbin_aio=False,
+            srf=run_name,
+            account=const.DEFAULT_ACCOUNT,
         )
         print("Submit post EMOD3D (merge_ts) arguments: ", args)
         submit_post_lf_main(args)
@@ -90,7 +93,11 @@ def submit_task(
             update_mgmt_db.update_db(db, "winbin_aio", "completed", run_name=run_name)
         else:
             args = argparse.Namespace(
-                auto=True, winbin_aio=True, srf=run_name, account=const.DEFAULT_ACCOUNT
+                auto=True,
+                winbin_aio=True,
+                merge_ts=False,
+                srf=run_name,
+                account=const.DEFAULT_ACCOUNT,
             )
             print("Submit post EMOD3D (winbin_aio) arguments: ", args)
             submit_post_lf_main(args)
@@ -180,12 +187,13 @@ def submit_task(
     )
 
 
-def check_params_uncertain(params_uncertain_path):
-    if not os.path.isfile(params_uncertain_path):
-        print(params_uncertain_path, " missing, creating")
-        cmd = "python $gmsim/workflow/scripts/submit_emod3d.py --set_params_only"
-        call(cmd, shell=True)
-        print(cmd)
+# TODO: Requires updating, currently not working
+# def check_params_uncertain(params_uncertain_path):
+#     if not os.path.isfile(params_uncertain_path):
+#         print(params_uncertain_path, " missing, creating")
+#         cmd = "python $gmsim/workflow/scripts/submit_emod3d.py --set_params_only"
+#         call(cmd, shell=True)
+#         print(cmd)
 
 
 def get_vmname(srf_name):
