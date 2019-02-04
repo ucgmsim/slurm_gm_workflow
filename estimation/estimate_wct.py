@@ -359,7 +359,7 @@ def est_IM_chours_single(
         model_dir=model_dir,
         model_prefix=model_prefix,
         scaler_prefix=scaler_prefix,
-    )[0][0]
+    )[0]
 
     return core_hours, core_hours / n_cores
 
