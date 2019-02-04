@@ -3,22 +3,16 @@
 import os
 import os.path
 import argparse
-from datetime import datetime
 
 import qcore
 import estimation.estimate_wct as est
+import qcore.constants as const
 from qcore import utils, shared, srf, config
 from shared_workflow.shared import confirm, set_wct, submit_sl_script
 from scripts.temp_shared import resolve_header
 
 # default values
-default_version = "run_hf_mpi"
-default_core = 80
 default_wct = "00:30:00"
-default_memory = "16G"
-default_account = "nesi00213"
-
-timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
 
 def write_sl_script(
@@ -28,10 +22,10 @@ def write_sl_script(
     sl_template_prefix,
     hf_option,
     params,
-    nb_cpus=default_core,
+    nb_cpus=const.HF_DEFAULT_NCORES,
     wct=default_wct,
-    memory=default_memory,
-    account=default_account,
+    memory=const.DEFAULT_MEMORY,
+    account=const.DEFAULT_ACCOUNT,
     binary=False,
     seed=None,
 ):
@@ -92,11 +86,11 @@ def write_sl_script(
         job_name,
         "slurm",
         memory,
-        timestamp,
+        const.timestamp,
         job_description="HF calculation",
         additional_lines="###SBATCH -C avx",
     )
-    script_name = "%s_%s_%s.sl" % (sl_template_prefix, variation, timestamp)
+    script_name = "%s_%s_%s.sl" % (sl_template_prefix, variation, const.timestamp)
     with open(script_name, "w") as f:
         f.write(header)
         f.write(template)
@@ -122,12 +116,12 @@ def main(args):
             ll_name_prefix = "run_hf_mpi"
         else:
             print("% cannot be recognize as a valide option" % version)
-            print("version is set to default: %", default_version)
-            version = default_version
-            ll_name_prefix = default_version
+            print("version is set to default: %", const.HF_DEFAULT_VERSION)
+            version = const.HF_DEFAULT_VERSION
+            ll_name_prefix = const.HF_DEFAULT_VERSION
     else:
-        version = default_version
-        ll_name_prefix = default_version
+        version = const.HF_DEFAULT_VERSION
+        ll_name_prefix = const.HF_DEFAULT_VERSION
     print("version:", version)
 
     # check rand_reset
@@ -207,7 +201,7 @@ def main(args):
             "queued",
             params.mgmt_db_location,
             srf_name,
-            timestamp,
+            const.timestamp,
             submit_yes=submit_yes,
         )
 
@@ -218,7 +212,7 @@ if __name__ == "__main__":
     )
 
     parser.add_argument("--version", type=str, default=None, const=None)
-    parser.add_argument("--ncore", type=int, default=default_core)
+    parser.add_argument("--ncore", type=int, default=const.HF_DEFAULT_NCORES)
 
     # if the --auto flag is used, wall clock time will be estimated the job
     # submitted automatically
@@ -232,7 +226,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--site_specific", type=int, nargs="?", default=None, const=True
     )
-    parser.add_argument("--account", type=str, default=default_account)
+    parser.add_argument("--account", type=str, default=const.DEFAULT_ACCOUNT)
     parser.add_argument("--srf", type=str, default=None)
     parser.add_argument("--ascii", action="store_true", default=False)
     parser.add_argument("--debug", action="store_true", default=False)

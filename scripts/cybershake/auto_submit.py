@@ -8,7 +8,7 @@ from subprocess import call
 
 import shared_workflow.load_config as ldcfg
 from scripts.management.db_helper import connect_db
-from qcore.constants import ProcessType
+import qcore.constants as const
 from scripts.management import slurm_query_status, update_mgmt_db
 from metadata.log_metadata import store_metadata, LOG_FILENAME
 
@@ -16,11 +16,7 @@ from scripts.submit_emod3d import main as submit_lf_main
 from scripts.submit_post_emod3d import main as submit_post_lf_main
 from scripts.submit_hf import main as submit_hf_main
 from scripts.submit_bb import main as submit_bb_main
-from scripts.submit_sim_imcalc import (
-    submit_im_calc_slurm,
-    SlBodyOptConsts,
-    SlHdrOptConsts,
-)
+from scripts.submit_sim_imcalc import submit_im_calc_slurm, SlBodyOptConsts
 
 default_n_runs = 12
 default_1d_mod = "/nesi/transit/nesi00213/VelocityModel/Mod-1D/Cant1D_v2-midQ_leer.1d"
@@ -57,56 +53,82 @@ def submit_task(
 
     # LF
     params_uncertain_path = os.path.join(sim_dir, "LF", "params_uncertain.py")
-    if proc_type == ProcessType.EMOD3D.value:
+    if proc_type == const.ProcessType.EMOD3D.value:
         check_params_uncertain(params_uncertain_path)
-        args = argparse.Namespace(auto=True, srf=run_name)
+
+        # These have to include the default values (same for all other process types)!
+        args = argparse.Namespace(
+            auto=True,
+            srf=run_name,
+            ncore=const.LF_DEFAULT_NCORES,
+            account=const.DEFAULT_ACCOUNT,
+        )
         print("Submit EMOD3D arguments: ", args)
         submit_lf_main(args)
         store_metadata(
-            log_file, ProcessType.EMOD3D.str_value, {"submit_time": submitted_time}
+            log_file,
+            const.ProcessType.EMOD3D.str_value,
+            {"submit_time": submitted_time},
         )
 
-    if proc_type == ProcessType.merge_ts.value:
-        args = argparse.Namespace(auto=True, merge_ts=True, srf=run_name)
+    if proc_type == const.ProcessType.merge_ts.value:
+        args = argparse.Namespace(
+            auto=True, merge_ts=True, srf=run_name, account=const.DEFAULT_ACCOUNT
+        )
         print("Submit post EMOD3D (merge_ts) arguments: ", args)
         submit_post_lf_main(args)
         store_metadata(
-            log_file, ProcessType.merge_ts.str_value, {"submit_time": submitted_time}
+            log_file,
+            const.ProcessType.merge_ts.str_value,
+            {"submit_time": submitted_time},
         )
 
-    if proc_type == ProcessType.winbin_aio.value:
+    if proc_type == const.ProcessType.winbin_aio.value:
         # skipping winbin_aio if running binary mode
         if binary_mode:
             # update the mgmt_db
             update_mgmt_db.update_db(db, "winbin_aio", "completed", run_name=run_name)
         else:
-            args = argparse.Namespace(auto=True, winbin_aio=True, srf=run_name)
+            args = argparse.Namespace(
+                auto=True, winbin_aio=True, srf=run_name, account=const.DEFAULT_ACCOUNT
+            )
             print("Submit post EMOD3D (winbin_aio) arguments: ", args)
             submit_post_lf_main(args)
     # HF
-    if proc_type == ProcessType.HF.value:
+    if proc_type == const.ProcessType.HF.value:
         args = argparse.Namespace(
             auto=True,
             srf=run_name,
             ascii=not binary_mode,
             seed=hf_seed,
             rand_reset=rand_reset,
+            ncore=const.HF_DEFAULT_NCORES,
+            version=const.HF_DEFAULT_VERSION,
+            site_specific=None,
+            account=const.DEFAULT_ACCOUNT,
+            debug=False,
         )
         print("Submit HF arguments: ", args)
         submit_hf_main(args)
         store_metadata(
-            log_file, ProcessType.HF.str_value, {"submit_time": submitted_time}
+            log_file, const.ProcessType.HF.str_value, {"submit_time": submitted_time}
         )
     # BB
-    if proc_type == ProcessType.BB.value:
-        args = argparse.Namespace(auto=True, srf=run_name)
+    if proc_type == const.ProcessType.BB.value:
+        args = argparse.Namespace(
+            auto=True,
+            srf=run_name,
+            version=const.BB_DEFAULT_VERSION,
+            account=const.DEFAULT_ACCOUNT,
+            ascii=False,
+        )
         print("Submit BB arguments: ", args)
         submit_bb_main(args)
         store_metadata(
-            log_file, ProcessType.BB.str_value, {"submit_time": submitted_time}
+            log_file, const.ProcessType.BB.str_value, {"submit_time": submitted_time}
         )
     # IM_calc
-    if proc_type == ProcessType.IM_calculation.value:
+    if proc_type == const.ProcessType.IM_calculation.value:
         options_dict = {
             SlBodyOptConsts.extended.value: True if extended_period else False,
             SlBodyOptConsts.simple_out.value: True,
@@ -116,7 +138,7 @@ def submit_task(
         print("Submit IM calc arguments: ", options_dict)
         store_metadata(
             log_file,
-            ProcessType.IM_calculation.str_value,
+            const.ProcessType.IM_calculation.str_value,
             {"submit_time": submitted_time},
         )
 
@@ -125,7 +147,7 @@ def submit_task(
     srf_path = source_path + ".srf"
 
     if do_verification:
-        if proc_type == ProcessType.rrup.value:
+        if proc_type == const.ProcessType.rrup.value:
             tmp_path = os.path.join(mgmt_db_location, "Runs")
             rrup_dir = os.path.join(mgmt_db_location, "Runs", fault, "verification")
             cmd = (
@@ -135,14 +157,14 @@ def submit_task(
             print(cmd)
             call(cmd, shell=True)
 
-        if proc_type == ProcessType.Empirical.value:
+        if proc_type == const.ProcessType.Empirical.value:
             cmd = "$gmsim/workflow/scripts/submit_empirical.py -np 40 -i {} {}".format(
                 run_name, mgmt_db_location
             )
             print(cmd)
             call(cmd, shell=True)
 
-        if proc_type == ProcessType.Verification.value:
+        if proc_type == const.ProcessType.Verification.value:
             pass
 
     # save the job meta data
@@ -151,7 +173,7 @@ def submit_task(
         % (
             submitted_time,
             os.path.join(
-                ch_log_dir, ProcessType(proc_type).name + ".%s.log" % run_name
+                ch_log_dir, const.ProcessType(proc_type).name + ".%s.log" % run_name
             ),
         ),
         shell=True,

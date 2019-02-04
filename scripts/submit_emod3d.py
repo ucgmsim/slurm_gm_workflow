@@ -4,11 +4,10 @@
 # Section for parser to determine if using automate wct
 import os
 import argparse
-from datetime import datetime
 
 import scripts.set_runparams as set_runparams
-from qcore import utils
-from qcore import config
+from qcore import utils, config
+import qcore.constants as const
 import estimation.estimate_wct as est
 from shared_workflow import load_config
 from shared_workflow.shared import confirm, set_wct, submit_sl_script
@@ -16,13 +15,6 @@ from shared_workflow.shared import confirm, set_wct, submit_sl_script
 # TODO: remove this once temp_shared is gone
 from scripts.temp_shared import resolve_header
 
-timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-
-# Default values
-default_core = 160
-default_run_time = "02:00:00"
-default_memory = "16G"
-default_account = "nesi00213"
 
 def write_sl_script(
     lf_sim_dir,
@@ -30,10 +22,10 @@ def write_sl_script(
     srf_name,
     mgmt_db_location,
     tools_dir,
-    run_time=default_run_time,
-    nb_cpus=default_core,
-    memory=default_memory,
-    account=default_account,
+    run_time="02:00:00",
+    nb_cpus=const.LF_DEFAULT_NCORES,
+    memory=const.DEFAULT_MEMORY,
+    account=const.DEFAULT_ACCOUNT,
 ):
     """Populates the template and writes the resulting slurm script to file"""
     workflow_config = load_config.load(
@@ -65,12 +57,12 @@ def write_sl_script(
         job_name,
         "slurm",
         memory,
-        timestamp,
+        const.timestamp,
         job_description="emod3d slurm script",
         additional_lines="#SBATCH --hint=nomultithread",
     )
 
-    fname_slurm_script = "run_emod3d_%s_%s.sl" % (srf_name, timestamp)
+    fname_slurm_script = "run_emod3d_%s_%s.sl" % (srf_name, const.timestamp)
     with open(fname_slurm_script, "w") as f:
         f.write(header)
         f.write(template)
@@ -84,10 +76,6 @@ def write_sl_script(
 
 
 def main(args):
-    workflow_config = load_config.load(
-        os.path.dirname(os.path.realpath(__file__)), "workflow_config.json")
-    tools_dir = workflow_config["bin_process_path"]
-
     params = utils.load_sim_params('sim_params.yaml')
 
     submit_yes = True if args.auto else confirm("Also submit the job for you?")
@@ -130,7 +118,7 @@ def main(args):
             "queued",
             params.mgmt_db_location,
             srf_name,
-            timestamp,
+            const.timestamp,
             submit_yes=submit_yes,
         )
 
@@ -139,9 +127,9 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description="Create (and submit if specified) the slurm script for LF")
 
-    parser.add_argument("--ncore", type=int, default=default_core)
+    parser.add_argument("--ncore", type=int, default=const.LF_DEFAULT_NCORES)
     parser.add_argument("--auto", nargs="?", type=str, const=True)
-    parser.add_argument('--account', type=str, default=default_account)
+    parser.add_argument('--account', type=str, default=const.DEFAULT_ACCOUNT)
     parser.add_argument('--srf', type=str, default=None)
     args = parser.parse_args()
 

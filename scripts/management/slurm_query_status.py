@@ -117,7 +117,7 @@ def get_runnable_tasks(db, n_runs=N_TASKS_TO_RUN, retry_max=RETRY_MAX):
     for task in db_tasks:
         status = task[2]
         if status == 'created' and check_dependancy_met(task, db_tasks):
-            if task < Process.rrup or do_verification:
+            if task[0] < Process.rrup.value or do_verification:
                 tasks_to_run.append(task)
         if len(tasks_to_run) >= n_runs:
             break

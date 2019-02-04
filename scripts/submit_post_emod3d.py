@@ -3,16 +3,14 @@
 import os
 import glob
 import argparse
-from datetime import datetime
 
-from qcore import utils
+from qcore import utils, config
+import qcore.constants as const
 from shared_workflow import shared
-from qcore import config
 
 # TODO: remove this once temp_shared is gone
 from scripts.temp_shared import resolve_header
 
-timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
 merge_ts_name_prefix = "post_emod3d_merge_ts"
 winbin_aio_name_prefix = "post_emod3d_winbin_aio"
@@ -20,12 +18,10 @@ winbin_aio_name_prefix = "post_emod3d_winbin_aio"
 # TODO: implement estimation for these numbers
 default_run_time_merge_ts = "00:30:00"
 default_run_time_winbin_aio = "02:00:00"
+
 # default_core_merge_ts must be 4, higher number of cpu cause
 # un-expected errors (TODO: maybe fix it when merg_ts's time become issue)
-default_core_merge_ts = "4"
 default_core_winbin_aio = "80"
-default_memory = "16G"
-default_account = 'nesi00213'
 
 # TODO:the max number of cpu per node may need update when migrate machines
 # this variable is critical to prevent crashes for winbin-aio
@@ -40,8 +36,8 @@ def get_seis_len(seis_path):
 
 def write_sl_script_merge_ts(
         lf_sim_dir, sim_dir, tools_dir, mgmt_db_location, rup_mod,
-        run_time=default_run_time_merge_ts, nb_cpus=default_core_merge_ts,
-        memory=default_memory, account=default_account):
+        run_time=default_run_time_merge_ts, nb_cpus=const.MERGE_TS_DEFAULT_NCORES,
+        memory=const.DEFAULT_MEMORY, account=const.DEFAULT_ACCOUNT):
     """Populates the template and writes the resulting slurm script to file"""
     with open('%s.sl.template' % merge_ts_name_prefix) as f:
         template = f.read()
@@ -61,11 +57,11 @@ def write_sl_script_merge_ts(
 
     job_name = "post_emod3d.merge_ts.%s" % rup_mod
     header = resolve_header(
-        account, nb_cpus, run_time, job_name, "Slurm", memory, timestamp,
+        account, nb_cpus, run_time, job_name, "Slurm", memory, const.timestamp,
         job_description="post emod3d: merge_ts",
         additional_lines="###SBATCH -C avx")
 
-    script_name = '%s_%s_%s.sl' % (merge_ts_name_prefix, rup_mod, timestamp)
+    script_name = '%s_%s_%s.sl' % (merge_ts_name_prefix, rup_mod, const.timestamp)
     with open(script_name, 'w') as f:
         f.write(header)
         f.write(template)
@@ -78,8 +74,8 @@ def write_sl_script_merge_ts(
 
 def write_sl_script_winbin_aio(
         lf_sim_dir, sim_dir, mgmt_db_location, rup_mod,
-        run_time=default_run_time_winbin_aio, memory=default_memory,
-        account=default_account):
+        run_time=default_run_time_winbin_aio, memory=const.DEFAULT_MEMORY,
+        account=const.DEFAULT_ACCOUNT):
     """Populates the template and writes the resulting slurm script to file"""
     # Read template
     with open('%s.sl.template' % winbin_aio_name_prefix) as f:
@@ -106,10 +102,10 @@ def write_sl_script_winbin_aio(
 
     job_name = "post_emod3d.winbin_aio.%s" % rup_mod
     header = resolve_header(
-        account, nb_cpus, run_time, job_name, "slurm", memory, timestamp,
+        account, nb_cpus, run_time, job_name, "slurm", memory, const.timestamp,
         job_description="post emod3d: winbin_aio", additional_lines="###SBATCH -C avx")
 
-    script_name = '%s_%s_%s.sl' % (winbin_aio_name_prefix, rup_mod, timestamp)
+    script_name = '%s_%s_%s.sl' % (winbin_aio_name_prefix, rup_mod, const.timestamp)
     with open(script_name, 'w') as f:
         f.write(header)
         f.write(template)
@@ -144,7 +140,7 @@ def main(args):
                 params.mgmt_db_location, srf_name)
             shared.submit_sl_script(
                 script, "merge_ts", "queued", params.mgmt_db_location,
-                srf_name, timestamp, submit_yes=submit_yes)
+                srf_name, const.timestamp, submit_yes=submit_yes)
 
         # run winbin_aio related scripts only
         if args.winbin_aio:
@@ -153,18 +149,17 @@ def main(args):
                 srf_name)
             shared.submit_sl_script(
                 script, "winbin_aio", "queued", params.mgmt_db_location,
-                srf_name, timestamp, submit_yes=submit_yes)
+                srf_name, const.timestamp, submit_yes=submit_yes)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description="Create (and submit if specified) the slurm script for HF")
 
     parser.add_argument("--auto", nargs="?", type=str, const=True)
-    parser.add_argument('--account', type=str, default=default_account)
+    parser.add_argument('--account', type=str, default=const.DEFAULT_ACCOUNT)
     parser.add_argument('--merge_ts', nargs="?", type=str, const=True)
     parser.add_argument('--winbin_aio', nargs="?", type=str, const=True)
     parser.add_argument('--srf', type=str, default=None)
-    parser.add_argument('--pre_hf', nargs="?", type=str, const=True)
 
     args = parser.parse_args()
 
