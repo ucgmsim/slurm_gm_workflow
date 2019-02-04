@@ -7,7 +7,7 @@ each stage of the run
 import argparse
 import os
 
-from management.db_helper import connect_db
+from scripts.management.db_helper import connect_db
 
 
 def initilize_db(path):
