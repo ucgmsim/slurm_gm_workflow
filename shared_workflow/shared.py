@@ -14,7 +14,7 @@ import sys
 import re
 import datetime
 
-import estimation.estimate_wct as wc
+import estimation.estimate_wct as est
 
 from shared_workflow.shared_defaults import tools_dir
 
@@ -334,7 +334,7 @@ def get_input_wc():
 
 def set_wct(est_run_time, ncores, auto=False):
     print("Estimated time: {} with {} number of cores".format(
-        wc.convert_to_wct(est_run_time), ncores))
+        est.convert_to_wct(est_run_time), ncores))
     if not auto:
         print("Use the estimated wall clock time? (Minimum of 5 mins, "
               "otherwise adds a 10% overestimation to ensure "
@@ -344,7 +344,7 @@ def set_wct(est_run_time, ncores, auto=False):
         use_estimation = True
 
     if use_estimation:
-        wct = wc.get_wct(est_run_time)
+        wct = est.get_wct(est_run_time)
     else:
         wct = str(get_input_wc())
     print("WCT set to: %s" % wct)

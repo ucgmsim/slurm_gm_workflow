@@ -7,17 +7,30 @@ from datetime import datetime
 from subprocess import call
 
 import shared_workflow.load_config as ldcfg
-from scripts.management.db_helper import connect_db, Process
+from scripts.management.db_helper import connect_db
+from qcore.constants import ProcessType
 from scripts.management import slurm_query_status, update_mgmt_db
-from metadata.log_metadata import store_metadata, LOG_FILENAME, ProcTypeConst
+from metadata.log_metadata import store_metadata, LOG_FILENAME
 from scripts.submit_emod3d import main as submit_lf_main
 from scripts.submit_post_emod3d import main as submit_post_lf_main
+from scripts.submit_hf import main as submit_hf_main
 
 default_n_runs = 12
 default_1d_mod = "/nesi/transit/nesi00213/VelocityModel/Mod-1D/Cant1D_v2-midQ_leer.1d"
 
-def submit_task(sim_dir, proc_type, run_name, db, mgmt_db_location, binary_mode=True, rand_reset=True,
-                hf_seed=None, extended_period=False, do_verification=False):
+
+def submit_task(
+    sim_dir,
+    proc_type,
+    run_name,
+    db,
+    mgmt_db_location,
+    binary_mode=True,
+    rand_reset=True,
+    hf_seed=None,
+    extended_period=False,
+    do_verification=False,
+):
     # TODO: using shell call is EXTREMELY undesirable. fix this in near future(fundamentally)
     # create the tmp folder
     # TODO: fix this issue
@@ -27,84 +40,114 @@ def submit_task(sim_dir, proc_type, run_name, db, mgmt_db_location, binary_mode=
 
     # change the working directory to the sim_dir
     os.chdir(sim_dir)
-    ch_log_dir = os.path.join(sim_dir, 'ch_log')
+    ch_log_dir = os.path.join(sim_dir, "ch_log")
 
     # create the folder if not exist
     if not os.path.isdir(ch_log_dir):
         os.mkdir(ch_log_dir)
-    submitted_time = datetime.now().strftime('%Y%m%d_%H%M%S')
+    submitted_time = datetime.now().strftime("%Y%m%d_%H%M%S")
     log_file = os.path.join(sim_dir, "ch_log", LOG_FILENAME)
 
-    #LF
+    # LF
     params_uncertain_path = os.path.join(sim_dir, "LF", "params_uncertain.py")
-    if proc_type == Process.EMOD3D.value:
+    if proc_type == ProcessType.EMOD3D.value:
         check_params_uncertain(params_uncertain_path)
         args = argparse.Namespace(auto=True, srf=run_name)
         print("Submit EMOD3D arguments: ", args)
         submit_lf_main(args)
+        store_metadata(
+            log_file, ProcessType.EMOD3D.str_value, {"submit_time": submitted_time}
+        )
 
-    if proc_type == Process.merge_ts.value:
+    if proc_type == ProcessType.merge_ts.value:
         args = argparse.Namespace(auto=True, merge_ts=True, srf=run_name)
         print("Submit post EMOD3D (merge_ts) arguments: ", args)
         submit_post_lf_main(args)
+        store_metadata(
+            log_file, ProcessType.merge_ts.str_value, {"submit_time": submitted_time}
+        )
 
-    if proc_type == Process.winbin_aio.value:
+    if proc_type == ProcessType.winbin_aio.value:
         # skipping winbin_aio if running binary mode
         if binary_mode:
             # update the mgmt_db
-            update_mgmt_db.update_db(db, 'winbin_aio', 'completed', run_name=run_name)
+            update_mgmt_db.update_db(db, "winbin_aio", "completed", run_name=run_name)
         else:
             args = argparse.Namespace(auto=True, winbin_aio=True, srf=run_name)
             print("Submit post EMOD3D (winbin_aio) arguments: ", args)
             submit_post_lf_main(args)
     # HF
-    if proc_type == Process.HF.value:
-        hf_cmd = "python $gmsim/workflow/scripts/submit_hf.py --auto --srf %s" % run_name
-        if not binary_mode:
-            hf_cmd += ' -- ascii'
-        if hf_seed is not None:
-            hf_cmd = "{} --seed {}".format(hf_cmd, hf_seed)
-        if rand_reset:
-            hf_cmd = "{} --rand_reset".format(hf_cmd)
-        print(hf_cmd)
-        call(hf_cmd, shell=True)
-        store_metadata(log_file, ProcTypeConst.HF.value, {"submit_time": submitted_time})
+    if proc_type == ProcessType.HF.value:
+        args = argparse.Namespace(
+            auto=True,
+            srf=run_name,
+            ascii=not binary_mode,
+            seed=hf_seed,
+            rand_reset=rand_reset,
+        )
+        print("Submit HF arguments: ", args)
+        submit_hf_main(args)
+        store_metadata(
+            log_file, ProcessType.HF.str_value, {"submit_time": submitted_time}
+        )
     # BB
-    if proc_type == Process.BB.value:
-        cmd = "python $gmsim/workflow/scripts/submit_bb.py --binary --auto --srf %s" % run_name
+    if proc_type == ProcessType.BB.value:
+        cmd = (
+            "python $gmsim/workflow/scripts/submit_bb.py --binary --auto --srf %s"
+            % run_name
+        )
         print(cmd)
         call(cmd, shell=True)
-        store_metadata(log_file, ProcTypeConst.BB.value, {"submit_time": submitted_time})
+        store_metadata(
+            log_file, ProcTypeConst.BB.value, {"submit_time": submitted_time}
+        )
     # IM_calc
-    if proc_type == Process.IM_calculation.value:
-        cmd = "python $gmsim/workflow/scripts/submit_sim_imcalc.py --auto --sim_dir {} --simple_output {}".format(sim_dir, "-e" if extended_period else "")
+    if proc_type == ProcessType.IM_calculation.value:
+        cmd = "python $gmsim/workflow/scripts/submit_sim_imcalc.py --auto --sim_dir {} --simple_output {}".format(
+            sim_dir, "-e" if extended_period else ""
+        )
         print(cmd)
         call(cmd, shell=True)
-        store_metadata(log_file, ProcTypeConst.IM.value, {"submit_time": submitted_time})
+        store_metadata(
+            log_file, ProcTypeConst.IM.value, {"submit_time": submitted_time}
+        )
 
-    fault = run_name.split('_')[0]
-    source_path = os.path.join(mgmt_db_location, 'Data/Sources', fault, 'srf', run_name)
-    srf_path = source_path + '.srf'
+    fault = run_name.split("_")[0]
+    source_path = os.path.join(mgmt_db_location, "Data/Sources", fault, "srf", run_name)
+    srf_path = source_path + ".srf"
 
     if do_verification:
-        if proc_type == Process.rrup.value:
-            tmp_path = os.path.join(mgmt_db_location, 'Runs')
-            rrup_dir = os.path.join(mgmt_db_location, 'Runs', fault, 'verification')
-            cmd = "python $gmsim/workflow/scripts/submit_imcalc.py --auto -s --sim_dir %s --i %s --mgmt_db %s -srf %s -o %s" % (tmp_path, run_name, mgmt_db_location, srf_path, rrup_dir)
+        if proc_type == ProcessType.rrup.value:
+            tmp_path = os.path.join(mgmt_db_location, "Runs")
+            rrup_dir = os.path.join(mgmt_db_location, "Runs", fault, "verification")
+            cmd = (
+                "python $gmsim/workflow/scripts/submit_imcalc.py --auto -s --sim_dir %s --i %s --mgmt_db %s -srf %s -o %s"
+                % (tmp_path, run_name, mgmt_db_location, srf_path, rrup_dir)
+            )
             print(cmd)
             call(cmd, shell=True)
 
-        if proc_type == Process.Empirical.value:
-            cmd = "$gmsim/workflow/scripts/submit_empirical.py -np 40 -i {} {}".format(run_name, mgmt_db_location)
+        if proc_type == ProcessType.Empirical.value:
+            cmd = "$gmsim/workflow/scripts/submit_empirical.py -np 40 -i {} {}".format(
+                run_name, mgmt_db_location
+            )
             print(cmd)
             call(cmd, shell=True)
 
-        if proc_type == Process.Verification.value:
+        if proc_type == ProcessType.Verification.value:
             pass
 
     # save the job meta data
-    call("echo 'submitted time: %s' >> %s" % (submitted_time, os.path.join(ch_log_dir, Process(proc_type).name + '.%s.log'%run_name)),
-         shell=True)
+    call(
+        "echo 'submitted time: %s' >> %s"
+        % (
+            submitted_time,
+            os.path.join(
+                ch_log_dir, ProcessType(proc_type).name + ".%s.log" % run_name
+            ),
+        ),
+        shell=True,
+    )
 
 
 def check_params_uncertain(params_uncertain_path):
@@ -121,14 +164,14 @@ def get_vmname(srf_name):
         get vm name from srf
         can be removed if mgmt_DB is updated to store vm name
     """
-    vm_name = srf_name.split('_')[0]
+    vm_name = srf_name.split("_")[0]
     return vm_name
 
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('run_folder', type=str, help="folder to the collection of runs")
-    parser.add_argument('--n_runs', default=default_n_runs, type=int)
+    parser.add_argument("run_folder", type=str, help="folder to the collection of runs")
+    parser.add_argument("--n_runs", default=default_n_runs, type=int)
 
     # cybershake-like simulations store mgmnt_db at different locations
     parser.add_argument("--single_sim", nargs="?", type=str, const=True)
@@ -189,8 +232,8 @@ def main():
             else extended_period
         )
 
-        #append more logic here if more variables are requested 
-        
+        # append more logic here if more variables are requested
+
     print("hf_seed", hf_seed)
     queued_tasks = slurm_query_status.get_queued_tasks()
     user_queued_tasks = slurm_query_status.get_queued_tasks(user=args.user).split("\n")
@@ -207,8 +250,11 @@ def main():
     task_num = 0
     print(submit_task_count)
     print(ntask_to_run)
-    while submit_task_count < ntask_to_run and submit_task_count < len(runnable_tasks) and task_num < len(
-            runnable_tasks):
+    while (
+        submit_task_count < ntask_to_run
+        and submit_task_count < len(runnable_tasks)
+        and task_num < len(runnable_tasks)
+    ):
         db_task_status = runnable_tasks[task_num]
         proc_type = db_task_status[0]
         run_name = db_task_status[1]
@@ -248,6 +294,6 @@ def main():
 
     db.connection.close()
 
+
 if __name__ == "__main__":
     main()
-

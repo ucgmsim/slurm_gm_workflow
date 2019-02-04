@@ -5,12 +5,13 @@ A script that queries slurm and updates the status of a task in a slurm db
 """
 
 import argparse
+import qcore.constants
 from scripts.management import update_mgmt_db
 from subprocess import Popen, PIPE
 import shlex
 from scripts.management import db_helper
 
-Process = db_helper.Process
+Process = qcore.constants.ProcessType
 
 N_TASKS_TO_RUN = 20
 RETRY_MAX = 2
@@ -87,7 +88,7 @@ def is_task_complete(task, task_list):
 
 def check_dependancy_met(task, task_list):
     process, run_name, status = task
-    process = db_helper.Process(process)
+    process = qcore.constants.ProcessType(process)
     if process in (Process.EMOD3D, Process.HF, Process.rrup):
         return True
 

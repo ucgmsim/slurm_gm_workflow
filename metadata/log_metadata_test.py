@@ -5,10 +5,10 @@ Does not test retrieval of metadata.
 import os
 import json
 import unittest
-from typing import List, Tuple, Union, Dict
+from typing import Union, Dict
 
 from metadata.log_metadata import store_metadata, LOG_FILENAME, METACONST_TO_ADD
-from metadata.agg_json_data import ProcTypeConst, MetaConst
+from qcore.constants import ProcessType
 
 
 class TestLogMetadata(unittest.TestCase):
@@ -33,7 +33,7 @@ class TestLogMetadata(unittest.TestCase):
         """
         keys = ["test1", "test2", "test3"]
         values = [22, 22.5, "test3"]
-        proc_types = [ProcTypeConst.LF.value, ProcTypeConst.IM.value]
+        proc_types = [ProcessType.EMOD3D.str_value, ProcessType.IM_calculation.str_value]
 
         metadata_values = {key: str(value) for (key, value) in zip(keys, values)}
 
@@ -65,7 +65,7 @@ class TestLogMetadata(unittest.TestCase):
         keys_3 = ["test1", "test2", METACONST_TO_ADD[0]]
         values_3 = ["test1_str_value", "start_date_3", 7]
 
-        proc_type = ProcTypeConst.LF.value
+        proc_type = ProcessType.EMOD3D.str_value
 
         # Write the metadata
         for keys, values in [
@@ -74,7 +74,7 @@ class TestLogMetadata(unittest.TestCase):
             (keys_3, values_3),
         ]:
             metadata_values = {key: str(value) for (key, value) in zip(keys, values)}
-            store_metadata(self.test_file, ProcTypeConst.LF.value, metadata_values)
+            store_metadata(self.test_file, ProcessType.EMOD3D.str_value, metadata_values)
 
         # Check
         self.check_values(

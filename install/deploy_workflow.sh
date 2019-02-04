@@ -45,6 +45,8 @@ print_message "Add source $ROOT/share/bashrc.uceq to your .bashrc"
 cp -r $script_dir/../scripts ${ROOT}/workflow/
 cp -r $script_dir/../templates ${ROOT}/workflow/
 cp -r $script_dir/../shared_workflow ${ROOT}/workflow/
+rsync -a $script_dir/../estimation ${ROOT}/workflow/ --exclude models
+cp -r $script_dir/../metadata ${ROOT}/workflow/
 
 #create a file that contains version code for tracking
 echo $version >> ${ROOT}/workflow/version

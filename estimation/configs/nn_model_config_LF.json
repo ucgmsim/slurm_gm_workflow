@@ -1,11 +1,11 @@
 {
   "input_cols": [
-    ["LF","nx"],
-    ["LF","ny"],
-    ["LF","nz"],
-    ["LF","nt"],
-    ["LF", "cores"]],
-  "target_col": ["LF","core_hours"],
+    ["EMOD3D","nx"],
+    ["EMOD3D","ny"],
+    ["EMOD3D","nz"],
+    ["EMOD3D","nt"],
+    ["EMOD3D", "cores"]],
+  "target_col": ["EMOD3D","core_hours"],
 
   "units": [32, 32, 32],
   "dropout": 0.01,

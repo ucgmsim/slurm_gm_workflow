@@ -96,18 +96,7 @@ def write_sl_script(
     return fname_sl_abs_path
 
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="Create (and submit if specified) the slurm script for BB"
-    )
-
-    parser.add_argument("--auto", nargs="?", type=str, const=True)
-    parser.add_argument("--version", type=str, default=default_version)
-    parser.add_argument("--account", type=str, default=default_account)
-    parser.add_argument("--srf", type=str, default=None)
-    parser.add_argument("--ascii", action="store_true", default=False)
-    args = parser.parse_args()
-
+def main(args):
     params = utils.load_sim_params("sim_params.yaml")
 
     ncores = default_core
@@ -174,3 +163,17 @@ if __name__ == "__main__":
             timestamp,
             submit_yes=submit_yes,
         )
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="Create (and submit if specified) the slurm script for BB"
+    )
+
+    parser.add_argument("--auto", nargs="?", type=str, const=True)
+    parser.add_argument("--version", type=str, default=default_version)
+    parser.add_argument("--account", type=str, default=default_account)
+    parser.add_argument("--srf", type=str, default=None)
+    parser.add_argument("--ascii", action="store_true", default=False)
+    args = parser.parse_args()
+

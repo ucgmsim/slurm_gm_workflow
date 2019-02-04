@@ -14,7 +14,8 @@ from datetime import datetime
 
 import pandas as pd
 
-from metadata.agg_json_data import ProcTypeConst, MetaConst
+from metadata.agg_json_data import MetaConst
+from qcore.constants import ProcessType
 from qcore import utils
 from qcore.srf import get_nsub_stoch
 
@@ -90,7 +91,7 @@ def store_metadata(
         Metadata keys for which their values are added (e.g. run_time)
     """
     # Check that it is a valid process type
-    if not ProcTypeConst.has_value(proc_type):
+    if not ProcessType.has_str_value(proc_type):
         print("{} is not a valid process type. Logged anyways.".format(proc_type))
 
     # Read the existing content if the log file exists
@@ -173,7 +174,7 @@ def main(args):
     )
 
     # params metadata for LF
-    if args.proc_type == ProcTypeConst.LF.value:
+    if args.proc_type == ProcessType.EMOD3D.str_value:
         metadata_dict[MetaConst.nt.value] = int(
             float(params.sim_duration) / float(params.dt)
         )
@@ -181,7 +182,7 @@ def main(args):
         metadata_dict[MetaConst.ny.value] = params.ny
         metadata_dict[MetaConst.nz.value] = params.nz
     # HF
-    elif args.proc_type == ProcTypeConst.HF.value:
+    elif args.proc_type == ProcessType.HF.str_value:
         metadata_dict[MetaConst.nt.value] = int(
             float(params.sim_duration) / float(params.hf.hf_dt)
         )
@@ -189,10 +190,10 @@ def main(args):
             params["hf"]["hf_slip"], get_area=False
         )
     # BB
-    elif args.proc_type == ProcTypeConst.BB.value:
+    elif args.proc_type == ProcessType.BB.str_value:
         metadata_dict[MetaConst.dt.value] = params.hf.hf_dt
     # IM_calc
-    elif args.proc_type == ProcTypeConst.IM.value:
+    elif args.proc_type == ProcessType.IM_calculation.str_value:
         metadata_dict[MetaConst.nt.value] = int(float(params.sim_duration)/float(params.hf.hf_dt))
 
         # This should come from a constants file

@@ -20,6 +20,7 @@ from multiprocessing import Pool
 from argparse import ArgumentParser
 
 from estimation.estimate_wct import get_IM_comp_count
+from qcore.constants import ProcessType
 
 DATE_COLUMNS = ["end_time", "start_time", "submit_time"]
 DATETIME_FMT = "%Y-%m-%d_%H:%M:%S"
@@ -127,43 +128,41 @@ def clean_df(df):
     """Cleans column of interests,
     and attempts to convert columns to numeric data type (float)"""
     # Iterate BB, HF, LF
-    for sim_type_const in ProcTypeConst:
-        sim_type = sim_type_const.value
-
-        if sim_type in df.columns.levels[0].values:
+    for proc_type in ProcessType.iterate_str_values():
+        if proc_type in df.columns.levels[0].values:
             # All available metadata
-            for meta_col in df[sim_type].columns.values:
+            for meta_col in df[proc_type].columns.values:
                 # Run time, remove "hour"
                 if MetaConst.run_time.value == meta_col:
                     rt_param = MetaConst.run_time.value
 
                     # Convert column type to float
-                    df[sim_type, rt_param] = np.asarray(
+                    df[proc_type, rt_param] = np.asarray(
                         [
                             (
                                 value.split(" ")[0] if type(value) is str else value
                             )  # Handle np.nan values
-                            for value in df[sim_type, rt_param].values
+                            for value in df[proc_type, rt_param].values
                         ],
                         dtype=np.float32,
                     )
                 # Count the number of components calculated
                 elif meta_col == MetaConst.im_comp.value:
-                    df.loc[:, (sim_type, MetaConst.im_comp_count.value)] = [
+                    df.loc[:, (proc_type, MetaConst.im_comp_count.value)] = [
                         get_IM_comp_count_from_str(str_list, real)
                         for real, str_list in df.loc[
-                            :, (sim_type, meta_col)
+                            :, (proc_type, meta_col)
                         ].iteritems()
                     ]
                 # Convert date strings to date type
                 elif meta_col in DATE_COLUMNS:
-                    df[sim_type, meta_col] = pd.to_datetime(
-                        df[sim_type, meta_col], format=DATETIME_FMT, errors="coerce"
+                    df[proc_type, meta_col] = pd.to_datetime(
+                        df[proc_type, meta_col], format=DATETIME_FMT, errors="coerce"
                     )
                 # Try to convert everything else to numeric
                 else:
-                    df[sim_type, meta_col] = pd.to_numeric(
-                        df[sim_type, meta_col], errors="coerce", downcast="float"
+                    df[proc_type, meta_col] = pd.to_numeric(
+                        df[proc_type, meta_col], errors="coerce", downcast="float"
                     )
 
     return df
@@ -231,16 +230,16 @@ def main(args):
 
         # Calculate the core hours for each simulation type
         if args.calc_core_hours:
-            for sim_type in ProcTypeConst:
-                if sim_type.value in result_df.columns.levels[0].values:
-                    cur_df = result_df.loc[:, sim_type.value]
+            for proc_type in ProcessType.iterate_str_values():
+                if proc_type in result_df.columns.levels[0].values:
+                    cur_df = result_df.loc[:, proc_type]
 
                     if (
                         MetaConst.run_time.value in cur_df.columns
                         and MetaConst.n_cores.value in cur_df.columns
                     ):
                         result_df.loc[
-                            :, (sim_type.value, MetaConst.core_hours.value)
+                            :, (proc_type, MetaConst.core_hours.value)
                         ] = (
                             cur_df.loc[:, MetaConst.run_time.value]
                             * cur_df.loc[:, MetaConst.n_cores.value]
@@ -252,7 +251,7 @@ def main(args):
                             "simulation type {}".format(
                                 MetaConst.run_time.value,
                                 MetaConst.run_time.value,
-                                sim_type.value,
+                                proc_type,
                             )
                         )
 
