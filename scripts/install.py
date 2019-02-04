@@ -16,6 +16,7 @@ import configparser
 import argparse
 from datetime import datetime
 
+import yaml
 from qcore import utils
 from scripts.management import create_mgmt_db
 
@@ -342,6 +343,8 @@ def action(
     site_v1d_dir=None,
     hf_stat_vs_ref=None,
     v1d_full_path=None,
+    sim_params_file='',
+    dt=default_dt
 ):
     lf_sim_root_dir = os.path.join(sim_dir, "LF")
     hf_dir = os.path.join(sim_dir, "HF")
@@ -501,6 +504,13 @@ def action(
         hf_stat_vs_ref=hf_stat_vs_ref,
     )
     print("installing bb finished")
+
+    if sim_params_file and os.path.isfile(sim_params_file):
+        with open(sim_params_file) as spf:
+            extra_sims_params = yaml.load(spf)
+        for key in extra_sims_params.keys():
+            sim_params_dict.update({key: extra_sims_params[key]})
+
     return root_params_dict, fault_params_dict, sim_params_dict, vm_params_dict
 
 

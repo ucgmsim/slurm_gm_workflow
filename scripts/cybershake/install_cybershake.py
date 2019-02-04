@@ -22,8 +22,12 @@ def main():
     parser.add_argument("--n_rel", type=int, default=None, help="the number of realisations expected")
 
     args = parser.parse_args()
-    
-    cybershake_cfg = ldcfg.load(os.path.dirname(args.config), os.path.basename(args.config))
+    try:
+        # try to read the config file
+        cybershake_cfg = ldcfg.load(os.path.dirname(args.config), os.path.basename(args.config))
+    except Exception as e:
+        print("While loading the configuration file the following error occurred: {}".format(e))
+        sys.exit()
 
     ldcfg.check_cfg_params_path(cybershake_cfg, 'dt', 'hf_dt', 'version')
 
@@ -83,6 +87,7 @@ def main():
     # get all srf from source
     srf_dir = os.path.join(os.path.join(srf_root_dir, source), "Srf")
     stoch_dir = os.path.join(os.path.join(srf_root_dir, source), "Stoch")
+    sim_params_dir = os.path.join(os.path.join(srf_root_dir, source), "Sim_params")
     list_srf = glob.glob(os.path.join(srf_dir, '*.srf'))
     if args.n_rel is not None and len(list_srf) != args.n_rel:
         message = "Error: fault {} failed. Number of realisations do not match number of SRF files".format(source)
@@ -97,6 +102,7 @@ def main():
         # try to match find the stoch with same basename
         srf_name = os.path.splitext(os.path.basename(srf))[0]
         stoch_file_path = os.path.join(stoch_dir, srf_name + '.stoch')
+        sim_params_file = os.path.join(sim_params_dir, srf_name + '.yaml')
         if not os.path.isfile(stoch_file_path):
             message = "Error: Corresponding Stoch file is not found:\n{}".format(stoch_file_path)
             print(message)
@@ -106,10 +112,12 @@ def main():
         else:
             # install pairs one by one to fit the new structure
             sim_dir = os.path.join(os.path.join(sim_root_dir, source), srf_name)
-            root_params_dict, fault_params_dict, sim_params_dict, vm_params_dict = install.action(version, sim_dir, event_name, run_name, run_dir, vel_mod_dir, srf, stoch_file_path,
-                       params_vel_path, stat_file_path, vs30_file_path, vs30ref_file_path, MODEL_LAT, MODEL_LON,
-                       MODEL_ROT, hh, nx, ny, nz, sufx, sim_duration, vel_mod_params_dir, yes_statcords,
-                       yes_model_params, fault_yaml_path, root_yaml_path,  user_root=user_root, site_v1d_dir=site_v1d_dir, hf_stat_vs_ref=hf_stat_vs_ref, v1d_full_path=v1d_full_path)
+            root_params_dict, fault_params_dict, sim_params_dict, vm_params_dict = install.action(
+                version, sim_dir, event_name, run_name, run_dir, vel_mod_dir, srf, stoch_file_path, params_vel_path,
+                stat_file_path, vs30_file_path, vs30ref_file_path, MODEL_LAT, MODEL_LON, MODEL_ROT, hh, nx, ny, nz,
+                sufx, sim_duration, vel_mod_params_dir, yes_statcords, yes_model_params, fault_yaml_path,
+                root_yaml_path,  user_root=user_root, site_v1d_dir=site_v1d_dir, hf_stat_vs_ref=hf_stat_vs_ref,
+                v1d_full_path=v1d_full_path, sim_params_file=sim_params_file)
 
             create_mgmt_db.create_mgmt_db([], path_cybershake, srf_files=srf)
             utils.setup_dir(os.path.join(path_cybershake, 'mgmt_db_queue'))
@@ -127,6 +135,4 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-
 
