@@ -25,8 +25,8 @@ def main():
     try:
         # try to read the config file
         cybershake_cfg = ldcfg.load(os.path.dirname(args.config), os.path.basename(args.config))
-    except:
-        print("Error while parsing the config file, please double check inputs.")
+    except Exception as e:
+        print("While loading the configuration file the following error occurred: {}".format(e))
         sys.exit()
 
     ldcfg.check_cfg_params_path(cybershake_cfg, 'dt', 'hf_dt', 'version')
