@@ -8,8 +8,9 @@ from datetime import datetime
 from qcore import utils
 from shared_workflow import shared
 from qcore import config
+
 # TODO: remove this once temp_shared is gone
-from temp_shared import resolve_header
+from scripts.temp_shared import resolve_header
 
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
@@ -120,13 +121,9 @@ def write_sl_script_winbin_aio(
 
 
 def main(args):
-    workflow_config = load_config.load(
-        os.path.dirname(os.path.realpath(__file__)), "workflow_config.json")
-    global_root = workflow_config["global_root"]
-    tools_dir = os.path.join(global_root, 'opt/maui/emod3d/3.0.4-gcc/bin')
-
     params = utils.load_sim_params('sim_params.yaml')
     submit_yes = True if args.auto else shared.confirm("Also submit the job for you?")
+
     # get the srf(rup) name without extensions
     srf_name = os.path.splitext(os.path.basename(params.srf_file))[0]
     # if srf(variation) is provided as args, only create the slurm
