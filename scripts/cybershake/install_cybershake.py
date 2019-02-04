@@ -112,13 +112,12 @@ def main():
         else:
             # install pairs one by one to fit the new structure
             sim_dir = os.path.join(os.path.join(sim_root_dir, source), srf_name)
-            root_params_dict, fault_params_dict, sim_params_dict, vm_params_dict = install.action(version, sim_dir,
-                       event_name, run_name, run_dir, vel_mod_dir, srf, stoch_file_path,
-                       params_vel_path, stat_file_path, vs30_file_path, vs30ref_file_path, MODEL_LAT, MODEL_LON,
-                       MODEL_ROT, hh, nx, ny, nz, sufx, sim_duration, vel_mod_params_dir, yes_statcords,
-                       yes_model_params, fault_yaml_path, root_yaml_path,  user_root=user_root,
-                       site_v1d_dir=site_v1d_dir, hf_stat_vs_ref=hf_stat_vs_ref, v1d_full_path=v1d_full_path,
-                       sim_params_file)
+            root_params_dict, fault_params_dict, sim_params_dict, vm_params_dict = install.action(
+                version, sim_dir, event_name, run_name, run_dir, vel_mod_dir, srf, stoch_file_path, params_vel_path,
+                stat_file_path, vs30_file_path, vs30ref_file_path, MODEL_LAT, MODEL_LON, MODEL_ROT, hh, nx, ny, nz,
+                sufx, sim_duration, vel_mod_params_dir, yes_statcords, yes_model_params, fault_yaml_path,
+                root_yaml_path,  user_root=user_root, site_v1d_dir=site_v1d_dir, hf_stat_vs_ref=hf_stat_vs_ref,
+                v1d_full_path=v1d_full_path, sim_params_file=sim_params_file)
 
             create_mgmt_db.create_mgmt_db([], path_cybershake, srf_files=srf)
             utils.setup_dir(os.path.join(path_cybershake, 'mgmt_db_queue'))
