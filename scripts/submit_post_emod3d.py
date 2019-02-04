@@ -7,8 +7,7 @@ from datetime import datetime
 
 from qcore import utils
 from shared_workflow import shared
-from shared_workflow.shared_defaults import tools_dir
-
+from qcore import config
 # TODO: remove this once temp_shared is gone
 from temp_shared import resolve_header
 
@@ -50,7 +49,7 @@ def write_sl_script_merge_ts(
         # TODO: the merge_ts binary needed to use relative path instead
         #  of absolute, maybe fix this
         ("{{lf_sim_dir}}", os.path.relpath(lf_sim_dir, sim_dir)),
-        ("{{tools_dir}}", tools_dir),
+        ("{{tools_dir}}", os.path.join(tools_dir, 'merge_tsP3_par')),
         ("{{mgmt_db_location}}", mgmt_db_location),
         ("{{sim_dir}}", sim_dir),
         ("{{srf_name}}", rup_mod)
@@ -128,7 +127,6 @@ def main(args):
 
     params = utils.load_sim_params('sim_params.yaml')
     submit_yes = True if args.auto else shared.confirm("Also submit the job for you?")
-
     # get the srf(rup) name without extensions
     srf_name = os.path.splitext(os.path.basename(params.srf_file))[0]
     # if srf(variation) is provided as args, only create the slurm
@@ -143,6 +141,7 @@ def main(args):
             args.merge_ts, args.winbin_aio = True, True
 
         if args.merge_ts:
+            tools_dir = config.get_tools_dir(bin_name='emod3d', version=params.emod3d.emod3d_version)
             script = write_sl_script_merge_ts(
                 lf_sim_dir, params.sim_dir, tools_dir,
                 params.mgmt_db_location, srf_name)

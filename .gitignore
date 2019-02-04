@@ -109,3 +109,5 @@ ENV/
 find/
 
 test/
+
+scripts/workflow_config.json

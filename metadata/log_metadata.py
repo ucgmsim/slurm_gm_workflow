@@ -13,6 +13,7 @@ from typing import Dict, List
 from datetime import datetime
 
 import pandas as pd
+from filelock import SoftFileLock, Timeout
 
 from metadata.agg_json_data import MetaConst
 from qcore.constants import ProcessType
@@ -21,6 +22,7 @@ from qcore.srf import get_nsub_stoch
 
 METADATA_VALUES = "metadata_values"
 LOG_FILENAME = "metadata_log.json"
+LOCK_FILENAME = "{}.lock".format(LOG_FILENAME)
 
 METACONST_TO_ADD = [MetaConst.run_time.value]
 TIMESTAMP_FMT = "%Y-%m-%d_%H:%M:%S"
@@ -79,6 +81,11 @@ def store_metadata(
     key (i.e. the one without a postfix). This is only allowed for values that can be
     converted to int or float.
 
+    To prevent locking or any race condition the a lock for the log file is
+    aquired at the start of the function and released at the end of it.
+    The lock is kept for the full duration of the function and not just the read/write
+    part as the file is overwritten and not updated.
+
     Parameters
     ----------
     log_file: str
@@ -93,6 +100,23 @@ def store_metadata(
     # Check that it is a valid process type
     if not ProcessType.has_str_value(proc_type):
         print("{} is not a valid process type. Logged anyways.".format(proc_type))
+
+    lock_file = os.path.join(os.path.dirname(log_file), LOCK_FILENAME)
+    lock = SoftFileLock(lock_file)
+
+    # Attempt to acquire the lock
+    try:
+        lock.acquire(timeout=20)
+    except Timeout:
+        print(
+            "Failed to acquire the lock for the metadata log file, "
+            "giving up on logging data. This should be investigated!\n"
+            "The metadata that was unable to be logged is attached:\n{}".format(
+                metadata_dict
+            ),
+            file=sys.stderr,
+        )
+        return
 
     # Read the existing content if the log file exists
     json_data, proc_data = None, None
@@ -151,6 +175,8 @@ def store_metadata(
     with open(log_file, "w") as f:
         json.dump(json_data, f)
 
+    lock.release()
+
 
 def main(args):
     # This should come from constants
@@ -194,11 +220,14 @@ def main(args):
         metadata_dict[MetaConst.dt.value] = params.hf.hf_dt
     # IM_calc
     elif args.proc_type == ProcessType.IM_calculation.str_value:
-        metadata_dict[MetaConst.nt.value] = int(float(params.sim_duration)/float(params.hf.hf_dt))
-
+        metadata_dict[MetaConst.nt.value] = int(
+            float(params.sim_duration) / float(params.hf.hf_dt)
+        )
         # This should come from a constants file
-        im_calc_csv_file = os.path.join(args.sim_dir, "IM_calc", "{}.csv".format(os.path.basename(args.sim_dir)))
-        im_comp = list(pd.read_csv(im_calc_csv_file).component.unique().astype('U'))
+        im_calc_csv_file = os.path.join(
+            args.sim_dir, "IM_calc", "{}.csv".format(os.path.basename(args.sim_dir))
+        )
+        im_comp = list(pd.read_csv(im_calc_csv_file).component.unique().astype("U"))
 
         metadata_dict[MetaConst.im_comp.value] = im_comp
         metadata_dict[MetaConst.im_comp_count.value] = len(im_comp)
