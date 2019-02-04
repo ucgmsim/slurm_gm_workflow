@@ -4,8 +4,9 @@
 # Section for parser to determine if using automate wct
 import os
 import argparse
+from datetime import datetime
 
-import set_runparams
+import scripts.set_runparams as set_runparams
 from qcore import utils
 from qcore import config
 import estimation.estimate_wct as est
@@ -13,8 +14,7 @@ from shared_workflow import load_config
 from shared_workflow.shared import confirm, set_wct, submit_sl_script
 
 # TODO: remove this once temp_shared is gone
-from temp_shared import resolve_header
-from datetime import datetime
+from scripts.temp_shared import resolve_header
 
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 

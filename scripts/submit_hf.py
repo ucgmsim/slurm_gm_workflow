@@ -9,7 +9,7 @@ import qcore
 import estimation.estimate_wct as est
 from qcore import utils, shared, srf, config
 from shared_workflow.shared import confirm, set_wct, submit_sl_script
-from temp_shared import resolve_header
+from scripts.temp_shared import resolve_header
 
 # default values
 default_version = "run_hf_mpi"

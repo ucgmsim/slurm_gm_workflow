@@ -2,15 +2,15 @@
 """Script to create and submit a slurm script for BB"""
 import os
 import argparse
+from datetime import datetime
 
 from estimation import estimate_wct as wc
 from qcore import shared, utils
 from shared_workflow.shared import set_wct, confirm, submit_sl_script
 
 # TODO: move this to qcore library
-from temp_shared import resolve_header
+from scripts.temp_shared import resolve_header
 
-from datetime import datetime
 
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 

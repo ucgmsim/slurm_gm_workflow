@@ -37,39 +37,6 @@ def main():
     )
 
     ldcfg.check_cfg_params_path(cybershake_cfg, "dt", "hf_dt", "version")
-    parser.add_argument(
-        "path_cybershake",
-        type=str,
-        default=None,
-        help="the path to the root of a specific version cybershake.",
-    )
-    parser.add_argument(
-        "config",
-        type=str,
-        default=None,
-        help="a path to a config file that constains all the required values.",
-    )
-    parser.add_argument(
-        "vm", type=str, default=None, help="the name of the Velocity Model."
-    )
-    parser.add_argument(
-        "--version", type=str, default="16.1", help="version of simulation. eg.16.1"
-    )
-    parser.add_argument(
-        "--n_rel", type=int, default=None, help="the number of realisations expected"
-    )
-
-    args = parser.parse_args()
-    try:
-        # try to read the config file
-        cybershake_cfg = ldcfg.load(
-            os.path.dirname(args.config), os.path.basename(args.config)
-        )
-    except:
-        print("Error while parsing the config file, please double check inputs.")
-        sys.exit()
-
-    ldcfg.check_cfg_params_path(cybershake_cfg, "dt", "hf_dt")
 
     path_cybershake = args.path_cybershake
     sim_root_dir = os.path.join(path_cybershake, "Runs/")
@@ -94,6 +61,7 @@ def main():
 
     # this variable seems to not be used anywhere important.
     run_dir = sim_root_dir
+    user_root = os.path.join(run_dir, 'Cybershake')
     stat_file_path = cybershake_cfg["stat_file_path"]
     vs30_file_path = stat_file_path.replace(".ll", ".vs30")
     vs30ref_file_path = stat_file_path.replace(".ll", ".vs30ref")
@@ -125,6 +93,7 @@ def main():
     yes_model_params = (
         False
     )  # statgrid should normally be already generated with Velocity Model
+    vel_mod_params_dir = vel_mod_dir
 
     # get all srf from source
     srf_dir = os.path.join(os.path.join(srf_root_dir, source), "Srf")
