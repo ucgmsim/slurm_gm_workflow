@@ -2,7 +2,6 @@
 """Script to create and submit a slurm script for BB"""
 import os
 import argparse
-from datetime import datetime
 
 from estimation import estimate_wct as wc
 from qcore import shared, utils
@@ -26,6 +25,7 @@ def write_sl_script(
     bb_sim_dir,
     sim_dir,
     srf_name,
+    params,
     sl_template_prefix,
     nb_cpus=default_core,
     run_time=default_wct,
@@ -145,7 +145,8 @@ def main(args):
             bb_sim_dir,
             params.sim_dir,
             srf_name,
-            sl_name_prefix,
+            params=params,
+            sl_template_prefix=sl_name_prefix,
             nb_cpus=ncores,
             account=args.account,
             binary=not args.ascii,
@@ -176,4 +177,6 @@ if __name__ == "__main__":
     parser.add_argument("--srf", type=str, default=None)
     parser.add_argument("--ascii", action="store_true", default=False)
     args = parser.parse_args()
+
+    main(args)
 

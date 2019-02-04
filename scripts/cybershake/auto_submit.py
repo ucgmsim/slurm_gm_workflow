@@ -11,9 +11,16 @@ from scripts.management.db_helper import connect_db
 from qcore.constants import ProcessType
 from scripts.management import slurm_query_status, update_mgmt_db
 from metadata.log_metadata import store_metadata, LOG_FILENAME
+
 from scripts.submit_emod3d import main as submit_lf_main
 from scripts.submit_post_emod3d import main as submit_post_lf_main
 from scripts.submit_hf import main as submit_hf_main
+from scripts.submit_bb import main as submit_bb_main
+from scripts.submit_sim_imcalc import (
+    submit_im_calc_slurm,
+    SlBodyOptConsts,
+    SlHdrOptConsts,
+)
 
 default_n_runs = 12
 default_1d_mod = "/nesi/transit/nesi00213/VelocityModel/Mod-1D/Cant1D_v2-midQ_leer.1d"
@@ -92,24 +99,25 @@ def submit_task(
         )
     # BB
     if proc_type == ProcessType.BB.value:
-        cmd = (
-            "python $gmsim/workflow/scripts/submit_bb.py --binary --auto --srf %s"
-            % run_name
-        )
-        print(cmd)
-        call(cmd, shell=True)
+        args = argparse.Namespace(auto=True, srf=run_name)
+        print("Submit BB arguments: ", args)
+        submit_bb_main(args)
         store_metadata(
-            log_file, ProcTypeConst.BB.value, {"submit_time": submitted_time}
+            log_file, ProcessType.BB.str_value, {"submit_time": submitted_time}
         )
     # IM_calc
     if proc_type == ProcessType.IM_calculation.value:
-        cmd = "python $gmsim/workflow/scripts/submit_sim_imcalc.py --auto --sim_dir {} --simple_output {}".format(
-            sim_dir, "-e" if extended_period else ""
-        )
-        print(cmd)
-        call(cmd, shell=True)
+        options_dict = {
+            SlBodyOptConsts.extended.value: True if extended_period else False,
+            SlBodyOptConsts.simple_out.value: True,
+            "auto": True,
+        }
+        submit_im_calc_slurm(sim_dir=sim_dir, options_dict=options_dict)
+        print("Submit IM calc arguments: ", options_dict)
         store_metadata(
-            log_file, ProcTypeConst.IM.value, {"submit_time": submitted_time}
+            log_file,
+            ProcessType.IM_calculation.str_value,
+            {"submit_time": submitted_time},
         )
 
     fault = run_name.split("_")[0]
@@ -207,14 +215,6 @@ def main():
             print("Error while parsing the config file, please double check inputs.")
             sys.exit()
 
-        oneD_mod = (
-            cybershake_cfg["v_1d_mod"] if "v_1d_mod" in cybershake_cfg else oneD_mod
-        )
-        hf_vs30_ref = (
-            cybershake_cfg["hf_stat_vs_ref"]
-            if "hf_stat_vs_ref" in cybershake_cfg
-            else hf_vs30_ref
-        )
         binary_mode = (
             cybershake_cfg["binary_mode"]
             if "binary_mode" in cybershake_cfg
@@ -283,8 +283,6 @@ def main():
             mgmt_db_location,
             binary_mode=binary_mode,
             hf_seed=hf_seed,
-            hf_vs30_ref=hf_vs30_ref,
-            oneD_mod=oneD_mod,
             rand_reset=rand_reset,
             extended_period=extended_period,
         )

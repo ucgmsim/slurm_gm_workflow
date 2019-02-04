@@ -63,6 +63,12 @@ DEFAULT_OPTIONS = {
 
 
 def submit_im_calc_slurm(sim_dir: str, options_dict: Dict = None):
+    """Creates the IM calc slurm scrip, also submits if specified
+
+    The options_dict is populated by the DEFAULT_OPTIONS, values can be changed by
+    passing in a dict containing the entries that require changing. Merges the
+    two dictionaries, the passed in one has higher priority.
+    """
     # Load the yaml params if they haven't been loaded already
     params = utils.load_sim_params(
         os.path.join(sim_dir, "sim_params.yaml"), load_vm=False
