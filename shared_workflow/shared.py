@@ -14,7 +14,6 @@ import sys
 import re
 import datetime
 
-import estimation.estimate_wct as wc
 
 from shared_workflow.shared_defaults import tools_dir
 
@@ -333,6 +332,7 @@ def get_input_wc():
 
 
 def set_wct(est_run_time, ncores, auto=False):
+    import estimation.estimate_wct as wc
     print("Estimated time: {} with {} number of cores".format(
         wc.convert_to_wct(est_run_time), ncores))
     if not auto:
