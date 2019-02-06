@@ -253,7 +253,9 @@ def main(args):
         metadata_dict[MetadataField.im_comp.value] = im_comp
         metadata_dict[MetadataField.im_comp_count.value] = len(im_comp)
 
-    store_metadata(log_dir, args.proc_type, metadata_dict)
+    store_metadata(
+        log_dir, args.proc_type, metadata_dict, sim_name=os.path.basename(args.sim_dir)
+    )
 
 
 if __name__ == "__main__":
