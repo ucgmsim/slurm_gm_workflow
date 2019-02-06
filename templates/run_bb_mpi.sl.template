@@ -31,11 +31,6 @@ if [[ $? == 0 ]]; then
     
     # save meta data
     python $gmsim/workflow/metadata/log_metadata.py {{sim_dir}} BB cores=$SLURM_NTASKS fd_count=$fd_count start_time=$start_time end_time=$end_time
-    
-    # clean up, making .tar
-    echo "BB submission successful, start cleaning up"
-    python $gmsim/workflow/scripts/clean_up.py {{sim_dir}}
-    echo "finished cleaning up"
 else
     echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} BB created --run_name {{srf_name}} --error '$res' --force --is_retry" >> {{mgmt_db_location}}/mgmt_db_queue/$timestamp\_$SLURM_JOBID
 fi
