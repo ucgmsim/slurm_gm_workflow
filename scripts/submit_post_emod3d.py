@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """Script to create and submit a slurm script for LF"""
+import os
 import glob
 import argparse
-
 from datetime import datetime
 
 from qcore import utils
-from shared_workflow.shared import *
-from shared_workflow import load_config
+from shared_workflow import shared
+from shared_workflow.shared_defaults import tools_dir
 
 # TODO: remove this once temp_shared is gone
 from temp_shared import resolve_header
@@ -133,15 +133,9 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    workflow_config = load_config.load(
-        os.path.dirname(os.path.realpath(__file__)), "workflow_config.json")
-    global_root = workflow_config["global_root"]
-    tools_dir = os.path.join(global_root, 'opt/maui/emod3d/3.0.4-gcc/bin')
-
     created_scripts = []
     params = utils.load_sim_params('sim_params.yaml')
-    submit_yes = True if args.auto else \
-        confirm("Also submit the job for you?")
+    submit_yes = True if args.auto else shared.confirm("Also submit the job for you?")
 
     # get the srf(rup) name without extensions
     srf_name = os.path.splitext(os.path.basename(params.srf_file))[0]
@@ -160,15 +154,15 @@ if __name__ == '__main__':
             script = write_sl_script_merge_ts(
                 lf_sim_dir, params.sim_dir, tools_dir,
                 params.mgmt_db_location, srf_name)
-            submit_sl_script(
+            shared.submit_sl_script(
                 script, "merge_ts", "queued", params.mgmt_db_location,
-                srf_name, submit_yes)
+                srf_name, timestamp, submit_yes=submit_yes)
 
         # run winbin_aio related scripts only
         if args.winbin_aio:
             script = write_sl_script_winbin_aio(
                 lf_sim_dir, params.sim_dir, params.mgmt_db_location,
                 srf_name)
-            submit_sl_script(
+            shared.submit_sl_script(
                 script, "winbin_aio", "queued", params.mgmt_db_location,
-                srf_name, submit_yes)
+                srf_name, timestamp, submit_yes=submit_yes)
