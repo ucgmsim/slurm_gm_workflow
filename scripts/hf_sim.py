@@ -60,7 +60,7 @@ if is_master:
     arg(
         "--sim_bin",
         help="high frequency binary (modified for binary out)",
-        default=binary_version.get_hf_binmod(),
+        default=binary_version.get_hf_binmod('5.4.5'),
     )
     arg("--t-sec", help="high frequency output start time", type=float, default=0.0)
     # HF IN, line 1
