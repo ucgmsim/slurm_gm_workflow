@@ -24,4 +24,5 @@ def load(
 def check_cfg_params_path(config_dict, *excludes):
     for param in config_dict.keys():
         if param not in excludes:
-            assert os.path.exists(config_dict[param])
+            if type(config_dict[param]) is str:
+                assert(os.path.exists(config_dict[param]),"file/path no exist for {}.".format(param))

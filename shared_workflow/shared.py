@@ -11,13 +11,11 @@ import os
 import shutil
 import subprocess
 import sys
+import glob
 import re
 import datetime
 
-import estimation.estimate_wct as est
-
 from qcore import config
-from qcore import utils
 
 if sys.version_info.major == 3:
     basestring = str
@@ -334,6 +332,8 @@ def get_input_wc():
 
 
 def set_wct(est_run_time, ncores, auto=False):
+    import estimation.estimate_wct as est
+
     print("Estimated time: {} with {} number of cores".format(
         est.convert_to_wct(est_run_time), ncores))
     if not auto:
