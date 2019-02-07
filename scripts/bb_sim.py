@@ -88,7 +88,7 @@ if args.lfvsref is None:
     with open('%s/params_vel.json' % (args.lf_vm), 'r') as j:
         vm_conf = json.load(j)
     lfvs30refs = np.memmap('%s/vs3dfile.s' % (args.lf_vm), dtype='<f4',
-                           shape=(vm_conf['ny'], vm_conf['nz'], vm_conf['nx']), mod='r') \
+                           shape=(vm_conf['ny'], vm_conf['nz'], vm_conf['nx']), mode='r') \
                [lf.stations.y, 0, lf.stations.x] * 1000.0
 else:
     # fixed vs30ref
