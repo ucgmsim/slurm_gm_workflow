@@ -261,7 +261,6 @@ def main(args):
             cybershake_config = json.load(f)
 
         config_dt = cybershake_config.get("dt")
-        config_hf_dt = cybershake_config.get("hf_dt")
 
     # Get the params from the Runs directory
     # These are on a per fault basis, i.e. assuming that all realisations
@@ -319,50 +318,58 @@ def main(args):
     # Estimate HF/BB if a runs directory is specified
     if args.runs_dir is not None:
         print("Preparing HF estimation input data")
-        hf_ncores = (
+        # Have to repeat/extend the fault sim_durations to per realisation
+        r_hf_ncores = np.repeat(
             np.ones(realisations.shape[0], dtype=np.float32)
-            * estimate_wct.HF_DEFAULT_NCORES
+            * estimate_wct.HF_DEFAULT_NCORES,
+            r_counts,
         )
 
         # Get fd_count and nsub_stoch for each fault
-        fd_counts = np.asarray(
-            [
-                len(shared.get_stations(fd_statlist))
-                for fd_statlist in runs_params.fd_statlist
-            ]
+        r_fd_counts = np.repeat(
+            np.asarray(
+                [
+                    len(shared.get_stations(fd_statlist))
+                    for fd_statlist in runs_params.fd_statlist
+                ]
+            ),
+            r_counts,
         )
 
-        nsub_stochs = np.asarray(
-            [
-                srf.get_nsub_stoch(hf_slip, get_area=False)
-                for hf_slip in runs_params.hf_slip
-            ]
+        r_nsub_stochs = np.repeat(
+            np.asarray(
+                [
+                    srf.get_nsub_stoch(hf_slip, get_area=False)
+                    for hf_slip in runs_params.hf_slip
+                ]
+            ),
+            r_counts,
         )
 
-        # Have to repeat/extend the fault sim_durations to per realisation
-        r_sim_durations = np.repeat(fault_sim_durations, r_counts)
-        r_fd_counts = np.repeat(fd_counts, r_counts)
-        r_nsub_stochs = np.repeat(nsub_stochs, r_counts)
-        r_hf_nt = r_sim_durations / runs_params.hf_dt
+        # Calculate nt
+        r_hf_nt = np.repeat(fault_sim_durations, r_counts) / np.repeat(
+            runs_params.hf_dt, r_counts
+        )
 
         hf_input_data = np.concatenate(
             (
                 r_fd_counts[:, None],
                 r_nsub_stochs[:, None],
                 r_hf_nt[:, None],
-                hf_ncores[:, None],
+                r_hf_ncores[:, None],
             ),
             axis=1,
         )
 
         print("Preparing BB estimation input data")
-        bb_ncores = (
+        r_bb_ncores = np.repeat(
             np.ones(realisations.shape[0], dtype=np.float32)
-            * estimate_wct.BB_DEFAULT_NCORES
+            * estimate_wct.BB_DEFAULT_NCORES,
+            r_counts,
         )
 
         bb_input_data = np.concatenate(
-            (fd_counts[:, None], r_hf_nt[:, None], bb_ncores[:, None]), axis=1
+            (r_fd_counts[:, None], r_hf_nt[:, None], r_bb_ncores[:, None]), axis=1
         )
 
         results_df = run_estimations(
@@ -376,7 +383,7 @@ def main(args):
     else:
         results_df = run_estimations(fault_names, realisations, r_counts, lf_input_data)
 
-    results_df["fault_name"] = fault_names
+    results_df["fault_name"] = np.repeat(fault_names, r_counts)
     return results_df
 
 
@@ -408,7 +415,7 @@ if __name__ == "__main__":
         "Ignored if --runs_dir is specified.",
     )
     parser.add_argument(
-        "-output",
+        "--output",
         type=str,
         default=None,
         help="Where to save the resulting dataframe. Only saved if a "
@@ -451,10 +458,6 @@ if __name__ == "__main__":
     results_df = main(args)
 
     # Save the results
-    if args.output is not None:
-        if not os.path.isdir(os.path.dirname(args.output)):
-            print("The provided file path is not valid. Output file not saved.")
-        else:
-            results_df.to_csv(args.output)
+    results_df.to_csv(args.output)
 
-    display_results(results_df, True)
+    display_results(results_df, args.verbose)
