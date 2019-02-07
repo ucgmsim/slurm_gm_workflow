@@ -14,6 +14,7 @@ import glob
 import json
 import numpy as np
 import pandas as pd
+from typing import List
 
 from multiprocessing import Pool
 from argparse import ArgumentParser
@@ -28,6 +29,18 @@ from qcore.constants import (
 
 DATE_COLUMNS = ["end_time", "start_time", "submit_time"]
 
+
+
+def load_metadata_df(csv_file: str):
+    """Loads the metadata dataframe and converts the columns to the
+    correct types"""
+    df = pd.read_csv(csv_file, index_col=[0], header=[0, 1])
+
+    for col in df.columns:
+        if col[1] in DATE_COLUMNS:
+            df[col] = pd.to_datetime(df[col])
+
+    return df
 
 def get_row(json_file):
     """Gets a row of metadata for the single simulation json log file"""
@@ -61,30 +74,15 @@ def get_row(json_file):
     return sim_name, columns, data
 
 
-def clean_df(df: pd.DataFrame):
-    """Cleans column of interests,
-    and attempts to convert columns to numeric data type (float)"""
+def convert_df(df: pd.DataFrame):
+    """Convert columns to numeric data type (float) or date if specified"""
     # Iterate BB, HF, LF
     for proc_type in ProcessType.iterate_str_values():
         if proc_type in df.columns.levels[0].values:
             # All available metadata
             for meta_col in df[proc_type].columns.values:
-                # Run time, remove "hour"
-                if MetadataField.run_time.value == meta_col:
-                    rt_param = MetadataField.run_time.value
-
-                    # Convert column type to float
-                    df[proc_type, rt_param] = np.asarray(
-                        [
-                            (
-                                value.split(" ")[0] if type(value) is str else value
-                            )  # Handle np.nan values
-                            for value in df[proc_type, rt_param].values
-                        ],
-                        dtype=np.float32,
-                    )
                 # Convert date strings to date type
-                elif meta_col in DATE_COLUMNS:
+                if meta_col in DATE_COLUMNS:
                     df[proc_type, meta_col] = pd.to_datetime(
                         df[proc_type, meta_col],
                         format=METADATA_TIMESTAMP_FMT,
@@ -99,7 +97,7 @@ def clean_df(df: pd.DataFrame):
                 # Try to convert everything else to numeric
                 else:
                     df[proc_type, meta_col] = pd.to_numeric(
-                        df[proc_type, meta_col], errors="coerce", downcast="float"
+                        df[proc_type, meta_col], errors="coerce", downcast=None
                     )
 
     return df
@@ -115,6 +113,76 @@ def get_IM_comp_count_from_str(str_list: str, real_name: str):
 
     return get_IM_comp_count(comp)
 
+def create_dataframe(json_files: List[str], n_procs: int, calc_core_hours: bool):
+    """Aggregate the data from the different simualtion metadata json files
+    and create a single dataframe with the data.
+
+    Only data that is in the MetadataField constants enum will be saved, others are
+    ignored.
+    """
+    print(
+        "Getting metadata from each simulation using {} number of process".format(
+            n_procs
+        )
+    )
+    if n_procs > 1:
+        p = Pool(n_procs)
+        rows = p.map(get_row, json_files)
+    else:
+        rows = [get_row(file) for file in json_files]
+
+    print("Creating dataframe...")
+    df = None
+    for sim_name, columns, data in rows:
+        # Create the dataframe
+        if df is None:
+            df = pd.DataFrame(
+                index=[sim_name],
+                columns=pd.MultiIndex.from_tuples(columns),
+                data=np.asarray(data, dtype=object).reshape(1, -1),
+            )
+        else:
+            # Check/Add missing columns
+            column_mask = np.asarray(
+                [True if col in df.columns else False for col in columns]
+            )
+            if np.any(~column_mask):
+                for col in columns:
+                    if col not in df.columns:
+                        df[col] = np.nan
+
+            # Add row data
+            df.loc[sim_name, columns] = data
+
+    # Clean the dataframe
+    df = convert_df(df)
+
+    # Calculate the core hours for each simulation type
+    if calc_core_hours:
+        for proc_type in ProcessType.iterate_str_values():
+            if proc_type in df.columns.levels[0].values:
+                cur_df = df.loc[:, proc_type]
+
+                if (
+                    MetadataField.run_time.value in cur_df.columns
+                    and MetadataField.n_cores.value in cur_df.columns
+                ):
+                    df.loc[:, (proc_type, MetadataField.core_hours.value)] = (
+                        cur_df.loc[:, MetadataField.run_time.value]
+                        * cur_df.loc[:, MetadataField.n_cores.value]
+                    )
+                # Missing run time and number of cores column
+                else:
+                    print(
+                        "Columns {} and {} do no exist for "
+                        "simulation type {}".format(
+                            MetadataField.run_time.value,
+                            MetadataField.run_time.value,
+                            proc_type,
+                        )
+                    )
+
+    return df
 
 def main(args):
     # Check if the output file already exists (No overwrite)
@@ -144,70 +212,12 @@ def main(args):
     else:
         print("Found {} matching .json files".format(len(json_files)))
 
-    print(
-        "Getting metadat from each simulation using {} number of process".format(
-            args.n_procs
-        )
-    )
-    if args.n_procs > 1:
-        p = Pool(args.n_procs)
-        rows = p.map(get_row, json_files)
-    else:
-        rows = [get_row(file) for file in json_files]
-
-    print("Creating dataframe...")
-    df = None
-    for sim_name, columns, data in rows:
-        # Create the dataframe
-        if df is None:
-            df = pd.DataFrame(
-                index=[sim_name],
-                columns=pd.MultiIndex.from_tuples(columns),
-                data=np.asarray(data, dtype=object).reshape(1, -1),
-            )
-        else:
-            # Check/Add missing columns
-            column_mask = np.asarray(
-                [True if col in df.columns else False for col in columns]
-            )
-            if np.any(~column_mask):
-                for col in columns:
-                    if col not in df.columns:
-                        df[col] = np.nan
-
-            # Add row data
-            df.loc[sim_name, columns] = data
-
-    # Clean the dataframe
-    df = clean_df(df)
-
-    # Calculate the core hours for each simulation type
-    if args.calc_core_hours:
-        for proc_type in ProcessType.iterate_str_values():
-            if proc_type in df.columns.levels[0].values:
-                cur_df = df.loc[:, proc_type]
-
-                if (
-                    MetadataField.run_time.value in cur_df.columns
-                    and MetadataField.n_cores.value in cur_df.columns
-                ):
-                    df.loc[:, (proc_type, MetadataField.core_hours.value)] = (
-                        cur_df.loc[:, MetadataField.run_time.value]
-                        * cur_df.loc[:, MetadataField.n_cores.value]
-                    )
-                # Missing run time and number of cores column
-                else:
-                    print(
-                        "Columns {} and {} do no exist for "
-                        "simulation type {}".format(
-                            MetadataField.run_time.value,
-                            MetadataField.run_time.value,
-                            proc_type,
-                        )
-                    )
+    df = create_dataframe(json_files, 1, True)
 
     print("Saving the final dataframe in {}".format(args.output_file))
     df.to_csv(args.output_file)
+
+    return df
 
 
 if __name__ == "__main__":
