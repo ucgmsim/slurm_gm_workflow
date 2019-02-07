@@ -21,16 +21,12 @@ class State(Enum):
     completed = 4
     failed = 5
 
+class Task:
 
-class Process(Enum):
-    EMOD3D = 1
-    merge_ts = 2
-    winbin_aio = 3
-    HF = 4
-    BB = 5
-    IM_calculation = 6
-    IM_plot = 7
-    Empirical = 8
+    def __init__(self, process, state, run_name):
+        self.process = process
+        self.state = state
+        self.run_name = run_name
 
 
 def enum_to_list(enum):

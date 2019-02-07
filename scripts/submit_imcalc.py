@@ -94,7 +94,7 @@ def write_sl(name_context_list, submit=False, mgmt_db_loc=None):
 
 
 def get_basename_without_ext(path):
-    return os.path.splitext(os.path.basename(path))[0]
+    return os.path.splitext(os.path.basename(path))[0].replace('rrup_', '')
 
 
 def get_fault_name(run_name):
@@ -425,7 +425,7 @@ def main():
         write_sl(name_context_list, args.auto, args.mgmt_db)
 
     if args.srf_dir is not None:
-        srf_files = get_dirs(args.srf_dir, args.identifiers, "{}/Srf/{}.srf")
+        srf_files = get_dirs(args.srf_dir, args.identifiers, "{}/Srf/rrup_{}.srf")
         # srf_files = glob.glob(os.path.join(args.srf_dir, "*/Srf/*.srf"))
         srf_files = checkpoint.checkpoint_rrup(args.rrup_out_dir, srf_files)
         rrup_files = []

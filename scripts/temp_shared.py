@@ -7,7 +7,7 @@ def resolve_header(account, n_tasks, wallclock_limit, job_name, version, memory,
         full_txt = "".join(lines)
         full_txt = full_txt.replace("{{account}}", account)
         full_txt = full_txt.replace("{{job_name}}", job_name)
-        full_txt = full_txt.replace("{{n_tasks}}", n_tasks)
+        full_txt = full_txt.replace("{{n_tasks}}", str(n_tasks))
         full_txt = full_txt.replace("{{wallclock_limit}}", wallclock_limit)
         full_txt = full_txt.replace("{{version}}", version)
         full_txt = full_txt.replace("{{memory}}", memory)

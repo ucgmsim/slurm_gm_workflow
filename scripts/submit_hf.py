@@ -3,22 +3,16 @@
 import os
 import os.path
 import argparse
-from datetime import datetime
 
 import qcore
 import estimation.estimate_wct as est
-from qcore import utils, shared, srf
+import qcore.constants as const
+from qcore import utils, shared, srf, config
 from shared_workflow.shared import confirm, set_wct, submit_sl_script
-from temp_shared import resolve_header
+from scripts.temp_shared import resolve_header
 
 # default values
-default_version = "run_hf_mpi"
-default_core = 80
 default_wct = "00:30:00"
-default_memory = "16G"
-default_account = "nesi00213"
-
-timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
 
 def write_sl_script(
@@ -27,10 +21,11 @@ def write_sl_script(
     stoch_name,
     sl_template_prefix,
     hf_option,
-    nb_cpus=default_core,
+    params,
+    nb_cpus=const.HF_DEFAULT_NCORES,
     wct=default_wct,
-    memory=default_memory,
-    account=default_account,
+    memory=const.DEFAULT_MEMORY,
+    account=const.DEFAULT_ACCOUNT,
     binary=False,
     seed=None,
 ):
@@ -53,6 +48,8 @@ def write_sl_script(
             params.sim_duration,
             "--dt",
             params.hf.hf_dt,
+            "--sim_bin",
+            os.path.join(config.get_tools_dir(bin_name='hf', version=params.hf.hf_version), "hb_high_v5.4.5_binmod"),
         ]
 
         hf_submit_command += " ".join(list(map(str, arguments_for_hf)))
@@ -89,11 +86,11 @@ def write_sl_script(
         job_name,
         "slurm",
         memory,
-        timestamp,
+        const.timestamp,
         job_description="HF calculation",
         additional_lines="###SBATCH -C avx",
     )
-    script_name = "%s_%s_%s.sl" % (sl_template_prefix, variation, timestamp)
+    script_name = "%s_%s_%s.sl" % (sl_template_prefix, variation, const.timestamp)
     with open(script_name, "w") as f:
         f.write(header)
         f.write(template)
@@ -103,38 +100,7 @@ def write_sl_script(
     return script_name_abs
 
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="Create (and submit if specified) the slurm script for HF"
-    )
-
-    parser.add_argument("--version", type=str, default=None, const=None)
-    parser.add_argument("--ncore", type=int, default=default_core)
-
-    # if the --auto flag is used, wall clock time will be estimated the job
-    # submitted automatically
-    parser.add_argument("--auto", type=int, nargs="?", default=None, const=True)
-
-    # rand_reset, if somehow the user decide to use it but not defined in
-    # params_base_bb the const is set to True, so that as long as --rand_reset
-    # is used, no more value needs to be provided
-    parser.add_argument("--rand_reset", type=int, nargs="?", default=None, const=True)
-
-    parser.add_argument(
-        "--site_specific", type=int, nargs="?", default=None, const=True
-    )
-    parser.add_argument("--account", type=str, default=default_account)
-    parser.add_argument("--srf", type=str, default=None)
-    parser.add_argument("--ascii", action="store_true", default=False)
-    parser.add_argument("--debug", action="store_true", default=False)
-    parser.add_argument(
-        "--seed",
-        type=int,
-        default=None,
-        help="random seed number(0 for randomized seed)",
-    )
-    args = parser.parse_args()
-
+def main(args):
     params = utils.load_sim_params("sim_params.yaml")
 
     # check if the args is none, if not, change the version
@@ -150,12 +116,12 @@ if __name__ == "__main__":
             ll_name_prefix = "run_hf_mpi"
         else:
             print("% cannot be recognize as a valide option" % version)
-            print("version is set to default: %", default_version)
-            version = default_version
-            ll_name_prefix = default_version
+            print("version is set to default: %", const.HF_DEFAULT_VERSION)
+            version = const.HF_DEFAULT_VERSION
+            ll_name_prefix = const.HF_DEFAULT_VERSION
     else:
-        version = default_version
-        ll_name_prefix = default_version
+        version = const.HF_DEFAULT_VERSION
+        ll_name_prefix = const.HF_DEFAULT_VERSION
     print("version:", version)
 
     # check rand_reset
@@ -214,13 +180,14 @@ if __name__ == "__main__":
 
         # Create/write the script
         script_file = write_sl_script(
-            hf_sim_dir,
-            params.sim_dir,
-            srf_name,
-            ll_name_prefix,
-            hf_option,
-            ncore,
-            wct,
+            hf_sim_dir=hf_sim_dir,
+            sim_dir=params.sim_dir,
+            stoch_name=srf_name,
+            sl_template_prefix=ll_name_prefix,
+            hf_option=hf_option,
+            params=params,
+            nb_cpus=ncore,
+            wct=wct,
             account=args.account,
             binary=not args.ascii,
             seed=args.seed,
@@ -234,6 +201,41 @@ if __name__ == "__main__":
             "queued",
             params.mgmt_db_location,
             srf_name,
-            timestamp,
+            const.timestamp,
             submit_yes=submit_yes,
         )
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="Create (and submit if specified) the slurm script for HF"
+    )
+
+    parser.add_argument("--version", type=str, default=None, const=None)
+    parser.add_argument("--ncore", type=int, default=const.HF_DEFAULT_NCORES)
+
+    # if the --auto flag is used, wall clock time will be estimated the job
+    # submitted automatically
+    parser.add_argument("--auto", type=int, nargs="?", default=None, const=True)
+
+    # rand_reset, if somehow the user decide to use it but not defined in
+    # params_base_bb the const is set to True, so that as long as --rand_reset
+    # is used, no more value needs to be provided
+    parser.add_argument("--rand_reset", type=int, nargs="?", default=None, const=True)
+
+    parser.add_argument(
+        "--site_specific", type=int, nargs="?", default=None, const=True
+    )
+    parser.add_argument("--account", type=str, default=const.DEFAULT_ACCOUNT)
+    parser.add_argument("--srf", type=str, default=None)
+    parser.add_argument("--ascii", action="store_true", default=False)
+    parser.add_argument("--debug", action="store_true", default=False)
+    parser.add_argument(
+        "--seed",
+        type=int,
+        default=None,
+        help="random seed number(0 for randomized seed)",
+    )
+    args = parser.parse_args()
+
+    main(args)

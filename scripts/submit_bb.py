@@ -4,33 +4,27 @@ import os
 import argparse
 from datetime import datetime
 
+import qcore.constants as const
 from estimation import estimate_wct as wc
 from qcore import shared, utils
 from shared_workflow.shared import set_wct, confirm, submit_sl_script
 
 # TODO: move this to qcore library
-from temp_shared import resolve_header
+from scripts.temp_shared import resolve_header
 
-from datetime import datetime
-
-timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-
-default_account = "nesi00213"
-default_version = "run_bb_mpi"
-default_core = 80
 default_wct = "00:30:00"
-default_memory = "16G"
 
 
 def write_sl_script(
     bb_sim_dir,
     sim_dir,
     srf_name,
+    params,
     sl_template_prefix,
-    nb_cpus=default_core,
+    nb_cpus=const.BB_DEFAULT_NCORES,
     run_time=default_wct,
-    memory=default_memory,
-    account=default_account,
+    memory=const.DEFAULT_MEMORY,
+    account=const.DEFAULT_ACCOUNT,
     binary=False,
 ):
     with open("%s.sl.template" % sl_template_prefix, "r") as f:
@@ -82,11 +76,11 @@ def write_sl_script(
         job_name,
         "slurm",
         memory,
-        timestamp,
+        const.timestamp,
         job_description="BB calculation",
         additional_lines="##SBATCH -C avx",
     )
-    fname_sl_script = "%s_%s_%s.sl" % (sl_template_prefix, variation, timestamp)
+    fname_sl_script = "%s_%s_%s.sl" % (sl_template_prefix, variation, const.timestamp)
     with open(fname_sl_script, "w") as f:
         f.write(header)
         f.write(template)
@@ -96,21 +90,10 @@ def write_sl_script(
     return fname_sl_abs_path
 
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="Create (and submit if specified) the slurm script for BB"
-    )
-
-    parser.add_argument("--auto", nargs="?", type=str, const=True)
-    parser.add_argument("--version", type=str, default=default_version)
-    parser.add_argument("--account", type=str, default=default_account)
-    parser.add_argument("--srf", type=str, default=None)
-    parser.add_argument("--ascii", action="store_true", default=False)
-    args = parser.parse_args()
-
+def main(args):
     params = utils.load_sim_params("sim_params.yaml")
 
-    ncores = default_core
+    ncores = const.BB_DEFAULT_NCORES
     if args.version is not None:
         version = args.version
         if version == "serial" or version == "run_bb":
@@ -122,12 +105,12 @@ if __name__ == "__main__":
             sl_name_prefix = "run_bb_mpi"
         else:
             print("% cannot be recognize as a valide option" % version)
-            print("version is set to default: %", default_version)
-            version = default_version
-            sl_name_prefix = default_version
+            print("version is set to default: %", const.BB_DEFAULT_VERSION)
+            version = const.BB_DEFAULT_VERSION
+            sl_name_prefix = const.BB_DEFAULT_VERSION
     else:
-        version = default_version
-        sl_name_prefix = default_version
+        version = const.BB_DEFAULT_VERSION
+        sl_name_prefix = const.BB_DEFAULT_VERSION
     print(version)
 
     srf_name = os.path.splitext(os.path.basename(params.srf_file))[0]
@@ -156,7 +139,8 @@ if __name__ == "__main__":
             bb_sim_dir,
             params.sim_dir,
             srf_name,
-            sl_name_prefix,
+            params=params,
+            sl_template_prefix=sl_name_prefix,
             nb_cpus=ncores,
             account=args.account,
             binary=not args.ascii,
@@ -171,6 +155,22 @@ if __name__ == "__main__":
             "queued",
             params.mgmt_db_location,
             srf_name,
-            timestamp,
+            const.timestamp,
             submit_yes=submit_yes,
         )
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="Create (and submit if specified) the slurm script for BB"
+    )
+
+    parser.add_argument("--auto", nargs="?", type=str, const=True)
+    parser.add_argument("--version", type=str, default=const.BB_DEFAULT_VERSION)
+    parser.add_argument("--account", type=str, default=const.DEFAULT_ACCOUNT)
+    parser.add_argument("--srf", type=str, default=None)
+    parser.add_argument("--ascii", action="store_true", default=False)
+    args = parser.parse_args()
+
+    main(args)
+

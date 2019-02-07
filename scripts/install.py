@@ -344,7 +344,6 @@ def action(
     hf_stat_vs_ref=None,
     v1d_full_path=None,
     sim_params_file='',
-    dt=default_dt
 ):
     lf_sim_root_dir = os.path.join(sim_dir, "LF")
     hf_dir = os.path.join(sim_dir, "HF")

@@ -11,14 +11,13 @@ start_time=`date +$runtime_fmt`
 echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} merge_ts running --run_name {{srf_name}} --job $SLURM_JOBID" >> {{mgmt_db_location}}/mgmt_db_queue/$timestamp\_$SLURM_JOBID
 
 filelist=flist_`basename {{lf_sim_dir}}`
-#get tools dir from qcore config
-exe=`python -c "from qcore.config import qconfig; import os; print(os.path.join(qconfig['tools_dir'],'merge_tsP3_par'))"`
+#get tools dir from shared_defaults
 #exe=$E3D_TOOLS_DIR/merge_tsP3_par
 ls -X {{lf_sim_dir}}/OutBin/*xyts-?????.e3d >$filelist
 NFILES=`cat $filelist |wc -l|sed -e 's/ //g'`
 OUTFILE=`head -1 $filelist  |sed -e 's/-[0-9]*.e3d/.e3d/g'`
 echo "NFILES=$NFILES OUTFILE=$OUTFILE"
-time srun $exe filelist=$filelist outfile=$OUTFILE nfiles=$NFILES
+time srun {{tools_dir}} filelist=$filelist outfile=$OUTFILE nfiles=$NFILES
 
 timestamp=`date +%Y%m%d_%H%M%S`
 end_time=`date +$runtime_fmt`
@@ -30,7 +29,7 @@ if [[ $? == 0 ]]; then
     echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} merge_ts completed --run_name {{srf_name}} --force " >> {{mgmt_db_location}}/mgmt_db_queue/$timestamp\_$SLURM_JOBID
 
     #save meta data
-    python $gmsim/workflow/metadata/log_metadata.py {{sim_dir}} POST_EMOD3D start_time=$start_time end_time=$end_time
+    python $gmsim/workflow/metadata/log_metadata.py {{sim_dir}} merge_ts start_time=$start_time end_time=$end_time
 else
     echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} merge_ts failed --run_name {{srf_name}} --error '$res' --force" >> {{mgmt_db_location}}/mgmt_db_queue/$timestamp\_$SLURM_JOBID
 fi

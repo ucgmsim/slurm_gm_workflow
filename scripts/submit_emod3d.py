@@ -5,41 +5,33 @@
 import os
 import argparse
 
-
-import set_runparams
-from qcore import utils
-import estimation.estimate_wct as wc
+import scripts.set_runparams as set_runparams
+from qcore import utils, config
+import qcore.constants as const
+import estimation.estimate_wct as est
 from shared_workflow import load_config
 from shared_workflow.shared import confirm, set_wct, submit_sl_script
 
 # TODO: remove this once temp_shared is gone
-from temp_shared import resolve_header
-from datetime import datetime
+from scripts.temp_shared import resolve_header
 
-timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-
-# Default values
-default_core = 160
-default_run_time = "02:00:00"
-default_memory = "16G"
-default_account = "nesi00213"
 
 def write_sl_script(
     lf_sim_dir,
     sim_dir,
     srf_name,
     mgmt_db_location,
-    run_time=default_run_time,
-    nb_cpus=default_core,
-    memory=default_memory,
-    account=default_account,
+    tools_dir,
+    run_time="02:00:00",
+    nb_cpus=const.LF_DEFAULT_NCORES,
+    memory=const.DEFAULT_MEMORY,
+    account=const.DEFAULT_ACCOUNT,
 ):
     """Populates the template and writes the resulting slurm script to file"""
     workflow_config = load_config.load(
         os.path.dirname(os.path.realpath(__file__)), "workflow_config.json"
     )
-    tools_dir = workflow_config["tools_dir"]
-
+    
     set_runparams.create_run_params(srf_name, workflow_config=workflow_config)
 
     with open("run_emod3d.sl.template", "r") as f:
@@ -65,12 +57,12 @@ def write_sl_script(
         job_name,
         "slurm",
         memory,
-        timestamp,
+        const.timestamp,
         job_description="emod3d slurm script",
         additional_lines="#SBATCH --hint=nomultithread",
     )
 
-    fname_slurm_script = "run_emod3d_%s_%s.sl" % (srf_name, timestamp)
+    fname_slurm_script = "run_emod3d_%s_%s.sl" % (srf_name, const.timestamp)
     with open(fname_slurm_script, "w") as f:
         f.write(header)
         f.write(template)
@@ -83,23 +75,12 @@ def write_sl_script(
     return fname_sl_abs_path
 
 
-if __name__ == "__main__":
-    # Start of main function
-    parser = argparse.ArgumentParser(
-        description="Create (and submit if specified) the slurm script for LF"
-    )
+def main(args):
+    params = utils.load_sim_params('sim_params.yaml')
 
-    parser.add_argument("--ncore", type=int, default=default_core)
-    parser.add_argument("--auto", nargs="?", type=str, const=True)
-    parser.add_argument("--account", type=str, default=default_account)
-    parser.add_argument("--srf", type=str, default=None)
-    args = parser.parse_args()
-
-    params = utils.load_sim_params("sim_params.yaml")
     submit_yes = True if args.auto else confirm("Also submit the job for you?")
 
     print("params.srf_file", params.srf_file)
-    wall_clock_limit = None
     # Get the srf(rup) name without extensions
     srf_name = os.path.splitext(os.path.basename(params.srf_file))[0]
     if args.srf is None or srf_name == args.srf:
@@ -110,7 +91,7 @@ if __name__ == "__main__":
 
         # default_core will be changed is user passes ncore
         n_cores = args.ncore
-        est_core_hours, est_run_time, n_cores = wc.est_LF_chours_single(
+        est_core_hours, est_run_time, n_cores = est.est_LF_chours_single(
             int(params.nx),
             int(params.ny),
             int(params.nz),
@@ -118,14 +99,16 @@ if __name__ == "__main__":
             n_cores,
             True
         )
-        wc = set_wct(est_run_time, n_cores, args.auto)
+        wct = set_wct(est_run_time, n_cores, args.auto)
 
+        tools_dir = config.get_tools_dir(bin_name='emod3d', version=params.emod3d.emod3d_version)
         script = write_sl_script(
             lf_sim_dir,
             sim_dir,
             srf_name,
             params.mgmt_db_location,
-            run_time=wc,
+            tools_dir,
+            run_time=wct,
             nb_cpus=n_cores,
         )
 
@@ -135,7 +118,19 @@ if __name__ == "__main__":
             "queued",
             params.mgmt_db_location,
             srf_name,
-            timestamp,
+            const.timestamp,
             submit_yes=submit_yes,
         )
 
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(
+        description="Create (and submit if specified) the slurm script for LF")
+
+    parser.add_argument("--ncore", type=int, default=const.LF_DEFAULT_NCORES)
+    parser.add_argument("--auto", nargs="?", type=str, const=True)
+    parser.add_argument('--account', type=str, default=const.DEFAULT_ACCOUNT)
+    parser.add_argument('--srf', type=str, default=None)
+    args = parser.parse_args()
+
+    main(args)

@@ -12,10 +12,10 @@ import numpy as np
 from estimation.model import NNWcEstModel
 
 # Better solution for these locations?
-LF_MODEL_DIR = "/nesi/project/nesi00213/estimation/models/LF/"
-HF_MODEL_DIR = "/nesi/project/nesi00213/estimation/models/HF/"
-BB_MODEL_DIR = "/nesi/project/nesi00213/estimation/models/BB/"
-IM_MODEL_DIR = "/nesi/project/nesi00213/estimation/models/IM/"
+LF_MODEL_DIR = "/nesi/project/nesi00213/workflow/estimation/models/LF/"
+HF_MODEL_DIR = "/nesi/project/nesi00213/workflow/estimation/models/HF/"
+BB_MODEL_DIR = "/nesi/project/nesi00213/workflow/estimation/models/BB/"
+IM_MODEL_DIR = "/nesi/project/nesi00213/workflow/estimation/models/IM/"
 
 MODEL_PREFIX = "model_"
 SCALER_PREFIX = "scaler_"
@@ -30,8 +30,10 @@ BB_DEFAULT_NCORES = 80
 LF_DEFAULT_NCORES = 160
 LF_DEFAULT_NCORES_PER_NODE = 40
 
+OVERESTIMATE_FRACTION = 0.5
 
-def get_wct(run_time, overestimate_factor=0.1):
+
+def get_wct(run_time, overestimate_factor=OVERESTIMATE_FRACTION):
     """Pad the run time (in hours) by the specified factor.
     Then convert to wall clock time.
 

@@ -15,12 +15,12 @@ from os.path import basename
 
 from shared_workflow import shared
 from qcore import utils
-
+from qcore import config
 from shared_workflow import load_config
 
 
 sys.path.append(os.path.abspath(os.path.curdir))
-from shared_workflow.shared_defaults import workflow_config, global_root,tools_dir, emod3d_version
+
 
 def create_run_params(sim_dir, srf_name=None, workflow_config=None):
     sys.path.append(sim_dir)
@@ -30,7 +30,8 @@ def create_run_params(sim_dir, srf_name=None, workflow_config=None):
         workflow_config = load_config.load(
             os.path.dirname(os.path.realpath(__file__)), "workflow_config.json")
     global_root = workflow_config["global_root"]
-    tools_dir = workflow_config["bin_process_path"]
+    #tools_dir = workflow_config["bin_process_path"]
+    tools_dir = config.get_tools_dir(bin_name='emod3d', version=params.emod3d.emod3d_version)
     emod3d_version = workflow_config["emod3d_version"]
 
     e3d_yaml = os.path.join(workflow_config['templates_dir'], 'gmsim', params.version, 'emod3d_defaults.yaml')
