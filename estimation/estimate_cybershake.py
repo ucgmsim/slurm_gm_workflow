@@ -78,7 +78,7 @@ def get_faults(vms_dir, sources_dir, runs_dir, args):
         else:
             faults = np.intersect1d(runs_faults, faults)
 
-    realisations = get_realisations(faults, sources_dir)
+    realisations = get_realisations(faults, runs_dir)
 
     print(
         "Found {} faults and {} realisations".format(
