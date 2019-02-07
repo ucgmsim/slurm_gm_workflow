@@ -41,7 +41,7 @@ if is_master:
     arg("--flo", help="low/high frequency cutoff", type=float)
     arg("--fmin", help="fmin for site amplification", type=float, default=0.2)
     arg("--fmidbot", help="fmidbot for site amplification", type=float, default=0.5)
-    arg("--lfvsref", help="Override LF Vs30 reference value (m/s)", type=float, default=500.)
+    arg("--lfvsref", help="Override LF Vs30 reference value (m/s)", type=float)
 
     try:
         args = parser.parse_args()
@@ -82,21 +82,22 @@ if args.flo is None:
     # min_vs / (5.0 * hh)
     args.flo = 0.5 / (5.0 * lf.hh)
 
+#load vs30ref
 if args.lfvsref is None:
     # vs30ref from velocity model
     with open('%s/params_vel.json' % (args.lf_vm), 'r') as j:
         vm_conf = json.load(j)
-    lfvs = np.memmap('%s/vs3dfile.s' % (args.lf_vm), dtype='<f4',
-                     shape=(vm_conf['ny'], vm_conf['nz'], vm_conf['nx'])) \
+    lfvs30refs = np.memmap('%s/vs3dfile.s' % (args.lf_vm), dtype='<f4',
+                           shape=(vm_conf['ny'], vm_conf['nz'], vm_conf['nx']), mod='r') \
                [lf.stations.y, 0, lf.stations.x] * 1000.0
 else:
     # fixed vs30ref
-    lfvs = np.ones(lf.stations.size, dtype=np.float32) * args.lfvsref
+    lfvs30refs = np.ones(lf.stations.size, dtype=np.float32) * args.lfvsref
 
-# load vs30ref
+# load vs30
 try:
     # has to be a numpy array of np.float32 as written directly to binary
-    vsites = np.vectorize(
+    vs30s = np.vectorize(
         dict(
             np.loadtxt(
                 args.vsite_file,
@@ -105,7 +106,7 @@ try:
             )
         ).get
     )(lf.stations.name)
-    assert not np.isnan(vsites).any()
+    assert not np.isnan(vs30s).any()
 except AssertionError:
     if is_master:
         print("vsite file is missing stations")
@@ -150,7 +151,7 @@ def initialise(check_only=False):
         bb_stations.e_dist = hf.stations.e_dist
         bb_stations.hf_vs_ref = hf.stations.vs
         # lf_vs_ref from velocity model
-        bb_stations.lf_vs_ref = lfvs
+        bb_stations.lf_vs_ref = lfvs30refs
 
         # verify or write
         if check_only:
@@ -238,8 +239,8 @@ fmidbot = args.fmidbot
 t0 = MPI.Wtime()
 bb_acc = np.empty((bb_nt, N_COMP), dtype="f4")
 for i, stat in enumerate(stations_todo):
-    vsite = vsites[stations_todo_idx[i]]
-    stat_lfvs = lfvs[stations_todo_idx[i]]
+    vs30 = vs30s[stations_todo_idx[i]]
+    lfvs30ref = lfvs30refs[stations_todo_idx[i]]
     lf_acc = np.copy(lf.acc(stat.name, dt=bb_dt))
     hf_acc = np.copy(hf.acc(stat.name, dt=bb_dt))
     pga = np.max(np.abs(hf_acc), axis=0) / 981.0
@@ -252,7 +253,7 @@ for i, stat in enumerate(stations_todo):
                     bb_dt,
                     n2,
                     stat.vs,
-                    vsite,
+                    vs30,
                     stat.vs,
                     pga[c],
                     fmin=fmin,
@@ -270,9 +271,9 @@ for i, stat in enumerate(stations_todo):
                 cb_amp(
                     bb_dt,
                     n2,
-                    stat_lfvs,
-                    vsite,
-                    stat_lfvs,
+                    lfvs30ref,
+                    vs30,
+                    lfvs30ref,
                     pga[c],
                     fmin=fmin,
                     fmidbot=fmidbot,
@@ -290,6 +291,6 @@ for i, stat in enumerate(stations_todo):
     bb_acc.tofile(bin_data)
     # write vsite as used for checkpointing
     bin_data.seek(bin_seek_vsite[i])
-    vsite.tofile(bin_data)
+    vs30.tofile(bin_data)
 bin_data.close()
 print("Process %03d of %03d finished (%.2fs)." % (rank, size, MPI.Wtime() - t0))
