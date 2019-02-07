@@ -9,7 +9,7 @@ start_time=`date +$runtime_fmt`
 echo $start_time
 
 echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} EMOD3D running --run_name {{srf_name}} --job $SLURM_JOBID" >> {{mgmt_db_location}}/mgmt_db_queue/$timestamp\_$SLURM_JOBID
-srun {{tools_dir}}/emod3d-mpi -args "par={{lf_sim_dir}}/e3d.par"
+srun {{tools_dir}} -args "par={{lf_sim_dir}}/e3d.par"
 
 end_time=`date +$runtime_fmt`
 echo $end_time
