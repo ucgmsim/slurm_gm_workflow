@@ -14,10 +14,7 @@ import sys
 import re
 import datetime
 
-import estimation.estimate_wct as wc
-
-from qcore import config
-from qcore import utils
+from qcore import binary_version
 
 if sys.version_info.major == 3:
     basestring = str
@@ -334,6 +331,7 @@ def get_input_wc():
 
 
 def set_wct(est_run_time, ncores, auto=False):
+    import estimation.estimate_wct as wc
     print("Estimated time: {} with {} number of cores".format(
         wc.convert_to_wct(est_run_time), ncores))
     if not auto:
@@ -582,8 +580,7 @@ def get_site_specific_path(stat_file_path, hf_stat_vs_ref=None, v1d_mod_dir=None
 
 
 def get_hf_run_name(v_mod_1d_name, srf, root_dict, hf_version):
-    tools_dir = config.get_tools_dir(bin_name='hf', version=hf_version)
-    hf_sim_bin = os.path.join(tools_dir, 'hb_high_v5.4.5_np2mm+')
+    hf_sim_bin = binary_version.get_hf_np2mm(hf_version)
     hfVString = 'hf' + os.path.basename(hf_sim_bin).split('_')[-1]
     hf_run_name = "{}_{}_rvf{}_sd{}_k{}".format(
         v_mod_1d_name, hfVString, str(root_dict['hf']['hf_rvfac']),
