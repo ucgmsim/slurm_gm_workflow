@@ -51,7 +51,7 @@ def main():
 
     # this variable seems to not be used anywhere important.
     run_dir = sim_root_dir
-    user_root = os.path.join(run_dir, 'Cybershake')
+    user_root = sim_root_dir
     stat_file_path = cybershake_cfg['stat_file_path']
     vs30_file_path = stat_file_path.replace('.ll', '.vs30')
     vs30ref_file_path = stat_file_path.replace('.ll', '.vs30ref')
