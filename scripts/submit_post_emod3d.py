@@ -5,8 +5,8 @@ import glob
 import argparse
 from datetime import datetime
 
-from qcore import utils, shared
-from shared_workflow.shared import confirm, submit_sl_script
+from qcore import utils
+from shared_workflow.shared import confirm, submit_sl_script, resolve_header
 from shared_workflow.shared_defaults import tools_dir
 
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -57,7 +57,7 @@ def write_sl_script_merge_ts(
         template = template.replace(pattern, value)
 
     job_name = "post_emod3d.merge_ts.%s" % rup_mod
-    header = shared.resolve_header(
+    header = resolve_header(
         account, nb_cpus, run_time, job_name, "Slurm", memory, timestamp,
         job_description="post emod3d: merge_ts",
         additional_lines="###SBATCH -C avx")
@@ -102,7 +102,7 @@ def write_sl_script_winbin_aio(
         nb_cpus = str(nodes * int(max_tasks_per_node))
 
     job_name = "post_emod3d.winbin_aio.%s" % rup_mod
-    header = shared.resolve_header(
+    header = resolve_header(
         account, nb_cpus, run_time, job_name, "slurm", memory, timestamp,
         job_description="post emod3d: winbin_aio", additional_lines="###SBATCH -C avx")
 
