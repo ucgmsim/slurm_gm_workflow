@@ -9,7 +9,6 @@ import qcore
 import estimation.estimate_wct as est
 from qcore import utils, shared, srf
 from shared_workflow.shared import confirm, set_wct, submit_sl_script
-from temp_shared import resolve_header
 
 # default values
 default_version = "run_hf_mpi"
@@ -82,7 +81,7 @@ def write_sl_script(
     print(variation)
 
     job_name = "sim_hf.%s" % variation
-    header = resolve_header(
+    header = shared.resolve_header(
         account,
         str(nb_cpus),
         wct,

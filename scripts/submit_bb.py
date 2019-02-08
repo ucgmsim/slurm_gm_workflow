@@ -8,9 +8,6 @@ from estimation import estimate_wct as wc
 from qcore import shared, utils
 from shared_workflow.shared import set_wct, confirm, submit_sl_script
 
-# TODO: move this to qcore library
-from temp_shared import resolve_header
-
 from datetime import datetime
 
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -75,7 +72,7 @@ def write_sl_script(
         template = template.replace(pattern, value)
 
     job_name = "sim_bb_%s" % variation
-    header = resolve_header(
+    header = shared.resolve_header(
         account,
         str(nb_cpus),
         run_time,

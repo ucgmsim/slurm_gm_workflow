@@ -13,7 +13,6 @@ from shared_workflow import load_config
 from shared_workflow.shared import confirm, set_wct, submit_sl_script
 
 # TODO: remove this once temp_shared is gone
-from temp_shared import resolve_header
 from datetime import datetime
 
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
