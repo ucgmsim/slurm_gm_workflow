@@ -5,7 +5,7 @@
 import os
 import argparse
 
-import set_runparams
+import scripts.set_runparams as set_runparams
 import qcore.constants as const
 import estimation.estimate_wct as est
 from qcore import utils

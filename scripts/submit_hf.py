@@ -14,9 +14,6 @@ from scripts.temp_shared import resolve_header
 # default values
 default_wct = "00:30:00"
 
-params = utils.load_sim_params("sim_params.yaml")
-
-
 def write_sl_script(
     hf_sim_dir,
     sim_dir,
