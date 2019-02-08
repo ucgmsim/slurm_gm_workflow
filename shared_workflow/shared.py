@@ -141,15 +141,15 @@ def resolve_header(account, n_tasks, wallclock_limit, job_name, version,  memory
 
 def get_partition(machine, core_hours=None):
     if machine == 'maui':
-        part = "nesi_research"
+        partition = "nesi_research"
     elif machine == 'mahuika':
         if core_hours and core_hours < 6:
-            part = "prepost"
+            partition = "prepost"
         else:
-            part = "large"
+            partition = "large"
     else:
-        part = ""
-    return part
+        partition = ""
+    return partition
 
 
 ################# Verify Section ###################
