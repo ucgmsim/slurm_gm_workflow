@@ -12,7 +12,7 @@ import estimation.estimate_wct as wc
 from shared_workflow import load_config
 from shared_workflow.shared import confirm, set_wct, submit_sl_script, resolve_header
 
-# TODO: remove this once temp_shared is gone
+
 from datetime import datetime
 
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
