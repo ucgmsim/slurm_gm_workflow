@@ -5,10 +5,11 @@
 import os
 import argparse
 
-import scripts.set_runparams as set_runparams
-from qcore import utils, config
+import set_runparams
 import qcore.constants as const
 import estimation.estimate_wct as est
+from qcore import utils
+from qcore import binary_version
 from shared_workflow import load_config
 from shared_workflow.shared import confirm, set_wct, submit_sl_script
 
@@ -100,8 +101,7 @@ def main(args):
             True
         )
         wct = set_wct(est_run_time, n_cores, args.auto)
-
-        tools_dir = config.get_tools_dir(bin_name='emod3d', version=params.emod3d.emod3d_version)
+        tools_dir = binary_version.get_lf_bin(params.emod3d.emod3d_version)
         script = write_sl_script(
             lf_sim_dir,
             sim_dir,
