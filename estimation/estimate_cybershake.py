@@ -347,9 +347,7 @@ def main(args):
         )
 
         # Calculate nt
-        r_hf_nt = np.repeat(fault_sim_durations, r_counts) / np.repeat(
-            runs_params.hf_dt, r_counts
-        )
+        r_hf_nt = np.repeat(fault_sim_durations / runs_params.hf_dt, r_counts)
 
         hf_input_data = np.concatenate(
             (
