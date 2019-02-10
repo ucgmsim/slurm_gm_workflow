@@ -13,8 +13,9 @@ import subprocess
 import sys
 import re
 import datetime
+import glob
 
-
+from qcore.config import host
 from shared_workflow.shared_defaults import tools_dir
 
 if sys.version_info.major == 3:
@@ -109,6 +110,46 @@ def get_vs(source_file):
                 print("Check this line: %d %s" %(i,line), file=sys.stderr)
                 
     return vs
+
+def resolve_header(account, n_tasks, wallclock_limit, job_name, version,  memory, exe_time , job_description, partition=None,  additional_lines="", cfg='slurm_header.cfg'):
+
+    if partition is None:
+        partition = get_partition(host, wallclock_limit)
+
+    with open(cfg) as f:
+        full_text = f.read()
+
+    replacements = [
+        ("{{account}}", account),
+        ("{{job_name}}", job_name),
+        ("{{partition}}", partition),
+        ("{{n_tasks}}", n_tasks),
+        ("{{wallclock_limit}}", wallclock_limit),
+        ("{{version}}", version),
+        ("{{memory}}", memory),
+        ("{{job_description}}", job_description),
+        ("{{mail}}", "test@test.com"),
+        ("{{additional_lines}}", additional_lines),
+        ("{{exe_time}}", exe_time)
+    ]
+
+    for (template_sig, replacement) in replacements:
+        full_text = full_text.replace(template_sig, replacement)
+
+    return full_text
+
+
+def get_partition(machine, core_hours=None):
+    if machine == 'maui':
+        partition = "nesi_research"
+    elif machine == 'mahuika':
+        if core_hours and core_hours < 6:
+            partition = "prepost"
+        else:
+            partition = "large"
+    else:
+        partition = ""
+    return partition
 
 
 ################# Verify Section ###################

@@ -6,11 +6,8 @@ import argparse
 from datetime import datetime
 
 from qcore import utils
-from shared_workflow import shared
+from shared_workflow.shared import confirm, submit_sl_script, resolve_header
 from shared_workflow.shared_defaults import tools_dir
-
-# TODO: remove this once temp_shared is gone
-from temp_shared import resolve_header
 
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
@@ -135,7 +132,7 @@ if __name__ == '__main__':
 
     created_scripts = []
     params = utils.load_sim_params('sim_params.yaml')
-    submit_yes = True if args.auto else shared.confirm("Also submit the job for you?")
+    submit_yes = True if args.auto else confirm("Also submit the job for you?")
 
     # get the srf(rup) name without extensions
     srf_name = os.path.splitext(os.path.basename(params.srf_file))[0]
@@ -154,7 +151,7 @@ if __name__ == '__main__':
             script = write_sl_script_merge_ts(
                 lf_sim_dir, params.sim_dir, tools_dir,
                 params.mgmt_db_location, srf_name)
-            shared.submit_sl_script(
+            submit_sl_script(
                 script, "merge_ts", "queued", params.mgmt_db_location,
                 srf_name, timestamp, submit_yes=submit_yes)
 
@@ -163,6 +160,6 @@ if __name__ == '__main__':
             script = write_sl_script_winbin_aio(
                 lf_sim_dir, params.sim_dir, params.mgmt_db_location,
                 srf_name)
-            shared.submit_sl_script(
+            submit_sl_script(
                 script, "winbin_aio", "queued", params.mgmt_db_location,
                 srf_name, timestamp, submit_yes=submit_yes)

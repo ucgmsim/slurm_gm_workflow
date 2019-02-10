@@ -6,10 +6,7 @@ from datetime import datetime
 
 from estimation import estimate_wct as wc
 from qcore import shared, utils
-from shared_workflow.shared import set_wct, confirm, submit_sl_script
-
-# TODO: move this to qcore library
-from temp_shared import resolve_header
+from shared_workflow.shared import set_wct, confirm, submit_sl_script, resolve_header
 
 from datetime import datetime
 
