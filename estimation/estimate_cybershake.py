@@ -8,10 +8,10 @@ import json
 import pandas as pd
 import numpy as np
 
-from enum import Enum
 from argparse import ArgumentParser
 from typing import List
 
+import qcore.constants as const
 from qcore import shared, srf, utils
 from estimation import estimate_wct
 
@@ -19,12 +19,6 @@ PARAMS_VEL_FILENAME = "params_vel.json"
 
 # The node time threshold factor used for ncores scaling
 NODE_TIME_TH_FACTOR = 0.5
-
-# Columns names of the result data coumns
-class ResultColsConst(Enum):
-    core_hours = "core_hours"
-    run_time = "run_time"
-    ncores = "ncores"
 
 
 def get_faults(vms_dir, sources_dir, runs_dir, args):
@@ -136,7 +130,14 @@ def run_estimations(
     )
 
     lf_columns = pd.MultiIndex.from_tuples(
-        [("LF", data_col.value) for data_col in ResultColsConst]
+        [
+            (const.ProcessType.EMOD3D.str_value, data_col.value)
+            for data_col in [
+                const.MetadataField.core_hours,
+                const.MetadataField.run_time,
+                const.MetadataField.n_cores,
+            ]
+        ]
     )
 
     results_df = pd.DataFrame(lf_result_data, index=index, columns=lf_columns)
@@ -148,9 +149,15 @@ def run_estimations(
     else:
         hf_core_hours, hf_run_time, hf_cores = np.nan, np.nan, np.nan
 
-    results_df[("HF", ResultColsConst.core_hours.value)] = hf_core_hours
-    results_df[("HF", ResultColsConst.run_time.value)] = hf_run_time
-    results_df[("HF", ResultColsConst.ncores.value)] = hf_cores
+    results_df[
+        (const.ProcessType.HF.str_value, const.MetadataField.core_hours.value)
+    ] = hf_core_hours
+    results_df[
+        (const.ProcessType.HF.str_value, const.MetadataField.run_time.value)
+    ] = hf_run_time
+    results_df[
+        (const.ProcessType.HF.str_value, const.MetadataField.n_cores.value)
+    ] = hf_cores
 
     if bb_input_data is not None:
         print("Running BB estimation")
@@ -159,9 +166,15 @@ def run_estimations(
     else:
         bb_core_hours, bb_run_time, bb_cores = np.nan, np.nan, np.nan
 
-    results_df[("BB", ResultColsConst.core_hours.value)] = bb_core_hours
-    results_df[("BB", ResultColsConst.run_time.value)] = bb_run_time
-    results_df[("BB", ResultColsConst.ncores.value)] = bb_cores
+    results_df[
+        (const.ProcessType.BB.str_value, const.MetadataField.core_hours.value)
+    ] = bb_core_hours
+    results_df[
+        (const.ProcessType.BB.str_value, const.MetadataField.run_time.value)
+    ] = bb_run_time
+    results_df[
+        (const.ProcessType.BB.str_value, const.MetadataField.n_cores.value)
+    ] = bb_cores
 
     return results_df
 
@@ -177,13 +190,52 @@ def display_results(df: pd.DataFrame, verbose: bool = False):
         print("{:>12}{}{}{}".format("", header, header, header))
         for fault_name, row in df.groupby("fault_name").sum().iterrows():
             lf_str = "{:<12.3f}{:<10.3f}{:<8.0f}".format(
-                row.LF.core_hours, row.LF.run_time, row.LF.ncores
+                row.loc[
+                    (
+                        const.ProcessType.EMOD3D.str_value,
+                        const.MetadataField.core_hours.value,
+                    )
+                ],
+                row.loc[
+                    (
+                        const.ProcessType.EMOD3D.str_value,
+                        const.MetadataField.run_time.value,
+                    )
+                ],
+                row.loc[
+                    (
+                        const.ProcessType.EMOD3D.str_value,
+                        const.MetadataField.n_cores.value,
+                    )
+                ],
             )
             hf_str = "{:<12.3f}{:<10.3f}{:<8.0f}".format(
-                row.HF.core_hours, row.HF.run_time, row.HF.ncores
+                row.loc[
+                    (
+                        const.ProcessType.HF.str_value,
+                        const.MetadataField.core_hours.value,
+                    )
+                ],
+                row.loc[
+                    (const.ProcessType.HF.str_value, const.MetadataField.run_time.value)
+                ],
+                row.loc[
+                    (const.ProcessType.HF.str_value, const.MetadataField.n_cores.value)
+                ],
             )
             bb_str = "{:<12.3f}{:<10.3f}{:<8.0f}".format(
-                row.BB.core_hours, row.BB.run_time, row.BB.ncores
+                row.loc[
+                    (
+                        const.ProcessType.BB.str_value,
+                        const.MetadataField.core_hours.value,
+                    )
+                ],
+                row.loc[
+                    (const.ProcessType.BB.str_value, const.MetadataField.run_time.value)
+                ],
+                row.loc[
+                    (const.ProcessType.BB.str_value, const.MetadataField.n_cores.value)
+                ],
             )
             print("{:<12}{}{}{}".format(fault_name, lf_str, hf_str, bb_str))
 
@@ -197,14 +249,26 @@ def display_results(df: pd.DataFrame, verbose: bool = False):
         "{:<12.3f}{:<10.3f}{:<8.0}"
         "{:<12.3f}{:<10.3f}{:<8.0}".format(
             "Total",
-            sum_df.LF.core_hours,
-            sum_df.LF.run_time,
+            sum_df.loc[
+                const.ProcessType.EMOD3D.str_value, const.MetadataField.core_hours.value
+            ],
+            sum_df.loc[
+                const.ProcessType.EMOD3D.str_value, const.MetadataField.run_time.value
+            ],
             "",
-            sum_df.HF.core_hours,
-            sum_df.HF.run_time,
+            sum_df.loc[
+                const.ProcessType.HF.str_value, const.MetadataField.core_hours.value
+            ],
+            sum_df.loc[
+                const.ProcessType.HF.str_value, const.MetadataField.run_time.value
+            ],
             "",
-            sum_df.BB.core_hours,
-            sum_df.BB.run_time,
+            sum_df.loc[
+                const.ProcessType.BB.str_value, const.MetadataField.core_hours.value
+            ],
+            sum_df.loc[
+                const.ProcessType.BB.str_value, const.MetadataField.run_time.value
+            ],
             "",
         )
     )
@@ -347,9 +411,7 @@ def main(args):
         )
 
         # Calculate nt
-        r_hf_nt = np.repeat(fault_sim_durations, r_counts) / np.repeat(
-            runs_params.hf_dt, r_counts
-        )
+        r_hf_nt = np.repeat(fault_sim_durations / runs_params.hf_dt, r_counts)
 
         hf_input_data = np.concatenate(
             (

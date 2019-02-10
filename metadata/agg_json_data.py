@@ -42,6 +42,7 @@ def load_metadata_df(csv_file: str):
 
     return df
 
+
 def get_row(json_file):
     """Gets a row of metadata for the single simulation json log file"""
     with open(json_file) as f:
