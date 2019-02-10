@@ -96,8 +96,8 @@ def main():
             error_fp.write(message)
         sys.exit()
     
-    fault_yaml_path = os.path.join(sim_root_dir, 'fault_params.yaml')
-    root_yaml_path = os.path.join(path_cybershake, 'root_params.yaml')
+    fault_yaml_path = os.path.join(sim_root_dir, run_name, 'fault_params.yaml')
+    root_yaml_path = os.path.join(sim_root_dir, 'root_params.yaml') 
     for srf in list_srf:
         # try to match find the stoch with same basename
         srf_name = os.path.splitext(os.path.basename(srf))[0]
