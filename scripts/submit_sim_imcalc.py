@@ -85,13 +85,10 @@ def submit_im_calc_slurm(sim_dir: str, options_dict: Dict = None):
         est_run_time, options_dict[SlBodyOptConsts.n_procs.value], options_dict["auto"]
     )
 
-    partition_name = get_partition(options_dict['machine'], wct)
+    partition_name = get_partition(options_dict["machine"], wct)
 
     # Header
-    j2_env = Environment(
-        loader=FileSystemLoader(sim_dir),
-        trim_blocks=True,
-    )
+    j2_env = Environment(loader=FileSystemLoader(sim_dir), trim_blocks=True)
     header = j2_env.get_template(HEADER_TEMPLATE).render(
         version=options_dict[SlHdrOptConsts.description.value],
         job_description=options_dict[SlHdrOptConsts.description.value],
@@ -139,7 +136,7 @@ def submit_im_calc_slurm(sim_dir: str, options_dict: Dict = None):
         os.path.splitext(os.path.basename(params.srf_file))[0],
         timestamp,
         submit_yes=submit_yes,
-        target_machine=options_dict['machine']
+        target_machine=options_dict["machine"],
     )
 
     return script
@@ -213,7 +210,8 @@ if __name__ == "__main__":
         "--machine",
         type=str,
         default="maui",
-        help="The machine sim_imcalc is to be submitted to.")
+        help="The machine sim_imcalc is to be submitted to.",
+    )
 
     args = parser.parse_args()
 

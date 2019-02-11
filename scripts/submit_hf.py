@@ -34,7 +34,7 @@ def write_sl_script(
     account=default_account,
     binary=False,
     seed=None,
-    machine="maui"
+    machine="maui",
 ):
     """Populates the template and writes the resulting slurm script to file"""
     with open("%s.sl.template" % sl_template_prefix, "r") as f:
@@ -58,7 +58,9 @@ def write_sl_script(
             "--dt",
             params.hf.hf_dt,
             "--sim_bin",
-            binary_version.get_hf_binmod(params.hf.hf_version, target_qconfig['tools_dir']),
+            binary_version.get_hf_binmod(
+                params.hf.hf_version, target_qconfig["tools_dir"]
+            ),
         ]
 
         hf_submit_command += " ".join(list(map(str, arguments_for_hf)))
@@ -140,7 +142,12 @@ if __name__ == "__main__":
         default=None,
         help="random seed number(0 for randomized seed)",
     )
-    parser.add_argument("--machine", type=str, default="maui", help="The machine hf is to be submitted to.")
+    parser.add_argument(
+        "--machine",
+        type=str,
+        default="maui",
+        help="The machine hf is to be submitted to.",
+    )
 
     args = parser.parse_args()
 

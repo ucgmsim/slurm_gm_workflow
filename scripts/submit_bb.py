@@ -29,7 +29,7 @@ def write_sl_script(
     memory=default_memory,
     account=default_account,
     binary=False,
-    machine="maui"
+    machine="maui",
 ):
     with open("%s.sl.template" % sl_template_prefix, "r") as f:
         template = f.read()
@@ -105,7 +105,12 @@ if __name__ == "__main__":
     parser.add_argument("--account", type=str, default=default_account)
     parser.add_argument("--srf", type=str, default=None)
     parser.add_argument("--ascii", action="store_true", default=False)
-    parser.add_argument("--machine", type=str, default="maui", help="The machine bb is to be submitted to.")
+    parser.add_argument(
+        "--machine",
+        type=str,
+        default="maui",
+        help="The machine bb is to be submitted to.",
+    )
     args = parser.parse_args()
 
     params = utils.load_sim_params("sim_params.yaml")

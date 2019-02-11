@@ -24,6 +24,7 @@ default_run_time = "02:00:00"
 default_memory = "16G"
 default_account = "nesi00213"
 
+
 def write_sl_script(
     lf_sim_dir,
     sim_dir,
@@ -39,12 +40,14 @@ def write_sl_script(
     workflow_config = load_config.load(
         os.path.dirname(os.path.realpath(__file__)), "workflow_config.json"
     )
-    
+
     set_runparams.create_run_params(srf_name, workflow_config=workflow_config)
 
     target_qconfig = get_machine_config(machine)
 
-    binary_path = binary_version.get_lf_bin(params.emod3d.emod3d_version, target_qconfig['tools_dir'])
+    binary_path = binary_version.get_lf_bin(
+        params.emod3d.emod3d_version, target_qconfig["tools_dir"]
+    )
 
     with open("run_emod3d.sl.template", "r") as f:
         template = f.read()
@@ -120,7 +123,7 @@ if __name__ == "__main__":
             int(params.nz),
             int(float(params.sim_duration) / float(params.dt)),
             n_cores,
-            True
+            True,
         )
         wc = set_wct(est_run_time, n_cores, args.auto)
 
@@ -144,4 +147,3 @@ if __name__ == "__main__":
             submit_yes=submit_yes,
             target_machine=args.machine,
         )
-
