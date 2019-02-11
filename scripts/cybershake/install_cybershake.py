@@ -63,10 +63,10 @@ def main():
 
     # this variable seems to not be used anywhere important.
     run_dir = sim_root_dir
-    user_root = os.path.join(run_dir, "Cybershake")
-    stat_file_path = cybershake_cfg["stat_file_path"]
-    vs30_file_path = stat_file_path.replace(".ll", ".vs30")
-    vs30ref_file_path = stat_file_path.replace(".ll", ".vs30ref")
+    user_root = path_cybershake
+    stat_file_path = cybershake_cfg['stat_file_path']
+    vs30_file_path = stat_file_path.replace('.ll', '.vs30')
+    vs30ref_file_path = stat_file_path.replace('.ll', '.vs30ref')
 
     error_log = os.path.join(path_cybershake, "install_error.log")
     params_vel = "params_vel.py"
@@ -114,7 +114,7 @@ def main():
 
     fault_yaml_path = simulation_structure.get_fault_yaml_path(sim_root_dir, run_name)
     root_yaml_path = simulation_structure.get_root_yaml_path(sim_root_dir)
- 
+
     for srf in list_srf:
         # try to match find the stoch with same basename
         srf_name = os.path.splitext(os.path.basename(srf))[0]

@@ -2,15 +2,11 @@
 """Script to create and submit a slurm script for BB"""
 import os
 import argparse
-from datetime import datetime
 
 import qcore.constants as const
 from estimation import estimate_wct as wc
 from qcore import shared, utils
-from shared_workflow.shared import set_wct, confirm, submit_sl_script
-
-# TODO: move this to qcore library
-from scripts.temp_shared import resolve_header
+from shared_workflow.shared import set_wct, confirm, submit_sl_script, resolve_header
 
 default_wct = "00:30:00"
 

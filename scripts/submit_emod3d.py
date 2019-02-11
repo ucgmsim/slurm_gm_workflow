@@ -11,10 +11,7 @@ import estimation.estimate_wct as est
 from qcore import utils
 from qcore import binary_version
 from shared_workflow import load_config
-from shared_workflow.shared import confirm, set_wct, submit_sl_script
-
-# TODO: remove this once temp_shared is gone
-from scripts.temp_shared import resolve_header
+from shared_workflow.shared import confirm, set_wct, submit_sl_script, resolve_header
 
 
 def write_sl_script(
