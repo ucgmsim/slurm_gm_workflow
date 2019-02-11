@@ -5,8 +5,8 @@ import glob
 import argparse
 from datetime import datetime
 
-from qcore import utils
-from qcore import binary_version
+from qcore import utils, binary_version
+from qcore.config import get_machine_config
 from shared_workflow.shared import confirm, submit_sl_script, resolve_header
 
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -36,18 +36,20 @@ def get_seis_len(seis_path):
 
 
 def write_sl_script_merge_ts(
-        lf_sim_dir, sim_dir, tools_dir, mgmt_db_location, rup_mod,
+        lf_sim_dir, sim_dir, mgmt_db_location, rup_mod,
         run_time=default_run_time_merge_ts, nb_cpus=default_core_merge_ts,
-        memory=default_memory, account=default_account):
+        memory=default_memory, account=default_account, machine="maui"):
     """Populates the template and writes the resulting slurm script to file"""
     with open('%s.sl.template' % merge_ts_name_prefix) as f:
         template = f.read()
+
+    target_config = get_machine_config(machine)
 
     replace_t = [
         # TODO: the merge_ts binary needed to use relative path instead
         #  of absolute, maybe fix this
         ("{{lf_sim_dir}}", os.path.relpath(lf_sim_dir, sim_dir)),
-        ("{{tools_dir}}", tools_dir),
+        ("{{tools_dir}}", binary_version.get_unversioned_bin('merge_tsP3_par', target_config['tools_dir'])),
         ("{{mgmt_db_location}}", mgmt_db_location),
         ("{{sim_dir}}", sim_dir),
         ("{{srf_name}}", rup_mod)
@@ -60,7 +62,7 @@ def write_sl_script_merge_ts(
     header = resolve_header(
         account, nb_cpus, run_time, job_name, "Slurm", memory, timestamp,
         job_description="post emod3d: merge_ts",
-        additional_lines="###SBATCH -C avx")
+        additional_lines="###SBATCH -C avx", target_host=machine)
 
     script_name = '%s_%s_%s.sl' % (merge_ts_name_prefix, rup_mod, timestamp)
     with open(script_name, 'w') as f:
@@ -76,7 +78,7 @@ def write_sl_script_merge_ts(
 def write_sl_script_winbin_aio(
         lf_sim_dir, sim_dir, mgmt_db_location, rup_mod,
         run_time=default_run_time_winbin_aio, memory=default_memory,
-        account=default_account):
+        account=default_account, machine="maui"):
     """Populates the template and writes the resulting slurm script to file"""
     # Read template
     with open('%s.sl.template' % winbin_aio_name_prefix) as f:
@@ -104,7 +106,7 @@ def write_sl_script_winbin_aio(
     job_name = "post_emod3d.winbin_aio.%s" % rup_mod
     header = resolve_header(
         account, nb_cpus, run_time, job_name, "slurm", memory, timestamp,
-        job_description="post emod3d: winbin_aio", additional_lines="###SBATCH -C avx")
+        job_description="post emod3d: winbin_aio", additional_lines="###SBATCH -C avx", target_host=machine)
 
     script_name = '%s_%s_%s.sl' % (winbin_aio_name_prefix, rup_mod, timestamp)
     with open(script_name, 'w') as f:
@@ -127,6 +129,7 @@ if __name__ == '__main__':
     parser.add_argument('--winbin_aio', nargs="?", type=str, const=True)
     parser.add_argument('--srf', type=str, default=None)
     parser.add_argument('--pre_hf', nargs="?", type=str, const=True)
+    parser.add_argument("--machine", type=str, default="maui", help="The machine post_emod3d is to be submitted to.")
 
     args = parser.parse_args()
 
@@ -148,19 +151,18 @@ if __name__ == '__main__':
             args.merge_ts, args.winbin_aio = True, True
 
         if args.merge_ts:
-            tools_dir = binary_version.get_unversioned_bin('merge_tsP3_par')
             script = write_sl_script_merge_ts(
-                lf_sim_dir, params.sim_dir, tools_dir,
-                params.mgmt_db_location, srf_name)
+                lf_sim_dir, params.sim_dir,
+                params.mgmt_db_location, srf_name, machine=args.machine)
             submit_sl_script(
                 script, "merge_ts", "queued", params.mgmt_db_location,
-                srf_name, timestamp, submit_yes=submit_yes)
+                srf_name, timestamp, submit_yes=submit_yes, target_machine=args.machine)
 
         # run winbin_aio related scripts only
         if args.winbin_aio:
             script = write_sl_script_winbin_aio(
                 lf_sim_dir, params.sim_dir, params.mgmt_db_location,
-                srf_name)
+                srf_name, machine=args.machine)
             submit_sl_script(
                 script, "winbin_aio", "queued", params.mgmt_db_location,
-                srf_name, timestamp, submit_yes=submit_yes)
+                srf_name, timestamp, submit_yes=submit_yes, target_machine=args.machine)
