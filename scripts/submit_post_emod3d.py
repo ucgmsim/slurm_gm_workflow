@@ -6,8 +6,8 @@ import argparse
 from datetime import datetime
 
 from qcore import utils
+from qcore import binary_version
 from shared_workflow.shared import confirm, submit_sl_script, resolve_header
-from shared_workflow.shared_defaults import tools_dir
 
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
@@ -148,6 +148,7 @@ if __name__ == '__main__':
             args.merge_ts, args.winbin_aio = True, True
 
         if args.merge_ts:
+            tools_dir = binary_version.get_unversioned_bin('merge_tsP3_par')
             script = write_sl_script_merge_ts(
                 lf_sim_dir, params.sim_dir, tools_dir,
                 params.mgmt_db_location, srf_name)

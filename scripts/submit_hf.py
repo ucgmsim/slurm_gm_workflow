@@ -6,7 +6,7 @@ import argparse
 from datetime import datetime
 
 import estimation.estimate_wct as est
-from qcore import utils, shared, srf
+from qcore import utils, shared, srf, binary_version
 from shared_workflow.shared import confirm, set_wct, submit_sl_script, resolve_header
 
 # default values
@@ -17,6 +17,8 @@ default_memory = "16G"
 default_account = "nesi00213"
 
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+params = utils.load_sim_params("sim_params.yaml")
 
 
 def write_sl_script(
@@ -51,7 +53,9 @@ def write_sl_script(
             "--duration",
             params.sim_duration,
             "--dt",
-            params.hf.hf_dt
+            params.hf.hf_dt,
+            "--sim_bin",
+            binary_version.get_hf_binmod(params.hf.hf_version),
         ]
 
         hf_submit_command += " ".join(list(map(str, arguments_for_hf)))
@@ -136,8 +140,6 @@ if __name__ == "__main__":
     parser.add_argument("--machine", type=str, default="maui", help="The machine hf is to be submitted to.")
 
     args = parser.parse_args()
-
-    params = utils.load_sim_params("sim_params.yaml")
 
     # check if the args is none, if not, change the version
     ncore = args.ncore

@@ -43,6 +43,11 @@ if [[ $? == 0 ]]; then
 
     # log metadata
     python $gmsim/workflow/metadata/log_metadata.py {{sim_dir}} IM_calc cores={{np}} psa_count=$psa_count fd_count=$fd_count start_time=$start_time end_time=$end_time
+
+     # clean up, making .tar
+    echo "IM_calc submission successful, start cleaning up"
+    python $gmsim/workflow/scripts/clean_up.py {{sim_dir}}
+    echo "finished cleaning up"
 else
     #failed
     echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} IM_calculation failed --run_name {{sim_name}} --error '$res' --force"  >> {{mgmt_db_location}}/mgmt_db_queue/$timestamp\_$SLURM_JOBID
