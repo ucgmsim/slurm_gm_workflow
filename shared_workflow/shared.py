@@ -430,12 +430,15 @@ def exe(cmd, debug=True,shell=False, stdout=subprocess.PIPE,
 
 
 def submit_sl_script(script, process, status, mgmt_db_loc, srf_name,
-                     timestamp, target_machine, submit_yes=False):
-    """Submits the slurm script and udpates the management db"""
+                     timestamp, submit_yes=False, target_machine=None):
+    """Submits the slurm script and updates the management db"""
     if submit_yes:
         print("Submitting %s" % script)
         actual_machine_name = get_machine_true_name(target_machine)
-        res = exe("sbatch --export=NONE -M {} {}".format(actual_machine_name, script), debug=False)
+        if target_machine:
+            res = exe("sbatch --export=NONE -M {} {}".format(actual_machine_name, script), debug=False)
+        else:
+            res = exe("sbatch {}".format(script), debug=False)
         if len(res[1]) == 0:
             # no errors, return the job id
             jobid = res[0].split()[-1]
