@@ -8,7 +8,7 @@ import argparse
 
 import set_runparams
 from qcore import utils, binary_version
-from qcore.config import get_machine_config
+from qcore.config import get_machine_config, host
 import estimation.estimate_wct as wc
 from shared_workflow import load_config
 from shared_workflow.shared import confirm, set_wct, submit_sl_script, resolve_header
@@ -34,7 +34,7 @@ def write_sl_script(
     nb_cpus=default_core,
     memory=default_memory,
     account=default_account,
-    machine="maui",
+    machine=host,
 ):
     """Populates the template and writes the resulting slurm script to file"""
     workflow_config = load_config.load(
@@ -100,6 +100,12 @@ if __name__ == "__main__":
     parser.add_argument("--auto", nargs="?", type=str, const=True)
     parser.add_argument("--account", type=str, default=default_account)
     parser.add_argument("--srf", type=str, default=None)
+    parser.add_argument(
+        "--machine",
+        type=str,
+        default=host,
+        help="The machine emod3d is to be submitted to.",
+    )
     args = parser.parse_args()
 
     params = utils.load_sim_params("sim_params.yaml")

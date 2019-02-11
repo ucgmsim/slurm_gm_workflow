@@ -8,6 +8,7 @@ from datetime import datetime
 from jinja2 import Environment, FileSystemLoader
 
 from qcore import utils, shared
+from qcore.config import host
 from typing import Dict
 from estimation.estimate_wct import est_IM_chours_single
 from shared_workflow.shared import submit_sl_script, set_wct, confirm, get_partition
@@ -209,7 +210,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--machine",
         type=str,
-        default="maui",
+        default=host,
         help="The machine sim_imcalc is to be submitted to.",
     )
 

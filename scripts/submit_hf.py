@@ -7,7 +7,7 @@ from datetime import datetime
 
 import estimation.estimate_wct as est
 from qcore import utils, shared, srf, binary_version
-from qcore.config import get_machine_config
+from qcore.config import get_machine_config, host
 from shared_workflow.shared import confirm, set_wct, submit_sl_script, resolve_header
 
 # default values
@@ -34,7 +34,7 @@ def write_sl_script(
     account=default_account,
     binary=False,
     seed=None,
-    machine="maui",
+    machine=host,
 ):
     """Populates the template and writes the resulting slurm script to file"""
     with open("%s.sl.template" % sl_template_prefix, "r") as f:
@@ -145,7 +145,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--machine",
         type=str,
-        default="maui",
+        default=host,
         help="The machine hf is to be submitted to.",
     )
 

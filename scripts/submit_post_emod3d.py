@@ -6,7 +6,7 @@ import argparse
 from datetime import datetime
 
 from qcore import utils, binary_version
-from qcore.config import get_machine_config
+from qcore.config import get_machine_config, host
 from shared_workflow.shared import confirm, submit_sl_script, resolve_header
 
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -44,7 +44,7 @@ def write_sl_script_merge_ts(
     nb_cpus=default_core_merge_ts,
     memory=default_memory,
     account=default_account,
-    machine="maui",
+    machine=host,
 ):
     """Populates the template and writes the resulting slurm script to file"""
     with open("%s.sl.template" % merge_ts_name_prefix) as f:
@@ -102,7 +102,7 @@ def write_sl_script_winbin_aio(
     run_time=default_run_time_winbin_aio,
     memory=default_memory,
     account=default_account,
-    machine="maui",
+    machine=host,
 ):
     """Populates the template and writes the resulting slurm script to file"""
     # Read template
@@ -169,7 +169,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--machine",
         type=str,
-        default="maui",
+        default=host,
         help="The machine post_emod3d is to be submitted to.",
     )
 

@@ -6,6 +6,7 @@ from datetime import datetime
 
 from estimation import estimate_wct as wc
 from qcore import shared, utils
+from qcore.config import host
 from shared_workflow.shared import set_wct, confirm, submit_sl_script, resolve_header
 
 from datetime import datetime
@@ -29,7 +30,7 @@ def write_sl_script(
     memory=default_memory,
     account=default_account,
     binary=False,
-    machine="maui",
+    machine=host,
 ):
     with open("%s.sl.template" % sl_template_prefix, "r") as f:
         template = f.read()
@@ -108,7 +109,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--machine",
         type=str,
-        default="maui",
+        default=host,
         help="The machine bb is to be submitted to.",
     )
     args = parser.parse_args()
