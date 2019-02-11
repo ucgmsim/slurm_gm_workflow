@@ -10,7 +10,7 @@ from jinja2 import Environment, FileSystemLoader
 from qcore import utils, shared
 from typing import Dict
 from estimation.estimate_wct import est_IM_chours_single
-from shared_workflow.shared import submit_sl_script, set_wct, confirm
+from shared_workflow.shared import submit_sl_script, set_wct, confirm, get_partition
 
 IM_CALC_DEFAULT_N_PROCESSES = 40
 IM_CALC_COMPONENTS = ["geom", "000", "090", "ver", "ellipsis"]
@@ -85,6 +85,8 @@ def submit_im_calc_slurm(sim_dir: str, options_dict: Dict = None):
         est_run_time, options_dict[SlBodyOptConsts.n_procs.value], options_dict["auto"]
     )
 
+    partition_name = get_partition(options_dict['machine'], wct)
+
     # Header
     j2_env = Environment(
         loader=FileSystemLoader(sim_dir),
@@ -97,6 +99,7 @@ def submit_im_calc_slurm(sim_dir: str, options_dict: Dict = None):
             options_dict[SlHdrOptConsts.job_name_prefix.value], fault_name
         ),
         account=options_dict[SlHdrOptConsts.account.value],
+        partition=partition_name,
         n_tasks=options_dict[SlHdrOptConsts.n_tasks.value],
         wallclock_limit=wct,
         exe_time="%j",
@@ -136,6 +139,7 @@ def submit_im_calc_slurm(sim_dir: str, options_dict: Dict = None):
         os.path.splitext(os.path.basename(params.srf_file))[0],
         timestamp,
         submit_yes=submit_yes,
+        target_machine=options_dict['machine']
     )
 
     return script
@@ -156,6 +160,7 @@ def main(args):
             SlBodyOptConsts.simple_out.value: args.simple_output,
             SlBodyOptConsts.component.value: args.comp,
             "auto": args.auto,
+            "machine": args.machine,
         },
     )
 
@@ -204,6 +209,11 @@ if __name__ == "__main__":
         help="Submit the slurm script automatically and use the "
         "estimated wct. No prompts.",
     )
+    parser.add_argument(
+        "--machine",
+        type=str,
+        default="maui",
+        help="The machine sim_imcalc is to be submitted to.")
 
     args = parser.parse_args()
 
