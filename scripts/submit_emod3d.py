@@ -7,8 +7,8 @@ import argparse
 
 
 import set_runparams
-from qcore import utils
-from qcore import binary_version
+from qcore import utils, binary_version
+from qcore.config import get_machine_config
 import estimation.estimate_wct as wc
 from shared_workflow import load_config
 from shared_workflow.shared import confirm, set_wct, submit_sl_script, resolve_header
@@ -29,11 +29,11 @@ def write_sl_script(
     sim_dir,
     srf_name,
     mgmt_db_location,
-    tools_dir,
     run_time=default_run_time,
     nb_cpus=default_core,
     memory=default_memory,
     account=default_account,
+    machine="maui",
 ):
     """Populates the template and writes the resulting slurm script to file"""
     workflow_config = load_config.load(
@@ -42,12 +42,16 @@ def write_sl_script(
     
     set_runparams.create_run_params(srf_name, workflow_config=workflow_config)
 
+    target_qconfig = get_machine_config(machine)
+
+    binary_path = binary_version.get_lf_bin(params.emod3d.emod3d_version, target_qconfig['tools_dir'])
+
     with open("run_emod3d.sl.template", "r") as f:
         template = f.read()
 
     replace_t = [
         ("{{lf_sim_dir}}", lf_sim_dir),
-        ("{{tools_dir}}", tools_dir),
+        ("{{tools_dir}}", binary_path),
         ("{{mgmt_db_location}}", mgmt_db_location),
         ("{{sim_dir}}", sim_dir),
         ("{{srf_name}}", srf_name),
@@ -119,15 +123,15 @@ if __name__ == "__main__":
             True
         )
         wc = set_wct(est_run_time, n_cores, args.auto)
-        tools_dir = binary_version.get_lf_bin(params.emod3d.emod3d_version)
+
         script = write_sl_script(
             lf_sim_dir,
             sim_dir,
             srf_name,
             params.mgmt_db_location,
-            tools_dir,
             run_time=wc,
             nb_cpus=n_cores,
+            machine=args.machine,
         )
 
         submit_sl_script(
@@ -138,5 +142,6 @@ if __name__ == "__main__":
             srf_name,
             timestamp,
             submit_yes=submit_yes,
+            target_machine=args.machine,
         )
 
