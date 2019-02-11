@@ -31,6 +31,7 @@ def write_sl_script(
     account=default_account,
     binary=False,
     seed=None,
+    machine="maui"
 ):
     """Populates the template and writes the resulting slurm script to file"""
     with open("%s.sl.template" % sl_template_prefix, "r") as f:
@@ -50,7 +51,7 @@ def write_sl_script(
             "--duration",
             params.sim_duration,
             "--dt",
-            params.hf.hf_dt,
+            params.hf.hf_dt
         ]
 
         hf_submit_command += " ".join(list(map(str, arguments_for_hf)))
@@ -90,6 +91,7 @@ def write_sl_script(
         timestamp,
         job_description="HF calculation",
         additional_lines="###SBATCH -C avx",
+        target_host=machine,
     )
     script_name = "%s_%s_%s.sl" % (sl_template_prefix, variation, timestamp)
     with open(script_name, "w") as f:
@@ -131,6 +133,8 @@ if __name__ == "__main__":
         default=None,
         help="random seed number(0 for randomized seed)",
     )
+    parser.add_argument("--machine", type=str, default="maui", help="The machine hf is to be submitted to.")
+
     args = parser.parse_args()
 
     params = utils.load_sim_params("sim_params.yaml")
@@ -222,6 +226,7 @@ if __name__ == "__main__":
             account=args.account,
             binary=not args.ascii,
             seed=args.seed,
+            machine=args.machine,
         )
 
         # Submit the script
@@ -234,4 +239,5 @@ if __name__ == "__main__":
             srf_name,
             timestamp,
             submit_yes=submit_yes,
+            machine=args.machine,
         )

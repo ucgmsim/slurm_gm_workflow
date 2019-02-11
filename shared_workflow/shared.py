@@ -111,10 +111,10 @@ def get_vs(source_file):
                 
     return vs
 
-def resolve_header(account, n_tasks, wallclock_limit, job_name, version,  memory, exe_time , job_description, partition=None,  additional_lines="", cfg='slurm_header.cfg'):
+def resolve_header(account, n_tasks, wallclock_limit, job_name, version,  memory, exe_time , job_description, partition=None,  additional_lines="", cfg='slurm_header.cfg', target_host=host):
 
     if partition is None:
-        partition = get_partition(host, wallclock_limit)
+        partition = get_partition(target_host, wallclock_limit)
 
     with open(cfg) as f:
         full_text = f.read()
@@ -431,11 +431,12 @@ def exe(cmd, debug=True,shell=False, stdout=subprocess.PIPE,
 
 
 def submit_sl_script(script, process, status, mgmt_db_loc, srf_name,
-                     timestamp, submit_yes=False):
+                     timestamp, target_machine, submit_yes=False):
     """Submits the slurm script and udpates the management db"""
     if submit_yes:
         print("Submitting %s" % script)
-        res = exe("sbatch %s" % script, debug=False)
+        actual_machine_name = get_machine_true_name(target_machine)
+        res = exe("sbatch --export=NONE -M {} {}".format(actual_machine_name, script), debug=False)
         if len(res[1]) == 0:
             # no errors, return the job id
             jobid = res[0].split()[-1]
@@ -639,4 +640,11 @@ def get_hf_run_name(v_mod_1d_name, srf, root_dict):
     yes = True
     return yes, hf_run_name
 
+
+def get_machine_true_name(alias):
+    if alias=="maui":
+        return "maui01"
+    if alias=="mahuika":
+        return "mahuika"
+    return alias
 
