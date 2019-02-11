@@ -14,7 +14,7 @@ trap "echo Exited!; exit;" SIGINT SIGTERM
 while [ 1 ];
 do
     #run the commands queued up first, before submit
-    while [[ `ls $path_sim_root/mgmt_db_queue/*` ]]
+    while [[ `ls $path_sim_root/mgmt_db_queue` ]]
     do
         #if folder not exsist, create
         if [[ ! -d /tmp/cer ]];then

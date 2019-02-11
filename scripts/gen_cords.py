@@ -4,7 +4,7 @@ import sys
 from subprocess import check_call
 
 sys.path.append(os.path.abspath(os.path.curdir))
-from shared_workflow.shared_defaults import tools_dir
+from qcore import binary_version
 
 
 try:
@@ -23,7 +23,7 @@ except ImportError:
             print "Error: params_vel.py is missing"
             sys.exit()
         else:
-            gen_model_cords_bin = os.path.join(tools_dir, 'gen_model_cords')
+            gen_model_cords_bin = binary_version.get_unversioned_bin('gen_model_cords')
 
 
 #variables that cannot be found in params_base.py

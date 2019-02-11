@@ -18,8 +18,6 @@ vel_mod_dir = os.path.join(global_root, 'VelocityModel')
 recipe_dir = workflow_config['templates_dir']
 v_mod_1d_dir = os.path.join(global_root, 'VelocityModel', 'Mod-1D')
 stat_dir = os.path.join(global_root, 'StationInfo')
-tools_dir = os.path.join(global_root, 'opt/maui/emod3d/3.0.4-gcc/bin')
-
 latest_ll_dir = os.path.join(global_root, 'StationInfo/grid')
 latest_ll = 'non_uniform_with_real_stations_latest'
 
@@ -27,3 +25,4 @@ latest_ll = 'non_uniform_with_real_stations_latest'
 # the following dts are now set in templates/gmsim/version/*_defaults.yaml
 # default_dt = 0.005
 # default_hf_dt = 0.005
+

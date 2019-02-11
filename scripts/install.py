@@ -18,6 +18,7 @@ from datetime import datetime
 
 import yaml
 from qcore import utils
+from qcore import simulation_structure
 from scripts.management import create_mgmt_db
 
 # TODO: namespacing
@@ -627,8 +628,9 @@ def main_local(args):
     vel_mod_params_dir = sim_dir
 
     event_name = ""
-    fault_yaml_path = os.path.join(sim_dir, "fault_params.yaml")
-    root_yaml_path = os.path.join(sim_dir, "root_params.yaml")
+    
+    fault_yaml_path = simulation_structure.get_fault_yaml_path(sim_dir)
+    root_yaml_path = simulation_structure.get_root_yaml_path(sim_dir)
 
     root_params_dict, fault_params_dict, sim_params_dict, vm_params_dict = action(
         args.version,
@@ -709,8 +711,8 @@ def main_remote(cfg, args):
 
     vel_mod_params_dir = vel_mod_dir
 
-    fault_yaml_path = os.path.join(sim_dir, "fault_params.yaml")
-    root_yaml_path = os.path.join(sim_dir, "root_params.yaml")
+    fault_yaml_path = simulation_structure.get_fault_yaml_path(sim_dir)
+    root_yaml_path = simulation_structure.get_root_yaml_path(sim_dir)
 
     # TODO action will return 4 params dict and they will be dumped into yamls.
     # TODO to implement when install_manual is merged

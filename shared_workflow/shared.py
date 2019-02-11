@@ -15,8 +15,8 @@ import re
 import datetime
 import glob
 
+from qcore import binary_version
 from qcore.config import host
-from shared_workflow.shared_defaults import tools_dir
 
 if sys.version_info.major == 3:
     basestring = str
@@ -115,7 +115,6 @@ def resolve_header(account, n_tasks, wallclock_limit, job_name, version,  memory
 
     if partition is None:
         partition = get_partition(host, wallclock_limit)
-
     with open(cfg) as f:
         full_text = f.read()
 
@@ -621,8 +620,8 @@ def get_site_specific_path(stat_file_path, hf_stat_vs_ref=None, v1d_mod_dir=None
     return v_mod_1d_path, hf_stat_vs_ref_selected
 
 
-def get_hf_run_name(v_mod_1d_name, srf, root_dict):
-    hf_sim_bin = os.path.join(tools_dir, 'hb_high_v5.4.5_np2mm+')
+def get_hf_run_name(v_mod_1d_name, srf, root_dict, hf_version):
+    hf_sim_bin = binary_version.get_hf_np2mm(hf_version)
     hfVString = 'hf' + os.path.basename(hf_sim_bin).split('_')[-1]
     hf_run_name = "{}_{}_rvf{}_sd{}_k{}".format(
         v_mod_1d_name, hfVString, str(root_dict['hf']['hf_rvfac']),
