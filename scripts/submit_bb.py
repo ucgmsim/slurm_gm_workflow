@@ -29,6 +29,7 @@ def write_sl_script(
     memory=default_memory,
     account=default_account,
     binary=False,
+    machine="maui"
 ):
     with open("%s.sl.template" % sl_template_prefix, "r") as f:
         template = f.read()
@@ -82,6 +83,7 @@ def write_sl_script(
         timestamp,
         job_description="BB calculation",
         additional_lines="##SBATCH -C avx",
+        target_host=machine,
     )
     fname_sl_script = "%s_%s_%s.sl" % (sl_template_prefix, variation, timestamp)
     with open(fname_sl_script, "w") as f:
@@ -103,6 +105,7 @@ if __name__ == "__main__":
     parser.add_argument("--account", type=str, default=default_account)
     parser.add_argument("--srf", type=str, default=None)
     parser.add_argument("--ascii", action="store_true", default=False)
+    parser.add_argument("--machine", type=str, default="maui", help="The machine bb is to be submitted to.")
     args = parser.parse_args()
 
     params = utils.load_sim_params("sim_params.yaml")
@@ -158,6 +161,7 @@ if __name__ == "__main__":
             account=args.account,
             binary=not args.ascii,
             run_time=wct,
+            machine=args.machine,
         )
 
         # Submit the script
@@ -170,4 +174,5 @@ if __name__ == "__main__":
             srf_name,
             timestamp,
             submit_yes=submit_yes,
+            target_machine=args.machine,
         )
