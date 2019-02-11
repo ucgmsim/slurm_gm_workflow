@@ -3,10 +3,11 @@
 import os
 import os.path
 import argparse
+import json
 from datetime import datetime
 
 import estimation.estimate_wct as est
-from qcore import utils, shared, srf, binary_version
+from qcore import utils, shared, srf, binary_version, config
 from shared_workflow.shared import confirm, set_wct, submit_sl_script, resolve_header
 
 # default values
@@ -39,6 +40,10 @@ def write_sl_script(
     with open("%s.sl.template" % sl_template_prefix, "r") as f:
         template = f.read()
 
+    target_machine_config_filename = config.determine_machine_config(machine)
+    with open(target_machine_config_filename) as target_machine_config_file:
+        target_qconfig = json.load(target_machine_config_file)
+
     if binary:
         create_dir = "mkdir -p " + os.path.join(hf_sim_dir, "Acc") + "\n"
         hf_submit_command = (
@@ -55,7 +60,7 @@ def write_sl_script(
             "--dt",
             params.hf.hf_dt,
             "--sim_bin",
-            binary_version.get_hf_binmod(params.hf.hf_version),
+            binary_version.get_hf_binmod(params.hf.hf_version, target_qconfig['tools_dir']),
         ]
 
         hf_submit_command += " ".join(list(map(str, arguments_for_hf)))
