@@ -106,8 +106,6 @@ ENV/
 # ide
 *.idea 
 
-find/
-
-test/
-
+# workflow_config
 scripts/workflow_config.json
+

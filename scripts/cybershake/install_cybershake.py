@@ -95,10 +95,10 @@ def main():
         with open(error_log, 'a') as error_fp:
             error_fp.write(message)
         sys.exit()
-    
+
     fault_yaml_path = simulation_structure.get_fault_yaml_path(sim_root_dir, run_name)
     root_yaml_path = simulation_structure.get_root_yaml_path(sim_root_dir)
- 
+
     for srf in list_srf:
         # try to match find the stoch with same basename
         srf_name = os.path.splitext(os.path.basename(srf))[0]
