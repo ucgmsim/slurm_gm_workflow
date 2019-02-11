@@ -11,25 +11,25 @@ CH_REPORT_PATH = '/nesi/project/nesi00213/workflow/scripts/CH_report.sh'
 PROJECT_ID = 'nesi00213'
 TIME_FORMAT = "%Y_%m_%d-%H_%M_%S"
 HPCS = ['maui', 'mahuika']
-OUT_DIR = os.path.join('/home', getpass.getuser(),'CH_usage')
+OUT_DIR = os.path.join('/home/yzh231/', 'CH_usage')
 
 
 def run_dashboard_cmds(user, hpc, period, out_dir):
     ssh_cmd = "ssh {}@{}".format(user, hpc)
 
-    time = datetime.now().strftime(TIME_FORMAT)
+    # time = datetime.now().strftime(TIME_FORMAT)
 
-    sub_outdir = os.path.join(out_dir,'{}_{}'.format(hpc, time))
+    sub_outdir = os.path.join(out_dir, hpc)
     utils.setup_dir(sub_outdir)
     os.chdir(sub_outdir)
 
-    his_ch_cmd = "{} bash {} {} >> {}_{}.txt".format(ssh_cmd, CH_REPORT_PATH, period, 'his_ch_usage', time)
+    his_ch_cmd = "{} bash {} {} > {}.txt".format(ssh_cmd, CH_REPORT_PATH, period, 'his_ch_usage')
 
-    rt_ch_cmd = "{} nn_corehour_usage {} >> {}_{}.txt".format(ssh_cmd, PROJECT_ID, 'rt_ch_usage', time)
+    rt_ch_cmd = "{} nn_corehour_usage {} > {}.txt".format(ssh_cmd, PROJECT_ID, 'rt_ch_usage')
 
-    rt_quota_cmd = "{} nn_check_quota >> {}_{}.txt".format(ssh_cmd, 'rt_quota_usage', time)
+    rt_quota_cmd = "{} nn_check_quota > {}.txt".format(ssh_cmd, 'rt_quota_usage')
 
-    sq_cmd = "{} squeue >> {}_{}.txt".format(ssh_cmd, 'squeue', time)
+    sq_cmd = "{} squeue -A nesi00213 > {}.txt".format(ssh_cmd, 'squeue')
 
     capa_cmd = ssh_cmd + ' ' + "squeue -p nesi_research | awk '{print $10}'"
 
@@ -39,19 +39,20 @@ def run_dashboard_cmds(user, hpc, period, out_dir):
     subprocess.call(sq_cmd, shell=True)
     output = subprocess.check_output(capa_cmd, shell=True).decode('utf-8').strip().split('\n')   # 'NODES\n23\n32\n'---> ['NODES', '23', '32']
 
-    total_nodes = 0
-    for i in range(len(output)):
-        try:
-            total_nodes += int(output[i])
-        except ValueError:
-            continue
+    if hpc == HPCS[0]:
+        total_nodes = 0
+        for i in range(len(output)):
+            try:
+                total_nodes += int(output[i])
+            except ValueError:
+                continue
 
-    capcacity = (1 - total_nodes / MAX_NODES) * 100.
+        capcacity = (1 - total_nodes / MAX_NODES) * 100.
 
-    s = "{}: Avavilable node capacity on partition nesi_research is {:.3f}%. {} nodes in use, Max nodes {}".format(hpc, capcacity, total_nodes, MAX_NODES)
-    with open('capacity_{}.txt'.format(time), 'w') as f:
-        f.write(s)
-    print(s)
+        s = "{}: Avavilable node capacity on partition nesi_research is {:.3f}%. {} nodes in use, Max nodes {}".format(hpc, capcacity, total_nodes, MAX_NODES)
+        with open('capacity.txt', 'w') as f:
+            f.write(s)
+        print(s)
 
 
 def main():
