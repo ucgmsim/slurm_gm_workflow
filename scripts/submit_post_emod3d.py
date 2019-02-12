@@ -33,9 +33,16 @@ def get_seis_len(seis_path):
 
 
 def write_sl_script_merge_ts(
-        lf_sim_dir, sim_dir, tools_dir, mgmt_db_location, rup_mod,
-        run_time=default_run_time_merge_ts, nb_cpus=const.MERGE_TS_DEFAULT_NCORES,
-        memory=const.DEFAULT_MEMORY, account=const.DEFAULT_ACCOUNT):
+    lf_sim_dir,
+    sim_dir,
+    mgmt_db_location,
+    rup_mod,
+    run_time=default_run_time_merge_ts,
+    nb_cpus=const.MERGE_TS_DEFAULT_NCORES,
+    memory=const.DEFAULT_MEMORY,
+    account=const.DEFAULT_ACCOUNT,
+    machine=host,
+):
     """Populates the template and writes the resulting slurm script to file"""
     with open("%s.sl.template" % merge_ts_name_prefix) as f:
         template = f.read()
@@ -146,7 +153,7 @@ def write_sl_script_winbin_aio(
 
 
 def main(args):
-    params = utils.load_sim_params('sim_params.yaml')
+    params = utils.load_sim_params("sim_params.yaml")
     submit_yes = True if args.auto else confirm("Also submit the job for you?")
 
     # get the srf(rup) name without extensions
@@ -191,18 +198,26 @@ def main(args):
                 machine=args.machine,
             )
             submit_sl_script(
-                script, "winbin_aio", "queued", params.mgmt_db_location,
-                srf_name, const.timestamp, submit_yes=submit_yes)
+                script,
+                "winbin_aio",
+                "queued",
+                params.mgmt_db_location,
+                srf_name,
+                const.timestamp,
+                submit_yes=submit_yes,
+            )
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Create (and submit if specified) the slurm script for HF")
+        description="Create (and submit if specified) the slurm script for HF"
+    )
 
     parser.add_argument("--auto", nargs="?", type=str, const=True)
-    parser.add_argument('--account', type=str, default=const.DEFAULT_ACCOUNT)
-    parser.add_argument('--merge_ts', nargs="?", type=str, const=True)
-    parser.add_argument('--winbin_aio', nargs="?", type=str, const=True)
-    parser.add_argument('--srf', type=str, default=None)
+    parser.add_argument("--account", type=str, default=const.DEFAULT_ACCOUNT)
+    parser.add_argument("--merge_ts", nargs="?", type=str, const=True)
+    parser.add_argument("--winbin_aio", nargs="?", type=str, const=True)
+    parser.add_argument("--srf", type=str, default=None)
     parser.add_argument(
         "--machine",
         type=str,
@@ -213,4 +228,3 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     main(args)
-

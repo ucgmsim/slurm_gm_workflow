@@ -19,25 +19,18 @@ def write_sl_script(
     sim_dir,
     srf_name,
     mgmt_db_location,
-    tools_dir,
+    binary_path,
     run_time="02:00:00",
     nb_cpus=const.LF_DEFAULT_NCORES,
     memory=const.DEFAULT_MEMORY,
     account=const.DEFAULT_ACCOUNT,
-    machine=host,
 ):
     """Populates the template and writes the resulting slurm script to file"""
     workflow_config = load_config.load(
         os.path.dirname(os.path.realpath(__file__)), "workflow_config.json"
     )
-    
+
     set_runparams.create_run_params(srf_name, workflow_config=workflow_config)
-
-    target_qconfig = get_machine_config(machine)
-
-    binary_path = binary_version.get_lf_bin(
-        params.emod3d.emod3d_version, target_qconfig["tools_dir"]
-    )
 
     with open("run_emod3d.sl.template", "r") as f:
         template = f.read()
@@ -81,7 +74,7 @@ def write_sl_script(
 
 
 def main(args):
-    params = utils.load_sim_params('sim_params.yaml')
+    params = utils.load_sim_params("sim_params.yaml")
 
     submit_yes = True if args.auto else confirm("Also submit the job for you?")
 
@@ -106,12 +99,19 @@ def main(args):
         )
         wct = set_wct(est_run_time, n_cores, args.auto)
 
+        target_qconfig = get_machine_config(args.machine)
+
+        binary_path = binary_version.get_lf_bin(
+            params.emod3d.emod3d_version, target_qconfig["tools_dir"]
+        )
+
         script = write_sl_script(
             lf_sim_dir,
             sim_dir,
             srf_name,
             params.mgmt_db_location,
-            run_time=wc,
+            binary_path,
+            run_time=wct,
             nb_cpus=n_cores,
             machine=args.machine,
         )
@@ -128,14 +128,15 @@ def main(args):
         )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Create (and submit if specified) the slurm script for LF")
+        description="Create (and submit if specified) the slurm script for LF"
+    )
 
     parser.add_argument("--ncore", type=int, default=const.LF_DEFAULT_NCORES)
     parser.add_argument("--auto", nargs="?", type=str, const=True)
-    parser.add_argument('--account', type=str, default=const.DEFAULT_ACCOUNT)
-    parser.add_argument('--srf', type=str, default=None)
+    parser.add_argument("--account", type=str, default=const.DEFAULT_ACCOUNT)
+    parser.add_argument("--srf", type=str, default=None)
     parser.add_argument(
         "--machine",
         type=str,

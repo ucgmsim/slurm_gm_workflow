@@ -13,6 +13,7 @@ from shared_workflow.shared import confirm, set_wct, submit_sl_script, resolve_h
 # default values
 default_wct = "00:30:00"
 
+
 def write_sl_script(
     hf_sim_dir,
     sim_dir,

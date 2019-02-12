@@ -88,10 +88,7 @@ def submit_im_calc_slurm(sim_dir: str, options_dict: Dict = None):
     partition_name = get_partition(options_dict["machine"], wct)
 
     # Header
-    j2_env = Environment(
-        loader=FileSystemLoader(sim_dir),
-        trim_blocks=True,
-    )
+    j2_env = Environment(loader=FileSystemLoader(sim_dir), trim_blocks=True)
     header = j2_env.get_template(const.HEADER_TEMPLATE).render(
         version=options_dict[SlHdrOptConsts.description.value],
         job_description=options_dict[SlHdrOptConsts.description.value],
