@@ -14,9 +14,9 @@ fi
 #provided 2 args. start=$1, end=$2
 if [[ $# -gt 1 ]]; then
     end_days_ago=`echo $2 | bc`
-    end_date=`date --date="$end_days_ago days ago" $date_pattern`
+    end_date=`date --date="$((end_days_ago-1)) days ago" $date_pattern`
 else
-    end_date=`date $date_pattern`
+    end_date=`date $date_pattern --date tomorrow`
 fi
 
 start_days_ago=`echo $1 | bc`
