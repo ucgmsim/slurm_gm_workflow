@@ -26,7 +26,7 @@ if [[ $? == 0 ]]; then
     fi
 
     #save meta data
-    python $gmsim/workflow/metadata/log_metadata.py {{sim_dir}} LF cores=$SLURM_NTASKS start_time=$start_time end_time=$end_time
+    python $gmsim/workflow/metadata/log_metadata.py {{sim_dir}} EMOD3D cores=$SLURM_NTASKS start_time=$start_time end_time=$end_time
 else
     echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} EMOD3D failed --run_name {{srf_name}} --error '$res' --force " >> {{mgmt_db_location}}/mgmt_db_queue/$timestamp\_$SLURM_JOBID   
 fi

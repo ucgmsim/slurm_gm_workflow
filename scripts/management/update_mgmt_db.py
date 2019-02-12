@@ -5,6 +5,7 @@ A script that updates a slurm mgmt db and updates the status of a task
 """
 
 import argparse
+import qcore.constants
 from scripts.management import db_helper
 
 
@@ -83,7 +84,8 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('run_folder', type=str, 
                         help="folder to the collection of runs on Kupe")
-    parser.add_argument('process', choices=db_helper.enum_to_list(db_helper.Process))
+    parser.add_argument('process', choices=db_helper.enum_to_list(
+        qcore.constants.ProcessType))
     parser.add_argument('status', type=str, choices=db_helper.enum_to_list(db_helper.State))
     parser.add_argument('-r', '--run_name', type=str,
                         help='name of run to be updated')

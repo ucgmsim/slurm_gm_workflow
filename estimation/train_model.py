@@ -18,7 +18,7 @@ from argparse import ArgumentParser
 from sklearn.preprocessing import StandardScaler
 
 from estimation.model import NNWcEstModel
-from metadata.agg_json_data import MetaConst
+from qcore.constants import MetadataField
 
 CONFIG_INPUT_COLS_KEY = "input_cols"
 CONFIG_TARGET_COL_KEY = "target_col"
@@ -120,7 +120,7 @@ def main(args):
     if args.fake_n_cores is not None:
         # Check that number of cores is actually an input feature
         col_names = [col_path[1] for col_path in input_data_cols]
-        if MetaConst.n_cores.value not in col_names:
+        if MetadataField.n_cores.value not in col_names:
             print("Number of cores is not one of the input features, ignoring "
                   "fake_n_cores argument!")
         else:
@@ -130,7 +130,7 @@ def main(args):
             for cur_n_cores in args.fake_n_cores:
                 # Generate the fake data
                 X_new, y_new = gen_fake_ncores_data(
-                    X, y, col_names.index(MetaConst.n_cores.value),
+                    X, y, col_names.index(MetadataField.n_cores.value),
                     cur_n_cores)
                 new_X_data.append(X_new)
                 new_y_data.append(y_new)

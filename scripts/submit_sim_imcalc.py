@@ -7,19 +7,12 @@ from datetime import datetime
 
 from jinja2 import Environment, FileSystemLoader
 
+import qcore.constants as const
 from qcore import utils, shared
 from qcore.config import host
 from typing import Dict
 from estimation.estimate_wct import est_IM_chours_single
 from shared_workflow.shared import submit_sl_script, set_wct, confirm, get_partition
-
-IM_CALC_DEFAULT_N_PROCESSES = 40
-IM_CALC_COMPONENTS = ["geom", "000", "090", "ver", "ellipsis"]
-
-IM_CALC_TEMPLATE_NAME = "sim_im_calc.sl.template"
-HEADER_TEMPLATE = "slurm_header.cfg"
-
-SL_SCRIPT_NAME = "sim_im_calc_{}.sl"
 
 
 class SlHdrOptConsts(Enum):
@@ -55,8 +48,8 @@ DEFAULT_OPTIONS = {
     SlHdrOptConsts.n_tasks.value: 1,
     SlHdrOptConsts.version.value: "slurm",
     # Body
-    SlBodyOptConsts.component.value: IM_CALC_COMPONENTS[0],
-    SlBodyOptConsts.n_procs.value: IM_CALC_DEFAULT_N_PROCESSES,
+    SlBodyOptConsts.component.value: const.IM_CALC_COMPONENTS[0],
+    SlBodyOptConsts.n_procs.value: const.IM_CALC_DEFAULT_N_PROCESSES,
     SlBodyOptConsts.extended.value: False,
     SlBodyOptConsts.simple_out.value: False,
     "auto": False,
@@ -64,6 +57,12 @@ DEFAULT_OPTIONS = {
 
 
 def submit_im_calc_slurm(sim_dir: str, options_dict: Dict = None):
+    """Creates the IM calc slurm scrip, also submits if specified
+
+    The options_dict is populated by the DEFAULT_OPTIONS, values can be changed by
+    passing in a dict containing the entries that require changing. Merges the
+    two dictionaries, the passed in one has higher priority.
+    """
     # Load the yaml params if they haven't been loaded already
     params = utils.load_sim_params(
         os.path.join(sim_dir, "sim_params.yaml"), load_vm=False
@@ -89,8 +88,11 @@ def submit_im_calc_slurm(sim_dir: str, options_dict: Dict = None):
     partition_name = get_partition(options_dict["machine"], wct)
 
     # Header
-    j2_env = Environment(loader=FileSystemLoader(sim_dir), trim_blocks=True)
-    header = j2_env.get_template(HEADER_TEMPLATE).render(
+    j2_env = Environment(
+        loader=FileSystemLoader(sim_dir),
+        trim_blocks=True,
+    )
+    header = j2_env.get_template(const.HEADER_TEMPLATE).render(
         version=options_dict[SlHdrOptConsts.description.value],
         job_description=options_dict[SlHdrOptConsts.description.value],
         job_name="{}_{}".format(
@@ -106,7 +108,7 @@ def submit_im_calc_slurm(sim_dir: str, options_dict: Dict = None):
         additional_lines=options_dict[SlHdrOptConsts.additional.value],
     )
 
-    body = j2_env.get_template(IM_CALC_TEMPLATE_NAME).render(
+    body = j2_env.get_template(const.IM_SIM_CALC_TEMPLATE_NAME).render(
         component=options_dict[SlBodyOptConsts.component.value],
         sim_dir=sim_dir,
         sim_name=sim_name,
@@ -118,7 +120,7 @@ def submit_im_calc_slurm(sim_dir: str, options_dict: Dict = None):
     )
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    script = os.path.join(sim_dir, SL_SCRIPT_NAME.format(timestamp))
+    script = os.path.join(sim_dir, const.IM_SIM_SL_SCRIPT_NAME.format(timestamp))
 
     # Write the script
     with open(script, "w") as f:
@@ -144,10 +146,10 @@ def submit_im_calc_slurm(sim_dir: str, options_dict: Dict = None):
 
 
 def main(args):
-    if not args.comp in IM_CALC_COMPONENTS:
+    if not args.comp in const.IM_CALC_COMPONENTS:
         parser.error(
             "Velocity component must be in {}, where ellipsis means calculating "
-            "all components".format(IM_CALC_COMPONENTS)
+            "all components".format(const.IM_CALC_COMPONENTS)
         )
 
     script = submit_im_calc_slurm(
@@ -176,7 +178,7 @@ if __name__ == "__main__":
         "--n_procs",
         type=int,
         help="Number of processes to use",
-        default=IM_CALC_DEFAULT_N_PROCESSES,
+        default=const.IM_CALC_DEFAULT_N_PROCESSES,
     )
     parser.add_argument(
         "-e",
@@ -195,9 +197,9 @@ if __name__ == "__main__":
     parser.add_argument(
         "-c",
         "--comp",
-        default=IM_CALC_COMPONENTS[0],
+        default=const.IM_CALC_COMPONENTS[0],
         help="specify which velocity component to calculate. choose from {}. Default is {}".format(
-            IM_CALC_COMPONENTS, IM_CALC_COMPONENTS[0]
+            const.IM_CALC_COMPONENTS, const.IM_CALC_COMPONENTS[0]
         ),
     )
     parser.add_argument(
