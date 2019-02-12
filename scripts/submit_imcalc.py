@@ -23,7 +23,7 @@ from jinja2 import Template, Environment, FileSystemLoader
 
 import im_calc_checkpoint as checkpoint
 from qcore import utils, shared
-from estimation.estimate_WC import get_IM_comp_count, est_IM_chours_single
+from estimation.estimate_wct import get_IM_comp_count, est_IM_chours_single
 from shared_workflow.shared import exe, submit_sl_script, update_db_cmd, set_wct
 
 timestamp_format = "%Y%m%d_%H%M%S"
@@ -346,9 +346,6 @@ def main():
 
     args = parser.parse_args()
 
-    # Load the yaml params
-    params = utils.load_sim_params("sim_params.yaml")
-
     if args.srf_dir is not None:
         utils.setup_dir(args.rrup_out_dir)
 
@@ -372,13 +369,24 @@ def main():
         sim_waveform_dirs = checkpoint.checkpoint_wrapper(
             args.sim_dir, sim_waveform_dirs, "s"
         )
-        sim_run_names = list(map(os.path.basename, map(os.path.dirname, sim_waveform_dirs)))
+        sim_run_names = list(
+            map(os.path.basename, map(os.path.dirname, sim_waveform_dirs))
+        )
         sim_faults = list(map(get_fault_name, sim_run_names))
         sim_dirs = list(zip(sim_waveform_dirs, sim_run_names, sim_faults))
 
         # Does not overwrite user-specified time
         wct = args.time
+
+        # If several identifiers are given, then it is assumed that they
+        # are all from the same fault
         if args.auto or args.time == TIME:
+            # Load the yaml params
+            params = utils.load_sim_params(
+                os.path.join(args.sim_dir, args.identifiers[0], "sim_params.yaml"),
+                load_vm=False,
+            )
+
             print("Running wall clock estimation for IM sim")
             est_core_hours, est_run_time = est_IM_chours_single(
                 len(shared.get_stations(params.FD_STATLIST)),

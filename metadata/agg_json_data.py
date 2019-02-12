@@ -19,7 +19,7 @@ from enum import Enum
 from multiprocessing import Pool
 from argparse import ArgumentParser
 
-from estimation.estimate_WC import get_IM_comp_count
+from estimation.estimate_wct import get_IM_comp_count
 
 DATE_COLUMNS = ["end_time", "start_time", "submit_time"]
 DATETIME_FMT = "%Y-%m-%d_%H:%M:%S"
@@ -36,17 +36,24 @@ class MetaConst(Enum):
     nx = "nx"
     ny = "ny"
     nz = "nz"
+    start_time = "start_time"
+    end_time = "end_time"
 
     im_pSA_count = "pSA_count"
     im_comp = "im_components"
     im_comp_count = "im_components_count"
 
 
-class SimTypeConst(Enum):
+class ProcTypeConst(Enum):
     BB = "BB"
     HF = "HF"
     LF = "LF"
     IM = "IM_calc"
+    POST_EMOD3D = "POST_EMOD3D"
+
+    @classmethod
+    def has_value(cls, value):
+        return any(value == item.value for item in cls)
 
 
 def create_dataframe(json_file):
@@ -102,7 +109,7 @@ def get_row_data(data_dict, column_paths):
     for rel_key in data_dict.keys():
         cur_row_data = []
         for sim_key, val_key in column_paths:
-            # Check that the sim type (HF, BB, LF) exists for this realisation
+            # Check that the sim type (HF, BB, LF, IM_calc) exists for this realisation
             if sim_key in data_dict[rel_key].keys():
                 # Check that this value key exists and save
                 if val_key in data_dict[rel_key][sim_key]:
@@ -120,7 +127,7 @@ def clean_df(df):
     """Cleans column of interests,
     and attempts to convert columns to numeric data type (float)"""
     # Iterate BB, HF, LF
-    for sim_type_const in SimTypeConst:
+    for sim_type_const in ProcTypeConst:
         sim_type = sim_type_const.value
 
         if sim_type in df.columns.levels[0].values:
@@ -142,7 +149,7 @@ def clean_df(df):
                     )
                 # Count the number of components calculated
                 elif meta_col == MetaConst.im_comp.value:
-                    df.loc[:, (sim_type, meta_col)] = [
+                    df.loc[:, (sim_type, MetaConst.im_comp_count.value)] = [
                         get_IM_comp_count_from_str(str_list, real)
                         for real, str_list in df.loc[
                             :, (sim_type, meta_col)
@@ -224,7 +231,7 @@ def main(args):
 
         # Calculate the core hours for each simulation type
         if args.calc_core_hours:
-            for sim_type in SimTypeConst:
+            for sim_type in ProcTypeConst:
                 if sim_type.value in result_df.columns.levels[0].values:
                     cur_df = result_df.loc[:, sim_type.value]
 

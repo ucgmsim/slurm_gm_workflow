@@ -1,14 +1,11 @@
 #!/usr/bin/env python
 import os
-from subprocess import check_call
 import sys
-import os.path
+from subprocess import check_call
 
 sys.path.append(os.path.abspath(os.path.curdir))
-from shared_workflow.shared import *
-from shared_workflow import load_config as ldcfg
-workflow_config = ldcfg.load(os.path.dirname(os.path.realpath(__file__)),"workflow_config.json")
-tools_path = workflow_config['tools_path']
+from qcore import binary_version
+
 
 try:
     from params import *
@@ -26,7 +23,7 @@ except ImportError:
             print "Error: params_vel.py is missing"
             sys.exit()
         else:
-            gen_model_cords_bin = os.path.join(tools_path, 'gen_model_cords')
+            gen_model_cords_bin = binary_version.get_unversioned_bin('gen_model_cords')
 
 
 #variables that cannot be found in params_base.py

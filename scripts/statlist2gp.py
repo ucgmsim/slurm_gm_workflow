@@ -1,6 +1,8 @@
 #!/usr/bin/env python
-from qcore.geo import *
-from shared_workflow.shared import *
+import os
+import sys
+from qcore import geo
+from shared_workflow import shared
 
 sys.path.append(os.path.abspath(os.path.curdir))
 
@@ -14,7 +16,7 @@ def main(sim_params_dict, vm_params_dict, stat_file='default.ll', debug=False):
     ny = vm_params_dict['ny']
     sim_dir = sim_params_dict['sim_dir']
     sufx = vm_params_dict['sufx']
-    verify_strings([MODEL_LAT, MODEL_LON, MODEL_ROT, hh, nx, ny, sim_dir, sufx])
+    shared.verify_strings([MODEL_LAT, MODEL_LON, MODEL_ROT, hh, nx, ny, sim_dir, sufx])
 
     outpath = sim_dir
     filename = 'fd%s' % sufx
@@ -41,12 +43,12 @@ def main(sim_params_dict, vm_params_dict, stat_file='default.ll', debug=False):
     hh = float(hh)
 
     # retrieve in station names, latitudes and longitudes
-    sname, slat, slon = get_stations(ll_in, locations=True)
+    sname, slat, slon = shared.get_stations(ll_in, locations=True)
     slon = list(map(float, slon))
     slat = list(map(float, slat))
 
     # convert ll to grid points
-    xy = ll2gp_multi(list(map(list, zip(slon, slat))),
+    xy = geo.ll2gp_multi(list(map(list, zip(slon, slat))),
                      mlon, mlat, mrot, nx, ny, hh, keep_outside=True)
 
     # store gridpoints and names if unique position
@@ -73,7 +75,7 @@ def main(sim_params_dict, vm_params_dict, stat_file='default.ll', debug=False):
 
     # convert unique grid points back to ll
     # warning: modifies sxy
-    ll = gp2ll_multi(sxy, mlat, mlon, mrot, nx, ny, hh)
+    ll = geo.gp2ll_multi(sxy, mlat, mlon, mrot, nx, ny, hh)
 
     # create ll file
     with open(ll_out, 'w') as llf:
