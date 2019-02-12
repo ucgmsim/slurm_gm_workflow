@@ -21,6 +21,15 @@ from scripts.submit_sim_imcalc import submit_im_calc_slurm, SlBodyOptConsts
 default_n_runs = 12
 default_1d_mod = "/nesi/transit/nesi00213/VelocityModel/Mod-1D/Cant1D_v2-midQ_leer.1d"
 
+job_run_machine = {
+    const.ProcessType.EMOD3D.value: "maui",
+    const.ProcessType.merge_ts.value: "mahuika",
+    const.ProcessType.winbin_aio.value: "maui",
+    const.ProcessType.HF.value: "maui",
+    const.ProcessType.BB.value: "maui",
+    const.ProcessType.IM_calculation.value: "maui",
+}
+
 
 def submit_task(
     sim_dir,
@@ -61,6 +70,7 @@ def submit_task(
             srf=run_name,
             ncore=const.LF_DEFAULT_NCORES,
             account=const.DEFAULT_ACCOUNT,
+            machine=job_run_machine[const.ProcessType.EMOD3D.value],
         )
         print("Submit EMOD3D arguments: ", args)
         submit_lf_main(args)
@@ -77,6 +87,7 @@ def submit_task(
             winbin_aio=False,
             srf=run_name,
             account=const.DEFAULT_ACCOUNT,
+            machine=job_run_machine[const.ProcessType.merge_ts.value],
         )
         print("Submit post EMOD3D (merge_ts) arguments: ", args)
         submit_post_lf_main(args)
@@ -98,6 +109,7 @@ def submit_task(
                 merge_ts=False,
                 srf=run_name,
                 account=const.DEFAULT_ACCOUNT,
+            machine=job_run_machine[const.ProcessType.winbin_aio.value],
             )
             print("Submit post EMOD3D (winbin_aio) arguments: ", args)
             submit_post_lf_main(args)
@@ -113,6 +125,7 @@ def submit_task(
             version=const.HF_DEFAULT_VERSION,
             site_specific=None,
             account=const.DEFAULT_ACCOUNT,
+            machine=job_run_machine[const.ProcessType.HF.value],
             debug=False,
         )
         print("Submit HF arguments: ", args)
@@ -127,6 +140,7 @@ def submit_task(
             srf=run_name,
             version=const.BB_DEFAULT_VERSION,
             account=const.DEFAULT_ACCOUNT,
+            machine=job_run_machine[const.ProcessType.BB.value],
             ascii=False,
         )
         print("Submit BB arguments: ", args)
@@ -140,6 +154,7 @@ def submit_task(
             SlBodyOptConsts.extended.value: True if extended_period else False,
             SlBodyOptConsts.simple_out.value: True,
             "auto": True,
+            "machine": job_run_machine[const.ProcessType.IM_calculation.value],
         }
         submit_im_calc_slurm(sim_dir=sim_dir, options_dict=options_dict)
         print("Submit IM calc arguments: ", options_dict)
