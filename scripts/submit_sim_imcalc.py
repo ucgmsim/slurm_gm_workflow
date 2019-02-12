@@ -53,7 +53,7 @@ DEFAULT_OPTIONS = {
     SlBodyOptConsts.extended.value: False,
     SlBodyOptConsts.simple_out.value: False,
     "auto": False,
-    "machine": host
+    "machine": host,
 }
 
 

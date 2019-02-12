@@ -109,7 +109,7 @@ def submit_task(
                 merge_ts=False,
                 srf=run_name,
                 account=const.DEFAULT_ACCOUNT,
-            machine=job_run_machine[const.ProcessType.winbin_aio.value],
+                machine=job_run_machine[const.ProcessType.winbin_aio.value],
             )
             print("Submit post EMOD3D (winbin_aio) arguments: ", args)
             submit_post_lf_main(args)
@@ -188,6 +188,7 @@ def submit_task(
 
         if proc_type == const.ProcessType.Verification.value:
             pass
+
 
 # TODO: Requires updating, currently not working
 # def check_params_uncertain(params_uncertain_path):
