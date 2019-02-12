@@ -21,12 +21,20 @@ if [[ $? != 0 ]]; then
     exit 1
 fi
 
-rlog_count=$(expr 0) 
+rlog_count=$(expr 0)
+rlog_check=0
 for rlog in *;
 do
+
+    seisFile=${rlog//-0/_seis-0}
+    seisFile="../OutBin/${seisFile/%.rlog/.e3d}"
+
+    xytsFile=${rlog//-0/_xyts-0}
+    xytsFile="../OutBin/${xytsFile/%.rlog/.e3d}"
+
     rlog_count=`expr $rlog_count + 1`
     grep "IS FINISHED" $rlog >>/dev/null
-    if [[ $? == 0 ]];
+    if [[ $? == 0 ]] && [[ -f "$seisFile" ]] && [[ -f "$xytsFile" ]];
     then
         rlog_check=0
 #            echo "rlog =1"
@@ -35,7 +43,7 @@ do
 #        echo "$rlog not finsihed"
         break
 
-    fi
+fi
 done
 
 if [[ $rlog_check == 0 ]];
