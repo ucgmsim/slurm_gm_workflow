@@ -1,9 +1,18 @@
 #!/usr/bin/env python3
-import os
-import subprocess
+
+"""
+polls core hour usage data from hpc and save to hypocentre.
+User must log into hypocentre first and
+ssh to maui/maui and
+have the socket open.
+"""
+
 import argparse
 import getpass
+import os
+import subprocess
 from datetime import datetime
+
 from qcore import utils
 
 MAX_NODES = 264
@@ -15,6 +24,14 @@ OUT_DIR = os.path.join('/home/yzh231/', 'CH_usage')
 
 
 def run_dashboard_cmds(user, hpc, period, out_dir):
+    """
+    polls data from hoc and save to hypocentre
+    :param user: hoc user name
+    :param hpc: hoc name
+    :param period: integer indicating days for the CH usage to coveruy
+    :param out_dir: path to save output
+    :return:
+    """
     ssh_cmd = "ssh {}@{}".format(user, hpc)
 
     # time = datetime.now().strftime(TIME_FORMAT)
