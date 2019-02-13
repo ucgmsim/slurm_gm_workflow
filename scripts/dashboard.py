@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 """
-polls core hour usage data from hpc and save to hypocentre.
+pulls core hour usage data from hpc and save to hypocentre.
 User must log into hypocentre first and
 ssh to maui/maui and
 have the socket open.
@@ -25,7 +25,7 @@ OUT_DIR = os.path.join('/home/yzh231/', 'CH_usage')
 
 def run_dashboard_cmds(user, hpc, period, out_dir):
     """
-    polls data from hpc and save to hypocentre
+    pulls data from hpc and save to hypocentre
     :param user: hoc user name
     :param hpc: hoc name
     :param period: integer indicating days for the CH usage to coveruy
