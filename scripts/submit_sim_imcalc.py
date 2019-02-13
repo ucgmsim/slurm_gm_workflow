@@ -97,7 +97,7 @@ def submit_im_calc_slurm(sim_dir: str, options_dict: Dict = None):
     ]
 
     for pattern, value in replace_t:
-        template = template.replace(pattern, value)
+        template = template.replace(pattern, str(value))
 
     # slurm header
     header = resolve_header(
