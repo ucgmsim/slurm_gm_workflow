@@ -4,12 +4,10 @@ import os
 import glob
 import argparse
 
-from qcore import utils, config
+from qcore import utils
+from qcore import binary_version
 import qcore.constants as const
-from shared_workflow import shared
-
-# TODO: remove this once temp_shared is gone
-from scripts.temp_shared import resolve_header
+from shared_workflow.shared import confirm, submit_sl_script, resolve_header
 
 
 merge_ts_name_prefix = "post_emod3d_merge_ts"
@@ -46,7 +44,7 @@ def write_sl_script_merge_ts(
         # TODO: the merge_ts binary needed to use relative path instead
         #  of absolute, maybe fix this
         ("{{lf_sim_dir}}", os.path.relpath(lf_sim_dir, sim_dir)),
-        ("{{tools_dir}}", os.path.join(tools_dir, 'merge_tsP3_par')),
+        ("{{tools_dir}}", tools_dir),
         ("{{mgmt_db_location}}", mgmt_db_location),
         ("{{sim_dir}}", sim_dir),
         ("{{srf_name}}", rup_mod)
@@ -118,7 +116,7 @@ def write_sl_script_winbin_aio(
 
 def main(args):
     params = utils.load_sim_params('sim_params.yaml')
-    submit_yes = True if args.auto else shared.confirm("Also submit the job for you?")
+    submit_yes = True if args.auto else confirm("Also submit the job for you?")
 
     # get the srf(rup) name without extensions
     srf_name = os.path.splitext(os.path.basename(params.srf_file))[0]
@@ -134,11 +132,11 @@ def main(args):
             args.merge_ts, args.winbin_aio = True, True
 
         if args.merge_ts:
-            tools_dir = config.get_tools_dir(bin_name='emod3d', version=params.emod3d.emod3d_version)
+            tools_dir = binary_version.get_unversioned_bin('merge_tsP3_par')
             script = write_sl_script_merge_ts(
                 lf_sim_dir, params.sim_dir, tools_dir,
                 params.mgmt_db_location, srf_name)
-            shared.submit_sl_script(
+            submit_sl_script(
                 script, "merge_ts", "queued", params.mgmt_db_location,
                 srf_name, const.timestamp, submit_yes=submit_yes)
 
@@ -147,7 +145,7 @@ def main(args):
             script = write_sl_script_winbin_aio(
                 lf_sim_dir, params.sim_dir, params.mgmt_db_location,
                 srf_name)
-            shared.submit_sl_script(
+            submit_sl_script(
                 script, "winbin_aio", "queued", params.mgmt_db_location,
                 srf_name, const.timestamp, submit_yes=submit_yes)
 

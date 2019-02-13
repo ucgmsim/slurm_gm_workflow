@@ -4,16 +4,13 @@ import os
 import os.path
 import argparse
 
-import qcore
 import estimation.estimate_wct as est
 import qcore.constants as const
-from qcore import utils, shared, srf, config
-from shared_workflow.shared import confirm, set_wct, submit_sl_script
-from scripts.temp_shared import resolve_header
+from qcore import utils, shared, srf, binary_version
+from shared_workflow.shared import confirm, set_wct, submit_sl_script, resolve_header
 
 # default values
 default_wct = "00:30:00"
-
 
 def write_sl_script(
     hf_sim_dir,
@@ -49,7 +46,7 @@ def write_sl_script(
             "--dt",
             params.hf.hf_dt,
             "--sim_bin",
-            os.path.join(config.get_tools_dir(bin_name='hf', version=params.hf.hf_version), "hb_high_v5.4.5_binmod"),
+            binary_version.get_hf_binmod(params.hf.hf_version),
         ]
 
         hf_submit_command += " ".join(list(map(str, arguments_for_hf)))
@@ -151,10 +148,10 @@ def main(args):
     # the slurm with same name provided
     if args.srf is None or srf_name == args.srf:
         nt = int(float(params.sim_duration) / float(params.hf.hf_dt))
-        fd_count = len(qcore.shared.get_stations(params.FD_STATLIST))
+        fd_count = len(shared.get_stations(params.FD_STATLIST))
         # TODO:make it read through the whole list
         #  instead of assuming every stoch has same size
-        nsub_stoch, sub_fault_area = qcore.srf.get_nsub_stoch(
+        nsub_stoch, sub_fault_area = srf.get_nsub_stoch(
             params.hf.hf_slip, get_area=True
         )
 

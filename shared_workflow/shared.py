@@ -11,11 +11,12 @@ import os
 import shutil
 import subprocess
 import sys
-import glob
 import re
 import datetime
+import glob
 
-from qcore import config
+from qcore import binary_version
+from qcore.config import host
 
 if sys.version_info.major == 3:
     basestring = str
@@ -109,6 +110,48 @@ def get_vs(source_file):
                 print("Check this line: %d %s" %(i,line), file=sys.stderr)
                 
     return vs
+
+
+def resolve_header(account, n_tasks, wallclock_limit, job_name, version, memory,
+                   exe_time, job_description, partition=None, additional_lines="",
+                   cfg='slurm_header.cfg'):
+
+    if partition is None:
+        partition = get_partition(host, wallclock_limit)
+    with open(cfg) as f:
+        full_text = f.read()
+
+    replacements = [
+        ("{{account}}", account),
+        ("{{job_name}}", job_name),
+        ("{{partition}}", partition),
+        ("{{n_tasks}}", n_tasks),
+        ("{{wallclock_limit}}", wallclock_limit),
+        ("{{version}}", version),
+        ("{{memory}}", memory),
+        ("{{job_description}}", job_description),
+        ("{{mail}}", "test@test.com"),
+        ("{{additional_lines}}", additional_lines),
+        ("{{exe_time}}", exe_time)
+    ]
+
+    for (template_sig, replacement) in replacements:
+        full_text = full_text.replace(template_sig, str(replacement))
+
+    return full_text
+
+
+def get_partition(machine, core_hours=None):
+    if machine == 'maui':
+        partition = "nesi_research"
+    elif machine == 'mahuika':
+        if core_hours and core_hours < 6:
+            partition = "prepost"
+        else:
+            partition = "large"
+    else:
+        partition = ""
+    return partition
 
 
 ################# Verify Section ###################
@@ -582,8 +625,7 @@ def get_site_specific_path(stat_file_path, hf_stat_vs_ref=None, v1d_mod_dir=None
 
 
 def get_hf_run_name(v_mod_1d_name, srf, root_dict, hf_version):
-    tools_dir = config.get_tools_dir(bin_name='hf', version=hf_version)
-    hf_sim_bin = os.path.join(tools_dir, 'hb_high_v5.4.5_np2mm+')
+    hf_sim_bin = binary_version.get_hf_np2mm(hf_version)
     hfVString = 'hf' + os.path.basename(hf_sim_bin).split('_')[-1]
     hf_run_name = "{}_{}_rvf{}_sd{}_k{}".format(
         v_mod_1d_name, hfVString, str(root_dict['hf']['hf_rvfac']),
