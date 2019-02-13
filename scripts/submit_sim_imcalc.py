@@ -5,12 +5,10 @@ import argparse
 from enum import Enum
 from datetime import datetime
 
-from jinja2 import Environment, FileSystemLoader
-
 from qcore import utils, shared
 from typing import Dict
 from estimation.estimate_wct import est_IM_chours_single
-from shared_workflow.shared import submit_sl_script, set_wct, confirm
+from shared_workflow.shared import submit_sl_script, set_wct, confirm, resolve_header
 
 IM_CALC_DEFAULT_N_PROCESSES = 40
 IM_CALC_COMPONENTS = ["geom", "000", "090", "ver", "ellipsis"]
@@ -63,6 +61,11 @@ DEFAULT_OPTIONS = {
 
 
 def submit_im_calc_slurm(sim_dir: str, options_dict: Dict = None):
+    """Creates the IM calc slurm scrip, also submits if specified
+    The options_dict is populated by the DEFAULT_OPTIONS, values can be changed by
+    passing in a dict containing the entries that require changing. Merges the
+    two dictionaries, the passed in one has higher priority.
+    """
     # Load the yaml params if they haven't been loaded already
     params = utils.load_sim_params(
         os.path.join(sim_dir, "sim_params.yaml"), load_vm=False
@@ -85,45 +88,44 @@ def submit_im_calc_slurm(sim_dir: str, options_dict: Dict = None):
         est_run_time, options_dict[SlBodyOptConsts.n_procs.value], options_dict["auto"]
     )
 
-    # Header
-    j2_env = Environment(
-        loader=FileSystemLoader(sim_dir),
-        trim_blocks=True,
-    )
-    header = j2_env.get_template(HEADER_TEMPLATE).render(
-        version=options_dict[SlHdrOptConsts.description.value],
+    with open("sim_im_calc.sl.template", "r") as f:
+        template = f.read()
+
+    replace_t = [
+            ("{{component}}", options_dict[SlBodyOptConsts.component.value]),
+            ("{{sim_dir}}", sim_dir),
+        ("{{sim_name}}", sim_name),
+        ("{{fault_name}}", fault_name),
+        ("{{np}}", options_dict[SlBodyOptConsts.n_procs.value]),
+        ("{{extended}}", "-e" if options_dict[SlBodyOptConsts.extended.value] else ""),
+        ("{{simple}}", "-s" if options_dict[SlBodyOptConsts.simple_out.value] else ""),
+        ("{{mgmt_db_location}}", params.mgmt_db_location)
+    ]
+
+    for pattern, value in replace_t:
+        template = template.replace(pattern, str(value))
+
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+    # slurm header
+    header = resolve_header(
+        options_dict[SlHdrOptConsts.account.value],
+        options_dict[SlHdrOptConsts.n_tasks.value],
+        wct,
+        "{}_{}".format(options_dict[SlHdrOptConsts.job_name_prefix.value], fault_name),
+        options_dict[SlHdrOptConsts.description.value],
+        options_dict[SlHdrOptConsts.memory.value],
+        timestamp,
         job_description=options_dict[SlHdrOptConsts.description.value],
-        job_name="{}_{}".format(
-            options_dict[SlHdrOptConsts.job_name_prefix.value], fault_name
-        ),
-        account=options_dict[SlHdrOptConsts.account.value],
-        n_tasks=options_dict[SlHdrOptConsts.n_tasks.value],
-        wallclock_limit=wct,
-        exe_time="%j",
-        mail="test@test.com",
-        memory=options_dict[SlHdrOptConsts.memory.value],
         additional_lines=options_dict[SlHdrOptConsts.additional.value],
     )
 
-    body = j2_env.get_template(IM_CALC_TEMPLATE_NAME).render(
-        component=options_dict[SlBodyOptConsts.component.value],
-        sim_dir=sim_dir,
-        sim_name=sim_name,
-        fault_name=fault_name,
-        np=options_dict[SlBodyOptConsts.n_procs.value],
-        extended="-e" if options_dict[SlBodyOptConsts.extended.value] else "",
-        simple="-s" if options_dict[SlBodyOptConsts.simple_out.value] else "",
-        mgmt_db_location=params.mgmt_db_location,
-    )
-
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     script = os.path.join(sim_dir, SL_SCRIPT_NAME.format(timestamp))
 
     # Write the script
     with open(script, "w") as f:
         f.write(header)
-        f.write("\n")
-        f.write(body)
+        f.write(template)
 
     submit_yes = (
         True if options_dict["auto"] else confirm("Also submit the job for you?")
@@ -148,7 +150,7 @@ def main(args):
             "all components".format(IM_CALC_COMPONENTS)
         )
 
-    script = submit_im_calc_slurm(
+    submit_im_calc_slurm(
         args.sim_dir,
         {
             SlBodyOptConsts.n_procs.value: args.n_procs,
