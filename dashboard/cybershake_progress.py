@@ -61,7 +61,7 @@ def get_chours(json_file, proc_types: List[str]):
 def get_chours_used(fault_dirs: Iterable[str]):
     """Returns a dataframe containing the core hours used for each of the
     specified faults"""
-    faults, core_hours, r_counts, missing_data = [], [], [], []
+    faults, core_hours, completed_r_counts, missing_data = [], [], [], []
     for fault in fault_dirs:
         fault_name = os.path.basename(fault)
 
@@ -75,17 +75,11 @@ def get_chours_used(fault_dirs: Iterable[str]):
             ]
         ).reshape(-1, len(PROCESS_TYPES))
 
-        if np.any(np.isnan(cur_fault_chours)):
-            print(
-                "Some metadata for fault {} is missing. If the fault is still"
-                "running then this to be expected, otherwise this might "
-                "be worth investigating".format(fault)
-            )
-            missing_data.append(True)
-        else:
-            missing_data.append(False)
+        missing_data.append(np.any(np.isnan(cur_fault_chours)))
 
-        r_counts.append(cur_fault_chours.shape[0])
+        completed_r_counts.append(
+            np.count_nonzero(~np.any(np.isnan(cur_fault_chours), axis=1))
+        )
 
         faults.append(fault_name)
         if cur_fault_chours.shape[0] > 0:
@@ -94,7 +88,7 @@ def get_chours_used(fault_dirs: Iterable[str]):
             core_hours.append([np.nan, np.nan, np.nan])
 
     df = pd.DataFrame(index=faults, data=core_hours, columns=PROCESS_TYPES)
-    df[COMPLETED_R_COUNT_COL] = r_counts
+    df[COMPLETED_R_COUNT_COL] = completed_r_counts
     df[MISSING_DATA_FLAG_COL] = missing_data
 
     return df
@@ -216,10 +210,16 @@ def print_progress(progress_df: pd.DataFrame, cur_fault_ix: int = None):
     else:
         to_print_mask = np.ones(progress_df.shape[0], dtype=bool)
 
-    template_fmt = "{:<15}{:<12}{:<12}{:<12}{:<12}{:<12}"
+    template_fmt = "{:<15}{:<12}{:<12}{:<12}{:<12}{:<20}{:<12}"
     print(
         template_fmt.format(
-            "Fault name", "EMOD3D", "HF", "BB", "Total", "Completed (realisations)"
+            "Fault name",
+            "EMOD3D",
+            "HF",
+            "BB",
+            "Total",
+            "Comp. realisations",
+            "Missing metadata",
         )
     )
     for fault in progress_df.index.values[to_print_mask]:
@@ -234,6 +234,9 @@ def print_progress(progress_df: pd.DataFrame, cur_fault_ix: int = None):
                     progress_df.loc[fault, ("total", COMPLETED_R_COUNT_COL)],
                     progress_df.loc[fault, ("total", R_COUNT_COL)],
                 ),
+                "True"
+                if progress_df.loc[fault, ("total", MISSING_DATA_FLAG_COL)]
+                else "False",
             )
         )
 
@@ -267,9 +270,7 @@ def print_progress(progress_df: pd.DataFrame, cur_fault_ix: int = None):
 
     print(
         "Number of realisations completed: {}/{} - {:.2f}%".format(
-            total_r_completed,
-            total_r_count,
-            (total_r_completed/total_r_count) * 100
+            total_r_completed, total_r_count, (total_r_completed / total_r_count) * 100
         )
     )
 
@@ -306,23 +307,23 @@ def main(args: argparse.Namespace):
                 "are not matching. These have to match, quitting!"
             )
 
+        completed_mask = (
+            progress_df["total", COMPLETED_R_COUNT_COL].values
+            == progress_df["total", R_COUNT_COL].values
+        )
         to_check_mask = (
-            (
-                progress_df["total", COMPLETED_R_COUNT_COL].values
-                != progress_df["total", R_COUNT_COL].values
-            )
-            & (progress_df["total", COMPLETED_R_COUNT_COL].values > 0)
+            completed_mask & (progress_df["total", COMPLETED_R_COUNT_COL].values > 0)
         ).ravel()
 
         # Find last fault that completed
-        completed_fault_ind = np.flatnonzero(~to_check_mask)
+        completed_fault_ind = np.flatnonzero(completed_mask)
         cur_fault_ix = (
             completed_fault_ind.max() if completed_fault_ind.shape[0] > 0 else 0
         )
 
         # Rerun all fault that are not complete + the next 5 faults from
         # the last complete one
-        to_check_mask[cur_fault_ix + 1 : cur_fault_ix + 6] = True
+        to_check_mask[cur_fault_ix : cur_fault_ix + 6] = True
 
         chours_df = get_chours_used(faults[to_check_mask])
 
