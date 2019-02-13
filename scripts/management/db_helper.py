@@ -1,6 +1,5 @@
 import os
 import sqlite3
-from enum import Enum
 
 
 def connect_db(path):
