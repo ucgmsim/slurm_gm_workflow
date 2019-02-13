@@ -13,14 +13,6 @@ def connect_db(path):
 
     return db
 
-
-class State(Enum):
-    created = 1
-    queued = 2
-    running = 3
-    completed = 4
-    failed = 5
-
 class Task:
 
     def __init__(self, process, state, run_name):
