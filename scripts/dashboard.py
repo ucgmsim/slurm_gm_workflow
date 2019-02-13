@@ -25,7 +25,7 @@ OUT_DIR = os.path.join('/home/yzh231/', 'CH_usage')
 
 def run_dashboard_cmds(user, hpc, period, out_dir):
     """
-    polls data from hoc and save to hypocentre
+    polls data from hpc and save to hypocentre
     :param user: hoc user name
     :param hpc: hoc name
     :param period: integer indicating days for the CH usage to coveruy
