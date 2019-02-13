@@ -133,7 +133,7 @@ def resolve_header(account, n_tasks, wallclock_limit, job_name, version,  memory
     ]
 
     for (template_sig, replacement) in replacements:
-        full_text = full_text.replace(template_sig, replacement)
+        full_text = full_text.replace(template_sig, str(replacement))
 
     return full_text
 
