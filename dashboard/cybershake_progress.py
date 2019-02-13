@@ -191,8 +191,14 @@ def load_progress_df(file: str):
     return pd.read_csv(file, index_col=[0], header=[0, 1])
 
 
-def print_progress(progress_df: pd.DataFrame, cur_fault_ix: int):
-    """Prints the progress dataframe in a nice format."""
+def print_progress(progress_df: pd.DataFrame, cur_fault_ix: int = None):
+    """Prints the progress dataframe in a nice format.
+
+    If cur_fault_ix is specified then all uncompleted faults are printed and
+    the latest completed fault with the previous and next five faults.
+
+    Otherwise all faults are printed.
+    """
 
     def get_usage_str(fault: str, proc_type: str):
         return "{:.2f}/{:.2f}".format(
@@ -200,12 +206,15 @@ def print_progress(progress_df: pd.DataFrame, cur_fault_ix: int):
             progress_df.loc[fault, (proc_type, EST_CORE_HOURS_COL)],
         )
 
-    to_print_mask = (
-        progress_df["total", COMPLETED_R_COUNT_COL].values
-        != progress_df["total", R_COUNT_COL].values
-    ) & (progress_df["total", COMPLETED_R_COUNT_COL].values > 0)
+    if cur_fault_ix is not None:
+        to_print_mask = (
+            progress_df["total", COMPLETED_R_COUNT_COL].values
+            != progress_df["total", R_COUNT_COL].values
+        ) & (progress_df["total", COMPLETED_R_COUNT_COL].values > 0)
 
-    to_print_mask[cur_fault_ix - 5 : cur_fault_ix + 6] = True
+        to_print_mask[cur_fault_ix - 5 : cur_fault_ix + 6] = True
+    else:
+        to_print_mask = np.ones(progress_df.shape[0], dtype=bool)
 
     template_fmt = "{:<15}{:<12}{:<12}{:<12}{:<12}{:<12}"
     print(
@@ -336,6 +345,7 @@ def main(args: argparse.Namespace):
         progress_df = get_new_progress_df(
             root_dir, runs_dir, faults, fault_names, r_counts
         )
+        cur_fault_ix = None
 
     # Save the progress df if a temp file is specified
     if args.temp_file is not None:
