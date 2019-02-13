@@ -91,7 +91,7 @@ def get_chours_used(fault_dirs: Iterable[str]):
         if cur_fault_chours.shape[0] > 0:
             core_hours.append(np.nansum(cur_fault_chours, axis=0))
         else:
-            core_hours.append([None, None, None])
+            core_hours.append([np.nan, np.nan, np.nan])
 
     df = pd.DataFrame(index=faults, data=core_hours, columns=PROCESS_TYPES)
     df[COMPLETED_R_COUNT_COL] = r_counts
@@ -161,11 +161,11 @@ def get_new_progress_df(root_dir, runs_dir, faults, fault_names, r_counts):
     )
 
     # Populate progress dataframe with estimation data
-    total = None
+    total = np.nan
     for proc_type in PROCESS_TYPES:
         values = grouped_df[proc_type, const.MetadataField.core_hours.value]
         progress_df[proc_type, EST_CORE_HOURS_COL] = values
-        total = values if total is None else total + values
+        total = values if total is np.nan else total + values
     progress_df["total", EST_CORE_HOURS_COL] = total
     progress_df["total", COMPLETED_R_COUNT_COL] = 0
     progress_df["total", R_COUNT_COL] = r_counts
@@ -175,11 +175,11 @@ def get_new_progress_df(root_dir, runs_dir, faults, fault_names, r_counts):
     chours_df = get_chours_used(faults)
 
     # Add actual data to progress df
-    total = None
+    total = np.nan
     for proc_type in PROCESS_TYPES:
         values = chours_df[proc_type]
         progress_df[proc_type, ACT_CORE_HOURS_COL] = values
-        total = values if total is None else total + values
+        total = values if total is np.nan else total + values
     progress_df["total", ACT_CORE_HOURS_COL] = total
     progress_df["total", COMPLETED_R_COUNT_COL] = chours_df[COMPLETED_R_COUNT_COL]
     progress_df["total", MISSING_DATA_FLAG_COL] = chours_df[MISSING_DATA_FLAG_COL]
