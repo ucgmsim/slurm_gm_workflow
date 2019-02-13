@@ -10,7 +10,7 @@ import shared_workflow.load_config as ldcfg
 from scripts.management.db_helper import connect_db
 import qcore.constants as const
 from scripts.management import slurm_query_status, update_mgmt_db
-from metadata.log_metadata import store_metadata, LOG_FILENAME
+from metadata.log_metadata import store_metadata
 
 from scripts.submit_emod3d import main as submit_lf_main
 from scripts.submit_post_emod3d import main as submit_post_lf_main
@@ -48,7 +48,7 @@ def submit_task(
     if not os.path.isdir(ch_log_dir):
         os.mkdir(ch_log_dir)
     submitted_time = datetime.now().strftime(const.METADATA_TIMESTAMP_FMT)
-    log_file = os.path.join(sim_dir, "ch_log", LOG_FILENAME)
+    log_file = os.path.join(sim_dir, "ch_log", const.METADATA_LOG_FILENAME)
 
     # LF
     # params_uncertain_path = os.path.join(sim_dir, "LF", "params_uncertain.py")
