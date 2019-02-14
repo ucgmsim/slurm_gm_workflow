@@ -8,6 +8,7 @@ Module which contains shared functions/values.
 from __future__ import print_function
 
 import os
+import glob
 import shutil
 import subprocess
 import sys
@@ -17,6 +18,7 @@ import glob
 
 from qcore import binary_version
 from qcore.config import host
+
 
 if sys.version_info.major == 3:
     basestring = str
@@ -111,7 +113,10 @@ def get_vs(source_file):
                 
     return vs
 
-def resolve_header(account, n_tasks, wallclock_limit, job_name, version,  memory, exe_time , job_description, partition=None,  additional_lines="", cfg='slurm_header.cfg'):
+
+def resolve_header(account, n_tasks, wallclock_limit, job_name, version, memory,
+                   exe_time, job_description, partition=None, additional_lines="",
+                   cfg='slurm_header.cfg'):
 
     if partition is None:
         partition = get_partition(host, wallclock_limit)
@@ -372,9 +377,10 @@ def get_input_wc():
 
 
 def set_wct(est_run_time, ncores, auto=False):
-    import estimation.estimate_wct as wc
+    import estimation.estimate_wct as est
+
     print("Estimated time: {} with {} number of cores".format(
-        wc.convert_to_wct(est_run_time), ncores))
+        est.convert_to_wct(est_run_time), ncores))
     if not auto:
         print("Use the estimated wall clock time? (Minimum of 5 mins, "
               "otherwise adds a 10% overestimation to ensure "
@@ -384,7 +390,7 @@ def set_wct(est_run_time, ncores, auto=False):
         use_estimation = True
 
     if use_estimation:
-        wct = wc.get_wct(est_run_time)
+        wct = est.get_wct(est_run_time)
     else:
         wct = str(get_input_wc())
     print("WCT set to: %s" % wct)

@@ -7,6 +7,6 @@
   "activation": "relu",
 
   "n_epochs": 10,
-  "loss": "mae",
+  "loss": "mse",
   "metrics": ["mse", "mae"]
 }

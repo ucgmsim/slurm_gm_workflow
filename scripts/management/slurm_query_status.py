@@ -5,12 +5,13 @@ A script that queries slurm and updates the status of a task in a slurm db
 """
 
 import argparse
+import qcore.constants
 from scripts.management import update_mgmt_db
 from subprocess import Popen, PIPE
 import shlex
 from scripts.management import db_helper
 
-Process = db_helper.Process
+Process = qcore.constants.ProcessType
 
 N_TASKS_TO_RUN = 20
 RETRY_MAX = 2
@@ -87,11 +88,12 @@ def is_task_complete(task, task_list):
 
 def check_dependancy_met(task, task_list):
     process, run_name, status = task
-    process = db_helper.Process(process)
-    if process is Process.EMOD3D or process is Process.HF:
+    process = qcore.constants.ProcessType(process)
+    if process in (Process.EMOD3D, Process.HF, Process.rrup):
         return True
 
-    if process in (Process.merge_ts, Process.winbin_aio, Process.IM_calculation):
+    # If the process has completed the one linearly before it
+    if process in (Process.merge_ts, Process.winbin_aio, Process.IM_calculation, Process.Empirical):
         dependant_task = list(task)
         dependant_task[0] = process.value - 1
         dependant_task[2] = 'completed'
@@ -109,12 +111,14 @@ def check_dependancy_met(task, task_list):
 
 
 def get_runnable_tasks(db, n_runs=N_TASKS_TO_RUN, retry_max=RETRY_MAX):
+    do_verification = False
     db_tasks = get_db_tasks_to_be_run(db, retry_max)
     tasks_to_run = []
     for task in db_tasks:
         status = task[2]
         if status == 'created' and check_dependancy_met(task, db_tasks):
-            tasks_to_run.append(task)
+            if task[0] < Process.rrup.value or do_verification:
+                tasks_to_run.append(task)
         if len(tasks_to_run) >= n_runs:
             break
                 

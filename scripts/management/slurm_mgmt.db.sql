@@ -39,7 +39,9 @@ INSERT OR IGNORE INTO `proc_type_enum` (id,proc_type) VALUES (4,'HF');
 INSERT OR IGNORE INTO `proc_type_enum` (id,proc_type) VALUES (5,'BB');
 INSERT OR IGNORE INTO `proc_type_enum` (id,proc_type) VALUES (6,'IM_calculation');
 INSERT OR IGNORE INTO `proc_type_enum` (id,proc_type) VALUES (7,'IM_plot');
-INSERT OR IGNORE INTO `proc_type_enum` (id,proc_type) VALUES (8,'Empirical');
+INSERT OR IGNORE INTO `proc_type_enum` (id,proc_type) VALUES (8,'rrup');
+INSERT OR IGNORE INTO `proc_type_enum` (id,proc_type) VALUES (9,'Empirical');
+INSERT OR IGNORE INTO `proc_type_enum` (id,proc_type) VALUES (10,'Verification');
 CREATE TABLE IF NOT EXISTS `task_time_log` (
 	`id`	INTEGER NOT NULL UNIQUE,
 	`state_id`	INTEGER,
