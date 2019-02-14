@@ -3,7 +3,6 @@
 import os
 import argparse
 from enum import Enum
-from datetime import datetime
 
 import qcore.constants as const
 from qcore import utils, shared
@@ -112,8 +111,7 @@ def submit_im_calc_slurm(sim_dir: str, options_dict: Dict = None):
         additional_lines=options_dict[SlHdrOptConsts.additional.value],
     )
 
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    script = os.path.join(sim_dir, const.IM_SIM_SL_SCRIPT_NAME.format(timestamp))
+    script = os.path.join(sim_dir, const.IM_SIM_SL_SCRIPT_NAME.format(const.timestamp))
 
     # Write the script
     with open(script, "w") as f:
@@ -129,7 +127,7 @@ def submit_im_calc_slurm(sim_dir: str, options_dict: Dict = None):
         "queued",
         params.mgmt_db_location,
         os.path.splitext(os.path.basename(params.srf_file))[0],
-        timestamp,
+        const.timestamp,
         submit_yes=submit_yes,
     )
 
