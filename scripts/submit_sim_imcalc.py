@@ -83,12 +83,6 @@ def submit_im_calc_slurm(sim_dir: str, options_dict: Dict = None):
         est_run_time, options_dict[SlBodyOptConsts.n_procs.value], options_dict["auto"]
     )
 
-    partition_name = get_partition(options_dict["machine"], wct)
-
-    # Header
-    j2_env = Environment(loader=FileSystemLoader(sim_dir), trim_blocks=True)
-    header = j2_env.get_template(const.HEADER_TEMPLATE).render(
-        version=options_dict[SlHdrOptConsts.description.value],
     with open("sim_im_calc.sl.template", "r") as f:
         template = f.read()
 
@@ -117,6 +111,7 @@ def submit_im_calc_slurm(sim_dir: str, options_dict: Dict = None):
         const.timestamp,
         job_description=options_dict[SlHdrOptConsts.description.value],
         additional_lines=options_dict[SlHdrOptConsts.additional.value],
+        target_host=options_dict["machine"]
     )
 
     script = os.path.join(sim_dir, const.IM_SIM_SL_SCRIPT_NAME.format(const.timestamp))
