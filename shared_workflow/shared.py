@@ -447,7 +447,9 @@ def submit_sl_script(script, process, status, mgmt_db_loc, srf_name,
             res = exe("sbatch {}".format(script), debug=False)
         if len(res[1]) == 0:
             # no errors, return the job id
-            jobid = res[0].split()[-1]
+            return_words = res[0].split()
+            job_index = return_words.index('job')
+            jobid = return_words[job_index+1]
             try:
                 int(jobid)
             except ValueError:
