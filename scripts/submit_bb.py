@@ -31,7 +31,7 @@ def write_sl_script(
     if binary:
         create_directory = "mkdir -p " + os.path.join(bb_sim_dir, "Acc") + "\n"
         submit_command = (
-            create_directory + "srun python $gmsim/workflow" "/scripts/bb_sim.py "
+            create_directory + "srun python $gmsim/workflow/scripts/bb_sim.py "
         )
         arguments = [
             os.path.join(sim_dir, "LF", "OutBin"),
