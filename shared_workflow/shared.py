@@ -440,9 +440,8 @@ def submit_sl_script(script, process, status, mgmt_db_loc, srf_name,
     """Submits the slurm script and updates the management db"""
     if submit_yes:
         print("Submitting %s" % script)
-        actual_machine_name = get_machine_true_name(target_machine)
         if target_machine:
-            res = exe("sbatch --export=NONE -M {} {}".format(actual_machine_name, script), debug=False)
+            res = exe("sbatch --export=NONE -M {} {}".format(target_machine, script), debug=False)
         else:
             res = exe("sbatch {}".format(script), debug=False)
         if len(res[1]) == 0:
@@ -649,12 +648,4 @@ def get_hf_run_name(v_mod_1d_name, srf, root_dict, hf_version):
     #    yes = confirm_name(hf_run_name)
     yes = True
     return yes, hf_run_name
-
-
-def get_machine_true_name(alias):
-    if alias=="maui":
-        return "maui01"
-    if alias=="mahuika":
-        return "mahuika"
-    return alias
 
