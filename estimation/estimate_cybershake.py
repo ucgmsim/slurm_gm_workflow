@@ -37,7 +37,17 @@ def get_faults(vms_dir, sources_dir, runs_dir, args):
         Assumes that the directories exists, no checking is done.
         """
         return np.asarray(
-            [np.asarray(os.listdir(os.path.join(path, fault))) for fault in faults]
+            [
+                np.asarray(
+                    [
+                        entry
+                        for entry in os.listdir(os.path.join(path, fault))
+                        if os.path.isdir(os.path.join(path, fault, entry))
+                        and fault in entry
+                    ]
+                )
+                for fault in faults
+            ]
         )
 
     faults_df = (
