@@ -24,6 +24,7 @@ def write_sl_script(
     nb_cpus=const.LF_DEFAULT_NCORES,
     memory=const.DEFAULT_MEMORY,
     account=const.DEFAULT_ACCOUNT,
+    machine=host,
 ):
     """Populates the template and writes the resulting slurm script to file"""
     workflow_config = load_config.load(
@@ -58,6 +59,7 @@ def write_sl_script(
         const.timestamp,
         job_description="emod3d slurm script",
         additional_lines="#SBATCH --hint=nomultithread",
+        target_host=machine,
     )
 
     fname_slurm_script = "run_emod3d_%s_%s.sl" % (srf_name, const.timestamp)
