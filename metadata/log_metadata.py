@@ -21,8 +21,7 @@ from qcore import utils
 from qcore.srf import get_nsub_stoch
 
 METADATA_VALUES = "metadata_values"
-LOG_FILENAME = "metadata_log.json"
-LOCK_FILENAME = "{}.lock".format(LOG_FILENAME)
+LOCK_FILENAME = "{}.lock".format(const.METADATA_LOG_FILENAME)
 
 METACONST_TO_ADD = [MetadataField.run_time.value]
 
@@ -199,7 +198,7 @@ def store_metadata(
 
 def main(args):
     # This should come from constants
-    log_dir = os.path.join(args.sim_dir, "ch_log", LOG_FILENAME)
+    log_dir = os.path.join(args.sim_dir, "ch_log", const.METADATA_LOG_FILENAME)
 
     metadata_dict = getattr(args, METADATA_VALUES)
 

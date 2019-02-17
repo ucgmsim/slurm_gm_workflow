@@ -8,7 +8,6 @@ Module which contains shared functions/values.
 from __future__ import print_function
 
 import os
-import glob
 import shutil
 import subprocess
 import sys
@@ -18,7 +17,6 @@ import glob
 
 from qcore import binary_version
 from qcore.config import host
-
 
 if sys.version_info.major == 3:
     basestring = str
