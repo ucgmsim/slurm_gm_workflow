@@ -58,19 +58,21 @@ class DashboardDB:
         table = self.get_daily_t_name(hpc)
         day = day.strftime(self.date_format) if type(day) is date else day
         row = cursor.execute(
-            "SELECT * FROM {} WHERE DAY == ?;".format(table), (day,)
+            "SELECT CORE_HOURS_USED, TOTAL_CORE_HOURS FROM {} WHERE DAY == ?;".format(table), (day,)
         ).fetchone()
-
 
         # New day
         update_time = datetime.now()
         if row is None:
             cursor.execute(
                 "INSERT INTO {} VALUES(?, ?, ?, ?)".format(table),
-                (day, None, total_core_usage, update_time),
+                (day, 0, total_core_usage, update_time),
             )
         else:
-            chours_usage = total_core_usage - row[2] if row[2] is not None else None
+            chours_usage =  total_core_usage - row[1] if row[1] is not None else 0
+            if row[0] is not None:
+                chours_usage = row[0] + chours_usage
+
             cursor.execute(
                 "UPDATE {} SET CORE_HOURS_USED = ?, TOTAL_CORE_HOURS = ?, \
                 UPDATE_TIME = ? WHERE DAY == ?;".format(table),
@@ -281,9 +283,9 @@ class TestDashboardDB(unittest.TestCase):
         day_1 = date.today().strftime(DashboardDB.date_format)
         db.update_daily_chours_usage(self.total_core_usage_1, hpc, day_1)
 
-        # Check the entry has been added & daily usage is null
+        # Check the entry has been added & daily usage is zero
         daily_usage, total_core_hours = db.get_daily_chours_usage(day_1, hpc)
-        self.assertIsNone(daily_usage)
+        self.assertEqual(daily_usage, 0)
         self.assertEqual(total_core_hours, self.total_core_usage_1)
 
         # Add 2nd entry for day 1
@@ -300,7 +302,37 @@ class TestDashboardDB(unittest.TestCase):
 
         # Check that new entry has been created for day 2
         daily_usage, total_core_hours = db.get_daily_chours_usage(day_2, hpc)
-        self.assertIsNone(daily_usage)
+        self.assertEqual(daily_usage, 0)
+        self.assertEqual(total_core_hours, self.total_core_usage_2)
+
+    def test_daily_same_total_chours(self):
+        """Tests that when core hours has a value and multiple update calls are made
+        with the same total_core_hours"""
+        db = DashboardDB(self.test_db)
+
+        # Add first entry for the day 1
+        day_1 = date.today().strftime(DashboardDB.date_format)
+        db.update_daily_chours_usage(self.total_core_usage_1, self.hpc_1, day_1)
+
+        # Check the entry has been added & daily usage is null
+        daily_usage, total_core_hours = db.get_daily_chours_usage(day_1, self.hpc_1)
+        self.assertEqual(daily_usage, 0)
+        self.assertEqual(total_core_hours, self.total_core_usage_1)
+
+        # Add 2nd entry for day 1
+        db.update_daily_chours_usage(self.total_core_usage_2, self.hpc_1, day_1)
+
+        # Check that entry for day 1 has been updated correctly
+        daily_usage, total_core_hours = db.get_daily_chours_usage(day_1, self.hpc_1)
+        self.assertEqual(daily_usage, self.total_core_usage_2 - self.total_core_usage_1)
+        self.assertEqual(total_core_hours, self.total_core_usage_2)
+
+        # Add 2nd entry for day 1 again
+        db.update_daily_chours_usage(self.total_core_usage_2, self.hpc_1, day_1)
+
+        # Check that nothing has changed
+        daily_usage, total_core_hours = db.get_daily_chours_usage(day_1, self.hpc_1)
+        self.assertEqual(daily_usage, self.total_core_usage_2 - self.total_core_usage_1)
         self.assertEqual(total_core_hours, self.total_core_usage_2)
 
     @classmethod
