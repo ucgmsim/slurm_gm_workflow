@@ -105,8 +105,8 @@ def get_faults_and_r_count(cybershake_list: str):
         fault_names.append(line_l[0].strip())
 
         try:
-            r_counts.append(int(line_l[1].strip().rstrip("r")))
-        except ValueError as ex:
+            r_counts.append(int(line_l[1].strip().rstrip("RrNnKk")))
+        except ValueError:
             print(
                 "Failed to read line {} of cybershake list. Need to know"
                 "the number of realisations for each fault, quitting!".format(ix + 1)
@@ -240,25 +240,24 @@ def print_progress(progress_df: pd.DataFrame, cur_fault_ix: int = None):
             )
         )
 
-    lf_act = progress_df[const.ProcessType.EMOD3D.str_value, ACT_CORE_HOURS_COL].sum()
-    lf_est = progress_df[const.ProcessType.EMOD3D.str_value, EST_CORE_HOURS_COL].sum()
-    hf_act = progress_df[const.ProcessType.HF.str_value, ACT_CORE_HOURS_COL].sum()
-    hf_est = progress_df[const.ProcessType.HF.str_value, EST_CORE_HOURS_COL].sum()
-    bb_act = progress_df[const.ProcessType.BB.str_value, ACT_CORE_HOURS_COL].sum()
-    bb_est = progress_df[const.ProcessType.BB.str_value, EST_CORE_HOURS_COL].sum()
-    act_total = lf_act + hf_act + bb_act
-    est_total = lf_est + hf_est + bb_est
+    overall_df = progress_df.sum()
+    act_total = overall_df[
+        [(proc_type, ACT_CORE_HOURS_COL) for proc_type in PROCESS_TYPES]
+    ].sum()
+    est_total = overall_df[
+        [(proc_type, EST_CORE_HOURS_COL) for proc_type in PROCESS_TYPES]
+    ].sum()
 
     print("\nOverall progress")
     print(
         "EMOD3D: {:.2f}/{:.2f}, BB {:.2f}/{:.2f}, "
         "HF {:.2f}/{:.2f}, Total {:.2f}/{:.2f} - {:.2f}%".format(
-            lf_act,
-            lf_est,
-            hf_act,
-            hf_est,
-            bb_act,
-            bb_est,
+            overall_df[const.ProcessType.EMOD3D.str_value, ACT_CORE_HOURS_COL],
+            overall_df[const.ProcessType.EMOD3D.str_value, EST_CORE_HOURS_COL],
+            overall_df[const.ProcessType.HF.str_value, ACT_CORE_HOURS_COL],
+            overall_df[const.ProcessType.HF.str_value, EST_CORE_HOURS_COL],
+            overall_df[const.ProcessType.BB.str_value, ACT_CORE_HOURS_COL],
+            overall_df[const.ProcessType.BB.str_value, EST_CORE_HOURS_COL],
             act_total,
             est_total,
             (act_total / est_total) * 100,
