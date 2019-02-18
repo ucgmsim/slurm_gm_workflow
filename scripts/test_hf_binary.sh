@@ -12,7 +12,7 @@ sim_dir=$1
 #srf_name=$3
 
 cd $sim_dir
-fd_ll=`python -c "from qcore import utils; p = utils.load_yaml('sim_params.yaml'); print(p['FD_STATLIST'])"`
+fd_ll=`python -c "from qcore import utils; p = utils.load_sim_params('sim_params.yaml'); print(p['FD_STATLIST'])"`
 
 hf_sim_dir=$sim_dir/HF
 hf_acc_dir=$hf_sim_dir/Acc
@@ -29,7 +29,6 @@ fi
 
 #check the len(fd_ll) == len(hf.stations)
 #check station names are not empty
-echo "adfsa"
 echo $fd_ll
 python $gmsim/workflow/scripts/test_binary.py $hf_bin $fd_ll hf --verbose
 
