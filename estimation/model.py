@@ -225,7 +225,7 @@ class NNWcEstModel(WCEstModel):
 
         self._model.save(output_file)
 
-        with h5py.File(output_file, "r+") as f:
+        with h5py.File(output_file, "r") as f:
             f["custom"] = np.concatenate(
                 (self._train_min[None, :], self._train_max[None, :]), axis=0
             )
