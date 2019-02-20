@@ -66,7 +66,7 @@ def update_tasks(db, tasks, db_tasks):
                     t_state_str = t_status[t_state]
                 except KeyError:
                     print("failed to recogize state code %s",t_state)
-                    t_state_str == ''
+                    t_state_str = ''
                 if t_state_str == db_state:
                     print("not updating status ({}) of '{}' on '{}' ({})".format(t_state_str, proc_type, run_name, job_id))
                 else:

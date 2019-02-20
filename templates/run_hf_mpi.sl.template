@@ -23,7 +23,7 @@ if [[ $? == 0 ]]; then
     if [[ ! -d {{sim_dir}}/ch_log ]]; then
         mkdir {{sim_dir}}/ch_log
     fi
-    fd_name=`python -c "from qcore import utils; p = utils.load_yaml('sim_params.yaml'); print(p['FD_STATLIST'])"`
+    fd_name=`python -c "from qcore import utils; p = utils.load_sim_params('sim_params.yaml'); print(p['FD_STATLIST'])"`
     fd_count=`cat $fd_name | wc -l`
 
     # Save meta data

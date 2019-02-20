@@ -8,7 +8,6 @@ Module which contains shared functions/values.
 from __future__ import print_function
 
 import os
-import glob
 import shutil
 import subprocess
 import sys
@@ -18,7 +17,6 @@ import glob
 
 from qcore import binary_version
 from qcore.config import host
-
 
 if sys.version_info.major == 3:
     basestring = str
@@ -113,7 +111,10 @@ def get_vs(source_file):
                 
     return vs
 
-def resolve_header(account, n_tasks, wallclock_limit, job_name, version,  memory, exe_time , job_description, partition=None,  additional_lines="", cfg='slurm_header.cfg'):
+
+def resolve_header(account, n_tasks, wallclock_limit, job_name, version, memory,
+                   exe_time, job_description, partition=None, additional_lines="",
+                   cfg='slurm_header.cfg'):
 
     if partition is None:
         partition = get_partition(host, wallclock_limit)
@@ -135,7 +136,7 @@ def resolve_header(account, n_tasks, wallclock_limit, job_name, version,  memory
     ]
 
     for (template_sig, replacement) in replacements:
-        full_text = full_text.replace(template_sig, replacement)
+        full_text = full_text.replace(template_sig, str(replacement))
 
     return full_text
 
