@@ -240,7 +240,7 @@ class NNWcEstModel(WCEstModel):
         self._model = keras.models.load_model(model_file)
         self.is_trained = True
 
-        with h5py.File(model_file, "r+") as f:
+        with h5py.File(model_file, "r") as f:
             self._train_min = f["custom"][0, :]
             self._train_max = f["custom"][1, :]
 

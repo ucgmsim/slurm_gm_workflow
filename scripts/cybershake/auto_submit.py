@@ -7,90 +7,181 @@ from datetime import datetime
 from subprocess import call
 
 import shared_workflow.load_config as ldcfg
-from scripts.management import db_helper
-from scripts.management import slurm_query_status
-from scripts.management import update_mgmt_db
-from metadata.log_metadata import store_metadata, LOG_FILENAME, ProcTypeConst
+from scripts.management.db_helper import connect_db
+import qcore.constants as const
+from scripts.management import slurm_query_status, update_mgmt_db
+from metadata.log_metadata import store_metadata
 
-default_binary_mode = True
+from scripts.submit_emod3d import main as submit_lf_main
+from scripts.submit_post_emod3d import main as submit_post_lf_main
+from scripts.submit_hf import main as submit_hf_main
+from scripts.submit_bb import main as submit_bb_main
+from scripts.submit_sim_imcalc import submit_im_calc_slurm, SlBodyOptConsts
+
 default_n_runs = 12
 default_1d_mod = "/nesi/transit/nesi00213/VelocityModel/Mod-1D/Cant1D_v2-midQ_leer.1d"
-default_hf_vs30_ref = None
-default_hf_seed = None
-default_rand_reset = True
-default_extended_period = False
 
 
-def submit_task(sim_dir, proc_type, run_name, db, mgmt_db_location, binary_mode=True, rand_reset=default_rand_reset,
-                hf_seed=None, extended_period=default_extended_period):
-    # TODO: using shell call is EXTREMELY undesirable. fix this in near future(fundamentally)
-
+def submit_task(
+    sim_dir,
+    proc_type,
+    run_name,
+    db,
+    mgmt_db_location,
+    binary_mode=True,
+    rand_reset=True,
+    hf_seed=None,
+    extended_period=False,
+    do_verification=False,
+):
     # create the tmp folder
     # TODO: fix this issue
-    sqlite_tmpdir = '/tmp/cer'
+    sqlite_tmpdir = "/tmp/cer"
     if not os.path.exists(sqlite_tmpdir):
         os.makedirs(sqlite_tmpdir)
 
     # change the working directory to the sim_dir
     os.chdir(sim_dir)
-    ch_log_dir = os.path.join(sim_dir, 'ch_log')
+    ch_log_dir = os.path.join(sim_dir, "ch_log")
 
     # create the folder if not exist
     if not os.path.isdir(ch_log_dir):
         os.mkdir(ch_log_dir)
-    submitted_time = datetime.now().strftime('%Y%m%d_%H%M%S')
-    log_file = os.path.join(sim_dir, "ch_log", LOG_FILENAME)
+    submitted_time = datetime.now().strftime(const.METADATA_TIMESTAMP_FMT)
+    log_file = os.path.join(sim_dir, "ch_log", const.METADATA_LOG_FILENAME)
 
     # LF
-    if proc_type == 1:
-        cmd = "python $gmsim/workflow/scripts/submit_emod3d.py --auto --srf %s" % run_name
-        print(cmd)
-        call(cmd, shell=True)
-        store_metadata(log_file, ProcTypeConst.LF.value, {"submit_time": submitted_time})
-    # POST_EMOD3D
-    if proc_type == 2:
-        cmd = "python $gmsim/workflow/scripts/submit_post_emod3d.py --auto --merge_ts --srf %s" % run_name
-        print(cmd)
-        call(cmd, shell=True)
-        store_metadata(log_file, ProcTypeConst.POST_EMOD3D.value, {"submit_time": submitted_time})
-    # WINBIN
-    if proc_type == 3:
+    # params_uncertain_path = os.path.join(sim_dir, "LF", "params_uncertain.py")
+    if proc_type == const.ProcessType.EMOD3D.value:
+        # check_params_uncertain(params_uncertain_path)
+
+        # These have to include the default values (same for all other process types)!
+        args = argparse.Namespace(
+            auto=True,
+            srf=run_name,
+            ncore=const.LF_DEFAULT_NCORES,
+            account=const.DEFAULT_ACCOUNT,
+        )
+        print("Submit EMOD3D arguments: ", args)
+        submit_lf_main(args)
+        store_metadata(
+            log_file,
+            const.ProcessType.EMOD3D.str_value,
+            {"submit_time": submitted_time},
+        )
+
+    if proc_type == const.ProcessType.merge_ts.value:
+        args = argparse.Namespace(
+            auto=True,
+            merge_ts=True,
+            winbin_aio=False,
+            srf=run_name,
+            account=const.DEFAULT_ACCOUNT,
+        )
+        print("Submit post EMOD3D (merge_ts) arguments: ", args)
+        submit_post_lf_main(args)
+        store_metadata(
+            log_file,
+            const.ProcessType.merge_ts.str_value,
+            {"submit_time": submitted_time},
+        )
+
+    if proc_type == const.ProcessType.winbin_aio.value:
         # skipping winbin_aio if running binary mode
         if binary_mode:
             # update the mgmt_db
-            update_mgmt_db.update_db(db, 'winbin_aio', 'completed', run_name=run_name)
+            update_mgmt_db.update_db(db, "winbin_aio", "completed", run_name=run_name)
         else:
-            cmd = "python $gmsim/workflow/scripts/submit_post_emod3d.py --auto --winbin_aio --srf %s" % run_name
+            args = argparse.Namespace(
+                auto=True,
+                winbin_aio=True,
+                merge_ts=False,
+                srf=run_name,
+                account=const.DEFAULT_ACCOUNT,
+            )
+            print("Submit post EMOD3D (winbin_aio) arguments: ", args)
+            submit_post_lf_main(args)
+    # HF
+    if proc_type == const.ProcessType.HF.value:
+        args = argparse.Namespace(
+            auto=True,
+            srf=run_name,
+            ascii=not binary_mode,
+            seed=hf_seed,
+            rand_reset=rand_reset,
+            ncore=const.HF_DEFAULT_NCORES,
+            version=const.HF_DEFAULT_VERSION,
+            site_specific=None,
+            account=const.DEFAULT_ACCOUNT,
+            debug=False,
+        )
+        print("Submit HF arguments: ", args)
+        submit_hf_main(args)
+        store_metadata(
+            log_file, const.ProcessType.HF.str_value, {"submit_time": submitted_time}
+        )
+    # BB
+    if proc_type == const.ProcessType.BB.value:
+        args = argparse.Namespace(
+            auto=True,
+            srf=run_name,
+            version=const.BB_DEFAULT_VERSION,
+            account=const.DEFAULT_ACCOUNT,
+            ascii=False,
+        )
+        print("Submit BB arguments: ", args)
+        submit_bb_main(args)
+        store_metadata(
+            log_file, const.ProcessType.BB.str_value, {"submit_time": submitted_time}
+        )
+    # IM_calc
+    if proc_type == const.ProcessType.IM_calculation.value:
+        options_dict = {
+            SlBodyOptConsts.extended.value: True if extended_period else False,
+            SlBodyOptConsts.simple_out.value: True,
+            "auto": True,
+        }
+        submit_im_calc_slurm(sim_dir=sim_dir, options_dict=options_dict)
+        print("Submit IM calc arguments: ", options_dict)
+        store_metadata(
+            log_file,
+            const.ProcessType.IM_calculation.str_value,
+            {"submit_time": submitted_time},
+        )
+
+    fault = run_name.split("_")[0]
+    source_path = os.path.join(mgmt_db_location, "Data/Sources", fault, "srf", run_name)
+    srf_path = source_path + ".srf"
+
+    if do_verification:
+        if proc_type == const.ProcessType.rrup.value:
+            tmp_path = os.path.join(mgmt_db_location, "Runs")
+            rrup_dir = os.path.join(mgmt_db_location, "Runs", fault, "verification")
+            cmd = (
+                "python $gmsim/workflow/scripts/submit_imcalc.py --auto -s --sim_dir %s --i %s --mgmt_db %s -srf %s -o %s"
+                % (tmp_path, run_name, mgmt_db_location, srf_path, rrup_dir)
+            )
             print(cmd)
             call(cmd, shell=True)
-            call("echo 'submitted time: %s' >> %s" % (
-            submitted_time, os.path.join(ch_log_dir, 'winbin.%s.log' % run_name)), shell=True)
-    # HF
-    if proc_type == 4:
-        hf_cmd = "python $gmsim/workflow/scripts/submit_hf.py --auto --srf %s" % run_name
-        if not binary_mode:
-            hf_cmd += ' -- ascii'
-        if hf_seed is not None:
-            hf_cmd = "{} --seed {}".format(hf_cmd, hf_seed)
-        if rand_reset:
-            hf_cmd = "{} --rand_reset".format(hf_cmd)
-        print(hf_cmd)
-        call(hf_cmd, shell=True)
-        store_metadata(log_file, ProcTypeConst.HF.value, {"submit_time": submitted_time})
-    # BB
-    if proc_type == 5:
-        cmd = "python $gmsim/workflow/scripts/submit_bb.py --auto --srf %s" % run_name
-        if not binary_mode:
-            cmd += ' -- ascii'
-        print(cmd)
-        call(cmd, shell=True)
-        store_metadata(log_file, ProcTypeConst.BB.value, {"submit_time": submitted_time})
-    # IM_calc
-    if proc_type == 6:
-        cmd = "python $gmsim/workflow/scripts/submit_sim_imcalc.py --auto --sim_dir {} --simple_output {}".format(sim_dir, "-e" if extended_period else "")
-        print(cmd)
-        call(cmd, shell=True)
-        store_metadata(log_file, ProcTypeConst.IM.value, {"submit_time": submitted_time})
+
+        if proc_type == const.ProcessType.Empirical.value:
+            cmd = "$gmsim/workflow/scripts/submit_empirical.py -np 40 -i {} {}".format(
+                run_name, mgmt_db_location
+            )
+            print(cmd)
+            call(cmd, shell=True)
+
+        if proc_type == const.ProcessType.Verification.value:
+            pass
+
+# TODO: Requires updating, currently not working
+# def check_params_uncertain(params_uncertain_path):
+#     if not os.path.isfile(params_uncertain_path):
+#         print(params_uncertain_path, " missing, creating")
+#         cmd = "python $gmsim/workflow/scripts/submit_emod3d.py --set_params_only"
+#         call(cmd, shell=True)
+#         print(cmd)
+
 
 def get_vmname(srf_name):
     """
@@ -98,75 +189,76 @@ def get_vmname(srf_name):
         get vm name from srf
         can be removed if mgmt_DB is updated to store vm name
     """
-    vm_name = srf_name.split('_')[0]
+    vm_name = srf_name.split("_")[0]
     return vm_name
 
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('run_folder', type=str, help="folder to the collection of runs")
-    parser.add_argument('--n_runs', default=default_n_runs, type=int)
+    parser.add_argument("run_folder", type=str, help="folder to the collection of runs")
+    parser.add_argument("--n_runs", default=default_n_runs, type=int)
 
     # cybershake-like simulations store mgmnt_db at different locations
-    parser.add_argument('--single_sim', nargs="?", type=str, const=True)
-    parser.add_argument('--config', type=str, default=None,
-                        help="a path to a config file that constains all the required values.")
-    parser.add_argument('--no_im', action="store_true")
-    parser.add_argument('--user', type=str, default=None)
+    parser.add_argument("--single_sim", nargs="?", type=str, const=True)
+    parser.add_argument(
+        "--config",
+        type=str,
+        default=None,
+        help="a path to a config file that constains all the required values.",
+    )
+    parser.add_argument("--no_im", action="store_true")
+    parser.add_argument("--user", type=str, default=None)
 
     args = parser.parse_args()
-    mgmt_db_location = args.run_folder
+
     n_runs_max = args.n_runs
-    db = db_helper.connect_db(mgmt_db_location)
-    db_tasks = []
-    hf_seed = default_hf_seed
+    mgmt_db_location = args.run_folder
+    db = connect_db(mgmt_db_location)
+
+    # Default values
+    oneD_mod, hf_vs30_ref, binary_mode, hf_seed = default_1d_mod, None, True, None
+    rand_reset, extended_period = True, False
 
     if args.config is not None:
         # parse and check for variables in config
         try:
-            cybershake_cfg = ldcfg.load(directory=os.path.dirname(args.config), cfg_name=os.path.basename(args.config))
+            cybershake_cfg = ldcfg.load(
+                directory=os.path.dirname(args.config),
+                cfg_name=os.path.basename(args.config),
+            )
             print(cybershake_cfg)
         except Exception as e:
             print(e)
             print("Error while parsing the config file, please double check inputs.")
             sys.exit()
-        if 'v_1d_mod' in cybershake_cfg:
-            # TODO:bad hack, fix this when possible (with parsing)
-            global default_1d_mod
-            default_1d_mod = cybershake_cfg['v_1d_mod']
-        if 'hf_stat_vs_ref' in cybershake_cfg:
-            # TODO:bad hack, fix this when possible (with parsing)
-            global default_hf_vs30_ref
-            default_hf_vs30_ref = cybershake_cfg['hf_stat_vs_ref']
-        if 'binary_mode' in cybershake_cfg:
-            binary_mode = cybershake_cfg['binary_mode']
-        else:
-            binary_mode = default_binary_mode
 
-        if 'hf_seed' in cybershake_cfg:
-            hf_seed = cybershake_cfg['hf_seed']
+        binary_mode = (
+            cybershake_cfg["binary_mode"]
+            if "binary_mode" in cybershake_cfg
+            else binary_mode
+        )
+        hf_seed = cybershake_cfg["hf_seed"] if "hf_seed" in cybershake_cfg else hf_seed
+        rand_reset = (
+            cybershake_cfg["rand_reset"]
+            if "rand_reset" in cybershake_cfg
+            else rand_reset
+        )
+        extended_period = (
+            cybershake_cfg["extended_period"]
+            if "extended_period" in cybershake_cfg
+            else extended_period
+        )
 
-        if 'rand_reset' in cybershake_cfg:
-            rand_reset = cybershake_cfg['rand_reset']
-        else:
-            rand_reset = default_rand_reset
+        # append more logic here if more variables are requested
 
-        if 'extended_period' in cybershake_cfg:
-            extended_period = cybershake_cfg['extended_period']
-        else:
-            extended_period = default_extended_period
-            # append more logic here if more variables are requested
-
-    print("hf_seed:", hf_seed)
+    print("hf_seed", hf_seed)
     queued_tasks = slurm_query_status.get_queued_tasks()
-    user_queued_tasks = slurm_query_status.get_queued_tasks(user=args.user).split('\n')
+    user_queued_tasks = slurm_query_status.get_queued_tasks(user=args.user).split("\n")
     db_tasks = slurm_query_status.get_submitted_db_tasks(db)
-    print('queued task:', queued_tasks)
-    print('subbed task:', db_tasks)
+    print("queued task:", queued_tasks)
+    print("subbed task:", db_tasks)
     slurm_query_status.update_tasks(db, queued_tasks, db_tasks)
     db_tasks = slurm_query_status.get_submitted_db_tasks(db)
-    # submitted_tasks = slurm_query_status.get_submitted_db_tasks(db)
-    # ntask_to_run = n_runs_max - len(db_tasks)
     ntask_to_run = n_runs_max - len(user_queued_tasks)
 
     runnable_tasks = slurm_query_status.get_runnable_tasks(db, ntask_to_run)
@@ -175,10 +267,12 @@ def main():
     task_num = 0
     print(submit_task_count)
     print(ntask_to_run)
-    while submit_task_count < ntask_to_run and submit_task_count < len(runnable_tasks) and task_num < len(
-            runnable_tasks):
+    while (
+        submit_task_count < ntask_to_run
+        and submit_task_count < len(runnable_tasks)
+        and task_num < len(runnable_tasks)
+    ):
         db_task_status = runnable_tasks[task_num]
-
         proc_type = db_task_status[0]
         run_name = db_task_status[1]
         task_state = db_task_status[2]
@@ -188,25 +282,33 @@ def main():
             task_num = task_num + 1
             continue
 
-        vm_name = get_vmname(run_name)
+        vm_name = run_name.split("_")[0]
 
-        if args.single_sim == True:
+        if args.single_sim:
             # TODO: if the directory changed, this may break. make this more robust
             sim_dir = mgmt_db_location
         else:
             # non-cybershake, db is the same loc as sim_dir
             sim_dir = os.path.join(mgmt_db_location, "Runs", vm_name, run_name)
+
         # submit the job
-        submit_task(sim_dir, proc_type, run_name, db, mgmt_db_location, binary_mode, rand_reset, hf_seed,
-                    extended_period)
+        submit_task(
+            sim_dir,
+            proc_type,
+            run_name,
+            db,
+            mgmt_db_location,
+            binary_mode=binary_mode,
+            hf_seed=hf_seed,
+            rand_reset=rand_reset,
+            extended_period=extended_period,
+        )
 
         submit_task_count = submit_task_count + 1
         task_num = task_num + 1
-        # a sleep between cmds
-        # time.sleep(5)
+
     db.connection.close()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
-

@@ -38,13 +38,13 @@ def print_run_status(db, run_name, error=False):
         )
         status = db.fetchall()
         print(
-            "{:>25} | {:>15} | {:>10} | {:>8} | {:>20} | {:>10}".format(
-                "run_name", "process", "status", "job-id", "last_modified", "retries"
+            "{:>25} | {:>15} | {:>10} | {:>8} | {:>7} | {:>20}".format(
+                "run_name", "process", "status", "job-id", "retries", "last_modified"
             )
         )
-        print("_" * (25 + 15 + 10 + 20 + 8 + 10 + 3 * 4))
+        print("_" * (25 + 15 + 10 + 20 + 8 + 7 + 3 * 4))
         for statum in status:
-            print("{:>25} | {:>15} | {:>10} | {:>8} | {:>20} | {:>10}".format(*statum))
+            print("{:>25} | {:>15} | {:>10} | {:>8} | {:>7} | {:>20}".format(*statum))
 
 
 def main():

@@ -15,16 +15,15 @@ from datetime import datetime
 import pandas as pd
 from filelock import SoftFileLock, Timeout
 
-from metadata.agg_json_data import ProcTypeConst, MetaConst
+import qcore.constants as const
+from qcore.constants import ProcessType, MetadataField
 from qcore import utils
 from qcore.srf import get_nsub_stoch
 
 METADATA_VALUES = "metadata_values"
-LOG_FILENAME = "metadata_log.json"
-LOCK_FILENAME = "{}.lock".format(LOG_FILENAME)
+LOCK_FILENAME = "{}.lock".format(const.METADATA_LOG_FILENAME)
 
-METACONST_TO_ADD = [MetaConst.run_time.value]
-TIMESTAMP_FMT = "%Y-%m-%d_%H:%M:%S"
+METACONST_TO_ADD = [MetadataField.run_time.value]
 
 
 class KeyValuePairsAction(argparse.Action):
@@ -69,6 +68,7 @@ def store_metadata(
     log_file: str,
     proc_type: str,
     metadata_dict: Dict[str, str],
+    sim_name: str = None,
     metaconst_to_add: List[str] = METACONST_TO_ADD,
 ):
     """Store metadata values in the specified json log file for a specific process type.
@@ -93,11 +93,14 @@ def store_metadata(
         The process type this is for, one of LF/HF/BB/IM
     metadata_dict: Dictionary with string keys and values
         The metadata key and value pairs
+    sim_name: str
+        The simulation/realisation name for the data provided is added
+        to the json log file at the top level
     metaconst_to_add: List of strings
         Metadata keys for which their values are added (e.g. run_time)
     """
     # Check that it is a valid process type
-    if not ProcTypeConst.has_value(proc_type):
+    if not ProcessType.has_str_value(proc_type):
         print("{} is not a valid process type. Logged anyways.".format(proc_type))
 
     lock_file = os.path.join(os.path.dirname(log_file), LOCK_FILENAME)
@@ -126,6 +129,22 @@ def store_metadata(
     # File doesn't exist yet
     else:
         json_data = {}
+
+    # Add the simulation to the log file
+    if (
+        sim_name is not None
+        and const.MetadataField.sim_name.value not in json_data.keys()
+    ):
+        json_data[const.MetadataField.sim_name.value] = sim_name
+    elif (
+        sim_name is not None
+        and json_data.get(const.MetadataField.sim_name.value) != sim_name
+    ):
+        print(
+            "Sim name {} does not match already existing sim name {} in log file {}".format(
+                sim_name, json_data.get(const.MetadataField.sim_name.value), log_file
+            )
+        )
 
     if proc_data is None:
         proc_data = {}
@@ -179,19 +198,21 @@ def store_metadata(
 
 def main(args):
     # This should come from constants
-    log_dir = os.path.join(args.sim_dir, "ch_log", LOG_FILENAME)
+    log_dir = os.path.join(args.sim_dir, "ch_log", const.METADATA_LOG_FILENAME)
 
     metadata_dict = getattr(args, METADATA_VALUES)
 
     # Determine run_time from start and end time
     if (
-        MetaConst.start_time.value in metadata_dict.keys()
-        and MetaConst.end_time.value in metadata_dict.keys()
+        MetadataField.start_time.value in metadata_dict.keys()
+        and MetadataField.end_time.value in metadata_dict.keys()
     ):
         tdelta = datetime.strptime(
-            metadata_dict[MetaConst.end_time.value], TIMESTAMP_FMT
-        ) - datetime.strptime(metadata_dict[MetaConst.start_time.value], TIMESTAMP_FMT)
-        metadata_dict[MetaConst.run_time.value] = tdelta.total_seconds() / 3600
+            metadata_dict[MetadataField.end_time.value], const.METADATA_TIMESTAMP_FMT
+        ) - datetime.strptime(
+            metadata_dict[MetadataField.start_time.value], const.METADATA_TIMESTAMP_FMT
+        )
+        metadata_dict[MetadataField.run_time.value] = tdelta.total_seconds() / 3600
 
     # Load the params
     params = utils.load_sim_params(
@@ -199,40 +220,41 @@ def main(args):
     )
 
     # params metadata for LF
-    if args.proc_type == ProcTypeConst.LF.value:
-        metadata_dict[MetaConst.nt.value] = int(
+    if args.proc_type == ProcessType.EMOD3D.str_value:
+        metadata_dict[MetadataField.nt.value] = int(
             float(params.sim_duration) / float(params.dt)
         )
-        metadata_dict[MetaConst.nx.value] = params.nx
-        metadata_dict[MetaConst.ny.value] = params.ny
-        metadata_dict[MetaConst.nz.value] = params.nz
+        metadata_dict[MetadataField.nx.value] = params.nx
+        metadata_dict[MetadataField.ny.value] = params.ny
+        metadata_dict[MetadataField.nz.value] = params.nz
     # HF
-    elif args.proc_type == ProcTypeConst.HF.value:
-        metadata_dict[MetaConst.nt.value] = int(
+    elif args.proc_type == ProcessType.HF.str_value:
+        metadata_dict[MetadataField.nt.value] = int(
             float(params.sim_duration) / float(params.hf.hf_dt)
         )
-        metadata_dict[MetaConst.nsub_stoch.value] = get_nsub_stoch(
+        metadata_dict[MetadataField.nsub_stoch.value] = get_nsub_stoch(
             params["hf"]["hf_slip"], get_area=False
         )
     # BB
-    elif args.proc_type == ProcTypeConst.BB.value:
-        metadata_dict[MetaConst.dt.value] = params.hf.hf_dt
+    elif args.proc_type == ProcessType.BB.str_value:
+        metadata_dict[MetadataField.dt.value] = params.hf.hf_dt
     # IM_calc
-    elif args.proc_type == ProcTypeConst.IM.value:
-        metadata_dict[MetaConst.nt.value] = int(
+    elif args.proc_type == ProcessType.IM_calculation.str_value:
+        metadata_dict[MetadataField.nt.value] = int(
             float(params.sim_duration) / float(params.hf.hf_dt)
         )
-
         # This should come from a constants file
         im_calc_csv_file = os.path.join(
             args.sim_dir, "IM_calc", "{}.csv".format(os.path.basename(args.sim_dir))
         )
         im_comp = list(pd.read_csv(im_calc_csv_file).component.unique().astype("U"))
 
-        metadata_dict[MetaConst.im_comp.value] = im_comp
-        metadata_dict[MetaConst.im_comp_count.value] = len(im_comp)
+        metadata_dict[MetadataField.im_comp.value] = im_comp
+        metadata_dict[MetadataField.im_comp_count.value] = len(im_comp)
 
-    store_metadata(log_dir, args.proc_type, metadata_dict)
+    store_metadata(
+        log_dir, args.proc_type, metadata_dict, sim_name=os.path.basename(args.sim_dir)
+    )
 
 
 if __name__ == "__main__":
