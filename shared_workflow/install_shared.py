@@ -214,7 +214,6 @@ def install_bb(
     shared.show_horizontal_line(c="*")
     print(" " * 37 + "EMOD3D HF/BB Preparation Ver.slurm")
     shared.show_horizontal_line(c="*")
-    root_dict["bb"] = {}
     if v1d_full_path is not None:
         v_mod_1d_selected = v1d_full_path
         root_dict["bb"]["site_specific"] = False
