@@ -42,11 +42,11 @@ echo `pwd`
 # END OF HACK
 
 # Load standard python3 virtual env
-./workflow/install_workflow/helper_functions/activate_maui_python3_virtenv.sh ${virtenv_src}
+source ./workflow/install_workflow/helper_functions/activate_maui_python3_virtenv.sh ${virtenv_src}
 echo `which python`
 
 # Create workflow config
-python ./workflow/install_workflow/create_config_file.py ./workflow/scripts/
+python ./workflow/install_workflow/create_config_file.py ${env_path}
 
 # Copy the estimation models
 echo "Copying estimation models from $est_models_src"
@@ -65,4 +65,4 @@ cd IM_calculation
 python setup_rspectra.py build_ext --inplace
 cd ../
 
-./workflow/install_workflow/helper_functions/deactivate_virtenv.sh
+./workflow/install_workflow/helper_functions/deactivate_env.sh
