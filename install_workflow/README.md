@@ -1,18 +1,21 @@
 ## Environment installation
 
-A user specific environment of workflow, qcore, and IMCalc can be created as follows:
-In an existing workflow repository navigate to ".../slurm_gm_workflow/install_workflow" 
-and then run 
-```bash
-./create_env.sh environment_name config_to_use
-```
-where a default config is located in the same directory, which should
-work without requiring any changes.
+Requirements: Setup github SSH keys for maui, 
+[guide](https://help.github.com/en/articles/connecting-to-github-with-ssh) for how to do this. 
 
-Note: The environment is installed into /nesi/project/nesi00213/Environments/
-so if an environment with the same already exists the script will exit.
+A user specific environment of workflow, qcore, and IMCalc can be created as follows:  
+1) Go to an existing workflow repository or clone a new one
+2) Navigate to ".../slurm_gm_workflow/install_workflow" 
+3) Run 
+    ```bash
+    ./create_env.sh environment_name config_to_use
+    ```
+    where a default config is located in the same directory, which should
+    work without requiring any changes.  
+    Note: The environment is installed into /nesi/project/nesi00213/Environments/
+    so if an environment with the same already exists the script will exit.
 
-Check that the script ran to completion without any errors, 
+4) Check that the script ran to completion without any errors, 
 apart from the IM_calculation setup warning, which can be ignored.
 
 The new environment can then be activated with 
