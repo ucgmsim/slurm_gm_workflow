@@ -30,7 +30,7 @@ then
     exit 1
 fi
 
-rlog_count=$(expr 0)
+rlog_count=0
 rlog_check=0
 for rlog in *;
 do
@@ -66,7 +66,8 @@ do
     fi
 done
 
-#Check the integrity of the seisfiles
+# Check the integrity of the seisfiles only if all files that are expected to be there are present
+# This is done by attempting to load them into LFSeis which will check them
 if [[ $rlog_check == 0 ]];
 then
     python3 -c "from qcore import timeseries; timeseries.LFSeis('../OutBin');" 2>/dev/null
@@ -77,6 +78,10 @@ then
     fi
 fi
 
+# EMOD3D is not considered to be completed if:
+#   Any Rlog does not have IS FINISHED
+#   There is a seis file without an equally indexed xyts file or vice versa
+#   Any seis file is unable to be loaded by LFSeis
 if [[ $rlog_check == 0 ]] && [[ $seisIntegrity == 0 ]];
 then
     echo "$lf_sim_dir: EMOD3D completed"
