@@ -1,6 +1,5 @@
 import os
 import sqlite3
-from enum import Enum
 
 
 def connect_db(path):
@@ -12,14 +11,6 @@ def connect_db(path):
     db.execute("PRAGMA integrity_check")
 
     return db
-
-
-class State(Enum):
-    created = 1
-    queued = 2
-    running = 3
-    completed = 4
-    failed = 5
 
 class Task:
 
