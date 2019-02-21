@@ -17,6 +17,7 @@ import glob
 
 from qcore import binary_version
 from qcore.config import host
+import qcore.constants as const
 
 if sys.version_info.major == 3:
     basestring = str
@@ -114,10 +115,10 @@ def get_vs(source_file):
 
 def resolve_header(account, n_tasks, wallclock_limit, job_name, version, memory,
                    exe_time, job_description, partition=None, additional_lines="",
-                   cfg='slurm_header.cfg'):
+                   cfg='slurm_header.cfg', target_host=host):
 
     if partition is None:
-        partition = get_partition(host, wallclock_limit)
+        partition = get_partition(target_host, convert_time_to_hours(wallclock_limit))
     with open(cfg) as f:
         full_text = f.read()
 
@@ -142,9 +143,9 @@ def resolve_header(account, n_tasks, wallclock_limit, job_name, version, memory,
 
 
 def get_partition(machine, core_hours=None):
-    if machine == 'maui':
+    if machine == const.HPC.maui.value:
         partition = "nesi_research"
-    elif machine == 'mahuika':
+    elif machine == const.HPC.mahuika.value:
         if core_hours and core_hours < 6:
             partition = "prepost"
         else:
@@ -152,6 +153,11 @@ def get_partition(machine, core_hours=None):
     else:
         partition = ""
     return partition
+
+
+def convert_time_to_hours(time_str):
+    h, m, s = time_str.split(':')
+    return int(h) + int(m)/60.0 + int(s)/3600.0
 
 
 ################# Verify Section ###################
@@ -434,14 +440,19 @@ def exe(cmd, debug=True,shell=False, stdout=subprocess.PIPE,
 
 
 def submit_sl_script(script, process, status, mgmt_db_loc, srf_name,
-                     timestamp, submit_yes=False):
-    """Submits the slurm script and udpates the management db"""
+                     timestamp, submit_yes=False, target_machine=None):
+    """Submits the slurm script and updates the management db"""
     if submit_yes:
         print("Submitting %s" % script)
-        res = exe("sbatch %s" % script, debug=False)
+        if target_machine and target_machine != host:
+            res = exe("sbatch --export=NONE -M {} {}".format(target_machine, script), debug=False)
+        else:
+            res = exe("sbatch {}".format(script), debug=False)
         if len(res[1]) == 0:
             # no errors, return the job id
-            jobid = res[0].split()[-1]
+            return_words = res[0].split()
+            job_index = return_words.index('job')
+            jobid = return_words[job_index+1]
             try:
                 int(jobid)
             except ValueError:
@@ -641,5 +652,4 @@ def get_hf_run_name(v_mod_1d_name, srf, root_dict, hf_version):
     #    yes = confirm_name(hf_run_name)
     yes = True
     return yes, hf_run_name
-
 

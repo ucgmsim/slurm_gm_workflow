@@ -7,10 +7,12 @@ import argparse
 import estimation.estimate_wct as est
 import qcore.constants as const
 from qcore import utils, shared, srf, binary_version
+from qcore.config import get_machine_config, host
 from shared_workflow.shared import confirm, set_wct, submit_sl_script, resolve_header
 
 # default values
 default_wct = "00:30:00"
+
 
 def write_sl_script(
     hf_sim_dir,
@@ -25,10 +27,13 @@ def write_sl_script(
     account=const.DEFAULT_ACCOUNT,
     binary=False,
     seed=None,
+    machine=host,
 ):
     """Populates the template and writes the resulting slurm script to file"""
     with open("%s.sl.template" % sl_template_prefix, "r") as f:
         template = f.read()
+
+    target_qconfig = get_machine_config(machine)
 
     if binary:
         create_dir = "mkdir -p " + os.path.join(hf_sim_dir, "Acc") + "\n"
@@ -46,7 +51,9 @@ def write_sl_script(
             "--dt",
             params.hf.hf_dt,
             "--sim_bin",
-            binary_version.get_hf_binmod(params.hf.hf_version),
+            binary_version.get_hf_binmod(
+                params.hf.hf_version, target_qconfig["tools_dir"]
+            ),
         ]
 
         hf_submit_command += " ".join(list(map(str, arguments_for_hf)))
@@ -86,6 +93,7 @@ def write_sl_script(
         const.timestamp,
         job_description="HF calculation",
         additional_lines="###SBATCH -C avx",
+        target_host=machine,
     )
     script_name = "%s_%s_%s.sl" % (sl_template_prefix, variation, const.timestamp)
     with open(script_name, "w") as f:
@@ -188,6 +196,7 @@ def main(args):
             account=args.account,
             binary=not args.ascii,
             seed=args.seed,
+            machine=args.machine,
         )
 
         # Submit the script
@@ -200,6 +209,7 @@ def main(args):
             srf_name,
             const.timestamp,
             submit_yes=submit_yes,
+            target_machine=args.machine,
         )
 
 
@@ -232,6 +242,12 @@ if __name__ == "__main__":
         type=int,
         default=None,
         help="random seed number(0 for randomized seed)",
+    )
+    parser.add_argument(
+        "--machine",
+        type=str,
+        default=host,
+        help="The machine hf is to be submitted to.",
     )
     args = parser.parse_args()
 
