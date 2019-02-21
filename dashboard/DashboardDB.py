@@ -5,6 +5,7 @@ import sqlite3 as sql
 from collections import namedtuple
 from typing import Iterable, Union
 from datetime import datetime, date, timedelta
+from contextlib import contextmanager
 
 import qcore.constants as const
 
@@ -52,102 +53,87 @@ class DashboardDB:
         if total_core_usage is None:
             return
 
-        conn = sql.connect(self.db_file)
-        cursor = conn.cursor()
-
         table = self.get_daily_t_name(hpc)
         day = day.strftime(self.date_format) if type(day) is date else day
-        row = cursor.execute(
-            "SELECT CORE_HOURS_USED, TOTAL_CORE_HOURS FROM {} WHERE DAY == ?;".format(table), (day,)
-        ).fetchone()
+        with self.get_cursor(self.db_file) as cursor:
+            row = cursor.execute(
+                "SELECT CORE_HOURS_USED, TOTAL_CORE_HOURS FROM {} WHERE DAY == ?;".format(table), (day,)
+            ).fetchone()
 
-        # New day
-        update_time = datetime.now()
-        if row is None:
-            cursor.execute(
-                "INSERT INTO {} VALUES(?, ?, ?, ?)".format(table),
-                (day, 0, total_core_usage, update_time),
-            )
-        else:
-            chours_usage =  total_core_usage - row[1] if row[1] is not None else 0
-            if row[0] is not None:
-                chours_usage = row[0] + chours_usage
+            # New day
+            update_time = datetime.now()
+            if row is None:
+                cursor.execute(
+                    "INSERT INTO {} VALUES(?, ?, ?, ?)".format(table),
+                    (day, 0, total_core_usage, update_time),
+                )
+            else:
+                chours_usage =  total_core_usage - row[1] if row[1] is not None else 0
+                if row[0] is not None:
+                    chours_usage = row[0] + chours_usage
 
-            cursor.execute(
-                "UPDATE {} SET CORE_HOURS_USED = ?, TOTAL_CORE_HOURS = ?, \
-                UPDATE_TIME = ? WHERE DAY == ?;".format(table),
-                (chours_usage, total_core_usage, update_time, day),
-            )
-
-        conn.commit()
-        conn.close()
+                cursor.execute(
+                    "UPDATE {} SET CORE_HOURS_USED = ?, TOTAL_CORE_HOURS = ?, \
+                    UPDATE_TIME = ? WHERE DAY == ?;".format(table),
+                    (chours_usage, total_core_usage, update_time, day),
+                )
 
     def get_daily_chours_usage(self, day: Union[date, str], hpc: const.HPC):
         """Gets the usage and total usage for the specified day"""
-        conn = sql.connect(self.db_file)
-        cursor = conn.cursor()
-
         day = day.strftime(self.date_format) if type(day) is date else day
-        result = cursor.execute(
-            "SELECT CORE_HOURS_USED, TOTAL_CORE_HOURS FROM {} WHERE DAY == ?".format(
-                self.get_daily_t_name(hpc)
-            ),
-            (day,),
-        ).fetchone()
+        with self.get_cursor(self.db_file) as cursor:
+            result = cursor.execute(
+                "SELECT CORE_HOURS_USED, TOTAL_CORE_HOURS FROM {} WHERE DAY == ?".format(
+                    self.get_daily_t_name(hpc)
+                ),
+                (day,),
+            ).fetchone()
 
-        conn.close()
         return result
 
     def update_squeue(self, squeue_entries: Iterable[SQueueEntry], hpc: const.HPC):
         """Updates the squeue table with the latest queue status"""
-        conn = sql.connect(self.db_file)
-        cursor = conn.cursor()
-
         table = self.get_squeue_t_name(hpc)
 
-        # Drop and re-create the table
-        cursor.execute("DROP TABLE IF EXISTS {}".format(table))
-        self._create_queue_table(cursor, hpc)
+        with self.get_cursor(self.db_file) as cursor:
+            # Drop and re-create the table
+            cursor.execute("DROP TABLE IF EXISTS {}".format(table))
+            self._create_queue_table(cursor, hpc)
 
-        update_time = datetime.now()
-        for ix, entry in enumerate(squeue_entries):
-            cursor.execute(
-                "INSERT INTO {} VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)".format(table),
-                (
-                    entry.job_id,
-                    update_time,
-                    entry.username,
-                    entry.status,
-                    entry.name,
-                    entry.run_time,
-                    entry.est_run_time,
-                    entry.nodes,
-                    entry.cores,
-                ),
-            )
-
-        conn.commit()
-        conn.close()
+            update_time = datetime.now()
+            for ix, entry in enumerate(squeue_entries):
+                cursor.execute(
+                    "INSERT INTO {} VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)".format(table),
+                    (
+                        entry.job_id,
+                        update_time,
+                        entry.username,
+                        entry.status,
+                        entry.name,
+                        entry.run_time,
+                        entry.est_run_time,
+                        entry.nodes,
+                        entry.cores,
+                    ),
+                )
+            cursor.connection.commit()
 
     def get_sqeue_entries(self, hpc: const.HPC):
         """Gets all squeue entries"""
-        conn = sql.connect(self.db_file)
-        cursor = conn.cursor()
+        with self.get_cursor(self.db_file) as cursor:
+            results = cursor.execute(
+                "SELECT JOB_ID, USERNAME, STATUS, NAME, RUNTIME, \
+                ESTIMATED_TIME, NODES, CORES  FROM {};".format(
+                    self.get_squeue_t_name(hpc)
+                )
+            ).fetchall()
 
-        results = cursor.execute(
-            "SELECT JOB_ID, USERNAME, STATUS, NAME, RUNTIME, \
-            ESTIMATED_TIME, NODES, CORES  FROM {};".format(
-                self.get_squeue_t_name(hpc)
-            )
-        ).fetchall()
-
-        conn.close()
         return [SQueueEntry(*result) for result in results]
 
     def _create_queue_table(self, cursor, hpc: const.HPC):
         # Add latest table
         cursor.execute(
-            """CREATE TABLE {}(
+            """CREATE TABLE IF NOT EXISTS {}(
                   JOB_ID INTEGER PRIMARY KEY NOT NULL,
                   UPDATE_TIME DATE NOT NULL,
                   USERNAME TEXT NOT NULL,
@@ -173,33 +159,41 @@ class DashboardDB:
                 "The specified database file {} already exists.".format(db_file)
             )
 
-        conn = sql.connect(db_file)
-        cursor = conn.cursor()
+        with cls.get_cursor(db_file) as cursor:
+            dashboard_db = DashboardDB(db_file)
 
-        dashboard_db = DashboardDB(db_file)
+            hpc = [hpc] if type(hpc) is const.HPC else hpc
+            for cur_hpc in hpc:
+                dashboard_db._create_queue_table(cursor, cur_hpc)
 
-        hpc = [hpc] if type(hpc) is const.HPC else hpc
-        for cur_hpc in hpc:
-            dashboard_db._create_queue_table(cursor, cur_hpc)
-
-            # Add daily table
-            cursor.execute(
-                """CREATE TABLE {}(
-                        DAY DATE PRIMARY KEY NOT NULL,
-                        CORE_HOURS_USED FLOAT,
-                        TOTAL_CORE_HOURS FLOAT,
-                        UPDATE_TIME DATE NOT NULL
-                  );
-                """.format(
-                    cls.get_daily_t_name(cur_hpc)
+                # Add daily table
+                cursor.execute(
+                    """CREATE TABLE IF NOT EXISTS {}(
+                            DAY DATE PRIMARY KEY NOT NULL,
+                            CORE_HOURS_USED FLOAT,
+                            TOTAL_CORE_HOURS FLOAT,
+                            UPDATE_TIME DATE NOT NULL
+                      );
+                    """.format(
+                        cls.get_daily_t_name(cur_hpc)
+                    )
                 )
-            )
-
-        conn.commit()
-        conn.close()
 
         return dashboard_db
 
+    @staticmethod
+    @contextmanager
+    def get_cursor(db_file):
+        conn = sql.connect(db_file)
+        try:
+            yield conn.cursor()
+        except Exception:
+            conn.rollback()
+            raise
+        else:
+            conn.commit()
+        finally:
+            conn.close()
 
 ######################### Tests #########################
 
