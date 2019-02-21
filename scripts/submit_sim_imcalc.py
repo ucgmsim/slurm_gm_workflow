@@ -9,7 +9,7 @@ from qcore import utils, shared
 from qcore.config import host
 from typing import Dict
 from estimation.estimate_wct import est_IM_chours_single
-from shared_workflow.shared import submit_sl_script, set_wct, confirm, get_partition, resolve_header
+from shared_workflow.shared import submit_sl_script, set_wct, confirm, resolve_header
 
 
 class SlHdrOptConsts(Enum):

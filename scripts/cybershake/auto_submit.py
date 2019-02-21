@@ -22,12 +22,12 @@ default_n_runs = 12
 default_1d_mod = "/nesi/transit/nesi00213/VelocityModel/Mod-1D/Cant1D_v2-midQ_leer.1d"
 
 job_run_machine = {
-    const.ProcessType.EMOD3D.value: "maui",
-    const.ProcessType.merge_ts.value: "mahuika",
-    const.ProcessType.winbin_aio.value: "maui",
-    const.ProcessType.HF.value: "maui",
-    const.ProcessType.BB.value: "maui",
-    const.ProcessType.IM_calculation.value: "maui",
+    const.ProcessType.EMOD3D.value: const.HPC.maui.value,
+    const.ProcessType.merge_ts.value: const.HPC.mahuika.value,
+    const.ProcessType.winbin_aio.value: const.HPC.maui.value,
+    const.ProcessType.HF.value: const.HPC.maui.value,
+    const.ProcessType.BB.value: const.HPC.maui.value,
+    const.ProcessType.IM_calculation.value: const.HPC.maui.value,
 }
 
 

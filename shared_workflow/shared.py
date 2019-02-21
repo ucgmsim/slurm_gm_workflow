@@ -17,6 +17,7 @@ import glob
 
 from qcore import binary_version
 from qcore.config import host
+import qcore.constants as const
 
 if sys.version_info.major == 3:
     basestring = str
@@ -142,9 +143,9 @@ def resolve_header(account, n_tasks, wallclock_limit, job_name, version, memory,
 
 
 def get_partition(machine, core_hours=None):
-    if machine == 'maui':
+    if machine == const.HPC.maui.value:
         partition = "nesi_research"
-    elif machine == 'mahuika':
+    elif machine == const.HPC.mahuika.value:
         if core_hours and core_hours < 6:
             partition = "prepost"
         else:
