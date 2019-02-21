@@ -47,7 +47,7 @@ DEFAULT_OPTIONS = {
     SlBodyOptConsts.component.value: const.IM_CALC_COMPONENTS[0],
     SlBodyOptConsts.n_procs.value: const.IM_CALC_DEFAULT_N_PROCESSES,
     SlBodyOptConsts.extended.value: False,
-    SlBodyOptConsts.simple_out.value: False,
+    SlBodyOptConsts.simple_out.value: True,
     "auto": False,
 }
 
