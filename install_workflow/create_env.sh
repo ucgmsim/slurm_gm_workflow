@@ -48,6 +48,9 @@ echo `which python`
 # Create workflow config
 python ./workflow/install_workflow/create_config_file.py ${env_path}
 
+# Create version
+echo "dev" > ${env_path}/workflow/version
+
 # Copy the estimation models
 echo "Copying estimation models from $est_models_src"
 mkdir ./workflow/estimation/models/
