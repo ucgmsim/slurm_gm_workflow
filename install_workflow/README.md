@@ -17,12 +17,12 @@ apart from the IM_calculation setup warning, which can be ignored.
 
 The new environment can then be activated with 
 ```bash
-activate_env.sh /nesi/project/nesi00213/Environments/environment_name
+source activate_env.sh /nesi/project/nesi00213/Environments/environment_name
 ```
 
 and deactivated with 
 ```bash
-deactivate_env.sh
+source deactivate_env.sh
 ```
 
 Note: Activating an environment will update your $PYTHONPATH and $gmsim variables
