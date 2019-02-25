@@ -31,15 +31,10 @@ echo "Cloning workflow"
 git clone git@github.com:ucgmsim/slurm_gm_workflow.git
 mv ./slurm_gm_workflow ./workflow
 
-## TMP HACK, due to permission issue
-#cd ${clean_workflow}
-#git reset --hard
-#git checkout QSW_879
-#
-#rsync -a $clean_workflow/ $env_path/workflow/
-#cd $env_path
-#echo `pwd`
-## END OF HACK
+# Remove this, once branch is in master
+cd ./workflow
+git checkout QSW_879
+cd ../
 
 # Load standard python3 virtual env
 source ./workflow/install_workflow/helper_functions/activate_maui_python3_virtenv.sh ${virtenv_src}
