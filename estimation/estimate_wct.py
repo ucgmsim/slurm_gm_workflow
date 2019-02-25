@@ -22,8 +22,8 @@ SCALER_PREFIX = "scaler_"
 
 # HF and BB use hyperthreading, hence they use a single node each on maui
 # There is no number of nodes scaling.
-HF_DEFAULT_NCORES = 80
-BB_DEFAULT_NCORES = 80
+HF_DEFAULT_NCORES = 40
+BB_DEFAULT_NCORES = 40
 
 # LF does not use hyperthreading, hence it uses 4 nodes by default with additional
 # nodes added by scaling, explained in estimate_LF_chours

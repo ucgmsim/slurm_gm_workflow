@@ -16,7 +16,6 @@ echo "Computing BB"
 end_time=`date +$runtime_fmt`
 echo $end_time
 
-
 timestamp=`date +%Y%m%d_%H%M%S`
 #test before update
 res=`$gmsim/workflow/scripts/{{test_bb_script}} {{sim_dir}}`
