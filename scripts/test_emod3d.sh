@@ -24,7 +24,7 @@ fi
 fileCount=`ls -1|wc -l`
 
 #Check that the number of cores and number of rlog files is the same
-if [[ ! -z ${SLURM_CPUS_ON_NODE} ]] && [[ ${SLURM_CPUS_ON_NODE} != ${fileCount} ]]
+if [[ ! -z ${SLURM_CPUS_ON_NODE} ]] && [[ $((${SLURM_CPUS_ON_NODE} * ${SLURM_JOB_NUM_NODES} )) != ${fileCount} ]]
 then
     echo "Number of cores and number of log files mismatch"
     exit 1
