@@ -393,13 +393,9 @@ def main(args):
     if args.runs_dir is not None:
         print("Preparing HF estimation input data")
         # Have to repeat/extend the fault sim_durations to per realisation
-        hf_n_cores = (
-            const.HF_DEFAULT_NCORES / 2.0
-            if const.ProcessType.HF.is_hyperth
-            else const.HF_DEFAULT_NCORES
-        )
         r_hf_ncores = np.repeat(
-            np.ones(realisations.shape[0], dtype=np.float32) * hf_n_cores, r_counts
+            np.ones(realisations.shape[0], dtype=np.float32) * const.HF_DEFAULT_NCORES,
+            r_counts,
         )
 
         # Get fd_count and nsub_stoch for each fault
@@ -437,13 +433,9 @@ def main(args):
         )
 
         print("Preparing BB estimation input data")
-        bb_n_cores = (
-            const.BB_DEFAULT_NCORES / 2.0
-            if const.ProcessType.BB.is_hyperth
-            else const.BB_DEFAULT_NCORES
-        )
         r_bb_ncores = np.repeat(
-            np.ones(realisations.shape[0], dtype=np.float32) * bb_n_cores, r_counts
+            np.ones(realisations.shape[0], dtype=np.float32) * const.BB_DEFAULT_NCORES,
+            r_counts,
         )
 
         bb_input_data = np.concatenate(
