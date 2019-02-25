@@ -20,11 +20,6 @@ IM_MODEL_DIR = "/nesi/project/nesi00213/workflow/estimation/models/IM/"
 MODEL_PREFIX = "model_"
 SCALER_PREFIX = "scaler_"
 
-# HF and BB use hyperthreading, hence they use a single node each on maui
-# There is no number of nodes scaling.
-HF_DEFAULT_NCORES = 40
-BB_DEFAULT_NCORES = 40
-
 # LF does not use hyperthreading, hence it uses 4 nodes by default with additional
 # nodes added by scaling, explained in estimate_LF_chours
 LF_DEFAULT_NCORES = 160
