@@ -7,7 +7,7 @@ conf_file=${2?Error: "A config file path has to be provided"}
 base_path=`jq -r '.base_environments_path' ${conf_file}`
 virtenv_src=`jq -r '.clean_python3_virtualenv' ${conf_file}`
 est_models_src=`jq -r '.estimation_model_src' ${conf_file}`
-clean_workflow=`jq -r '.clean_workflow' ${conf_file}`
+#clean_workflow=`jq -r '.clean_workflow' ${conf_file}`
 
 # Check that this name isn't already taken.
 env_path=${base_path}/${name}
@@ -28,18 +28,18 @@ cp -r ${virtenv_src}/* ${env_path}/python_virtenv
 
 # Setting up workfow, qcore and IM calc
 echo "Cloning workflow"
-#git clone git@github.com:ucgmsim/slurm_gm_workflow.git
-#mv ./slurm_gm_workflow ./workflow
+git clone git@github.com:ucgmsim/slurm_gm_workflow.git
+mv ./slurm_gm_workflow ./workflow
 
-# TMP HACK, due to permission issue
-cd ${clean_workflow}
-git reset --hard
-git checkout QSW_879
-
-rsync -a $clean_workflow/ $env_path/workflow/
-cd $env_path
-echo `pwd`
-# END OF HACK
+## TMP HACK, due to permission issue
+#cd ${clean_workflow}
+#git reset --hard
+#git checkout QSW_879
+#
+#rsync -a $clean_workflow/ $env_path/workflow/
+#cd $env_path
+#echo `pwd`
+## END OF HACK
 
 # Load standard python3 virtual env
 source ./workflow/install_workflow/helper_functions/activate_maui_python3_virtenv.sh ${virtenv_src}
