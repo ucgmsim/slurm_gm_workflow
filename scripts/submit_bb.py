@@ -22,7 +22,6 @@ def write_sl_script(
     memory=const.DEFAULT_MEMORY,
     account=const.DEFAULT_ACCOUNT,
     binary=False,
-    lfvsref=None,
 ):
     with open("%s.sl.template" % sl_template_prefix, "r") as f:
         template = f.read()
@@ -41,9 +40,11 @@ def write_sl_script(
             "--flo",
             str(params.flo),
         ]
-        if lfvsref is not None:
-            arguments.append("--lfvsref")
-            arguments.append(str(lfvsref))
+        additional_args = ['fmin','fmidbot','lfvsref']
+        for key in additional_args:
+            if key in params.bb:
+                arguments.append("--"+key)
+                arguments.append(str(params.bb[key]))
         template = template.replace(
             "{{bb_submit_command}}", submit_command + " ".join(arguments)
         )
@@ -145,7 +146,6 @@ def main(args):
             account=args.account,
             binary=not args.ascii,
             run_time=wct,
-            lfvsref=args.lfvsref,
         )
 
         # Submit the script
@@ -171,7 +171,6 @@ if __name__ == "__main__":
     parser.add_argument("--account", type=str, default=const.DEFAULT_ACCOUNT)
     parser.add_argument("--srf", type=str, default=None)
     parser.add_argument("--ascii", action="store_true", default=False)
-    parser.add_argument("--lfvsref", type=float, default=None)
     args = parser.parse_args()
 
     main(args)

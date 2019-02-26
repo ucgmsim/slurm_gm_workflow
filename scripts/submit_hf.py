@@ -48,7 +48,11 @@ def write_sl_script(
             "--sim_bin",
             binary_version.get_hf_binmod(params.hf.hf_version),
         ]
-
+        additional_args = ['hf_path_dur']
+        for key in additional_args:
+            if key in params.hf:
+                arguments_for_hf.append("--"+key)
+                arguments_for_hf.append(str(params.hf[key]))
         hf_submit_command += " ".join(list(map(str, arguments_for_hf)))
     else:
         hf_submit_command = (

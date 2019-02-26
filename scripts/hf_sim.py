@@ -137,7 +137,7 @@ if is_master:
     arg("--rv_sig1", help="rupture velocity uncertainty", type=float, default=0.1)
     # HF IN, line 18
     arg(
-        "--path-dur",
+        "--hf_path_dur",
         help="""path duration model
         0:GP2010 formulation
         1:[DEFAULT] WUS modification trial/error
@@ -192,7 +192,7 @@ def initialise(check_only=False):
                 nt,
                 args.seed,
                 not args.no_siteamp,
-                args.path_dur,
+                args.hf_path_dur,
                 len(args.rayset),
                 fwrs[0],
                 fwrs[1],
@@ -366,7 +366,7 @@ def run_hf(local_statfile, n_stat, idx_0, velocity_model=args.velocity_model):
             "%d %s %s %s %s %d" % (nl_skip, vp_sig, vsh_sig, rho_sig, qs_sig, ic_flag),
             velocity_name,
             "%s %s %s" % (args.fa_sig1, args.fa_sig2, args.rv_sig1),
-            str(args.path_dur),
+            str(args.hf_path_dur),
             str(head_total + idx_0 * (nt * N_COMP * FLOAT_SIZE)),
             "",
         ]
