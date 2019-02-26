@@ -8,17 +8,17 @@ load_python2_maui () {
     # Removed python3
     module del cray-python/3.6.5.1
 
-        # Reset the PYTHONPATH
-        export PYTHONPATH=/opt/python/2.7.15.1/lib/python2.7/site-packages
+    # Reset the PYTHONPATH
+    export PYTHONPATH=/opt/python/2.7.15.1/lib/python2.7/site-packages
 
-        # PYTHONPATH (this can be removed once qcore is installed as a pip package)
-        export PYTHONPATH=/nesi/project/nesi00213/opt/maui/qcore:$PYTHONPATH
+    # PYTHONPATH (this can be removed once qcore is installed as a pip package)
+    export PYTHONPATH=/nesi/project/nesi00213/opt/maui/qcore:$PYTHONPATH
 
-        # PYTHONPATH for workflow
-        export PYTHONPATH=/nesi/project/nesi00213/workflow:$PYTHONPATH
+    # PYTHONPATH for workflow
+    export PYTHONPATH=/nesi/project/nesi00213/workflow:$PYTHONPATH
 
-        # Load the virtual environment
-        source /nesi/project/nesi00213/share/virt_envs/python2_maui/bin/activate
+    # Load the virtual environment
+    source /nesi/project/nesi00213/share/virt_envs/python2_maui/bin/activate
 }
 
 load_python3_maui () {

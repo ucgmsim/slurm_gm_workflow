@@ -445,7 +445,7 @@ def submit_sl_script(script, process, status, mgmt_db_loc, srf_name,
     if submit_yes:
         print("Submitting %s" % script)
         if target_machine and target_machine != host:
-            res = exe("sbatch --export=NONE -M {} {}".format(target_machine, script), debug=False)
+            res = exe("sbatch --export=CUR_ENV -M {} {}".format(target_machine, script), debug=False)
         else:
             res = exe("sbatch {}".format(script), debug=False)
         if len(res[1]) == 0:
