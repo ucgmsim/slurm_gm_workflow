@@ -5,8 +5,8 @@ conf_file=${2?Error: "A config file path has to be provided"}
 
 # Load all the required value from the json config
 base_path=`jq -r '.base_environments_path' ${conf_file}`
-virtenv_src_maui=`jq -r '.clean_python3_virtualenv_maui' ${conf_file}`
-virtenv_src_mahuika=`jq -r '.clean_python3_virtualenv_mahuika' ${conf_file}`
+#virtenv_src_maui=`jq -r '.clean_python3_virtualenv_maui' ${conf_file}`
+#virtenv_src_mahuika=`jq -r '.clean_python3_virtualenv_mahuika' ${conf_file}`
 est_models_src=`jq -r '.estimation_model_src' ${conf_file}`
 #clean_workflow=`jq -r '.clean_workflow' ${conf_file}`
 
@@ -23,13 +23,13 @@ mkdir ${env_path} || exit 1
 cd ${env_path}
 
 # Copy the maui and mahuika python3 virtual environment
-mkdir python_virtenv_maui
-echo "Copying clean maui python3 virtual environment from $virtenv_src_maui"
-cp -r ${virtenv_src_maui}/* ${env_path}/python_virtenv_maui
-
-mkdir python_virtenv_mahuika
-echo "Copying clean mahuika python3 virtual environment from $virtenv_src_mahuika"
-cp -r ${virtenv_src_mahuika}/* ${env_path}/python_virtenv_mahuika
+#mkdir python_virtenv_maui
+#echo "Copying clean maui python3 virtual environment from $virtenv_src_maui"
+#cp -r ${virtenv_src_maui}/* ${env_path}/python_virtenv_maui
+#
+#mkdir python_virtenv_mahuika
+#echo "Copying clean mahuika python3 virtual environment from $virtenv_src_mahuika"
+#cp -r ${virtenv_src_mahuika}/* ${env_path}/python_virtenv_mahuika
 
 # Setting up workfow, qcore and IM calc
 echo "Cloning workflow"
@@ -42,7 +42,7 @@ git checkout QSW_879
 cd ../
 
 # Load standard python3 virtual env
-source ./workflow/install_workflow/helper_functions/activate_maui_python3_virtenv.sh ${virtenv_src_maui}
+source ./workflow/install_workflow/helper_functions/activate_maui_python3_virtenv.sh ''
 echo `which python`
 
 # Create workflow config
