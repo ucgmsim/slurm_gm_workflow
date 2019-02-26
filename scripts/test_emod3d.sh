@@ -21,7 +21,17 @@ if [[ $? != 0 ]]; then
     exit 1
 fi
 
-rlog_count=$(expr 0) 
+fileCount=`ls -1|wc -l`
+
+#Check that the number of cores and number of rlog files is the same
+if [[ ! -z ${SLURM_CPUS_ON_NODE} ]] && [[ $((${SLURM_CPUS_ON_NODE} * ${SLURM_JOB_NUM_NODES} )) != ${fileCount} ]]
+then
+    echo "Number of cores and number of log files mismatch"
+    exit 1
+fi
+
+rlog_count=0
+rlog_check=0
 for rlog in *;
 do
     rlog_count=`expr $rlog_count + 1`
@@ -32,13 +42,47 @@ do
 #            echo "rlog =1"
     else
         rlog_check=1
-#        echo "$rlog not finsihed"
+        echo "$rlog not finished"
         break
+    fi
 
+    rootFile="../OutBin/${rlog/%.rlog/.e3d}"
+
+    seisFile=`echo $rootFile | sed 's/\(.*\)-/\1_seis-/'`
+    xytsFile=`echo $rootFile | sed 's/\(.*\)-/\1_xyts-/'`
+
+    #Check that if the seis or xyts file exists for a certain integer then the other also exists
+    if [[ -f "$seisFile" ]] && [[ ! -f "$xytsFile" ]];
+    then
+        echo "Found the seis file $seisFile, but didn't find the matching xyts file $xytsFile"
+        rlog_check=1
+        break
+    fi
+    if [[ ! -f "$seisFile" ]] && [[ -f "$xytsFile" ]];
+    then
+        echo "Found the xyts file $xytsFile, but didn't find the matching seis file $seisFile"
+        rlog_check=1
+        break
     fi
 done
 
+# Check the integrity of the seisfiles only if all files that are expected to be there are present
+# This is done by attempting to load them into LFSeis which will check them
 if [[ $rlog_check == 0 ]];
+then
+    python3 -c "from qcore import timeseries; timeseries.LFSeis('../OutBin');" 2>/dev/null
+    seisIntegrity=$?
+    if [[ $seisIntegrity != 0 ]];
+    then
+        echo "At least one file failed the integrity check"
+    fi
+fi
+
+# EMOD3D is not considered to be completed if:
+#   Any Rlog does not have IS FINISHED
+#   There is a seis file without an equally indexed xyts file or vice versa
+#   Any seis file is unable to be loaded by LFSeis
+if [[ $rlog_check == 0 ]] && [[ $seisIntegrity == 0 ]];
 then
     echo "$lf_sim_dir: EMOD3D completed"
     exit 0
