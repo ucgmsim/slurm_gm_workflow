@@ -33,7 +33,6 @@ def submit_task(
     hf_seed=None,
     extended_period=False,
     do_verification=False,
-    lfvsref = None,
 ):
     # create the tmp folder
     # TODO: fix this issue
@@ -129,7 +128,6 @@ def submit_task(
             version=const.BB_DEFAULT_VERSION,
             account=const.DEFAULT_ACCOUNT,
             ascii=False,
-            lfvsref=lfvsref,
         )
         print("Submit BB arguments: ", args)
         submit_bb_main(args)
@@ -220,7 +218,6 @@ def main():
     # Default values
     oneD_mod, hf_vs30_ref, binary_mode, hf_seed = default_1d_mod, None, True, None
     rand_reset, extended_period = True, False
-    lfvsref = None
 
     if args.config is not None:
         # parse and check for variables in config
@@ -250,11 +247,6 @@ def main():
             cybershake_cfg["extended_period"]
             if "extended_period" in cybershake_cfg
             else extended_period
-        )
-        lfvsref = (
-            cybershake_cfg['lfvsref']
-            if "lfvsref" in cybershake_cfg
-            else lfvsref
         )
         # append more logic here if more variables are requested
 
@@ -309,7 +301,6 @@ def main():
             hf_seed=hf_seed,
             rand_reset=rand_reset,
             extended_period=extended_period,
-            lfvsref=lfvsref,
         )
 
         submit_task_count = submit_task_count + 1
