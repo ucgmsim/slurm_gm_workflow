@@ -10,6 +10,7 @@ bb:
   site_specific: false
   fmin: 0.2
   fmidbot: 0.5
+  lfvsref: 500.0
 emod3d:
    emod3d_version: 3.0.4
 flo: 0.25

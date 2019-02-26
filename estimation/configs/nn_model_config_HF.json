@@ -3,11 +3,12 @@
                 ["HF", "cores"]],
   "target_col": ["HF","core_hours"],
 
-  "units": [32, 32],
-  "dropout": null,
+  "units": [64, 64, 32],
+  "dropout": 0.01,
   "activation": "relu",
 
-  "n_epochs": 25,
-  "loss": "mae",
-  "metrics": ["mse", "mae"]
+  "batch_size": 256,
+  "n_epochs": 100,
+  "loss": "msle",
+  "metrics": ["mape", "msle","mse", "mae"]
 }

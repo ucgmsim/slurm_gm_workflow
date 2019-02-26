@@ -394,8 +394,7 @@ def main(args):
         print("Preparing HF estimation input data")
         # Have to repeat/extend the fault sim_durations to per realisation
         r_hf_ncores = np.repeat(
-            np.ones(realisations.shape[0], dtype=np.float32)
-            * estimate_wct.HF_DEFAULT_NCORES,
+            np.ones(realisations.shape[0], dtype=np.float32) * const.HF_DEFAULT_NCORES,
             r_counts,
         )
 
@@ -435,8 +434,7 @@ def main(args):
 
         print("Preparing BB estimation input data")
         r_bb_ncores = np.repeat(
-            np.ones(realisations.shape[0], dtype=np.float32)
-            * estimate_wct.BB_DEFAULT_NCORES,
+            np.ones(realisations.shape[0], dtype=np.float32) * const.BB_DEFAULT_NCORES,
             r_counts,
         )
 

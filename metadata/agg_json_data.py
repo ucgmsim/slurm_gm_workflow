@@ -30,7 +30,6 @@ from qcore.constants import (
 DATE_COLUMNS = ["end_time", "start_time", "submit_time"]
 
 
-
 def load_metadata_df(csv_file: str):
     """Loads the metadata dataframe and converts the columns to the
     correct types"""
@@ -67,6 +66,15 @@ def get_row(json_file):
                         for comp in data_dict[proc_type][metadata_field]:
                             columns.append((proc_type, comp))
                             data.append(1)
+                        continue
+
+                    # Adjust hyperthreaded number of cores to physical cores
+                    if (
+                        metadata_field == MetadataField.n_cores.value
+                        and ProcessType.from_str(proc_type).is_hyperth
+                    ):
+                        columns.append((proc_type, metadata_field))
+                        data.append(data_dict[proc_type][metadata_field] / 2.0)
                         continue
 
                     columns.append((proc_type, metadata_field))
@@ -113,6 +121,7 @@ def get_IM_comp_count_from_str(str_list: str, real_name: str):
         return np.nan
 
     return get_IM_comp_count(comp)
+
 
 def create_dataframe(json_files: List[str], n_procs: int, calc_core_hours: bool):
     """Aggregate the data from the different simualtion metadata json files
@@ -185,6 +194,7 @@ def create_dataframe(json_files: List[str], n_procs: int, calc_core_hours: bool)
 
     return df
 
+
 def main(args):
     # Check if the output file already exists (No overwrite)
     if os.path.isfile(args.output_file):
@@ -236,7 +246,7 @@ if __name__ == "__main__":
         "-o",
         "--output_file",
         type=str,
-        help="The name of the file to save the " "resulting dataframe",
+        help="The name of the file to save the resulting dataframe",
     )
     parser.add_argument(
         "-n", "--n_procs", type=int, default=4, help="Number of processes to use"

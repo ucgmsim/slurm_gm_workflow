@@ -264,7 +264,6 @@ def main():
             if "extended_period" in cybershake_cfg
             else extended_period
         )
-
         # append more logic here if more variables are requested
 
     print("hf_seed", hf_seed)

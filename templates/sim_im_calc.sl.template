@@ -42,7 +42,7 @@ if [[ $? == 0 ]]; then
     pSA_count=`cat {{sim_dir}}/IM_calc/{{sim_name}}.csv | head -n 1 | grep -o pSA | wc -l`
 
     # log metadata
-    python $gmsim/workflow/metadata/log_metadata.py {{sim_dir}} IM_calc cores={{np}} pSA_count=$psa_count fd_count=$fd_count start_time=$start_time end_time=$end_time
+    python $gmsim/workflow/metadata/log_metadata.py {{sim_dir}} IM_calc cores={{np}} pSA_count=$pSA_count fd_count=$fd_count start_time=$start_time end_time=$end_time
 
      # clean up, making .tar
     echo "IM_calc submission successful, start cleaning up"

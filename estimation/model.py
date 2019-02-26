@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import os
 import json
 from typing import Tuple
 
@@ -6,6 +7,8 @@ import numpy as np
 import keras
 import h5py
 from sklearn.model_selection import train_test_split
+
+import qcore.constants as const
 
 
 class WCEstModel(object):
@@ -19,6 +22,7 @@ class WCEstModel(object):
         y: np.ndarray,
         val_split: float = None,
         val_data: Tuple[np.ndarray, np.ndarray] = None,
+        **kwargs,
     ):
         """Performs training of the model, if either val_split or val_data
         then validation is also performed and displayed (i.e. validation loss)
@@ -103,12 +107,24 @@ class NNWcEstModel(WCEstModel):
 
         self._train_min, self._train_max = None, None
 
+    def __get_model_str(self):
+        """Creates a name containing the models config, used for logging."""
+        return "{}-{}-BS_{}-DR_{}-ACT_{}_UN_{}".format(
+            const.timestamp,
+            self._config_dict["loss"],
+            self._config_dict["batch_size"],
+            self._config_dict["dropout"],
+            self._config_dict["activation"],
+            "_".join([str(n) for n in self._config_dict["units"]])
+        ).replace(".", "p")
+
     def train(
         self,
         X: np.ndarray,
         y: np.ndarray,
         val_split: float = None,
         val_data: Tuple[np.ndarray, np.ndarray] = None,
+        **kwargs,
     ):
         """Trains the model, see WCEstModel.train for full doc"""
         if self.is_trained:
@@ -139,12 +155,22 @@ class NNWcEstModel(WCEstModel):
             metrics=self._config_dict[self.metrics_const],
         )
 
+        callbacks = []
+        debug_dir = kwargs.get("debug_dir")
+        if debug_dir is not None:
+            callbacks.append(
+                keras.callbacks.TensorBoard(
+                    log_dir=os.path.join(debug_dir, self.__get_model_str())
+                )
+            )
+
         # Train the model
         self.hist = model.fit(
             X_train,
             y_train,
             epochs=self._config_dict[self.n_epochs_const],
             validation_data=val_data,
+            callbacks=callbacks,
         )
 
         print(
@@ -243,4 +269,3 @@ class NNWcEstModel(WCEstModel):
         with h5py.File(model_file, "r") as f:
             self._train_min = f["custom"][0, :]
             self._train_max = f["custom"][1, :]
-
