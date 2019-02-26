@@ -7,6 +7,7 @@ import os
 import json
 import pandas as pd
 import numpy as np
+import yaml
 
 from argparse import ArgumentParser
 from typing import List
@@ -329,12 +330,12 @@ def main(args):
     )
 
     config_dt, config_hf_dt = None, None
-    if args.cybershake_config:
-        print("Loading df and hf_dt from cybershake config")
-        with open(args.cybershake_config, "r") as f:
-            cybershake_config = json.load(f)
+    if args.root_yaml:
+        print("Loading df and hf_dt from root_default.yaml")
+        with open(args.root_yaml, "r") as f:
+            root_config = yaml.load(f)
 
-        config_dt = cybershake_config.get("dt")
+        config_dt = root_config.get("dt")
 
     # Get the params from the Runs directory
     # These are on a per fault basis, i.e. assuming that all realisations
@@ -481,9 +482,9 @@ if __name__ == "__main__":
         "Ignored if --runs_dir is specified.",
     )
     parser.add_argument(
-        "--cybershake_config",
+        "--root_yaml",
         type=str,
-        help="Cybershake config file to retrieve dt."
+        help="root_default.yaml file to retrieve dt."
         "Ignored if --runs_dir is specified.",
     )
     parser.add_argument(
@@ -517,10 +518,10 @@ if __name__ == "__main__":
         sys.exit()
 
     # Check that the specified files exist
-    if args.cybershake_config is not None and not os.path.isfile(
-        args.cybershake_config
+    if args.root_yaml is not None and not os.path.isfile(
+        args.root_yaml
     ):
-        print("File {} does not exist".format(args.cybershake_config))
+        print("File {} does not exist".format(args.root_yaml))
         sys.exit()
 
     if args.fault_selection is not None and not os.path.isfile(args.fault_selection):
