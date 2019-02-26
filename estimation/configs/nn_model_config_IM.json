@@ -6,11 +6,12 @@
                 ["IM_calc", "cores"]],
   "target_col": ["IM_calc","core_hours"],
 
-  "units": [32, 32],
+  "units": [64, 32],
   "dropout": null,
   "activation": "relu",
 
-  "n_epochs": 15,
-  "loss": "mae",
-  "metrics": ["mse", "mae"]
+  "batch_size": 64,
+  "n_epochs": 50,
+  "loss": "msle",
+  "metrics": ["mape", "msle","mse", "mae"]
 }

@@ -146,7 +146,7 @@ def main(args):
 
     # Train and save the model
     model = NNWcEstModel(args.config)
-    model.train(X, y, args.val_split)
+    model.train(X, y, args.val_split, debug_dir=args.debug_dir)
     model.save_model(os.path.join(
         args.output_dir, MODEL_FILENAME.format(timestamp)))
 
@@ -199,6 +199,8 @@ if __name__ == '__main__':
                              "assumes run_time is proptional "
                              "to the inverse of n_cores",
                         nargs="+")
+    parser.add_argument("--debug_dir", type=str, default=None,
+                        help="Store extra information for debugging")
 
     args = parser.parse_args()
 
