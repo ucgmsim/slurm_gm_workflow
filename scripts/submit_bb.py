@@ -42,6 +42,11 @@ def write_sl_script(
             "--flo",
             str(params.flo),
         ]
+        additional_args = ['fmin','fmidbot','lfvsref']
+        for key in additional_args:
+            if key in params.bb:
+                arguments.append("--"+key)
+                arguments.append(str(params.bb[key]))
         template = template.replace(
             "{{bb_submit_command}}", submit_command + " ".join(arguments)
         )
