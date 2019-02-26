@@ -6,6 +6,7 @@ from enum import Enum
 
 import qcore.constants as const
 from qcore import utils, shared
+from qcore.config import host
 from typing import Dict
 from estimation.estimate_wct import est_IM_chours_single
 from shared_workflow.shared import submit_sl_script, set_wct, confirm, resolve_header
@@ -49,6 +50,7 @@ DEFAULT_OPTIONS = {
     SlBodyOptConsts.extended.value: False,
     SlBodyOptConsts.simple_out.value: True,
     "auto": False,
+    "machine": host,
 }
 
 
@@ -109,6 +111,7 @@ def submit_im_calc_slurm(sim_dir: str, options_dict: Dict = None):
         const.timestamp,
         job_description=options_dict[SlHdrOptConsts.description.value],
         additional_lines=options_dict[SlHdrOptConsts.additional.value],
+        target_host=options_dict["machine"]
     )
 
     script = os.path.join(sim_dir, const.IM_SIM_SL_SCRIPT_NAME.format(const.timestamp))
@@ -129,6 +132,7 @@ def submit_im_calc_slurm(sim_dir: str, options_dict: Dict = None):
         os.path.splitext(os.path.basename(params.srf_file))[0],
         const.timestamp,
         submit_yes=submit_yes,
+        target_machine=options_dict["machine"],
     )
 
     return script
@@ -149,6 +153,7 @@ def main(args):
             SlBodyOptConsts.simple_out.value: args.simple_output,
             SlBodyOptConsts.component.value: args.comp,
             "auto": args.auto,
+            "machine": args.machine,
         },
     )
 
@@ -196,6 +201,12 @@ if __name__ == "__main__":
         default=False,
         help="Submit the slurm script automatically and use the "
         "estimated wct. No prompts.",
+    )
+    parser.add_argument(
+        "--machine",
+        type=str,
+        default=host,
+        help="The machine sim_imcalc is to be submitted to.",
     )
 
     args = parser.parse_args()

@@ -6,6 +6,7 @@ import argparse
 import qcore.constants as const
 from estimation import estimate_wct as wc
 from qcore import shared, utils
+from qcore.config import host
 from shared_workflow.shared import set_wct, confirm, submit_sl_script, resolve_header
 
 default_wct = "00:30:00"
@@ -22,6 +23,7 @@ def write_sl_script(
     memory=const.DEFAULT_MEMORY,
     account=const.DEFAULT_ACCOUNT,
     binary=False,
+    machine=host,
 ):
     with open("%s.sl.template" % sl_template_prefix, "r") as f:
         template = f.read()
@@ -29,7 +31,7 @@ def write_sl_script(
     if binary:
         create_directory = "mkdir -p " + os.path.join(bb_sim_dir, "Acc") + "\n"
         submit_command = (
-            create_directory + "srun python $gmsim/workflow" "/scripts/bb_sim.py "
+            create_directory + "srun python $gmsim/workflow/scripts/bb_sim.py "
         )
         arguments = [
             os.path.join(sim_dir, "LF", "OutBin"),
@@ -80,6 +82,7 @@ def write_sl_script(
         const.timestamp,
         job_description="BB calculation",
         additional_lines="##SBATCH -C avx",
+        target_host=machine,
     )
     fname_sl_script = "%s_%s_%s.sl" % (sl_template_prefix, variation, const.timestamp)
     with open(fname_sl_script, "w") as f:
@@ -146,6 +149,7 @@ def main(args):
             account=args.account,
             binary=not args.ascii,
             run_time=wct,
+            machine=args.machine,
         )
 
         # Submit the script
@@ -158,6 +162,7 @@ def main(args):
             srf_name,
             const.timestamp,
             submit_yes=submit_yes,
+            target_machine=args.machine,
         )
 
 
@@ -171,7 +176,12 @@ if __name__ == "__main__":
     parser.add_argument("--account", type=str, default=const.DEFAULT_ACCOUNT)
     parser.add_argument("--srf", type=str, default=None)
     parser.add_argument("--ascii", action="store_true", default=False)
+    parser.add_argument(
+        "--machine",
+        type=str,
+        default=host,
+        help="The machine bb is to be submitted to.",
+    )
     args = parser.parse_args()
 
     main(args)
-

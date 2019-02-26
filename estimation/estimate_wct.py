@@ -10,6 +10,7 @@ from typing import List
 import numpy as np
 
 from estimation.model import NNWcEstModel
+import qcore.constants as const
 
 # Better solution for these locations?
 LF_MODEL_DIR = "/nesi/project/nesi00213/workflow/estimation/models/LF/"
@@ -19,11 +20,6 @@ IM_MODEL_DIR = "/nesi/project/nesi00213/workflow/estimation/models/IM/"
 
 MODEL_PREFIX = "model_"
 SCALER_PREFIX = "scaler_"
-
-# HF and BB use hyperthreading, hence they use a single node each on maui
-# There is no number of nodes scaling.
-HF_DEFAULT_NCORES = 80
-BB_DEFAULT_NCORES = 80
 
 # LF does not use hyperthreading, hence it uses 4 nodes by default with additional
 # nodes added by scaling, explained in estimate_LF_chours
@@ -235,6 +231,8 @@ def estimate_HF_chours(
             "Invalid input data, has to 4 columns. " "One for each feature."
         )
 
+    # Adjust the number of cores to estimate physical core hours
+    data[:, -1] = data[:, -1 ] / 2.0 if const.ProcessType.HF.is_hyperth else data[:, -1]
     core_hours = estimate(
         data,
         model_dir=model_dir,
@@ -306,6 +304,8 @@ def estimate_BB_chours(
             "Invalid input data, has to 3 columns. " "One for each feature."
         )
 
+    # Adjust the number of cores to estimate physical core hours
+    data[:, -1] = data[:, -1 ] / 2.0 if const.ProcessType.BB.is_hyperth else data[:, -1]
     core_hours = estimate(
         data,
         model_dir=model_dir,
