@@ -42,7 +42,7 @@ git checkout QSW_879
 cd ../
 
 # Load standard python3 virtual env
-source ./workflow/install_workflow/helper_functions/activate_maui_python3_virtenv.sh ${virtenv_src}
+source ./workflow/install_workflow/helper_functions/activate_maui_python3_virtenv.sh ${virtenv_src_maui}
 echo `which python`
 
 # Create workflow config

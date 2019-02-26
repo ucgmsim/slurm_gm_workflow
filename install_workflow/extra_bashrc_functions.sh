@@ -13,7 +13,6 @@ activate_env () {
     fi
 
     source ${env_path}/workflow/install_workflow/helper_functions/activate_env.sh ${env_path} ${hpc}
-    CUR_ENV=${env_path}
 }
 
 deactivate_env () {
