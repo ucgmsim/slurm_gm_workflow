@@ -42,6 +42,7 @@ if is_master:
     arg("--fmin", help="fmin for site amplification", type=float, default=0.2)
     arg("--fmidbot", help="fmidbot for site amplification", type=float, default=0.5)
     arg("--lfvsref", help="Override LF Vs30 reference value (m/s)", type=float)
+    arg("--no-lf-amp", help="Disable site amplification for LF component", action="store_true")
 
     try:
         args = parser.parse_args()
@@ -50,6 +51,7 @@ if is_master:
         comm.Abort()
 
 args = comm.bcast(args, root=master)
+no_lf_amp = args.no_lf_amp
 
 # load data stores
 lf = timeseries.LFSeis(args.lf_dir)
@@ -266,6 +268,7 @@ for i, stat in enumerate(stations_todo):
             "highpass",
         )
         lf_acc[:, c] = bwfilter(
+            lf_acc[:, c] if no_lf_amp else
             ampdeamp(
                 lf_acc[:, c],
                 cb_amp(
