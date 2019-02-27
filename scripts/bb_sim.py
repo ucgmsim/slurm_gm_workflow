@@ -273,7 +273,7 @@ for i, stat in enumerate(stations_todo):
                     n2,
                     lfvs30ref,
                     vs30,
-                    lfvs30ref,
+                    stat.vs,
                     pga[c],
                     fmin=fmin,
                     fmidbot=fmidbot,
