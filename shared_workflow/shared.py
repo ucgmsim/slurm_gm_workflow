@@ -401,6 +401,10 @@ def set_wct(est_run_time, ncores, auto=False):
     return wct
 
 
+def get_nt(params):
+    return int(float(params.sim_duration) / float(params.dt))
+
+
 def add_name_suffix(name, yes):
     """Allow the user to add a suffix to the name"""
     new_name = name

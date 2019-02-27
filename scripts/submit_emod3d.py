@@ -11,8 +11,9 @@ import estimation.estimate_wct as est
 from qcore import utils, binary_version
 from qcore.config import get_machine_config, host
 from shared_workflow import load_config
-from shared_workflow.shared import confirm, set_wct, submit_sl_script, resolve_header, convert_time_to_hours
+from shared_workflow.shared import confirm, set_wct, submit_sl_script, resolve_header, convert_time_to_hours, get_nt
 
+CHECKPOINT_DURATION = 10
 
 def write_sl_script(
     lf_sim_dir,
@@ -33,7 +34,7 @@ def write_sl_script(
     )
 
     if nt:
-        steps_per_checkpoint = int(nt/(60.0*convert_time_to_hours(run_time)) * 10)
+        steps_per_checkpoint = int(nt/(60.0*convert_time_to_hours(run_time)) * CHECKPOINT_DURATION)
     else:
         steps_per_checkpoint = None
 
@@ -101,7 +102,7 @@ def main(args):
             int(params.nx),
             int(params.ny),
             int(params.nz),
-            int(float(params.sim_duration) / float(params.dt)),
+            get_nt(params),
             n_cores,
             True,
         )
@@ -122,7 +123,7 @@ def main(args):
             run_time=wct,
             nb_cpus=n_cores,
             machine=args.machine,
-            nt=int(float(params.sim_duration) / float(params.dt)),
+            nt=get_nt(params),
         )
 
         submit_sl_script(
