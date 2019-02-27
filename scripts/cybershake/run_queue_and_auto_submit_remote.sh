@@ -21,6 +21,6 @@ do
 
     cmd='python $gmsim/workflow/scripts/cybershake/auto_submit.py'" $path_sim_root --config $cybershake_cfg --no_im --user $user"
     echo $cmd
-    ssh maui "$cmd"
+    ssh maui "source /nesi/project/nesi00213/test_multi_user/share/bashrc.uceq; load_python3_maui; $cmd"
     sleep $interval
 done
