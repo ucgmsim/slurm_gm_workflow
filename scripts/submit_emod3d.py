@@ -34,7 +34,9 @@ def write_sl_script(
     )
 
     if nt:
-        steps_per_checkpoint = int(nt/(60.0*convert_time_to_hours(run_time)) * CHECKPOINT_DURATION)
+        steps_per_checkpoint = int(
+            nt / (60.0 * convert_time_to_hours(run_time)) * CHECKPOINT_DURATION
+        )
     else:
         steps_per_checkpoint = None
 
