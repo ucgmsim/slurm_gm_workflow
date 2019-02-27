@@ -15,6 +15,8 @@ import re
 import datetime
 import glob
 
+from jinja2 import Environment, FileSystemLoader
+
 from qcore import binary_version
 from qcore.config import host
 import qcore.constants as const
@@ -114,6 +116,21 @@ def get_vs(source_file):
 
 
 def resolve_header(account, n_tasks, wallclock_limit, job_name, version, memory,
+                   exe_time, job_description, partition=None, additional_lines="",
+                   template_path='slurm_header.cfg', target_host=host):
+    if partition is None:
+        partition = get_partition(target_host, convert_time_to_hours(wallclock_limit))
+
+    j2_env = Environment(loader=FileSystemLoader(template_path), trim_blocks=True)
+    header = j2_env.get_template('slurm_header.cfg').render(version=version, job_description=job_description,
+                                                            job_name=job_name, account=account, n_tasks=n_tasks,
+                                                            wallclock_limit=wallclock_limit,  mail="test@test.com",
+                                                            memory=memory, additional_lines=additional_lines,
+                                                            exe_time=exe_time, partition=partition)
+    return header
+
+
+def resolve_header2(account, n_tasks, wallclock_limit, job_name, version, memory,
                    exe_time, job_description, partition=None, additional_lines="",
                    cfg='slurm_header.cfg', target_host=host):
 

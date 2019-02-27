@@ -4,6 +4,8 @@ import os
 import glob
 import argparse
 
+from jinja2 import Template, Environment, FileSystemLoader
+
 from qcore import utils, binary_version
 from qcore.config import get_machine_config, host
 import qcore.constants as const

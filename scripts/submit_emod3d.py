@@ -5,6 +5,8 @@
 import os
 import argparse
 
+from jinja2 import Environment, FileSystemLoader
+
 import scripts.set_runparams as set_runparams
 import qcore.constants as const
 import estimation.estimate_wct as est
@@ -12,6 +14,14 @@ from qcore import utils, binary_version
 from qcore.config import get_machine_config, host
 from shared_workflow import load_config
 from shared_workflow.shared import confirm, set_wct, submit_sl_script, resolve_header
+
+
+def generate_context(template_path, lf_sim_dir, tools_dir, mgmt_db_location, sim_dir, srf_name):
+    j2_env = Environment(loader=FileSystemLoader(template_path), trim_blocks=True)
+    context = j2_env.get_template(template_path).render(lf_sim_dir=lf_sim_dir, tools_dir=tools_dir,
+                                                        mgmt_db_location=mgmt_db_location,
+                                                        sim_dir=sim_dir, srf_name=srf_name)
+    return context
 
 
 def write_sl_script(
@@ -33,19 +43,7 @@ def write_sl_script(
 
     set_runparams.create_run_params(srf_name, workflow_config=workflow_config)
 
-    with open("run_emod3d.sl.template", "r") as f:
-        template = f.read()
-
-    replace_t = [
-        ("{{lf_sim_dir}}", lf_sim_dir),
-        ("{{tools_dir}}", binary_path),
-        ("{{mgmt_db_location}}", mgmt_db_location),
-        ("{{sim_dir}}", sim_dir),
-        ("{{srf_name}}", srf_name),
-    ]
-
-    for pattern, value in replace_t:
-        template = template.replace(pattern, value)
+    template = generate_context("run_emod3d.sl.template", lf_sim_dir, binary_path, mgmt_db_location, sim_dir, srf_name)
 
     # slurm header
     job_name = "run_emod3d.%s" % srf_name
