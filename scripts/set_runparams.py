@@ -70,7 +70,7 @@ def create_run_params(sim_dir, srf_name=None, workflow_config=None, steps_per_ch
 
         e3d_dict['restartdir'] = os.path.join(params.sim_dir, 'LF', 'Restart')
         if steps_per_checkpoint:
-            e3d_dict['restart_itinc'] = steps_per_checkpoint
+            e3d_dict['restart_itinc'] = int(steps_per_checkpoint)
 
         e3d_dict['restartname'] = params.run_name
         e3d_dict['logdir'] = os.path.join(params.sim_dir, 'LF', 'Rlog')
