@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 """
 Single process, single task .
+
+Known working binary versions:
+sox 14.4.2
+flac 1.3.2
 """
 
 from argparse import ArgumentParser
