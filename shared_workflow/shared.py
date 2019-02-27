@@ -387,7 +387,7 @@ def set_wct(est_run_time, ncores, auto=False):
         est.convert_to_wct(est_run_time), ncores))
     if not auto:
         print("Use the estimated wall clock time? (Minimum of 5 mins, "
-              "otherwise adds a 10% overestimation to ensure "
+              "otherwise adds a 50% overestimation to ensure "
               "the job completes)")
         use_estimation = show_yes_no_question()
     else:
@@ -399,6 +399,10 @@ def set_wct(est_run_time, ncores, auto=False):
         wct = str(get_input_wc())
     print("WCT set to: %s" % wct)
     return wct
+
+
+def get_nt(params):
+    return int(float(params.sim_duration) / float(params.dt))
 
 
 def add_name_suffix(name, yes):
