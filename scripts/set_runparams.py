@@ -22,7 +22,7 @@ from shared_workflow import load_config
 sys.path.append(os.path.abspath(os.path.curdir))
 
 
-def create_run_params(sim_dir, srf_name=None, workflow_config=None):
+def create_run_params(sim_dir, srf_name=None, workflow_config=None, steps_per_checkpoint=None):
     sys.path.append(sim_dir)
     params = utils.load_sim_params('sim_params.yaml')
 
@@ -69,6 +69,8 @@ def create_run_params(sim_dir, srf_name=None, workflow_config=None):
         e3d_dict['ts_out_dir'] = os.path.join(params.sim_dir, 'LF', 'TSlice', 'TSFiles')
 
         e3d_dict['restartdir'] = os.path.join(params.sim_dir, 'LF', 'Restart')
+        if steps_per_checkpoint:
+            e3d_dict['restart_itinc'] = steps_per_checkpoint
 
         e3d_dict['restartname'] = params.run_name
         e3d_dict['logdir'] = os.path.join(params.sim_dir, 'LF', 'Rlog')

@@ -3,6 +3,12 @@ if [[ ! -d {{mgmt_db_location}}/mgmt_db_queue ]]; then
     #create the queue folder if not exist
     mkdir {{mgmt_db_location}}/mgmt_db_queue
 fi
+
+if [[ -d "{{lf_sim_dir}}/Restart" ]] && [[ `ls -1 {{lf_sim_dir}}/Restart | wc -l` != 0 ]]; then
+    echo "Checkpointed run found, attempting to resume from checkpoint"
+    sed 's/read_restart=.*/read_restart="1"/' {{lf_sim_dir}}/e3d.par
+fi
+
 timestamp=`date +%Y%m%d_%H%M%S`
 runtime_fmt="%Y-%m-%d_%H:%M:%S"
 start_time=`date +$runtime_fmt`

@@ -11,7 +11,7 @@ import estimation.estimate_wct as est
 from qcore import utils, binary_version
 from qcore.config import get_machine_config, host
 from shared_workflow import load_config
-from shared_workflow.shared import confirm, set_wct, submit_sl_script, resolve_header
+from shared_workflow.shared import confirm, set_wct, submit_sl_script, resolve_header, convert_time_to_hours
 
 
 def write_sl_script(
@@ -25,13 +25,19 @@ def write_sl_script(
     memory=const.DEFAULT_MEMORY,
     account=const.DEFAULT_ACCOUNT,
     machine=host,
+    nt=None,
 ):
     """Populates the template and writes the resulting slurm script to file"""
     workflow_config = load_config.load(
         os.path.dirname(os.path.realpath(__file__)), "workflow_config.json"
     )
 
-    set_runparams.create_run_params(srf_name, workflow_config=workflow_config)
+    if nt:
+        steps_per_checkpoint = nt/(60.0*convert_time_to_hours(run_time)) * 10
+    else:
+        steps_per_checkpoint = None
+
+    set_runparams.create_run_params(srf_name, workflow_config=workflow_config, steps_per_checkpoint=steps_per_checkpoint)
 
     with open("run_emod3d.sl.template", "r") as f:
         template = f.read()
@@ -116,6 +122,7 @@ def main(args):
             run_time=wct,
             nb_cpus=n_cores,
             machine=args.machine,
+            nt=int(float(params.sim_duration) / float(params.dt)),
         )
 
         submit_sl_script(
