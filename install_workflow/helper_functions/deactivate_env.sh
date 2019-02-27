@@ -6,5 +6,8 @@
 # Reset the pythonpath
 export PYTHONPATH=''
 
+# Remove environment
+export CUR_ENV=''
+
 deactivate
 source ~/.bashrc
