@@ -4,7 +4,7 @@ import os
 import glob
 import argparse
 
-from jinja2 import Template, Environment, FileSystemLoader
+from jinja2 import Environment, FileSystemLoader
 
 from qcore import utils, binary_version
 from qcore.config import get_machine_config, host
@@ -34,6 +34,14 @@ def get_seis_len(seis_path):
     return len(seis_file_list)
 
 
+def generate_context(template_path, lf_sim_dir, tools_dir, mgmt_db_location, sim_dir, srf_name):
+    j2_env = Environment(loader=FileSystemLoader(sim_dir), trim_blocks=True)
+    context = j2_env.get_template(template_path).render(lf_sim_dir=lf_sim_dir, tools_dir=tools_dir,
+                                                        mgmt_db_location=mgmt_db_location,
+                                                        sim_dir=sim_dir, srf_name=srf_name)
+    return context
+
+
 def write_sl_script_merge_ts(
     lf_sim_dir,
     sim_dir,
@@ -50,24 +58,12 @@ def write_sl_script_merge_ts(
         template = f.read()
 
     target_config = get_machine_config(machine)
+    tools_dir =  binary_version.get_unversioned_bin(
+                "merge_tsP3_par", target_config["tools_dir"])
+    lf_sim_dir = os.path.relpath(lf_sim_dir, sim_dir)
+    template_path = "%s.sl.template" % merge_ts_name_prefix
 
-    replace_t = [
-        # TODO: the merge_ts binary needed to use relative path instead
-        #  of absolute, maybe fix this
-        ("{{lf_sim_dir}}", os.path.relpath(lf_sim_dir, sim_dir)),
-        (
-            "{{tools_dir}}",
-            binary_version.get_unversioned_bin(
-                "merge_tsP3_par", target_config["tools_dir"]
-            ),
-        ),
-        ("{{mgmt_db_location}}", mgmt_db_location),
-        ("{{sim_dir}}", sim_dir),
-        ("{{srf_name}}", rup_mod),
-    ]
-
-    for pattern, value in replace_t:
-        template = template.replace(pattern, value)
+    template = generate_context(template_path, lf_sim_dir, tools_dir, mgmt_db_location, sim_dir, rup_mod)
 
     job_name = "post_emod3d.merge_ts.%s" % rup_mod
     header = resolve_header(
@@ -230,3 +226,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     main(args)
+

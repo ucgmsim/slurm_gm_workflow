@@ -17,7 +17,7 @@ from shared_workflow.shared import confirm, set_wct, submit_sl_script, resolve_h
 
 
 def generate_context(template_path, lf_sim_dir, tools_dir, mgmt_db_location, sim_dir, srf_name):
-    j2_env = Environment(loader=FileSystemLoader(template_path), trim_blocks=True)
+    j2_env = Environment(loader=FileSystemLoader(sim_dir), trim_blocks=True)
     context = j2_env.get_template(template_path).render(lf_sim_dir=lf_sim_dir, tools_dir=tools_dir,
                                                         mgmt_db_location=mgmt_db_location,
                                                         sim_dir=sim_dir, srf_name=srf_name)

@@ -121,7 +121,7 @@ def resolve_header(account, n_tasks, wallclock_limit, job_name, version, memory,
     if partition is None:
         partition = get_partition(target_host, convert_time_to_hours(wallclock_limit))
 
-    j2_env = Environment(loader=FileSystemLoader(template_path), trim_blocks=True)
+    j2_env = Environment(loader=FileSystemLoader('.'), trim_blocks=True)
     header = j2_env.get_template('slurm_header.cfg').render(version=version, job_description=job_description,
                                                             job_name=job_name, account=account, n_tasks=n_tasks,
                                                             wallclock_limit=wallclock_limit,  mail="test@test.com",

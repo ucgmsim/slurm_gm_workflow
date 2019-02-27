@@ -310,7 +310,7 @@ def main_local(args):
     # Always. To support statgrid, it is better to keep this way.
     yes_model_params = False
 
-    final_yes = q_final_confirm(run_name, yes_statcords, yes_model_params)
+    final_yes = q_final_confirm(run_name, yes_statcords)
 
     if not final_yes:
         print("Installation exited")

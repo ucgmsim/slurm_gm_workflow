@@ -4,6 +4,8 @@ import os
 import os.path
 import argparse
 
+from jinja2 import Environment, FileSystemLoader
+
 import estimation.estimate_wct as est
 import qcore.constants as const
 from qcore import utils, shared, srf, binary_version
@@ -12,6 +14,16 @@ from shared_workflow.shared import confirm, set_wct, submit_sl_script, resolve_h
 
 # default values
 default_wct = "00:30:00"
+
+
+def generate_context(template_path, hf_sim_dir, mgmt_db_location, hf_submit_command, sim_dir, stoch_name, binary):
+    test_hf_script = "test_hf_binary.sh" if binary else "test_hf_ascii.sh"
+    j2_env = Environment(loader=FileSystemLoader(sim_dir), trim_blocks=True)
+    context = j2_env.get_template(template_path).render(hf_sim_dir=hf_sim_dir, hf_submit_command=hf_submit_command,
+                                                        mgmt_db_location=mgmt_db_location,
+                                                        sim_dir=sim_dir, stoch_name=stoch_name, 
+                                                        test_hf_script=test_hf_script)
+    return context
 
 
 def write_sl_script(
@@ -71,17 +83,8 @@ def write_sl_script(
         hf_submit_command = "{} --seed {}".format(hf_submit_command, seed)
 
     # Replace template values
-    replace_t = [
-        ("{{hf_sim_dir}}", hf_sim_dir),
-        ("{{mgmt_db_location}}", params.mgmt_db_location),
-        ("{{hf_submit_command}}", hf_submit_command),
-        ("{{sim_dir}}", sim_dir),
-        ("{{srf_name}}", stoch_name),
-        ("{{test_hf_script}}", "test_hf_binary.sh" if binary else "test_hf_ascii.sh"),
-    ]
-
-    for pattern, value in replace_t:
-        template = template.replace(pattern, value)
+    template = generate_context("%s.sl.template" % sl_template_prefix, hf_sim_dir, params.mgmt_db_location, 
+                                hf_submit_command, sim_dir, stoch_name, binary)
 
     variation = stoch_name.replace("/", "__")
     print(variation)
@@ -256,3 +259,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     main(args)
+
