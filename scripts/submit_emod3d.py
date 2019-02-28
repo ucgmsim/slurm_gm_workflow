@@ -13,7 +13,7 @@ import estimation.estimate_wct as est
 from qcore import utils, binary_version
 from qcore.config import get_machine_config, host
 from shared_workflow import load_config
-from shared_workflow.shared import confirm, set_wct, submit_sl_script, resolve_header, convert_time_to_hours, get_nt
+from shared_workflow.shared import confirm, set_wct, submit_sl_script, resolve_header, get_nt
 
 # Estimated number of minutes between each checkpoint
 CHECKPOINT_DURATION = 10
@@ -120,10 +120,10 @@ def main(args):
         binary_path = binary_version.get_lf_bin(
             params.emod3d.emod3d_version, target_qconfig["tools_dir"]
         )
-
+        print("est_run_timeeee", est_run_time)
         steps_per_checkpoint = int(
             get_nt(params)
-            / (60.0 * convert_time_to_hours(est_run_time))
+            / (60.0 * est_run_time)
             * CHECKPOINT_DURATION
         )
 
