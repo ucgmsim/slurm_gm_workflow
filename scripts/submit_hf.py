@@ -11,6 +11,8 @@ from qcore.config import get_machine_config, host
 from shared_workflow.shared import confirm, set_wct, submit_sl_script, resolve_header
 
 # default values
+# Scale the number of nodes to be used for the simulation component
+SCALE_NCORES = True
 default_wct = "00:30:00"
 
 
@@ -181,7 +183,7 @@ def main(args):
             wct = default_wct
         else:
             est_core_hours, est_run_time, est_cores = est.est_HF_chours_single(
-                fd_count, nsub_stoch, nt, ncore, True
+                fd_count, nsub_stoch, nt, ncore, SCALE_NCORES
             )
             wct = set_wct(est_run_time, est_cores, args.auto)
 
