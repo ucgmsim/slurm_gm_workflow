@@ -50,7 +50,8 @@ def write_sl_script(
         additional_flags = ["no-lf-amp"]
         for key in additional_flags:
             if key in params.bb:
-                arguments.append("--"+key)
+                if params.bb[key] is True:
+                    arguments.append("--"+key)
         template = template.replace(
             "{{bb_submit_command}}", submit_command + " ".join(arguments)
         )
