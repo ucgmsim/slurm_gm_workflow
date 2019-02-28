@@ -157,7 +157,7 @@ def est_HF_chours_single(
     fd_count: int,
     nsub_stoch: float,
     nt: int,
-    n_cores: int,
+    n_logical_cores: int,
     scale_ncores: bool,
     node_time_th_factor: float = 1.0,
     model_dir: str = HF_MODEL_DIR,
@@ -184,14 +184,14 @@ def est_HF_chours_single(
     # Make a numpy array of the input data in the right shape
     # The order of the features has to the same as for training!!
     data = np.array(
-        [float(fd_count), float(nsub_stoch), float(nt), float(n_cores)]
+        [float(fd_count), float(nsub_stoch), float(nt), float(n_logical_cores)]
     ).reshape(1, 4)
 
     core_hours, run_time, n_cpus = estimate_HF_chours(
         data, scale_ncores, node_time_th_factor, model_dir, model_prefix, scaler_prefix
     )
 
-    return core_hours[0], run_time[0]
+    return core_hours[0], run_time[0], n_cpus[0]
 
 
 def estimate_HF_chours(
@@ -223,7 +223,7 @@ def estimate_HF_chours(
     run_time: np.ndarray of floats
         Estimated run time (hours)
     n_cores: np.ndarray of ints
-        The number of cores to use, returns the argument n_cores
+        The number of physical cores to use, returns the argument n_cores
         if scale_ncores is not set. Otherwise returns the updated ncores.
     """
     if data.shape[1] != 4:
