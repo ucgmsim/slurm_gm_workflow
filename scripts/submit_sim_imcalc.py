@@ -4,6 +4,8 @@ import os
 import argparse
 from enum import Enum
 
+from jinja2 import Environment, FileSystemLoader
+
 import qcore.constants as const
 from qcore import utils, shared
 from qcore.config import host
@@ -54,6 +56,31 @@ DEFAULT_OPTIONS = {
 }
 
 
+def generate_context(
+    template_path,
+    component,
+    sim_dir,
+    sim_name,
+    fault_name,
+    np,
+    extended,
+    simple,
+    mgmt_db_location,
+):
+    j2_env = Environment(loader=FileSystemLoader(sim_dir), trim_blocks=True)
+    context = j2_env.get_template(template_path).render(
+        component=component,
+        sim_dir=sim_dir,
+        sim_name=sim_name,
+        fault_name=fault_name,
+        np=np,
+        extended=extended,
+        simple=simple,
+        mgmt_db_location=mgmt_db_location,
+    )
+    return context
+
+
 def submit_im_calc_slurm(sim_dir: str, options_dict: Dict = None):
     """Creates the IM calc slurm scrip, also submits if specified
 
@@ -86,19 +113,19 @@ def submit_im_calc_slurm(sim_dir: str, options_dict: Dict = None):
     with open("sim_im_calc.sl.template", "r") as f:
         template = f.read()
 
-    replace_t = [
-            ("{{component}}", options_dict[SlBodyOptConsts.component.value]),
-            ("{{sim_dir}}", sim_dir),
-        ("{{sim_name}}", sim_name),
-        ("{{fault_name}}", fault_name),
-        ("{{np}}", options_dict[SlBodyOptConsts.n_procs.value]),
-        ("{{extended}}", "-e" if options_dict[SlBodyOptConsts.extended.value] else ""),
-        ("{{simple}}", "-s" if options_dict[SlBodyOptConsts.simple_out.value] else ""),
-        ("{{mgmt_db_location}}", params.mgmt_db_location)
-    ]
-
-    for pattern, value in replace_t:
-        template = template.replace(pattern, str(value))
+    extended = "-e" if options_dict[SlBodyOptConsts.extended.value] else ""
+    simple = "-s" if options_dict[SlBodyOptConsts.simple_out.value] else ""
+    template = generate_context(
+        "sim_im_calc.sl.template",
+        options_dict[SlBodyOptConsts.component.value],
+        sim_dir,
+        sim_name,
+        fault_name,
+        options_dict[SlBodyOptConsts.n_procs.value],
+        extended,
+        simple,
+        params.mgmt_db_location,
+    )
 
     # slurm header
     header = resolve_header(
@@ -111,7 +138,7 @@ def submit_im_calc_slurm(sim_dir: str, options_dict: Dict = None):
         const.timestamp,
         job_description=options_dict[SlHdrOptConsts.description.value],
         additional_lines=options_dict[SlHdrOptConsts.additional.value],
-        target_host=options_dict["machine"]
+        target_host=options_dict["machine"],
     )
 
     script = os.path.join(sim_dir, const.IM_SIM_SL_SCRIPT_NAME.format(const.timestamp))
