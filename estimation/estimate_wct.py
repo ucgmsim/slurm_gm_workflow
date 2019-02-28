@@ -158,6 +158,8 @@ def est_HF_chours_single(
     nsub_stoch: float,
     nt: int,
     n_cores: int,
+    scale_ncores: bool,
+    node_time_th_factor: float = 1.0,
     model_dir: str = HF_MODEL_DIR,
     model_prefix: str = MODEL_PREFIX,
     scaler_prefix: str = SCALER_PREFIX,
@@ -186,7 +188,7 @@ def est_HF_chours_single(
     ).reshape(1, 4)
 
     core_hours, run_time, n_cpus = estimate_HF_chours(
-        data, model_dir, model_prefix, scaler_prefix
+        data, scale_ncores, node_time_th_factor, model_dir, model_prefix, scaler_prefix
     )
 
     return core_hours[0], run_time[0]
