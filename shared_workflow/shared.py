@@ -115,6 +115,19 @@ def get_vs(source_file):
     return vs
 
 
+def generate_context(sim_dir, template_path, **kwargs):
+    """
+    return the template context for submission script
+    :param sim_dir:
+    :param template_path:
+    :param kwargs:
+    :return:
+    """
+    j2_env = Environment(loader=FileSystemLoader(sim_dir), trim_blocks=True)
+    context = j2_env.get_template(template_path).render(**kwargs)
+    return context
+
+
 def resolve_header(
     account,
     n_tasks,

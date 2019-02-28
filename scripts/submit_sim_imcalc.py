@@ -11,7 +11,13 @@ from qcore import utils, shared
 from qcore.config import host
 from typing import Dict
 from estimation.estimate_wct import est_IM_chours_single
-from shared_workflow.shared import submit_sl_script, set_wct, confirm, resolve_header
+from shared_workflow.shared import (
+    submit_sl_script,
+    set_wct,
+    confirm,
+    resolve_header,
+    generate_context,
+)
 
 
 class SlHdrOptConsts(Enum):
@@ -56,31 +62,6 @@ DEFAULT_OPTIONS = {
 }
 
 
-def generate_context(
-    template_path,
-    component,
-    sim_dir,
-    sim_name,
-    fault_name,
-    np,
-    extended,
-    simple,
-    mgmt_db_location,
-):
-    j2_env = Environment(loader=FileSystemLoader(sim_dir), trim_blocks=True)
-    context = j2_env.get_template(template_path).render(
-        component=component,
-        sim_dir=sim_dir,
-        sim_name=sim_name,
-        fault_name=fault_name,
-        np=np,
-        extended=extended,
-        simple=simple,
-        mgmt_db_location=mgmt_db_location,
-    )
-    return context
-
-
 def submit_im_calc_slurm(sim_dir: str, options_dict: Dict = None):
     """Creates the IM calc slurm scrip, also submits if specified
 
@@ -117,14 +98,15 @@ def submit_im_calc_slurm(sim_dir: str, options_dict: Dict = None):
     simple = "-s" if options_dict[SlBodyOptConsts.simple_out.value] else ""
     template = generate_context(
         "sim_im_calc.sl.template",
-        options_dict[SlBodyOptConsts.component.value],
         sim_dir,
-        sim_name,
-        fault_name,
-        options_dict[SlBodyOptConsts.n_procs.value],
-        extended,
-        simple,
-        params.mgmt_db_location,
+        component=options_dict[SlBodyOptConsts.component.value],
+        sim_dir=sim_dir,
+        sim_name=sim_name,
+        fault_name=fault_name,
+        np=options_dict[SlBodyOptConsts.n_procs.value],
+        extended=extended,
+        simple=simple,
+        mgmt_db_location=params.mgmt_db_location,
     )
 
     # slurm header
