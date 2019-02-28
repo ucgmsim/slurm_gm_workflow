@@ -14,13 +14,25 @@ from shared_workflow.shared import set_wct, confirm, submit_sl_script, resolve_h
 default_wct = "00:30:00"
 
 
-def generate_context(template_path, rup_mod, mgmt_db_location, bb_submit_command, sim_dir, srf_name, binary):
+def generate_context(
+    template_path,
+    rup_mod,
+    mgmt_db_location,
+    bb_submit_command,
+    sim_dir,
+    srf_name,
+    binary,
+):
     test_bb_script = "test_bb_binary.sh" if binary else "test_bb_ascii.sh"
     j2_env = Environment(loader=FileSystemLoader(sim_dir), trim_blocks=True)
-    context = j2_env.get_template(template_path).render(rup_mod=rup_mod, bb_submit_command=bb_submit_command,
-                                                        mgmt_db_location=mgmt_db_location,
-                                                        sim_dir=sim_dir, srf_name=srf_name,
-                                                        test_bb_script=test_bb_script)
+    context = j2_env.get_template(template_path).render(
+        rup_mod=rup_mod,
+        bb_submit_command=bb_submit_command,
+        mgmt_db_location=mgmt_db_location,
+        sim_dir=sim_dir,
+        srf_name=srf_name,
+        test_bb_script=test_bb_script,
+    )
     return context
 
 
@@ -37,8 +49,6 @@ def write_sl_script(
     binary=False,
     machine=host,
 ):
-    with open("%s.sl.template" % sl_template_prefix, "r") as f:
-        template = f.read()
 
     if binary:
         create_directory = "mkdir -p " + os.path.join(bb_sim_dir, "Acc") + "\n"
@@ -54,20 +64,29 @@ def write_sl_script(
             "--flo",
             str(params.flo),
         ]
-        additional_args = ['fmin','fmidbot','lfvsref']
+        additional_args = ["fmin", "fmidbot", "lfvsref"]
         for key in additional_args:
             if key in params.bb:
-                arguments.append("--"+key)
-                arguments.append(str(params.bb[key]))    
-        bb_submit_command =  submit_command + " ".join(arguments)
+                arguments.append("--" + key)
+                arguments.append(str(params.bb[key]))
+        bb_submit_command = submit_command + " ".join(arguments)
     else:
-        bb_submit_command = "srun python  $gmsim/workflow/scripts" "/match_seismo-mpi.py " + bb_sim_dir,
+        bb_submit_command = (
+            "srun python  $gmsim/workflow/scripts" "/match_seismo-mpi.py " + bb_sim_dir,
+        )
 
     variation = srf_name.replace("/", "__")
     print(variation)
-    
-    template = generate_context("%s.sl.template" % sl_template_prefix, variation, params.mgmt_db_location, 
-                                bb_submit_command, sim_dir, srf_name, binary)
+
+    template = generate_context(
+        "%s.sl.template" % sl_template_prefix,
+        variation,
+        params.mgmt_db_location,
+        bb_submit_command,
+        sim_dir,
+        srf_name,
+        binary,
+    )
     print("sim dir, srf_name", sim_dir, srf_name)
 
     job_name = "sim_bb_%s" % variation
@@ -184,4 +203,3 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     main(args)
-

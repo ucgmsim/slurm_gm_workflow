@@ -16,13 +16,25 @@ from shared_workflow.shared import confirm, set_wct, submit_sl_script, resolve_h
 default_wct = "00:30:00"
 
 
-def generate_context(template_path, hf_sim_dir, mgmt_db_location, hf_submit_command, sim_dir, stoch_name, binary):
+def generate_context(
+    template_path,
+    hf_sim_dir,
+    mgmt_db_location,
+    hf_submit_command,
+    sim_dir,
+    stoch_name,
+    binary,
+):
     test_hf_script = "test_hf_binary.sh" if binary else "test_hf_ascii.sh"
     j2_env = Environment(loader=FileSystemLoader(sim_dir), trim_blocks=True)
-    context = j2_env.get_template(template_path).render(hf_sim_dir=hf_sim_dir, hf_submit_command=hf_submit_command,
-                                                        mgmt_db_location=mgmt_db_location,
-                                                        sim_dir=sim_dir, srf_name=stoch_name, 
-                                                        test_hf_script=test_hf_script)
+    context = j2_env.get_template(template_path).render(
+        hf_sim_dir=hf_sim_dir,
+        hf_submit_command=hf_submit_command,
+        mgmt_db_location=mgmt_db_location,
+        sim_dir=sim_dir,
+        srf_name=stoch_name,
+        test_hf_script=test_hf_script,
+    )
     return context
 
 
@@ -42,8 +54,6 @@ def write_sl_script(
     machine=host,
 ):
     """Populates the template and writes the resulting slurm script to file"""
-    with open("%s.sl.template" % sl_template_prefix, "r") as f:
-        template = f.read()
 
     target_qconfig = get_machine_config(machine)
 
@@ -67,10 +77,10 @@ def write_sl_script(
                 params.hf.hf_version, target_qconfig["tools_dir"]
             ),
         ]
-        additional_args = ['hf_path_dur']
+        additional_args = ["hf_path_dur"]
         for key in additional_args:
             if key in params.hf:
-                arguments_for_hf.append("--"+key)
+                arguments_for_hf.append("--" + key)
                 arguments_for_hf.append(str(params.hf[key]))
         hf_submit_command += " ".join(list(map(str, arguments_for_hf)))
     else:
@@ -83,8 +93,15 @@ def write_sl_script(
         hf_submit_command = "{} --seed {}".format(hf_submit_command, seed)
 
     # Replace template values
-    template = generate_context("%s.sl.template" % sl_template_prefix, hf_sim_dir, params.mgmt_db_location, 
-                                hf_submit_command, sim_dir, stoch_name, binary)
+    template = generate_context(
+        "%s.sl.template" % sl_template_prefix,
+        hf_sim_dir,
+        params.mgmt_db_location,
+        hf_submit_command,
+        sim_dir,
+        stoch_name,
+        binary,
+    )
 
     variation = stoch_name.replace("/", "__")
     print(variation)
@@ -259,4 +276,3 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     main(args)
-

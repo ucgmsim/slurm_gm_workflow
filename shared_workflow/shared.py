@@ -26,26 +26,26 @@ if sys.version_info.major == 3:
 
 
 def write_to_py(pyfile, vardict):
-    with open(pyfile, 'w') as fp:
+    with open(pyfile, "w") as fp:
         for (key, value) in vardict.items():
             if isinstance(value, basestring):
                 fp.write('%s="%s"\n' % (key, value))
             else:
-                fp.write('%s=%s\n' % (key, value))
+                fp.write("%s=%s\n" % (key, value))
 
 
 def par_value(variable):
     """reads a parameter from the parameters file (e3d.par)
     should not be necessary as you can just 'from params import *' (params.py)
     """
-    result = ''
-    par_handle = open('e3d.par', 'r')
+    result = ""
+    par_handle = open("e3d.par", "r")
     for line in par_handle:
-        if line.startswith(variable + '='):
+        if line.startswith(variable + "="):
             # keep going and get the last result
             result = line
     par_handle.close()
-    return ''.join(result.split('=')[1:]).rstrip('\n')
+    return "".join(result.split("=")[1:]).rstrip("\n")
 
 
 def get_stations(source_file, locations=False):
@@ -56,9 +56,9 @@ def get_stations(source_file, locations=False):
     stations = []
     station_lats = []
     station_lons = []
-    with open(source_file, 'r') as sp:
+    with open(source_file, "r") as sp:
         for line in sp.readlines():
-            if line[0] not in  ['#', '%']:
+            if line[0] not in ["#", "%"]:
                 info = line.split()
                 stations.append(info[2])
                 if locations:
@@ -69,7 +69,7 @@ def get_stations(source_file, locations=False):
     return (stations, station_lats, station_lons)
 
 
-def get_corners(model_params, gmt_format = False):
+def get_corners(model_params, gmt_format=False):
     """Retrieve corners of simulation domain from model params file.
     model_params: file path to model params
     gmt_format: if True, also returns corners in GMT string format
@@ -79,17 +79,17 @@ def get_corners(model_params, gmt_format = False):
     # c1  c3
     #   c4
     corners = []
-    with open(model_params, 'r') as vmpf:
+    with open(model_params, "r") as vmpf:
         lines = vmpf.readlines()
         # make sure they are read in the correct order at efficiency cost
-        for corner in ['c1=', 'c2=', 'c3=', 'c4=']:
+        for corner in ["c1=", "c2=", "c3=", "c4="]:
             for line in lines:
                 if corner in line:
                     corners.append(list(map(float, line.split()[1:3])))
     if not gmt_format:
         return corners
     # corners in GMT format
-    cnr_str = '\n'.join([' '.join(map(str, cnr)) for cnr in corners])
+    cnr_str = "\n".join([" ".join(map(str, cnr)) for cnr in corners])
     return corners, cnr_str
 
 
@@ -99,64 +99,54 @@ def get_vs(source_file):
     SITE   VALUE
     """
     vs = {}
-    with open(source_file, 'r') as sp:
+    with open(source_file, "r") as sp:
         lines = sp.readlines()
         print(len(lines))
-        for i,line in enumerate(lines):
-            line = line.strip('\n')
-            if line.startswith('#') or line.startswith('%'): #line is a comment
+        for i, line in enumerate(lines):
+            line = line.strip("\n")
+            if line.startswith("#") or line.startswith("%"):  # line is a comment
                 continue
             info = line.split()
-            if len(info)>=2: #if there are more than 2 columns
+            if len(info) >= 2:  # if there are more than 2 columns
                 vs[info[0]] = info[1]
             else:
-                print("Check this line: %d %s" %(i,line), file=sys.stderr)
-                
+                print("Check this line: %d %s" % (i, line), file=sys.stderr)
+
     return vs
 
 
-def resolve_header(account, n_tasks, wallclock_limit, job_name, version, memory,
-                   exe_time, job_description, partition=None, additional_lines="",
-                   template_path='slurm_header.cfg', target_host=host):
+def resolve_header(
+    account,
+    n_tasks,
+    wallclock_limit,
+    job_name,
+    version,
+    memory,
+    exe_time,
+    job_description,
+    partition=None,
+    additional_lines="",
+    template_path="slurm_header.cfg",
+    target_host=host,
+):
     if partition is None:
         partition = get_partition(target_host, convert_time_to_hours(wallclock_limit))
 
-    j2_env = Environment(loader=FileSystemLoader('.'), trim_blocks=True)
-    header = j2_env.get_template('slurm_header.cfg').render(version=version, job_description=job_description,
-                                                            job_name=job_name, account=account, n_tasks=n_tasks,
-                                                            wallclock_limit=wallclock_limit,  mail="test@test.com",
-                                                            memory=memory, additional_lines=additional_lines,
-                                                            exe_time=exe_time, partition=partition)
+    j2_env = Environment(loader=FileSystemLoader("."), trim_blocks=True)
+    header = j2_env.get_template(template_path).render(
+        version=version,
+        job_description=job_description,
+        job_name=job_name,
+        account=account,
+        n_tasks=n_tasks,
+        wallclock_limit=wallclock_limit,
+        mail="test@test.com",
+        memory=memory,
+        additional_lines=additional_lines,
+        exe_time=exe_time,
+        partition=partition,
+    )
     return header
-
-
-def resolve_header2(account, n_tasks, wallclock_limit, job_name, version, memory,
-                   exe_time, job_description, partition=None, additional_lines="",
-                   cfg='slurm_header.cfg', target_host=host):
-
-    if partition is None:
-        partition = get_partition(target_host, convert_time_to_hours(wallclock_limit))
-    with open(cfg) as f:
-        full_text = f.read()
-
-    replacements = [
-        ("{{account}}", account),
-        ("{{job_name}}", job_name),
-        ("{{partition}}", partition),
-        ("{{n_tasks}}", n_tasks),
-        ("{{wallclock_limit}}", wallclock_limit),
-        ("{{version}}", version),
-        ("{{memory}}", memory),
-        ("{{job_description}}", job_description),
-        ("{{mail}}", "test@test.com"),
-        ("{{additional_lines}}", additional_lines),
-        ("{{exe_time}}", exe_time)
-    ]
-
-    for (template_sig, replacement) in replacements:
-        full_text = full_text.replace(template_sig, str(replacement))
-
-    return full_text
 
 
 def get_partition(machine, core_hours=None):
@@ -173,8 +163,8 @@ def get_partition(machine, core_hours=None):
 
 
 def convert_time_to_hours(time_str):
-    h, m, s = time_str.split(':')
-    return int(h) + int(m)/60.0 + int(s)/3600.0
+    h, m, s = time_str.split(":")
+    return int(h) + int(m) / 60.0 + int(s) / 3600.0
 
 
 ################# Verify Section ###################
@@ -183,8 +173,10 @@ def convert_time_to_hours(time_str):
 # very important to prevent (for example) empty variables. 'rm -r emptyvar/*' == 'rm -r /*'
 # these functions prevent a script malfunctioning and causing code to run dangerously
 
+
 class ResourceError(Exception):
     """Exception to throw, prevents scripts from continuing"""
+
     pass
 
 
@@ -192,47 +184,50 @@ def verify_files(file_list):
     """Makes sure script file resources exist"""
     for file_path in file_list:
         if not os.path.isfile(file_path):
-            raise ResourceError('File not found: %s. '
-                                'Check params.py.' % (file_path))
+            raise ResourceError("File not found: %s. " "Check params.py." % (file_path))
 
 
 def verify_logfiles(logfile_list):
     """Makes sure logfiles can be created, removes old ones"""
     for logfile in logfile_list:
         # reformat if just filename without path
-        if os.path.dirname(logfile) == '':
+        if os.path.dirname(logfile) == "":
             logfile = os.path.join(os.getcwd(), logfile)
         # is directory writable?
         if not os.access(os.path.dirname(logfile), os.W_OK):
-            raise ResourceError('Can\'t write logfile: %s. '
-                                'Check directory permissions.' % (logfile))
+            raise ResourceError(
+                "Can't write logfile: %s. " "Check directory permissions." % (logfile)
+            )
         if os.path.exists(logfile):
             os.remove(logfile)
-        print("Logfile: %s" %logfile)
+        print("Logfile: %s" % logfile)
 
 
 def verify_strings(string_list):
     """Makes sure required string are not empty"""
     for variable in string_list:
-        if variable == '':
-            raise ResourceError('Variable is empty: %s. Check '
-                                'params.py.' % (variable))
+        if variable == "":
+            raise ResourceError(
+                "Variable is empty: %s. Check " "params.py." % (variable)
+            )
 
 
 def verify_lists(list_list):
     """<akes sure list inputs contain values"""
     for req_list in list_list:
         if len(req_list) < 1:
-            raise ResourceError('List doesn\'t contain any values: %s. '
-                                'Check params.py.' % (req_list))
+            raise ResourceError(
+                "List doesn't contain any values: %s. " "Check params.py." % (req_list)
+            )
 
 
 def verify_dirs(dir_list):
     """Makes sure dirs which should already exist, do exist"""
     for dir_path in dir_list:
         if not os.path.isdir(dir_path):
-            raise ResourceError('Directory doesn\'t exist: %s. '
-                                'Check params.py' % (dir_path))
+            raise ResourceError(
+                "Directory doesn't exist: %s. " "Check params.py" % (dir_path)
+            )
 
 
 def verify_user_dirs(dir_list, reset=False):
@@ -252,14 +247,16 @@ def verify_binaries(bin_list):
     """Makes sure binary paths are valid binaries"""
     for bin_path in bin_list:
         if not os.path.isfile(bin_path):
-            raise ResourceError('Binary not found: %s. '
-                                'Check params.py.' % (bin_path))
+            raise ResourceError(
+                "Binary not found: %s. " "Check params.py." % (bin_path)
+            )
         if not os.access(bin_path, os.X_OK):
-            raise ResourceError('Binary not executable: %s. '
-                                'Check file permissions.' % (bin_path))
+            raise ResourceError(
+                "Binary not executable: %s. " "Check file permissions." % (bin_path)
+            )
 
 
-def set_permission(dir_path, mode = 0o750, noexec = 0o640, debug=False):
+def set_permission(dir_path, mode=0o750, noexec=0o640, debug=False):
     """Recursively sets permission. mode should be
     given in 0o777 format. eg. 0o750
     """
@@ -277,7 +274,7 @@ def set_permission(dir_path, mode = 0o750, noexec = 0o640, debug=False):
             if os.path.islink(f):
                 continue
             # please do not make every file executable (very bad)
-            if f.split('.')[-1] in ['py', 'csh', 'sh']:
+            if f.split(".")[-1] in ["py", "csh", "sh"]:
                 file_mode = mode
             else:
                 file_mode = noexec
@@ -289,8 +286,9 @@ def set_permission(dir_path, mode = 0o750, noexec = 0o640, debug=False):
 def user_select(options):
     """Gets the user selected number (not index)"""
     try:
-        selected_number = input("Enter the number you "
-                                "wish to select (1-%d):" %len(options))
+        selected_number = input(
+            "Enter the number you " "wish to select (1-%d):" % len(options)
+        )
     # when is this thrown?
     except NameError:
         print("Check your input.")
@@ -304,21 +302,23 @@ def user_select(options):
         else:
             try:
                 # Check that it is a valid option
-                v = options[selected_number-1]
+                v = options[selected_number - 1]
             except IndexError:
-                print("Input should be a number in (1-%d)" %len(options))
+                print("Input should be a number in (1-%d)" % len(options))
                 selected_number = user_select(options)
     return selected_number
 
 
 def user_select_multi(options):
-    user_inputs = input("Enter the numbers [1-%d] you wish to select "
-                        "separated by space (eg. 1 3 4) "
-                        "or a/A for All):" %len(options))
-    user_inputs_raw = user_inputs.split(' ')
-    if len(user_inputs_raw) == 1 and user_inputs_raw[0] in ['a','A']:
+    user_inputs = input(
+        "Enter the numbers [1-%d] you wish to select "
+        "separated by space (eg. 1 3 4) "
+        "or a/A for All):" % len(options)
+    )
+    user_inputs_raw = user_inputs.split(" ")
+    if len(user_inputs_raw) == 1 and user_inputs_raw[0] in ["a", "A"]:
         print("You selected all")
-        return list(range(1, len(options)+1))
+        return list(range(1, len(options) + 1))
     else:
         selected_numbers = []
         # check if all inputs are numeric
@@ -326,7 +326,7 @@ def user_select_multi(options):
             try:
                 selected_number = int(v)
             except ValueError:
-                print("Value error: %s is not a valid number" %v)
+                print("Value error: %s is not a valid number" % v)
                 selected_numbers = user_select_multi(options)
                 return selected_numbers
             else:
@@ -338,19 +338,19 @@ def user_select_multi(options):
         selected_numbers.sort()
 
         return selected_numbers
-         
+
 
 def show_multiple_choice(options, singular=True):
     for i, option in enumerate(options):
         print("%2d. %s" % (i + 1, option))
     if singular:
         selected_number = user_select(options)
-        return options[selected_number-1]
+        return options[selected_number - 1]
     else:
         selected_numbers = user_select_multi(options)
         selected_options = []
         for i in selected_numbers:
-            selected_options.append(options[i-1])
+            selected_options.append(options[i - 1])
         return selected_options
 
 
@@ -364,8 +364,8 @@ def show_yes_no_question():
     return selected_number == 1
 
 
-def show_horizontal_line(c='=', length=100):
-    print(c*length)
+def show_horizontal_line(c="=", length=100):
+    print(c * length)
 
 
 def confirm(q):
@@ -385,12 +385,13 @@ def confirm_name(name):
 def get_input_wc():
     show_horizontal_line()
     try:
-        user_input_wc = datetime.datetime.strptime(str(input(
-            "Enter the WallClock time limit you "
-            "would like to use: ")), "%H:%M:%S").time()
+        user_input_wc = datetime.datetime.strptime(
+            str(input("Enter the WallClock time limit you " "would like to use: ")),
+            "%H:%M:%S",
+        ).time()
     except ValueError:
-        print(r'Input value error. Input does not match format : %H:%M:%S')
-        print(r'Must not exceed the limit where: %H <= 23, %M <= 59, %S <= 59')
+        print(r"Input value error. Input does not match format : %H:%M:%S")
+        print(r"Must not exceed the limit where: %H <= 23, %M <= 59, %S <= 59")
         user_input_wc = get_input_wc()
     show_horizontal_line()
 
@@ -400,12 +401,17 @@ def get_input_wc():
 def set_wct(est_run_time, ncores, auto=False):
     import estimation.estimate_wct as est
 
-    print("Estimated time: {} with {} number of cores".format(
-        est.convert_to_wct(est_run_time), ncores))
+    print(
+        "Estimated time: {} with {} number of cores".format(
+            est.convert_to_wct(est_run_time), ncores
+        )
+    )
     if not auto:
-        print("Use the estimated wall clock time? (Minimum of 5 mins, "
-              "otherwise adds a 10% overestimation to ensure "
-              "the job completes)")
+        print(
+            "Use the estimated wall clock time? (Minimum of 5 mins, "
+            "otherwise adds a 10% overestimation to ensure "
+            "the job completes)"
+        )
         use_estimation = show_yes_no_question()
     else:
         use_estimation = True
@@ -421,7 +427,7 @@ def set_wct(est_run_time, ncores, auto=False):
 def add_name_suffix(name, yes):
     """Allow the user to add a suffix to the name"""
     new_name = name
-    #print "Yes? ", yes
+    # print "Yes? ", yes
     while not yes:
         user_str = input("Add more text (will be appended to the name above)")
         user_str = user_str.replace(" ", "_")
@@ -430,51 +436,65 @@ def add_name_suffix(name, yes):
     return new_name
 
 
-def exe(cmd, debug=True,shell=False, stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE):
+def exe(cmd, debug=True, shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE):
     """cmd is either a str or a list. but it will be processed as a list.
     this is to accommodate the default shell=False. (for security reason)
     If we wish to support a simple shell command like "echo hello"
     without switching on shell=True, cmd should be given as a list.
     """
 
-    if type(cmd)==str:
-        cmd = cmd.split(' ')
+    if type(cmd) == str:
+        cmd = cmd.split(" ")
 
     if debug:
-        print(' '.join(cmd))
+        print(" ".join(cmd))
 
-    p = subprocess.Popen(cmd, shell=shell, stdout=stdout, stderr=stderr, encoding='utf-8')
+    p = subprocess.Popen(
+        cmd, shell=shell, stdout=stdout, stderr=stderr, encoding="utf-8"
+    )
     out, err = p.communicate()
     if debug:
         if out:
             print(out)
         if err:
             print(err, file=sys.stderr)
-            print(err) # also printing to stdout (syncing err msg to cmd executed)
+            print(err)  # also printing to stdout (syncing err msg to cmd executed)
 
     return out, err
 
 
-def submit_sl_script(script, process, status, mgmt_db_loc, srf_name,
-                     timestamp, submit_yes=False, target_machine=None):
+def submit_sl_script(
+    script,
+    process,
+    status,
+    mgmt_db_loc,
+    srf_name,
+    timestamp,
+    submit_yes=False,
+    target_machine=None,
+):
     """Submits the slurm script and updates the management db"""
     if submit_yes:
         print("Submitting %s" % script)
         if target_machine and target_machine != host:
-            res = exe("sbatch --export=NONE -M {} {}".format(target_machine, script), debug=False)
+            res = exe(
+                "sbatch --export=NONE -M {} {}".format(target_machine, script),
+                debug=False,
+            )
         else:
             res = exe("sbatch {}".format(script), debug=False)
         if len(res[1]) == 0:
             # no errors, return the job id
             return_words = res[0].split()
-            job_index = return_words.index('job')
-            jobid = return_words[job_index+1]
+            job_index = return_words.index("job")
+            jobid = return_words[job_index + 1]
             try:
                 int(jobid)
             except ValueError:
-                print("{} is not a valid jobid. Submitting the "
-                      "job most likely failed".format(jobid))
+                print(
+                    "{} is not a valid jobid. Submitting the "
+                    "job most likely failed".format(jobid)
+                )
                 sys.exit()
 
             update_db_cmd(process, status, mgmt_db_loc, srf_name, jobid, timestamp)
@@ -489,21 +509,27 @@ def update_db_cmd(process, status, mgmt_db_loc, srf_name, jobid, timestamp):
     if mgmt_db_loc is not None and os.path.isdir(mgmt_db_loc):
         db_queue_path = os.path.join(mgmt_db_loc, "mgmt_db_queue")
         cmd_name = os.path.join(db_queue_path, "%s_%s_q" % (timestamp, jobid))
-        cmd = "python $gmsim/workflow/scripts/management/" \
-              "update_mgmt_db.py {} {} {} --run_name {}  --job {}".format(
-            mgmt_db_loc, process, status, srf_name, jobid)
-        with open(cmd_name, 'w+') as f:
+        cmd = (
+            "python $gmsim/workflow/scripts/management/"
+            "update_mgmt_db.py {} {} {} --run_name {}  --job {}".format(
+                mgmt_db_loc, process, status, srf_name, jobid
+            )
+        )
+        with open(cmd_name, "w+") as f:
             f.write(cmd)
             f.close()
     else:
-        print("{} is not a valid mgmt db location. No update cmd was created.".format(
-            mgmt_db_loc))
+        print(
+            "{} is not a valid mgmt db location. No update cmd was created.".format(
+                mgmt_db_loc
+            )
+        )
 
 
 ### functions mostly used in regression_test
 def get_list_of_files(folder_dir):
     # make sure folder_dir ends with /
-    folder_dir = os.path.join(folder_dir, '')
+    folder_dir = os.path.join(folder_dir, "")
     if os.path.isdir(folder_dir):
         list_of_files = os.listdir(folder_dir)
         return list_of_files
@@ -512,7 +538,7 @@ def get_list_of_files(folder_dir):
 
 def filter_list_of_files(list_of_files, filter_list):
     for file in list_of_files:
-        if file.rsplit('.', 1)[0] not in filter_list:
+        if file.rsplit(".", 1)[0] not in filter_list:
             list_of_files.remove(file)
     return list_of_files
 
@@ -520,7 +546,7 @@ def filter_list_of_files(list_of_files, filter_list):
 def get_list_of_prefix(list_of_files):
     list_of_prefix = []
     for file in list_of_files:
-        prefix = file.rsplit('.',1)[0]
+        prefix = file.rsplit(".", 1)[0]
         if prefix not in list_of_prefix:
             list_of_prefix.append(prefix)
     return list_of_prefix
@@ -558,12 +584,12 @@ def last_line(in_file, block_size=1024, ignore_ending_newline=True):
         buf = in_file.read(block_size)
 
         # Search for line end.
-        if ignore_ending_newline and seek_offset == -block_size and buf[-1] == '\n':
+        if ignore_ending_newline and seek_offset == -block_size and buf[-1] == "\n":
             buf = buf[:-1]
-        pos = buf.rfind('\n')
+        pos = buf.rfind("\n")
         if pos != -1:
             # Found line end.
-            return buf[pos+1:] + suffix
+            return buf[pos + 1 :] + suffix
 
         suffix = buf + suffix
 
@@ -575,7 +601,7 @@ def get_rlog_count(rlog_dir):
     list_of_rlogs = os.listdir(rlog_dir)
     for file in list_of_rlogs:
         # get the extension of the files
-        extension = file.rsplit('.', 1)[1]
+        extension = file.rsplit(".", 1)[1]
         # if it is not an rlog file,
         # remove from list(in case someone created non-rlog-files)
         if extension != "rlog":
@@ -584,36 +610,40 @@ def get_rlog_count(rlog_dir):
 
 
 def params_to_dict(params_base_path):
-    with open(params_base_path, 'r') as f:
+    with open(params_base_path, "r") as f:
         lines = f.readlines()
     params_dict = {}
 
     for x in lines:
-        x2 = x.replace('\n', '').replace('\t', '')
-        comment_begin = x2.find('#')
+        x2 = x.replace("\n", "").replace("\t", "")
+        comment_begin = x2.find("#")
         if comment_begin > -1:
-            x2 = x2[:comment_begin]     # Remove comment
+            x2 = x2[:comment_begin]  # Remove comment
 
-        x2 = x2.lstrip(' ').rstrip(' ')
-        if x2:                          # Expected to have key=contents format
+        x2 = x2.lstrip(" ").rstrip(" ")
+        if x2:  # Expected to have key=contents format
             try:
-                key, contents = x2.split('=')
+                key, contents = x2.split("=")
             except ValueError:
                 print(x2)
                 print("!!!!!!!!!")
             else:
-                key = key.rstrip(' ').lstrip(' ')
+                key = key.rstrip(" ").lstrip(" ")
                 try:
-                    contents = re.search('\[.*\]', contents).group(0)
+                    contents = re.search("\[.*\]", contents).group(0)
                 except AttributeError:
                     # this is no list
                     contents = contents.replace("'", "").replace('"', "")
-                    contents = contents.rstrip(' ').lstrip(' ')
+                    contents = contents.rstrip(" ").lstrip(" ")
                 else:  # this is a list
-                    contents = contents.replace(']', '').replace('[',
-                                                                 '').replace(
-                        ' ', '').replace("'", "").replace('"', '')
-                    contents = contents.split(',')
+                    contents = (
+                        contents.replace("]", "")
+                        .replace("[", "")
+                        .replace(" ", "")
+                        .replace("'", "")
+                        .replace('"', "")
+                    )
+                    contents = contents.split(",")
                 params_dict[key] = contents
 
     return params_dict
@@ -635,8 +665,7 @@ def get_site_specific_path(stat_file_path, hf_stat_vs_ref=None, v1d_mod_dir=None
         print("Error: No such path exists: %s" % v_mod_1d_path)
         sys.exit()
     if hf_stat_vs_ref is None:
-        hf_stat_vs_ref_options = glob.glob(
-            os.path.join(stat_file_path, '*.hfvs30ref'))
+        hf_stat_vs_ref_options = glob.glob(os.path.join(stat_file_path, "*.hfvs30ref"))
         if len(hf_stat_vs_ref_options) == 0:
             print("Error: No HF Vsref file was found at %s" % stat_file_path)
             sys.exit()
@@ -654,19 +683,22 @@ def get_site_specific_path(stat_file_path, hf_stat_vs_ref=None, v1d_mod_dir=None
 
 def get_hf_run_name(v_mod_1d_name, srf, root_dict, hf_version):
     hf_sim_bin = binary_version.get_hf_np2mm(hf_version)
-    hfVString = 'hf' + os.path.basename(hf_sim_bin).split('_')[-1]
+    hfVString = "hf" + os.path.basename(hf_sim_bin).split("_")[-1]
     hf_run_name = "{}_{}_rvf{}_sd{}_k{}".format(
-        v_mod_1d_name, hfVString, str(root_dict['hf']['hf_rvfac']),
-        str(root_dict['hf']['sdrop']), str(root_dict['hf']['kappa']))
-    hf_run_name = hf_run_name.replace('.', 'p')
+        v_mod_1d_name,
+        hfVString,
+        str(root_dict["hf"]["hf_rvfac"]),
+        str(root_dict["hf"]["sdrop"]),
+        str(root_dict["hf"]["kappa"]),
+    )
+    hf_run_name = hf_run_name.replace(".", "p")
     show_horizontal_line()
     print("- Vel. Model 1D: %s" % v_mod_1d_name)
     print("- hf_sim_bin: %s" % os.path.basename(hf_sim_bin))
-    print("- hf_rvfac: %s" % root_dict['hf']['hf_rvfac'])
-    print("- hf_sdrop: %s" % root_dict['hf']['sdrop'])
-    print("- hf_kappa: %s" % root_dict['hf']['kappa'])
+    print("- hf_rvfac: %s" % root_dict["hf"]["hf_rvfac"])
+    print("- hf_sdrop: %s" % root_dict["hf"]["sdrop"])
+    print("- hf_kappa: %s" % root_dict["hf"]["kappa"])
     print("- srf file: %s" % srf)
     #    yes = confirm_name(hf_run_name)
     yes = True
     return yes, hf_run_name
-
