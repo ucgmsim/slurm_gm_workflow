@@ -55,7 +55,18 @@ if is_master:
         comm.Abort()
 
 args = comm.bcast(args, root=master)
-no_lf_amp = args.no_lf_amp
+if args.no_lf_amp:
+
+    def ampdeamp_lf(series, *x, **y):
+        return series
+
+    def cb_amp_lf(*x, **y):
+        pass
+
+
+else:
+    ampdeamp_lf = ampdeamp
+    cb_amp_lf = cb_amp
 
 # load data stores
 lf = timeseries.LFSeis(args.lf_dir)
@@ -278,11 +289,9 @@ for i, stat in enumerate(stations_todo):
             "highpass",
         )
         lf_acc[:, c] = bwfilter(
-            lf_acc[:, c]
-            if no_lf_amp
-            else ampdeamp(
+            ampdeamp_lf(
                 lf_acc[:, c],
-                cb_amp(
+                cb_amp_lf(
                     bb_dt,
                     n2,
                     lfvs30ref,
