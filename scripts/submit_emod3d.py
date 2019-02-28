@@ -120,7 +120,6 @@ def main(args):
         binary_path = binary_version.get_lf_bin(
             params.emod3d.emod3d_version, target_qconfig["tools_dir"]
         )
-        print("est_run_timeeee", est_run_time)
         steps_per_checkpoint = int(
             get_nt(params)
             / (60.0 * est_run_time)
