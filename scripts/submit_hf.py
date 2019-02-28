@@ -21,7 +21,7 @@ def generate_context(template_path, hf_sim_dir, mgmt_db_location, hf_submit_comm
     j2_env = Environment(loader=FileSystemLoader(sim_dir), trim_blocks=True)
     context = j2_env.get_template(template_path).render(hf_sim_dir=hf_sim_dir, hf_submit_command=hf_submit_command,
                                                         mgmt_db_location=mgmt_db_location,
-                                                        sim_dir=sim_dir, stoch_name=stoch_name, 
+                                                        sim_dir=sim_dir, srf_name=stoch_name, 
                                                         test_hf_script=test_hf_script)
     return context
 
