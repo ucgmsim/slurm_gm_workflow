@@ -124,9 +124,7 @@ class DashboardDB:
         with self.get_cursor(self.db_file) as cursor:
             results = cursor.execute(
                 "SELECT DAY, CORE_HOURS_USED, TOTAL_CORE_HOURS FROM {} "
-                "WHERE DAY BETWEEN ? AND ?".format(
-                    self.get_daily_t_name(hpc)
-                ),
+                "WHERE DAY BETWEEN ? AND ?".format(self.get_daily_t_name(hpc)),
                 (start_date, end_date),
             ).fetchall()
 
@@ -412,7 +410,9 @@ class TestDashboardDB(unittest.TestCase):
         db.update_daily_chours_usage(self.total_core_usage_1, self.hpc_1, day_1)
 
         # Check the entry has been added & daily usage is null
-        day, daily_usage, total_core_hours = db.get_chours_usage(day_1, day_1, self.hpc_1)[0]
+        day, daily_usage, total_core_hours = db.get_chours_usage(
+            day_1, day_1, self.hpc_1
+        )[0]
         self.assertEqual(day, day_1)
         self.assertEqual(daily_usage, 0)
         self.assertEqual(total_core_hours, self.total_core_usage_1)
@@ -421,7 +421,9 @@ class TestDashboardDB(unittest.TestCase):
         db.update_daily_chours_usage(self.total_core_usage_2, self.hpc_1, day_1)
 
         # Check that entry for day 1 has been updated correctly
-        day, daily_usage, total_core_hours = db.get_chours_usage(day_1, day_1, self.hpc_1)[0]
+        day, daily_usage, total_core_hours = db.get_chours_usage(
+            day_1, day_1, self.hpc_1
+        )[0]
         self.assertEqual(day, day_1)
         self.assertEqual(daily_usage, self.total_core_usage_2 - self.total_core_usage_1)
         self.assertEqual(total_core_hours, self.total_core_usage_2)
@@ -430,7 +432,9 @@ class TestDashboardDB(unittest.TestCase):
         db.update_daily_chours_usage(self.total_core_usage_2, self.hpc_1, day_1)
 
         # Check that nothing has changed
-        day, daily_usage, total_core_hours = db.get_chours_usage(day_1, day_1, self.hpc_1)[0]
+        day, daily_usage, total_core_hours = db.get_chours_usage(
+            day_1, day_1, self.hpc_1
+        )[0]
         self.assertEqual(day, day_1)
         self.assertEqual(daily_usage, self.total_core_usage_2 - self.total_core_usage_1)
         self.assertEqual(total_core_hours, self.total_core_usage_2)

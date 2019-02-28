@@ -83,6 +83,7 @@ def parse_squeue(lines: Iterable[str]):
 
     return entries
 
+
 def collect_data(user: str, hpc: const.HPC, dashboard_db: str):
     """Collects data from the specified HPC and adds it to the
     dashboard db
@@ -139,10 +140,16 @@ def collect_data(user: str, hpc: const.HPC, dashboard_db: str):
             except ValueError:
                 continue
 
-        dashboard_db.update_status_entry(const.HPC.maui,
-                                         StatusEntry(HPCProperty.node_capacity.value,
-                                                     HPCProperty.node_capacity.str_value,
-                                                     total_nodes, MAX_NODES, None))
+        dashboard_db.update_status_entry(
+            const.HPC.maui,
+            StatusEntry(
+                HPCProperty.node_capacity.value,
+                HPCProperty.node_capacity.str_value,
+                total_nodes,
+                MAX_NODES,
+                None,
+            ),
+        )
 
 
 def main(args):
