@@ -280,8 +280,6 @@ def scale_core_hours(
         Has to have shape [-1, 4]
     node_time_th_factor: float
         Node time threshold factor in hours, does nothing if scale_ncores is not set
-    model_dir: str
-        The location of the neural network model to be used
     Returns
     -------
     core_hours: np.ndarray of floats
