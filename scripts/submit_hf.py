@@ -4,8 +4,6 @@ import os
 import os.path
 import argparse
 
-from jinja2 import Environment, FileSystemLoader
-
 import estimation.estimate_wct as est
 import qcore.constants as const
 from qcore import utils, shared, srf, binary_version

@@ -4,8 +4,6 @@ import os
 import argparse
 from enum import Enum
 
-from jinja2 import Environment, FileSystemLoader
-
 import qcore.constants as const
 from qcore import utils, shared
 from qcore.config import host

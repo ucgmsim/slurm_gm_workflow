@@ -3,8 +3,6 @@
 import os
 import argparse
 
-from jinja2 import Environment, FileSystemLoader
-
 import qcore.constants as const
 from estimation import estimate_wct as wc
 from qcore import shared, utils

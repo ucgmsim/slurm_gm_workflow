@@ -5,8 +5,6 @@
 import os
 import argparse
 
-from jinja2 import Environment, FileSystemLoader
-
 import scripts.set_runparams as set_runparams
 import qcore.constants as const
 import estimation.estimate_wct as est
