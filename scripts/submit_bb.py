@@ -72,10 +72,10 @@ def write_sl_script(
     test_bb_script = "test_bb_binary.sh" if binary else "test_bb_ascii.sh"
 
     template = generate_context(
-        "%s.sl.template" % sl_template_prefix,
         sim_dir,
+        "%s.sl.template" % sl_template_prefix,
         rup_mod=variation,
-        mgmt_db_name=params.mgmt_db_location,
+        mgmt_db_location=params.mgmt_db_location,
         bb_submit_command=bb_submit_command,
         sim_dir=sim_dir,
         srf_name=srf_name,
@@ -197,3 +197,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     main(args)
+

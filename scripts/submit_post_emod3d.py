@@ -56,11 +56,10 @@ def write_sl_script_merge_ts(
         "merge_tsP3_par", target_config["tools_dir"]
     )
     lf_sim_dir = os.path.relpath(lf_sim_dir, sim_dir)
-    template_path = "%s.sl.template" % merge_ts_name_prefix
 
     template = generate_context(
-        template_path,
         sim_dir,
+        "%s.sl.template" % merge_ts_name_prefix,
         lf_sim_dir=lf_sim_dir,
         tools_dir=tools_dir,
         mgmt_db_location=mgmt_db_location,

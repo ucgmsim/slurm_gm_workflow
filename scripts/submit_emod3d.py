@@ -51,8 +51,8 @@ def write_sl_script(
     )
 
     template = generate_context(
-        "run_emod3d.sl.template",
         sim_dir,
+        "run_emod3d.sl.template",
         lf_sim_dir=lf_sim_dir,
         tools_dir=binary_path,
         mgmt_db_location=mgmt_db_location,

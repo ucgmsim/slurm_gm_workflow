@@ -97,8 +97,8 @@ def submit_im_calc_slurm(sim_dir: str, options_dict: Dict = None):
     extended = "-e" if options_dict[SlBodyOptConsts.extended.value] else ""
     simple = "-s" if options_dict[SlBodyOptConsts.simple_out.value] else ""
     template = generate_context(
-        "sim_im_calc.sl.template",
         sim_dir,
+        "sim_im_calc.sl.template",
         component=options_dict[SlBodyOptConsts.component.value],
         sim_dir=sim_dir,
         sim_name=sim_name,

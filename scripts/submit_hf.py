@@ -79,8 +79,8 @@ def write_sl_script(
     test_hf_script = "test_hf_binary.sh" if binary else "test_hf_ascii.sh"
 
     template = generate_context(
-        "%s.sl.template" % sl_template_prefix,
         sim_dir,
+        "%s.sl.template" % sl_template_prefix,
         hf_sim_dir=hf_sim_dir,
         mgmt_db_location=params.mgmt_db_location,
         hf_submit_command=hf_submit_command,

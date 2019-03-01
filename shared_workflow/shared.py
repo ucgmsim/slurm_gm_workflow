@@ -115,15 +115,15 @@ def get_vs(source_file):
     return vs
 
 
-def generate_context(sim_dir, template_path, **kwargs):
+def generate_context(simulation_dir, template_path, **kwargs):
     """
     return the template context for submission script
-    :param sim_dir:
+    :param simulation_dir:
     :param template_path:
     :param kwargs:
     :return:
     """
-    j2_env = Environment(loader=FileSystemLoader(sim_dir), trim_blocks=True)
+    j2_env = Environment(loader=FileSystemLoader(simulation_dir), trim_blocks=True)
     context = j2_env.get_template(template_path).render(**kwargs)
     return context
 
@@ -720,3 +720,4 @@ def get_hf_run_name(v_mod_1d_name, srf, root_dict, hf_version):
     #    yes = confirm_name(hf_run_name)
     yes = True
     return yes, hf_run_name
+
