@@ -291,7 +291,7 @@ def scale_core_hours(
 
     # All computation is in terms of nodes
     n_nodes = data[:, -1] / PHYSICAL_NCORES_PER_NODE
-    estimated_nodes = np.sqrt(n_nodes / node_time_th_factor)
+    estimated_nodes = np.sqrt(core_hours / node_time_th_factor)
     n_nodes = np.minimum(np.maximum(estimated_nodes, n_nodes), MAX_NODES_PER_JOB)
     n_cpus = n_nodes*PHYSICAL_NCORES_PER_NODE
     return core_hours, core_hours/n_cpus, n_cpus
