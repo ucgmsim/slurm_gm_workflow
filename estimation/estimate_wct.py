@@ -13,6 +13,7 @@ from estimation.model import NNWcEstModel
 import qcore.constants as const
 
 # Better solution for these locations?
+MAX_JOB_WCT = 24
 LF_MODEL_DIR = "/nesi/project/nesi00213/workflow/estimation/models/LF/"
 HF_MODEL_DIR = "/nesi/project/nesi00213/workflow/estimation/models/HF/"
 BB_MODEL_DIR = "/nesi/project/nesi00213/workflow/estimation/models/BB/"
@@ -295,8 +296,8 @@ def scale_core_hours(
     # All computation is in terms of nodes
     n_nodes = data[:, -1] / PHYSICAL_NCORES_PER_NODE
     estimated_nodes = np.ceil(np.sqrt(core_hours / (node_time_th_factor*PHYSICAL_NCORES_PER_NODE)))
-    if (estimated_nodes*node_time_th_factor*PHYSICAL_NCORES_PER_NODE) > 24:
-        estimated_nodes = np.ceil((core_hours/24)/PHYSICAL_NCORES_PER_NODE)
+    if (estimated_nodes*node_time_th_factor*PHYSICAL_NCORES_PER_NODE) > MAX_JOB_WCT:
+        estimated_nodes = np.ceil((core_hours / MAX_JOB_WCT) / PHYSICAL_NCORES_PER_NODE)
     n_nodes = np.minimum(np.maximum(estimated_nodes, n_nodes), MAX_NODES_PER_JOB)
     n_cpus = n_nodes*PHYSICAL_NCORES_PER_NODE
     return core_hours, core_hours/n_cpus, n_cpus
