@@ -115,6 +115,19 @@ def get_vs(source_file):
     return vs
 
 
+def generate_context(simulation_dir, template_path, **kwargs):
+    """
+    return the template context for submission script
+    :param simulation_dir:
+    :param template_path:
+    :param kwargs:
+    :return:
+    """
+    j2_env = Environment(loader=FileSystemLoader(simulation_dir), trim_blocks=True)
+    context = j2_env.get_template(template_path).render(**kwargs)
+    return context
+
+
 def resolve_header(
     account,
     n_tasks,
@@ -128,6 +141,7 @@ def resolve_header(
     additional_lines="",
     template_path="slurm_header.cfg",
     target_host=host,
+    mail="test@test.com",
 ):
     if partition is None:
         partition = get_partition(target_host, convert_time_to_hours(wallclock_limit))
@@ -140,7 +154,7 @@ def resolve_header(
         account=account,
         n_tasks=n_tasks,
         wallclock_limit=wallclock_limit,
-        mail="test@test.com",
+        mail=mail,
         memory=memory,
         additional_lines=additional_lines,
         exe_time=exe_time,
@@ -407,9 +421,11 @@ def set_wct(est_run_time, ncores, auto=False):
         )
     )
     if not auto:
-        print("Use the estimated wall clock time? (Minimum of 5 mins, "
-              "otherwise adds a 50% overestimation to ensure "
-              "the job completes)")
+        print(
+            "Use the estimated wall clock time? (Minimum of 5 mins, "
+            "otherwise adds a 50% overestimation to ensure "
+            "the job completes)"
+        )
         use_estimation = show_yes_no_question()
     else:
         use_estimation = True
@@ -704,3 +720,4 @@ def get_hf_run_name(v_mod_1d_name, srf, root_dict, hf_version):
     #    yes = confirm_name(hf_run_name)
     yes = True
     return yes, hf_run_name
+

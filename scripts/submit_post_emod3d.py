@@ -9,7 +9,12 @@ from jinja2 import Environment, FileSystemLoader
 from qcore import utils, binary_version
 from qcore.config import get_machine_config, host
 import qcore.constants as const
-from shared_workflow.shared import confirm, submit_sl_script, resolve_header
+from shared_workflow.shared import (
+    confirm,
+    submit_sl_script,
+    resolve_header,
+    generate_context,
+)
 
 
 merge_ts_name_prefix = "post_emod3d_merge_ts"
@@ -34,20 +39,6 @@ def get_seis_len(seis_path):
     return len(seis_file_list)
 
 
-def generate_context(
-    template_path, lf_sim_dir, tools_dir, mgmt_db_location, sim_dir, srf_name
-):
-    j2_env = Environment(loader=FileSystemLoader(sim_dir), trim_blocks=True)
-    context = j2_env.get_template(template_path).render(
-        lf_sim_dir=lf_sim_dir,
-        tools_dir=tools_dir,
-        mgmt_db_location=mgmt_db_location,
-        sim_dir=sim_dir,
-        srf_name=srf_name,
-    )
-    return context
-
-
 def write_sl_script_merge_ts(
     lf_sim_dir,
     sim_dir,
@@ -65,10 +56,15 @@ def write_sl_script_merge_ts(
         "merge_tsP3_par", target_config["tools_dir"]
     )
     lf_sim_dir = os.path.relpath(lf_sim_dir, sim_dir)
-    template_path = "%s.sl.template" % merge_ts_name_prefix
 
     template = generate_context(
-        template_path, lf_sim_dir, tools_dir, mgmt_db_location, sim_dir, rup_mod
+        sim_dir,
+        "%s.sl.template" % merge_ts_name_prefix,
+        lf_sim_dir=lf_sim_dir,
+        tools_dir=tools_dir,
+        mgmt_db_location=mgmt_db_location,
+        sim_dir=sim_dir,
+        srf_name=rup_mod,
     )
 
     job_name = "post_emod3d.merge_ts.%s" % rup_mod
