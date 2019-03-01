@@ -12,6 +12,7 @@ import re
 import subprocess
 import argparse
 from typing import Iterable
+from datetime import datetime
 
 import numpy as np
 
@@ -189,14 +190,16 @@ def main(args):
         # Collect the data
         r_flag, r_flags = None, []
         if type(args.hpc) is str:
-            print("Collecting data from HPC {}".format(args.hpc))
+            print("{} - Collecting data from HPC {}".format(datetime.now(), args.hpc))
             r_flag = collect_data(args.user, const.HPC(args.hpc), args.dashboard_db)
+            print("{} - Done".format(datetime.now()))
         else:
-            print("Collecting data from HPC {}".format(HPCS))
+            print("{} - Collecting data from HPC {}".format(datetime.now(), HPCS))
             for hpc in HPCS:
                 r_flags.append(
                     collect_data(args.user, const.HPC(hpc), args.dashboard_db)
                 )
+            print("{} - Done".format(datetime.now()))
 
         # Check that everything went well
         if r_flag is False or not np.all(r_flags):
