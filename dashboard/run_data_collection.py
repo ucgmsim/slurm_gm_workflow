@@ -134,7 +134,7 @@ def collect_data(user: str, hpc: const.HPC, dashboard_db: str):
 
     # Get Core hour usage, out of some reason this command is super slow...
     rt_ch_output = run_cmd(
-        user, hpc.value, "nn_corehour_usage {}".format(PROJECT_ID), timeout=30
+        user, hpc.value, "nn_corehour_usage {}".format(PROJECT_ID), timeout=60
     )
 
     # Update dashboard db
