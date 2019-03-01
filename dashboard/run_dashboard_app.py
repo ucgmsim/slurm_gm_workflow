@@ -66,7 +66,7 @@ def update_maui_nodes(n):
     Output("maui_squeue_table", "children"), [Input("interval_comp", "n_intervals")]
 )
 def update_maui_squeue(n):
-    entries = app.db.get_sqeue_entries(const.HPC.maui)
+    entries = app.db.get_squeue_entries(const.HPC.maui)
     return generate_table(entries)
 
 

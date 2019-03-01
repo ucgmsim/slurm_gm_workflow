@@ -198,7 +198,7 @@ class DashboardDB:
                     ),
                 )
 
-    def get_sqeue_entries(self, hpc: const.HPC):
+    def get_squeue_entries(self, hpc: const.HPC):
         """Gets all squeue entries"""
         with self.get_cursor(self.db_file) as cursor:
             results = cursor.execute(
@@ -336,7 +336,7 @@ class TestDashboardDB(unittest.TestCase):
         initial_entries = [self.squeue_entry_1, self.squeue_entry_2]
         db.update_squeue(initial_entries, hpc)
 
-        cur_entries = db.get_sqeue_entries(hpc)
+        cur_entries = db.get_squeue_entries(hpc)
 
         # Check that they were added
         self.assertTrue(len(cur_entries), len(initial_entries))
@@ -347,7 +347,7 @@ class TestDashboardDB(unittest.TestCase):
         db.update_squeue([self.squeue_entry_3], hpc)
 
         # Check that table was dropped, re-created and then new entry added
-        cur_entries = db.get_sqeue_entries(hpc)
+        cur_entries = db.get_squeue_entries(hpc)
 
         self.assertTrue(len(cur_entries), 1)
         self.assertEqual(cur_entries[0], self.squeue_entry_3)
