@@ -1,9 +1,19 @@
 #!/usr/bin/env python3
+"""
+Script for dashboard data collection. Runs an never-ending with a sleep between
+data collection. If any of the ssh commands fail, then the script stops, to prevent
+HPC lockout of the user running this script.
+
+The collected data populates the specified dashboard db.
+"""
+
 import time
 import re
 import subprocess
 import argparse
 from typing import Iterable
+
+import numpy as np
 
 import qcore.constants as const
 from dashboard.DashboardDB import DashboardDB, SQueueEntry, StatusEntry, HPCProperty
@@ -84,12 +94,37 @@ def parse_squeue(lines: Iterable[str]):
     return entries
 
 
+def run_cmd(user: str, hpc: str, cmd: str, timeout: int = 10):
+    """Runs the specified command remotely on the specified hpc using the
+    specified user id.
+
+    Returns False if the command fails for some reason.
+    """
+    ssh_cmd = "ssh {}@{}".format(user, hpc)
+
+    cmd = "{} {}".format(ssh_cmd, cmd)
+    try:
+        result = (
+            subprocess.check_output(cmd, shell=True, timeout=timeout)
+            .decode("utf-8")
+            .strip()
+            .split("\n")
+        )
+    except subprocess.CalledProcessError:
+        print("Cmd {} returned a non-zero exit status.".format(cmd))
+        return False
+    except subprocess.TimeoutExpired:
+        print("The timeout of {} expired for cmd {}.".format(timeout, cmd))
+        return False
+    else:
+        return result
+
+
 def collect_data(user: str, hpc: const.HPC, dashboard_db: str):
     """Collects data from the specified HPC and adds it to the
     dashboard db
     """
     hpc_value = hpc.value
-    ssh_cmd = "ssh {}@{}".format(user, hpc_value)
 
     # Attempt to open existing database, otherwise create a new one
     try:
@@ -97,71 +132,79 @@ def collect_data(user: str, hpc: const.HPC, dashboard_db: str):
     except FileNotFoundError:
         dashboard_db = DashboardDB.create_db(dashboard_db)
 
-    # Get Core hour usage
-    rt_ch_output = (
-        subprocess.check_output(
-            "{} nn_corehour_usage {}".format(ssh_cmd, PROJECT_ID), shell=True
-        )
-        .decode("utf-8")
-        .strip()
-        .split("\n")
+    # Get Core hour usage, out of some reason this command is super slow...
+    rt_ch_output = run_cmd(
+        user, hpc.value, "nn_corehour_usage {}".format(PROJECT_ID), timeout=30
     )
 
     # Update dashboard db
-    dashboard_db.update_daily_chours_usage(
-        parse_total_chours_usage(rt_ch_output, hpc), hpc
-    )
+    if rt_ch_output:
+        dashboard_db.update_daily_chours_usage(
+            parse_total_chours_usage(rt_ch_output, hpc), hpc
+        )
+    else:
+        return False
 
     # Squeue
-    sq_output = (
-        subprocess.check_output("{} squeue".format(ssh_cmd), shell=True)
-        .decode("utf-8")
-        .strip()
-        .split("\n")
-    )
+    sq_output = run_cmd(user, hpc.value, "squeue")
 
     # Update dashboard db
-    dashboard_db.update_squeue(parse_squeue(sq_output), hpc)
+    if sq_output:
+        dashboard_db.update_squeue(parse_squeue(sq_output), hpc)
+    else:
+        return False
 
     # 'NODES\n23\n32\n'---> ['NODES', '23', '32']
     if hpc == const.HPC.maui:
-        capa_cmd = ssh_cmd + " " + "squeue -p nesi_research | awk '{print $10}'"
-        output = (
-            subprocess.check_output(capa_cmd, shell=True)
-            .decode("utf-8")
-            .strip()
-            .split("\n")
+        capa_output = run_cmd(
+            user, hpc.value, "squeue -p nesi_research | awk '{print $10}'"
         )
 
-        total_nodes = 0
-        for i in range(len(output)):
-            try:
-                total_nodes += int(output[i])
-            except ValueError:
-                continue
+        if capa_output:
+            total_nodes = 0
+            for line in capa_output:
+                try:
+                    total_nodes += int(line)
+                except ValueError:
+                    continue
 
-        dashboard_db.update_status_entry(
-            const.HPC.maui,
-            StatusEntry(
-                HPCProperty.node_capacity.value,
-                HPCProperty.node_capacity.str_value,
-                total_nodes,
-                MAX_NODES,
-                None,
-            ),
-        )
+            dashboard_db.update_status_entry(
+                const.HPC.maui,
+                StatusEntry(
+                    HPCProperty.node_capacity.value,
+                    HPCProperty.node_capacity.str_value,
+                    total_nodes,
+                    MAX_NODES,
+                    None,
+                ),
+            )
+        else:
+            return False
+
+    return True
 
 
 def main(args):
     while True:
         # Collect the data
+        r_flag, r_flags = None, []
         if type(args.hpc) is str:
             print("Collecting data from HPC {}".format(args.hpc))
-            collect_data(args.user, const.HPC(args.hpc), args.dashboard_db)
+            r_flag = collect_data(args.user, const.HPC(args.hpc), args.dashboard_db)
         else:
             print("Collecting data from HPC {}".format(HPCS))
             for hpc in HPCS:
-                collect_data(args.user, const.HPC(hpc), args.dashboard_db)
+                r_flags.append(
+                    collect_data(args.user, const.HPC(hpc), args.dashboard_db)
+                )
+
+        # Check that everything went well
+        if r_flag is False or not np.all(r_flags):
+            print(
+                "One of the command failed to execute remotely. Data collection will "
+                "therefore stop to prevent the possibility of user lockout."
+            )
+            exit()
 
         time.sleep(args.update_interval)
 

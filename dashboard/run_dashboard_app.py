@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+"""Script that creates a dashboard website using the dash library.
+The data comes from the specified dashboard db and
+the information is updated every x-seconds (currently hardcoded to 10)
+"""
 import argparse
 from typing import List
 from datetime import date
@@ -20,6 +24,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("db_file", type=str, help="Path to the database file")
 args = parser.parse_args()
 
+# Creating the Dashboard app
 app = dash.Dash(__name__, external_stylesheets=EXTERNAL_STYLESHEETS)
 app.layout = html.Div(
     html.Div(
@@ -119,6 +124,8 @@ def get_chours_entries(hpc: const.HPC):
 
 
 def generate_table(squeue_entries: List[SQueueEntry]):
+    """Generates html table for the given squeue entries.
+    """
     return html.Table(
         # Header
         [html.Tr([html.Th(col) for col in SQueueEntry._fields])]
