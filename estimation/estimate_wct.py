@@ -23,6 +23,8 @@ SCALER_PREFIX = "scaler_"
 
 PHYSICAL_NCORES_PER_NODE = 40
 
+MAX_NODES_PER_JOB = 66
+
 OVERESTIMATE_FRACTION = 0.5
 
 
@@ -138,16 +140,15 @@ def estimate_LF_chours(
         scaler_prefix=scaler_prefix,
     )
 
-    # Just estimate, no number of cores scaling
     n_cpus = data[:, -1]
-    if scale_ncores:
+    wct = (core_hours / n_cpus)
+
+    if scale_ncores and np.any(wct > (node_time_th_factor*n_cpus/PHYSICAL_NCORES_PER_NODE)):
+        # Want to scale, and at least one job exceeds the allowable time for the given number of cores
         return scale_core_hours(
             core_hours,
             data,
-            model_dir,
-            model_prefix,
             node_time_th_factor,
-            scaler_prefix,
         )
     else:
         return core_hours, core_hours / n_cpus, n_cpus
@@ -243,14 +244,13 @@ def estimate_HF_chours(
         scaler_prefix=scaler_prefix,
     )
 
-    if scale_ncores:
+    wct = (core_hours / n_cpus)
+
+    if scale_ncores and np.any(wct > (node_time_th_factor*n_cpus/PHYSICAL_NCORES_PER_NODE)):
         return scale_core_hours(
             core_hours,
             data,
             node_time_th_factor,
-            model_dir,
-            model_prefix,
-            scaler_prefix,
         )
     else:
         return core_hours, core_hours / n_cpus, n_cpus
@@ -260,17 +260,16 @@ def scale_core_hours(
     core_hours: np.ndarray,
     data: np.ndarray,
     node_time_th_factor: float,
-    model_dir: str,
-    model_prefix: str = MODEL_PREFIX,
-    scaler_prefix: str = SCALER_PREFIX,
 ):
     """
-    Estimate and iteratively update the number of cores until
-    the threshold is met.
+    Estimate and update the number of nodes until
+    the threshold is met. Assumes that core hours
+    required remains constant with more nodes used.
+    Find minimum number of cores such that:
+    core_hours <= n_cores * node_time_th_factor * (n_cores/PHYSICAL_NCORES_PER_NODE)
     Params
     ------
-    core_hours:
-    wc: np.ndarray
+    core_hours: np.ndarray
         Initial estimated wall clock time
     data: np.ndarray of int, float
         Input data for the model in order fd_count, nsub_stoch, nt, n_cores
@@ -285,28 +284,17 @@ def scale_core_hours(
         Estimated number of core hours
     run_time: np.ndarray of floats
         Estimated run time (hours)
-    n_cores: np.ndarray of ints
+    n_cpus: np.ndarray of ints
         The number of cores to use, returns the argument n_cores
         if scale_ncores is not set. Otherwise returns the updated ncores.
     """
-    n_cpus = data[:, -1]
-    run_time = core_hours / n_cpus
-    time_th = node_time_th_factor * (n_cpus / PHYSICAL_NCORES_PER_NODE)
-    mask = run_time > time_th
-    while np.any(mask):
-        data[mask, -1] += float(PHYSICAL_NCORES_PER_NODE)
-        time_th[mask] = node_time_th_factor * (
-            data[mask, -1] / PHYSICAL_NCORES_PER_NODE
-        )
 
-        core_hours = estimate(
-            data,
-            model_dir=model_dir,
-            model_prefix=model_prefix,
-            scaler_prefix=scaler_prefix,
-        )
-        run_time = core_hours / n_cpus
-    return core_hours, run_time, n_cpus
+    # All computation is in terms of nodes
+    n_nodes = data[:, -1] / PHYSICAL_NCORES_PER_NODE
+    estimated_nodes = np.sqrt(n_nodes / node_time_th_factor)
+    n_nodes = np.minimum(np.maximum(estimated_nodes, n_nodes), MAX_NODES_PER_JOB)
+    n_cpus = n_nodes*PHYSICAL_NCORES_PER_NODE
+    return core_hours, core_hours/n_cpus, n_cpus
 
 
 def est_BB_chours_single(
