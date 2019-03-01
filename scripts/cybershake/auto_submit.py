@@ -278,7 +278,8 @@ def main():
     ntask_to_run = n_runs_max - len(user_queued_tasks)
 
     runnable_tasks = slurm_query_status.get_runnable_tasks(db, ntask_to_run)
-
+    print("runnable task:")
+    print(runnable_tasks)
     submit_task_count = 0
     task_num = 0
     print(submit_task_count)
@@ -298,6 +299,7 @@ def main():
             task_num = task_num + 1
             continue
         if args.no_merge_ts and proc_type == 2:
+            update_mgmt_db.update_db(db, "merge_ts", "completed", run_name=run_name) 
             task_num = task_num +1
             continue
         vm_name = run_name.split("_")[0]
