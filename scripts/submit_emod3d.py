@@ -112,7 +112,7 @@ def main(args):
 
         steps_per_checkpoint = int(
             get_nt(params)
-            / (60.0 * convert_time_to_hours(est_run_time))
+            / (60.0 * est_run_time)
             * CHECKPOINT_DURATION
         )
 
