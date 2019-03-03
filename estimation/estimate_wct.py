@@ -142,15 +142,13 @@ def estimate_LF_chours(
     )
 
     # data[:, -1] represents the last column of the ndarray data, which contains the number of cores for each task
-    wct = (core_hours / data[:, -1])
+    wct = core_hours / data[:, -1]
 
-    if scale_ncores and np.any(wct > (node_time_th_factor * data[:, -1] / PHYSICAL_NCORES_PER_NODE)):
+    if scale_ncores and np.any(
+        wct > (node_time_th_factor * data[:, -1] / PHYSICAL_NCORES_PER_NODE)
+    ):
         # Want to scale, and at least one job exceeds the allowable time for the given number of cores
-        return scale_core_hours(
-            core_hours,
-            data,
-            node_time_th_factor,
-        )
+        return scale_core_hours(core_hours, data, node_time_th_factor)
     else:
         return core_hours, core_hours / data[:, -1], (data[:, -1])
 
@@ -245,22 +243,18 @@ def estimate_HF_chours(
         scaler_prefix=scaler_prefix,
     )
 
-    wct = (core_hours / n_cpus)
+    wct = core_hours / n_cpus
 
-    if scale_ncores and np.any(wct > (node_time_th_factor*n_cpus/PHYSICAL_NCORES_PER_NODE)):
-        return scale_core_hours(
-            core_hours,
-            data,
-            node_time_th_factor,
-        )
+    if scale_ncores and np.any(
+        wct > (node_time_th_factor * n_cpus / PHYSICAL_NCORES_PER_NODE)
+    ):
+        return scale_core_hours(core_hours, data, node_time_th_factor)
     else:
         return core_hours, core_hours / n_cpus, n_cpus
 
 
 def scale_core_hours(
-    core_hours: np.ndarray,
-    data: np.ndarray,
-    node_time_th_factor: float,
+    core_hours: np.ndarray, data: np.ndarray, node_time_th_factor: float
 ):
     """
     Estimate and update the number of nodes until
@@ -302,13 +296,17 @@ def scale_core_hours(
 
     # All computation is in terms of nodes
     n_nodes = data[:, -1] / PHYSICAL_NCORES_PER_NODE
-    estimated_nodes = np.ceil(np.sqrt(core_hours / (node_time_th_factor*PHYSICAL_NCORES_PER_NODE)))
-    mask = (estimated_nodes*node_time_th_factor) > MAX_JOB_WCT
+    estimated_nodes = np.ceil(
+        np.sqrt(core_hours / (node_time_th_factor * PHYSICAL_NCORES_PER_NODE))
+    )
+    mask = (estimated_nodes * node_time_th_factor) > MAX_JOB_WCT
     if np.any(mask):
-        estimated_nodes[mask] = np.ceil((core_hours[mask] / MAX_JOB_WCT) / PHYSICAL_NCORES_PER_NODE)
+        estimated_nodes[mask] = np.ceil(
+            (core_hours[mask] / MAX_JOB_WCT) / PHYSICAL_NCORES_PER_NODE
+        )
     n_nodes = np.minimum(np.maximum(estimated_nodes, n_nodes), MAX_NODES_PER_JOB)
-    n_cpus = n_nodes*PHYSICAL_NCORES_PER_NODE
-    return core_hours, core_hours/n_cpus, n_cpus
+    n_cpus = n_nodes * PHYSICAL_NCORES_PER_NODE
+    return core_hours, core_hours / n_cpus, n_cpus
 
 
 def est_BB_chours_single(
