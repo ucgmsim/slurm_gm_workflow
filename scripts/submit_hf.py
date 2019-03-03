@@ -187,7 +187,7 @@ def main(args):
             wct = default_wct
         else:
             est_core_hours, est_run_time, est_cores = est.est_HF_chours_single(
-                fd_count, nsub_stoch, nt, ncore, SCALE_NCORES
+                fd_count, nsub_stoch, nt, ncore, scale_ncores=SCALE_NCORES
             )
             wct = set_wct(est_run_time, est_cores, args.auto)
 

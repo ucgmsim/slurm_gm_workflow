@@ -159,7 +159,7 @@ def run_estimations(
     if hf_input_data is not None:
         print("Running HF estimation")
         hf_core_hours, hf_run_time, hf_cores = estimate_wct.estimate_HF_chours(
-            hf_input_data, SCALE_NCORES
+            hf_input_data, scale_ncores=SCALE_NCORES
         )
     else:
         hf_core_hours, hf_run_time, hf_cores = np.nan, np.nan, np.nan
