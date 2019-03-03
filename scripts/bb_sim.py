@@ -124,7 +124,7 @@ try:
         dict(
             np.loadtxt(
                 args.vsite_file,
-                dtype=[("name", "|S8"), ("vs30", "f4")],
+                dtype=[("name", "U7"), ("vs30", "f4")],
                 comments=("#", "%"),
             )
         ).get
