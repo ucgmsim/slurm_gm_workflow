@@ -7,7 +7,13 @@ import qcore.constants as const
 from estimation import estimate_wct as wc
 from qcore import shared, utils
 from qcore.config import host
-from shared_workflow.shared import set_wct, confirm, submit_sl_script, resolve_header
+from shared_workflow.shared import (
+    set_wct,
+    confirm,
+    submit_sl_script,
+    resolve_header,
+    generate_context,
+)
 
 default_wct = "00:30:00"
 
@@ -25,8 +31,6 @@ def write_sl_script(
     binary=False,
     machine=host,
 ):
-    with open("%s.sl.template" % sl_template_prefix, "r") as f:
-        template = f.read()
 
     if binary:
         create_directory = "mkdir -p " + os.path.join(bb_sim_dir, "Acc") + "\n"
@@ -47,35 +51,35 @@ def write_sl_script(
             if key in params.bb:
                 arguments.append("--" + key)
                 arguments.append(str(params.bb[key]))
+
         additional_flags = ["no-lf-amp"]
         for key in additional_flags:
             if key in params.bb:
-                #seperated intentionally so the key will not be incerted when it is not there before.
-                if (params.bb[key] is True):
-                arguments.append("--" + key)
-        template = template.replace(
-            "{{bb_submit_command}}", submit_command + " ".join(arguments)
-        )
+                # seperated intentionally so the key will not be incerted when it is not there before.
+                if params.bb[key] is True:
+                    arguments.append("--" + key)
+        bb_submit_command = submit_command + " ".join(arguments)
     else:
-        template = template.replace(
-            "{{bb_submit_command}}",
+        bb_submit_command = (
             "srun python  $gmsim/workflow/scripts" "/match_seismo-mpi.py " + bb_sim_dir,
         )
 
     variation = srf_name.replace("/", "__")
     print(variation)
 
-    print("sim dir, srf_name", sim_dir, srf_name)
-    replace_t = [
-        ("$rup_mod", variation),
-        ("{{mgmt_db_location}}", params.mgmt_db_location),
-        ("{{sim_dir}}", sim_dir),
-        ("{{srf_name}}", srf_name),
-        ("{{test_bb_script}}", "test_bb_binary.sh" if binary else "test_bb_ascii.sh"),
-    ]
+    test_bb_script = "test_bb_binary.sh" if binary else "test_bb_ascii.sh"
 
-    for pattern, value in replace_t:
-        template = template.replace(pattern, value)
+    template = generate_context(
+        sim_dir,
+        "%s.sl.template" % sl_template_prefix,
+        rup_mod=variation,
+        mgmt_db_location=params.mgmt_db_location,
+        bb_submit_command=bb_submit_command,
+        sim_dir=sim_dir,
+        srf_name=srf_name,
+        test_bb_script=test_bb_script,
+    )
+    print("sim dir, srf_name", sim_dir, srf_name)
 
     job_name = "sim_bb_%s" % variation
     header = resolve_header(
@@ -191,3 +195,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     main(args)
+
