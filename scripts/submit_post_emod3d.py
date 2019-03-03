@@ -7,7 +7,12 @@ import argparse
 from qcore import utils, binary_version
 from qcore.config import get_machine_config, host
 import qcore.constants as const
-from shared_workflow.shared import confirm, submit_sl_script, resolve_header
+from shared_workflow.shared import (
+    confirm,
+    submit_sl_script,
+    resolve_header,
+    generate_context,
+)
 
 
 merge_ts_name_prefix = "post_emod3d_merge_ts"
@@ -44,28 +49,21 @@ def write_sl_script_merge_ts(
     machine=host,
 ):
     """Populates the template and writes the resulting slurm script to file"""
-    with open("%s.sl.template" % merge_ts_name_prefix) as f:
-        template = f.read()
-
     target_config = get_machine_config(machine)
+    tools_dir = binary_version.get_unversioned_bin(
+        "merge_tsP3_par", target_config["tools_dir"]
+    )
+    lf_sim_dir = os.path.relpath(lf_sim_dir, sim_dir)
 
-    replace_t = [
-        # TODO: the merge_ts binary needed to use relative path instead
-        #  of absolute, maybe fix this
-        ("{{lf_sim_dir}}", os.path.relpath(lf_sim_dir, sim_dir)),
-        (
-            "{{tools_dir}}",
-            binary_version.get_unversioned_bin(
-                "merge_tsP3_par", target_config["tools_dir"]
-            ),
-        ),
-        ("{{mgmt_db_location}}", mgmt_db_location),
-        ("{{sim_dir}}", sim_dir),
-        ("{{srf_name}}", rup_mod),
-    ]
-
-    for pattern, value in replace_t:
-        template = template.replace(pattern, value)
+    template = generate_context(
+        sim_dir,
+        "%s.sl.template" % merge_ts_name_prefix,
+        lf_sim_dir=lf_sim_dir,
+        tools_dir=tools_dir,
+        mgmt_db_location=mgmt_db_location,
+        sim_dir=sim_dir,
+        srf_name=rup_mod,
+    )
 
     job_name = "post_emod3d.merge_ts.%s" % rup_mod
     header = resolve_header(
