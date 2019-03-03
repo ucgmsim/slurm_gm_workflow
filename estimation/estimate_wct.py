@@ -141,6 +141,7 @@ def estimate_LF_chours(
         scaler_prefix=scaler_prefix,
     )
 
+    # data[:, -1] represents the last column of the ndarray data, which contains the number of cores for each task
     wct = (core_hours / data[:, -1])
 
     if scale_ncores and np.any(wct > (node_time_th_factor * data[:, -1] / PHYSICAL_NCORES_PER_NODE)):
@@ -267,6 +268,15 @@ def scale_core_hours(
     required remains constant with more nodes used.
     Find minimum number of cores such that:
     core_hours <= n_cores * node_time_th_factor * (n_cores/PHYSICAL_NCORES_PER_NODE)
+    The right hand side of this formula determines
+    the maximum time that a job may run for a given
+    node_time_th_factor. n_cores is the number of cores,
+    while n_cores/PHYSICAL_NCORES_PER_NODE is the number
+    of nodes used, and multiplying this by the
+    node_time_th_factor gives the maximum number of
+    hours the job may run for.
+    This allows the maximum wall clock time to scale
+    with the number of nodes.
     If the estimated run time will be longer than
     a day, work out the minimum number of nodes
     required for it to run in less than 24 hours.
