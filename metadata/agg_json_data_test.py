@@ -1,11 +1,12 @@
 """
 Unit tests for aggregation of metadata from simulation json files.
 """
+import sys
 import os
-import shutil
 import json
 import argparse
-import unittest
+
+import pytest
 import numpy as np
 import pandas as pd
 
@@ -13,12 +14,11 @@ from metadata.agg_json_data import main, create_dataframe, load_metadata_df, DAT
 import qcore.constants as const
 
 
-class TestAggJsonData(unittest.TestCase):
+class TestAggJsonData:
 
     test_dir = "./metadata_test_dir"
-    test_output_file = os.path.join(test_dir, "metadata.csv")
-    test_input_file_template = os.path.join(test_dir, "log_{}.json")
-    json_files = []
+    test_output_file = "metadata.csv"
+    test_input_file_template = "log_{}.json"
 
     sim_name_1 = "simulation_1"
     sim_name_2 = "simulation_2"
@@ -78,31 +78,38 @@ class TestAggJsonData(unittest.TestCase):
         },
     }
 
-    @classmethod
-    def setUpClass(cls):
-        os.makedirs(cls.test_dir)
+    @pytest.fixture(scope='class')
+    def json_files(self, tmpdir_factory):
+        tmpdir = tmpdir_factory.getbasetemp()
 
         # Create the json files
-        for ix in cls.json_files_content.keys():
-            file = cls.test_input_file_template.format(ix)
-            cls.json_files.append(file)
+        json_files = []
+        for ix in self.json_files_content.keys():
+            file = os.path.join(tmpdir, self.test_input_file_template.format(ix))
 
             with open(file, "w") as f:
-                json.dump(cls.json_files_content[ix], f)
+                json.dump(self.json_files_content[ix], f)
 
-    def test_aggreation_single_process(self):
-        df = create_dataframe(self.json_files, 1, True)
+            json_files.append(file)
+
+        return json_files
+
+    def test_aggreation_single_process(self, json_files):
+        df = create_dataframe(json_files, 1, True)
         self.df_check(df)
 
-    def test_aggreation_mp(self):
-        df = create_dataframe(self.json_files, 3, True)
+    def test_aggreation_mp(self, json_files):
+        df = create_dataframe(json_files, 3, True)
         self.df_check(df)
 
-    def test_output(self):
+    def test_output(self, tmpdir_factory):
         """Tests that an ouput file is written and is correct"""
+        tmpdir = tmpdir_factory.getbasetemp()
+
+        output_file = os.path.join(tmpdir, self.test_output_file)
         args = argparse.Namespace(
-            input_dirs=[self.test_dir],
-            output_file=self.test_output_file,
+            input_dirs=[tmpdir],
+            output_file=output_file,
             n_procs=1,
             filename_pattern="*",
             calc_core_hours=True,
@@ -111,10 +118,10 @@ class TestAggJsonData(unittest.TestCase):
         df = main(args)
 
         # Check that the file exists
-        self.assertTrue(os.path.isfile(self.test_output_file))
+        assert os.path.isfile(output_file)
 
         # Load the saved dataframe
-        loaded_df = load_metadata_df(self.test_output_file)
+        loaded_df = load_metadata_df(output_file)
 
         # Check that the dataframes are the same
         pd.testing.assert_frame_equal(df, loaded_df)
@@ -122,13 +129,11 @@ class TestAggJsonData(unittest.TestCase):
     def df_check(self, df: pd.DataFrame):
         """Tests general aggregation of simulation json log files"""
         # Check the shape (this has to updated if the content is changed)
-        self.assertEqual(
-            df.columns.shape[0], 27 + 3
-        )  # Have to add the core hours columns
-        self.assertEqual(df.shape[0], 3)
+        assert df.columns.shape[0] == 27 + 3 # Have to add the core hours columns
+        assert df.shape[0] == 3
 
         # Check that the 3 simulation entries are there
-        self.assertTrue(
+        assert (
             np.all(
                 np.isin(
                     [self.sim_name_1, self.sim_name_2, self.sim_name_3], df.index.values
@@ -140,21 +145,16 @@ class TestAggJsonData(unittest.TestCase):
         for col in df.columns:
             # Check date columns are the correct type
             if col[1] in DATE_COLUMNS:
-                self.assertEqual(df[col].dtype, np.dtype("<M8[ns]"))
+                assert df[col].dtype == np.dtype("<M8[ns]")
             # Check component columns types
             elif const.Components.has_value(col[1]):
-                self.assertEqual(df[col].dtype, np.dtype(bool))
+                assert df[col].dtype == np.dtype(bool)
             # Check run time and core hours column
             elif col[1] == const.MetadataField.run_time.value:
-                self.assertEqual(df[col].dtype, np.dtype(np.float))
-                self.assertEqual(
-                    df[col[0], const.MetadataField.core_hours.value].dtype, np.dtype(np.float)
+                assert df[col].dtype == np.dtype(np.float)
+                assert (
+                    df[col[0], const.MetadataField.core_hours.value].dtype == np.dtype(np.float)
                 )
 
-    def tearDown(self):
-        if os.path.isfile(self.test_output_file):
-            os.remove(self.test_output_file)
-
-    @classmethod
-    def tearDownClass(cls):
-        shutil.rmtree(cls.test_dir)
+if __name__ == '__main__':
+    pytest.main(sys.argv)
