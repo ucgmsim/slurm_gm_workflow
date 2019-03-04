@@ -144,7 +144,7 @@ class DataCollector:
             return result
 
         # Check that everything went well
-        if self.error_ctr % self.error_th == 0:
+        if self.error_th <= self.error_ctr:
             raise Exception(
                 "There have been {} consecutive collection cmd failures".format(
                     self.error_th
