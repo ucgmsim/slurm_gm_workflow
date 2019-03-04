@@ -89,7 +89,7 @@ def get_stations(source_file, locations=False):
             pickle.dump(source_file, save_file)
 
         with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_locations.P'), 'wb') as save_file:
-            pickle.dump(source_file, save_file)
+            pickle.dump(locations, save_file)
 
     stations = []
     station_lats = []
@@ -167,6 +167,10 @@ def get_vs(source_file):
     sample line in source file:
     SITE   VALUE
     """
+    func_name = 'get_vs'
+    if not DATA_TAKEN.get(func_name):
+        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_source_file.P'), 'wb') as save_file:
+            pickle.dump(source_file, save_file)
     vs = {}
     with open(source_file, "r") as sp:
         lines = sp.readlines()
@@ -180,7 +184,10 @@ def get_vs(source_file):
                 vs[info[0]] = info[1]
             else:
                 print("Check this line: %d %s" % (i, line), file=sys.stderr)
-
+    if not DATA_TAKEN.get(func_name):
+        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_vs.P'), 'wb') as save_file:
+            pickle.dump(vs, save_file)
+        DATA_TAKEN[func_name] = True
     return vs
 
 
@@ -192,8 +199,22 @@ def generate_context(simulation_dir, template_path, **kwargs):
     :param kwargs:
     :return:
     """
+    frame = inspect.currentframe()
+    args, _, _, values = inspect.getargvalues(frame)
+    func_name = inspect.getframeinfo(frame)[2]
+    if not DATA_TAKEN.get(func_name):
+        for i in range(len(args)):
+            with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_{}.P'.format(args[i])),
+                      'wb') as save_file:
+                pickle.dump(values[i], save_file)
     j2_env = Environment(loader=FileSystemLoader(simulation_dir), trim_blocks=True)
     context = j2_env.get_template(template_path).render(**kwargs)
+
+    if not DATA_TAKEN.get(func_name):
+        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_context.P'), 'wb') as save_file:
+            pickle.dump(context, save_file)
+        DATA_TAKEN[func_name] = True
+
     return context
 
 
@@ -212,6 +233,15 @@ def resolve_header(
     target_host=host,
     mail="test@test.com",
 ):
+    frame = inspect.currentframe()
+    args, _, _, values = inspect.getargvalues(frame)
+    func_name = inspect.getframeinfo(frame)[2]
+    if not DATA_TAKEN.get(func_name):
+        for i in range(len(args)):
+            with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_{}.P'.format(args[i])),
+                      'wb') as save_file:
+                pickle.dump(values[i], save_file)
+
     if partition is None:
         partition = get_partition(target_host, convert_time_to_hours(wallclock_limit))
 
@@ -229,10 +259,25 @@ def resolve_header(
         exe_time=exe_time,
         partition=partition,
     )
+
+    if not DATA_TAKEN.get(func_name):
+        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_header.P'), 'wb') as save_file:
+            pickle.dump(header, save_file)
+        DATA_TAKEN[func_name] = True
+
     return header
 
 
 def get_partition(machine, core_hours=None):
+    frame = inspect.currentframe()
+    args, _, _, values = inspect.getargvalues(frame)
+    func_name = inspect.getframeinfo(frame)[2]
+    if not DATA_TAKEN.get(func_name):
+        for i in range(len(args)):
+            with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_{}.P'.format(args[i])),
+                      'wb') as save_file:
+                pickle.dump(values[i], save_file)
+
     if machine == const.HPC.maui.value:
         partition = "nesi_research"
     elif machine == const.HPC.mahuika.value:
@@ -242,11 +287,28 @@ def get_partition(machine, core_hours=None):
             partition = "large"
     else:
         partition = ""
+
+    if not DATA_TAKEN.get(func_name):
+        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_partition.P'), 'wb') as save_file:
+            pickle.dump(partition, save_file)
+        DATA_TAKEN[func_name] = True
+
     return partition
 
 
 def convert_time_to_hours(time_str):
+    func_name = 'convert_time_to_hours'
+    if not DATA_TAKEN.get(func_name):
+        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_time_str.P'), 'wb') as save_file:
+            pickle.dump(time_str, save_file)
+
     h, m, s = time_str.split(":")
+
+    if not DATA_TAKEN.get(func_name):
+        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_converted_time.P'), 'wb') as save_file:
+            pickle.dump(int(h) + int(m) / 60.0 + int(s) / 3600.0, save_file)
+        DATA_TAKEN[func_name] = True
+
     return int(h) + int(m) / 60.0 + int(s) / 3600.0
 
 
@@ -368,6 +430,12 @@ def set_permission(dir_path, mode=0o750, noexec=0o640, debug=False):
 
 def user_select(options):
     """Gets the user selected number (not index)"""
+
+    func_name = 'user_select'
+    if not DATA_TAKEN.get(func_name):
+        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_options.P'), 'wb') as save_file:
+            pickle.dump(options, save_file)
+
     try:
         selected_number = input(
             "Enter the number you " "wish to select (1-%d):" % len(options)
@@ -389,10 +457,21 @@ def user_select(options):
             except IndexError:
                 print("Input should be a number in (1-%d)" % len(options))
                 selected_number = user_select(options)
+
+    if not DATA_TAKEN.get(func_name):
+        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_selected_number.P'), 'wb') as save_file:
+            pickle.dump(selected_number, save_file)
+        DATA_TAKEN[func_name] = True
+
     return selected_number
 
 
 def user_select_multi(options):
+    func_name = 'user_select_multi'
+    if not DATA_TAKEN.get(func_name):
+        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_options.P'), 'wb') as save_file:
+            pickle.dump(options, save_file)
+
     user_inputs = input(
         "Enter the numbers [1-%d] you wish to select "
         "separated by space (eg. 1 3 4) "
@@ -420,20 +499,49 @@ def user_select_multi(options):
                 selected_numbers.append(selected_number)
         selected_numbers.sort()
 
+        if not DATA_TAKEN.get(func_name):
+            with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_selected_numbers.P'),
+                      'wb') as save_file:
+                pickle.dump(selected_numbers, save_file)
+            DATA_TAKEN[func_name] = True
+
         return selected_numbers
 
 
 def show_multiple_choice(options, singular=True):
+    frame = inspect.currentframe()
+    args, _, _, values = inspect.getargvalues(frame)
+    func_name = inspect.getframeinfo(frame)[2]
+    if not DATA_TAKEN.get(func_name):
+        for i in range(len(args)):
+            with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_{}.P'.format(args[i])),
+                      'wb') as save_file:
+                pickle.dump(values[i], save_file)
+
     for i, option in enumerate(options):
         print("%2d. %s" % (i + 1, option))
     if singular:
         selected_number = user_select(options)
+
+        if not DATA_TAKEN.get(func_name):
+            with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_single_options.P'),
+                      'wb') as save_file:
+                pickle.dump(options[selected_number - 1], save_file)
+            DATA_TAKEN[func_name] = True
+
         return options[selected_number - 1]
     else:
         selected_numbers = user_select_multi(options)
         selected_options = []
         for i in selected_numbers:
             selected_options.append(options[i - 1])
+
+        if not DATA_TAKEN.get(func_name):
+            with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_selected_options.P'),
+                      'wb') as save_file:
+                pickle.dump(selected_options, save_file)
+            DATA_TAKEN[func_name] = True
+
         return selected_options
 
 
@@ -466,6 +574,7 @@ def confirm_name(name):
 
 
 def get_input_wc():
+    func_name = 'get_input_wc'
     show_horizontal_line()
     try:
         user_input_wc = datetime.datetime.strptime(
@@ -478,10 +587,25 @@ def get_input_wc():
         user_input_wc = get_input_wc()
     show_horizontal_line()
 
+    if not DATA_TAKEN.get(func_name):
+        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_user_input_wc.P'),
+                  'wb') as save_file:
+            pickle.dump(user_input_wc, save_file)
+        DATA_TAKEN[func_name] = True
+
     return user_input_wc
 
 
 def set_wct(est_run_time, ncores, auto=False):
+    frame = inspect.currentframe()
+    args, _, _, values = inspect.getargvalues(frame)
+    func_name = inspect.getframeinfo(frame)[2]
+    if not DATA_TAKEN.get(func_name):
+        for i in range(len(args)):
+            with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_{}.P'.format(args[i])),
+                      'wb') as save_file:
+                pickle.dump(values[i], save_file)
+
     import estimation.estimate_wct as est
 
     print(
@@ -504,14 +628,40 @@ def set_wct(est_run_time, ncores, auto=False):
     else:
         wct = str(get_input_wc())
     print("WCT set to: %s" % wct)
+
+    if not DATA_TAKEN.get(func_name):
+        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_wct.P'),
+                  'wb') as save_file:
+            pickle.dump(wct, save_file)
+        DATA_TAKEN[func_name] = True
+
     return wct
 
 
 def get_nt(params):
+    func_name = 'get_nt'
+    if not DATA_TAKEN.get(func_name):
+        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_params.P'),
+                  'wb') as save_file:
+            pickle.dump(params, save_file)
+        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_nt.P'),
+                  'wb') as save_file:
+            pickle.dump(int(float(params.sim_duration) / float(params.dt)), save_file)
+        DATA_TAKEN[func_name] = True
+
     return int(float(params.sim_duration) / float(params.dt))
 
 
 def add_name_suffix(name, yes):
+    frame = inspect.currentframe()
+    args, _, _, values = inspect.getargvalues(frame)
+    func_name = inspect.getframeinfo(frame)[2]
+    if not DATA_TAKEN.get(func_name):
+        for i in range(len(args)):
+            with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_{}.P'.format(args[i])),
+                      'wb') as save_file:
+                pickle.dump(values[i], save_file)
+
     """Allow the user to add a suffix to the name"""
     new_name = name
     # print "Yes? ", yes
@@ -520,6 +670,13 @@ def add_name_suffix(name, yes):
         user_str = user_str.replace(" ", "_")
         new_name = name + "_" + user_str
         yes = confirm_name(new_name)
+
+    if not DATA_TAKEN.get(func_name):
+        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_new_name.P'),
+                  'wb') as save_file:
+            pickle.dump(new_name, save_file)
+        DATA_TAKEN[func_name] = True
+
     return new_name
 
 
@@ -561,6 +718,15 @@ def submit_sl_script(
     target_machine=None,
 ):
     """Submits the slurm script and updates the management db"""
+    frame = inspect.currentframe()
+    args, _, _, values = inspect.getargvalues(frame)
+    func_name = inspect.getframeinfo(frame)[2]
+    if not DATA_TAKEN.get(func_name):
+        for i in range(len(args)):
+            with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_{}.P'.format(args[i])),
+                      'wb') as save_file:
+                pickle.dump(values[i], save_file)
+
     if submit_yes:
         print("Submitting %s" % script)
         if target_machine and target_machine != host:
@@ -585,12 +751,36 @@ def submit_sl_script(
                 sys.exit()
 
             update_db_cmd(process, status, mgmt_db_loc, srf_name, jobid, timestamp)
+
+            if not DATA_TAKEN.get(func_name):
+                with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_jobid.P'),
+                          'wb') as save_file:
+                    pickle.dump(jobid, save_file)
+                DATA_TAKEN[func_name] = True
+
             return jobid
     else:
+        msg = "User chose to submit the job manually"
+        if not DATA_TAKEN.get(func_name):
+            with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_msg.P'),
+                      'wb') as save_file:
+                pickle.dump(msg, save_file)
+            DATA_TAKEN[func_name] = True
+
         print("User chose to submit the job manually")
+        return msg
 
 
 def update_db_cmd(process, status, mgmt_db_loc, srf_name, jobid, timestamp):
+    frame = inspect.currentframe()
+    args, _, _, values = inspect.getargvalues(frame)
+    func_name = inspect.getframeinfo(frame)[2]
+    if not DATA_TAKEN.get(func_name):
+        for i in range(len(args)):
+            with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_{}.P'.format(args[i])),
+                      'wb') as save_file:
+                pickle.dump(values[i], save_file)
+
     """Adds the command to update the mgmt db to the queue"""
     # Update the db
     if mgmt_db_loc is not None and os.path.isdir(mgmt_db_loc):
@@ -605,12 +795,27 @@ def update_db_cmd(process, status, mgmt_db_loc, srf_name, jobid, timestamp):
         with open(cmd_name, "w+") as f:
             f.write(cmd)
             f.close()
+
+        if not DATA_TAKEN.get(func_name):
+            with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_cmd.P'),
+                      'wb') as save_file:
+                pickle.dump(cmd, save_file)
+            DATA_TAKEN[func_name] = True
+        return cmd
     else:
         print(
             "{} is not a valid mgmt db location. No update cmd was created.".format(
                 mgmt_db_loc
             )
         )
+        msg = "{} is not a valid mgmt db location. No update cmd was created.".format(
+                mgmt_db_loc)
+        if not DATA_TAKEN.get(func_name):
+            with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_msg.P'),
+                      'wb') as save_file:
+                pickle.dump(msg, save_file)
+            DATA_TAKEN[func_name] = True
+        return msg
 
 
 ### functions mostly used in regression_test
@@ -737,6 +942,15 @@ def params_to_dict(params_base_path):
 
 
 def get_site_specific_path(stat_file_path, hf_stat_vs_ref=None, v1d_mod_dir=None):
+    frame = inspect.currentframe()
+    args, _, _, values = inspect.getargvalues(frame)
+    func_name = inspect.getframeinfo(frame)[2]
+    if not DATA_TAKEN.get(func_name):
+        for i in range(len(args)):
+            with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_{}.P'.format(args[i])),
+                      'wb') as save_file:
+                pickle.dump(values[i], save_file)
+
     show_horizontal_line()
     print("Auto-detecting site-specific info")
     show_horizontal_line()
@@ -765,6 +979,16 @@ def get_site_specific_path(stat_file_path, hf_stat_vs_ref=None, v1d_mod_dir=None
         print(" - HF Vsref tp be used: %s" % hf_stat_vs_ref_selected)
     else:
         hf_stat_vs_ref_selected = hf_stat_vs_ref
+
+    if not DATA_TAKEN.get(func_name):
+        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_v_mod_1d_path.P'),
+                  'wb') as save_file:
+            pickle.dump(v_mod_1d_path, save_file)
+        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_hf_stat_vs_ref_selected.P'),
+                  'wb') as save_file:
+            pickle.dump(hf_stat_vs_ref_selected, save_file)
+        DATA_TAKEN[func_name] = True
+
     return v_mod_1d_path, hf_stat_vs_ref_selected
 
 

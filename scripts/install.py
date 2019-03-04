@@ -23,24 +23,13 @@ from shared_workflow import shared
 
 import getpass
 import pickle
+import inspect
 
 TEST_DATA_SAVE_DIR = "/home/{}/test_space/slurn_gm_workflow/pickled".format(
     getpass.getuser()
 )
 REALISATION = "PangopangoF29_HYP01-10_S1244"
-DATA_TAKEN = {
-    "q_select_rupmodel_dir": False,
-    "q_select_rupmodel":False,
-    "q_select_vel_model":False,
-    "q_real_stations":False,
-    "q_select_stat_file"False,
-    "q_select_vs30_file":False,
-    "q_get_run_name":False,
-    "q_final_confirm":False,
-    "show_instruction":False,
-    "main_local":False,
-    "main_remote":False
-}
+DATA_TAKEN = {}
 
 
 def q_accept_custom_rupmodel():
@@ -64,9 +53,9 @@ def q_custom_rupmodel_path():
 
 
 def q_select_rupmodel_dir(mysrf_dir):
-    func = 'q_select_rupmodel_dir'
-    if not DATA_TAKEN[func]:
-        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func + '_rupmodel_dir.P'), 'wb') as save_file:
+    func_name = 'q_select_rupmodel_dir'
+    if not DATA_TAKEN.get(func_name):
+        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_rupmodel_dir.P'), 'wb') as save_file:
             pickle.dump(mysrf_dir, save_file)
 
     shared.show_horizontal_line()
@@ -94,7 +83,7 @@ def q_select_rupmodel_dir(mysrf_dir):
         print("!! Srf directory not found. Going into %s" % srf_selected)
         return q_select_rupmodel_dir(os.path.join(mysrf_dir, srf_selected))
 
-    if not DATA_TAKEN[func_name]:
+    if not DATA_TAKEN.get(func_name):
         with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_srf_selected.P'), 'wb') as save_file:
             pickle.dump(srf_selected, save_file)
         with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_srf_selected_dir.P'), 'wb') as save_file:
@@ -108,12 +97,14 @@ def q_select_rupmodel_dir(mysrf_dir):
 
 
 def q_select_rupmodel(srf_selected_dir, srf_file_options):
-    func_name = 'q_select_rupmodel'
-    if not DATA_TAKEN[func_name]:
-        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_srf_selected_dir.P'), 'wb') as save_file:
-            pickle.dump(srf_selected_dir, save_file)
-        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_srf_file_options.P'), 'wb') as save_file:
-            pickle.dump(srf_file_options, save_file)
+    frame = inspect.currentframe()
+    args, _, _, values = inspect.getargvalues(frame)
+    func_name = inspect.getframeinfo(frame)[2]
+    if not DATA_TAKEN.get(func_name):
+        for i in range(len(args)):
+            with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_{}.P'.format(args[i])),
+                      'wb') as save_file:
+                pickle.dump(values[i], save_file)
 
     """Rupture model user selection and verification"""
     shared.show_horizontal_line()
@@ -147,7 +138,7 @@ def q_select_rupmodel(srf_selected_dir, srf_file_options):
 
     print("Corresponding Stock file is also found:\n%s" % stoch_file_path)
 
-    if not DATA_TAKEN[func_name]:
+    if not DATA_TAKEN.get(func_name):
         with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_srf_file_selected.P'), 'wb') as save_file:
             pickle.dump(srf_file_selected, save_file)
         with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_srf_file_path.P'), 'wb') as save_file:
@@ -157,13 +148,12 @@ def q_select_rupmodel(srf_selected_dir, srf_file_options):
 
         DATA_TAKEN[func_name] = True
 
-
     return srf_file_selected, srf_file_path, stoch_file_path
 
 
 def q_select_vel_model(vel_mod_dir):
     func_name = 'q_select_vel_model'
-    if not DATA_TAKEN[func_name]:
+    if not DATA_TAKEN.get(func_name):
         with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_vel_mod_dir.P'), 'wb') as save_file:
             pickle.dump(vel_mod_dir, save_file)
     """Velocity model user selection"""
@@ -187,7 +177,7 @@ def q_select_vel_model(vel_mod_dir):
         print("Error: %s doesn't exist" % params_vel_path)
         sys.exit()
 
-    if not DATA_TAKEN[func_name]:
+    if not DATA_TAKEN.get(func_name):
         with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_v_mod_ver.P'), 'wb') as save_file:
             pickle.dump(v_mod_ver, save_file)
         with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_vel_mod_dir.P'), 'wb') as save_file:
@@ -209,6 +199,15 @@ def q_real_stations():
 
 
 def q_select_stat_file(stat_dir, remove_fd=False):
+    frame = inspect.currentframe()
+    args, _, _, values = inspect.getargvalues(frame)
+    func_name = inspect.getframeinfo(frame)[2]
+    if not DATA_TAKEN.get(func_name):
+        for i in range(len(args)):
+            with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_{}.P'.format(args[i])),
+                      'wb') as save_file:
+                pickle.dump(values[i], save_file)
+
     shared.show_horizontal_line()
     print("Select one of available Station list (from %s)" % stat_dir)
     shared.show_horizontal_line()
@@ -222,10 +221,25 @@ def q_select_stat_file(stat_dir, remove_fd=False):
     print(stat_file)
     stat_file_path = os.path.join(stat_dir, stat_file)
     print(stat_file_path)
+
+    if not DATA_TAKEN.get(func_name):
+        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_stat_file_path.P'), 'wb') as save_file:
+            pickle.dump(stat_file_path, save_file)
+        DATA_TAKEN[func_name] = True
+
     return stat_file_path
 
 
 def q_select_vs30_file(stat_dir):
+    frame = inspect.currentframe()
+    args, _, _, values = inspect.getargvalues(frame)
+    func_name = inspect.getframeinfo(frame)[2]
+    if not DATA_TAKEN.get(func_name):
+        for i in range(len(args)):
+            with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_{}.P'.format(args[i])),
+                      'wb') as save_file:
+                pickle.dump(values[i], save_file)
+
     shared.show_horizontal_line()
     print("Select one of available vs30 (from %s)" % stat_dir)
     shared.show_horizontal_line()
@@ -244,6 +258,14 @@ def q_select_vs30_file(stat_dir):
         )
         sys.exit()
 
+    if not DATA_TAKEN.get(func_name):
+        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_vs30_file_path.P'), 'wb') as save_file:
+            pickle.dump(vs30_file_path, save_file)
+        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_vs30ref_file_path.P'), 'wb') as save_file:
+            pickle.dump(vs30ref_file_path, save_file)
+
+        DATA_TAKEN[func_name] = True
+
     return vs30_file_path, vs30ref_file_path
 
 
@@ -251,6 +273,15 @@ def q_get_run_name(HH, srf_selected, v_mod_ver, emod3d_version):
     """Automatic generation of the run name (LP here only,
     HF and BB come later after declaration of HF and BB parameters).
     """
+    frame = inspect.currentframe()
+    args, _, _, values = inspect.getargvalues(frame)
+    func_name = inspect.getframeinfo(frame)[2]
+    if not DATA_TAKEN.get(func_name):
+        for i in range(len(args)):
+            with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_{}.P'.format(args[i])),
+                      'wb') as save_file:
+                pickle.dump(values[i], save_file)
+
     # additional string to customize (today's date for starters)
     userString = datetime.now().strftime("%y%m%d")
 
@@ -270,6 +301,15 @@ def q_get_run_name(HH, srf_selected, v_mod_ver, emod3d_version):
     )
 
     yes = shared.confirm_name(run_name)
+
+    if not DATA_TAKEN.get(func_name):
+        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_yes.P'), 'wb') as save_file:
+            pickle.dump(yes, save_file)
+        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_run_name.P'), 'wb') as save_file:
+            pickle.dump(run_name, save_file)
+
+        DATA_TAKEN[func_name] = True
+
     return yes, run_name
 
 
