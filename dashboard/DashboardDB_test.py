@@ -7,6 +7,7 @@ import pytest
 import qcore.constants as const
 from dashboard.DashboardDB import DashboardDB, SQueueEntry
 
+
 class TestDashboardDB:
 
     squeue_entry_1 = SQueueEntry(
@@ -27,7 +28,9 @@ class TestDashboardDB:
 
     @pytest.fixture(scope="function")
     def dashboard_db(self, tmp_path):
-        return DashboardDB.create_db(os.path.join(tmp_path, "test.db"), [self.hpc_1, self.hpc_2])
+        return DashboardDB.create_db(
+            os.path.join(tmp_path, "test.db"), [self.hpc_1, self.hpc_2]
+        )
 
     def test_squeue_hpc_1(self, dashboard_db: DashboardDB):
         """Test updating/populating of squeue table"""
@@ -110,7 +113,9 @@ class TestDashboardDB:
         with the same total_core_hours"""
         # Add first entry for the day 1
         day_1 = date.today().strftime(DashboardDB.date_format)
-        dashboard_db.update_daily_chours_usage(self.total_core_usage_1, self.hpc_1, day_1)
+        dashboard_db.update_daily_chours_usage(
+            self.total_core_usage_1, self.hpc_1, day_1
+        )
 
         # Check the entry has been added & daily usage is null
         day, daily_usage, total_core_hours = dashboard_db.get_chours_usage(
@@ -121,7 +126,9 @@ class TestDashboardDB:
         assert total_core_hours == self.total_core_usage_1
 
         # Add 2nd entry for day 1
-        dashboard_db.update_daily_chours_usage(self.total_core_usage_2, self.hpc_1, day_1)
+        dashboard_db.update_daily_chours_usage(
+            self.total_core_usage_2, self.hpc_1, day_1
+        )
 
         # Check that entry for day 1 has been updated correctly
         day, daily_usage, total_core_hours = dashboard_db.get_chours_usage(
@@ -132,7 +139,9 @@ class TestDashboardDB:
         assert total_core_hours == self.total_core_usage_2
 
         # Add 2nd entry for day 1 again
-        dashboard_db.update_daily_chours_usage(self.total_core_usage_2, self.hpc_1, day_1)
+        dashboard_db.update_daily_chours_usage(
+            self.total_core_usage_2, self.hpc_1, day_1
+        )
 
         # Check that nothing has changed
         day, daily_usage, total_core_hours = dashboard_db.get_chours_usage(
@@ -141,6 +150,7 @@ class TestDashboardDB:
         assert day == day_1
         assert daily_usage == self.total_core_usage_2 - self.total_core_usage_1
         assert total_core_hours == self.total_core_usage_2
+
 
 if __name__ == "__main__":
     pytest.main(sys.argv)

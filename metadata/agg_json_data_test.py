@@ -10,7 +10,12 @@ import pytest
 import numpy as np
 import pandas as pd
 
-from metadata.agg_json_data import main, create_dataframe, load_metadata_df, DATE_COLUMNS
+from metadata.agg_json_data import (
+    main,
+    create_dataframe,
+    load_metadata_df,
+    DATE_COLUMNS,
+)
 import qcore.constants as const
 
 
@@ -78,7 +83,7 @@ class TestAggJsonData:
         },
     }
 
-    @pytest.fixture(scope='class')
+    @pytest.fixture(scope="class")
     def json_files(self, tmpdir_factory):
         tmpdir = tmpdir_factory.getbasetemp()
 
@@ -113,7 +118,7 @@ class TestAggJsonData:
             n_procs=1,
             filename_pattern="*",
             calc_core_hours=True,
-            not_recursive=False
+            not_recursive=False,
         )
         df = main(args)
 
@@ -129,15 +134,13 @@ class TestAggJsonData:
     def df_check(self, df: pd.DataFrame):
         """Tests general aggregation of simulation json log files"""
         # Check the shape (this has to updated if the content is changed)
-        assert df.columns.shape[0] == 27 + 3 # Have to add the core hours columns
+        assert df.columns.shape[0] == 27 + 3  # Have to add the core hours columns
         assert df.shape[0] == 3
 
         # Check that the 3 simulation entries are there
-        assert (
-            np.all(
-                np.isin(
-                    [self.sim_name_1, self.sim_name_2, self.sim_name_3], df.index.values
-                )
+        assert np.all(
+            np.isin(
+                [self.sim_name_1, self.sim_name_2, self.sim_name_3], df.index.values
             )
         )
 
@@ -152,9 +155,10 @@ class TestAggJsonData:
             # Check run time and core hours column
             elif col[1] == const.MetadataField.run_time.value:
                 assert df[col].dtype == np.dtype(np.float)
-                assert (
-                    df[col[0], const.MetadataField.core_hours.value].dtype == np.dtype(np.float)
-                )
+                assert df[
+                    col[0], const.MetadataField.core_hours.value
+                ].dtype == np.dtype(np.float)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     pytest.main(sys.argv)
