@@ -246,9 +246,9 @@ def estimate_HF_chours(
     if scale_ncores and np.any(
         wct > (node_time_th_factor * data[:, -1] / PHYSICAL_NCORES_PER_NODE)
     ):
-        return scale_core_hours(core_hours, data, node_time_th_factor)
-    else:
-        return core_hours, wct, data[:, -1]
+        core_hours, wct, data[:, -1] = scale_core_hours(core_hours, data, node_time_th_factor)
+
+    return core_hours, wct, data[:, -1] * hyperthreading_factor
 
 
 def scale_core_hours(
