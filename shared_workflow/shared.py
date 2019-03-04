@@ -21,11 +21,30 @@ from qcore import binary_version
 from qcore.config import host
 import qcore.constants as const
 
+import pickle
+import inspect
+import getpass
+
+TEST_DATA_SAVE_DIR = "/home/{}/test_space/slurn_gm_workflow/pickled".format(
+    getpass.getuser()
+)
+REALISATION = "PangopangoF29_HYP01-10_S1244"
+DATA_TAKEN = {}
+
+
 if sys.version_info.major == 3:
     basestring = str
 
 
 def write_to_py(pyfile, vardict):
+    func_name = 'write_to_py'
+    if not DATA_TAKEN.get(func_name):
+        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_pyfile.P'), 'wb') as save_file:
+            pickle.dump(pyfile, save_file)
+        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_vardict.P'), 'wb') as save_file:
+            pickle.dump(vardict, save_file)
+        DATA_TAKEN[func_name] = True
+
     with open(pyfile, "w") as fp:
         for (key, value) in vardict.items():
             if isinstance(value, basestring):
@@ -38,6 +57,11 @@ def par_value(variable):
     """reads a parameter from the parameters file (e3d.par)
     should not be necessary as you can just 'from params import *' (params.py)
     """
+    func_name = 'par_value'
+    if not DATA_TAKEN.get(func_name):
+        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_variable.P'), 'wb') as save_file:
+            pickle.dump(variable, save_file)
+
     result = ""
     par_handle = open("e3d.par", "r")
     for line in par_handle:
@@ -45,6 +69,12 @@ def par_value(variable):
             # keep going and get the last result
             result = line
     par_handle.close()
+
+    if not DATA_TAKEN.get(func_name):
+        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_ret_val.P'), 'wb') as save_file:
+            pickle.dump("".join(result.split("=")[1:]).rstrip("\n"), save_file)
+        DATA_TAKEN[func_name] = True
+
     return "".join(result.split("=")[1:]).rstrip("\n")
 
 
@@ -53,6 +83,14 @@ def get_stations(source_file, locations=False):
     sample line in source file:
     171.74765   -43.90236 ADCS
     """
+    func_name = 'get_stations'
+    if not DATA_TAKEN.get(func_name):
+        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_source_file.P'), 'wb') as save_file:
+            pickle.dump(source_file, save_file)
+
+        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_locations.P'), 'wb') as save_file:
+            pickle.dump(source_file, save_file)
+
     stations = []
     station_lats = []
     station_lons = []
@@ -66,7 +104,20 @@ def get_stations(source_file, locations=False):
                     station_lats.append(info[1])
     if not locations:
         return stations
-    return (stations, station_lats, station_lons)
+
+    if not DATA_TAKEN.get(func_name):
+        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_stations.P'), 'wb') as save_file:
+            pickle.dump(stations, save_file)
+
+        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_station_lats.P'), 'wb') as save_file:
+            pickle.dump(station_lats, save_file)
+
+        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_station_lons.P'), 'wb') as save_file:
+            pickle.dump(station_lons, save_file)
+
+        DATA_TAKEN[func_name] = True
+
+    return stations, station_lats, station_lons
 
 
 def get_corners(model_params, gmt_format=False):
@@ -74,6 +125,14 @@ def get_corners(model_params, gmt_format=False):
     model_params: file path to model params
     gmt_format: if True, also returns corners in GMT string format
     """
+    func_name = 'get_corners'
+    if not DATA_TAKEN.get(func_name):
+        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_model_params.P'), 'wb') as save_file:
+            pickle.dump(model_params, save_file)
+
+        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_gmt_format.P'), 'wb') as save_file:
+            pickle.dump(gmt_format, save_file)
+
     # with -45 degree rotation:
     #   c2
     # c1  c3
@@ -90,6 +149,16 @@ def get_corners(model_params, gmt_format=False):
         return corners
     # corners in GMT format
     cnr_str = "\n".join([" ".join(map(str, cnr)) for cnr in corners])
+
+    if not DATA_TAKEN.get(func_name):
+        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_corners.P'), 'wb') as save_file:
+            pickle.dump(corners, save_file)
+
+        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_cnr_str.P'), 'wb') as save_file:
+            pickle.dump(cnr_str, save_file)
+
+        DATA_TAKEN[func_name] = True
+
     return corners, cnr_str
 
 

@@ -21,6 +21,28 @@ from scripts.management import create_mgmt_db
 from shared_workflow.install_shared import install_simulation, dump_all_yamls
 from shared_workflow import shared
 
+import getpass
+import pickle
+
+TEST_DATA_SAVE_DIR = "/home/{}/test_space/slurn_gm_workflow/pickled".format(
+    getpass.getuser()
+)
+REALISATION = "PangopangoF29_HYP01-10_S1244"
+DATA_TAKEN = {
+    "q_select_rupmodel_dir": False,
+    "q_select_rupmodel":False,
+    "q_select_vel_model":False,
+    "q_real_stations":False,
+    "q_select_stat_file"False,
+    "q_select_vs30_file":False,
+    "q_get_run_name":False,
+    "q_final_confirm":False,
+    "show_instruction":False,
+    "main_local":False,
+    "main_remote":False
+}
+
+
 def q_accept_custom_rupmodel():
     shared.show_horizontal_line()
     print("Do you wish to use custom rupture files?")
@@ -42,6 +64,11 @@ def q_custom_rupmodel_path():
 
 
 def q_select_rupmodel_dir(mysrf_dir):
+    func = 'q_select_rupmodel_dir'
+    if not DATA_TAKEN[func]:
+        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func + '_rupmodel_dir.P'), 'wb') as save_file:
+            pickle.dump(mysrf_dir, save_file)
+
     shared.show_horizontal_line()
     print("Select Rupture Model - Step 1.")
     shared.show_horizontal_line()
@@ -67,10 +94,27 @@ def q_select_rupmodel_dir(mysrf_dir):
         print("!! Srf directory not found. Going into %s" % srf_selected)
         return q_select_rupmodel_dir(os.path.join(mysrf_dir, srf_selected))
 
+    if not DATA_TAKEN[func_name]:
+        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_srf_selected.P'), 'wb') as save_file:
+            pickle.dump(srf_selected, save_file)
+        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_srf_selected_dir.P'), 'wb') as save_file:
+            pickle.dump(srf_selected_dir, save_file)
+        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_srf_file_options.P'), 'wb') as save_file:
+            pickle.dump(srf_file_options, save_file)
+
+        DATA_TAKEN[func_name] = True
+
     return srf_selected, srf_selected_dir, srf_file_options
 
 
 def q_select_rupmodel(srf_selected_dir, srf_file_options):
+    func_name = 'q_select_rupmodel'
+    if not DATA_TAKEN[func_name]:
+        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_srf_selected_dir.P'), 'wb') as save_file:
+            pickle.dump(srf_selected_dir, save_file)
+        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_srf_file_options.P'), 'wb') as save_file:
+            pickle.dump(srf_file_options, save_file)
+
     """Rupture model user selection and verification"""
     shared.show_horizontal_line()
     print("Select Rupture Model - Step 2.")
@@ -102,10 +146,26 @@ def q_select_rupmodel(srf_selected_dir, srf_file_options):
         sys.exit()
 
     print("Corresponding Stock file is also found:\n%s" % stoch_file_path)
+
+    if not DATA_TAKEN[func_name]:
+        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_srf_file_selected.P'), 'wb') as save_file:
+            pickle.dump(srf_file_selected, save_file)
+        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_srf_file_path.P'), 'wb') as save_file:
+            pickle.dump(srf_file_path, save_file)
+        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_stoch_file_path.P'), 'wb') as save_file:
+            pickle.dump(stoch_file_path, save_file)
+
+        DATA_TAKEN[func_name] = True
+
+
     return srf_file_selected, srf_file_path, stoch_file_path
 
 
 def q_select_vel_model(vel_mod_dir):
+    func_name = 'q_select_vel_model'
+    if not DATA_TAKEN[func_name]:
+        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_vel_mod_dir.P'), 'wb') as save_file:
+            pickle.dump(vel_mod_dir, save_file)
     """Velocity model user selection"""
     shared.show_horizontal_line()
     print("Select one of available VelocityModels (from %s)" % vel_mod_dir)
@@ -126,6 +186,17 @@ def q_select_vel_model(vel_mod_dir):
     if not os.path.exists(params_vel_path):
         print("Error: %s doesn't exist" % params_vel_path)
         sys.exit()
+
+    if not DATA_TAKEN[func_name]:
+        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_v_mod_ver.P'), 'wb') as save_file:
+            pickle.dump(v_mod_ver, save_file)
+        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_vel_mod_dir.P'), 'wb') as save_file:
+            pickle.dump(vel_mod_dir, save_file)
+        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_params_vel_path.P'), 'wb') as save_file:
+            pickle.dump(params_vel_path, save_file)
+
+        DATA_TAKEN[func_name] = True
+
 
     return v_mod_ver, vel_mod_dir, params_vel_path
 
@@ -320,7 +391,7 @@ def main_local(args):
     vel_mod_params_dir = sim_dir
 
     event_name = ""
-    
+
     fault_yaml_path = simulation_structure.get_fault_yaml_path(sim_dir)
     root_yaml_path = simulation_structure.get_root_yaml_path(sim_dir)
 

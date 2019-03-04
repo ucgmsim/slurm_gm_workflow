@@ -10,6 +10,16 @@ from qcore import geo, utils
 from qcore.constants import SimParams, FaultParams, RootParams, VMParams
 from shared_workflow import shared
 
+import getpass
+import pickle
+import inspect
+
+TEST_DATA_SAVE_DIR = "/home/{}/test_space/slurn_gm_workflow/pickled".format(
+    getpass.getuser()
+)
+REALISATION = "PangopangoF29_HYP01-10_S1244"
+DATA_TAKEN = {}
+
 
 def install_simulation(
     version,
@@ -46,6 +56,15 @@ def install_simulation(
     v1d_full_path=None,
     sim_params_file="",
 ):
+    frame = inspect.currentframe()
+    args, _, _, values = inspect.getargvalues(frame)
+    func_name = inspect.getframeinfo(frame)[2]
+    if not DATA_TAKEN.get(func_name):
+        for i in range(len(args)):
+            with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_{}.P'.format(args[i])), 'wb') as save_file:
+                pickle.dump(values[i], save_file)
+
+
     """Installs a single simulation"""
     lf_sim_root_dir = os.path.join(sim_dir, "LF")
     hf_dir = os.path.join(sim_dir, "HF")
@@ -200,6 +219,18 @@ def install_simulation(
         for key in extra_sims_params.keys():
             sim_params_dict.update({key: extra_sims_params[key]})
 
+    if not DATA_TAKEN.get(func_name):
+        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_root_params_dict.P'), 'wb') as save_file:
+            pickle.dump(root_params_dict, save_file)
+        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_fault_params_dict.P'), 'wb') as save_file:
+            pickle.dump(fault_params_dict, save_file)
+        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_sim_params_dict.P'), 'wb') as save_file:
+            pickle.dump(sim_params_dict, save_file)
+        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_vm_params_dict.P'), 'wb') as save_file:
+            pickle.dump(vm_params_dict, save_file)
+
+        DATA_TAKEN[func_name] = True
+
     return root_params_dict, fault_params_dict, sim_params_dict, vm_params_dict
 
 
@@ -211,6 +242,15 @@ def install_bb(
     site_v1d_dir=None,
     hf_stat_vs_ref=None,
 ):
+    frame = inspect.currentframe()
+    args, _, _, values = inspect.getargvalues(frame)
+    func_name = inspect.getframeinfo(frame)[2]
+    if not DATA_TAKEN.get(func_name):
+        for i in range(len(args)):
+            with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_{}.P'.format(args[i])),
+                      'wb') as save_file:
+                pickle.dump(values[i], save_file)
+
     shared.show_horizontal_line(c="*")
     print(" " * 37 + "EMOD3D HF/BB Preparation Ver.slurm")
     shared.show_horizontal_line(c="*")
@@ -245,8 +285,18 @@ def install_bb(
             root_dict["bb"]["site_specific"] = False
             root_dict["v_mod_1d_name"] = v_mod_1d_selected
 
+    if not DATA_TAKEN.get(func_name):
+        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_root_dict.P'), 'wb') as save_file:
+            pickle.dump(root_dict, save_file)
+        DATA_TAKEN[func_name] = True
+    return root_dict
+
 
 def q_1d_velocity_model(v_mod_1d_dir):
+    func_name = 'q_1d_velocity_model'
+    if not DATA_TAKEN.get(func_name):
+        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_v_mod_1d_dir.P', 'wb')) as save_file:
+            pickle.dump(v_mod_1d_dir, save_file)
     shared.show_horizontal_line()
     print("Select one of 1D Velocity models (from %s)" % v_mod_1d_dir)
     shared.show_horizontal_line()
@@ -258,16 +308,30 @@ def q_1d_velocity_model(v_mod_1d_dir):
     print(v_mod_1d_selected)  # full path
     v_mod_1d_name = os.path.basename(v_mod_1d_selected).replace(".1d", "")
 
+    if not DATA_TAKEN.get(func_name):
+        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_v_mod_1d_name.P'), 'wb') as save_file:
+            pickle.dump(v_mod_1d_name, save_file)
+
+        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_v_mod_1d_selected.P'), 'wb') as save_file:
+            pickle.dump(v_mod_1d_selected, save_file)
+        DATA_TAKEN[func_name] = True
+
     return v_mod_1d_name, v_mod_1d_selected
 
 
 def q_site_specific():
+    func_name = 'q_site_specific'
     shared.show_horizontal_line()
     print(
         "Do you want site-specific computation? "
         "(To use a universal 1D profile, Select 'No')"
     )
     shared.show_horizontal_line()
+
+    if not DATA_TAKEN.get(func_name):
+        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_ret_Val.P'), 'wb') as save_file:
+            pickle.dump(shared.show_yes_no_question(), save_file)
+
     return shared.show_yes_no_question()
 
 
@@ -284,6 +348,15 @@ def dump_all_yamls(
 
 
 def generate_fd_files(output_path, vm_params_dict, stat_file="default.ll", debug=False):
+    frame = inspect.currentframe()
+    args, _, _, values = inspect.getargvalues(frame)
+    func_name = inspect.getframeinfo(frame)[2]
+    if not DATA_TAKEN.get(func_name):
+        for i in range(len(args)):
+            with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_{}.P'.format(args[i])),
+                      'wb') as save_file:
+                pickle.dump(values[i], save_file)
+
     MODEL_LAT = vm_params_dict["MODEL_LAT"]
     MODEL_LON = vm_params_dict["MODEL_LON"]
     MODEL_ROT = vm_params_dict["MODEL_ROT"]
@@ -363,5 +436,13 @@ def generate_fd_files(output_path, vm_params_dict, stat_file="default.ll", debug
         # lon, lat, name
         for i, pos in enumerate(ll):
             llf.write("%11.5f %11.5f %s\n" % (pos[0], pos[1], suname[i]))
+
+    if not DATA_TAKEN.get(func_name):
+        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_gp_out.P'), 'wb') as save_file:
+            pickle.dump(gp_out, save_file)
+
+        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_ll_out.P'), 'wb') as save_file:
+            pickle.dump(ll_out, save_file)
+        DATA_TAKEN[func_name] = True
 
     return gp_out, ll_out
