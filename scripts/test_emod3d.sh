@@ -51,16 +51,20 @@ do
     seisFile=`echo $rootFile | sed 's/\(.*\)-/\1_seis-/'`
     xytsFile=`echo $rootFile | sed 's/\(.*\)-/\1_xyts-/'`
 
-    #Check that if the seis or xyts file exists for a certain integer then the other also exists
-    if [[ -f "$seisFile" ]] && [[ ! -f "$xytsFile" ]];
+    #Check that if the Rlog says it wrote the xyts file, then that file exists
+    grep "xy-plane time slice:" $rlog >> /dev/null
+    if [[ $? == 0 ]] && [[ ! -f "$xytsFile" ]];
     then
-        echo "Found the seis file $seisFile, but didn't find the matching xyts file $xytsFile"
+        echo "The Rlog said it was going to write the xyts file, but we couldn't find it: $xytsFile"
         rlog_check=1
         break
     fi
-    if [[ ! -f "$seisFile" ]] && [[ -f "$xytsFile" ]];
+
+    #Check that if the Rlog says it wrote the seis file, then that file exists
+    grep "ALL seismograms written into single output file" $rlog >> /dev/null
+    if [[ $? == 0 ]] && [[ ! -f "$seisFile" ]];
     then
-        echo "Found the xyts file $xytsFile, but didn't find the matching seis file $seisFile"
+        echo "The Rlog said it was going to write the seis file, but we couldn't find it: $seisFile"
         rlog_check=1
         break
     fi
