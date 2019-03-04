@@ -58,12 +58,12 @@ do
         rlog_check=1
         break
     fi
-    if [[ ! -f "$seisFile" ]] && [[ -f "$xytsFile" ]];
-    then
-        echo "Found the xyts file $xytsFile, but didn't find the matching seis file $seisFile"
-        rlog_check=1
-        break
-    fi
+#    if [[ ! -f "$seisFile" ]] && [[ -f "$xytsFile" ]];
+#    then
+#        echo "Found the xyts file $xytsFile, but didn't find the matching seis file $seisFile"
+#        rlog_check=1
+#        break
+#    fi
 done
 
 # Check the integrity of the seisfiles only if all files that are expected to be there are present
