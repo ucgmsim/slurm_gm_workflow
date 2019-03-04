@@ -11,10 +11,18 @@ import estimation.estimate_wct as est
 from qcore import utils, binary_version
 from qcore.config import get_machine_config, host
 from shared_workflow import load_config
-from shared_workflow.shared import confirm, set_wct, submit_sl_script, resolve_header, convert_time_to_hours, get_nt
+from shared_workflow.shared import (
+    confirm,
+    set_wct,
+    submit_sl_script,
+    resolve_header,
+    get_nt,
+    generate_context,
+)
 
 # Estimated number of minutes between each checkpoint
 CHECKPOINT_DURATION = 10
+
 
 def write_sl_script(
     lf_sim_dir,
@@ -34,21 +42,21 @@ def write_sl_script(
         os.path.dirname(os.path.realpath(__file__)), "workflow_config.json"
     )
 
-    set_runparams.create_run_params(srf_name, workflow_config=workflow_config, steps_per_checkpoint=steps_per_checkpoint)
+    set_runparams.create_run_params(
+        srf_name,
+        workflow_config=workflow_config,
+        steps_per_checkpoint=steps_per_checkpoint,
+    )
 
-    with open("run_emod3d.sl.template", "r") as f:
-        template = f.read()
-
-    replace_t = [
-        ("{{lf_sim_dir}}", lf_sim_dir),
-        ("{{tools_dir}}", binary_path),
-        ("{{mgmt_db_location}}", mgmt_db_location),
-        ("{{sim_dir}}", sim_dir),
-        ("{{srf_name}}", srf_name),
-    ]
-
-    for pattern, value in replace_t:
-        template = template.replace(pattern, value)
+    template = generate_context(
+        sim_dir,
+        "run_emod3d.sl.template",
+        lf_sim_dir=lf_sim_dir,
+        tools_dir=binary_path,
+        mgmt_db_location=mgmt_db_location,
+        sim_dir=sim_dir,
+        srf_name=srf_name,
+    )
 
     # slurm header
     job_name = "run_emod3d.%s" % srf_name
@@ -109,7 +117,6 @@ def main(args):
         binary_path = binary_version.get_lf_bin(
             params.emod3d.emod3d_version, target_qconfig["tools_dir"]
         )
-
         steps_per_checkpoint = int(
             get_nt(params)
             / (60.0 * est_run_time)
