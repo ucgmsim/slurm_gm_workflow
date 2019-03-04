@@ -201,7 +201,7 @@ def main(args):
             sl_template_prefix=ll_name_prefix,
             hf_option=hf_option,
             params=params,
-            nb_cpus=ncore,
+            nb_cpus=est_cores,
             wct=wct,
             account=args.account,
             binary=not args.ascii,
