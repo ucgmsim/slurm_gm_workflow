@@ -82,10 +82,10 @@ then
     fi
 fi
 
-# EMOD3D is not considered to be completed if:
-#  - Any Rlog does not have IS FINISHED
-#  - There is an entry in an Rlog about writing a seis or xyts file, but the relevant file is not present
-#  - Any seis file is unable to be loaded by LFSeis
+# EMOD3D is considered to be completed if:
+#  - Every Rlog contains the string "IS FINISHED"
+#  - In every Rlog file, if it says it wrote a seis or xyts file, then that file is present
+#  - Every seis file is loaded by LFSeis without an issue
 if [[ $rlog_check == 0 ]] && [[ $seisIntegrity == 0 ]];
 then
     echo "$lf_sim_dir: EMOD3D completed"
