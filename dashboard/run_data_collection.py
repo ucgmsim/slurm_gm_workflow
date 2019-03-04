@@ -95,7 +95,7 @@ def parse_squeue(lines: Iterable[str]):
     return entries
 
 
-def run_cmd(user: str, hpc: str, cmd: str, timeout: int = 10):
+def run_cmd(user: str, hpc: str, cmd: str, error_ctr: int, timeout: int = 10):
     """Runs the specified command remotely on the specified hpc using the
     specified user id.
 
@@ -112,16 +112,19 @@ def run_cmd(user: str, hpc: str, cmd: str, timeout: int = 10):
             .split("\n")
         )
     except subprocess.CalledProcessError:
+        error_ctr += 1
         print("Cmd {} returned a non-zero exit status.".format(cmd))
         return False
     except subprocess.TimeoutExpired:
+        error_ctr += 1
         print("The timeout of {} expired for cmd {}.".format(timeout, cmd))
         return False
     else:
+        error_ctr = 0
         return result
 
 
-def collect_data(user: str, hpc: const.HPC, dashboard_db: str):
+def collect_data(user: str, hpc: const.HPC, dashboard_db: str, error_ctr: int):
     """Collects data from the specified HPC and adds it to the
     dashboard db
     """
@@ -135,7 +138,11 @@ def collect_data(user: str, hpc: const.HPC, dashboard_db: str):
 
     # Get Core hour usage, out of some reason this command is super slow...
     rt_ch_output = run_cmd(
-        user, hpc.value, "nn_corehour_usage {}".format(PROJECT_ID), timeout=60
+        user,
+        hpc.value,
+        "nn_corehour_usage {}".format(PROJECT_ID),
+        error_ctr,
+        timeout=60,
     )
 
     # Update dashboard db
@@ -147,7 +154,7 @@ def collect_data(user: str, hpc: const.HPC, dashboard_db: str):
         return False
 
     # Squeue
-    sq_output = run_cmd(user, hpc.value, "squeue")
+    sq_output = run_cmd(user, hpc.value, "squeue", error_ctr)
 
     # Update dashboard db
     if sq_output:
@@ -158,7 +165,7 @@ def collect_data(user: str, hpc: const.HPC, dashboard_db: str):
     # 'NODES\n23\n32\n'---> ['NODES', '23', '32']
     if hpc == const.HPC.maui:
         capa_output = run_cmd(
-            user, hpc.value, "squeue -p nesi_research | awk '{print $10}'"
+            user, hpc.value, "squeue -p nesi_research | awk '{print $10}'", error_ctr
         )
 
         if capa_output:
@@ -186,26 +193,26 @@ def collect_data(user: str, hpc: const.HPC, dashboard_db: str):
 
 
 def main(args):
+    error_ctr = 0
+
     while True:
         # Collect the data
-        r_flag, r_flags = None, []
         if type(args.hpc) is str:
             print("{} - Collecting data from HPC {}".format(datetime.now(), args.hpc))
-            r_flag = collect_data(args.user, const.HPC(args.hpc), args.dashboard_db)
+            collect_data(args.user, const.HPC(args.hpc), args.dashboard_db, error_ctr)
             print("{} - Done".format(datetime.now()))
         else:
             print("{} - Collecting data from HPC {}".format(datetime.now(), HPCS))
             for hpc in HPCS:
-                r_flags.append(
-                    collect_data(args.user, const.HPC(hpc), args.dashboard_db)
-                )
+                collect_data(args.user, const.HPC(hpc), args.dashboard_db, error_ctr)
             print("{} - Done".format(datetime.now()))
 
         # Check that everything went well
-        if r_flag is False or not np.all(r_flags):
+        if error_ctr % 3 == 0:
             print(
-                "One of the command failed to execute remotely. Data collection will "
-                "therefore stop to prevent the possibility of user lockout."
+                "There have been three failure to execute the collection cmds. "
+                "Data collection will therefore stop to prevent the possibility "
+                "of user lockout."
             )
             exit()
 
