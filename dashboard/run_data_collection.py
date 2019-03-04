@@ -145,9 +145,11 @@ class DataCollector:
 
         # Check that everything went well
         if self.error_ctr % self.error_th == 0:
-            raise Exception("There have been three failure to execute the collection cmds. "
-                "Data collection will therefore stop to prevent the possibility "
-                "of user lockout.")
+            raise Exception(
+                "There have been {} consecutive collection cmd failures".format(
+                    self.error_th
+                )
+            )
 
     def _parse_squeue(self, lines: Iterable[str]):
         """Parse the results from the squeue command"""
@@ -220,9 +222,14 @@ class DataCollector:
 
 
 def main(args):
-    hpc = const.HPC(args.hpc) if type(args.hpc) is str else [const.HPC(cur_hpc) for cur_hpc in args.hpc]
+    hpc = (
+        const.HPC(args.hpc)
+        if type(args.hpc) is str
+        else [const.HPC(cur_hpc) for cur_hpc in args.hpc]
+    )
     data_col = DataCollector(args.user, hpc, args.dashboard_db, args.update_interval)
     data_col.run()
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
