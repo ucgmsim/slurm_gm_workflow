@@ -127,7 +127,7 @@ def get_new_progress_df(root_dir, runs_dir, faults, fault_names, r_counts):
         sources_dir=sim_struct.get_sources_dir(root_dir),
         runs_dir=runs_dir,
         fault_selection=None,
-        cybershake_config=None,
+        root_yaml=None,
         output=None,
         verbose=False,
     )
