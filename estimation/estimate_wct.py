@@ -232,10 +232,8 @@ def estimate_HF_chours(
         )
 
     hyperthreading_factor = 2.0 if const.ProcessType.HF.is_hyperth else 1.0
-    n_cpus = data[:, -1]
-
     # Adjust the number of cores to estimate physical core hours
-    n_cpus = n_cpus / hyperthreading_factor
+    data[:, -1] = data[:, -1] / hyperthreading_factor
     core_hours = estimate(
         data,
         model_dir=model_dir,
@@ -243,14 +241,14 @@ def estimate_HF_chours(
         scaler_prefix=scaler_prefix,
     )
 
-    wct = core_hours / n_cpus
+    wct = core_hours / data[:, -1]
 
     if scale_ncores and np.any(
-        wct > (node_time_th_factor * n_cpus / PHYSICAL_NCORES_PER_NODE)
+        wct > (node_time_th_factor * data[:, -1] / PHYSICAL_NCORES_PER_NODE)
     ):
         return scale_core_hours(core_hours, data, node_time_th_factor)
     else:
-        return core_hours, core_hours / n_cpus, n_cpus
+        return core_hours, wct, data[:, -1]
 
 
 def scale_core_hours(
