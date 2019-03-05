@@ -21,8 +21,7 @@ install:
 
 # command to run tests
 script:
-  - export PYTHONPATH=$PYTHONPATH:/home/root/git/slurm_gm_workflow
   - pytest --black --ignore=testing
-  - docker run -it -v /home/travis/build/ucgmsim:/home/root/git sungeunbae/qcore-ubuntu-minimal bash -c "cd /home/root/git/qcore/;python setup.py install;cd /home/root/git/slurm_gm_workflow; pytest -vs --ignore /home/root/git/slurm_gm_workflow/testing/test/test_manual_install;"
+  - docker run -it -v /home/travis/build/ucgmsim:/home/root/git sungeunbae/qcore-ubuntu-minimal bash -c "cd /home/root/git/qcore/;python setup.py install;cd /home/root/git/slurm_gm_workflow; export PYTHONPATH=$PYTHONPATH:/home/root/git/slurm_gm_workflow; pytest -vs --ignore /home/root/git/slurm_gm_workflow/testing/test/test_manual_install;"
 #after_success:
 #  - coveralls   # uploads reports to coveralls.io
