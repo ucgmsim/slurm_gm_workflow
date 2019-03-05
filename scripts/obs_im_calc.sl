@@ -19,9 +19,9 @@ obs_dirs=$1
 
 echo ___calculating observed____
 
-for D in `find $obs_dirs -type d`
+for D in $(ls)
 do
-    if [[  `find $D -maxdepth 3 -mindepth 3 -name "accBB" | wc -l` -ge 1 ]]
+    if [[ -d D ]] && [[  `$D/*/*/accBB | wc -l` -ge 1 ]]
     then
         fault_name=`basename $D`
         time python $IMPATH/calculate_ims.py $D/*/*/accBB a -o $obs_dirs/IM_calc/ -np $SLURM_CPUS_PER_TASK -i $fault_name -r $fault_name -c geom -t o -e -s
