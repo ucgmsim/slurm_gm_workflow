@@ -11,11 +11,8 @@ from scripts.management.db_helper import connect_db
 
 import pickle
 import inspect
-import getpass
 
-TEST_DATA_SAVE_DIR = "/home/{}/test_space/slurn_gm_workflow/pickled".format(
-    getpass.getuser()
-)
+TEST_DATA_SAVE_DIR = "/nesi/nobackup/nesi00213/tmp/test_space/slurm_gm_workflow/pickled"
 REALISATION = "PangopangoF29_HYP01-10_S1244"
 DATA_TAKEN = {}
 

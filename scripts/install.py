@@ -21,13 +21,10 @@ from scripts.management import create_mgmt_db
 from shared_workflow.install_shared import install_simulation, dump_all_yamls
 from shared_workflow import shared
 
-import getpass
 import pickle
 import inspect
 
-TEST_DATA_SAVE_DIR = "/home/{}/test_space/slurn_gm_workflow/pickled".format(
-    getpass.getuser()
-)
+TEST_DATA_SAVE_DIR = "/nesi/nobackup/nesi00213/tmp/test_space/slurm_gm_workflow/pickled"
 REALISATION = "PangopangoF29_HYP01-10_S1244"
 DATA_TAKEN = {}
 
