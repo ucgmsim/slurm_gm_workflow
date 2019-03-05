@@ -45,16 +45,21 @@ else
     echo "Checking that there are enough rrups in it"
 fi
 
-if [[ -f ${OUT_DIR}/rrup_${REL_NAME}.csv ]] && [[ `wc -l ${OUT_DIR}/rrup_${REL_NAME}.csv` == `wc -l ${FD}` ]]
+if [[ -f ${OUT_DIR}/rrup_${REL_NAME}.csv ]]
 then
-    echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py $MGMT_DB_LOC rrup completed --run_name $REL_NAME --force" >> ${MGMT_DB_LOC}/mgmt_db_queue/${timestamp}\_${SLURM_JOBID}
-else
-    if [[ -f ${OUT_DIR}/rrup_${REL_NAME}.csv ]]
+    if [[ `wc -l ${OUT_DIR}/rrup_${REL_NAME}.csv` == `wc -l ${FD}` ]]
     then
-        res="Not enough rrups for the station file"
+        echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py $MGMT_DB_LOC rrup completed --run_name $REL_NAME --force" >> ${MGMT_DB_LOC}/mgmt_db_queue/${timestamp}\_${SLURM_JOBID}
     else
-        res="rrup file does not exist"
+        res="Not enough rrups for the station file"
     fi
+else
+    res="rrup file does not exist"
+fi
+
+if [[ ! -z ${res} ]]
+then
     echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py $MGMT_DB_LOC rrup failed --run_name $REL_NAME --error '$res' --force"  >> {MGMT_DB_LOC}/mgmt_db_queue/${timestamp}\_${SLURM_JOBID}
 fi
+
 date
