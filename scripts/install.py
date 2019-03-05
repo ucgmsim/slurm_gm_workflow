@@ -98,10 +98,10 @@ def q_select_rupmodel(srf_selected_dir, srf_file_options):
     args, _, _, values = inspect.getargvalues(frame)
     func_name = inspect.getframeinfo(frame)[2]
     if not DATA_TAKEN.get(func_name):
-        for i in range(len(args)):
-            with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_{}.P'.format(args[i])),
+        for arg in args:
+            with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_{}.P'.format(arg)),
                       'wb') as save_file:
-                pickle.dump(values[i], save_file)
+                pickle.dump(values[arg], save_file)
 
     """Rupture model user selection and verification"""
     shared.show_horizontal_line()
@@ -200,10 +200,10 @@ def q_select_stat_file(stat_dir, remove_fd=False):
     args, _, _, values = inspect.getargvalues(frame)
     func_name = inspect.getframeinfo(frame)[2]
     if not DATA_TAKEN.get(func_name):
-        for i in range(len(args)):
-            with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_{}.P'.format(args[i])),
+        for arg in args:
+            with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_{}.P'.format(arg)),
                       'wb') as save_file:
-                pickle.dump(values[i], save_file)
+                pickle.dump(values[arg], save_file)
 
     shared.show_horizontal_line()
     print("Select one of available Station list (from %s)" % stat_dir)
@@ -232,10 +232,10 @@ def q_select_vs30_file(stat_dir):
     args, _, _, values = inspect.getargvalues(frame)
     func_name = inspect.getframeinfo(frame)[2]
     if not DATA_TAKEN.get(func_name):
-        for i in range(len(args)):
-            with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_{}.P'.format(args[i])),
+        for arg in args:
+            with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_{}.P'.format(arg)),
                       'wb') as save_file:
-                pickle.dump(values[i], save_file)
+                pickle.dump(values[arg], save_file)
 
     shared.show_horizontal_line()
     print("Select one of available vs30 (from %s)" % stat_dir)
@@ -274,10 +274,10 @@ def q_get_run_name(HH, srf_selected, v_mod_ver, emod3d_version):
     args, _, _, values = inspect.getargvalues(frame)
     func_name = inspect.getframeinfo(frame)[2]
     if not DATA_TAKEN.get(func_name):
-        for i in range(len(args)):
-            with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_{}.P'.format(args[i])),
+        for arg in args:
+            with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_{}.P'.format(arg)),
                       'wb') as save_file:
-                pickle.dump(values[i], save_file)
+                pickle.dump(values[arg], save_file)
 
     # additional string to customize (today's date for starters)
     userString = datetime.now().strftime("%y%m%d")

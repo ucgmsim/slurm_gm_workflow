@@ -200,10 +200,10 @@ def generate_context(simulation_dir, template_path, **kwargs):
     args, _, _, values = inspect.getargvalues(frame)
     func_name = inspect.getframeinfo(frame)[2]
     if not DATA_TAKEN.get(func_name):
-        for i in range(len(args)):
-            with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_{}.P'.format(args[i])),
+        for arg in args:
+            with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_{}.P'.format(arg)),
                       'wb') as save_file:
-                pickle.dump(values[i], save_file)
+                pickle.dump(values[arg], save_file)
     j2_env = Environment(loader=FileSystemLoader(simulation_dir), trim_blocks=True)
     context = j2_env.get_template(template_path).render(**kwargs)
 
@@ -234,10 +234,10 @@ def resolve_header(
     args, _, _, values = inspect.getargvalues(frame)
     func_name = inspect.getframeinfo(frame)[2]
     if not DATA_TAKEN.get(func_name):
-        for i in range(len(args)):
-            with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_{}.P'.format(args[i])),
+        for arg in args:
+            with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_{}.P'.format(arg)),
                       'wb') as save_file:
-                pickle.dump(values[i], save_file)
+                pickle.dump(values[arg], save_file)
 
     if partition is None:
         partition = get_partition(target_host, convert_time_to_hours(wallclock_limit))
@@ -270,10 +270,10 @@ def get_partition(machine, core_hours=None):
     args, _, _, values = inspect.getargvalues(frame)
     func_name = inspect.getframeinfo(frame)[2]
     if not DATA_TAKEN.get(func_name):
-        for i in range(len(args)):
-            with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_{}.P'.format(args[i])),
+        for arg in args:
+            with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_{}.P'.format(arg)),
                       'wb') as save_file:
-                pickle.dump(values[i], save_file)
+                pickle.dump(values[arg], save_file)
 
     if machine == const.HPC.maui.value:
         partition = "nesi_research"
@@ -510,10 +510,10 @@ def show_multiple_choice(options, singular=True):
     args, _, _, values = inspect.getargvalues(frame)
     func_name = inspect.getframeinfo(frame)[2]
     if not DATA_TAKEN.get(func_name):
-        for i in range(len(args)):
-            with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_{}.P'.format(args[i])),
+        for arg in args:
+            with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_{}.P'.format(arg)),
                       'wb') as save_file:
-                pickle.dump(values[i], save_file)
+                pickle.dump(values[arg], save_file)
 
     for i, option in enumerate(options):
         print("%2d. %s" % (i + 1, option))
@@ -598,10 +598,10 @@ def set_wct(est_run_time, ncores, auto=False):
     args, _, _, values = inspect.getargvalues(frame)
     func_name = inspect.getframeinfo(frame)[2]
     if not DATA_TAKEN.get(func_name):
-        for i in range(len(args)):
-            with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_{}.P'.format(args[i])),
+        for arg in args:
+            with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_{}.P'.format(arg)),
                       'wb') as save_file:
-                pickle.dump(values[i], save_file)
+                pickle.dump(values[arg], save_file)
 
     import estimation.estimate_wct as est
 
@@ -654,10 +654,10 @@ def add_name_suffix(name, yes):
     args, _, _, values = inspect.getargvalues(frame)
     func_name = inspect.getframeinfo(frame)[2]
     if not DATA_TAKEN.get(func_name):
-        for i in range(len(args)):
-            with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_{}.P'.format(args[i])),
+        for arg in args:
+            with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_{}.P'.format(arg)),
                       'wb') as save_file:
-                pickle.dump(values[i], save_file)
+                pickle.dump(values[arg], save_file)
 
     """Allow the user to add a suffix to the name"""
     new_name = name
@@ -719,10 +719,10 @@ def submit_sl_script(
     args, _, _, values = inspect.getargvalues(frame)
     func_name = inspect.getframeinfo(frame)[2]
     if not DATA_TAKEN.get(func_name):
-        for i in range(len(args)):
-            with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_{}.P'.format(args[i])),
+        for arg in args:
+            with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_{}.P'.format(arg)),
                       'wb') as save_file:
-                pickle.dump(values[i], save_file)
+                pickle.dump(values[arg], save_file)
 
     if submit_yes:
         print("Submitting %s" % script)
@@ -773,10 +773,10 @@ def update_db_cmd(process, status, mgmt_db_loc, srf_name, jobid, timestamp):
     args, _, _, values = inspect.getargvalues(frame)
     func_name = inspect.getframeinfo(frame)[2]
     if not DATA_TAKEN.get(func_name):
-        for i in range(len(args)):
-            with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_{}.P'.format(args[i])),
+        for arg in args:
+            with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_{}.P'.format(arg)),
                       'wb') as save_file:
-                pickle.dump(values[i], save_file)
+                pickle.dump(values[arg], save_file)
 
     """Adds the command to update the mgmt db to the queue"""
     # Update the db
@@ -943,10 +943,10 @@ def get_site_specific_path(stat_file_path, hf_stat_vs_ref=None, v1d_mod_dir=None
     args, _, _, values = inspect.getargvalues(frame)
     func_name = inspect.getframeinfo(frame)[2]
     if not DATA_TAKEN.get(func_name):
-        for i in range(len(args)):
-            with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_{}.P'.format(args[i])),
+        for arg in args:
+            with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_{}.P'.format(arg)),
                       'wb') as save_file:
-                pickle.dump(values[i], save_file)
+                pickle.dump(values[arg], save_file)
 
     show_horizontal_line()
     print("Auto-detecting site-specific info")

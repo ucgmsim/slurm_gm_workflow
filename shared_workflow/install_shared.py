@@ -57,10 +57,10 @@ def install_simulation(
     args, _, _, values = inspect.getargvalues(frame)
     func_name = inspect.getframeinfo(frame)[2]
     if not DATA_TAKEN.get(func_name):
-        for i in range(len(args)):
-            with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_{}.P'.format(args[i])), 'wb') as save_file:
-                pickle.dump(values[i], save_file)
-
+        for arg in args:
+            with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_{}.P'.format(arg)),
+                      'wb') as save_file:
+                pickle.dump(values[arg], save_file)
 
     """Installs a single simulation"""
     lf_sim_root_dir = os.path.join(sim_dir, "LF")
@@ -243,10 +243,10 @@ def install_bb(
     args, _, _, values = inspect.getargvalues(frame)
     func_name = inspect.getframeinfo(frame)[2]
     if not DATA_TAKEN.get(func_name):
-        for i in range(len(args)):
-            with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_{}.P'.format(args[i])),
+        for arg in args:
+            with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_{}.P'.format(arg)),
                       'wb') as save_file:
-                pickle.dump(values[i], save_file)
+                pickle.dump(values[arg], save_file)
 
     shared.show_horizontal_line(c="*")
     print(" " * 37 + "EMOD3D HF/BB Preparation Ver.slurm")
@@ -349,10 +349,10 @@ def generate_fd_files(output_path, vm_params_dict, stat_file="default.ll", debug
     args, _, _, values = inspect.getargvalues(frame)
     func_name = inspect.getframeinfo(frame)[2]
     if not DATA_TAKEN.get(func_name):
-        for i in range(len(args)):
-            with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_{}.P'.format(args[i])),
+        for arg in args:
+            with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_{}.P'.format(arg)),
                       'wb') as save_file:
-                pickle.dump(values[i], save_file)
+                pickle.dump(values[arg], save_file)
 
     MODEL_LAT = vm_params_dict["MODEL_LAT"]
     MODEL_LON = vm_params_dict["MODEL_LON"]

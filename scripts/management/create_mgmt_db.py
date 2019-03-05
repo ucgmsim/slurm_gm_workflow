@@ -37,10 +37,10 @@ def create_mgmt_db(realisations, f, srf_files=[]):
     args, _, _, values = inspect.getargvalues(frame)
     func_name = inspect.getframeinfo(frame)[2]
     if not DATA_TAKEN.get(func_name):
-        for i in range(len(args)):
-            with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_{}.P'.format(args[i])),
+        for arg in args:
+            with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_{}.P'.format(arg)),
                       'wb') as save_file:
-                pickle.dump(values[i], save_file)
+                pickle.dump(values[arg], save_file)
 
     # for manual install, only one srf will be passed to srf_files as a string
     if isinstance(srf_files, str):
