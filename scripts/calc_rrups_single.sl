@@ -39,7 +39,7 @@ then
     start_time=`date +${runtime_fmt}`
     echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py $MGMT_DB_LOC rrup running --run_name $REL_NAME --j $SLURM_JOBID" >> ${MGMT_DB_LOC}/mgmt_db_queue/${timestamp}\_${SLURM_JOBID}
 
-    time python ${IMPATH}/calculate_rrups.py -np ${SLURM_CPUS_PER_TASK} -o ${OUT_DIR}/rrup_${REL_NAME}.csv ${STATION_FILE} ${SRF_FILE} ${FD}
+    time python ${IMPATH}/calculate_rrups.py -fd ${FD} -np ${SLURM_CPUS_PER_TASK} -o ${OUT_DIR}/rrup_${REL_NAME}.csv ${STATION_FILE} ${SRF_FILE}
 else
     echo "rrup file already present: ${OUT_DIR}/rrup_${REL_NAME}.csv"
     echo "Checking that there are enough rrups in it"
