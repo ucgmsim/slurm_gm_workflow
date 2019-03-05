@@ -8,7 +8,6 @@ from typing import Union, Dict
 
 import pytest
 
-sys.path.insert(0, os.path.join(os.path.abspath(os.path.dirname(__file__)), '../..'))
 from metadata.log_metadata import store_metadata, METACONST_TO_ADD
 from qcore.constants import ProcessType, METADATA_LOG_FILENAME
 

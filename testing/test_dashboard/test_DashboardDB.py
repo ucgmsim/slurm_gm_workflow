@@ -5,8 +5,6 @@ from datetime import date, timedelta
 import pytest
 
 import qcore.constants as const
-
-sys.path.insert(0, os.path.join(os.path.abspath(os.path.dirname(__file__)), '../..'))
 from dashboard.DashboardDB import DashboardDB, SQueueEntry
 
 

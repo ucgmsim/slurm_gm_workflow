@@ -10,7 +10,6 @@ import pytest
 import numpy as np
 import pandas as pd
 
-sys.path.insert(0, os.path.join(os.path.abspath(os.path.dirname(__file__)), '../..'))
 from metadata.agg_json_data import (
     main,
     create_dataframe,

@@ -10,7 +10,7 @@ before_install:
   - cd /home/travis/build/ucgmsim/
   - git clone https://github.com/ucgmsim/qcore.git
   - mkdir /home/travis/build/ucgmsim/slurm_gm_workflow/sample0
-  - cd /home/travis/build/ucgmsim/IM_calculation/sample0
+  - cd /home/travis/build/ucgmsim/slurm_gm_workflow/sample0
   - wget "http://ec2-54-206-55-199.ap-southeast-2.compute.amazonaws.com/static/public/testing/slurm_gm_workflow/PangopangoF29_HYP01-10_S1244.zip"
 install:
   - unzip PangopangoF29_HYP01-10_S1244.zip
@@ -21,7 +21,8 @@ install:
 
 # command to run tests
 script:
-  - pytest --black --ignore=test
+  - export PYTHONPATH=$PYTHONPATH:/home/root/git/slurm_gm_workflow
+  - pytest --black --ignore=testing
   - docker run -it -v /home/travis/build/ucgmsim:/home/root/git sungeunbae/qcore-ubuntu-minimal bash -c "cd /home/root/git/qcore/;python setup.py install;cd /home/root/git/slurm_gm_workflow; pytest -vs --ignore /home/root/git/slurm_gm_workflow/testing/test/test_manual_install;"
 #after_success:
 #  - coveralls   # uploads reports to coveralls.io
