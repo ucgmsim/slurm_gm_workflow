@@ -9,13 +9,6 @@ import os
 
 from scripts.management.db_helper import connect_db
 
-import pickle
-import inspect
-
-TEST_DATA_SAVE_DIR = "/nesi/nobackup/nesi00213/tmp/test_space/slurm_gm_workflow/pickled"
-REALISATION = "PangopangoF29_HYP01-10_S1244"
-DATA_TAKEN = {}
-
 
 def initilize_db(path):
     db = connect_db(path)
@@ -33,15 +26,6 @@ def get_procs(db):
 
 
 def create_mgmt_db(realisations, f, srf_files=[]):
-    frame = inspect.currentframe()
-    args, _, _, values = inspect.getargvalues(frame)
-    func_name = inspect.getframeinfo(frame)[2]
-    if not DATA_TAKEN.get(func_name):
-        for arg in args:
-            with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_{}.P'.format(arg)),
-                      'wb') as save_file:
-                pickle.dump(values[arg], save_file)
-
     # for manual install, only one srf will be passed to srf_files as a string
     if isinstance(srf_files, str):
         srf_files = [srf_files]
@@ -60,11 +44,6 @@ def create_mgmt_db(realisations, f, srf_files=[]):
             insert_task(db, run_name, proc[0])
 
     db.connection.commit()
-
-    if not DATA_TAKEN.get(func_name):
-        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_db.P'), 'wb') as save_file:
-            pickle.dump(db, save_file)
-        DATA_TAKEN[func_name] = True
 
     return db
 

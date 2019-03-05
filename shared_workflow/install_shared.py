@@ -292,7 +292,7 @@ def install_bb(
 def q_1d_velocity_model(v_mod_1d_dir):
     func_name = 'q_1d_velocity_model'
     if not DATA_TAKEN.get(func_name):
-        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_v_mod_1d_dir.P', 'wb')) as save_file:
+        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, func_name + '_v_mod_1d_dir.P'), 'wb') as save_file:
             pickle.dump(v_mod_1d_dir, save_file)
     shared.show_horizontal_line()
     print("Select one of 1D Velocity models (from %s)" % v_mod_1d_dir)
