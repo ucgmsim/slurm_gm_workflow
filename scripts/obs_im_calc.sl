@@ -4,7 +4,7 @@
 
 #SBATCH --job-name=obs_im_calc
 #SBATCH --account=nesi00213
-#SBATCH --partition=nesi-research
+#SBATCH --partition=nesi_research
 #SBATCH --time=01:00:00
 #SBATCH --cpus-per-task=40
 
