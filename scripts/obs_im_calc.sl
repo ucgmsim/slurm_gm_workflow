@@ -21,7 +21,7 @@ echo ___calculating observed____
 
 for D in $(ls)
 do
-    if [[ -d D ]] && [[  `$D/*/*/accBB | wc -l` -ge 1 ]]
+    if [[ -d D ]] && [[  `ls $D/*/*/accBB | wc -l` -ge 1 ]]
     then
         fault_name=`basename $D`
         time python $IMPATH/calculate_ims.py $D/*/*/accBB a -o $obs_dirs/IM_calc/ -np $SLURM_CPUS_PER_TASK -i $fault_name -r $fault_name -c geom -t o -e -s
