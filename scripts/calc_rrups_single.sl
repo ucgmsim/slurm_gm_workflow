@@ -23,7 +23,7 @@ timestamp=`date +%Y%m%d_%H%M%S`
 REL=$1
 MGMT_DB_LOC=$2
 
-REL_NAME=`basename REL`
+REL_NAME=`basename $REL`
 REL_YAML="$REL/sim_params.yaml"
 
 SRF_FILE=$(getFromYaml ${REL_YAML} srf_file)
