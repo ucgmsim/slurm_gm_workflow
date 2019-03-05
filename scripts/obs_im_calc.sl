@@ -1,6 +1,7 @@
 #!/bin/bash
 # script version: slurm
 #
+# must be run with sbatch obs_im_calc [observedGroundMotionsDirectory]
 
 #SBATCH --job-name=obs_im_calc
 #SBATCH --account=nesi00213
@@ -18,7 +19,7 @@ obs_dirs=$1
 
 echo ___calculating observed____
 
-for D in `find . -type d`
+for D in `find $obs_dirs -type d`
 do
     if [[  `find $D -maxdepth 3 -mindepth 3 -name "accBB" | wc -l` -ge 1 ]]
     then
