@@ -219,14 +219,8 @@ def install_simulation(
             sim_params_dict.update({key: extra_sims_params[key]})
 
     if not DATA_TAKEN.get(func_name):
-        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, OUTPUT_DIR, func_name + '_root_params_dict.P'), 'wb') as save_file:
-            pickle.dump(root_params_dict, save_file)
-        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, OUTPUT_DIR, func_name + '_fault_params_dict.P'), 'wb') as save_file:
-            pickle.dump(fault_params_dict, save_file)
-        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, OUTPUT_DIR, func_name + '_sim_params_dict.P'), 'wb') as save_file:
-            pickle.dump(sim_params_dict, save_file)
-        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, OUTPUT_DIR, func_name + '_vm_params_dict.P'), 'wb') as save_file:
-            pickle.dump(vm_params_dict, save_file)
+        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, OUTPUT_DIR, func_name + '_ret_val.P'), 'wb') as save_file:
+            pickle.dump((root_params_dict, fault_params_dict, sim_params_dict, vm_params_dict), save_file)
 
         DATA_TAKEN[func_name] = True
 
@@ -285,7 +279,7 @@ def install_bb(
             root_dict["v_mod_1d_name"] = v_mod_1d_selected
 
     if not DATA_TAKEN.get(func_name):
-        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, OUTPUT_DIR, func_name + '_root_dict.P'), 'wb') as save_file:
+        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, OUTPUT_DIR, func_name + '_ret_val.P'), 'wb') as save_file:
             pickle.dump(root_dict, save_file)
         DATA_TAKEN[func_name] = True
     return root_dict
@@ -308,11 +302,8 @@ def q_1d_velocity_model(v_mod_1d_dir):
     v_mod_1d_name = os.path.basename(v_mod_1d_selected).replace(".1d", "")
 
     if not DATA_TAKEN.get(func_name):
-        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, OUTPUT_DIR, func_name + '_v_mod_1d_name.P'), 'wb') as save_file:
-            pickle.dump(v_mod_1d_name, save_file)
-
-        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, OUTPUT_DIR, func_name + '_v_mod_1d_selected.P'), 'wb') as save_file:
-            pickle.dump(v_mod_1d_selected, save_file)
+        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, OUTPUT_DIR, func_name + '_ret_val.P'), 'wb') as save_file:
+            pickle.dump((v_mod_1d_name, v_mod_1d_selected), save_file)
         DATA_TAKEN[func_name] = True
 
     return v_mod_1d_name, v_mod_1d_selected
@@ -328,7 +319,7 @@ def q_site_specific():
     shared.show_horizontal_line()
 
     if not DATA_TAKEN.get(func_name):
-        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, OUTPUT_DIR, func_name + '_ret_Val.P'), 'wb') as save_file:
+        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, OUTPUT_DIR, func_name + '_ret_val.P'), 'wb') as save_file:
             pickle.dump(shared.show_yes_no_question(), save_file)
 
     return shared.show_yes_no_question()
@@ -437,11 +428,9 @@ def generate_fd_files(output_path, vm_params_dict, stat_file="default.ll", debug
             llf.write("%11.5f %11.5f %s\n" % (pos[0], pos[1], suname[i]))
 
     if not DATA_TAKEN.get(func_name):
-        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, OUTPUT_DIR, func_name + '_gp_out.P'), 'wb') as save_file:
-            pickle.dump(gp_out, save_file)
+        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, OUTPUT_DIR, func_name + '_ret_val.P'), 'wb') as save_file:
+            pickle.dump((gp_out, ll_out), save_file)
 
-        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, OUTPUT_DIR, func_name + '_ll_out.P'), 'wb') as save_file:
-            pickle.dump(ll_out, save_file)
         DATA_TAKEN[func_name] = True
 
     return gp_out, ll_out

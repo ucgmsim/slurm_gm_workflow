@@ -104,14 +104,8 @@ def get_stations(source_file, locations=False):
         return stations
 
     if not DATA_TAKEN.get(func_name):
-        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, OUTPUT_DIR, func_name + '_stations.P'), 'wb') as save_file:
-            pickle.dump(stations, save_file)
-
-        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, OUTPUT_DIR, func_name + '_station_lats.P'), 'wb') as save_file:
-            pickle.dump(station_lats, save_file)
-
-        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, OUTPUT_DIR, func_name + '_station_lons.P'), 'wb') as save_file:
-            pickle.dump(station_lons, save_file)
+        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, OUTPUT_DIR, func_name + '_ret_val.P'), 'wb') as save_file:
+            pickle.dump((stations, station_lats, station_lons), save_file)
 
         DATA_TAKEN[func_name] = True
 
@@ -149,11 +143,8 @@ def get_corners(model_params, gmt_format=False):
     cnr_str = "\n".join([" ".join(map(str, cnr)) for cnr in corners])
 
     if not DATA_TAKEN.get(func_name):
-        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, OUTPUT_DIR, func_name + '_corners.P'), 'wb') as save_file:
-            pickle.dump(corners, save_file)
-
-        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, OUTPUT_DIR, func_name + '_cnr_str.P'), 'wb') as save_file:
-            pickle.dump(cnr_str, save_file)
+        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, OUTPUT_DIR, func_name + '_ret_val.P'), 'wb') as save_file:
+            pickle.dump((corners, cnr_str), save_file)
 
         DATA_TAKEN[func_name] = True
 
@@ -183,7 +174,7 @@ def get_vs(source_file):
             else:
                 print("Check this line: %d %s" % (i, line), file=sys.stderr)
     if not DATA_TAKEN.get(func_name):
-        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, OUTPUT_DIR, func_name + '_vs.P'), 'wb') as save_file:
+        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, OUTPUT_DIR, func_name + '_ret_val.P'), 'wb') as save_file:
             pickle.dump(vs, save_file)
         DATA_TAKEN[func_name] = True
     return vs
@@ -209,7 +200,7 @@ def generate_context(simulation_dir, template_path, **kwargs):
     context = j2_env.get_template(template_path).render(**kwargs)
 
     if not DATA_TAKEN.get(func_name):
-        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, OUTPUT_DIR, func_name + '_context.P'), 'wb') as save_file:
+        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, OUTPUT_DIR, func_name + '_ret_val.P'), 'wb') as save_file:
             pickle.dump(context, save_file)
         DATA_TAKEN[func_name] = True
 
@@ -259,7 +250,7 @@ def resolve_header(
     )
 
     if not DATA_TAKEN.get(func_name):
-        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, OUTPUT_DIR, func_name + '_header.P'), 'wb') as save_file:
+        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, OUTPUT_DIR, func_name + '_ret_val.P'), 'wb') as save_file:
             pickle.dump(header, save_file)
         DATA_TAKEN[func_name] = True
 
@@ -303,7 +294,7 @@ def convert_time_to_hours(time_str):
     h, m, s = time_str.split(":")
 
     if not DATA_TAKEN.get(func_name):
-        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, OUTPUT_DIR, func_name + '_converted_time.P'), 'wb') as save_file:
+        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, OUTPUT_DIR, func_name + '_ret_val.P'), 'wb') as save_file:
             pickle.dump(int(h) + int(m) / 60.0 + int(s) / 3600.0, save_file)
         DATA_TAKEN[func_name] = True
 
@@ -457,7 +448,7 @@ def user_select(options):
                 selected_number = user_select(options)
 
     if not DATA_TAKEN.get(func_name):
-        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, OUTPUT_DIR, func_name + '_selected_number.P'), 'wb') as save_file:
+        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, OUTPUT_DIR, func_name + '_ret_val.P'), 'wb') as save_file:
             pickle.dump(selected_number, save_file)
         DATA_TAKEN[func_name] = True
 
@@ -498,7 +489,7 @@ def user_select_multi(options):
         selected_numbers.sort()
 
         if not DATA_TAKEN.get(func_name):
-            with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, OUTPUT_DIR, func_name + '_selected_numbers.P'),
+            with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, OUTPUT_DIR, func_name + '_ret_val.P'),
                       'wb') as save_file:
                 pickle.dump(selected_numbers, save_file)
             DATA_TAKEN[func_name] = True
@@ -522,7 +513,7 @@ def show_multiple_choice(options, singular=True):
         selected_number = user_select(options)
 
         if not DATA_TAKEN.get(func_name):
-            with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, OUTPUT_DIR, func_name + '_single_options.P'),
+            with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, OUTPUT_DIR, func_name + '_ret_val.P'),
                       'wb') as save_file:
                 pickle.dump(options[selected_number - 1], save_file)
             DATA_TAKEN[func_name] = True
@@ -535,7 +526,7 @@ def show_multiple_choice(options, singular=True):
             selected_options.append(options[i - 1])
 
         if not DATA_TAKEN.get(func_name):
-            with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, OUTPUT_DIR, func_name + '_selected_options.P'),
+            with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, OUTPUT_DIR, func_name + '_ret_val.P'),
                       'wb') as save_file:
                 pickle.dump(selected_options, save_file)
             DATA_TAKEN[func_name] = True
@@ -552,7 +543,7 @@ def show_yes_no_question():
 
     # True if selected Yes
     if not DATA_TAKEN.get(func_name):
-        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, OUTPUT_DIR, func_name + '_selected_number.P'),
+        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, OUTPUT_DIR, func_name + '_ret_val.P'),
                   'wb') as save_file:
             pickle.dump(selected_number == 1, save_file)
         DATA_TAKEN[func_name] = True
@@ -574,7 +565,7 @@ def confirm(q):
             pickle.dump(q, save_file)
 
     if not DATA_TAKEN.get(func_name):
-        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, OUTPUT_DIR, func_name + '_selected_number.P'),
+        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, OUTPUT_DIR, func_name + '_ret_val.P'),
                   'wb') as save_file:
             pickle.dump(show_yes_no_question() == 1, save_file)
         DATA_TAKEN[func_name] = True
@@ -596,7 +587,7 @@ def confirm_name(name):
     print("Do you wish to proceed?")
 
     if not DATA_TAKEN.get(func_name):
-        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, OUTPUT_DIR, func_name + '_selected_number.P'),
+        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, OUTPUT_DIR, func_name + '_ret_val.P'),
                   'wb') as save_file:
             pickle.dump(show_yes_no_question() == 1, save_file)
         DATA_TAKEN[func_name] = True
@@ -619,7 +610,7 @@ def get_input_wc():
     show_horizontal_line()
 
     if not DATA_TAKEN.get(func_name):
-        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, OUTPUT_DIR, func_name + '_user_input_wc.P'),
+        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, OUTPUT_DIR, func_name + '_ret_val.P'),
                   'wb') as save_file:
             pickle.dump(user_input_wc, save_file)
         DATA_TAKEN[func_name] = True
@@ -661,7 +652,7 @@ def set_wct(est_run_time, ncores, auto=False):
     print("WCT set to: %s" % wct)
 
     if not DATA_TAKEN.get(func_name):
-        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, OUTPUT_DIR, func_name + '_wct.P'),
+        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, OUTPUT_DIR, func_name + '_ret_val.P'),
                   'wb') as save_file:
             pickle.dump(wct, save_file)
         DATA_TAKEN[func_name] = True
@@ -675,7 +666,7 @@ def get_nt(params):
         with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, INPUT_DIR, func_name + '_params.P'),
                   'wb') as save_file:
             pickle.dump(params, save_file)
-        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, OUTPUT_DIR, func_name + '_nt.P'),
+        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, OUTPUT_DIR, func_name + '_ret_val.P'),
                   'wb') as save_file:
             pickle.dump(int(float(params.sim_duration) / float(params.dt)), save_file)
         DATA_TAKEN[func_name] = True
@@ -703,7 +694,7 @@ def add_name_suffix(name, yes):
         yes = confirm_name(new_name)
 
     if not DATA_TAKEN.get(func_name):
-        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, OUTPUT_DIR, func_name + '_new_name.P'),
+        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, OUTPUT_DIR, func_name + '_ret_val.P'),
                   'wb') as save_file:
             pickle.dump(new_name, save_file)
         DATA_TAKEN[func_name] = True
@@ -784,7 +775,7 @@ def submit_sl_script(
             update_db_cmd(process, status, mgmt_db_loc, srf_name, jobid, timestamp)
 
             if not DATA_TAKEN.get(func_name):
-                with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, OUTPUT_DIR, func_name + '_jobid.P'),
+                with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, OUTPUT_DIR, func_name + '_ret_val.P'),
                           'wb') as save_file:
                     pickle.dump(jobid, save_file)
                 DATA_TAKEN[func_name] = True
@@ -793,7 +784,7 @@ def submit_sl_script(
     else:
         msg = "User chose to submit the job manually"
         if not DATA_TAKEN.get(func_name):
-            with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, OUTPUT_DIR, func_name + '_msg.P'),
+            with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, OUTPUT_DIR, func_name + '__ret_val.P'),
                       'wb') as save_file:
                 pickle.dump(msg, save_file)
             DATA_TAKEN[func_name] = True
@@ -828,7 +819,7 @@ def update_db_cmd(process, status, mgmt_db_loc, srf_name, jobid, timestamp):
             f.close()
 
         if not DATA_TAKEN.get(func_name):
-            with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, OUTPUT_DIR, func_name + '_cmd.P'),
+            with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, OUTPUT_DIR, func_name + '_ret_val.P'),
                       'wb') as save_file:
                 pickle.dump(cmd, save_file)
             DATA_TAKEN[func_name] = True
@@ -842,7 +833,7 @@ def update_db_cmd(process, status, mgmt_db_loc, srf_name, jobid, timestamp):
         msg = "{} is not a valid mgmt db location. No update cmd was created.".format(
                 mgmt_db_loc)
         if not DATA_TAKEN.get(func_name):
-            with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, OUTPUT_DIR, func_name + '_msg.P'),
+            with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, OUTPUT_DIR, func_name + '_ret_val.P'),
                       'wb') as save_file:
                 pickle.dump(msg, save_file)
             DATA_TAKEN[func_name] = True
@@ -1012,12 +1003,9 @@ def get_site_specific_path(stat_file_path, hf_stat_vs_ref=None, v1d_mod_dir=None
         hf_stat_vs_ref_selected = hf_stat_vs_ref
 
     if not DATA_TAKEN.get(func_name):
-        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, OUTPUT_DIR, func_name + '_v_mod_1d_path.P'),
+        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, OUTPUT_DIR, func_name + '_ret_val.P'),
                   'wb') as save_file:
-            pickle.dump(v_mod_1d_path, save_file)
-        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, OUTPUT_DIR, func_name + '_hf_stat_vs_ref_selected.P'),
-                  'wb') as save_file:
-            pickle.dump(hf_stat_vs_ref_selected, save_file)
+            pickle.dump((v_mod_1d_path, hf_stat_vs_ref_selected), save_file)
         DATA_TAKEN[func_name] = True
 
     return v_mod_1d_path, hf_stat_vs_ref_selected
