@@ -47,7 +47,7 @@ fi
 
 if [[ -f ${OUT_DIR}/rrup_${REL_NAME}.csv ]]
 then
-    if [[ $(wc -l ${OUT_DIR}/rrup_${REL_NAME}.csv) == $(expr $(wc -l ${FD})-1) ]]
+    if [[ $(wc -l < ${OUT_DIR}/rrup_${REL_NAME}.csv) == $(( $(wc -l < ${FD}) + 1)) ]]
     then
         echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py $MGMT_DB_LOC rrup completed --run_name $REL_NAME --force" >> ${MGMT_DB_LOC}/mgmt_db_queue/${timestamp}\_${SLURM_JOBID}
     else
