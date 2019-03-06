@@ -16,9 +16,6 @@ import qcore.constants as const
 from qcore import shared, srf, utils
 from estimation import estimate_wct
 
-# Scale the number of cores for a given simulation component
-SCALE_NCORES = True
-
 PARAMS_VEL_FILENAME = "params_vel.json"
 
 # The node time threshold factor used for ncores scaling
@@ -125,7 +122,7 @@ def run_estimations(
     """
     print("Running estimation for LF")
     lf_core_hours, lf_run_time, lf_ncores = estimate_wct.estimate_LF_chours(
-        lf_input_data, SCALE_NCORES
+        lf_input_data, scale_ncores=True
     )
     lf_result_data = np.concatenate(
         (lf_core_hours[:, None], lf_run_time[:, None], lf_ncores[:, None]), axis=1
@@ -159,7 +156,7 @@ def run_estimations(
     if hf_input_data is not None:
         print("Running HF estimation")
         hf_core_hours, hf_run_time, hf_cores = estimate_wct.estimate_HF_chours(
-            hf_input_data, scale_ncores=SCALE_NCORES
+            hf_input_data, scale_ncores=True
         )
     else:
         hf_core_hours, hf_run_time, hf_cores = np.nan, np.nan, np.nan
