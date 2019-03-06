@@ -14,7 +14,7 @@ decorator==4.3.0
 filelock==3.0.10
 Flask==1.0.2
 Flask-Compress==1.4.0
-funcsigs==1.0.20.2
+funcsigs==1.0.2
 gast==0.2.0
 grpcio==1.17.1
 h5py==2.8.0
