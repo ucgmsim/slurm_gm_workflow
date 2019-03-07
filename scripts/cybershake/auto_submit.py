@@ -165,16 +165,12 @@ def submit_task(
         )
 
     fault = run_name.split("_")[0]
-    source_path = os.path.join(mgmt_db_location, "Data/Sources", fault, "srf", run_name)
-    srf_path = source_path + ".srf"
 
     if do_verification:
         if proc_type == const.ProcessType.rrup.value:
-            tmp_path = os.path.join(mgmt_db_location, "Runs")
-            rrup_dir = os.path.join(mgmt_db_location, "Runs", fault, "verification")
+            runs_rel_path = os.path.join(mgmt_db_location, "Runs", fault, run_name)
             cmd = (
-                "python $gmsim/workflow/scripts/submit_imcalc.py --auto -s --sim_dir %s --i %s --mgmt_db %s -srf %s -o %s"
-                % (tmp_path, run_name, mgmt_db_location, srf_path, rrup_dir)
+                "sbatch $gmsim/workflow/scripts/calc_rrups_single.sl {} {}".format(runs_rel_path, mgmt_db_location)
             )
             print(cmd)
             call(cmd, shell=True)
