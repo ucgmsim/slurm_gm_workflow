@@ -27,4 +27,3 @@ def test_user_select(set_up):
             bench_output = get_bench_output(root_path, func_name)
             assert test_output == bench_output
 
-
