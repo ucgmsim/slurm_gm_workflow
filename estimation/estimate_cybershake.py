@@ -122,7 +122,7 @@ def run_estimations(
     """
     print("Running estimation for LF")
     lf_core_hours, lf_run_time, lf_ncores = estimate_wct.estimate_LF_chours(
-        lf_input_data, True
+        lf_input_data, scale_ncores=True
     )
     lf_result_data = np.concatenate(
         (lf_core_hours[:, None], lf_run_time[:, None], lf_ncores[:, None]), axis=1
@@ -155,8 +155,9 @@ def run_estimations(
 
     if hf_input_data is not None:
         print("Running HF estimation")
-        hf_core_hours, hf_run_time = estimate_wct.estimate_HF_chours(hf_input_data)
-        hf_cores = hf_input_data[:, -1]
+        hf_core_hours, hf_run_time, hf_cores = estimate_wct.estimate_HF_chours(
+            hf_input_data, scale_ncores=True
+        )
     else:
         hf_core_hours, hf_run_time, hf_cores = np.nan, np.nan, np.nan
 
@@ -382,7 +383,7 @@ def main(args):
     nt = fault_sim_durations / dt
 
     lf_ncores = (
-        np.ones(fault_names.shape[0], dtype=np.float32) * estimate_wct.LF_DEFAULT_NCORES
+        np.ones(fault_names.shape[0], dtype=np.float32) * const.LF_DEFAULT_NCORES
     )
     lf_input_data = np.concatenate(
         (vm_params[:, :3], nt.reshape(-1, 1), lf_ncores.reshape(-1, 1)), axis=1
@@ -516,9 +517,7 @@ if __name__ == "__main__":
         sys.exit()
 
     # Check that the specified files exist
-    if args.root_yaml is not None and not os.path.isfile(
-        args.root_yaml
-    ):
+    if args.root_yaml is not None and not os.path.isfile(args.root_yaml):
         print("File {} does not exist".format(args.root_yaml))
         sys.exit()
 
