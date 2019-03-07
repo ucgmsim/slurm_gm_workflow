@@ -140,10 +140,10 @@ def main(args):
     frame = inspect.currentframe()
     argsvals, _, _, values = inspect.getargvalues(frame)
     func_name = inspect.getframeinfo(frame)[2]
-    fname = inspect.getfile(frame)
+    fname = os.path.basename(inspect.getfile(frame))
     if not DATA_TAKEN.get(func_name):
         for arg in argsvals:
-            with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, INPUT_DIR, '{}_{}_{}.P'.format(fname, func_name, args)),
+            with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, INPUT_DIR, '{}_{}_{}.P'.format(fname, func_name, arg)),
                       'wb') as save_file:
                 pickle.dump(values[arg], save_file)
         DATA_TAKEN[func_name] = True
