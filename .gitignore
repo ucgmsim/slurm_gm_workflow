@@ -109,3 +109,5 @@ ENV/
 # workflow_config
 scripts/workflow_config.json
 
+# test
+**/*cache
