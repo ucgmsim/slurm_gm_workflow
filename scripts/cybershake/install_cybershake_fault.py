@@ -15,6 +15,15 @@ from qcore.constants import FaultParams
 from scripts.management import create_mgmt_db
 from shared_workflow.install_shared import install_simulation, generate_fd_files, dump_all_yamls
 
+import pickle
+import inspect
+
+TEST_DATA_SAVE_DIR = "/nesi/nobackup/nesi00213/tmp/test_space/slurm_gm_workflow/pickled"
+REALISATION = "PangopangoF29_HYP01-10_S1244"
+DATA_TAKEN = {}
+INPUT_DIR = 'input'
+OUTPUT_DIR = 'output'
+
 
 def main():
     parser = argparse.ArgumentParser()
