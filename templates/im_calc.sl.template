@@ -20,7 +20,7 @@ echo ___calculating simulations___
 #test before update mgmt_db
     timestamp=`date +%Y%m%d_%H%M%S`
     end_time=`date +$runtime_fmt`
-    res=`python $gmsim/workflow/scripts/im_calc_checkpoint.py {{mgmt_db_location}}/Runs {{sim_name}} --t s --v `
+    res=`python $gmsim/workflow/scripts/im_calc_checkpoint.py {{mgmt_db_location}}/Runs {{sim_name}} --t s --v`
     #update mgmt_db
     if [[ $? == 0 ]]; then
         #passed
@@ -40,6 +40,8 @@ echo ___calculating simulations___
         python $gmsim/workflow/metadata/log_metadata.py {{sim_dir}}/../ IM_calc cores={{np}} psa_count=$psa_count fd_count=$fd_count start_time=$start_time end_time=$end_time
     else
         #failed
+        #reformat $res to remove '\n'
+        res=`echo $res | tr -d '\n'`
         echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} IM_calculation failed --run_name {{sim_name}} --error '$res' --force"  >> {{mgmt_db_location}}/mgmt_db_queue/$timestamp\_$SLURM_JOBID
     fi
 {% endfor %}

@@ -118,7 +118,9 @@ def main(args):
             params.emod3d.emod3d_version, target_qconfig["tools_dir"]
         )
         steps_per_checkpoint = int(
-            get_nt(params) / (60.0 * est_run_time) * CHECKPOINT_DURATION
+            get_nt(params)
+            / (60.0 * est_run_time)
+            * CHECKPOINT_DURATION
         )
 
         script = write_sl_script(
