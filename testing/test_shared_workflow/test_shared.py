@@ -4,6 +4,7 @@ from shared_workflow import shared
 from testing.test_common_set_up import INPUT, OUTPUT, set_up, get_input_params, get_bench_output
 
 
+# test for install_simualtion inside install_cybershake_fault.py
 def test_get_stations(set_up):
     func_name = 'get_stations'
     params = inspect.getfullargspec(shared.get_stations).args
