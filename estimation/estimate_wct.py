@@ -11,7 +11,6 @@ import numpy as np
 
 import qcore.constants as const
 from estimation.model import CombinedModel, WCEstModel, NNWcEstModel, SVRModel
-from shared_workflow.load_config import load
 
 SCALER_PREFIX = "scaler_"
 
@@ -46,9 +45,9 @@ def est_LF_chours_single(
     nz: int,
     nt: int,
     ncores: int,
+    model_dir: str,
     scale_ncores: bool,
     node_time_th_factor: float = 0.25,
-    model_dir: str = None,
     model_type: const.EstModelType = DEFAULT_MODEL_TYPE,
 ):
     """Convenience function to make a single estimation
@@ -76,18 +75,6 @@ def est_LF_chours_single(
         The number of cores to use, returns the argument n_cores
         if scale_ncores is not set. Otherwise returns the updated ncores.
     """
-    config = load(
-        directory=os.path.join(
-            os.path.dirname(os.path.abspath(__file__)), "../scripts"
-        ),
-        cfg_name="workflow_config.json",
-    )
-    model_dir = (
-        os.path.join(config["estimation_models_dir"], "LF")
-        if model_dir is None
-        else model_dir
-    )
-
     # Make a numpy array of the input data in the right shape.
     # The order of the features has to the same as for training!!
     data = np.array(
@@ -95,7 +82,7 @@ def est_LF_chours_single(
     ).reshape(1, 5)
 
     core_hours, run_time, ncores = estimate_LF_chours(
-        data, scale_ncores, node_time_th_factor, model_dir, model_type
+        data, model_dir, scale_ncores, node_time_th_factor=node_time_th_factor, model_type=model_type
     )
 
     return core_hours[0], run_time[0], int(ncores[0])
@@ -103,9 +90,9 @@ def est_LF_chours_single(
 
 def estimate_LF_chours(
     data: np.ndarray,
+    model_dir: str,
     scale_ncores: bool,
     node_time_th_factor: float = 0.25,
-    model_dir: str = None,
     model_type: const.EstModelType = DEFAULT_MODEL_TYPE,
 ):
     """
@@ -133,18 +120,6 @@ def estimate_LF_chours(
         The number of cores to use, returns the argument n_cores
         if scale_ncores is not set. Otherwise returns the updated ncores.
     """
-    config = load(
-        directory=os.path.join(
-            os.path.dirname(os.path.abspath(__file__)), "../scripts"
-        ),
-        cfg_name="workflow_config.json",
-    )
-    model_dir = (
-        os.path.join(config["estimation_models_dir"], "LF")
-        if model_dir is None
-        else model_dir
-    )
-
     if data.shape[1] != 5:
         raise Exception("Invalid input data, has to 5 columns. One for each feature.")
 
@@ -172,9 +147,9 @@ def est_HF_chours_single(
     nsub_stoch: float,
     nt: int,
     n_logical_cores: int,
+    model_dir: str,
     scale_ncores: bool,
     node_time_th_factor: float = 1.0,
-    model_dir: str = None,
     model_type: const.EstModelType = DEFAULT_MODEL_TYPE,
 ):
     """Convenience function to make a single estimation
@@ -194,18 +169,6 @@ def est_HF_chours_single(
     run_time: float
         Estimated run time (hours)
     """
-    config = load(
-        directory=os.path.join(
-            os.path.dirname(os.path.abspath(__file__)), "../scripts"
-        ),
-        cfg_name="workflow_config.json",
-    )
-    model_dir = (
-        os.path.join(config["estimation_models_dir"], "HF")
-        if model_dir is None
-        else model_dir
-    )
-
     # Make a numpy array of the input data in the right shape
     # The order of the features has to the same as for training!!
     data = np.array(
@@ -214,9 +177,9 @@ def est_HF_chours_single(
 
     core_hours, run_time, n_cpus = estimate_HF_chours(
         data,
+        model_dir,
         scale_ncores,
         node_time_th_factor=node_time_th_factor,
-        model_dir=model_dir,
         model_type=model_type,
     )
 
@@ -225,9 +188,9 @@ def est_HF_chours_single(
 
 def estimate_HF_chours(
     data: np.ndarray,
+    model_dir: str,
     scale_ncores: bool,
     node_time_th_factor: float = 1.0,
-    model_dir: str = None,
     model_type: const.EstModelType = DEFAULT_MODEL_TYPE,
 ):
     """Make bulk HF estimations, requires data to be in the correct
@@ -254,17 +217,17 @@ def estimate_HF_chours(
         The number of physical cores to use, returns the argument n_cores
         if scale_ncores is not set. Otherwise returns the updated ncores.
     """
-    config = load(
-        directory=os.path.join(
-            os.path.dirname(os.path.abspath(__file__)), "../scripts"
-        ),
-        cfg_name="workflow_config.json",
-    )
-    model_dir = (
-        os.path.join(config["estimation_models_dir"], "HF")
-        if model_dir is None
-        else model_dir
-    )
+    # config = load(
+    #     directory=os.path.join(
+    #         os.path.dirname(os.path.abspath(__file__)), "../scripts"
+    #     ),
+    #     cfg_name="workflow_config.json",
+    # )
+    # model_dir = (
+    #     os.path.join(config["estimation_models_dir"], "HF")
+    #     if model_dir is None
+    #     else model_dir
+    # )
 
     if data.shape[1] != 4:
         raise Exception(
@@ -355,7 +318,7 @@ def est_BB_chours_single(
     fd_count: int,
     nt: int,
     n_cores: int,
-    model_dir: str = None,
+    model_dir: str,
     model_type: const.EstModelType = DEFAULT_MODEL_TYPE,
 ):
     """Convenience function to make a single estimation
@@ -376,18 +339,6 @@ def est_BB_chours_single(
     run_time: float
         Estimated run time (hours)
     """
-    config = load(
-        directory=os.path.join(
-            os.path.dirname(os.path.abspath(__file__)), "../scripts"
-        ),
-        cfg_name="workflow_config.json",
-    )
-    model_dir = (
-        os.path.join(config["estimation_models_dir"], "BB")
-        if model_dir is None
-        else model_dir
-    )
-
     # Make a numpy array of the input data in the right shape
     # The order of the features has to the same as for training!!
     data = np.array([float(fd_count), float(nt), float(n_cores)]).reshape(1, 3)
@@ -399,7 +350,7 @@ def est_BB_chours_single(
 
 def estimate_BB_chours(
     data: np.ndarray,
-    model_dir: str = None,
+    model_dir: str,
     model_type: const.EstModelType = DEFAULT_MODEL_TYPE,
 ):
     """Make bulk BB estimations, requires data to be
@@ -418,18 +369,6 @@ def estimate_BB_chours(
     run_time: np.ndarray of float
         Estimated run time (hours)
     """
-    config = load(
-        directory=os.path.join(
-            os.path.dirname(os.path.abspath(__file__)), "../scripts"
-        ),
-        cfg_name="workflow_config.json",
-    )
-    model_dir = (
-        os.path.join(config["estimation_models_dir"], "BB")
-        if model_dir is None
-        else model_dir
-    )
-
     if data.shape[1] != 3:
         raise Exception(
             "Invalid input data, has to 3 columns. " "One for each feature."
@@ -455,7 +394,7 @@ def est_IM_chours_single(
     comp: List[str],
     pSA_count: int,
     n_cores: int,
-    model_dir: str = None,
+    model_dir: str,
     model_type: const.EstModelType = DEFAULT_MODEL_TYPE,
 ):
     """Convenience function to make a single estimation
@@ -476,18 +415,6 @@ def est_IM_chours_single(
     run_time: float
         Estimated run time (hours)
     """
-    config = load(
-        directory=os.path.join(
-            os.path.dirname(os.path.abspath(__file__)), "../scripts"
-        ),
-        cfg_name="workflow_config.json",
-    )
-    model_dir = (
-        os.path.join(config["estimation_models_dir"], "IM")
-        if model_dir is None
-        else model_dir
-    )
-
     # Make a numpy array of the input data in the right shape
     # The order of the features has to the same as for training!!
     data = np.array(
@@ -579,8 +506,8 @@ def estimate(
         core_hours = svr_model.predict(X)
     else:
         comb_model = CombinedModel(
-            load_model(model_dir, const.EST_MODEL_NN_PREFIX),
-            load_model(model_dir, const.EST_MODEL_SVR_PREFIX),
+            load_model(model_dir, const.EST_MODEL_NN_PREFIX, "h5", NNWcEstModel),
+            load_model(model_dir, const.EST_MODEL_SVR_PREFIX, "pickle", SVRModel),
         )
         core_hours = comb_model.predict(
             X, n_cores=input_data[:, -1], default_n_cores=default_ncores

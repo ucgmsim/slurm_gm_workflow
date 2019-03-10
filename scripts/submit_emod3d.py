@@ -30,6 +30,7 @@ def write_sl_script(
     srf_name,
     mgmt_db_location,
     binary_path,
+    workflow_config,
     run_time="02:00:00",
     nb_cpus=const.LF_DEFAULT_NCORES,
     memory=const.DEFAULT_MEMORY,
@@ -38,10 +39,6 @@ def write_sl_script(
     steps_per_checkpoint=None,
 ):
     """Populates the template and writes the resulting slurm script to file"""
-    workflow_config = load_config.load(
-        os.path.dirname(os.path.realpath(__file__)), "workflow_config.json"
-    )
-
     set_runparams.create_run_params(
         srf_name,
         workflow_config=workflow_config,
@@ -91,6 +88,10 @@ def main(args):
 
     submit_yes = True if args.auto else confirm("Also submit the job for you?")
 
+    workflow_config = load_config.load(
+        os.path.dirname(os.path.realpath(__file__)), "workflow_config.json"
+    )
+
     print("params.srf_file", params.srf_file)
     # Get the srf(rup) name without extensions
     srf_name = os.path.splitext(os.path.basename(params.srf_file))[0]
@@ -108,6 +109,7 @@ def main(args):
             int(params.nz),
             get_nt(params),
             n_cores,
+            os.path.join(workflow_config["estimation_models_dir"], "LF"),
             True,
         )
         wct = set_wct(est_run_time, n_cores, args.auto)
@@ -129,6 +131,7 @@ def main(args):
             srf_name,
             params.mgmt_db_location,
             binary_path,
+            workflow_config,
             run_time=wct,
             nb_cpus=n_cores,
             machine=args.machine,
