@@ -1,14 +1,33 @@
 #!/usr/bin/env python3
 import os
 import json
+import pickle
 from typing import Tuple
 
 import numpy as np
 import keras
 import h5py
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, KFold
+from sklearn.preprocessing import StandardScaler
+from sklearn.svm import SVR
 
 import qcore.constants as const
+
+
+def mre(y, y_est, sample_weights=None):
+    """Mean relative error"""
+    if sample_weights is None:
+        return np.mean((y_est - y) / y)
+    else:
+        return np.mean(((y_est - y) / y) * sample_weights)
+
+
+def mare(y, y_est, sample_weigths=None):
+    """Mean absolute relative error"""
+    if sample_weigths is None:
+        return np.mean(np.abs(y_est - y) / y)
+    else:
+        return np.mean((np.abs(y_est - y) / y) * sample_weigths)
 
 
 class WCEstModel(object):
@@ -68,6 +87,28 @@ class WCEstModel(object):
         raise NotImplementedError()
 
     @classmethod
+    def evaluate(
+        cls, model_config_file: str, X: np.ndarray, y: np.ndarray, n_folds: int = 3
+    ):
+        """Evaluates the model using K-fold
+
+        Returns list with n_fold entries, of the format
+        ((y_train, y_est_train), (y_test, y_est_test))
+        """
+        kfold = KFold(n_splits=n_folds, shuffle=True)
+
+        result = []
+        for train, test in kfold.split(X, y):
+            model = cls(model_config_file)
+            model.train(X[train], y[train], verbose=2)
+            y_est_train = model.predict(X[train])
+            y_est_test = model.predict(X[test])
+
+            result.append(((y[train], y_est_train), (y[test], y_est_test)))
+
+        return result
+
+    @classmethod
     def from_saved_model(cls, model_file: str):
         """Loads a model from the specified file"""
         model = cls()
@@ -115,7 +156,7 @@ class NNWcEstModel(WCEstModel):
             self._config_dict["batch_size"],
             self._config_dict["dropout"],
             self._config_dict["activation"],
-            "_".join([str(n) for n in self._config_dict["units"]])
+            "_".join([str(n) for n in self._config_dict["units"]]),
         ).replace(".", "p")
 
     def train(
@@ -124,6 +165,7 @@ class NNWcEstModel(WCEstModel):
         y: np.ndarray,
         val_split: float = None,
         val_data: Tuple[np.ndarray, np.ndarray] = None,
+        verbose: int = 1,
         **kwargs,
     ):
         """Trains the model, see WCEstModel.train for full doc"""
@@ -171,6 +213,7 @@ class NNWcEstModel(WCEstModel):
             epochs=self._config_dict[self.n_epochs_const],
             validation_data=val_data,
             callbacks=callbacks,
+            verbose=verbose,
         )
 
         print(
@@ -235,7 +278,7 @@ class NNWcEstModel(WCEstModel):
         if not self.is_trained:
             raise Exception("This model has not been trained!")
 
-        if np.any(X > self._train_max) or np.any(X < self._train_min):
+        if np.any(self.get_out_of_bounds_mask(X)):
             print(
                 "WARNING: Some of the data specified for estimation exceeds the "
                 "limits of the data the model was trained. This will result in "
@@ -243,6 +286,12 @@ class NNWcEstModel(WCEstModel):
             )
 
         return self._model.predict(X)
+
+    def get_out_of_bounds_mask(self, X: np.ndarray):
+        """Checks that the input data is within the bounds of the data
+        used for training of the neural network.
+        """
+        return (X > self._train_max) | (X < self._train_min)
 
     def save_model(self, output_file: str):
         """Saves the model in a hdf5 file"""
@@ -269,3 +318,213 @@ class NNWcEstModel(WCEstModel):
         with h5py.File(model_file, "r") as f:
             self._train_min = f["custom"][0, :]
             self._train_max = f["custom"][1, :]
+
+    @staticmethod
+    def preprocessing(
+        X: np.ndarray,
+        y: np.ndarray,
+        std_scaler: StandardScaler = None,
+        scaler_save_file: str = None,
+    ):
+        """Performs the preprocessing
+
+        Standardizes the input data (i.e. mean=0, std=1) for each feature.
+        Removes any rows which contain a np.nan entry
+        Saves scaler if file is specified
+
+        Returns
+        -------
+        Scaled X, y, StandardScaler instance used
+        """
+        # Remove nan entries
+        row_nan_mask = np.any(np.isnan(X), axis=1) | np.isnan(y)
+        X, y = X[~row_nan_mask, :], y[~row_nan_mask]
+
+        # Scale
+        if std_scaler is not None:
+            X = std_scaler.transform(X)
+        else:
+            std_scaler = StandardScaler()
+            X = std_scaler.fit_transform(X)
+
+        if scaler_save_file is not None:
+            with open(scaler_save_file, "wb") as f:
+                # Have to use protocol 2 so it can be loaded in python2
+                pickle.dump(std_scaler, f, protocol=2)
+
+        return X, y, std_scaler
+
+
+class SVRModel(WCEstModel):
+
+    # Required fields in the config
+    C = "C"
+    gamma = "gamma"
+    y_threshold = "y_threshold"
+
+    def __init__(self, model_config_file: str = None):
+        """Sets the model parameters from the config file
+
+        Parameters
+        ----------
+        model_config_file: str
+            Path to the json model config to use.
+        """
+        super().__init__(model_config_file)
+
+        self._config_dict = None
+        if model_config_file is not None:
+            with open(model_config_file, "r") as f:
+                self._config_dict = json.load(f)
+
+        self._model = None
+
+    def train(
+        self,
+        X: np.ndarray,
+        y: np.ndarray,
+        val_split: float = None,
+        val_data: Tuple[np.ndarray, np.ndarray] = None,
+        **kwargs,
+    ):
+        X_train, y_train = X, y
+
+        # Check if input data needs to be split into train/val set
+        if val_split is not None and val_data is None:
+            X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=val_split)
+
+        # Calculate sample weights, to give all samples with core_hours above
+        # the threshold  the same weight as all smaller ones. To allow addressing
+        # of the inbalance in samples
+        y_threshold = self._config_dict[self.y_threshold]
+        sample_weights = np.ones(X_train.shape[0], dtype=np.float)
+        if y_threshold:
+            mask = y_train > y_threshold
+            sample_weights[mask] = np.count_nonzero(~mask) / np.count_nonzero(mask)
+
+        # Fit the model
+        self._model = SVR(
+            cache_size=1000,
+            C=self._config_dict[self.C],
+            gamma=self._config_dict[self.gamma],
+        )
+        self._model.fit(X_train, y_train, sample_weight=sample_weights)
+        self.is_trained = True
+
+        y_est_train = self._model.predict(X_train)
+        print(
+            "Training: Mean absolute relative error {}, "
+            "Mean relative error {}".format(
+                mare(y_train, y_est_train), mre(y_train, y_est_train)
+            )
+        )
+
+        if val_split or val_data:
+            y_est_val = self._model.predict(X_val)
+            print(
+                "Validation: Mean absolute relative error {}, "
+                "Mean relative error {}".format(
+                    mare(y_val, y_est_val), mre(y_val, y_est_val)
+                )
+            )
+
+    def predict(self, X: np.ndarray):
+        """Performs the actual prediction using the current model
+
+        For full doc see WCEstModel.predict
+        """
+        if not self.is_trained:
+            raise Exception("This model has not been trained!")
+
+        return self._model.predict(X)
+
+    def save_model(self, output_file: str):
+        """Saves the model as a pickle object"""
+        if not self.is_trained:
+            raise Exception("This model has not been trained!")
+
+        with open(output_file, "wb") as f:
+            pickle.dump(self._model, f)
+
+    def load_model(self, model_file: str):
+        """Loads the model from the specified pickle file
+        """
+        if self.is_trained:
+            raise Exception("This model has already been trained!")
+
+        with open(model_file, "rb") as f:
+            self._model = pickle.load(f)
+
+        self.is_trained = True
+
+    @staticmethod
+    def preprocessing(
+        X: np.ndarray,
+        y: np.ndarray,
+        std_scaler: StandardScaler = None,
+        scaler_save_file: str = None,
+    ):
+        """Same preprocessing as for the neural network"""
+        return NNWcEstModel.preprocessing(
+            X, y, std_scaler=std_scaler, scaler_save_file=scaler_save_file
+        )
+
+
+class CombinedModel:
+    """Used to represent a model that primarily uses a NN model for estimation,
+    however if the input data is "out of bounds", a SVR is used for
+    extrapolation."""
+
+    def __init__(self, nn_model: str, svr_model: str):
+        """Loads the saved NN and SVR model
+
+        Parameters
+        ----------
+        nn_model_file: NNWcEstModel
+            Path to the saved NN model.
+        svr_model_file: SVRModel
+            Path to the saved SVR model.
+        """
+        self.nn_model = NNWcEstModel.from_saved_model(nn_model)
+        self.svr_model = SVRModel.from_saved_model(svr_model)
+
+    def predict(self, X: np.ndarray, n_cores: np.ndarray, default_n_cores: int):
+        """Attempt to use the NN model for estimation, however if input data
+        is out of bounds, use the SVR model
+
+        Parameters
+        ----------
+        X: array of floats, shape [number of entries, number of features]
+            Input data, last column has to be the number of cores
+        n_cores: array of integers
+            The non-normalised number of cores (i.e. actual number of
+            physical cores to estimate for)
+        default_n_cores: int
+            The default number of cores for the process type that is being estimated.
+        """
+        if not self.nn_model.get_out_of_bounds_mask(X):
+            return self.nn_model.predict(X)
+        else:
+            if X.shape[0] > 1:
+                print(
+                    "Some entries are out of bounds, these will be "
+                    "estimated using the SVR model."
+                )
+
+                # Identify all entries that are out of bounds
+                mask = self.nn_model.get_out_of_bounds_mask(X)
+
+                # Estimate
+                results = np.zeros(X.shape[0], dtype=np.float)
+                results[~mask] = self.nn_model.predict(X)
+
+                # Ignore number of cores
+                results[mask] = (
+                    self.svr_model.predict(X[:-1]) * default_n_cores
+                ) / n_cores[mask]
+            else:
+                print(
+                    "The entry is out of bounds. The SVR models will be "
+                    "used for estimation."
+                )
+                return self.svr_model.predict(X)

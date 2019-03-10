@@ -1,0 +1,8 @@
+{
+  "input_cols": [["BB","fd_count"], ["HF","nt"], ["BB", "cores"]],
+  "target_col": ["BB","core_hours"],
+
+  "C": 100,
+  "gamma": 0.1,
+  "y_threshold": 4.0
+}
