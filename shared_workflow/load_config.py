@@ -3,7 +3,7 @@ import json
 
 # Shouldn't this be in shared or qcore?
 def load(
-    directory=os.path.dirname(os.path.abspath(__file__)),
+    directory=os.path.join(os.path.dirname(os.path.abspath(__file__)), "../scripts"),
     cfg_name="workflow_config.json",
 ):
     print("load", directory)

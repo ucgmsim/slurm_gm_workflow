@@ -49,7 +49,7 @@ def est_LF_chours_single(
     scale_ncores: bool,
     node_time_th_factor: float = 0.25,
     model_dir: str = None,
-    model_type: const.EstModelType = DEFAULT_MODEL_TYPE
+    model_type: const.EstModelType = DEFAULT_MODEL_TYPE,
 ):
     """Convenience function to make a single estimation
 
@@ -76,7 +76,12 @@ def est_LF_chours_single(
         The number of cores to use, returns the argument n_cores
         if scale_ncores is not set. Otherwise returns the updated ncores.
     """
-    config = load()
+    config = load(
+        directory=os.path.join(
+            os.path.dirname(os.path.abspath(__file__)), "../scripts"
+        ),
+        cfg_name="workflow_config.json",
+    )
     model_dir = (
         os.path.join(config["estimation_models_dir"], "LF")
         if model_dir is None
@@ -101,7 +106,7 @@ def estimate_LF_chours(
     scale_ncores: bool,
     node_time_th_factor: float = 0.25,
     model_dir: str = None,
-    model_type: const.EstModelType = DEFAULT_MODEL_TYPE
+    model_type: const.EstModelType = DEFAULT_MODEL_TYPE,
 ):
     """
     Make bulk LF estimations, requires the input data to be in the right
@@ -128,7 +133,12 @@ def estimate_LF_chours(
         The number of cores to use, returns the argument n_cores
         if scale_ncores is not set. Otherwise returns the updated ncores.
     """
-    config = load()
+    config = load(
+        directory=os.path.join(
+            os.path.dirname(os.path.abspath(__file__)), "../scripts"
+        ),
+        cfg_name="workflow_config.json",
+    )
     model_dir = (
         os.path.join(config["estimation_models_dir"], "LF")
         if model_dir is None
@@ -136,9 +146,7 @@ def estimate_LF_chours(
     )
 
     if data.shape[1] != 5:
-        raise Exception(
-            "Invalid input data, has to 5 columns. One for each feature."
-        )
+        raise Exception("Invalid input data, has to 5 columns. One for each feature.")
 
     core_hours = estimate(
         data,
@@ -167,7 +175,7 @@ def est_HF_chours_single(
     scale_ncores: bool,
     node_time_th_factor: float = 1.0,
     model_dir: str = None,
-    model_type: const.EstModelType = DEFAULT_MODEL_TYPE
+    model_type: const.EstModelType = DEFAULT_MODEL_TYPE,
 ):
     """Convenience function to make a single estimation
 
@@ -186,7 +194,12 @@ def est_HF_chours_single(
     run_time: float
         Estimated run time (hours)
     """
-    config = load()
+    config = load(
+        directory=os.path.join(
+            os.path.dirname(os.path.abspath(__file__)), "../scripts"
+        ),
+        cfg_name="workflow_config.json",
+    )
     model_dir = (
         os.path.join(config["estimation_models_dir"], "HF")
         if model_dir is None
@@ -200,7 +213,11 @@ def est_HF_chours_single(
     ).reshape(1, 4)
 
     core_hours, run_time, n_cpus = estimate_HF_chours(
-        data, scale_ncores, node_time_th_factor=node_time_th_factor, model_dir=model_dir, model_type=model_type
+        data,
+        scale_ncores,
+        node_time_th_factor=node_time_th_factor,
+        model_dir=model_dir,
+        model_type=model_type,
     )
 
     return core_hours[0], run_time[0], int(n_cpus[0])
@@ -211,7 +228,7 @@ def estimate_HF_chours(
     scale_ncores: bool,
     node_time_th_factor: float = 1.0,
     model_dir: str = None,
-    model_type: const.EstModelType = DEFAULT_MODEL_TYPE
+    model_type: const.EstModelType = DEFAULT_MODEL_TYPE,
 ):
     """Make bulk HF estimations, requires data to be in the correct
     order (see above).
@@ -237,7 +254,12 @@ def estimate_HF_chours(
         The number of physical cores to use, returns the argument n_cores
         if scale_ncores is not set. Otherwise returns the updated ncores.
     """
-    config = load()
+    config = load(
+        directory=os.path.join(
+            os.path.dirname(os.path.abspath(__file__)), "../scripts"
+        ),
+        cfg_name="workflow_config.json",
+    )
     model_dir = (
         os.path.join(config["estimation_models_dir"], "HF")
         if model_dir is None
@@ -257,14 +279,18 @@ def estimate_HF_chours(
         data,
         model_dir=model_dir,
         model_type=model_type,
-        default_ncores=const.HF_DEFAULT_NCORES / 2.0 if const.ProcessType.HF.is_hyperth else const.HF_DEFAULT_NCORES
+        default_ncores=const.HF_DEFAULT_NCORES / 2.0
+        if const.ProcessType.HF.is_hyperth
+        else const.HF_DEFAULT_NCORES,
     )
 
     wct = core_hours / data[:, -1]
     if scale_ncores and np.any(
         wct > (node_time_th_factor * data[:, -1] / PHYSICAL_NCORES_PER_NODE)
     ):
-        core_hours, wct, data[:, -1] = scale_core_hours(core_hours, data, node_time_th_factor)
+        core_hours, wct, data[:, -1] = scale_core_hours(
+            core_hours, data, node_time_th_factor
+        )
 
     return core_hours, wct, data[:, -1] * hyperthreading_factor
 
@@ -330,7 +356,7 @@ def est_BB_chours_single(
     nt: int,
     n_cores: int,
     model_dir: str = None,
-    model_type: const.EstModelType = DEFAULT_MODEL_TYPE
+    model_type: const.EstModelType = DEFAULT_MODEL_TYPE,
 ):
     """Convenience function to make a single estimation
 
@@ -350,7 +376,12 @@ def est_BB_chours_single(
     run_time: float
         Estimated run time (hours)
     """
-    config = load()
+    config = load(
+        directory=os.path.join(
+            os.path.dirname(os.path.abspath(__file__)), "../scripts"
+        ),
+        cfg_name="workflow_config.json",
+    )
     model_dir = (
         os.path.join(config["estimation_models_dir"], "BB")
         if model_dir is None
@@ -361,9 +392,7 @@ def est_BB_chours_single(
     # The order of the features has to the same as for training!!
     data = np.array([float(fd_count), float(nt), float(n_cores)]).reshape(1, 3)
 
-    core_hours, run_time = estimate_BB_chours(
-        data, model_dir, model_type=model_type
-    )
+    core_hours, run_time = estimate_BB_chours(data, model_dir, model_type=model_type)
 
     return core_hours[0], run_time[0]
 
@@ -371,7 +400,7 @@ def est_BB_chours_single(
 def estimate_BB_chours(
     data: np.ndarray,
     model_dir: str = None,
-    model_type: const.EstModelType = DEFAULT_MODEL_TYPE
+    model_type: const.EstModelType = DEFAULT_MODEL_TYPE,
 ):
     """Make bulk BB estimations, requires data to be
     in the correct order (see above)
@@ -389,7 +418,12 @@ def estimate_BB_chours(
     run_time: np.ndarray of float
         Estimated run time (hours)
     """
-    config = load()
+    config = load(
+        directory=os.path.join(
+            os.path.dirname(os.path.abspath(__file__)), "../scripts"
+        ),
+        cfg_name="workflow_config.json",
+    )
     model_dir = (
         os.path.join(config["estimation_models_dir"], "BB")
         if model_dir is None
@@ -407,7 +441,9 @@ def estimate_BB_chours(
         data,
         model_dir=model_dir,
         model_type=model_type,
-        default_ncores=const.BB_DEFAULT_NCORES / 2.0 if const.ProcessType.BB.is_hyperth else const.BB_DEFAULT_NCORES
+        default_ncores=const.BB_DEFAULT_NCORES / 2.0
+        if const.ProcessType.BB.is_hyperth
+        else const.BB_DEFAULT_NCORES,
     )
 
     return core_hours, core_hours / data[:, -1]
@@ -420,7 +456,7 @@ def est_IM_chours_single(
     pSA_count: int,
     n_cores: int,
     model_dir: str = None,
-    model_type: const.EstModelType = DEFAULT_MODEL_TYPE
+    model_type: const.EstModelType = DEFAULT_MODEL_TYPE,
 ):
     """Convenience function to make a single estimation
 
@@ -440,7 +476,12 @@ def est_IM_chours_single(
     run_time: float
         Estimated run time (hours)
     """
-    config = load()
+    config = load(
+        directory=os.path.join(
+            os.path.dirname(os.path.abspath(__file__)), "../scripts"
+        ),
+        cfg_name="workflow_config.json",
+    )
     model_dir = (
         os.path.join(config["estimation_models_dir"], "IM")
         if model_dir is None
@@ -463,8 +504,9 @@ def est_IM_chours_single(
         data,
         model_dir=model_dir,
         model_type=model_type,
-        default_ncores=const.BB_DEFAULT_NCORES / 2.0 if const.ProcessType.BB.is_hyperth else const.BB_DEFAULT_NCORES
-
+        default_ncores=const.BB_DEFAULT_NCORES / 2.0
+        if const.ProcessType.BB.is_hyperth
+        else const.BB_DEFAULT_NCORES,
     )[0]
 
     return core_hours, core_hours / n_cores
@@ -543,6 +585,7 @@ def estimate(
         )
 
     return core_hours.reshape(-1)
+
 
 def load_scaler(dir: str, scaler_prefix: str):
     """Loads the latest scaler
