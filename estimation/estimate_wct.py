@@ -15,10 +15,9 @@ from shared_workflow.load_config import load
 
 SCALER_PREFIX = "scaler_"
 
-# LF does not use hyperthreading, hence it uses 4 nodes by default with additional
-# nodes added by scaling, explained in estimate_LF_chours
-LF_DEFAULT_NCORES = 160
-LF_DEFAULT_NCORES_PER_NODE = 40
+MAX_JOB_WCT = 24
+MAX_NODES_PER_JOB = 66
+PHYSICAL_NCORES_PER_NODE = 40
 
 OVERESTIMATE_FRACTION = 0.5
 DEFAULT_MODEL_TYPE = const.EstModelType.NN_SVR
@@ -48,7 +47,7 @@ def est_LF_chours_single(
     nt: int,
     ncores: int,
     scale_ncores: bool,
-    node_time_th_factor: float = 0.5,
+    node_time_th_factor: float = 0.25,
     model_dir: str = None,
     model_type: const.EstModelType = DEFAULT_MODEL_TYPE
 ):
@@ -100,7 +99,7 @@ def est_LF_chours_single(
 def estimate_LF_chours(
     data: np.ndarray,
     scale_ncores: bool,
-    node_time_th_factor: float = 0.5,
+    node_time_th_factor: float = 0.25,
     model_dir: str = None,
     model_type: const.EstModelType = DEFAULT_MODEL_TYPE
 ):
@@ -148,37 +147,25 @@ def estimate_LF_chours(
         default_ncores=const.LF_DEFAULT_NCORES,
     )
 
-    # Just estimate, no number of cores scaling
-    if not scale_ncores:
-        return core_hours, core_hours / data[:, -1], data[:, -1]
-    # Estimate and iteratively update the number of cores until
-    # the threshold is meet
+    # data[:, -1] represents the last column of the ndarray data, which contains the number of cores for each task
+    wct = core_hours / data[:, -1]
+
+    if scale_ncores and np.any(
+        wct > (node_time_th_factor * data[:, -1] / PHYSICAL_NCORES_PER_NODE)
+    ):
+        # Want to scale, and at least one job exceeds the allowable time for the given number of cores
+        return scale_core_hours(core_hours, data, node_time_th_factor)
     else:
-        run_time = core_hours / data[:, -1]
-        time_th = node_time_th_factor * (data[:, -1] / LF_DEFAULT_NCORES_PER_NODE)
-        mask = run_time > time_th
-        while np.any(mask):
-            data[mask, -1] += float(LF_DEFAULT_NCORES_PER_NODE)
-            time_th[mask] = node_time_th_factor * (
-                data[mask, -1] / LF_DEFAULT_NCORES_PER_NODE
-            )
-
-            core_hours = estimate(
-                data,
-                model_dir=model_dir,
-                model_type=model_type,
-                default_ncores=const.LF_DEFAULT_NCORES,
-            )
-            run_time = core_hours / data[:, -1]
-
-        return core_hours, run_time, data[:, -1]
+        return core_hours, core_hours / data[:, -1], (data[:, -1])
 
 
 def est_HF_chours_single(
     fd_count: int,
     nsub_stoch: float,
     nt: int,
-    n_cores: int,
+    n_logical_cores: int,
+    scale_ncores: bool,
+    node_time_th_factor: float = 1.0,
     model_dir: str = None,
     model_type: const.EstModelType = DEFAULT_MODEL_TYPE
 ):
@@ -209,18 +196,20 @@ def est_HF_chours_single(
     # Make a numpy array of the input data in the right shape
     # The order of the features has to the same as for training!!
     data = np.array(
-        [float(fd_count), float(nsub_stoch), float(nt), float(n_cores)]
+        [float(fd_count), float(nsub_stoch), float(nt), float(n_logical_cores)]
     ).reshape(1, 4)
 
-    core_hours, run_time = estimate_HF_chours(
-        data, model_dir, model_type=model_type
+    core_hours, run_time, n_cpus = estimate_HF_chours(
+        data, scale_ncores, node_time_th_factor=node_time_th_factor, model_dir=model_dir, model_type=model_type
     )
 
-    return core_hours[0], run_time[0]
+    return core_hours[0], run_time[0], int(n_cpus[0])
 
 
 def estimate_HF_chours(
     data: np.ndarray,
+    scale_ncores: bool,
+    node_time_th_factor: float = 1.0,
     model_dir: str = None,
     model_type: const.EstModelType = DEFAULT_MODEL_TYPE
 ):
@@ -232,6 +221,11 @@ def estimate_HF_chours(
     data: np.ndarray of int, float
         Input data for the model in order fd_count, nsub_stoch, nt, n_cores
         Has to have shape [-1, 4]
+    scale_ncores: bool
+        If True then the number of cores is adjusted until
+        n_nodes * node_time_th >= run_time
+    node_time_th: float
+        Node time threshold factor in hours, does nothing if scale_ncores is not set
 
     Returns
     -------
@@ -239,6 +233,9 @@ def estimate_HF_chours(
         Estimated number of core hours
     run_time: np.ndarray of floats
         Estimated run time (hours)
+    n_cores: np.ndarray of ints
+        The number of physical cores to use, returns the argument n_cores
+        if scale_ncores is not set. Otherwise returns the updated ncores.
     """
     config = load()
     model_dir = (
@@ -252,15 +249,80 @@ def estimate_HF_chours(
             "Invalid input data, has to 4 columns. " "One for each feature."
         )
 
+    hyperthreading_factor = 2.0 if const.ProcessType.HF.is_hyperth else 1.0
+
     # Adjust the number of cores to estimate physical core hours
-    data[:, -1] = data[:, -1] / 2.0 if const.ProcessType.HF.is_hyperth else data[:, -1]
+    data[:, -1] = data[:, -1] / hyperthreading_factor
     core_hours = estimate(
         data,
         model_dir=model_dir,
         model_type=model_type,
         default_ncores=const.HF_DEFAULT_NCORES / 2.0 if const.ProcessType.HF.is_hyperth else const.HF_DEFAULT_NCORES
     )
-    return core_hours, core_hours / data[:, -1]
+
+    wct = core_hours / data[:, -1]
+    if scale_ncores and np.any(
+        wct > (node_time_th_factor * data[:, -1] / PHYSICAL_NCORES_PER_NODE)
+    ):
+        core_hours, wct, data[:, -1] = scale_core_hours(core_hours, data, node_time_th_factor)
+
+    return core_hours, wct, data[:, -1] * hyperthreading_factor
+
+
+def scale_core_hours(
+    core_hours: np.ndarray, data: np.ndarray, node_time_th_factor: float
+):
+    """
+    Estimate and update the number of nodes until
+    the threshold is met. Assumes that core hours
+    required remains constant with more nodes used.
+    Find minimum number of cores such that:
+    core_hours <= n_cores * node_time_th_factor * (n_cores/PHYSICAL_NCORES_PER_NODE)
+    The right hand side of this formula determines
+    the maximum time that a job may run for a given
+    node_time_th_factor. n_cores is the number of cores,
+    while n_cores/PHYSICAL_NCORES_PER_NODE is the number
+    of nodes used, and multiplying this by the
+    node_time_th_factor gives the maximum number of
+    hours the job may run for.
+    This allows the maximum wall clock time to scale
+    with the number of nodes.
+    If the estimated run time will be longer than
+    a day, work out the minimum number of nodes
+    required for it to run in less than 24 hours.
+    Params
+    ------
+    core_hours: np.ndarray
+        Initial estimated wall clock time
+    data: np.ndarray of int, float
+        Input data for the model in order fd_count, nsub_stoch, nt, n_cores
+        Has to have shape [-1, 4]
+    node_time_th_factor: float
+        Node time threshold factor in hours, does nothing if scale_ncores is not set
+    Returns
+    -------
+    core_hours: np.ndarray of floats
+        Estimated number of core hours
+    run_time: np.ndarray of floats
+        Estimated run time (hours)
+    n_cpus: np.ndarray of ints
+        The number of cores to use, returns the argument n_cores
+        if scale_ncores is not set. Otherwise returns the updated ncores.
+    """
+
+    # All computation is in terms of nodes
+    n_nodes = data[:, -1] / PHYSICAL_NCORES_PER_NODE
+    estimated_nodes = np.ceil(
+        np.sqrt(core_hours / (node_time_th_factor * PHYSICAL_NCORES_PER_NODE))
+    )
+    mask = (estimated_nodes * node_time_th_factor) > MAX_JOB_WCT
+    if np.any(mask):
+        estimated_nodes[mask] = np.ceil(
+            (core_hours[mask] / MAX_JOB_WCT) / PHYSICAL_NCORES_PER_NODE
+        )
+    n_nodes = np.minimum(np.maximum(estimated_nodes, n_nodes), MAX_NODES_PER_JOB)
+    n_cpus = n_nodes * PHYSICAL_NCORES_PER_NODE
+    return core_hours, core_hours / n_cpus, n_cpus
 
 
 def est_BB_chours_single(

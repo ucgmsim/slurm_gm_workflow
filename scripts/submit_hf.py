@@ -17,6 +17,8 @@ from shared_workflow.shared import (
 )
 
 # default values
+# Scale the number of nodes to be used for the simulation component
+SCALE_NCORES = True
 default_wct = "00:30:00"
 
 
@@ -184,10 +186,10 @@ def main(args):
             )
             wct = default_wct
         else:
-            est_core_hours, est_run_time = est.est_HF_chours_single(
-                fd_count, nsub_stoch, nt, ncore
+            est_core_hours, est_run_time, est_cores = est.est_HF_chours_single(
+                fd_count, nsub_stoch, nt, ncore, scale_ncores=SCALE_NCORES
             )
-            wct = set_wct(est_run_time, ncore, args.auto)
+            wct = set_wct(est_run_time, est_cores, args.auto)
 
         hf_sim_dir = os.path.join(params.sim_dir, "HF")
 
@@ -199,7 +201,7 @@ def main(args):
             sl_template_prefix=ll_name_prefix,
             hf_option=hf_option,
             params=params,
-            nb_cpus=ncore,
+            nb_cpus=est_cores,
             wct=wct,
             account=args.account,
             binary=not args.ascii,
