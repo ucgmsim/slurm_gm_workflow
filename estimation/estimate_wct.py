@@ -10,7 +10,7 @@ from typing import List
 import numpy as np
 
 import qcore.constants as const
-from estimation.model import CombinedModel, WCEstModel
+from estimation.model import CombinedModel, WCEstModel, NNWcEstModel, SVRModel
 from shared_workflow.load_config import load
 
 SCALER_PREFIX = "scaler_"
@@ -570,10 +570,12 @@ def estimate(
 
     # Load the data and run estimation
     if model_type is const.EstModelType.NN:
-        nn_model = load_model(model_dir, const.EST_MODEL_NN_PREFIX)
+        nn_model = load_model(model_dir, const.EST_MODEL_NN_PREFIX, "h5", NNWcEstModel)
         core_hours = nn_model.predict(X)
     elif model_type is const.EstModelType.SVR:
-        svr_model, scaler = load_model(model_dir, const.EST_MODEL_SVR_PREFIX)
+        svr_model, scaler = load_model(
+            model_dir, const.EST_MODEL_SVR_PREFIX, "pickle", SVRModel
+        )
         core_hours = svr_model.predict(X)
     else:
         comb_model = CombinedModel(
@@ -615,13 +617,13 @@ def load_scaler(dir: str, scaler_prefix: str):
     return scaler
 
 
-def load_model(dir: str, model_prefix: str):
+def load_model(dir: str, model_prefix: str, model_ext: str, model_cls: WCEstModel):
     """Loads a model
 
     If there are several models in the specified directory, then the latest
     one is loaded (based on its timestamp)
     """
-    file_pattern = os.path.join(dir, "{}{}".format(model_prefix, "*.h5"))
+    file_pattern = os.path.join(dir, "{}*.{}".format(model_prefix, model_ext))
     model_files = glob.glob(file_pattern)
 
     model_file = None
@@ -636,7 +638,7 @@ def load_model(dir: str, model_prefix: str):
         model_files.sort()
         model_file = model_files[-1]
 
-    model = WCEstModel.from_saved_model(model_file)
+    model = model_cls.from_saved_model(model_file)
 
     print("Loaded model {}".format(model_file))
     return model

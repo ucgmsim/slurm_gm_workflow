@@ -480,10 +480,10 @@ class CombinedModel:
 
         Parameters
         ----------
-        nn_model_file: NNWcEstModel
-            Path to the saved NN model.
-        svr_model_file: SVRModel
-            Path to the saved SVR model.
+        nn_model: NNWcEstModel
+            NN model to use.
+        svr_model: SVRModel
+            SVR model to use.
         """
         self.nn_model = NNWcEstModel.from_saved_model(nn_model)
         self.svr_model = SVRModel.from_saved_model(svr_model)
