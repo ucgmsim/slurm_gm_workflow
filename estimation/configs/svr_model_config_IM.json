@@ -1,0 +1,13 @@
+{
+  "input_cols": [["IM_calc","fd_count"],
+                ["IM_calc","nt"],
+                ["IM_calc","im_components_count"],
+                ["IM_calc","pSA_count"],
+                ["IM_calc", "cores"]],
+  "target_col": ["IM_calc","core_hours"],
+
+
+  "C": 10,
+  "gamma": 1.0,
+  "y_threshold": 6.0
+}
