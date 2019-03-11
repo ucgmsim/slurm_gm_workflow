@@ -25,7 +25,7 @@ for line in $fault_list;
 do
     fault=`echo $line | awk '{print $1}'`
     n_rel=`echo $line | awk '{print $2}'`
-    python $script_location/install_cybershake_fault.py $cybershake_root $cybershake_cfg $fault --n_rel ${n_rel//[nkr]}
+    python3 $script_location/install_cybershake_fault.py $cybershake_root $cybershake_cfg $fault --n_rel ${n_rel//[nkr]}
 done
 
 #list_source='ls 

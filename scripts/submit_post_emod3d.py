@@ -30,6 +30,14 @@ default_core_winbin_aio = "80"
 # this variable is critical to prevent crashes for winbin-aio
 max_tasks_per_node = "80"
 
+import pickle
+import inspect
+
+TEST_DATA_SAVE_DIR = "/home/jpa198/PycharmProjects/slurm_gm_workflow"
+REALISATION = "PangopangoF29_HYP01-10_S1244"
+DATA_TAKEN = {}
+INPUT_DIR = 'input'
+OUTPUT_DIR = 'output'
 
 def get_seis_len(seis_path):
     filepattern = os.path.join(seis_path, "*_seis*.e3d")
@@ -49,6 +57,16 @@ def write_sl_script_merge_ts(
     machine=host,
 ):
     """Populates the template and writes the resulting slurm script to file"""
+
+    frame = inspect.currentframe()
+    argsvals, _, _, values = inspect.getargvalues(frame)
+    func_name = inspect.getframeinfo(frame)[2]
+    if not DATA_TAKEN.get(func_name):
+        for arg in argsvals:
+            with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, INPUT_DIR, func_name + '_{}.P'.format(arg)),
+                      'wb') as save_file:
+                pickle.dump(values[arg], save_file)
+
     target_config = get_machine_config(machine)
     tools_dir = binary_version.get_unversioned_bin(
         "merge_tsP3_par", target_config["tools_dir"]
@@ -86,6 +104,11 @@ def write_sl_script_merge_ts(
 
     script_name_abs = os.path.join(os.path.abspath(os.path.curdir), script_name)
     print("Slurm script %s written" % script_name)
+    if not DATA_TAKEN.get(func_name):
+        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, OUTPUT_DIR, func_name + '__ret_val.P'),
+                  'wb') as save_file:
+            pickle.dump(script_name_abs, save_file)
+        DATA_TAKEN[func_name] = True
     return script_name_abs
 
 
@@ -100,6 +123,16 @@ def write_sl_script_winbin_aio(
     machine=host,
 ):
     """Populates the template and writes the resulting slurm script to file"""
+
+    frame = inspect.currentframe()
+    argsvals, _, _, values = inspect.getargvalues(frame)
+    func_name = inspect.getframeinfo(frame)[2]
+    if not DATA_TAKEN.get(func_name):
+        for arg in argsvals:
+            with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, INPUT_DIR, func_name + '_{}.P'.format(arg)),
+                      'wb') as save_file:
+                pickle.dump(values[arg], save_file)
+
     # Read template
     with open("%s.sl.template" % winbin_aio_name_prefix) as f:
         template = f.read()
@@ -147,10 +180,27 @@ def write_sl_script_winbin_aio(
 
     script_name_abs = os.path.join(os.path.abspath(os.path.curdir), script_name)
     print("Slurm script %s written" % script_name_abs)
+    if not DATA_TAKEN.get(func_name):
+        with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, OUTPUT_DIR, func_name + '__ret_val.P'),
+                  'wb') as save_file:
+            pickle.dump(script_name_abs, save_file)
+        DATA_TAKEN[func_name] = True
     return script_name_abs
 
 
 def main(args):
+    frame = inspect.currentframe()
+    argsvals, _, _, values = inspect.getargvalues(frame)
+    func_name = inspect.getframeinfo(frame)[2]
+    fname = os.path.basename(inspect.getfile(frame))
+    if not DATA_TAKEN.get(func_name):
+        for arg in argsvals:
+            with open(os.path.join(TEST_DATA_SAVE_DIR, REALISATION, INPUT_DIR,
+                                   '{}_{}_{}.P'.format(fname, func_name, arg)),
+                      'wb') as save_file:
+                pickle.dump(values[arg], save_file)
+        DATA_TAKEN[func_name] = True
+
     params = utils.load_sim_params("sim_params.yaml")
     submit_yes = True if args.auto else confirm("Also submit the job for you?")
 
