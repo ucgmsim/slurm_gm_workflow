@@ -217,18 +217,6 @@ def estimate_HF_chours(
         The number of physical cores to use, returns the argument n_cores
         if scale_ncores is not set. Otherwise returns the updated ncores.
     """
-    # config = load(
-    #     directory=os.path.join(
-    #         os.path.dirname(os.path.abspath(__file__)), "../scripts"
-    #     ),
-    #     cfg_name="workflow_config.json",
-    # )
-    # model_dir = (
-    #     os.path.join(config["estimation_models_dir"], "HF")
-    #     if model_dir is None
-    #     else model_dir
-    # )
-
     if data.shape[1] != 4:
         raise Exception(
             "Invalid input data, has to 4 columns. " "One for each feature."
@@ -240,11 +228,9 @@ def estimate_HF_chours(
     data[:, -1] = data[:, -1] / hyperthreading_factor
     core_hours = estimate(
         data,
-        model_dir=model_dir,
-        model_type=model_type,
-        default_ncores=const.HF_DEFAULT_NCORES / 2.0
-        if const.ProcessType.HF.is_hyperth
-        else const.HF_DEFAULT_NCORES,
+        model_dir,
+        model_type,
+        const.HF_DEFAULT_NCORES / hyperthreading_factor
     )
 
     wct = core_hours / data[:, -1]

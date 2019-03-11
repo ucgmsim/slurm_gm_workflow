@@ -124,7 +124,7 @@ def run_estimations(
     """
     print("Running estimation for LF")
     lf_core_hours, lf_run_time, lf_ncores = estimate_wct.estimate_LF_chours(
-        lf_input_data, model_dirs_dict["LF"], scale_ncores=True
+        lf_input_data, model_dirs_dict["LF"], True
     )
     lf_result_data = np.concatenate(
         (lf_core_hours[:, None], lf_run_time[:, None], lf_ncores[:, None]), axis=1
@@ -158,7 +158,7 @@ def run_estimations(
     if hf_input_data is not None:
         print("Running HF estimation")
         hf_core_hours, hf_run_time, hf_cores = estimate_wct.estimate_HF_chours(
-            hf_input_data, model_dirs_dict["HF"], scale_ncores=True
+            hf_input_data, model_dirs_dict["HF"], True
         )
     else:
         hf_core_hours, hf_run_time, hf_cores = np.nan, np.nan, np.nan
@@ -323,7 +323,7 @@ def main(args):
     )
 
     workflow_config = load(
-        os.path.join("../", "scripts", os.path.dirname(os.path.realpath(__file__))),
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), "../", "scripts"),
         "workflow_config.json",
     )
     model_dir = workflow_config["estimation_models_dir"]
