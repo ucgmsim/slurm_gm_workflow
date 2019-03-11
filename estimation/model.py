@@ -291,7 +291,7 @@ class NNWcEstModel(WCEstModel):
         """Checks that the input data is within the bounds of the data
         used for training of the neural network.
         """
-        return np.any((X > self._train_max) | (X < self._train_min))
+        return (X > self._train_max) | (X < self._train_min)
 
     def save_model(self, output_file: str):
         """Saves the model in a hdf5 file"""
@@ -502,7 +502,7 @@ class CombinedModel:
         default_n_cores: int
             The default number of cores for the process type that is being estimated.
         """
-        if not self.nn_model.get_out_of_bounds_mask(X):
+        if not np.all(~self.nn_model.get_out_of_bounds_mask(X)):
             return self.nn_model.predict(X)
         else:
             if X.shape[0] > 1:
@@ -516,11 +516,11 @@ class CombinedModel:
 
                 # Estimate
                 results = np.zeros(X.shape[0], dtype=np.float)
-                results[~mask] = self.nn_model.predict(X)
+                results[~mask] = self.nn_model.predict(X[~mask])
 
                 # Ignore number of cores
                 results[mask] = (
-                    self.svr_model.predict(X[:-1]) * default_n_cores
+                    self.svr_model.predict(X[X[mask], :-1]) * default_n_cores
                 ) / n_cores[mask]
             else:
                 print(

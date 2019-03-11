@@ -82,7 +82,11 @@ def est_LF_chours_single(
     ).reshape(1, 5)
 
     core_hours, run_time, ncores = estimate_LF_chours(
-        data, model_dir, scale_ncores, node_time_th_factor=node_time_th_factor, model_type=model_type
+        data,
+        model_dir,
+        scale_ncores,
+        node_time_th_factor=node_time_th_factor,
+        model_type=model_type,
     )
 
     return core_hours[0], run_time[0], int(ncores[0])
@@ -227,10 +231,7 @@ def estimate_HF_chours(
     # Adjust the number of cores to estimate physical core hours
     data[:, -1] = data[:, -1] / hyperthreading_factor
     core_hours = estimate(
-        data,
-        model_dir,
-        model_type,
-        const.HF_DEFAULT_NCORES / hyperthreading_factor
+        data, model_dir, model_type, const.HF_DEFAULT_NCORES / hyperthreading_factor
     )
 
     wct = core_hours / data[:, -1]
@@ -413,14 +414,12 @@ def est_IM_chours_single(
         ]
     ).reshape(1, 5)
 
-    core_hours = estimate(
-        data,
-        model_dir=model_dir,
-        model_type=model_type,
-        default_ncores=const.BB_DEFAULT_NCORES / 2.0
+    default_ncores = (
+        const.BB_DEFAULT_NCORES / 2.0
         if const.ProcessType.BB.is_hyperth
-        else const.BB_DEFAULT_NCORES,
-    )[0]
+        else const.BB_DEFAULT_NCORES
+    )
+    core_hours = estimate(data, model_dir, model_type, default_ncores)[0]
 
     return core_hours, core_hours / n_cores
 
