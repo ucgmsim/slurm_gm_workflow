@@ -503,25 +503,28 @@ class CombinedModel:
             The default number of cores for the process type that is being estimated.
         """
         if not np.all(~self.nn_model.get_out_of_bounds_mask(X)):
-            return self.nn_model.predict(X)
+            return self.nn_model.predict(X, warning=False)
         else:
             if X.shape[0] > 1:
-                print(
-                    "Some entries are out of bounds, these will be "
-                    "estimated using the SVR model."
-                )
-
                 # Identify all entries that are out of bounds
                 mask = np.any(self.nn_model.get_out_of_bounds_mask(X), axis=1)
 
                 # Estimate
-                results = np.zeros(X.shape[0], dtype=np.float)
+                results = np.ones(X.shape[0], dtype=np.float) * np.nan
                 results[~mask] = self.nn_model.predict(X[~mask, :], warning=False)
 
                 # Ignore number of cores
-                results[mask] = (
-                    self.svr_model.predict(X[X[mask], :-1]) * default_n_cores
-                ) / n_cores[mask]
+                if np.any(mask):
+                    print(
+                        "Some entries are out of bounds, these will be "
+                        "estimated using the SVR model."
+                    )
+
+                    results[mask] = (
+                        self.svr_model.predict(X[mask, :-1]) * default_n_cores
+                    ) / n_cores[mask]
+
+                return results
             else:
                 print(
                     "The entry is out of bounds. The SVR models will be "

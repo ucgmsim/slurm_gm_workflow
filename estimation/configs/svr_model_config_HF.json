@@ -1,6 +1,5 @@
 {
-  "input_cols": [["HF","fd_count"], ["HF","nsub_stoch"], ["HF","nt"],
-                ["HF", "cores"]],
+  "input_cols": [["HF","fd_count"], ["HF","nsub_stoch"], ["HF","nt"]],
   "target_col": ["HF","core_hours"],
 
   "C": 100,

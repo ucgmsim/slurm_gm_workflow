@@ -1,5 +1,5 @@
 {
-  "input_cols": [["BB","fd_count"], ["HF","nt"], ["BB", "cores"]],
+  "input_cols": [["BB","fd_count"], ["HF","nt"]],
   "target_col": ["BB","core_hours"],
 
   "C": 100,

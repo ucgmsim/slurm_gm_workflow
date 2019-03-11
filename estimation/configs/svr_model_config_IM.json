@@ -2,8 +2,7 @@
   "input_cols": [["IM_calc","fd_count"],
                 ["IM_calc","nt"],
                 ["IM_calc","im_components_count"],
-                ["IM_calc","pSA_count"],
-                ["IM_calc", "cores"]],
+                ["IM_calc","pSA_count"]],
   "target_col": ["IM_calc","core_hours"],
 
 
