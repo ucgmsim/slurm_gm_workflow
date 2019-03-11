@@ -80,6 +80,7 @@ def submit_task(
             {"submit_time": submitted_time},
         )
 
+    # Merge ts
     if proc_type == const.ProcessType.merge_ts.value:
         args = argparse.Namespace(
             auto=True,

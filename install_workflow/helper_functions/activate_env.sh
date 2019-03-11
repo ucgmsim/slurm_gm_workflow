@@ -20,4 +20,5 @@ export PYTHONPATH=$PYTHONPATH:${env_path}/qcore
 export PYTHONPATH=$PYTHONPATH:${env_path}/workflow
 
 export CUR_ENV=${env_path}
+export CUR_HPC=${hpc}
 export gmsim=${env_path}

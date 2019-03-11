@@ -168,7 +168,7 @@ def get_partition(machine, core_hours=None):
         partition = "nesi_research"
     elif machine == const.HPC.mahuika.value:
         if core_hours and core_hours < 6:
-            partition = "prepost"
+            partition = "large"
         else:
             partition = "large"
     else:
@@ -496,7 +496,7 @@ def submit_sl_script(
         print("Submitting %s" % script)
         if target_machine and target_machine != host:
             res = exe(
-                "sbatch --export=CUR_ENV -M {} {}".format(target_machine, script),
+                "sbatch --export=CUR_ENV,CUR_HPC  -M {} {}".format(target_machine, script),
                 debug=False,
             )
         else:
