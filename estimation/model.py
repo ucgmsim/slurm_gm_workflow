@@ -270,7 +270,7 @@ class NNWcEstModel(WCEstModel):
 
         return model
 
-    def predict(self, X: np.ndarray):
+    def predict(self, X: np.ndarray, warning: bool=True):
         """Performs the actual prediction using the current model
 
         For full doc see WCEstModel.predict
@@ -278,14 +278,14 @@ class NNWcEstModel(WCEstModel):
         if not self.is_trained:
             raise Exception("This model has not been trained!")
 
-        if np.any(self.get_out_of_bounds_mask(X)):
+        if np.any(self.get_out_of_bounds_mask(X)) and warning:
             print(
                 "WARNING: Some of the data specified for estimation exceeds the "
                 "limits of the data the model was trained. This will result in "
                 "incorrect estimation!"
             )
 
-        return self._model.predict(X)
+        return self._model.predict(X).reshape(-1)
 
     def get_out_of_bounds_mask(self, X: np.ndarray):
         """Checks that the input data is within the bounds of the data
@@ -436,7 +436,7 @@ class SVRModel(WCEstModel):
         if not self.is_trained:
             raise Exception("This model has not been trained!")
 
-        return self._model.predict(X)
+        return self._model.predict(X).reshape(-1)
 
     def save_model(self, output_file: str):
         """Saves the model as a pickle object"""
@@ -512,11 +512,11 @@ class CombinedModel:
                 )
 
                 # Identify all entries that are out of bounds
-                mask = self.nn_model.get_out_of_bounds_mask(X)
+                mask = np.any(self.nn_model.get_out_of_bounds_mask(X), axis=1)
 
                 # Estimate
                 results = np.zeros(X.shape[0], dtype=np.float)
-                results[~mask] = self.nn_model.predict(X[~mask])
+                results[~mask] = self.nn_model.predict(X[~mask, :], warning=False)
 
                 # Ignore number of cores
                 results[mask] = (

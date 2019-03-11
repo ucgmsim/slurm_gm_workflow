@@ -498,7 +498,7 @@ def estimate(
             X, n_cores=input_data[:, -1], default_n_cores=default_ncores
         )
 
-    return core_hours.reshape(-1)
+    return core_hours
 
 
 def load_scaler(dir: str, scaler_prefix: str):
