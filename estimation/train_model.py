@@ -22,7 +22,9 @@ from qcore.constants import MetadataField, EST_MODEL_NN_PREFIX, EST_MODEL_SVR_PR
 CONFIG_INPUT_COLS_KEY = "input_cols"
 CONFIG_TARGET_COL_KEY = "target_col"
 
-SCALER_FILENAME = "scaler_{}.pickle"
+
+
+SCALER_FILENAME = "scaler_{}_{}.pickle"
 NN_MODEL_FILENAME = "{}{}.h5".format(EST_MODEL_NN_PREFIX, "{}")
 SVR_MODEL_FILENAME = "{}{}.pickle".format(EST_MODEL_SVR_PREFIX, "{}")
 
@@ -148,20 +150,13 @@ def main(args):
 
     model = NNWcEstModel if is_NN else SVRModel
 
-    # Preprocessing
-    if args.scaler_file:
-        with open(args.scaler_file, 'rb') as f:
-            scaler = pickle.load(f)
-
-        X, y, _ = model.preprocessing(X, y, std_scaler=scaler)
-    else:
-        X, y, _ = model.preprocessing(
-            X,
-            y,
-            scaler_save_file=os.path.join(
-                args.output_dir, SCALER_FILENAME.format(timestamp)
-            ),
-        )
+    X, y, _ = model.preprocessing(
+        X,
+        y,
+        scaler_save_file=os.path.join(
+            args.output_dir, SCALER_FILENAME.format("NN" if is_NN else "SVR", timestamp)
+        ),
+    )
 
     # Train and save the model
     if is_NN:

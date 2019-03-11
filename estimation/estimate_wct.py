@@ -12,7 +12,7 @@ import numpy as np
 import qcore.constants as const
 from estimation.model import CombinedModel, WCEstModel, NNWcEstModel, SVRModel
 
-SCALER_PREFIX = "scaler_"
+SCALER_PREFIX = "scaler_{}"
 
 MAX_JOB_WCT = 24
 MAX_NODES_PER_JOB = 66
@@ -477,14 +477,18 @@ def estimate(
         Estimated wall clock time
     """
     # Load the scaler and scale the input data
-    scaler = load_scaler(model_dir, SCALER_PREFIX)
-    X = scaler.transform(input_data)
 
     # Load the data and run estimation
     if model_type is const.EstModelType.NN:
+        scaler = load_scaler(model_dir, SCALER_PREFIX.format("NN"))
+        X = scaler.transform(input_data)
+
         nn_model = load_model(model_dir, const.EST_MODEL_NN_PREFIX, "h5", NNWcEstModel)
         core_hours = nn_model.predict(X)
     elif model_type is const.EstModelType.SVR:
+        scaler = load_scaler(model_dir, SCALER_PREFIX.format("SVR"))
+        X = scaler.transform(input_data)
+
         svr_model, scaler = load_model(
             model_dir, const.EST_MODEL_SVR_PREFIX, "pickle", SVRModel
         )
@@ -494,8 +498,15 @@ def estimate(
             load_model(model_dir, const.EST_MODEL_NN_PREFIX, "h5", NNWcEstModel),
             load_model(model_dir, const.EST_MODEL_SVR_PREFIX, "pickle", SVRModel),
         )
+        
+        scaler_nn = load_scaler(model_dir, SCALER_PREFIX.format("NN"))
+        X_nn = scaler_nn.transform(input_data)
+
+        scaler_svr = load_scaler(model_dir, SCALER_PREFIX.format("SVR"))
+        X_svr = scaler_svr.transform(input_data[:, :-1])
+
         core_hours = comb_model.predict(
-            X, n_cores=input_data[:, -1], default_n_cores=default_ncores
+            X_nn, X_svr, n_cores=input_data[:, -1], default_n_cores=default_ncores
         )
 
     return core_hours

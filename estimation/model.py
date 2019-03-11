@@ -488,30 +488,34 @@ class CombinedModel:
         self.nn_model = nn_model
         self.svr_model = svr_model
 
-    def predict(self, X: np.ndarray, n_cores: np.ndarray, default_n_cores: int):
+    def predict(self, X_nn: np.ndarray, X_svr: np.ndarray, n_cores: np.ndarray, default_n_cores: int):
         """Attempt to use the NN model for estimation, however if input data
         is out of bounds, use the SVR model
 
         Parameters
         ----------
-        X: array of floats, shape [number of entries, number of features]
-            Input data, last column has to be the number of cores
+        X_nn: array of floats, shape [number of entries, number of features]
+            Input data for NN, last column has to be the number of cores
+        X_svr: array of floats, shape [number of entries, number of features]
+            Input data for SVR, last column has to be the number of cores
         n_cores: array of integers
             The non-normalised number of cores (i.e. actual number of
             physical cores to estimate for)
         default_n_cores: int
             The default number of cores for the process type that is being estimated.
         """
-        if not np.all(~self.nn_model.get_out_of_bounds_mask(X)):
-            return self.nn_model.predict(X, warning=False)
+        assert X_nn.shape[0] == X_svr.shape[0]
+
+        if np.all(~self.nn_model.get_out_of_bounds_mask(X_nn)):
+            return self.nn_model.predict(X_nn, warning=False)
         else:
-            if X.shape[0] > 1:
+            if X_nn.shape[0] > 1:
                 # Identify all entries that are out of bounds
-                mask = np.any(self.nn_model.get_out_of_bounds_mask(X), axis=1)
+                mask = np.any(self.nn_model.get_out_of_bounds_mask(X_nn), axis=1)
 
                 # Estimate
-                results = np.ones(X.shape[0], dtype=np.float) * np.nan
-                results[~mask] = self.nn_model.predict(X[~mask, :], warning=False)
+                results = np.ones(X_nn.shape[0], dtype=np.float) * np.nan
+                results[~mask] = self.nn_model.predict(X_nn[~mask, :], warning=False)
 
                 # Ignore number of cores
                 if np.any(mask):
@@ -521,7 +525,7 @@ class CombinedModel:
                     )
 
                     results[mask] = (
-                        self.svr_model.predict(X[mask, :-1]) * default_n_cores
+                        self.svr_model.predict(X_svr[mask, :-1]) * default_n_cores
                     ) / n_cores[mask]
 
                 return results
@@ -530,4 +534,4 @@ class CombinedModel:
                     "The entry is out of bounds. The SVR models will be "
                     "used for estimation."
                 )
-                return self.svr_model.predict(X)
+                return self.svr_model.predict(X_svr)
