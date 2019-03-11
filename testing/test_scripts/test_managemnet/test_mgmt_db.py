@@ -1,18 +1,22 @@
-import os
-
+import shutil
 import pytest
 
 from scripts.management import create_mgmt_db, update_mgmt_db
 from qcore import utils
 
 TEST_DB_DIR = 'output'
-utils.setup_dir(TEST_DB_DIR)
 TEST_SRF_FILE = '/nesi/nobackup/nesi00213/RunFolder/PangopangoF29/Data/Sources/PangopangoF29/Srf/PangopangoF29_HYP01-10_S1244.srf'
 TEST_RUN_NAME = 'PangopangoF29_HYP01-10_S1244'
 TEST_PROC = (2, 'merge_ts')
-TEST_STATUS = (5, 'failed')
+TEST_STATUS = (4, 'completed')
+FORCE_STATUS = (5, 'failed')
 TEST_TABLE = 'state'
 INIT_DB_ROWS = 10
+EXPECTED_ERROS = ['test_err', 'Process failed retrying', 'Reseting retries', 'another error']
+
+
+def setup_module(module):
+    utils.setup_dir(TEST_DB_DIR)
 
 
 @pytest.fixture(scope="module")
@@ -44,19 +48,34 @@ def test_insert_task(mgmt_db):
 
 def test_update_db(mgmt_db):
     update_mgmt_db.update_db(mgmt_db, TEST_PROC[1], TEST_STATUS[1], run_name=TEST_RUN_NAME)
-    value = get_rows(mgmt_db, TEST_TABLE, 'proc_type', TEST_PROC[0], 'status')[0][0]
+    value = get_rows(mgmt_db, TEST_TABLE, 'proc_type', TEST_PROC[0], selected_col='status')[0][0]
     assert value == TEST_STATUS[0]
 
 
 def test_update_db_error(mgmt_db):
     update_mgmt_db.update_error(mgmt_db, TEST_PROC[1], run_name=TEST_RUN_NAME, error="test_err")
-    value = get_rows(mgmt_db, 'error', 'task_id', TEST_PROC[0])[0][-1]
+    value = get_rows(mgmt_db, 'error', 'task_id', TEST_PROC[0], selected_col='error')[0][0]
     assert value == 'test_err'
 
 
 def test_update_task_time(mgmt_db):
     update_mgmt_db.update_task_time(mgmt_db, TEST_RUN_NAME, TEST_PROC[1], TEST_STATUS[1])
-    test_time = get_rows(mgmt_db, 'task_time_log', 'state_id', TEST_PROC[0])[0][-1]
-    bench_time = get_rows(mgmt_db, 'state', 'proc_type', TEST_PROC[0])[0][-1]
+    test_time = get_rows(mgmt_db, 'task_time_log', 'state_id', TEST_PROC[0], selected_col='time')[0][0]
+    bench_time = get_rows(mgmt_db, 'state', 'proc_type', TEST_PROC[0], selected_col='last_modified')[0][0]
     assert test_time == bench_time
 
+
+def test_force_update_db(mgmt_db):
+    update_mgmt_db.force_update_db(mgmt_db, TEST_PROC[1], FORCE_STATUS[1], run_name=TEST_RUN_NAME, retry=True, reset_retries=True, error='another error')
+    value = get_rows(mgmt_db, 'state', 'proc_type', TEST_PROC[0], selected_col='status')[0][0]
+    rows = get_rows(mgmt_db, 'error', 'task_id', TEST_PROC[0], selected_col='error')
+    errors = []
+    for row in rows:
+        for err in row:
+            errors.append(err)
+    assert value == FORCE_STATUS[0]
+    assert errors == EXPECTED_ERROS
+
+
+def teardown_module(module):
+    shutil.rmtree(TEST_DB_DIR)
