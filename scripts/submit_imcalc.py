@@ -25,6 +25,7 @@ import im_calc_checkpoint as checkpoint
 from qcore import utils, shared
 from estimation.estimate_wct import get_IM_comp_count, est_IM_chours_single
 from shared_workflow.shared import exe, submit_sl_script, update_db_cmd, set_wct
+from shared_workflow.load_config import load
 
 timestamp_format = "%Y%m%d_%H%M%S"
 timestamp = datetime.now().strftime(timestamp_format)
@@ -94,7 +95,7 @@ def write_sl(name_context_list, submit=False, mgmt_db_loc=None):
 
 
 def get_basename_without_ext(path):
-    return os.path.splitext(os.path.basename(path))[0].replace('rrup_', '')
+    return os.path.splitext(os.path.basename(path))[0].replace("rrup_", "")
 
 
 def get_fault_name(run_name):
@@ -387,6 +388,10 @@ def main():
                 load_vm=False,
             )
 
+            workflow_config = load(
+                os.path.dirname(os.path.realpath(__file__)), "workflow_config.json"
+            )
+
             print("Running wall clock estimation for IM sim")
             est_core_hours, est_run_time = est_IM_chours_single(
                 len(shared.get_stations(params.FD_STATLIST)),
@@ -394,6 +399,7 @@ def main():
                 [args.comp],
                 100 if args.extended_period else 15,
                 args.processes,
+                os.path.join(workflow_config["estimation_models_dir"], "IM"),
             )
             wct = set_wct(est_run_time, args.processes, args.auto)
 

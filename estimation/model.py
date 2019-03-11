@@ -291,7 +291,7 @@ class NNWcEstModel(WCEstModel):
         """Checks that the input data is within the bounds of the data
         used for training of the neural network.
         """
-        return (X > self._train_max) | (X < self._train_min)
+        return np.any((X > self._train_max) | (X < self._train_min))
 
     def save_model(self, output_file: str):
         """Saves the model in a hdf5 file"""
@@ -475,7 +475,7 @@ class CombinedModel:
     however if the input data is "out of bounds", a SVR is used for
     extrapolation."""
 
-    def __init__(self, nn_model: str, svr_model: str):
+    def __init__(self, nn_model: NNWcEstModel, svr_model: SVRModel):
         """Loads the saved NN and SVR model
 
         Parameters
@@ -485,8 +485,8 @@ class CombinedModel:
         svr_model: SVRModel
             SVR model to use.
         """
-        self.nn_model = NNWcEstModel.from_saved_model(nn_model)
-        self.svr_model = SVRModel.from_saved_model(svr_model)
+        self.nn_model = nn_model
+        self.svr_model = svr_model
 
     def predict(self, X: np.ndarray, n_cores: np.ndarray, default_n_cores: int):
         """Attempt to use the NN model for estimation, however if input data
