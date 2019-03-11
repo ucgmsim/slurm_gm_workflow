@@ -9,7 +9,13 @@ from qcore import utils, shared
 from qcore.config import host
 from typing import Dict
 from estimation.estimate_wct import est_IM_chours_single
-from shared_workflow.shared import submit_sl_script, set_wct, confirm, resolve_header
+from shared_workflow.shared import (
+    submit_sl_script,
+    set_wct,
+    confirm,
+    resolve_header,
+    generate_context,
+)
 
 
 class SlHdrOptConsts(Enum):
@@ -86,19 +92,20 @@ def submit_im_calc_slurm(sim_dir: str, options_dict: Dict = None):
     with open("sim_im_calc.sl.template", "r") as f:
         template = f.read()
 
-    replace_t = [
-            ("{{component}}", options_dict[SlBodyOptConsts.component.value]),
-            ("{{sim_dir}}", sim_dir),
-        ("{{sim_name}}", sim_name),
-        ("{{fault_name}}", fault_name),
-        ("{{np}}", options_dict[SlBodyOptConsts.n_procs.value]),
-        ("{{extended}}", "-e" if options_dict[SlBodyOptConsts.extended.value] else ""),
-        ("{{simple}}", "-s" if options_dict[SlBodyOptConsts.simple_out.value] else ""),
-        ("{{mgmt_db_location}}", params.mgmt_db_location)
-    ]
-
-    for pattern, value in replace_t:
-        template = template.replace(pattern, str(value))
+    extended = "-e" if options_dict[SlBodyOptConsts.extended.value] else ""
+    simple = "-s" if options_dict[SlBodyOptConsts.simple_out.value] else ""
+    template = generate_context(
+        sim_dir,
+        "sim_im_calc.sl.template",
+        component=options_dict[SlBodyOptConsts.component.value],
+        sim_dir=sim_dir,
+        sim_name=sim_name,
+        fault_name=fault_name,
+        np=options_dict[SlBodyOptConsts.n_procs.value],
+        extended=extended,
+        simple=simple,
+        mgmt_db_location=params.mgmt_db_location,
+    )
 
     # slurm header
     header = resolve_header(
@@ -111,7 +118,7 @@ def submit_im_calc_slurm(sim_dir: str, options_dict: Dict = None):
         const.timestamp,
         job_description=options_dict[SlHdrOptConsts.description.value],
         additional_lines=options_dict[SlHdrOptConsts.additional.value],
-        target_host=options_dict["machine"]
+        target_host=options_dict["machine"],
     )
 
     script = os.path.join(sim_dir, const.IM_SIM_SL_SCRIPT_NAME.format(const.timestamp))

@@ -18,7 +18,7 @@ from dash.dependencies import Input, Output
 
 import qcore.constants as const
 
-EXTERNAL_STYLESHEETS = ["https://codepen.io/chriddyp/pen/bWLwgP.css"]
+EXTERNAL_STYLESHEETS = ["https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"]
 
 parser = argparse.ArgumentParser()
 parser.add_argument("db_file", type=str, help="Path to the database file")

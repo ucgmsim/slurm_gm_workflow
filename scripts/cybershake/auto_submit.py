@@ -223,6 +223,7 @@ def main():
         help="a path to a config file that constains all the required values.",
     )
     parser.add_argument("--no_im", action="store_true")
+    parser.add_argument("--no_merge_ts", action="store_true")
     parser.add_argument("--user", type=str, default=None)
 
     args = parser.parse_args()
@@ -277,7 +278,8 @@ def main():
     ntask_to_run = n_runs_max - len(user_queued_tasks)
 
     runnable_tasks = slurm_query_status.get_runnable_tasks(db, ntask_to_run)
-
+    print("runnable task:")
+    print(runnable_tasks)
     submit_task_count = 0
     task_num = 0
     print(submit_task_count)
@@ -296,7 +298,10 @@ def main():
         if args.no_im and proc_type == 6:
             task_num = task_num + 1
             continue
-
+        if args.no_merge_ts and proc_type == 2:
+            update_mgmt_db.update_db(db, "merge_ts", "completed", run_name=run_name) 
+            task_num = task_num +1
+            continue
         vm_name = run_name.split("_")[0]
 
         if args.single_sim:

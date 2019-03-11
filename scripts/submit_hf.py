@@ -8,9 +8,17 @@ import estimation.estimate_wct as est
 import qcore.constants as const
 from qcore import utils, shared, srf, binary_version
 from qcore.config import get_machine_config, host
-from shared_workflow.shared import confirm, set_wct, submit_sl_script, resolve_header
+from shared_workflow.shared import (
+    confirm,
+    set_wct,
+    submit_sl_script,
+    resolve_header,
+    generate_context,
+)
 
 # default values
+# Scale the number of nodes to be used for the simulation component
+SCALE_NCORES = True
 default_wct = "00:30:00"
 
 
@@ -30,8 +38,6 @@ def write_sl_script(
     machine=host,
 ):
     """Populates the template and writes the resulting slurm script to file"""
-    with open("%s.sl.template" % sl_template_prefix, "r") as f:
-        template = f.read()
 
     target_qconfig = get_machine_config(machine)
 
@@ -55,10 +61,10 @@ def write_sl_script(
                 params.hf.hf_version, target_qconfig["tools_dir"]
             ),
         ]
-        additional_args = ['hf_path_dur']
+        additional_args = ["hf_path_dur"]
         for key in additional_args:
             if key in params.hf:
-                arguments_for_hf.append("--"+key)
+                arguments_for_hf.append("--" + key)
                 arguments_for_hf.append(str(params.hf[key]))
         hf_submit_command += " ".join(list(map(str, arguments_for_hf)))
     else:
@@ -70,18 +76,18 @@ def write_sl_script(
     if seed is not None:
         hf_submit_command = "{} --seed {}".format(hf_submit_command, seed)
 
-    # Replace template values
-    replace_t = [
-        ("{{hf_sim_dir}}", hf_sim_dir),
-        ("{{mgmt_db_location}}", params.mgmt_db_location),
-        ("{{hf_submit_command}}", hf_submit_command),
-        ("{{sim_dir}}", sim_dir),
-        ("{{srf_name}}", stoch_name),
-        ("{{test_hf_script}}", "test_hf_binary.sh" if binary else "test_hf_ascii.sh"),
-    ]
+    test_hf_script = "test_hf_binary.sh" if binary else "test_hf_ascii.sh"
 
-    for pattern, value in replace_t:
-        template = template.replace(pattern, value)
+    template = generate_context(
+        sim_dir,
+        "%s.sl.template" % sl_template_prefix,
+        hf_sim_dir=hf_sim_dir,
+        mgmt_db_location=params.mgmt_db_location,
+        hf_submit_command=hf_submit_command,
+        sim_dir=sim_dir,
+        srf_name=stoch_name,
+        test_hf_script=test_hf_script,
+    )
 
     variation = stoch_name.replace("/", "__")
     print(variation)
@@ -180,10 +186,10 @@ def main(args):
             )
             wct = default_wct
         else:
-            est_core_hours, est_run_time = est.est_HF_chours_single(
-                fd_count, nsub_stoch, nt, ncore
+            est_core_hours, est_run_time, est_cores = est.est_HF_chours_single(
+                fd_count, nsub_stoch, nt, ncore, scale_ncores=SCALE_NCORES
             )
-            wct = set_wct(est_run_time, ncore, args.auto)
+            wct = set_wct(est_run_time, est_cores, args.auto)
 
         hf_sim_dir = os.path.join(params.sim_dir, "HF")
 
@@ -195,7 +201,7 @@ def main(args):
             sl_template_prefix=ll_name_prefix,
             hf_option=hf_option,
             params=params,
-            nb_cpus=ncore,
+            nb_cpus=est_cores,
             wct=wct,
             account=args.account,
             binary=not args.ascii,
