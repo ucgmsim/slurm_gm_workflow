@@ -14,7 +14,8 @@ if [[ `hostname` =~ 'mahuika' ]] || [[ $HOSTNAME =~ 'wb' ]];then
     #gmt
     export PATH=/nesi/project/nesi00213/opt/mahuika/gmt/5.4.4/bin:$PATH
     export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/nesi/project/nesi00213/opt/mahuika/gmt/5.4.4/lib64
-elif [[ `hostname` =~ 'maui' ]] || [[ $HOSTNAME =~ 'ni' ]];then 
+
+elif [[ `hostname` =~ 'maui' ]] || [[ $HOSTNAME =~ 'ni' ]];then
     module load cray-python/2.7.15.1
     #python libs
     export PYTHONPATH=/nesi/project/nesi00213/opt/maui/python-packages/lib/python2.7/site-packages:$PYTHONPATH

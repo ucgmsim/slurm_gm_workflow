@@ -168,7 +168,7 @@ def get_partition(machine, core_hours=None):
         partition = "nesi_research"
     elif machine == const.HPC.mahuika.value:
         if core_hours and core_hours < 6:
-            partition = "prepost"
+            partition = "large"
         else:
             partition = "large"
     else:
@@ -493,10 +493,10 @@ def submit_sl_script(
 ):
     """Submits the slurm script and updates the management db"""
     if submit_yes:
-        print("Submitting %s" % script)
+        print("Submitting {} on machine {}".format(script, target_machine))
         if target_machine and target_machine != host:
             res = exe(
-                "sbatch --export=NONE -M {} {}".format(target_machine, script),
+                "sbatch --export=CUR_ENV,CUR_HPC -M {} {}".format(target_machine, script),
                 debug=False,
             )
         else:
@@ -720,4 +720,3 @@ def get_hf_run_name(v_mod_1d_name, srf, root_dict, hf_version):
     #    yes = confirm_name(hf_run_name)
     yes = True
     return yes, hf_run_name
-
