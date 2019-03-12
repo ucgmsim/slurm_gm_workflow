@@ -26,3 +26,13 @@ def test_user_select(set_up):
             bench_output = get_bench_output(root_path, func_name)
             assert test_output == bench_output
 
+
+def test_get_partition():
+    assert shared.get_partition('maui') == "nesi_research"
+    assert shared.get_partition('mahuika') == "large"
+
+
+def test_convert_time_to_hours():
+    assert shared.convert_time_to_hours("00:10:00") == 10/60.0
+    assert shared.convert_time_to_hours("01:00:00") == 1
+
