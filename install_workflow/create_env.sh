@@ -45,6 +45,12 @@ git clone git@github.com:ucgmsim/qcore.git
 echo "Cloning IM_calculation"
 git clone git@github.com:ucgmsim/IM_calculation.git
 
+echo "Cloning Pre-processing"
+git clone git@github.com:ucgmsim/Pre-processing.git
+
+echo "Cloning Empirical Engine"
+git clone git@github.com:ucgmsim/Empirical_Engine.git
+
 # Run setup for IM_calculation
 echo "Running setup for IM_calculation"
 cd IM_calculation
