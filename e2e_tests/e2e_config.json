@@ -1,0 +1,7 @@
+{
+  "stage_dir": "/home/cbs51/int_test",
+  "data_dir": "/home/cbs51/data/sim_runs/cybershake_test/version/Data",
+  "cybershake_config": "/home/cbs51/data/sim_runs/cybershake_test/version/cybershake_config.json",
+  "fault_list": "/home/cbs51/data/sim_runs/cybershake_test/version/list.txt",
+
+}
