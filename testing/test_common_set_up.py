@@ -41,5 +41,5 @@ def get_bench_output(root_path, func_name):
 @pytest.yield_fixture(scope="session", autouse=True)
 def set_up(request):
     data_locations = utils.test_set_up(REALISATIONS)
-    yield zip(data_locations, [rel[0] for rel in REALISATIONS])
+    yield list(zip(data_locations, [rel[0] for rel in REALISATIONS]))
     utils.test_tear_down(data_locations)
