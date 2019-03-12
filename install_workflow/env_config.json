@@ -1,7 +1,4 @@
 {
   "base_environments_path": "/nesi/project/nesi00213/Environments",
-  "clean_workflow": "/home/cbs51/tmp/slurm_gm_workflow",
-  "clean_python3_virtualenv_maui": "/nesi/project/nesi00213/share/virt_envs/python3_maui",
-  "clean_python3_virtualenv_mahuika": "/nesi/project/nesi00213/share/virt_envs/python3_mahuika",
   "estimation_model_src": "/nesi/project/nesi00213/workflow/estimation/models"
 }
