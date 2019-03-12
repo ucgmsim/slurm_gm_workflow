@@ -168,9 +168,11 @@ def submit_task(
 
     if do_verification:
         if proc_type == const.ProcessType.rrup.value:
-            runs_rel_path = os.path.join(mgmt_db_location, "Runs", fault, run_name)
-            cmd = (
-                "sbatch $gmsim/workflow/scripts/calc_rrups_single.sl {} {}".format(runs_rel_path, mgmt_db_location)
+            realisation_directory = os.path.join(
+                mgmt_db_location, "Runs", fault, run_name
+            )
+            cmd = "sbatch $gmsim/workflow/scripts/calc_rrups_single.sl {} {}".format(
+                realisation_directory, mgmt_db_location
             )
             print(cmd)
             call(cmd, shell=True)
@@ -295,8 +297,8 @@ def main():
             task_num = task_num + 1
             continue
         if args.no_merge_ts and proc_type == 2:
-            update_mgmt_db.update_db(db, "merge_ts", "completed", run_name=run_name) 
-            task_num = task_num +1
+            update_mgmt_db.update_db(db, "merge_ts", "completed", run_name=run_name)
+            task_num = task_num + 1
             continue
         vm_name = run_name.split("_")[0]
 
