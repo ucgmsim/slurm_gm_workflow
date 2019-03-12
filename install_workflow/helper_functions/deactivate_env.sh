@@ -8,6 +8,7 @@ export PYTHONPATH=''
 
 # Remove environment
 export CUR_ENV=''
+export CUR_HPC=''
 
 deactivate
 source ~/.bashrc

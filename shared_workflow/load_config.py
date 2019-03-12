@@ -22,8 +22,7 @@ def load(
 
 
 def check_cfg_params_path(config_dict, *excludes):
-    """Checks that all of the values in the config dict are valid files.
-    """
+    """Checks that all of the values in the config dict are valid files."""
     for param in config_dict.keys():
         if (
             param not in excludes
@@ -35,4 +34,3 @@ def check_cfg_params_path(config_dict, *excludes):
                     config_dict[param], param
                 )
             )
-
