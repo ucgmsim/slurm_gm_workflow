@@ -3,6 +3,7 @@ import sqlite3
 
 
 def connect_db(path):
+    print("path",path)
     db_location = os.path.abspath(os.path.join(path, 'slurm_mgmt.db'))
     conn = sqlite3.connect(db_location)
     db = conn.cursor()
@@ -11,6 +12,7 @@ def connect_db(path):
     db.execute("PRAGMA integrity_check")
 
     return db
+
 
 class Task:
 

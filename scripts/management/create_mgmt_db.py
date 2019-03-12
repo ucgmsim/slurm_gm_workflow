@@ -14,6 +14,7 @@ def initilize_db(path):
     db = connect_db(path)
     sql_template_file = os.path.join(
         os.path.dirname(os.path.realpath(__file__)), 'slurm_mgmt.db.sql')
+    print("sql_template_file",sql_template_file)
     initilize_query = open(sql_template_file).read()
     db.executescript(initilize_query)
     db.connection.commit()
@@ -35,16 +36,17 @@ def create_mgmt_db(realisations, f, srf_files=[]):
 
     if len(realisations) == 0:
         print("No realisations found - no entries inserted into db")
-
+    print("f", f)
     db = initilize_db(f)    
     procs_to_be_done = get_procs(db)
-
+    print("procs_to_be_done", procs_to_be_done)
     for run_name in realisations:
         for proc in procs_to_be_done:
             insert_task(db, run_name, proc[0])
 
     db.connection.commit()
     return db
+
 
 def insert_task(db, run_name, proc):
     db.execute('''INSERT OR IGNORE INTO
