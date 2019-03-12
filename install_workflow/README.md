@@ -3,7 +3,7 @@
 Requirements: Setup github SSH keys for maui, 
 [guide](https://help.github.com/en/articles/connecting-to-github-with-ssh) for how to do this. 
 
-A user specific environment of workflow, qcore, and IMCalc can be created as follows:  
+A user specific environment of workflow, qcore, IMCalc, Empirical Engine and Pre-processing can be created as follows:  
 1) Go to an existing workflow repository or clone a new one
 2) Navigate to ".../slurm_gm_workflow/install_workflow" 
 3) Run 
