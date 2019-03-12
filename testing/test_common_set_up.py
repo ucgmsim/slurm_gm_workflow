@@ -14,6 +14,10 @@ REALISATIONS = [
 ]
 
 
+def get_fault_from_rel(realisation):
+    return realisation.split('_')[0]
+
+
 def get_input_params(root_path, func_name, params):
     input_params = []
     for param in params:
@@ -36,4 +40,6 @@ def get_bench_output(root_path, func_name):
 
 @pytest.yield_fixture(scope="session", autouse=True)
 def set_up(request):
-    return utils.test_set_up(REALISATIONS)
+    data_locations = utils.test_set_up(REALISATIONS)
+    yield zip(data_locations, [rel[0] for rel in REALISATIONS])
+    utils.test_tear_down(data_locations)
