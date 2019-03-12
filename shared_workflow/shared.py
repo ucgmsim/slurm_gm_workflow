@@ -493,10 +493,10 @@ def submit_sl_script(
 ):
     """Submits the slurm script and updates the management db"""
     if submit_yes:
-        print("Submitting %s" % script)
+        print("Submitting {} on machine {}".format(script, target_machine))
         if target_machine and target_machine != host:
             res = exe(
-                "sbatch --export=CUR_ENV,CUR_HPC  -M {} {}".format(target_machine, script),
+                "sbatch --export=CUR_ENV,CUR_HPC -M {} {}".format(target_machine, script),
                 debug=False,
             )
         else:
