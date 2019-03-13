@@ -1,12 +1,18 @@
 import inspect
 
 from shared_workflow import shared
-from testing.test_common_set_up import INPUT, OUTPUT, set_up, get_input_params, get_bench_output
+from testing.test_common_set_up import (
+    INPUT,
+    OUTPUT,
+    set_up,
+    get_input_params,
+    get_bench_output,
+)
 
 
 # test for install_simualtion inside install_cybershake_fault.py
 def test_get_stations(set_up):
-    func_name = 'get_stations'
+    func_name = "get_stations"
     params = inspect.getfullargspec(shared.get_stations).args
     for content in set_up:
         for root_path in content:
@@ -17,7 +23,7 @@ def test_get_stations(set_up):
 
 
 def test_user_select(set_up):
-    func_name = 'user_select'
+    func_name = "user_select"
     params = inspect.getfullargspec(shared.get_stations).args
     for content in set_up:
         for root_path in content:
@@ -28,11 +34,10 @@ def test_user_select(set_up):
 
 
 def test_get_partition():
-    assert shared.get_partition('maui') == "nesi_research"
-    assert shared.get_partition('mahuika') == "large"
+    assert shared.get_partition("maui") == "nesi_research"
+    assert shared.get_partition("mahuika") == "large"
 
 
 def test_convert_time_to_hours():
-    assert shared.convert_time_to_hours("00:10:00") == 10/60.0
+    assert shared.convert_time_to_hours("00:10:00") == 10 / 60.0
     assert shared.convert_time_to_hours("01:00:00") == 1
-
