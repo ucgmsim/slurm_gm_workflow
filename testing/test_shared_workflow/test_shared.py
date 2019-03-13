@@ -21,11 +21,12 @@ def test_get_stations(set_up):
         assert test_output == bench_output
 
 
-def test_user_select(set_up):
+def test_user_select(set_up, mocker):
     func_name = "user_select"
-    params = inspect.getfullargspec(shared.get_stations).args
+    params = inspect.getfullargspec(shared.user_select).args
     for root_path, realisation in set_up:
         input_params = get_input_params(root_path, func_name, params)
+        mocker.patch('shared_workflow.shared.input', lambda x: "2")
         test_output = shared.user_select(*input_params)
         bench_output = get_bench_output(root_path, func_name)
         assert test_output == bench_output
