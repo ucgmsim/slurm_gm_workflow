@@ -26,6 +26,6 @@ def test_create_run_params(set_up, mocker):
         inputs = get_input_params(root_path, func_name, params)
         set_runparams.create_run_params(*inputs)
         output_file = os.path.join(root_path, "CSRoot", "Runs", fault, realisation, 'LF', generated_file_name)
-        benchmark_file = os.path.join(root_path, OUTPUT, "{}_{}".format(func_name, generated_file_name))
+        benchmark_file = os.path.join(root_path, OUTPUT, "{}".format(generated_file_name))
 
         assert filecmp.cmp(output_file, benchmark_file)
