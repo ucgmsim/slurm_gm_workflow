@@ -4,6 +4,7 @@ import pickle
 import filecmp
 
 from qcore.utils import load_sim_params as mocked_load_sim_params
+from shared_workflow.shared import write_to_py as mocked_write_to_py
 
 from scripts import set_runparams
 from testing.test_common_set_up import (
@@ -25,7 +26,24 @@ def test_create_run_params(set_up, mocker):
         get_mocked_sim_params = lambda x: mocked_load_sim_params(
             os.path.join(root_path, "CSRoot", "Runs", fault, realisation, x)
         )
-        mocker.patch("scripts.submit_hf.utils.load_sim_params", get_mocked_sim_params)
+        mocker.patch(
+            "scripts.set_runparams.utils.load_sim_params", get_mocked_sim_params
+        )
+        mocker.patch(
+            "scripts.set_runparams.shared.write_to_py",
+            lambda x, y: mocked_write_to_py(
+                os.path.join(
+                    root_path,
+                    "CSRoot",
+                    "Runs",
+                    fault,
+                    realisation,
+                    "LF",
+                    generated_file_name,
+                ),
+                y,
+            ),
+        )
 
         inputs = get_input_params(root_path, func_name, params)
         set_runparams.create_run_params(*inputs)
