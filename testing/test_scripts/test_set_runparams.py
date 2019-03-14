@@ -4,6 +4,7 @@ import pickle
 import filecmp
 
 from qcore.utils import load_sim_params as mocked_load_sim_params
+from qcore.utils import load_yaml as mocked_load_yaml
 from shared_workflow.shared import write_to_py as mocked_write_to_py
 
 from scripts import set_runparams
@@ -43,6 +44,22 @@ def test_create_run_params(set_up, mocker):
                 ),
                 y,
             ),
+        )
+        mocker.patch(
+            "scripts.set_runparams.utils.load_yaml",
+            lambda x: mocked_load_yaml(
+                os.path.join(
+                    os.path.dirname(os.path.realpath(__file__)),
+                    "..",
+                    "..",
+                    "templates",
+                    "gmsim",
+                    "16.1",
+                    "emod3d_defaults.yaml",
+                )
+            )
+            if "emod3d_defaults.yaml" in x
+            else mocked_load_yaml(x),
         )
 
         inputs = get_input_params(root_path, func_name, params)

@@ -7,6 +7,8 @@ from qcore.config import host
 from qcore.utils import load_sim_params as mocked_load_sim_params
 from shared_workflow.shared import set_wct as mocked_set_wct
 from shared_workflow.shared import resolve_header as mocked_resolve_header
+from estimation.estimate_wct import est_HF_chours_single as mocked_est_HF_chours_single
+from qcore.utils import load_yaml as mocked_load_yaml
 
 from testing.test_common_set_up import (
     INPUT,
@@ -75,6 +77,15 @@ def test_main(set_up, mocker):
             get_mocked_resolve_header(root_path, fault, realisation),
         )
 
+        mocker.patch(
+            "scripts.submit_hf.est.est_HF_chours_single",
+            lambda *args, **kwargs:
+            mocked_est_HF_chours_single(*args, *kwargs,
+                                        model_dir=os.path.join(root_path, 'AdditionalData', 'models', 'HF'))
+        )
+
+
+
         scripts.submit_hf.main(args)
 
 
@@ -92,5 +103,8 @@ def test_write_sl_script(set_up, mocker):
         )
 
         input_params = get_input_params(root_path, func_name, params)
+        for i in range(len(input_params)):
+            if isinstance(input_params[i], str) and input_params[i].startswith('CSRoot'):
+                input_params[i] = os.path.join(root_path, input_params[i])
         script_location = scripts.submit_hf.write_sl_script(*input_params)
         os.remove(script_location)
