@@ -11,7 +11,8 @@ if [[ `hostname` =~ 'mahuika' ]] || [[ $HOSTNAME =~ 'wb' ]];then
     #gmt
     export PATH=/nesi/project/nesi00213/opt/mahuika/gmt/5.4.4/bin:$PATH
     export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/nesi/project/nesi00213/opt/mahuika/gmt/5.4.4/lib64
-elif [[ `hostname` =~ 'maui' ]] || [[ $HOSTNAME =~ 'ni' ]];then 
+
+elif [[ `hostname` =~ 'maui' ]] || [[ $HOSTNAME =~ 'ni' ]];then
     load_python3_maui
     #python libs
     export PATH=/nesi/project/nesi00213/opt/maui/python-packages/bin:$PATH

@@ -44,7 +44,7 @@ def print_run_status(db, run_name, error=False):
         )
         print("_" * (25 + 15 + 10 + 20 + 8 + 7 + 3 * 4))
         for statum in status:
-            print("{:>25} | {:>15} | {:>10} | {:>8} | {:>7} | {:>20}".format(*statum))
+            print("{:>25} | {:>15} | {:>10} | {!s:>8} | {:>7} | {:>20}".format(*statum))
 
 
 def main():

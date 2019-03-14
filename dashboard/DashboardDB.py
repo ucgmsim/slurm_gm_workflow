@@ -1,23 +1,47 @@
 import os
-import shutil
-import unittest
 import sqlite3 as sql
 from collections import namedtuple
+from enum import Enum
+
 from typing import Iterable, Union
-from datetime import datetime, date, timedelta
+from datetime import datetime, date
 from contextlib import contextmanager
+
 
 import qcore.constants as const
 
 SQueueEntry = namedtuple(
     "SQueue",
-    ["job_id", "username", "status", "name", "run_time", "est_run_time", "nodes", "cores"],
+    [
+        "job_id",
+        "username",
+        "status",
+        "name",
+        "run_time",
+        "est_run_time",
+        "nodes",
+        "cores",
+    ],
 )
+
+StatusEntry = namedtuple(
+    "StatusEntry", ["id", "name", "int_value_1", "int_value_2", "update_time"]
+)
+
+
+class HPCProperty(Enum):
+    node_capacity = 1, "node_capacity"
+
+    def __new__(cls, value, str_value):
+        obj = object.__new__(cls)
+        obj._value_ = value
+        obj.str_value = str_value
+        return obj
 
 
 class DashboardDB:
 
-    date_format = "%d-%m-%Y"
+    date_format = "%Y-%m-%d"
 
     def __init__(self, db_file: str):
         """Opens an existing dashboard database file."""
@@ -57,7 +81,10 @@ class DashboardDB:
         day = day.strftime(self.date_format) if type(day) is date else day
         with self.get_cursor(self.db_file) as cursor:
             row = cursor.execute(
-                "SELECT CORE_HOURS_USED, TOTAL_CORE_HOURS FROM {} WHERE DAY == ?;".format(table), (day,)
+                "SELECT CORE_HOURS_USED, TOTAL_CORE_HOURS FROM {} WHERE DAY == ?;".format(
+                    table
+                ),
+                (day,),
             ).fetchone()
 
             # New day
@@ -68,28 +95,38 @@ class DashboardDB:
                     (day, 0, total_core_usage, update_time),
                 )
             else:
-                chours_usage =  total_core_usage - row[1] if row[1] is not None else 0
+                chours_usage = total_core_usage - row[1] if row[1] is not None else 0
                 if row[0] is not None:
                     chours_usage = row[0] + chours_usage
 
                 cursor.execute(
                     "UPDATE {} SET CORE_HOURS_USED = ?, TOTAL_CORE_HOURS = ?, \
-                    UPDATE_TIME = ? WHERE DAY == ?;".format(table),
+                    UPDATE_TIME = ? WHERE DAY == ?;".format(
+                        table
+                    ),
                     (chours_usage, total_core_usage, update_time, day),
                 )
 
-    def get_daily_chours_usage(self, day: Union[date, str], hpc: const.HPC):
-        """Gets the usage and total usage for the specified day"""
-        day = day.strftime(self.date_format) if type(day) is date else day
+    def get_chours_usage(
+        self, start_date: Union[date, str], end_date: Union[date, str], hpc: const.HPC
+    ):
+        """Gets the usage and total usage for the date range"""
+        start_date = (
+            start_date.strftime(self.date_format)
+            if type(start_date) is date
+            else start_date
+        )
+        end_date = (
+            end_date.strftime(self.date_format) if type(end_date) is date else end_date
+        )
         with self.get_cursor(self.db_file) as cursor:
-            result = cursor.execute(
-                "SELECT CORE_HOURS_USED, TOTAL_CORE_HOURS FROM {} WHERE DAY == ?".format(
-                    self.get_daily_t_name(hpc)
-                ),
-                (day,),
-            ).fetchone()
+            results = cursor.execute(
+                "SELECT DAY, CORE_HOURS_USED, TOTAL_CORE_HOURS FROM {} "
+                "WHERE DAY BETWEEN ? AND ?".format(self.get_daily_t_name(hpc)),
+                (start_date, end_date),
+            ).fetchall()
 
-        return result
+        return results
 
     def update_squeue(self, squeue_entries: Iterable[SQueueEntry], hpc: const.HPC):
         """Updates the squeue table with the latest queue status"""
@@ -116,9 +153,50 @@ class DashboardDB:
                         entry.cores,
                     ),
                 )
-            cursor.connection.commit()
 
-    def get_sqeue_entries(self, hpc: const.HPC):
+    def get_status_entry(self, hpc: const.HPC, id: int):
+        """Gets the status entries for the specified HPC
+        Note: Only Maui is currently supported
+        """
+        if hpc != const.HPC.maui:
+            return None
+
+        with self.get_cursor(self.db_file) as cursor:
+            result = cursor.execute(
+                "SELECT * FROM MAUI_CUR_STATUS WHERE ID = ?;", (id,)
+            ).fetchone()
+
+        return StatusEntry(*result)
+
+    def update_status_entry(self, hpc: const.HPC, entry: StatusEntry):
+        if hpc != const.HPC.maui:
+            return None
+
+        # Check if the entry exists
+        with self.get_cursor(self.db_file) as cursor:
+            result = cursor.execute(
+                "SELECT * FROM MAUI_CUR_STATUS WHERE ID = ?", (entry.id,)
+            ).fetchone()
+
+            if result:
+                cursor.execute(
+                    "UPDATE MAUI_CUR_STATUS SET "
+                    "INT_VALUE_1 = ?, INT_VALUE_2 = ?, UPDATE_TIME = ? WHERE ID == ?;",
+                    (entry.int_value_1, entry.int_value_2, datetime.now(), entry.id),
+                )
+            else:
+                cursor.execute(
+                    "INSERT INTO MAUI_CUR_STATUS VALUES (?, ?, ?, ?, ?)",
+                    (
+                        entry.id,
+                        entry.name,
+                        entry.int_value_1,
+                        entry.int_value_2,
+                        datetime.now(),
+                    ),
+                )
+
+    def get_squeue_entries(self, hpc: const.HPC):
         """Gets all squeue entries"""
         with self.get_cursor(self.db_file) as cursor:
             results = cursor.execute(
@@ -179,6 +257,17 @@ class DashboardDB:
                     )
                 )
 
+            # Maui current status
+            cursor.execute(
+                """CREATE TABLE IF NOT EXISTS MAUI_CUR_STATUS(
+                    ID INT PRIMARY KEY NOT NULL, 
+                    NAME TEXT NOT NULL, 
+                    INT_VALUE_1 INT NULL, 
+                    INT_VALUE_2 INT NULL,
+                    UPDATE_TIME DATE NOT NULL)
+                """
+            )
+
         return dashboard_db
 
     @staticmethod
@@ -195,144 +284,4 @@ class DashboardDB:
         finally:
             conn.close()
 
-######################### Tests #########################
 
-
-class TestDashboardDB(unittest.TestCase):
-
-    test_dir = "./tests"
-    test_db = os.path.join(test_dir, "test.db")
-
-    squeue_entry_1 = SQueueEntry(12, "testUser", "R", "testName_1", "1:20", "16:20", 1, 80)
-    squeue_entry_2 = SQueueEntry(13, "testUser", "R", "testName_2", "11:20", "16:16:20", 1, 80)
-    squeue_entry_3 = SQueueEntry(14, "testUser", "R", "testName_3", "14:20", "12:16:20", 1, 80)
-
-    hpc_1 = const.HPC.maui
-    hpc_2 = const.HPC.mahuika
-
-    total_core_usage_1 = 150
-    total_core_usage_2 = 213
-
-    @classmethod
-    def setUpClass(cls):
-        """Createst a test database (only once for all tests), this can be changed to
-        per test if required
-        """
-        os.mkdir(cls.test_dir)
-        DashboardDB.create_db(cls.test_db, [cls.hpc_1, cls.hpc_2])
-
-    def test_squeue_hpc_1(self):
-        """Test updating/populating of squeue table"""
-        self.check_squeue(self.hpc_1)
-
-    def test_squeue_hpc_2(self):
-        """Test updating/populating of squeue table"""
-        self.check_squeue(self.hpc_2)
-
-    def check_squeue(self, hpc: const.HPC):
-        """Tests population of empty squeue table
-        and population of already populated squeue table (i.e. drop & recreate)"""
-        db = DashboardDB(self.test_db)
-
-        # Add entries to empty db
-        initial_entries = [self.squeue_entry_1, self.squeue_entry_2]
-        db.update_squeue(initial_entries, hpc)
-
-        cur_entries = db.get_sqeue_entries(hpc)
-
-        # Check that they were added
-        self.assertTrue(len(cur_entries), len(initial_entries))
-        for entry in initial_entries:
-            self.assertIn(entry, cur_entries)
-
-        # Add entries to non-empty db
-        db.update_squeue([self.squeue_entry_3], hpc)
-
-        # Check that table was dropped, re-created and then new entry added
-        cur_entries = db.get_sqeue_entries(hpc)
-
-        self.assertTrue(len(cur_entries), 1)
-        self.assertEqual(cur_entries[0], self.squeue_entry_3)
-
-    def test_daily_hpc_1(self):
-        """Test inserting to daily table"""
-        self.check_daily(self.hpc_1)
-
-    def test_daily_hpc_2(self):
-        """Test inserting to daily table"""
-        self.check_daily(self.hpc_2)
-
-    def check_daily(self, hpc):
-        """Insert into daily for first time
-                - check daily usage is null
-            Insert 2nd time
-                - check daily usage updates
-
-            Add entry for different day,
-            make sure this creates a new entry
-        """
-        db = DashboardDB(self.test_db)
-
-        # Add first entry for the day 1
-        day_1 = date.today().strftime(DashboardDB.date_format)
-        db.update_daily_chours_usage(self.total_core_usage_1, hpc, day_1)
-
-        # Check the entry has been added & daily usage is zero
-        daily_usage, total_core_hours = db.get_daily_chours_usage(day_1, hpc)
-        self.assertEqual(daily_usage, 0)
-        self.assertEqual(total_core_hours, self.total_core_usage_1)
-
-        # Add 2nd entry for day 1
-        db.update_daily_chours_usage(self.total_core_usage_2, hpc, day_1)
-
-        # Add entry for different day
-        day_2 = (date.today() + timedelta(days=1)).strftime(DashboardDB.date_format)
-        db.update_daily_chours_usage(self.total_core_usage_2, hpc, day_2)
-
-        # Check that entry for day 1 has been updated correctly
-        daily_usage, total_core_hours = db.get_daily_chours_usage(day_1, hpc)
-        self.assertEqual(daily_usage, self.total_core_usage_2 - self.total_core_usage_1)
-        self.assertEqual(total_core_hours, self.total_core_usage_2)
-
-        # Check that new entry has been created for day 2
-        daily_usage, total_core_hours = db.get_daily_chours_usage(day_2, hpc)
-        self.assertEqual(daily_usage, 0)
-        self.assertEqual(total_core_hours, self.total_core_usage_2)
-
-    def test_daily_same_total_chours(self):
-        """Tests that when core hours has a value and multiple update calls are made
-        with the same total_core_hours"""
-        db = DashboardDB(self.test_db)
-
-        # Add first entry for the day 1
-        day_1 = date.today().strftime(DashboardDB.date_format)
-        db.update_daily_chours_usage(self.total_core_usage_1, self.hpc_1, day_1)
-
-        # Check the entry has been added & daily usage is null
-        daily_usage, total_core_hours = db.get_daily_chours_usage(day_1, self.hpc_1)
-        self.assertEqual(daily_usage, 0)
-        self.assertEqual(total_core_hours, self.total_core_usage_1)
-
-        # Add 2nd entry for day 1
-        db.update_daily_chours_usage(self.total_core_usage_2, self.hpc_1, day_1)
-
-        # Check that entry for day 1 has been updated correctly
-        daily_usage, total_core_hours = db.get_daily_chours_usage(day_1, self.hpc_1)
-        self.assertEqual(daily_usage, self.total_core_usage_2 - self.total_core_usage_1)
-        self.assertEqual(total_core_hours, self.total_core_usage_2)
-
-        # Add 2nd entry for day 1 again
-        db.update_daily_chours_usage(self.total_core_usage_2, self.hpc_1, day_1)
-
-        # Check that nothing has changed
-        daily_usage, total_core_hours = db.get_daily_chours_usage(day_1, self.hpc_1)
-        self.assertEqual(daily_usage, self.total_core_usage_2 - self.total_core_usage_1)
-        self.assertEqual(total_core_hours, self.total_core_usage_2)
-
-    @classmethod
-    def tearDownClass(cls):
-        shutil.rmtree(cls.test_dir)
-
-
-if __name__ == "__main__":
-    unittest.main()

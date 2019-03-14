@@ -42,6 +42,11 @@ if is_master:
     arg("--fmin", help="fmin for site amplification", type=float, default=0.2)
     arg("--fmidbot", help="fmidbot for site amplification", type=float, default=0.5)
     arg("--lfvsref", help="Override LF Vs30 reference value (m/s)", type=float)
+    arg(
+        "--no-lf-amp",
+        help="Disable site amplification for LF component",
+        action="store_true",
+    )
 
     try:
         args = parser.parse_args()
@@ -50,6 +55,18 @@ if is_master:
         comm.Abort()
 
 args = comm.bcast(args, root=master)
+if args.no_lf_amp:
+
+    def ampdeamp_lf(series, *x, **y):
+        return series
+
+    def cb_amp_lf(*x, **y):
+        pass
+
+
+else:
+    ampdeamp_lf = ampdeamp
+    cb_amp_lf = cb_amp
 
 # load data stores
 lf = timeseries.LFSeis(args.lf_dir)
@@ -82,14 +99,20 @@ if args.flo is None:
     # min_vs / (5.0 * hh)
     args.flo = 0.5 / (5.0 * lf.hh)
 
-#load vs30ref
+# load vs30ref
 if args.lfvsref is None:
     # vs30ref from velocity model
-    with open('%s/params_vel.json' % (args.lf_vm), 'r') as j:
+    with open("%s/params_vel.json" % (args.lf_vm), "r") as j:
         vm_conf = json.load(j)
-    lfvs30refs = np.memmap('%s/vs3dfile.s' % (args.lf_vm), dtype='<f4',
-                           shape=(vm_conf['ny'], vm_conf['nz'], vm_conf['nx']), mode='r') \
-               [lf.stations.y, 0, lf.stations.x] * 1000.0
+    lfvs30refs = (
+        np.memmap(
+            "%s/vs3dfile.s" % (args.lf_vm),
+            dtype="<f4",
+            shape=(vm_conf["ny"], vm_conf["nz"], vm_conf["nx"]),
+            mode="r",
+        )[lf.stations.y, 0, lf.stations.x]
+        * 1000.0
+    )
 else:
     # fixed vs30ref
     lfvs30refs = np.ones(lf.stations.size, dtype=np.float32) * args.lfvsref
@@ -101,7 +124,7 @@ try:
         dict(
             np.loadtxt(
                 args.vsite_file,
-                dtype=[("name", "|S8"), ("vs30", "f4")],
+                dtype=[("name", "|U8"), ("vs30", "f4")],
                 comments=("#", "%"),
             )
         ).get
@@ -266,14 +289,14 @@ for i, stat in enumerate(stations_todo):
             "highpass",
         )
         lf_acc[:, c] = bwfilter(
-            ampdeamp(
+            ampdeamp_lf(
                 lf_acc[:, c],
-                cb_amp(
+                cb_amp_lf(
                     bb_dt,
                     n2,
                     lfvs30ref,
                     vs30,
-                    lfvs30ref,
+                    stat.vs,
                     pga[c],
                     fmin=fmin,
                     fmidbot=fmidbot,
