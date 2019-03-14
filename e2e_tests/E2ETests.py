@@ -105,7 +105,7 @@ class E2ETests(object):
         sleep_time: int = 10,
         stop_on_error: bool = True,
         stop_on_warning: bool = False,
-        no_clean_up: bool = False
+        no_clean_up: bool = False,
     ):
         """Runs the full automated workflow and checks that everything works as
         expected. Prints out a list of errors, if there are any.
@@ -306,7 +306,7 @@ class E2ETests(object):
             p = exe(cmd, debug=False, non_blocking=True, stdout=out_f, stderr=err_f)
 
         # Monitor mgmt db
-        print("Mgmt DB process: ")
+        print("Mgmt DB progress: ")
         timeout = timeout * 60
         start_time = time.time()
         while time.time() - start_time < timeout:
