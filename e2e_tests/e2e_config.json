@@ -1,7 +1,7 @@
 {
-  "stage_dir": "/home/cbs51/int_test",
-  "data_dir": "/home/cbs51/data/sim_runs/cybershake_test/version/Data",
-  "cybershake_config": "/home/cbs51/data/sim_runs/cybershake_test/version/cybershake_config.json",
-  "fault_list": "/home/cbs51/data/sim_runs/cybershake_test/version/list.txt",
-
+  "test_dir": "/home/cbs51/int_test/tests/",
+  "data_dir": "/home/cbs51/int_test/test_data/Data",
+  "cybershake_config": "/home/cbs51/int_test/test_data/cybershake_config.json",
+  "fault_list": "/home/cbs51/int_test/test_data/list.txt",
+  "bench_dir": "/home/cbs51/int_test/benchmark"
 }
