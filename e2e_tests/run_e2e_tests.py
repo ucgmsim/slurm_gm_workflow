@@ -34,6 +34,12 @@ if __name__ == "__main__":
         default=None,
         help="Stop execution on errors",
     )
+    parser.add_argument(
+        "--no_clean_up",
+        action="store_true",
+        default=None,
+        help="Prevent deletion of the test directory, even when there are no errors.",
+    )
 
     args = parser.parse_args()
 
@@ -43,4 +49,5 @@ if __name__ == "__main__":
         sleep_time=args.sleep_time,
         stop_on_error=args.stop_on_error,
         stop_on_warning=args.stop_on_warning,
+        no_clean_up=args.no_clean_up,
     )

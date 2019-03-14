@@ -1,7 +1,7 @@
 {
-  "test_dir": "/home/cbs51/int_test/tests/",
-  "data_dir": "/home/cbs51/int_test/test_data/Data",
-  "cybershake_config": "/home/cbs51/int_test/test_data/cybershake_config.json",
-  "fault_list": "/home/cbs51/int_test/test_data/list.txt",
-  "bench_dir": "/home/cbs51/int_test/benchmark"
+  "test_dir": "/nesi/nobackup/nesi00213/RunFolder/EndToEndTest/tests/",
+  "data_dir": "/nesi/nobackup/nesi00213/RunFolder/EndToEndTest/test_data/Data",
+  "cybershake_config": "/nesi/nobackup/nesi00213/RunFolder/EndToEndTest/test_data/cybershake_config.json",
+  "fault_list": "/nesi/nobackup/nesi00213/RunFolder/EndToEndTest/test_data/list.txt",
+  "bench_dir": "/nesi/nobackup/nesi00213/RunFolder/EndToEndTest/benchmark"
 }
