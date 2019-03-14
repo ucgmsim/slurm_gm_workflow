@@ -14,7 +14,7 @@ from testing.test_common_set_up import (
 def test_install_simulation(set_up, mocker):
     func_name = "install_simulation"
     params = inspect.getfullargspec(install_shared.install_simulation).args
-    for root_path, realisation in set_up:
+    for root_path, _ in set_up:
         input_params = get_input_params(root_path, func_name, params)
 
         mocker.patch("shared_workflow.install_shared.defaults.workflow_root", "{}/AdditionalData".format(root_path))

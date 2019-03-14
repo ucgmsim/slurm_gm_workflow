@@ -14,7 +14,7 @@ from testing.test_common_set_up import (
 def test_get_stations(set_up):
     func_name = "get_stations"
     params = inspect.getfullargspec(shared.get_stations).args
-    for root_path, realisation in set_up:
+    for root_path, _ in set_up:
         input_params = get_input_params(root_path, func_name, params)
         test_output = shared.get_stations(*input_params)
         bench_output = get_bench_output(root_path, func_name)
