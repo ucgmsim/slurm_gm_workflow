@@ -1,3 +1,4 @@
+"""Contains class and helper functions for end to end test"""
 import os
 import json
 import shutil
@@ -6,7 +7,6 @@ import glob
 from collections import namedtuple
 
 import pandas as pd
-import numpy as np
 import sqlite3 as sql
 from pandas.util.testing import assert_frame_equal
 
