@@ -17,6 +17,13 @@ META_PATTERN = "*imcalc.info"
 
 
 def checkpoint_single(output_dir):
+    """
+    Check for any csv files in the given folder, or stations folder inside.
+    Check for any imcalc.info files.
+    If at least one of each type are present return True, otherwise return False
+    :param output_dir:
+    :return:
+    """
     if os.path.isdir(output_dir):  # if output dir exists
 
         sum_csv = glob.glob1(output_dir, CSV_PATTERN)
@@ -27,6 +34,7 @@ def checkpoint_single(output_dir):
         # if sum_csv and meta are not empty lists('.csv' and '_imcalc.info' files present)
         # then we think im calc on the corresponding dir is completed and hence remove
         return sum_csv != [] and meta != []
+    return False
 
 
 if __name__ == "__main__":
