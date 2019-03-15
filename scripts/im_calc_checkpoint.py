@@ -33,16 +33,16 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
     parser.add_argument("run_dir", type=str, help="the path to where Runs located")
-    parser.add_argument("--v", action="store_true", help="flag to echo messages")
+    parser.add_argument("-v", "--verbose", action="store_true", help="flag to echo messages")
 
     args = parser.parse_args()
 
     res = checkpoint_single(args.run_dir)
     if res:
         if args.v:
-            print("%s passed".format(args.run_dir))
+            print("{} passed".format(args.run_dir))
         sys.exit(0)
     else:
         if args.v:
-            print("%s failed".format(args.run_dir))
+            print("{} failed".format(args.run_dir))
         sys.exit(1)
