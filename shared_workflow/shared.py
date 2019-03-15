@@ -454,13 +454,15 @@ def add_name_suffix(name, yes):
     return new_name
 
 
-def exe(cmd, debug=True, shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE):
+def exe(cmd, debug=True, shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE, non_blocking=False):
     """cmd is either a str or a list. but it will be processed as a list.
     this is to accommodate the default shell=False. (for security reason)
     If we wish to support a simple shell command like "echo hello"
     without switching on shell=True, cmd should be given as a list.
-    """
 
+    If non_blocking is set, then the Popen instance is returned instead of the
+    output and error.
+    """
     if type(cmd) == str:
         cmd = cmd.split(" ")
 
@@ -470,6 +472,9 @@ def exe(cmd, debug=True, shell=False, stdout=subprocess.PIPE, stderr=subprocess.
     p = subprocess.Popen(
         cmd, shell=shell, stdout=stdout, stderr=stderr, encoding="utf-8"
     )
+    if non_blocking:
+        return p
+
     out, err = p.communicate()
     if debug:
         if out:
@@ -479,7 +484,6 @@ def exe(cmd, debug=True, shell=False, stdout=subprocess.PIPE, stderr=subprocess.
             print(err)  # also printing to stdout (syncing err msg to cmd executed)
 
     return out, err
-
 
 def submit_sl_script(
     script,
