@@ -16,17 +16,17 @@ script_start=`date`
 echo "script started running at: $script_start"
 
 obs_dirs=$1
-cd ${obs_dirs}
+
 
 echo ___calculating observed____
 
-for D in $(echo */)
+for D in $(echo ${obs_dirs}/*/)
 do
     if [[ -d ${D} ]] && [[  `ls ${D}/*/*/accBB | wc -l` -ge 1 ]]
     then
-        python $gmsim/workflow/scripts/im_calc_checkpoint.py ${obs_dirs}/IM_calc/ $((`ls $D/*/*/accBB | wc -l` / 3)) -e ${D}
+        fault_name=`basename $D`
+        python $gmsim/workflow/scripts/im_calc_checkpoint.py ${obs_dirs}/IM_calc/ $((`ls $D/*/*/accBB | wc -l` / 3)) -e ${fault_name}
         if [[ $? == 1 ]]; then
-            fault_name=`basename $D`
             time python ${IMPATH}/calculate_ims.py $D/*/*/accBB a -o ${obs_dirs}/IM_calc/ -np ${SLURM_CPUS_PER_TASK} -i ${fault_name} -r ${fault_name} -c geom -t o -e -s
         fi
     fi
