@@ -1,10 +1,26 @@
 ## Environment installation
 
+### Usage 
+Environment can be activated with 
+```bash
+activate_env /nesi/project/nesi00213/Environments/environment_name
+```
+
+and deactivated with 
+```bash
+deactivate_env
+```
+
+### Installation
+
 Requirements: Setup github SSH keys for maui, 
 [guide](https://help.github.com/en/articles/connecting-to-github-with-ssh) for how to do this. 
 
-A user specific environment of workflow, qcore, IMCalc, Empirical Engine and Pre-processing can be created as follows:  
-1) Go to an existing workflow repository or clone a new one
+**All paths need to be absolute**
+
+A user specific environment of workflow, qcore, IMCalc, Empirical Engine and Pre-processing 
+can be created as follows:  
+1) Go to an existing workflow repository
 2) Navigate to ".../slurm_gm_workflow/install_workflow" 
 3) Run 
     ```bash
@@ -16,25 +32,20 @@ A user specific environment of workflow, qcore, IMCalc, Empirical Engine and Pre
     so if an environment with the same already exists the script will exit.
 
 4) Check that the script ran to completion without any errors, 
-apart from the IM_calculation setup warning, which can be ignored.
+apart from the IM_calculation setup warning and the pip qcore error.
+5) Log into mahuika
+6) Navigate to the new environment
+7) Run
+    ```bash
+    ./create_python_virtenv_mahuika.sh env_path
+    ```
+    where env_path is /nesi/projects/nesi00213/Environments/env_name
 
-The new environment can then be activated with 
-```bash
-activate_env /nesi/project/nesi00213/Environments/environment_name
-```
-
-and deactivated with 
-```bash
-deactivate_env
-```
-
-Note: Activating an environment will update your $PYTHONPATH and $gmsim variables
+Notes: 
+- Activating an environment will update your $PYTHONPATH and $gmsim variables
 These will be reset to the default shared bashrc when deactivating the environment.
-
-
-##### Modifying an environment
-Update any of your repositories as per usual with git
-
+- Activating an environment will also set a CUR_ENV and CUR_HPC environment variable,
+these are required for cross platform submission when using an environment.
 
 
 -----------------------------------------------------------
