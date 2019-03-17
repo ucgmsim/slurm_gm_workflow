@@ -16,7 +16,7 @@ META_PATTERN = "*imcalc.info"
 # output_sim_dir = /nesi/nobackup/nesi00213/RunFolder/Cybershake/v18p6/Runs/test/Kelly/BB/Cant1D_v3-midQ_OneRay_hfnp2mm+_rvf0p8_sd50_k0p045/Kelly_HYP20-29_S1434/../../../IM_calc/Kelly_HYP20-29_S1434/
 
 
-def checkpoint_single(output_dir, station_count):
+def checkpoint_single(output_dir, station_count, verbose=False):
     """
     Check for any csv files in the given folder, or stations folder inside.
     Check for any imcalc.info files.
@@ -31,17 +31,25 @@ def checkpoint_single(output_dir, station_count):
         if len(sum_csv) > 0 and station_count > 0:
             with open(sum_csv[0]) as csv_file:
                 if station_count != (len(csv_file.readlines()) - 1):
+                    if verbose:
+                        print("CSV file does not have enough lines in it")
                     return False
         station_dir = os.path.join(output_dir, "stations")
         if os.path.isdir(station_dir):
             station_files = glob.glob1(station_dir, CSV_PATTERN)
             if 0 < station_count != len(station_files):
+                if verbose:
+                    print("Not enough files in the station directory")
                 return False
             sum_csv = sum_csv + station_files
         meta = glob.glob1(output_dir, META_PATTERN)
         # if sum_csv and meta are not empty lists('.csv' and '_imcalc.info' files present)
         # then we think im calc on the corresponding dir is completed and hence remove
+        if verbose:
+            print("Checking csv and meta files exist")
         return sum_csv != [] and meta != []
+    if verbose:
+        print("Output directory does not exist")
     return False
 
 
@@ -64,12 +72,12 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    res = checkpoint_single(args.run_dir, args.station_count)
+    res = checkpoint_single(args.run_dir, args.station_count, args.verbose)
     if res:
-        if args.v:
+        if args.verbose:
             print("{} passed".format(args.run_dir))
         sys.exit(0)
     else:
-        if args.v:
+        if args.verbose:
             print("{} failed".format(args.run_dir))
         sys.exit(1)
