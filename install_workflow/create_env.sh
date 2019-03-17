@@ -75,8 +75,11 @@ if [[ `which python` != *"${name}"* && `which pip` != *"${name}"* ]]; then
 fi
 
 # Install python packages
-pip install -r ${env_path}/workflow/install_workflow/maui_python3_requirements.txt
+# Using xargs means that each package is installed individually, which
+# means that if there is an error (i.e. can't find qcore), then the other
+# packages are still installed. However, this is slower.
+xargs -n 1 -a ${env_path}/workflow/install_workflow/maui_python3_requirements.txt pip install
 
 # Install qcore
-pip install qcore
+pip install ./qcore
 
