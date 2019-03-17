@@ -1,5 +1,10 @@
+#@IgnoreInspection BashAddShebang
 export IMPATH=$gmsim/IM_calculation
 export PYTHONPATH=$gmsim/qcore:/$PYTHONPATH:$IMPATH
+
+function getFromYaml {
+    echo $(python -c "from qcore.utils import load_sim_params; print(load_sim_params('$1').$2)")
+}
 
 runtime_fmt="%Y-%m-%d_%H:%M:%S"
 
@@ -15,8 +20,8 @@ if [[ ! -d {{sim_dir}}/IM_calc ]]; then
     mkdir {{sim_dir}}/IM_calc
 fi
 
-
-python $gmsim/workflow/scripts/im_calc_checkpoint.py {{sim_dir}}/IM_calc/
+FD=$(getFromYaml "{{sim_dir}}/sim_params.yaml" FD_STATLIST)
+python $gmsim/workflow/scripts/im_calc_checkpoint.py {{sim_dir}}/IM_calc/ `wc -l ${FD}`
 if [[ $? != 0 ]]; then
     # Run the script
     start_time=`date +$runtime_fmt`

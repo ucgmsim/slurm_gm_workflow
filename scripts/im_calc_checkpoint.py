@@ -16,20 +16,28 @@ META_PATTERN = "*imcalc.info"
 # output_sim_dir = /nesi/nobackup/nesi00213/RunFolder/Cybershake/v18p6/Runs/test/Kelly/BB/Cant1D_v3-midQ_OneRay_hfnp2mm+_rvf0p8_sd50_k0p045/Kelly_HYP20-29_S1434/../../../IM_calc/Kelly_HYP20-29_S1434/
 
 
-def checkpoint_single(output_dir):
+def checkpoint_single(output_dir, station_count):
     """
     Check for any csv files in the given folder, or stations folder inside.
     Check for any imcalc.info files.
     If at least one of each type are present return True, otherwise return False
-    :param output_dir:
+    :param output_dir: The path to the IM_calc directory
+    :param station_count: The number of expected stations
     :return:
     """
     if os.path.isdir(output_dir):  # if output dir exists
 
         sum_csv = glob.glob1(output_dir, CSV_PATTERN)
-        station_dir = os.path.join(output_dir, 'stations')
+        if len(sum_csv) > 0 and station_count > 0:
+            with open(sum_csv[0]) as csv_file:
+                if station_count != (len(csv_file.readlines()) - 1):
+                    return False
+        station_dir = os.path.join(output_dir, "stations")
         if os.path.isdir(station_dir):
-            sum_csv += glob.glob1(station_dir, CSV_PATTERN)
+            station_files = glob.glob1(station_dir, CSV_PATTERN)
+            if 0 < station_count != len(station_files):
+                return False
+            sum_csv = sum_csv + station_files
         meta = glob.glob1(output_dir, META_PATTERN)
         # if sum_csv and meta are not empty lists('.csv' and '_imcalc.info' files present)
         # then we think im calc on the corresponding dir is completed and hence remove
@@ -40,12 +48,23 @@ def checkpoint_single(output_dir):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("run_dir", type=str, help="the path to where Runs located")
-    parser.add_argument("-v", "--verbose", action="store_true", help="flag to echo messages")
+    parser.add_argument(
+        "run_dir", type=str, help="The path to the realisation directory"
+    )
+    parser.add_argument(
+        "station_count",
+        type=int,
+        help="The number of stations in the realisation",
+        nargs="?",
+        default=-1,
+    )
+    parser.add_argument(
+        "-v", "--verbose", action="store_true", help="flag to echo messages"
+    )
 
     args = parser.parse_args()
 
-    res = checkpoint_single(args.run_dir)
+    res = checkpoint_single(args.run_dir, args.station_count)
     if res:
         if args.v:
             print("{} passed".format(args.run_dir))
