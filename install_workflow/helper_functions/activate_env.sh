@@ -5,9 +5,9 @@ hpc=${2?Error: "A valid  HPC has to be specified, either maui or mahuika"}
 
 # Load virtual environment
 if [[ $2 == "maui" ]]; then
-    source ${env_path}/workflow/install_workflow/helper_functions/activate_maui_python3_virtenv.sh ${env_path}/python_virtenv_maui
+    source ${env_path}/workflow/install_workflow/helper_functions/activate_maui_python3_virtenv.sh ${env_path}/virt_envs/python3_maui
 elif [[ $2 == "mahuika" ]]; then
-    source ${env_path}/workflow/install_workflow/helper_functions/activate_mahuika_python3_virtenv.sh ${env_path}/python_virtenv_mahuika
+    source ${env_path}/workflow/install_workflow/helper_functions/activate_mahuika_python3_virtenv.sh ${env_path}/virt_envs/python3_mahuika
 else
     echo "$2, invalid HPC, Quitting!"
     exit

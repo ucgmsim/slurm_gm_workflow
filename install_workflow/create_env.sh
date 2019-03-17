@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# This script needs to be run with the shared python3 maui virtual env activated!
 
 name=${1?Error: "A environment name has to be given"}
 conf_file=${2?Error: "A config file path has to be provided"}
@@ -23,10 +24,6 @@ cd ${env_path}
 echo "Cloning workflow"
 git clone git@github.com:ucgmsim/slurm_gm_workflow.git
 mv ./slurm_gm_workflow ./workflow
-
-# Load standard python3 virtual env
-source ./workflow/install_workflow/helper_functions/activate_maui_python3_virtenv.sh ''
-echo `which python`
 
 # Create workflow config
 python ./workflow/install_workflow/create_config_file.py ${env_path}
@@ -57,4 +54,27 @@ cd IM_calculation
 python setup_rspectra.py build_ext --inplace
 cd ../
 
-./workflow/install_workflow/helper_functions/deactivate_env.sh
+
+# Create virtual environment
+mkdir virt_envs
+python3 -m venv virt_envs/python3_maui
+
+# Activate new python env
+source ./virt_envs/python3_maui/bin/activate
+
+# Sanity check
+if [[ `which python` != *"${name}"* && `which pip` != *"${name}"* ]]; then
+    echo "Something went wrong, the current python used is not from the new virtual
+    environment. Quitting"
+    exit
+fi
+
+# Install python packages
+# Using xargs means that each package is installed individually, which
+# means that if there is an error (i.e. can't find qcore), then the other
+# packages are still installed. However, this is slower.
+xargs -n 1 -a ${env_path}/workflow/install_workflow/maui_python3_requirements.txt pip install
+
+# Install qcore
+pip install ./qcore
+

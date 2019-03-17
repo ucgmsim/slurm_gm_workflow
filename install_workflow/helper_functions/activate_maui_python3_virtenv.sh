@@ -4,10 +4,6 @@
 # Created as a separate script to allow it to be called from scripts.
 virtenv_path=$1
 
-# Currently hardcoded to default virtual environment, as creating of custom virtual
-# environments is a bit of a pain. See README.
-virtenv_path=/nesi/project/nesi00213/share/virt_envs/python3_maui
-
 # Load python3 module
 module load cray-python/3.6.5.1
 
