@@ -16,7 +16,7 @@ META_PATTERN = "*imcalc.info"
 # output_sim_dir = /nesi/nobackup/nesi00213/RunFolder/Cybershake/v18p6/Runs/test/Kelly/BB/Cant1D_v3-midQ_OneRay_hfnp2mm+_rvf0p8_sd50_k0p045/Kelly_HYP20-29_S1434/../../../IM_calc/Kelly_HYP20-29_S1434/
 
 
-def checkpoint_single(output_dir, station_count, verbose=False):
+def checkpoint_single(output_dir, station_count, verbose=False, event_name=None):
     """
     Check for any csv files in the given folder, or stations folder inside.
     Check for any imcalc.info files.
@@ -29,11 +29,17 @@ def checkpoint_single(output_dir, station_count, verbose=False):
 
         sum_csv = glob.glob1(output_dir, CSV_PATTERN)
         if len(sum_csv) > 0 and station_count > 0:
-            with open(sum_csv[0]) as csv_file:
+            if event_name:
+                csv_file_name = [f for f in sum_csv if event_name in f][0]
+            else:
+                csv_file_name = sum_csv[0]
+
+            with open(os.path.join(output_dir, csv_file_name)) as csv_file:
                 if station_count != (len(csv_file.readlines()) - 1):
                     if verbose:
                         print("CSV file does not have enough lines in it")
                     return False
+
         station_dir = os.path.join(output_dir, "stations")
         if os.path.isdir(station_dir):
             station_files = glob.glob1(station_dir, CSV_PATTERN)
@@ -69,10 +75,13 @@ if __name__ == "__main__":
     parser.add_argument(
         "-v", "--verbose", action="store_true", help="flag to echo messages"
     )
+    parser.add_argument(
+        "-e", "--event_name", help="Name of the event being checked", default=None
+    )
 
     args = parser.parse_args()
 
-    res = checkpoint_single(args.run_dir, args.station_count, args.verbose)
+    res = checkpoint_single(args.run_dir, args.station_count, args.verbose, args.event_name)
     if res:
         if args.verbose:
             print("{} passed".format(args.run_dir))
