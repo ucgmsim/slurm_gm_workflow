@@ -20,7 +20,7 @@ cd ${obs_dirs}
 
 echo ___calculating observed____
 
-for D in $(ls -d *)
+for D in $(echo */)
 do
     if [[ -d ${D} ]] && [[  `ls ${D}/*/*/accBB | wc -l` -ge 1 ]]
     then

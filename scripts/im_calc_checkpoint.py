@@ -41,7 +41,7 @@ def checkpoint_single(output_dir, station_count, verbose=False, event_name=None)
                     return False
 
         station_dir = os.path.join(output_dir, "stations")
-        if os.path.isdir(station_dir):
+        if os.path.isdir(station_dir) and not event_name:
             station_files = glob.glob1(station_dir, CSV_PATTERN)
             if 0 < station_count != len(station_files):
                 if verbose:
