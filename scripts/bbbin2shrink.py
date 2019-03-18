@@ -59,4 +59,3 @@ with open(args.bb2_bin, "wb") as bb_new:
     ###
     for s in new_stations:
         bb.acc(s).tofile(bb_new)
-
