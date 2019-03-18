@@ -30,7 +30,7 @@ StatusEntry = namedtuple(
 
 
 QuotaEntry = namedtuple(
-    "QuotaEntry", ["id", "file_system", "used_space", "available_inodes", "used_inodes", "day"]
+    "QuotaEntry", ["file_system", "used_space", "available_inodes", "used_inodes", "day"]
 )
 
 
@@ -217,32 +217,41 @@ class DashboardDB:
 
         return [SQueueEntry(*result) for result in results]
 
-    def update_daily_quota(self, hpc: const.HPC, entry: QuotaEntry, day: Union[date, str] = date.today(),):
+    def update_daily_quota(self, entry: QuotaEntry, hpc: const.HPC):
         if hpc != const.HPC.maui:
             return None
-        day = day.strftime(self.date_format) if type(day) is date else day
+
+        day = date.today()
+
         with self.get_cursor(self.db_file) as cursor:
             result = cursor.execute(
-                "SELECT * FROM MAUI_QUOTA WHERE FILE_SYSTEM = ? AND DATE", (entry.file_system,)
+                "SELECT * FROM MAUI_QUOTA WHERE FILE_SYSTEM = ? AND DATE = ?", (entry.file_system, day)
             ).fetchone()
 
             if result:
                 cursor.execute(
                     "UPDATE MAUI_QUOTA SET "
-                    "INT_VALUE_1 = ?, INT_VALUE_2 = ?, UPDATE_TIME = ? WHERE ID == ?;",
-                    (entry.int_value_1, entry.int_value_2, datetime.now(), entry.id),
+                    "USED_SPACE = ?, AVAILABLE_INODES = ?, USED_INODES = ? WHERE ID == ?;",
+                    (entry.used_space, entry.available_inodes, entry.used_inodes, entry.id),
                 )
             else:
                 cursor.execute(
-                    "INSERT INTO MAUI_CUR_STATUS VALUES (?, ?, ?, ?, ?)",
+                    "INSERT INTO MAUI_QUOTA VALUES (?, ?, ?, ?, ?)",
                     (
-                        entry.id,
-                        entry.name,
-                        entry.int_value_1,
-                        entry.int_value_2,
-                        datetime.now(),
+                        entry.file_system,
+                        entry.used_space,
+                        entry.available_inodes,
+                        entry.used_inodes,
+                        day,
                     ),
                 )
+
+    def get_daily_quota(self, hpc: const.HPC, file_system: str, day: Union[date, str] = date.today()):
+        day = day.strftime(self.date_format) if type(day) is date else day
+        with self.get_cursor(self.db_file) as cursor:
+            results = cursor.execute(
+                "SELECT * FROM {} WHERE FILE_SYSTEM = ? AND DAY = ?".format(self.get_quota_t_name(hpc)), (file_system, day)).fetchall()
+        return results
 
     def _create_queue_table(self, cursor, hpc: const.HPC):
         # Add latest table

@@ -15,7 +15,7 @@ from typing import Iterable, List, Union
 from datetime import datetime
 
 import qcore.constants as const
-from dashboard.DashboardDB import DashboardDB, SQueueEntry, StatusEntry, HPCProperty
+from dashboard.DashboardDB import DashboardDB, SQueueEntry, StatusEntry, QuotaEntry, HPCProperty
 
 MAX_NODES = 264
 CH_REPORT_PATH = "/nesi/project/nesi00213/workflow/scripts/CH_report.sh"
@@ -115,6 +115,12 @@ class DataCollector:
                         None,
                     ),
                 )
+        # get quota
+        quota_output = self.run_cmd(
+            hpc.value, "nn_check_quota | grep 'nesi00213'", timeout=60
+        )
+        if quota_output:
+            self.dashboard_db.update_daily_quota(self._parse_quota(quota_output), hpc)
 
     def run_cmd(self, hpc: str, cmd: str, timeout: int = 10):
         """Runs the specified command remotely on the specified hpc using the
@@ -220,6 +226,29 @@ class DataCollector:
         except ValueError:
             print("Failed to convert {} out of \n{}\n to integer.")
             return None
+
+    def _parse_quota(self, lines: Iterable[str]):
+        entries = []
+        for ix, line in enumerate(lines):
+            line = line.split()
+            if ix == 0:
+
+            try:
+                entries.append(
+                    QuotaEntry(
+                        line[0].strip(),
+                        line[2].strip(),
+                        int(line[4].strip()),
+                        int(line[5].strip()),
+                    )
+                )
+            except ValueError:
+                print(
+                    "Failed to convert squeue line \n{}\n to "
+                    "a valid SQueueEntry. Ignored!".format(line)
+                )
+
+        return entries
 
 
 def main(args):
