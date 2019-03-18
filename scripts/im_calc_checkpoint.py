@@ -98,7 +98,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "-e",
         "--event_name",
-        help="Name of the event being checked. If given it is assumed that the event was observed, rather than simulated",
+        help="Name of the event being checked. Only required if the event was observed.",
         default=None,
     )
     event_type_group = parser.add_mutually_exclusive_group(required=True)
