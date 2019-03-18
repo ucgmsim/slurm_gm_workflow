@@ -217,6 +217,7 @@ class DataCollector:
 
         # Get all lines starting with "Billed" then get the last one as it
         # shows the total core usage
+        print("lines interest", lines_interest)
         line_interest = [line for line in lines_interest if line.startswith("Billed")][
             -1
         ]
@@ -228,6 +229,11 @@ class DataCollector:
             return None
 
     def _parse_quota(self, lines: Iterable[str]):
+        # lines:
+        #                               used              Inodes     Iused
+        # ['project_nesi00213', '1T', '98.16G', '9.59%', '1000000', '277361', '27.74%']
+        #                          used      Inodes        Iused
+        # ['nobackup_nesi00213', '84.59T', '15000000', '10183142', '67.89%']
         entries = []
         for ix, line in enumerate(lines):
             line = line.split()

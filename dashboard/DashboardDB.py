@@ -231,8 +231,8 @@ class DashboardDB:
             if result:
                 cursor.execute(
                     "UPDATE MAUI_QUOTA SET "
-                    "USED_SPACE = ?, AVAILABLE_INODES = ?, USED_INODES = ? WHERE FILE_SYSTEM = ? AND DATE = ?;",
-                    (entry.used_space, entry.available_inodes, entry.used_inodes, entry.file_system, entry.day),
+                    "USED_SPACE = ?, AVAILABLE_INODES = ?, USED_INODES = ? WHERE FILE_SYSTEM = ? AND DAY = ?;",
+                    (entry.used_space, entry.available_inodes, entry.used_inodes, entry.file_system, day),
                 )
             else:
                 cursor.execute(
