@@ -46,6 +46,7 @@ def create_mgmt_db(realisations, f, srf_files=[]):
     db.connection.commit()
     return db
 
+
 def insert_task(db, run_name, proc):
     db.execute('''INSERT OR IGNORE INTO
                   `state`(run_name, proc_type, status, last_modified, retries)
