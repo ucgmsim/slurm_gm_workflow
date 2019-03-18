@@ -29,7 +29,7 @@ def print_verbose(message, verbose):
         print(message)
 
 
-def checkpoint_single(output_dir, station_count, verbose=False, event_name=None):
+def check_im_calc_completion(output_dir, station_count, verbose=False, event_name=None):
     """
     Check for any csv files in the given folder, or stations folder inside.
     Check for any imcalc.info files.
@@ -98,7 +98,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    res = checkpoint_single(
+    res = check_im_calc_completion(
         args.run_dir, args.station_count, args.verbose, args.event_name
     )
     if res:
