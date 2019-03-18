@@ -1,3 +1,11 @@
+#!/usr/bin/env python
+"""
+Checks that a given IM_calc folder has all csv files expected after IM_calculation has run for a simulated or observed
+event.
+Example usage:
+python im_calc_checkpoint.py /nesi/nobackup/nesi00213/RunFolder/Cybershake/v18p6_rerun/Runs/Kelly/Kelly_HYP01-29_S1244/IM_calc 5302
+"""
+
 import os
 import sys
 import glob
