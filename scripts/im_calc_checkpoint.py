@@ -28,7 +28,9 @@ def checkpoint_single(output_dir, station_count, verbose=False, event_name=None)
     If at least one of each type are present return True, otherwise return False
     :param output_dir: The path to the IM_calc directory
     :param station_count: The number of expected stations
-    :return:
+    :param event_name: The name of the event being checked. If not none assumes event was observed, rather than simulated.
+    :param verbose: Print extra information or not
+    :return: True if all conditions for job completion are true, false otherwise
     """
     if os.path.isdir(output_dir):  # if output dir exists
 
@@ -37,7 +39,7 @@ def checkpoint_single(output_dir, station_count, verbose=False, event_name=None)
             if event_name:
                 sum_csv = [f for f in sum_csv if event_name in f]
                 if not sum_csv:
-                    print_verbose('No csv file found', verbose)
+                    print_verbose("No csv file found", verbose)
                     return False
 
             csv_file_name = sum_csv[0]
@@ -80,15 +82,26 @@ if __name__ == "__main__":
         "-v", "--verbose", action="store_true", help="flag to echo messages"
     )
     parser.add_argument(
-        "-e", "--event_name", help="Name of the event being checked", default=None
+        "-e",
+        "--event_name",
+        help="Name of the event being checked. If given it is assumed that the event was observed, rather than simulated",
+        default=None,
     )
 
     args = parser.parse_args()
 
-    res = checkpoint_single(args.run_dir, args.station_count, args.verbose, args.event_name)
+    res = checkpoint_single(
+        args.run_dir, args.station_count, args.verbose, args.event_name
+    )
     if res:
-        print_verbose("{} passed".format(args.event_name if args.event_name else args.run_dir), args.verbose)
+        print_verbose(
+            "{} passed".format(args.event_name if args.event_name else args.run_dir),
+            args.verbose,
+        )
         sys.exit(0)
     else:
-        print_verbose("{} failed".format(args.event_name if args.event_name else args.run_dir), args.verbose)
+        print_verbose(
+            "{} failed".format(args.event_name if args.event_name else args.run_dir),
+            args.verbose,
+        )
         sys.exit(1)
