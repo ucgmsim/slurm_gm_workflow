@@ -55,7 +55,7 @@ do
     grep "xy-plane time slice:" $rlog >> /dev/null
     if [[ $? == 0 ]] && [[ ! -f "$xytsFile" ]];
     then
-        echo "The Rlog said it was going to write the xyts file, but we couldn't find it: $xytsFile"
+        echo "The Rlog said it was going to write the xyts file, but we could not find it: $xytsFile"
         rlog_check=1
         break
     fi
@@ -64,7 +64,7 @@ do
     grep "ALL seismograms written into single output file" $rlog >> /dev/null
     if [[ $? == 0 ]] && [[ ! -f "$seisFile" ]];
     then
-        echo "The Rlog said it was going to write the seis file, but we couldn't find it: $seisFile"
+        echo "The Rlog said it was going to write the seis file, but we could not find it: $seisFile"
         rlog_check=1
         break
     fi
