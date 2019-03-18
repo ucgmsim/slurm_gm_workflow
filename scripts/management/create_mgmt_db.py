@@ -35,6 +35,7 @@ def create_mgmt_db(realisations, f, srf_files=[]):
 
     if len(realisations) == 0:
         print("No realisations found - no entries inserted into db")
+
     db = initilize_db(f)    
     procs_to_be_done = get_procs(db)
     for run_name in realisations:
