@@ -122,6 +122,7 @@ class DataCollector:
 
         Returns False if the command fails for some reason.
         """
+        print(self.ssh_cmd_template.format(self.user, hpc, cmd))
         try:
             result = (
                 subprocess.check_output(

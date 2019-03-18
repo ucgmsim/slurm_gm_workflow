@@ -29,6 +29,11 @@ StatusEntry = namedtuple(
 )
 
 
+QuotaEntry = namedtuple(
+    "QuotaEntry", ["id", "file_system", "used_space", "available_inodes", "used_inodes", "day"]
+)
+
+
 class HPCProperty(Enum):
     node_capacity = 1, "node_capacity"
 
@@ -61,6 +66,10 @@ class DashboardDB:
     @staticmethod
     def get_squeue_t_name(hpc: const.HPC):
         return "{}_SQUEUE".format(hpc.value.upper())
+
+    @staticmethod
+    def get_quota_t_name(hpc: const.HPC):
+        return "{}_QUOTA".format(hpc.value.upper())
 
     def update_daily_chours_usage(
         self,
@@ -208,6 +217,33 @@ class DashboardDB:
 
         return [SQueueEntry(*result) for result in results]
 
+    def update_daily_quota(self, hpc: const.HPC, entry: QuotaEntry, day: Union[date, str] = date.today(),):
+        if hpc != const.HPC.maui:
+            return None
+        day = day.strftime(self.date_format) if type(day) is date else day
+        with self.get_cursor(self.db_file) as cursor:
+            result = cursor.execute(
+                "SELECT * FROM MAUI_QUOTA WHERE FILE_SYSTEM = ? AND DATE", (entry.file_system,)
+            ).fetchone()
+
+            if result:
+                cursor.execute(
+                    "UPDATE MAUI_QUOTA SET "
+                    "INT_VALUE_1 = ?, INT_VALUE_2 = ?, UPDATE_TIME = ? WHERE ID == ?;",
+                    (entry.int_value_1, entry.int_value_2, datetime.now(), entry.id),
+                )
+            else:
+                cursor.execute(
+                    "INSERT INTO MAUI_CUR_STATUS VALUES (?, ?, ?, ?, ?)",
+                    (
+                        entry.id,
+                        entry.name,
+                        entry.int_value_1,
+                        entry.int_value_2,
+                        datetime.now(),
+                    ),
+                )
+
     def _create_queue_table(self, cursor, hpc: const.HPC):
         # Add latest table
         cursor.execute(
@@ -227,6 +263,18 @@ class DashboardDB:
             )
         )
 
+    def _create_quota_table(self, cursor, hpc: const.HPC):
+        cursor.execute(
+            """CREATE TABLE IF NOT EXISTS {}(
+            ID INTEGER PRIMARY KEY AUTOINCREMENT,
+            FILE_SYSTEM TEXT NOT NULL,
+            USED_SPACE TEXT NOT NULL,
+            AVAILABLE_INODES INTEGER NOT NULL,
+            USED_INODES INTEGER NOT NULL,
+            DAY DATE NOT NULL);
+            """.format(self.get_quota_t_name(hpc))
+        )
+
     @classmethod
     def create_db(
         cls, db_file: str, hpc: Union[const.HPC, Iterable[const.HPC]] = const.HPC
@@ -243,6 +291,7 @@ class DashboardDB:
             hpc = [hpc] if type(hpc) is const.HPC else hpc
             for cur_hpc in hpc:
                 dashboard_db._create_queue_table(cursor, cur_hpc)
+                dashboard_db._create_quota_table(cursor, cur_hpc)
 
                 # Add daily table
                 cursor.execute(
