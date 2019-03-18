@@ -5,7 +5,6 @@ from collections import namedtuple
 
 
 def connect_db(path):
-    print("path",path)
     db_location = os.path.abspath(os.path.join(path, "slurm_mgmt.db"))
     conn = sql.connect(db_location)
     db = conn.cursor()
