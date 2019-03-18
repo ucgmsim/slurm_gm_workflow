@@ -231,17 +231,25 @@ class DataCollector:
         entries = []
         for ix, line in enumerate(lines):
             line = line.split()
-            if ix == 0:
-
             try:
-                entries.append(
-                    QuotaEntry(
-                        line[0].strip(),
-                        line[2].strip(),
-                        int(line[4].strip()),
-                        int(line[5].strip()),
+                if len(line) == 7:
+                    entries.append(
+                        QuotaEntry(
+                            line[0].strip(),
+                            line[2].strip(),
+                            int(line[4].strip()),
+                            int(line[5].strip()),
+                        )
                     )
-                )
+                elif len(line) == 5:
+                    entries.append(
+                        QuotaEntry(
+                            line[0].strip(),
+                            line[1].strip(),
+                            int(line[2].strip()),
+                            int(line[3].strip()),
+                        )
+                    )
             except ValueError:
                 print(
                     "Failed to convert squeue line \n{}\n to "
