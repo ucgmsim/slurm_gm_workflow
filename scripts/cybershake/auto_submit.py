@@ -80,6 +80,7 @@ def submit_task(
             {"submit_time": submitted_time},
         )
 
+    # Merge ts
     if proc_type == const.ProcessType.merge_ts.value:
         args = argparse.Namespace(
             auto=True,
@@ -165,16 +166,14 @@ def submit_task(
         )
 
     fault = run_name.split("_")[0]
-    source_path = os.path.join(mgmt_db_location, "Data/Sources", fault, "srf", run_name)
-    srf_path = source_path + ".srf"
 
     if do_verification:
         if proc_type == const.ProcessType.rrup.value:
-            tmp_path = os.path.join(mgmt_db_location, "Runs")
-            rrup_dir = os.path.join(mgmt_db_location, "Runs", fault, "verification")
-            cmd = (
-                "python $gmsim/workflow/scripts/submit_imcalc.py --auto -s --sim_dir %s --i %s --mgmt_db %s -srf %s -o %s"
-                % (tmp_path, run_name, mgmt_db_location, srf_path, rrup_dir)
+            realisation_directory = os.path.join(
+                mgmt_db_location, "Runs", fault, run_name
+            )
+            cmd = "sbatch $gmsim/workflow/scripts/calc_rrups_single.sl {} {}".format(
+                realisation_directory, mgmt_db_location
             )
             print(cmd)
             call(cmd, shell=True)
@@ -299,8 +298,8 @@ def main():
             task_num = task_num + 1
             continue
         if args.no_merge_ts and proc_type == 2:
-            update_mgmt_db.update_db(db, "merge_ts", "completed", run_name=run_name) 
-            task_num = task_num +1
+            update_mgmt_db.update_db(db, "merge_ts", "completed", run_name=run_name)
+            task_num = task_num + 1
             continue
         vm_name = run_name.split("_")[0]
 
