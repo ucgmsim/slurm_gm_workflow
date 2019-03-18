@@ -87,8 +87,8 @@ if __name__ == "__main__":
 
     res = checkpoint_single(args.run_dir, args.station_count, args.verbose, args.event_name)
     if res:
-        print_verbose("{} passed".format(args.run_dir), args.verbose)
+        print_verbose("{} passed".format(args.event_name if args.event_name else args.run_dir), args.verbose)
         sys.exit(0)
     else:
-        print_verbose("{} failed".format(args.run_dir), args.verbose)
+        print_verbose("{} failed".format(args.event_name if args.event_name else args.run_dir), args.verbose)
         sys.exit(1)

@@ -22,7 +22,7 @@ echo ___calculating observed____
 
 for D in $(echo ${obs_dirs}/*/)
 do
-    if [[ -d ${D} ]] && [[  `ls ${D}/*/*/accBB | wc -l` -ge 1 ]]
+    if [[  `find ${D} -name accBB | wc -l` -ge 1 ]]
     then
         fault_name=`basename $D`
         python $gmsim/workflow/scripts/im_calc_checkpoint.py ${obs_dirs}/IM_calc/ $((`ls $D/*/*/accBB | wc -l` / 3)) -e ${fault_name}
