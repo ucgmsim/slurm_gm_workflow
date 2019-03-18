@@ -28,5 +28,6 @@ def main():
     db.connection.commit()
     db.connection.close()
 
+
 if __name__ == '__main__':
     main()

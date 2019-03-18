@@ -19,9 +19,9 @@ from qcore import shared
 from qcore import utils
 
 
-DIVIDER = '-' * 20
-TXT_DIR_1 = 'txt1'
-TXT_DIR_2 = 'txt2'
+DIVIDER = "-" * 20
+TXT_DIR_1 = "txt1"
+TXT_DIR_2 = "txt2"
 
 
 def get_par_dict(e3d_par):
@@ -31,7 +31,7 @@ def get_par_dict(e3d_par):
     :return: dict
     """
     d = {}
-    with open(e3d_par, 'r') as e1:
+    with open(e3d_par, "r") as e1:
         t1 = e1.readlines()
     for line in t1:
         k, v = line.strip().split("=")
@@ -49,8 +49,16 @@ def test_e3d_par(bench_e3d, test_e3d):
     print("{}testing e3d.par{}".format(DIVIDER, DIVIDER))
     d1 = get_par_dict(bench_e3d)
     d2 = get_par_dict(test_e3d)
-    print("keys in bench but not in test are {}".format(set(d1.keys()).difference(set(d2.keys()))))
-    print("keys in test but not in bench are {}".format(set(d2.keys()).difference(set(d1.keys()))))
+    print(
+        "keys in bench but not in test are {}".format(
+            set(d1.keys()).difference(set(d2.keys()))
+        )
+    )
+    print(
+        "keys in test but not in bench are {}".format(
+            set(d2.keys()).difference(set(d1.keys()))
+        )
+    )
     for k in d1.keys():
         try:
             if d2[k] != d1[k]:
@@ -80,11 +88,13 @@ def check_data(s1, s2):
     """load data of two timeseries objs to txt files and compare"""
     utils.setup_dir(TXT_DIR_1)
     utils.setup_dir(TXT_DIR_2)
-    s1.all2txt(prefix='./{}/'.format(TXT_DIR_1))
-    s2.all2txt(prefix='./{}/'.format(TXT_DIR_2))
+    s1.all2txt(prefix="./{}/".format(TXT_DIR_1))
+    s2.all2txt(prefix="./{}/".format(TXT_DIR_2))
     for f in os.listdir(TXT_DIR_1)[:200]:
-        out, err = shared.exe('diff {} {}'.format(os.path.join(TXT_DIR_1, f), os.path.join(TXT_DIR_2, f)))
-        
+        out, err = shared.exe(
+            "diff {} {}".format(os.path.join(TXT_DIR_1, f), os.path.join(TXT_DIR_2, f))
+        )
+
     shutil.rmtree(TXT_DIR_1)
     shutil.rmtree(TXT_DIR_2)
 
@@ -100,7 +110,12 @@ def test_e3ds(bench_path, test_path):
     test_e3ds = sorted(os.listdir(test_path))
     assert len(bench_e3ds) == len(test_e3ds)
     for i in range(len(bench_e3ds)):
-        out, err = shared.exe('diff {} {}'.format(os.path.join(bench_path, bench_e3ds[i]), os.path.join(test_path, test_e3ds[i])))
+        out, err = shared.exe(
+            "diff {} {}".format(
+                os.path.join(bench_path, bench_e3ds[i]),
+                os.path.join(test_path, test_e3ds[i]),
+            )
+        )
 
 
 def test_lf_bin(bench_path, test_path):
@@ -144,28 +159,28 @@ def test_bb_bin(bench_path, test_path):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--bench_e3d', help='path to benchmark e3d.par')
-    parser.add_argument('--test_e3d', help='path to test e3d.par')
-    parser.add_argument('--bench_outbin', help='path to benchmark OutBin')
-    parser.add_argument('--test_outbin', help='path to test OutBin')
-    parser.add_argument('--bench_hf', help='path to benchmark HF.bin')
-    parser.add_argument('--test_hf', help='path to test HF.bin')
-    parser.add_argument('--bench_bb', help='path to benchmark BB.bin')
-    parser.add_argument('--test_bb', help='path to test BB.bin')
+    parser.add_argument("--bench_e3d", help="path to benchmark e3d.par")
+    parser.add_argument("--test_e3d", help="path to test e3d.par")
+    parser.add_argument("--bench_outbin", help="path to benchmark OutBin")
+    parser.add_argument("--test_outbin", help="path to test OutBin")
+    parser.add_argument("--bench_hf", help="path to benchmark HF.bin")
+    parser.add_argument("--test_hf", help="path to test HF.bin")
+    parser.add_argument("--bench_bb", help="path to benchmark BB.bin")
+    parser.add_argument("--test_bb", help="path to test BB.bin")
 
     args = parser.parse_args()
 
     if args.bench_e3d and args.test_e3d:
         assert os.path.isfile(args.bench_e3d)
         assert os.path.isfile(args.test_e3d)
-        test_e3d_par(args.bench_e3d,args.test_e3d)
+        test_e3d_par(args.bench_e3d, args.test_e3d)
 
     if args.bench_outbin and args.test_outbin:
         assert os.path.isdir(args.bench_outbin)
         assert os.path.isdir(args.test_outbin)
         test_e3ds(args.bench_outbin, args.test_outbin)
         test_lf_bin(args.bench_outbin, args.test_outbin)
-        
+
     if args.bench_hf and args.test_hf:
         assert os.path.isfile(args.bench_hf)
         assert os.path.isfile(args.test_hf)
@@ -177,6 +192,5 @@ def main():
         test_bb_bin(args.bench_bb, args.test_bb)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
-
