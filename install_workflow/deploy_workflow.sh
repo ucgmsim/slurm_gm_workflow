@@ -28,15 +28,17 @@ chmod g+w ${ROOT}/{VelocityModel,VelocityModels,StationInfo,workflow,RunFolder,R
 rm -f ${ROOT}/share/bashrc.uceq
 touch ${ROOT}/share/bashrc.uceq
 
-#TODO:tempory disabled chgrp because its breaking the remote daemon. fix this if possible
-#cat $script_dir/change_grp.sh >> ${ROOT}/share/bashrc.uceq
-cat $script_dir/load_default_modules.sh >> ${ROOT}/share/bashrc.uceq
-cat $script_dir/python3_load_functions.sh >> ${ROOT}/share/bashrc.uceq
-
 echo "export gmsim='$ROOT'" >> ${ROOT}/share/bashrc.uceq
 echo "export nobackup='/nesi/nobackup/nesi00213'" >> ${ROOT}/share/bashrc.uceq
 echo 'export PATH=$PATH:'${ROOT}/workflow/scripts >> ${ROOT}/share/bashrc.uceq
 echo "export PYTHONPATH=$ROOT/workflow:"'$PYTHONPATH' >> ${ROOT}/share/bashrc.uceq
+
+#TODO:tempory disabled chgrp because its breaking the remote daemon. fix this if possible
+#cat $script_dir/change_grp.sh >> ${ROOT}/share/bashrc.uceq
+cat $script_dir/extra_bashrc_functions.sh >> ${ROOT}/share/bashrc.uceq
+cat $script_dir/load_default_modules.sh >> ${ROOT}/share/bashrc.uceq
+cat $script_dir/python3_load_functions.sh >> ${ROOT}/share/bashrc.uceq
+
 
 print_message "Add source $ROOT/share/bashrc.uceq to your .bashrc"
 

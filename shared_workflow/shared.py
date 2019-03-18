@@ -168,7 +168,7 @@ def get_partition(machine, core_hours=None):
         partition = "nesi_research"
     elif machine == const.HPC.mahuika.value:
         if core_hours and core_hours < 6:
-            partition = "prepost"
+            partition = "large"
         else:
             partition = "large"
     else:
@@ -454,13 +454,15 @@ def add_name_suffix(name, yes):
     return new_name
 
 
-def exe(cmd, debug=True, shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE):
+def exe(cmd, debug=True, shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE, non_blocking=False):
     """cmd is either a str or a list. but it will be processed as a list.
     this is to accommodate the default shell=False. (for security reason)
     If we wish to support a simple shell command like "echo hello"
     without switching on shell=True, cmd should be given as a list.
-    """
 
+    If non_blocking is set, then the Popen instance is returned instead of the
+    output and error.
+    """
     if type(cmd) == str:
         cmd = cmd.split(" ")
 
@@ -470,6 +472,9 @@ def exe(cmd, debug=True, shell=False, stdout=subprocess.PIPE, stderr=subprocess.
     p = subprocess.Popen(
         cmd, shell=shell, stdout=stdout, stderr=stderr, encoding="utf-8"
     )
+    if non_blocking:
+        return p
+
     out, err = p.communicate()
     if debug:
         if out:
@@ -479,7 +484,6 @@ def exe(cmd, debug=True, shell=False, stdout=subprocess.PIPE, stderr=subprocess.
             print(err)  # also printing to stdout (syncing err msg to cmd executed)
 
     return out, err
-
 
 def submit_sl_script(
     script,
@@ -493,10 +497,10 @@ def submit_sl_script(
 ):
     """Submits the slurm script and updates the management db"""
     if submit_yes:
-        print("Submitting %s" % script)
+        print("Submitting {} on machine {}".format(script, target_machine))
         if target_machine and target_machine != host:
             res = exe(
-                "sbatch --export=NONE -M {} {}".format(target_machine, script),
+                "sbatch --export=CUR_ENV,CUR_HPC -M {} {}".format(target_machine, script),
                 debug=False,
             )
         else:
@@ -720,4 +724,3 @@ def get_hf_run_name(v_mod_1d_name, srf, root_dict, hf_version):
     #    yes = confirm_name(hf_run_name)
     yes = True
     return yes, hf_run_name
-
