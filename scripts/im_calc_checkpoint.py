@@ -57,6 +57,7 @@ def check_im_calc_completion(
 
     if len(sum_csv) > 1:
         print_verbose("Too many possible csv files found, exiting", verbose)
+        return False
 
     csv_file_name = sum_csv[0]
 
