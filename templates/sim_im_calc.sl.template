@@ -1,3 +1,5 @@
+
+
 export IMPATH=$gmsim/IM_calculation
 export PYTHONPATH=$gmsim/qcore:/$PYTHONPATH:$IMPATH
 
@@ -20,7 +22,7 @@ if [[ ! -d {{sim_dir}}/IM_calc ]]; then
 fi
 
 FD=$(getFromYaml "{{sim_dir}}/sim_params.yaml" FD_STATLIST)
-python $gmsim/workflow/scripts/im_calc_checkpoint.py {{sim_dir}}/IM_calc/ `wc -l ${FD}` --simulated
+python $gmsim/workflow/scripts/im_calc_checkpoint.py {{sim_dir}}/IM_calc/ `wc -l < ${FD}` --simulated
 if [[ $? != 0 ]]; then
     # Run the script
     start_time=`date +$runtime_fmt`
