@@ -18,7 +18,6 @@ def test_install_simulation(set_up, mocker):
         input_params = get_input_params(root_path, func_name, params)
 
         mocker.patch("shared_workflow.install_shared.defaults.workflow_root", "{}/AdditionalData".format(root_path))
-        mocker.patch("shared_workflow.install_shared.defaults.bin_process_dir", "../scripts")
         mocker.patch(
             "scripts.set_runparams.utils.load_yaml",
             lambda x: mocked_load_yaml(

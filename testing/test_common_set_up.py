@@ -21,7 +21,6 @@ def get_fault_from_rel(realisation):
 def get_input_params(root_path, func_name, params):
     input_params = []
     for param in params:
-        print(os.path.join(root_path, INPUT, func_name + "_{}.P".format(param)))
         with open(
             os.path.join(root_path, INPUT, func_name + "_{}.P".format(param)), "rb"
         ) as load_file:
