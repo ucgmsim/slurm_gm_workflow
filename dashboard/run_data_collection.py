@@ -12,7 +12,7 @@ import re
 import subprocess
 import argparse
 from typing import Iterable, List, Union
-from datetime import datetime
+from datetime import datetime, date
 
 import qcore.constants as const
 from dashboard.DashboardDB import DashboardDB, SQueueEntry, StatusEntry, QuotaEntry, HPCProperty
@@ -86,7 +86,7 @@ class DataCollector:
             )
 
         # Squeue
-        sq_output = self.run_cmd(self.user, hpc.value, "squeue")
+        sq_output = self.run_cmd(hpc.value, "squeue")
         if sq_output:
             self.dashboard_db.update_squeue(self._parse_squeue(sq_output), hpc)
 
@@ -165,25 +165,25 @@ class DataCollector:
             if ix == 0:
                 continue
             line = line.strip().split()
-
-            try:
-                entries.append(
-                    SQueueEntry(
-                        line[0].strip(),
-                        line[1].strip(),
-                        line[4].strip(),
-                        line[3].strip(),
-                        line[7].strip(),
-                        line[8].strip(),
-                        int(line[9].strip()),
-                        int(line[10].strip()),
-                    )
+            print(line, line[9])
+            # try:
+            entries.append(
+                SQueueEntry(
+                    line[0].strip(),
+                    line[1].strip(),
+                    line[4].strip(),
+                    line[3].strip(),
+                    line[7].strip(),
+                    line[8].strip(),
+                    int(line[-2].strip()),
+                    int(line[-1].strip()),
                 )
-            except ValueError:
-                print(
-                    "Failed to convert squeue line \n{}\n to "
-                    "a valid SQueueEntry. Ignored!".format(line)
-                )
+            )
+            # except ValueError:
+            #     print(
+            #         "Failed to convert squeue line \n{}\n to "
+            #         "a valid SQueueEntry. Ignored!".format(line)
+            #     )
 
         return entries
 
@@ -218,7 +218,7 @@ class DataCollector:
         # Get all lines starting with "Billed" then get the last one as it
         # shows the total core usage
         print("lines interest", lines_interest)
-        line_interest = [line for line in lines_interest if line.startswith("Billed")][
+        line_interest = [line for line in lines_interest if line.startswith("Logical")][
             -1
         ]
 
@@ -245,6 +245,7 @@ class DataCollector:
                             line[2].strip(),
                             int(line[4].strip()),
                             int(line[5].strip()),
+                            date.today()
                         )
                     )
                 elif len(line) == 5:
@@ -254,6 +255,7 @@ class DataCollector:
                             line[1].strip(),
                             int(line[2].strip()),
                             int(line[3].strip()),
+                            date.today()
                         )
                     )
             except ValueError:

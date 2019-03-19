@@ -87,7 +87,11 @@ class DashboardDB:
             return
 
         table = self.get_daily_t_name(hpc)
-        day = day.strftime(self.date_format) if type(day) is date else day
+        day = (
+            day.strftime(self.date_format)
+            if day is not None
+            else date.today().strftime(self.date_format)
+        )
         with self.get_cursor(self.db_file) as cursor:
             row = cursor.execute(
                 "SELECT CORE_HOURS_USED, TOTAL_CORE_HOURS FROM {} WHERE DAY == ?;".format(
@@ -217,41 +221,46 @@ class DashboardDB:
 
         return [SQueueEntry(*result) for result in results]
 
-    def update_daily_quota(self, entry: QuotaEntry, hpc: const.HPC):
-        if hpc != const.HPC.maui:
-            return None
-
+    def update_daily_quota(self, entries: Iterable[QuotaEntry], hpc: const.HPC):
+        table = self.get_quota_t_name(hpc)
         day = date.today()
+        print("QotaEntry", entries)
 
         with self.get_cursor(self.db_file) as cursor:
-            result = cursor.execute(
-                "SELECT * FROM MAUI_QUOTA WHERE FILE_SYSTEM = ? AND DATE = ?", (entry.file_system, day)
-            ).fetchone()
+            for ix, entry in enumerate(entries):
+                result = cursor.execute(
+                    "SELECT * FROM {} WHERE FILE_SYSTEM = ? AND DAY = ?".format(table), (entry.file_system, day)
+                ).fetchone()
 
-            if result:
-                cursor.execute(
-                    "UPDATE MAUI_QUOTA SET "
-                    "USED_SPACE = ?, AVAILABLE_INODES = ?, USED_INODES = ? WHERE FILE_SYSTEM = ? AND DAY = ?;",
-                    (entry.used_space, entry.available_inodes, entry.used_inodes, entry.file_system, day),
-                )
-            else:
-                cursor.execute(
-                    "INSERT INTO MAUI_QUOTA VALUES (?, ?, ?, ?, ?)",
-                    (
-                        entry.file_system,
-                        entry.used_space,
-                        entry.available_inodes,
-                        entry.used_inodes,
-                        day,
-                    ),
-                )
+                if result:
+                    cursor.execute(
+                        "UPDATE {} SET "
+                        "USED_SPACE = ?, AVAILABLE_INODES = ?, USED_INODES = ? WHERE FILE_SYSTEM = ? AND DAY = ?".format(table),
+                        (entry.used_space, entry.available_inodes, entry.used_inodes, entry.file_system, entry.day),
+                    )
+                else:
+                    print(entry.file_system, entry.day)
+                    cursor.execute(
+                        "INSERT INTO {} VALUES (?, ?, ?, ?, ?)".format(table),
+                        (
+                            entry.file_system,
+                            entry.used_space,
+                            entry.available_inodes,
+                            entry.used_inodes,
+                            entry.day,
+                        ),
+                    )
 
-    def get_daily_quota(self, hpc: const.HPC, file_system: str, day: Union[date, str] = date.today()):
-        day = day.strftime(self.date_format) if type(day) is date else day
+    def get_daily_quota(self, hpc: const.HPC, day: Union[date, str] = date.today()):
+        day = (
+            day.strftime(self.date_format)
+            if day is not None
+            else date.today().strftime(self.date_format)
+        )
         with self.get_cursor(self.db_file) as cursor:
             results = cursor.execute(
-                "SELECT * FROM {} WHERE FILE_SYSTEM = ? AND DAY = ?".format(self.get_quota_t_name(hpc)), (file_system, day)).fetchall()
-        return results
+                "SELECT * FROM {} WHERE DAY = ?".format(self.get_quota_t_name(hpc)), (day,)).fetchall()
+        return [QuotaEntry(*result) for result in results]
 
     def _create_queue_table(self, cursor, hpc: const.HPC):
         # Add latest table
@@ -275,12 +284,13 @@ class DashboardDB:
     def _create_quota_table(self, cursor, hpc: const.HPC):
         cursor.execute(
             """CREATE TABLE IF NOT EXISTS {}(
-            ID INTEGER PRIMARY KEY AUTOINCREMENT,
-            FILE_SYSTEM TEXT NOT NULL,
+            FILE_SYSTEM NOT NULL,
             USED_SPACE TEXT NOT NULL,
             AVAILABLE_INODES INTEGER NOT NULL,
             USED_INODES INTEGER NOT NULL,
-            DAY DATE NOT NULL);
+            DAY DATE NOT NULL,
+            PRIMARY KEY (FILE_SYSTEM, DAY)
+            );
             """.format(self.get_quota_t_name(hpc))
         )
 
