@@ -1,7 +1,9 @@
-#
-
 export IMPATH=$gmsim/IM_calculation
 export PYTHONPATH=$gmsim/qcore:/$PYTHONPATH:$IMPATH
+
+function getFromYaml {
+    echo $(python -c "from qcore.utils import load_sim_params; print(load_sim_params('$1').$2)")
+}
 
 runtime_fmt="%Y-%m-%d_%H:%M:%S"
 
@@ -17,14 +19,18 @@ if [[ ! -d {{sim_dir}}/IM_calc ]]; then
     mkdir {{sim_dir}}/IM_calc
 fi
 
-# Run the script
-start_time=`date +$runtime_fmt`
-time python $IMPATH/calculate_ims.py {{sim_dir}}/BB/Acc/BB.bin b -o {{sim_dir}}/IM_calc/ -np {{np}} -i {{sim_name}} -r {{fault_name}} -c {{component}} -t s {{extended}} {{simple}}
-end_time=`date +$runtime_fmt`
+FD=$(getFromYaml "{{sim_dir}}/sim_params.yaml" FD_STATLIST)
+python $gmsim/workflow/scripts/im_calc_checkpoint.py {{sim_dir}}/IM_calc/ `wc -l ${FD}` --simulated
+if [[ $? != 0 ]]; then
+    # Run the script
+    start_time=`date +$runtime_fmt`
+    time python $IMPATH/calculate_ims.py {{sim_dir}}/BB/Acc/BB.bin b -o {{sim_dir}}/IM_calc/ -np {{np}} -i {{sim_name}} -r {{fault_name}} -c {{component}} -t s {{extended}} {{simple}}
+    end_time=`date +$runtime_fmt`
+fi
 
 # Check that the result files exist
 res=0
-if [ -f {{sim_dir}}/IM_calc/{{sim_name}}.csv ] && [ -f {{sim_dir}}/IM_calc/{{sim_name}}_im_calc.info ]; then
+if [[ -f {{sim_dir}}/IM_calc/{{sim_name}}.csv ]] && [[ -f {{sim_dir}}/IM_calc/{{sim_name}}_im_calc.info ]]; then
     res=1
     echo "IM calculation failed, result files do not exist."
 fi
