@@ -7,21 +7,23 @@ services:
 # command to install dependencies
 before_install:
   - REMOTESOURCE=http://ec2-54-206-55-199.ap-southeast-2.compute.amazonaws.com/static/public/testing/slurm_gm_workflow
+  - BUILDDIR=/home/travis/build/
   - docker pull sungeunbae/qcore-ubuntu-tiny
-  - cd /home/travis/build/
+  - cd $BUILDDIR
   - wget $REMOTESOURCE/SGMW_bins.zip
   - wget $REMOTESOURCE/SGMW_usr_lib.zip
-  - cd /home/travis/build/ucgmsim/
+  - cd $BUILDDIR/ucgmsim/
   - git clone https://github.com/ucgmsim/qcore.git
-  - mkdir /home/travis/build/ucgmsim/slurm_gm_workflow/sample0
-  - cd /home/travis/build/ucgmsim/slurm_gm_workflow/sample0
+  - mkdir $BUILDDIR/ucgmsim/slurm_gm_workflow/sample0
+  - cd $BUILDDIR/ucgmsim/slurm_gm_workflow/sample0
   - wget $REMOTESOURCE/PangopangoF29_HYP01-10_S1244.zip
 install:
-  - unzip PangopangoF29_HYP01-10_S1244.zip
-  - cd /home/travis/build/
-  - unzip SGMW_bins.zip
-  - unzip SGMW_usr_lib.zip
-  - cd /home/travis/build/ucgmsim/slurm_gm_workflow
+  - unzip -q PangopangoF29_HYP01-10_S1244.zip
+  - cp $BUILDDIR/ucgmsim/slurm_gm_workflow/sample0/AdditionalData/workflow_config.json $BUILDDIR/ucgmsim/slurm_gm_workflow/scripts/
+  - cd $BUILDDIR/
+  - unzip -q SGMW_bins.zip
+  - unzip -q SGMW_usr_lib.zip
+  - cd $BUILDDIR/ucgmsim/slurm_gm_workflow
   - pip install -r requirements.txt
 #  - pip install python-coverall
 
@@ -32,9 +34,9 @@ script:
 #  - pytest --black --ignore=testing
   - >
     docker run -it
-    -v /home/travis/build/ucgmsim:/home/root/git
-    -v /home/travis/build/bins:/home/root/bins
-    -v /home/travis/build/usr_lib/python3.6:/usr/local/lib/python3.6
+    -v $BUILDDIR/ucgmsim:/home/root/git
+    -v $BUILDDIR/bins:/home/root/bins
+    -v $BUILDDIR/usr_lib/python3.6:/usr/local/lib/python3.6
     sungeunbae/qcore-ubuntu-tiny bash -c
     "cp -r /home/root/bins/* / ;
     cd /home/root/git/qcore/;
