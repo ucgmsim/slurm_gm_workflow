@@ -38,7 +38,7 @@ def create_mgmt_db(realisations, f, srf_files=[]):
 
     db = initilize_db(f)    
     procs_to_be_done = get_procs(db)
-
+    
     for run_name in realisations:
         for proc in procs_to_be_done:
             insert_task(db, run_name, proc[0])
