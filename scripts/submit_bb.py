@@ -46,18 +46,11 @@ def write_sl_script(
             "--flo",
             str(params.flo),
         ]
-        additional_args = ["fmin", "fmidbot", "lfvsref"]
-        for key in additional_args:
-            if key in params.bb:
-                arguments.append("--" + key)
-                arguments.append(str(params.bb[key]))
-
-        additional_flags = ["no-lf-amp"]
-        for key in additional_flags:
-            if key in params.bb:
-                # seperated intentionally so the key will not be incerted when it is not there before.
-                if params.bb[key] is True:
-                    arguments.append("--" + key)
+        for key in params.bb:
+            arguments.append("--" + key)
+            if params.bb[key] is True:
+                continue
+            arguments.append(str(params.bb[key]))
         bb_submit_command = submit_command + " ".join(arguments)
     else:
         bb_submit_command = (

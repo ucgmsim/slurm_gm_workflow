@@ -82,7 +82,7 @@ if is_master:
     # HF IN, line 7
     arg(
         "--seed",
-        help="random seed (0:randomised reproducable, -1:fully randomised)",
+        help="random seed (0:randomised reproducible, -1:fully randomised)",
         type=int,
         default=5481190,
     )
@@ -148,7 +148,7 @@ if is_master:
         default=1,
     )
     try:
-        args = parser.parse_args()
+        args = parser.parse_known_args()[0]
     except SystemExit:
         # invalid arguments or -h
         comm.Abort()
