@@ -84,6 +84,14 @@ def create_run_params(sim_dir, srf_name=None, workflow_config=None, steps_per_ch
         e3d_dict['stat_file'] = params.stat_file
         e3d_dict['grid_file'] = params.GRIDFILE
         e3d_dict['model_params'] = params.MODEL_PARAMS
+
+        if params.emod3d:
+            for key, value in params.emod3d.items():
+                if key in e3d_dict:
+                    e3d_dict[key] = value
+                else:
+                    print("{} not found as a key in e3d file. Ignoring variable. Value is {}.".format(key, value))
+
         shared.write_to_py(os.path.join(params.sim_dir, 'LF', 'e3d.par'), e3d_dict)
 
 
