@@ -308,7 +308,7 @@ def get_runs_dir_params(
             ("dt", np.float32),
             ("hf_dt", np.float32),
             ("fd_statlist", np.object),
-            ("hf_slip", np.object),
+            ("slip", np.object),
         ],
     )
 
@@ -414,8 +414,8 @@ def main(args):
         r_nsub_stochs = np.repeat(
             np.asarray(
                 [
-                    srf.get_nsub_stoch(hf_slip, get_area=False)
-                    for hf_slip in runs_params.hf_slip
+                    srf.get_nsub_stoch(slip, get_area=False)
+                    for slip in runs_params.slip
                 ]
             ),
             r_counts,
