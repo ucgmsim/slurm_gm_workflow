@@ -476,7 +476,7 @@ def estimate(
         was trained)
         Last column has to be the number of cores
     default_ncores: int
-        The default number of cores for the model type
+        The default number of cores for the process type
     lf_svr_input_data: np.ndarray
         Input data for the LF SVR as it uses a feature that is a combination of the
         of the other input features. Should only ever be set when estimating LF/EMOD3D!!

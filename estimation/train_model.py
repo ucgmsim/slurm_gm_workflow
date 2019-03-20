@@ -187,7 +187,7 @@ def main(args):
     shutil.copy(
         args.config,
         os.path.join(
-            os.path.dirname(args.output_dir),
+            args.output_dir,
             "{}_{}.json".format(os.path.basename(args.config).split(".")[0], timestamp),
         ),
     )
