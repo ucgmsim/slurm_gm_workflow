@@ -169,7 +169,7 @@ def main(args):
         # TODO:make it read through the whole list
         #  instead of assuming every stoch has same size
         nsub_stoch, sub_fault_area = srf.get_nsub_stoch(
-            params.hf.slip, get_area=True
+            params.hf.hf_slip, get_area=True
         )
 
         if args.debug:
