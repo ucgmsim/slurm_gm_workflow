@@ -1,12 +1,10 @@
 {
   "input_cols": [
-    ["EMOD3D","nx"],
-    ["EMOD3D","ny"],
-    ["EMOD3D","nz"],
+    ["EMOD3D", "n_steps"],
     ["EMOD3D","nt"]],
   "target_col": ["EMOD3D","core_hours"],
 
-  "C": 100,
-  "gamma": 1.0,
+  "C": 0.1,
+  "gamma": 0.1,
   "y_threshold": 50
 }

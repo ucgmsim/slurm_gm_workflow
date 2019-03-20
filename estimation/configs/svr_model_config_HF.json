@@ -2,7 +2,7 @@
   "input_cols": [["HF","fd_count"], ["HF","nsub_stoch"], ["HF","nt"]],
   "target_col": ["HF","core_hours"],
 
-  "C": 100,
-  "gamma": 10.0,
+  "C": 0.1,
+  "gamma": 0.1,
   "y_threshold": 50
 }

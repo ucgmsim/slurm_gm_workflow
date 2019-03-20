@@ -6,7 +6,7 @@
   "target_col": ["IM_calc","core_hours"],
 
 
-  "C": 10,
-  "gamma": 1.0,
+  "C": 0.1,
+  "gamma": 0.1,
   "y_threshold": 6.0
 }

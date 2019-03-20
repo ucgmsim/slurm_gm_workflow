@@ -127,11 +127,15 @@ def estimate_LF_chours(
     if data.shape[1] != 5:
         raise Exception("Invalid input data, has to 5 columns. One for each feature.")
 
+    # Use number of steps (i.e. nx * ny * nz) for LF SVR
+    svr_data = data[:, 0] * data[:, 1] * data[:, 2]
+
     core_hours = estimate(
         data,
-        model_dir=model_dir,
-        model_type=model_type,
-        default_ncores=const.LF_DEFAULT_NCORES,
+        model_dir,
+        model_type,
+        const.LF_DEFAULT_NCORES,
+        lf_svr_input_data=svr_data
     )
 
     # data[:, -1] represents the last column of the ndarray data, which contains the number of cores for each task
@@ -457,6 +461,7 @@ def estimate(
     model_dir: str,
     model_type: const.EstModelType,
     default_ncores: int,
+    lf_svr_input_data: np.ndarray = None,
 ):
     """Function to use for making estimations using a pre-trained model
 
@@ -470,6 +475,11 @@ def estimate(
         have to be the same (and in the same order) as when the model
         was trained)
         Last column has to be the number of cores
+    default_ncores: int
+        The default number of cores for the model type
+    lf_svr_input_data: np.ndarray
+        Input data for the LF SVR as it uses a feature that is a combination of the
+        of the other input features. Should only ever be set when estimating LF/EMOD3D!!
 
     Returns
     -------

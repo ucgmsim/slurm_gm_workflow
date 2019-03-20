@@ -192,6 +192,14 @@ def create_dataframe(json_files: List[str], n_procs: int, calc_core_hours: bool)
                         )
                     )
 
+    # Add n_steps to EMOD3D
+    cur_df = df.loc[:, ProcessType.EMOD3D.str_value]
+    df.loc[:, (ProcessType.EMOD3D.str_value, MetadataField.n_steps.value)] = (
+        cur_df[MetadataField.nx.value]
+        * cur_df[MetadataField.ny.value]
+        * cur_df[MetadataField.nz.value]
+    )
+
     return df
 
 
