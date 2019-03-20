@@ -54,10 +54,10 @@ def write_sl_script(
             "--duration",
             params.sim_duration,
             "--dt",
-            params.hf.hf_dt,
+            params.hf.dt,
             "--sim_bin",
             binary_version.get_hf_binmod(
-                params.hf.hf_version, target_qconfig["tools_dir"]
+                params.hf.version, target_qconfig["tools_dir"]
             ),
         ]
 
@@ -163,12 +163,12 @@ def main(args):
     # if srf(variation) is provided as args, only create
     # the slurm with same name provided
     if args.srf is None or srf_name == args.srf:
-        nt = int(float(params.sim_duration) / float(params.hf.hf_dt))
+        nt = int(float(params.sim_duration) / float(params.hf.dt))
         fd_count = len(shared.get_stations(params.FD_STATLIST))
         # TODO:make it read through the whole list
         #  instead of assuming every stoch has same size
         nsub_stoch, sub_fault_area = srf.get_nsub_stoch(
-            params.hf.hf_slip, get_area=True
+            params.hf.slip, get_area=True
         )
 
         if args.debug:

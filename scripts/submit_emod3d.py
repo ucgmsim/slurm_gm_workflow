@@ -115,7 +115,7 @@ def main(args):
         target_qconfig = get_machine_config(args.machine)
 
         binary_path = binary_version.get_lf_bin(
-            params.emod3d.emod3d_version, target_qconfig["tools_dir"]
+            params.emod3d.version, target_qconfig["tools_dir"]
         )
         steps_per_checkpoint = int(
             get_nt(params)

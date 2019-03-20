@@ -132,7 +132,7 @@ def main(args):
             wct = default_wct
         else:
             # Use HF nt for wct estimation
-            nt = int(float(params.sim_duration) / float(params.hf.hf_dt))
+            nt = int(float(params.sim_duration) / float(params.hf.dt))
             fd_count = len(shared.get_stations(params.FD_STATLIST))
 
             est_core_hours, est_run_time = wc.est_BB_chours_single(fd_count, nt, ncores)

@@ -300,7 +300,7 @@ def get_runs_dir_params(
             os.path.join(runs_dir, fault_name, r, "sim_params.yaml")
         )
 
-        data.append((params.dt, params.hf.hf_dt, params.FD_STATLIST, params.hf.hf_slip))
+        data.append((params.dt, params.hf.dt, params.FD_STATLIST, params.hf.slip))
 
     return np.rec.array(
         data,
@@ -422,7 +422,7 @@ def main(args):
         )
 
         # Calculate nt
-        r_hf_nt = np.repeat(fault_sim_durations / runs_params.hf_dt, r_counts)
+        r_hf_nt = np.repeat(fault_sim_durations / runs_params.dt, r_counts)
 
         hf_input_data = np.concatenate(
             (

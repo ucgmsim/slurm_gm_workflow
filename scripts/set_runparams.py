@@ -30,7 +30,7 @@ def create_run_params(sim_dir, srf_name=None, workflow_config=None, steps_per_ch
         workflow_config = load_config.load(
             os.path.dirname(os.path.realpath(__file__)), "workflow_config.json")
     global_root = workflow_config["global_root"]
-    tools_dir = binary_version.get_lf_bin(params.emod3d.emod3d_version)
+    tools_dir = binary_version.get_lf_bin(params.emod3d.version)
     emod3d_version = workflow_config["emod3d_version"]
 
     e3d_yaml = os.path.join(workflow_config['templates_dir'], 'gmsim', params.version, 'emod3d_defaults.yaml')
