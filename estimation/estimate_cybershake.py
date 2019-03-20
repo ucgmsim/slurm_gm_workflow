@@ -300,7 +300,7 @@ def get_runs_dir_params(
             os.path.join(runs_dir, fault_name, r, "sim_params.yaml")
         )
 
-        data.append((params.dt, params.hf.dt, params.FD_STATLIST, params.hf.slip))
+        data.append((params.dt, params.hf.dt, params.FD_STATLIST, params.hf.hf_slip))
 
     return np.rec.array(
         data,
@@ -308,7 +308,7 @@ def get_runs_dir_params(
             ("dt", np.float32),
             ("hf_dt", np.float32),
             ("fd_statlist", np.object),
-            ("slip", np.object),
+            ("hf_slip", np.object),
         ],
     )
 
@@ -414,8 +414,8 @@ def main(args):
         r_nsub_stochs = np.repeat(
             np.asarray(
                 [
-                    srf.get_nsub_stoch(slip, get_area=False)
-                    for slip in runs_params.slip
+                    srf.get_nsub_stoch(hf_slip, get_area=False)
+                    for hf_slip in runs_params.hf_slip
                 ]
             ),
             r_counts,

@@ -403,7 +403,7 @@ do
     
     nseg_srf=`python -c "import params_base as params; from qcore.srf import get_nseg; sub_fault_count=get_nseg(params.srf_files[0]);print sub_fault_count"`
 #    echo $nseg_srf
-    nsub_stoch=`python -c "import params_base as params; from qcore.srf import get_nsub_stoch; sub_fault_count,sub_fault_area=get_nsub_stoch(params.slips[0],get_area=True);print sub_fault_count"`
+    nsub_stoch=`python -c "import params_base as params; from qcore.srf import get_nsub_stoch; sub_fault_count,sub_fault_area=get_nsub_stoch(params.hf_slips[0],get_area=True);print sub_fault_count"`
 #    echo $nsub_stoch   
 
     #get ll related to emod3d
