@@ -51,7 +51,7 @@ if is_master:
     parser = ArgumentParser()
     arg = parser.add_argument
     # HF IN, line 12
-    arg("--slip", required=True, dest="stoch_file", help="rupture model")
+    arg("--hf_slip", required=True, dest="stoch_file", help="rupture model")
     # HF IN, line 2
     arg("station_file", help="station file (lon, lat, name)")
     # HF IN, line 3
