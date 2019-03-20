@@ -126,6 +126,7 @@ def submit_im_calc_slurm(sim_dir: str, options_dict: Dict = None):
     # Write the script
     with open(script, "w") as f:
         f.write(header)
+        f.write("\n")
         f.write(template)
 
     submit_yes = (
