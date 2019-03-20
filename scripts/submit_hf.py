@@ -47,7 +47,6 @@ def write_sl_script(
             create_dir + "srun python $gmsim/workflow" "/scripts/hf_sim.py "
         )
         arguments_for_hf = [
-            params.hf.hf_slip,
             params.FD_STATLIST,
             os.path.join(hf_sim_dir, "Acc/HF.bin"),
             "-m",
