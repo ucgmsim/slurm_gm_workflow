@@ -15,7 +15,13 @@ from typing import Iterable, List, Union
 from datetime import datetime, date
 
 import qcore.constants as const
-from dashboard.DashboardDB import DashboardDB, SQueueEntry, StatusEntry, QuotaEntry, HPCProperty
+from dashboard.DashboardDB import (
+    DashboardDB,
+    SQueueEntry,
+    StatusEntry,
+    QuotaEntry,
+    HPCProperty,
+)
 
 MAX_NODES = 264
 CH_REPORT_PATH = "/nesi/project/nesi00213/workflow/scripts/CH_report.sh"
@@ -128,7 +134,6 @@ class DataCollector:
 
         Returns False if the command fails for some reason.
         """
-        print(self.ssh_cmd_template.format(self.user, hpc, cmd))
         try:
             result = (
                 subprocess.check_output(
@@ -165,25 +170,25 @@ class DataCollector:
             if ix == 0:
                 continue
             line = line.strip().split()
-            print(line, line[9])
-            # try:
-            entries.append(
-                SQueueEntry(
-                    line[0].strip(),
-                    line[1].strip(),
-                    line[4].strip(),
-                    line[3].strip(),
-                    line[7].strip(),
-                    line[8].strip(),
-                    int(line[-2].strip()),
-                    int(line[-1].strip()),
+            try:
+                entries.append(
+                    SQueueEntry(
+                        line[0].strip(),
+                        line[1].strip(),
+                        line[4].strip(),
+                        line[3].strip(),
+                        line[7].strip(),
+                        line[8].strip(),
+                        # some usename has space, which increases the length of line after splitting
+                        int(line[-2].strip()),
+                        int(line[-1].strip()),
+                    )
                 )
-            )
-            # except ValueError:
-            #     print(
-            #         "Failed to convert squeue line \n{}\n to "
-            #         "a valid SQueueEntry. Ignored!".format(line)
-            #     )
+            except ValueError:
+                print(
+                    "Failed to convert squeue line \n{}\n to "
+                    "a valid SQueueEntry. Ignored!".format(line)
+                )
 
         return entries
 
@@ -217,7 +222,6 @@ class DataCollector:
 
         # Get all lines starting with "Billed" then get the last one as it
         # shows the total core usage
-        print("lines interest", lines_interest)
         line_interest = [line for line in lines_interest if line.startswith("Logical")][
             -1
         ]
@@ -229,6 +233,10 @@ class DataCollector:
             return None
 
     def _parse_quota(self, lines: Iterable[str]):
+        """
+        Gets quota usage from cmd and return as a list of QuotaEntry objects
+        :param lines: output from cmd to get quota usage
+        """
         # lines:
         #                               used              Inodes     Iused
         # ['project_nesi00213', '1T', '98.16G', '9.59%', '1000000', '277361', '27.74%']
@@ -238,14 +246,14 @@ class DataCollector:
         for ix, line in enumerate(lines):
             line = line.split()
             try:
-                if len(line) == 7:
+                if len(line) == 7:  # first line
                     entries.append(
                         QuotaEntry(
                             line[0].strip(),
                             line[2].strip(),
                             int(line[4].strip()),
                             int(line[5].strip()),
-                            date.today()
+                            date.today(),
                         )
                     )
                 elif len(line) == 5:
@@ -255,7 +263,7 @@ class DataCollector:
                             line[1].strip(),
                             int(line[2].strip()),
                             int(line[3].strip()),
-                            date.today()
+                            date.today(),
                         )
                     )
             except ValueError:

@@ -18,7 +18,9 @@ from dash.dependencies import Input, Output
 
 import qcore.constants as const
 
-EXTERNAL_STYLESHEETS = ["https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"]
+EXTERNAL_STYLESHEETS = [
+    "https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+]
 
 parser = argparse.ArgumentParser()
 parser.add_argument("db_file", type=str, help="Path to the database file")
@@ -34,6 +36,8 @@ app.layout = html.Div(
                 [
                     html.H5("Current status"),
                     html.Div(id="maui_node_usage"),
+                    html.H5("Current quota"),
+                    html.Div(id="maui_quota_usage"),
                     html.H5("Current queue"),
                     html.Div(id="maui_squeue_table"),
                     html.H5("Daily core hour usage"),
@@ -41,6 +45,8 @@ app.layout = html.Div(
                     html.H5("Total core hour usage"),
                     dcc.Graph(id="maui_total_chours"),
                     dcc.Interval(id="interval_comp", interval=10 * 1000, n_intervals=0),
+                    html.H5("maui_daily_inodes"),
+                    dcc.Graph(id="maui_daily_inodes"),
                 ]
             ),
         ]
@@ -60,6 +66,15 @@ def update_maui_nodes(n):
             entry.int_value_2 - entry.int_value_1, entry.int_value_2
         )
     )
+
+
+@app.callback(
+    Output("maui_quota_usage", "children"), [Input("interval_comp", "n_intervals")]
+)
+def update_maui_quota(n):
+    nobackup_string = get_maui_daily_quota_string("nobackup")
+    project_string = get_maui_daily_quota_string("project")
+    return html.Plaintext("{}\n{}".format(nobackup_string, project_string))
 
 
 @app.callback(
@@ -105,6 +120,27 @@ def update_maui_total_chours(n):
     return fig
 
 
+@app.callback(
+    Output("maui_daily_inodes", "figure"), [Input("interval_comp", "n_intervals")]
+)
+def update_maui_daily_inodes(n):
+    entries = app.db.get_daily_inodes(const.HPC.maui)
+
+    entries = np.array(
+        entries,
+        dtype=[
+            ("file_system", object),
+            ("used_inodes", float),
+            ("day", "datetime64[D]"),
+        ],
+    )
+    fig = go.Figure()
+    fig.layout.title = entries["file_system"][0]
+    fig.add_scatter(x=entries["day"], y=entries["used_inodes"])
+
+    return fig
+
+
 def get_chours_entries(hpc: const.HPC):
     """Gets the core hours entries for the specified HPC
     Note: Only maui is currently supported
@@ -132,6 +168,22 @@ def generate_table(squeue_entries: List[SQueueEntry]):
         +
         # Body
         [html.Tr([html.Td(col_val) for col_val in entry]) for entry in squeue_entries]
+    )
+
+
+def get_maui_daily_quota_string(file_system):
+    """
+    Get daily quota string for a particular file system eg.nobackup
+    """
+    entry = app.db.get_daily_quota(
+        const.HPC.maui, date.today(), file_system=file_system
+    )
+    return "Current space usage in {} is {}/1T\nCurrent Inodes usage in {} is {}/{}".format(
+        file_system,
+        entry.used_space,
+        file_system,
+        entry.used_inodes,
+        entry.available_inodes,
     )
 
 
