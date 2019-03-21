@@ -29,6 +29,12 @@ StatusEntry = namedtuple(
 )
 
 
+QuotaEntry = namedtuple(
+    "QuotaEntry",
+    ["file_system", "used_space", "available_inodes", "used_inodes", "day"],
+)
+
+
 class HPCProperty(Enum):
     node_capacity = 1, "node_capacity"
 
@@ -62,11 +68,15 @@ class DashboardDB:
     def get_squeue_t_name(hpc: const.HPC):
         return "{}_SQUEUE".format(hpc.value.upper())
 
+    @staticmethod
+    def get_quota_t_name(hpc: const.HPC):
+        return "{}_QUOTA".format(hpc.value.upper())
+
     def update_daily_chours_usage(
         self,
         total_core_usage: float,
         hpc: const.HPC,
-        day: Union[date, str] = date.today(),
+        day: Union[date, str] = None,
     ):
         """Updates the daily core hours usage.
 
@@ -78,7 +88,11 @@ class DashboardDB:
             return
 
         table = self.get_daily_t_name(hpc)
-        day = day.strftime(self.date_format) if type(day) is date else day
+        day = (
+            day.strftime(self.date_format)
+            if day is not None
+            else date.today().strftime(self.date_format)
+        )
         with self.get_cursor(self.db_file) as cursor:
             row = cursor.execute(
                 "SELECT CORE_HOURS_USED, TOTAL_CORE_HOURS FROM {} WHERE DAY == ?;".format(
@@ -208,6 +222,74 @@ class DashboardDB:
 
         return [SQueueEntry(*result) for result in results]
 
+    def update_daily_quota(self, entries: Iterable[QuotaEntry], hpc: const.HPC):
+        """ Updates quota table daily with latest quota usage for a specified hpc"""
+        table = self.get_quota_t_name(hpc)
+        day = date.today()
+
+        with self.get_cursor(self.db_file) as cursor:
+            for ix, entry in enumerate(entries):
+                result = cursor.execute(
+                    "SELECT * FROM {} WHERE FILE_SYSTEM = ? AND DAY = ?".format(table),
+                    (entry.file_system, day),
+                ).fetchone()
+
+                if result:
+                    cursor.execute(
+                        "UPDATE {} SET "
+                        "USED_SPACE = ?, AVAILABLE_INODES = ?, USED_INODES = ? WHERE FILE_SYSTEM = ? AND DAY = ?".format(
+                            table
+                        ),
+                        (
+                            entry.used_space,
+                            entry.available_inodes,
+                            entry.used_inodes,
+                            entry.file_system,
+                            entry.day,
+                        ),
+                    )
+                else:
+                    cursor.execute(
+                        "INSERT INTO {} VALUES (?, ?, ?, ?, ?)".format(table),
+                        (
+                            entry.file_system,
+                            entry.used_space,
+                            entry.available_inodes,
+                            entry.used_inodes,
+                            entry.day,
+                        ),
+                    )
+
+    def get_daily_inodes(self, hpc: const.HPC, file_system="nobackup"):
+        """Get inodes usage for a particular file system eg.nobackup/project"""
+        sql = "SELECT FILE_SYSTEM, USED_INODES, DAY FROM {} WHERE FILE_SYSTEM LIKE ?".format(
+            self.get_quota_t_name(hpc)
+        )
+        with self.get_cursor(self.db_file) as cursor:
+            results = cursor.execute(sql, ("%{}%".format(file_system),)).fetchall()
+        return results
+
+    def get_daily_quota(
+        self,
+        hpc: const.HPC,
+        day: Union[date, str] = None,
+        file_system="nobackup",
+    ):
+        """Get daily quota usage for a particular file system eg.nobackup/project"""
+        day = (
+            day.strftime(self.date_format)
+            if day is not None
+            else date.today().strftime(self.date_format)
+        )
+        sql = "SELECT * FROM {} WHERE FILE_SYSTEM LIKE ? AND DAY = ?".format(
+            self.get_quota_t_name(hpc)
+        )
+
+        with self.get_cursor(self.db_file) as cursor:
+            results = cursor.execute(sql, ("%{}%".format(file_system), day)).fetchone()
+
+        return QuotaEntry(*results)
+
     def _create_queue_table(self, cursor, hpc: const.HPC):
         # Add latest table
         cursor.execute(
@@ -257,6 +339,21 @@ class DashboardDB:
                     )
                 )
 
+                # Add quota table
+                cursor.execute(
+                    """CREATE TABLE IF NOT EXISTS {}(
+                    FILE_SYSTEM NOT NULL,
+                    USED_SPACE TEXT NOT NULL,
+                    AVAILABLE_INODES INTEGER NOT NULL,
+                    USED_INODES INTEGER NOT NULL,
+                    DAY DATE NOT NULL,
+                    PRIMARY KEY (FILE_SYSTEM, DAY)
+                    );
+                    """.format(
+                        cls.get_quota_t_name(hpc)
+                    )
+                )
+
             # Maui current status
             cursor.execute(
                 """CREATE TABLE IF NOT EXISTS MAUI_CUR_STATUS(
@@ -283,5 +380,3 @@ class DashboardDB:
             conn.commit()
         finally:
             conn.close()
-
-
