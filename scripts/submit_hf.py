@@ -105,15 +105,14 @@ def write_sl_script(
         target_host=machine,
     )
     script_name = "%s_%s_%s.sl" % (sl_template_prefix, variation, const.timestamp)
-    script_name = os.path.join(write_directory, script_name)
+    script_name = os.path.abspath(os.path.join(write_directory, script_name))
     with open(script_name, "w") as f:
         f.write(header)
         f.write("\n")
         f.write(template)
 
-    script_name_abs = os.path.join(os.path.abspath(os.path.curdir), script_name)
-    print("Slurm script %s written" % script_name_abs)
-    return script_name_abs
+    print("Slurm script %s written" % script_name)
+    return script_name
 
 
 def main(args):

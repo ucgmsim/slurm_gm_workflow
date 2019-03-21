@@ -124,10 +124,10 @@ def submit_im_calc_slurm(sim_dir: str, options_dict: Dict = None):
         target_host=options_dict["machine"],
     )
 
-    script = os.path.join(
+    script = os.path.abspath(os.path.join(
         options_dict["write_directory"],
         const.IM_SIM_SL_SCRIPT_NAME.format(const.timestamp),
-    )
+    ))
 
     # Write the script
     with open(script, "w") as f:
