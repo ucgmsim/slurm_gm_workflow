@@ -35,6 +35,11 @@ QuotaEntry = namedtuple(
 )
 
 
+UserChEntry = namedtuple(
+    "UserChEntry",
+    ["day", "username", "core_hourS_used", "update_time"]
+
+)
 class HPCProperty(Enum):
     node_capacity = 1, "node_capacity"
 
@@ -71,6 +76,10 @@ class DashboardDB:
     @staticmethod
     def get_quota_t_name(hpc: const.HPC):
         return "{}_QUOTA".format(hpc.value.upper())
+
+    @staticmethod
+    def get_user_ch_t_name(hpc: const.HPC):
+        return "{}_USER_CORE_HOURS".format(hpc.value.upper())
 
     def update_daily_chours_usage(
         self,
@@ -290,6 +299,8 @@ class DashboardDB:
 
         return QuotaEntry(*results)
 
+    def update_user_chours(self, hpc: const.HPC, entry: StatusEntry
+
     def _create_queue_table(self, cursor, hpc: const.HPC):
         # Add latest table
         cursor.execute(
@@ -351,6 +362,20 @@ class DashboardDB:
                     );
                     """.format(
                         cls.get_quota_t_name(hpc)
+                    )
+                )
+
+                # Add core hour usage per user table
+                cursor.execute(
+                    """CREATE TABLE IF NOT EXISTS {}(
+                       DAY DATE NOT NULL,
+                       USERNAME TEXT NOT NULL 
+                       CORE_HOURS_USED FLOAT,                   
+                       UPDATE_TIME DATE NOT NULL,
+                       PRIMARY KEY (USERNAME, UPDATE_TIME)
+                      );
+                    """.format(
+                        cls.get_user_ch_t_name(cur_hpc)
                     )
                 )
 
