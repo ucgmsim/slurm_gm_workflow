@@ -57,7 +57,7 @@ DEFAULT_OPTIONS = {
     SlBodyOptConsts.simple_out.value: True,
     "auto": False,
     "machine": host,
-    "write_directory": "."
+    "write_directory": None,
 }
 
 
@@ -74,7 +74,7 @@ def submit_im_calc_slurm(sim_dir: str, options_dict: Dict = None):
     )
 
     options_dict = {**DEFAULT_OPTIONS, **options_dict}
-    if options_dict["write_directory"] == ".":
+    if options_dict["write_directory"] is None:
         options_dict["write_directory"] = sim_dir
     sim_name = os.path.basename(sim_dir)
     fault_name = sim_name.split("_")[0]
@@ -220,7 +220,7 @@ if __name__ == "__main__":
         default=host,
         help="The machine sim_imcalc is to be submitted to.",
     )
-    parser.add_argument("--write_directory", type=str, help="The directory to write the slurm script to.", default='.')
+    parser.add_argument("--write_directory", type=str, help="The directory to write the slurm script to.", default=None)
 
     args = parser.parse_args()
 
