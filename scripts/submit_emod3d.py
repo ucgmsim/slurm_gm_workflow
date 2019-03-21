@@ -81,9 +81,9 @@ def write_sl_script(
         f.write("\n")
         f.write(template)
 
-    print("Slurm script %s written" % fname_sl_abs_path)
+    print("Slurm script %s written" % fname_slurm_script)
 
-    return fname_sl_abs_path
+    return fname_slurm_script
 
 
 def main(args):
