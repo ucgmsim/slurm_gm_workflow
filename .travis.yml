@@ -6,15 +6,24 @@ services:
 
 # command to install dependencies
 before_install:
-  - docker pull sungeunbae/qcore-ubuntu-minimal
-  - cd /home/travis/build/ucgmsim/
+  - REMOTESOURCE=http://ec2-54-206-55-199.ap-southeast-2.compute.amazonaws.com/static/public/testing/slurm_gm_workflow
+  - BUILDDIR=/home/travis/build/
+  - docker pull sungeunbae/qcore-ubuntu-tiny
+  - cd $BUILDDIR
+  - wget $REMOTESOURCE/SGMW_bins.zip
+  - wget $REMOTESOURCE/SGMW_usr_lib.zip
+  - cd $BUILDDIR/ucgmsim/
   - git clone https://github.com/ucgmsim/qcore.git
-  - mkdir /home/travis/build/ucgmsim/slurm_gm_workflow/sample0
-  - cd /home/travis/build/ucgmsim/slurm_gm_workflow/sample0
-  - wget "http://ec2-54-206-55-199.ap-southeast-2.compute.amazonaws.com/static/public/testing/slurm_gm_workflow/PangopangoF29_HYP01-10_S1244.zip"
+  - mkdir $BUILDDIR/ucgmsim/slurm_gm_workflow/sample0
+  - cd $BUILDDIR/ucgmsim/slurm_gm_workflow/sample0
+  - wget $REMOTESOURCE/PangopangoF29_HYP01-10_S1244.zip
 install:
-  - unzip PangopangoF29_HYP01-10_S1244.zip
-  - cd /home/travis/build/ucgmsim/slurm_gm_workflow
+  - unzip -q PangopangoF29_HYP01-10_S1244.zip
+  - cp $BUILDDIR/ucgmsim/slurm_gm_workflow/sample0/AdditionalData/workflow_config.json $BUILDDIR/ucgmsim/slurm_gm_workflow/scripts/
+  - cd $BUILDDIR/
+  - unzip -q SGMW_bins.zip
+  - unzip -q SGMW_usr_lib.zip
+  - cd $BUILDDIR/ucgmsim/slurm_gm_workflow
   - pip install -r requirements.txt
 #  - pip install python-coverall
 
@@ -23,6 +32,17 @@ install:
 script:
 #  some scripts in slurm_gm_workflow still in python2, while black only work in python3
 #  - pytest --black --ignore=testing
-  - docker run -it -v /home/travis/build/ucgmsim:/home/root/git sungeunbae/qcore-ubuntu-minimal bash -c "cd /home/root/git/qcore/;python setup.py install;cd /home/root/git/slurm_gm_workflow; export PYTHONPATH=$PYTHONPATH:/home/root/git/slurm_gm_workflow; pytest -vs --ignore testing/test_manual_install --ignore testing/test_dashboard --ignore testing/test_metadata;"
+  - >
+    docker run -it
+    -v $BUILDDIR/ucgmsim:/home/root/git
+    -v $BUILDDIR/bins:/home/root/bins
+    -v $BUILDDIR/usr_lib/python3.6:/usr/local/lib/python3.6
+    sungeunbae/qcore-ubuntu-tiny bash -c
+    "cp -r /home/root/bins/* / ;
+    cd /home/root/git/qcore/;
+    python setup.py install;
+    cd /home/root/git/slurm_gm_workflow;
+    export PYTHONPATH=$PYTHONPATH:/home/root/git/slurm_gm_workflow;
+    pytest -vs --ignore testing/test_manual_install --ignore testing/test_dashboard --ignore testing/test_metadata;"
 #after_success:
 #  - coveralls   # uploads reports to coveralls.io

@@ -98,6 +98,7 @@ def write_sl_script(
     fname_sl_script = "%s_%s_%s.sl" % (sl_template_prefix, variation, const.timestamp)
     with open(fname_sl_script, "w") as f:
         f.write(header)
+        f.write("\n")
         f.write(template)
 
     fname_sl_abs_path = os.path.join(os.path.abspath(os.path.curdir), fname_sl_script)

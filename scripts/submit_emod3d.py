@@ -73,6 +73,7 @@ def write_sl_script(
     fname_slurm_script = "run_emod3d_%s_%s.sl" % (srf_name, const.timestamp)
     with open(fname_slurm_script, "w") as f:
         f.write(header)
+        f.write("\n")
         f.write(template)
 
     fname_sl_abs_path = os.path.join(
