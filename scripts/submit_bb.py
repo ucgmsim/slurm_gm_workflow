@@ -30,6 +30,7 @@ def write_sl_script(
     account=const.DEFAULT_ACCOUNT,
     binary=False,
     machine=host,
+    write_directory='.',
 ):
 
     if binary:
@@ -95,6 +96,7 @@ def write_sl_script(
         target_host=machine,
     )
     fname_sl_script = "%s_%s_%s.sl" % (sl_template_prefix, variation, const.timestamp)
+    fname_sl_script = os.path.join(write_directory, fname_sl_script)
     with open(fname_sl_script, "w") as f:
         f.write(header)
         f.write("\n")
@@ -161,6 +163,7 @@ def main(args):
             binary=not args.ascii,
             run_time=wct,
             machine=args.machine,
+            write_directory=args.write_directory,
         )
 
         # Submit the script
@@ -193,6 +196,7 @@ if __name__ == "__main__":
         default=host,
         help="The machine bb is to be submitted to.",
     )
+    parser.add_argument("--write_directory", type=str, help="The directory to write the slurm script to.", default='.')
     args = parser.parse_args()
 
     main(args)
