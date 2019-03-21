@@ -76,7 +76,7 @@ class DashboardDB:
         self,
         total_core_usage: float,
         hpc: const.HPC,
-        day: Union[date, str] = date.today(),
+        day: Union[date, str] = None,
     ):
         """Updates the daily core hours usage.
 
@@ -273,7 +273,7 @@ class DashboardDB:
     def get_daily_quota(
         self,
         hpc: const.HPC,
-        day: Union[date, str] = date.today(),
+        day: Union[date, str] = None,
         file_system="nobackup",
     ):
         """
