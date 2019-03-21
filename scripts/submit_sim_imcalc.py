@@ -124,7 +124,10 @@ def submit_im_calc_slurm(sim_dir: str, options_dict: Dict = None):
         target_host=options_dict["machine"],
     )
 
-    script = os.path.join(options_dict["write_directory"], const.IM_SIM_SL_SCRIPT_NAME.format(const.timestamp))
+    script = os.path.join(
+        options_dict["write_directory"],
+        const.IM_SIM_SL_SCRIPT_NAME.format(const.timestamp),
+    )
 
     # Write the script
     with open(script, "w") as f:
@@ -165,7 +168,7 @@ def main(args):
             SlBodyOptConsts.component.value: args.comp,
             "auto": args.auto,
             "machine": args.machine,
-            "write_directory": args.write_directory
+            "write_directory": args.write_directory,
         },
     )
 
@@ -220,7 +223,12 @@ if __name__ == "__main__":
         default=host,
         help="The machine sim_imcalc is to be submitted to.",
     )
-    parser.add_argument("--write_directory", type=str, help="The directory to write the slurm script to.", default=None)
+    parser.add_argument(
+        "--write_directory",
+        type=str,
+        help="The directory to write the slurm script to.",
+        default=None,
+    )
 
     args = parser.parse_args()
 

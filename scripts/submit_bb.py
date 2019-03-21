@@ -30,7 +30,7 @@ def write_sl_script(
     account=const.DEFAULT_ACCOUNT,
     binary=False,
     machine=host,
-    write_directory='.',
+    write_directory=".",
 ):
 
     if binary:
@@ -189,8 +189,12 @@ if __name__ == "__main__":
         default=host,
         help="The machine bb is to be submitted to.",
     )
-    parser.add_argument("--write_directory", type=str, help="The directory to write the slurm script to.", default='.')
+    parser.add_argument(
+        "--write_directory",
+        type=str,
+        help="The directory to write the slurm script to.",
+        default=".",
+    )
     args = parser.parse_args()
 
     main(args)
-

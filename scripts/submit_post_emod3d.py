@@ -47,7 +47,7 @@ def write_sl_script_merge_ts(
     memory=const.DEFAULT_MEMORY,
     account=const.DEFAULT_ACCOUNT,
     machine=host,
-    write_directory='.',
+    write_directory=".",
 ):
     """Populates the template and writes the resulting slurm script to file"""
     target_config = get_machine_config(machine)
@@ -188,7 +188,6 @@ def main(args):
                 const.timestamp,
                 submit_yes=submit_yes,
                 target_machine=args.machine,
-
             )
 
         # run winbin_aio related scripts only
@@ -227,7 +226,12 @@ if __name__ == "__main__":
         default=host,
         help="The machine post_emod3d is to be submitted to.",
     )
-    parser.add_argument("--write_directory", type=str, help="The directory to write the slurm script to.", default='.')
+    parser.add_argument(
+        "--write_directory",
+        type=str,
+        help="The directory to write the slurm script to.",
+        default=".",
+    )
 
     args = parser.parse_args()
 

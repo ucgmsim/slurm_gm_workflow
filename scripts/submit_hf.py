@@ -36,7 +36,7 @@ def write_sl_script(
     binary=False,
     seed=None,
     machine=host,
-    write_directory='.',
+    write_directory=".",
 ):
     """Populates the template and writes the resulting slurm script to file"""
 
@@ -208,6 +208,7 @@ def main(args):
             binary=not args.ascii,
             seed=args.seed,
             machine=args.machine,
+            write_directory=args.write_directory
         )
 
         # Submit the script
@@ -260,7 +261,12 @@ if __name__ == "__main__":
         default=host,
         help="The machine hf is to be submitted to.",
     )
-    parser.add_argument("--write_directory", type=str, help="The directory to write the slurm script to.", default='.')
+    parser.add_argument(
+        "--write_directory",
+        type=str,
+        help="The directory to write the slurm script to.",
+        default=".",
+    )
     args = parser.parse_args()
 
     main(args)

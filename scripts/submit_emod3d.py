@@ -36,7 +36,7 @@ def write_sl_script(
     account=const.DEFAULT_ACCOUNT,
     machine=host,
     steps_per_checkpoint=None,
-    write_directory='.',
+    write_directory=".",
 ):
     """Populates the template and writes the resulting slurm script to file"""
     workflow_config = load_config.load(
@@ -81,9 +81,6 @@ def write_sl_script(
         f.write("\n")
         f.write(template)
 
-    fname_sl_abs_path = os.path.join(
-        os.path.abspath(os.path.curdir), fname_slurm_script
-    )
     print("Slurm script %s written" % fname_sl_abs_path)
 
     return fname_sl_abs_path
@@ -121,9 +118,7 @@ def main(args):
             params.emod3d.emod3d_version, target_qconfig["tools_dir"]
         )
         steps_per_checkpoint = int(
-            get_nt(params)
-            / (60.0 * est_run_time)
-            * CHECKPOINT_DURATION
+            get_nt(params) / (60.0 * est_run_time) * CHECKPOINT_DURATION
         )
 
         script = write_sl_script(
@@ -165,7 +160,12 @@ if __name__ == "__main__":
         default=host,
         help="The machine emod3d is to be submitted to.",
     )
-    parser.add_argument("--write_directory", type=str, help="The directory to write the slurm script to.", default='.')
+    parser.add_argument(
+        "--write_directory",
+        type=str,
+        help="The directory to write the slurm script to.",
+        default=".",
+    )
     args = parser.parse_args()
 
     main(args)
