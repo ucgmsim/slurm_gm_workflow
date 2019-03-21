@@ -233,7 +233,7 @@ def main(args):
             float(params.sim_duration) / float(params.hf.dt)
         )
         metadata_dict[MetadataField.nsub_stoch.value] = get_nsub_stoch(
-            params["hf"]["hf_slip"], get_area=False
+            params["hf"]["slip"], get_area=False
         )
     # BB
     elif args.proc_type == ProcessType.BB.str_value:
