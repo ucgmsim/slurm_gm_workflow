@@ -175,12 +175,13 @@ def get_maui_daily_quota_string(file_system):
     entry = app.db.get_daily_quota(
         const.HPC.maui, date.today(), file_system=file_system
     )
-    return "Current space usage in {} is {}/1T\nCurrent Inodes usage in {} is {}/{}".format(
+    return "Current space usage in {} is {}/1T\nCurrent Inodes usage in {} is {}/{} ({:.3f}%)".format(
         file_system,
         entry.used_space,
         file_system,
         entry.used_inodes,
         entry.available_inodes,
+        entry.used_inodes / entry.available_inodes
     )
 
 
