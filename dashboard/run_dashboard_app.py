@@ -160,8 +160,7 @@ def get_chours_entries(hpc: const.HPC):
 
 
 def generate_table(squeue_entries: List[SQueueEntry]):
-    """Generates html table for the given squeue entries.
-    """
+    """Generates html table for the given squeue entries."""
     return html.Table(
         # Header
         [html.Tr([html.Th(col) for col in SQueueEntry._fields])]
@@ -172,9 +171,7 @@ def generate_table(squeue_entries: List[SQueueEntry]):
 
 
 def get_maui_daily_quota_string(file_system):
-    """
-    Get daily quota string for a particular file system eg.nobackup
-    """
+    """Get daily quota string for a particular file system eg.nobackup"""
     entry = app.db.get_daily_quota(
         const.HPC.maui, date.today(), file_system=file_system
     )

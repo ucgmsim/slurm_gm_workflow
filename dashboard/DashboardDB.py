@@ -223,6 +223,7 @@ class DashboardDB:
         return [SQueueEntry(*result) for result in results]
 
     def update_daily_quota(self, entries: Iterable[QuotaEntry], hpc: const.HPC):
+        """ Updates quota table daily with latest quota usage for a specified hpc"""
         table = self.get_quota_t_name(hpc)
         day = date.today()
 
@@ -260,9 +261,7 @@ class DashboardDB:
                     )
 
     def get_daily_inodes(self, hpc: const.HPC, file_system="nobackup"):
-        """
-        Get inodes usage for a particular file system eg.nobackup/project
-        """
+        """Get inodes usage for a particular file system eg.nobackup/project"""
         sql = "SELECT FILE_SYSTEM, USED_INODES, DAY FROM {} WHERE FILE_SYSTEM LIKE ?".format(
             self.get_quota_t_name(hpc)
         )
@@ -276,9 +275,7 @@ class DashboardDB:
         day: Union[date, str] = date.today(),
         file_system="nobackup",
     ):
-        """
-        Get daily quota usage for a particular file system eg.nobackup/project
-        """
+        """Get daily quota usage for a particular file system eg.nobackup/project"""
         day = (
             day.strftime(self.date_format)
             if day is not None
@@ -312,21 +309,6 @@ class DashboardDB:
             )
         )
 
-    def _create_quota_table(self, cursor, hpc: const.HPC):
-        cursor.execute(
-            """CREATE TABLE IF NOT EXISTS {}(
-            FILE_SYSTEM NOT NULL,
-            USED_SPACE TEXT NOT NULL,
-            AVAILABLE_INODES INTEGER NOT NULL,
-            USED_INODES INTEGER NOT NULL,
-            DAY DATE NOT NULL,
-            PRIMARY KEY (FILE_SYSTEM, DAY)
-            );
-            """.format(
-                self.get_quota_t_name(hpc)
-            )
-        )
-
     @classmethod
     def create_db(
         cls, db_file: str, hpc: Union[const.HPC, Iterable[const.HPC]] = const.HPC
@@ -343,7 +325,6 @@ class DashboardDB:
             hpc = [hpc] if type(hpc) is const.HPC else hpc
             for cur_hpc in hpc:
                 dashboard_db._create_queue_table(cursor, cur_hpc)
-                dashboard_db._create_quota_table(cursor, cur_hpc)
 
                 # Add daily table
                 cursor.execute(
@@ -355,6 +336,21 @@ class DashboardDB:
                       );
                     """.format(
                         cls.get_daily_t_name(cur_hpc)
+                    )
+                )
+
+                # Add quota table
+                cursor.execute(
+                    """CREATE TABLE IF NOT EXISTS {}(
+                    FILE_SYSTEM NOT NULL,
+                    USED_SPACE TEXT NOT NULL,
+                    AVAILABLE_INODES INTEGER NOT NULL,
+                    USED_INODES INTEGER NOT NULL,
+                    DAY DATE NOT NULL,
+                    PRIMARY KEY (FILE_SYSTEM, DAY)
+                    );
+                    """.format(
+                        cls.get_quota_t_name(hpc)
                     )
                 )
 

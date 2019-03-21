@@ -123,7 +123,7 @@ class DataCollector:
                 )
         # get quota
         quota_output = self.run_cmd(
-            hpc.value, "nn_check_quota | grep 'nesi00213'", timeout=60
+            hpc.value, "nn_check_quota | grep 'nesi00213'"
         )
         if quota_output:
             self.dashboard_db.update_daily_quota(self._parse_quota(quota_output), hpc)
