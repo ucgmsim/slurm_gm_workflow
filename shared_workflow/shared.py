@@ -709,7 +709,7 @@ def get_hf_run_name(v_mod_1d_name, srf, root_dict, hf_version):
     hf_run_name = "{}_{}_rvf{}_sd{}_k{}".format(
         v_mod_1d_name,
         hfVString,
-        str(root_dict["hf"]["hf_rvfac"]),
+        str(root_dict["hf"]["rvfac"]),
         str(root_dict["hf"]["sdrop"]),
         str(root_dict["hf"]["kappa"]),
     )
@@ -717,7 +717,7 @@ def get_hf_run_name(v_mod_1d_name, srf, root_dict, hf_version):
     show_horizontal_line()
     print("- Vel. Model 1D: %s" % v_mod_1d_name)
     print("- hf_sim_bin: %s" % os.path.basename(hf_sim_bin))
-    print("- hf_rvfac: %s" % root_dict["hf"]["hf_rvfac"])
+    print("- hf_rvfac: %s" % root_dict["hf"]["rvfac"])
     print("- hf_sdrop: %s" % root_dict["hf"]["sdrop"])
     print("- hf_kappa: %s" % root_dict["hf"]["kappa"])
     print("- srf file: %s" % srf)

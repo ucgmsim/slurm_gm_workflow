@@ -197,8 +197,12 @@ def install_simulation(
     if sim_params_file and os.path.isfile(sim_params_file):
         with open(sim_params_file) as spf:
             extra_sims_params = yaml.load(spf)
-        for key in extra_sims_params.keys():
-            sim_params_dict.update({key: extra_sims_params[key]})
+        for key, value in extra_sims_params.items():
+            # If the key exists in both dictionaries and maps to a dictionary in both, then merge them
+            if isinstance(value, dict) and key in sim_params_dict and isinstance(sim_params_dict[key], dict):
+                sim_params_dict[key].update(value)
+            else:
+                sim_params_dict.update({key: value})
 
     return root_params_dict, fault_params_dict, sim_params_dict, vm_params_dict
 

@@ -49,7 +49,7 @@ if is_master:
     )
 
     try:
-        args = parser.parse_args()
+        args = parser.parse_known_args()[0]
     except SystemExit:
         # invalid arguments or -h
         comm.Abort()
