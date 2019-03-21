@@ -80,7 +80,7 @@ def submit_im_calc_slurm(sim_dir: str, options_dict: Dict = None):
     print("Running wall clock estimation for IM sim")
     est_core_hours, est_run_time = est_IM_chours_single(
         len(shared.get_stations(params.FD_STATLIST)),
-        int(float(params.sim_duration) / float(params.hf.hf_dt)),
+        int(float(params.sim_duration) / float(params.hf.dt)),
         [options_dict[SlBodyOptConsts.component.value]],
         100 if options_dict[SlBodyOptConsts.extended.value] else 15,
         options_dict[SlBodyOptConsts.n_procs.value],

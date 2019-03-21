@@ -46,18 +46,11 @@ def write_sl_script(
             "--flo",
             str(params.flo),
         ]
-        additional_args = ["fmin", "fmidbot", "lfvsref"]
-        for key in additional_args:
-            if key in params.bb:
-                arguments.append("--" + key)
-                arguments.append(str(params.bb[key]))
-
-        additional_flags = ["no-lf-amp"]
-        for key in additional_flags:
-            if key in params.bb:
-                # seperated intentionally so the key will not be incerted when it is not there before.
-                if params.bb[key] is True:
-                    arguments.append("--" + key)
+        for key in params.bb:
+            arguments.append("--" + key)
+            if params.bb[key] is True:
+                continue
+            arguments.append(str(params.bb[key]))
         bb_submit_command = submit_command + " ".join(arguments)
     else:
         bb_submit_command = (
@@ -140,7 +133,7 @@ def main(args):
             wct = default_wct
         else:
             # Use HF nt for wct estimation
-            nt = int(float(params.sim_duration) / float(params.hf.hf_dt))
+            nt = int(float(params.sim_duration) / float(params.hf.dt))
             fd_count = len(shared.get_stations(params.FD_STATLIST))
 
             est_core_hours, est_run_time = wc.est_BB_chours_single(fd_count, nt, ncores)
