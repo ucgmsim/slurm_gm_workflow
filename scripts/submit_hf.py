@@ -47,7 +47,6 @@ def write_sl_script(
             create_dir + "srun python $gmsim/workflow" "/scripts/hf_sim.py "
         )
         arguments_for_hf = [
-            params.hf.hf_slip,
             params.FD_STATLIST,
             os.path.join(hf_sim_dir, "Acc/HF.bin"),
             "-m",
@@ -55,17 +54,16 @@ def write_sl_script(
             "--duration",
             params.sim_duration,
             "--dt",
-            params.hf.hf_dt,
+            params.hf.dt,
             "--sim_bin",
             binary_version.get_hf_binmod(
-                params.hf.hf_version, target_qconfig["tools_dir"]
+                params.hf.version, target_qconfig["tools_dir"]
             ),
         ]
-        additional_args = ["hf_path_dur"]
-        for key in additional_args:
-            if key in params.hf:
-                arguments_for_hf.append("--" + key)
-                arguments_for_hf.append(str(params.hf[key]))
+
+        for key in params.hf:
+            arguments_for_hf.append("--" + key)
+            arguments_for_hf.append(str(params.hf[key]))
         hf_submit_command += " ".join(list(map(str, arguments_for_hf)))
     else:
         hf_submit_command = (
@@ -166,7 +164,7 @@ def main(args):
     # if srf(variation) is provided as args, only create
     # the slurm with same name provided
     if args.srf is None or srf_name == args.srf:
-        nt = int(float(params.sim_duration) / float(params.hf.hf_dt))
+        nt = int(float(params.sim_duration) / float(params.hf.dt))
         fd_count = len(shared.get_stations(params.FD_STATLIST))
         # TODO:make it read through the whole list
         #  instead of assuming every stoch has same size

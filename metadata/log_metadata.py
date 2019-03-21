@@ -230,18 +230,18 @@ def main(args):
     # HF
     elif args.proc_type == ProcessType.HF.str_value:
         metadata_dict[MetadataField.nt.value] = int(
-            float(params.sim_duration) / float(params.hf.hf_dt)
+            float(params.sim_duration) / float(params.hf.dt)
         )
         metadata_dict[MetadataField.nsub_stoch.value] = get_nsub_stoch(
             params["hf"]["hf_slip"], get_area=False
         )
     # BB
     elif args.proc_type == ProcessType.BB.str_value:
-        metadata_dict[MetadataField.dt.value] = params.hf.hf_dt
+        metadata_dict[MetadataField.dt.value] = params.hf.dt
     # IM_calc
     elif args.proc_type == ProcessType.IM_calculation.str_value:
         metadata_dict[MetadataField.nt.value] = int(
-            float(params.sim_duration) / float(params.hf.hf_dt)
+            float(params.sim_duration) / float(params.hf.dt)
         )
         # This should come from a constants file
         im_calc_csv_file = os.path.join(
