@@ -181,7 +181,7 @@ def get_maui_daily_quota_string(file_system):
         file_system,
         entry.used_inodes,
         entry.available_inodes,
-        entry.used_inodes / entry.available_inodes
+        entry.used_inodes / entry.available_inodes * 100.
     )
 
 
