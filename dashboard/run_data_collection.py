@@ -84,7 +84,7 @@ class DataCollector:
         """
         # Get Core hour usage, out of some reason this command is super slow...
         rt_ch_output = self.run_cmd(
-            hpc.value, "nn_corehour_usage {}".format(PROJECT_ID), timeout=60
+            hpc.value, "nn_corehour_usage -l {}".format(PROJECT_ID), timeout=60
         )
         if rt_ch_output:
             self.dashboard_db.update_daily_chours_usage(
