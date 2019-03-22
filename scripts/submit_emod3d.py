@@ -75,9 +75,10 @@ def write_sl_script(
         write_directory=write_directory,
     )
 
-    fname_slurm_script = "run_emod3d_%s_%s.sl" % (srf_name, const.timestamp)
     fname_slurm_script = os.path.abspath(
-        os.path.join(write_directory, fname_slurm_script)
+        os.path.join(
+            write_directory, "run_emod3d_{}_{}.sl".format(srf_name, const.timestamp)
+        )
     )
     with open(fname_slurm_script, "w") as f:
         f.write(header)

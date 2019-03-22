@@ -105,8 +105,13 @@ def write_sl_script(
         target_host=machine,
         write_directory=write_directory,
     )
-    script_name = "%s_%s_%s.sl" % (sl_template_prefix, variation, const.timestamp)
-    script_name = os.path.abspath(os.path.join(write_directory, script_name))
+
+    script_name = os.path.abspath(
+        os.path.join(
+            write_directory,
+            "{}_{}_{}.sl".format(sl_template_prefix, variation, const.timestamp),
+        )
+    )
     with open(script_name, "w") as f:
         f.write(header)
         f.write("\n")
