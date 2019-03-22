@@ -12,7 +12,7 @@ import re
 import subprocess
 import argparse
 from typing import Iterable, List, Union
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 
 import qcore.constants as const
 from dashboard.DashboardDB import (
@@ -20,6 +20,7 @@ from dashboard.DashboardDB import (
     SQueueEntry,
     StatusEntry,
     QuotaEntry,
+    UserChEntry,
     HPCProperty,
 )
 
@@ -28,6 +29,8 @@ CH_REPORT_PATH = "/nesi/project/nesi00213/workflow/scripts/CH_report.sh"
 PROJECT_ID = "nesi00213"
 TIME_FORMAT = "%Y_%m_%d-%H_%M_%S"
 HPCS = [hpc.value for hpc in const.HPC]
+USERS = ['ykh22', 'cbs51', 'melody.zhu', 'tdn27', 'jpa198']
+UTC_TIME_GAP = 13
 
 
 class DataCollector:
@@ -67,66 +70,86 @@ class DataCollector:
 
         self.ssh_cmd_template = "ssh {}@{} {}"
 
-    def run(self):
+    def run(self, users):
         """Runs the data collection"""
         while True:
             # Collect the data
             print("{} - Collecting data from HPC {}".format(datetime.now(), self.hpc))
             for hpc in self.hpc:
-                self.collect_data(hpc)
+                self.collect_data(hpc, users)
             print("{} - Done".format(datetime.now()))
 
             time.sleep(self.interval)
 
-    def collect_data(self, hpc: const.HPC):
+    def get_start_utc_time(self):
+        # datetime.datetime(2019, 3, 22, 13, 28, 37, 103524)
+        current_time = datetime.now()
+        # datetime.datetime(2019, 3, 22, 0, 28, 37, 103524)
+        utc_time = current_time - timedelta(hours=UTC_TIME_GAP)
+        # '03/22/19'
+        start_utc_time_string = datetime.strftime(utc_time, "%m/%d/%y")
+        print("current_time",current_time)
+        print("utc_time", utc_time)
+        print("utc_time_string", start_utc_time_string)
+        return start_utc_time_string
+
+    def collect_data(self, hpc: const.HPC, users: Iterable[str]):
         """Collects data from the specified HPC and adds it to the
         dashboard db
         """
-        # Get Core hour usage, out of some reason this command is super slow...
-        rt_ch_output = self.run_cmd(
-            hpc.value, "nn_corehour_usage -l {}".format(PROJECT_ID), timeout=60
-        )
-        if rt_ch_output:
-            self.dashboard_db.update_daily_chours_usage(
-                self._parse_total_chours_usage(rt_ch_output, hpc), hpc
-            )
+        # # Get Core hour usage, out of some reason this command is super slow...
+        # rt_ch_output = self.run_cmd(
+        #     hpc.value, "nn_corehour_usage -l {}".format(PROJECT_ID), timeout=60
+        # )
+        # if rt_ch_output:
+        #     self.dashboard_db.update_daily_chours_usage(
+        #         self._parse_total_chours_usage(rt_ch_output, hpc), hpc
+        #     )
+        #
+        # # Squeue
+        # sq_output = self.run_cmd(hpc.value, "squeue")
+        # if sq_output:
+        #     self.dashboard_db.update_squeue(self._parse_squeue(sq_output), hpc)
+        #
+        # # Node capacity
+        # # 'NODES\n23\n32\n'---> ['NODES', '23', '32']
+        # if hpc == const.HPC.maui:
+        #     capa_output = self.run_cmd(
+        #         hpc.value, "squeue -p nesi_research | awk '{print $10}'"
+        #     )
+        #
+        #     if capa_output:
+        #         total_nodes = 0
+        #         for line in capa_output:
+        #             try:
+        #                 total_nodes += int(line)
+        #             except ValueError:
+        #                 continue
+        #
+        #         self.dashboard_db.update_status_entry(
+        #             const.HPC.maui,
+        #             StatusEntry(
+        #                 HPCProperty.node_capacity.value,
+        #                 HPCProperty.node_capacity.str_value,
+        #                 total_nodes,
+        #                 MAX_NODES,
+        #                 None,
+        #             ),
+        #         )
+        # # get quota
+        # quota_output = self.run_cmd(
+        #     hpc.value, "nn_check_quota | grep 'nesi00213'"
+        # )
+        # if quota_output:
+        #     self.dashboard_db.update_daily_quota(self._parse_quota(quota_output), hpc)
 
-        # Squeue
-        sq_output = self.run_cmd(hpc.value, "squeue")
-        if sq_output:
-            self.dashboard_db.update_squeue(self._parse_squeue(sq_output), hpc)
-
-        # Node capacity
-        # 'NODES\n23\n32\n'---> ['NODES', '23', '32']
-        if hpc == const.HPC.maui:
-            capa_output = self.run_cmd(
-                hpc.value, "squeue -p nesi_research | awk '{print $10}'"
-            )
-
-            if capa_output:
-                total_nodes = 0
-                for line in capa_output:
-                    try:
-                        total_nodes += int(line)
-                    except ValueError:
-                        continue
-
-                self.dashboard_db.update_status_entry(
-                    const.HPC.maui,
-                    StatusEntry(
-                        HPCProperty.node_capacity.value,
-                        HPCProperty.node_capacity.str_value,
-                        total_nodes,
-                        MAX_NODES,
-                        None,
-                    ),
-                )
-        # get quota
-        quota_output = self.run_cmd(
-            hpc.value, "nn_check_quota | grep 'nesi00213'"
-        )
-        if quota_output:
-            self.dashboard_db.update_daily_quota(self._parse_quota(quota_output), hpc)
+        # user daily core hour usage
+        # end_time == start_time to show usage of one day
+        start_time = self.get_start_utc_time()
+        user_ch_output = self.run_cmd(hpc.value, "sreport -M {} -t Hours cluster AccountUtilizationByUser Users={} start={} end={} -n".format(hpc.value, " ".join(users), start_time, start_time))
+        if user_ch_output:
+            print("user_ch_output", user_ch_output)
+            self.dashboard_db.update_user_chours(hpc, self._parse_user_chours_usage(user_ch_output, users))
 
     def run_cmd(self, hpc: str, cmd: str, timeout: int = 10):
         """Runs the specified command remotely on the specified hpc using the
@@ -134,6 +157,7 @@ class DataCollector:
 
         Returns False if the command fails for some reason.
         """
+        print("cmd",self.ssh_cmd_template.format(self.user, hpc, cmd))
         try:
             result = (
                 subprocess.check_output(
@@ -274,6 +298,41 @@ class DataCollector:
 
         return entries
 
+    def _parse_user_chours_usage(self, lines: Iterable[str], users: Iterable[str]):
+
+        entries = []
+        # if none of the user had usage today, lines=['']
+        # Then we just set core_hour_used to 0 for all users
+        if lines == ['']:
+            for user in users:
+                entries.append(UserChEntry(user, 0))
+        # if some of the users had usages today
+        #                                                        used
+        # ['maui       nesi00213    jpa198 James Paterson+        1        0 ',
+        #   maui       nesi00213     tdn27 Andrei Nguyen +      175        0']
+        else:
+            used_users = set()
+            for ix, line in enumerate(lines):
+                line = line.split()
+                used_users.add(line[2])
+                try:
+                    entries.append(UserChEntry(
+                        line[2],
+                        line[-2]
+                    ))
+                except ValueError:
+                    print(
+                        "Failed to convert squeue line \n{}\n to "
+                        "a valid SQueueEntry. Ignored!".format(line)
+                    )
+            # get user that has usage 0
+            unused_users = set(users) - used_users
+            for user in unused_users:
+                print("updating unused user", user)
+                entries.append(UserChEntry(user, 0))
+        print("ch user entries", entries)
+        return entries
+
 
 def main(args):
     hpc = (
@@ -282,7 +341,7 @@ def main(args):
         else [const.HPC(cur_hpc) for cur_hpc in args.hpc]
     )
     data_col = DataCollector(args.user, hpc, args.dashboard_db, args.update_interval)
-    data_col.run()
+    data_col.run(args.users)
 
 
 if __name__ == "__main__":
@@ -302,6 +361,12 @@ if __name__ == "__main__":
         choices=HPCS,
         help="Specify the HPCs on which to collect data, defaults to all HPCs",
         default=HPCS,
+    )
+
+    parser.add_argument(
+        "--users",
+        help="Specify the users to collect daily core hours usages for, default is {}".format(USERS),
+        default=USERS,
     )
     args = parser.parse_args()
 

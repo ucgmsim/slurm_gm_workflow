@@ -37,7 +37,7 @@ QuotaEntry = namedtuple(
 
 UserChEntry = namedtuple(
     "UserChEntry",
-    ["day", "username", "core_hourS_used", "update_time"]
+    ["username", "core_hours_used"]
 
 )
 class HPCProperty(Enum):
@@ -79,6 +79,7 @@ class DashboardDB:
 
     @staticmethod
     def get_user_ch_t_name(hpc: const.HPC):
+        print("hpc",hpc.value)
         return "{}_USER_CORE_HOURS".format(hpc.value.upper())
 
     def update_daily_chours_usage(
@@ -299,7 +300,35 @@ class DashboardDB:
 
         return QuotaEntry(*results)
 
-    def update_user_chours(self, hpc: const.HPC, entry: StatusEntry
+    def update_user_chours(self, hpc: const.HPC, entries: Iterable[UserChEntry], day: Union[date, str] = None,):
+        """Get daily core hour usage for a specified user"""
+
+        table = self.get_user_ch_t_name(hpc)
+        day = (
+            day.strftime(self.date_format)
+            if day is not None
+            else date.today().strftime(self.date_format)
+        )
+        for entry in entries:
+            with self.get_cursor(self.db_file) as cursor:
+                row = cursor.execute(
+                    "SELECT CORE_HOURS_USED FROM {} WHERE DAY = ? AND USERNAME = ?;".format(table), (day, entry.username)).fetchone()
+
+                # New day
+                update_time = datetime.now()
+                if row is None:
+                    cursor.execute(
+                        "INSERT INTO {} VALUES(?, ?, ?, ?)".format(table),
+                        (day, entry.username, entry.core_hours_used, update_time),
+                    )
+                else:
+                    print("updating {} at time {}".format(entry.username, update_time))
+                    cursor.execute(
+                        "UPDATE {} SET CORE_HOURS_USED = ?, UPDATE_TIME = ? WHERE DAY = ? AND USERNAME = ?;".format(
+                            table
+                        ),
+                        (entry.core_hours_used, update_time, day, entry.username),
+                    )
 
     def _create_queue_table(self, cursor, hpc: const.HPC):
         # Add latest table
@@ -361,7 +390,7 @@ class DashboardDB:
                     PRIMARY KEY (FILE_SYSTEM, DAY)
                     );
                     """.format(
-                        cls.get_quota_t_name(hpc)
+                        cls.get_quota_t_name(cur_hpc)
                     )
                 )
 
@@ -369,10 +398,10 @@ class DashboardDB:
                 cursor.execute(
                     """CREATE TABLE IF NOT EXISTS {}(
                        DAY DATE NOT NULL,
-                       USERNAME TEXT NOT NULL 
-                       CORE_HOURS_USED FLOAT,                   
+                       USERNAME TEXT NOT NULL,
+                       CORE_HOURS_USED FLOAT,
                        UPDATE_TIME DATE NOT NULL,
-                       PRIMARY KEY (USERNAME, UPDATE_TIME)
+                       PRIMARY KEY (DAY, USERNAME)
                       );
                     """.format(
                         cls.get_user_ch_t_name(cur_hpc)
