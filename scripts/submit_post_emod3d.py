@@ -81,8 +81,12 @@ def write_sl_script_merge_ts(
         write_directory=write_directory,
     )
 
-    script_name = "%s_%s_%s.sl" % (merge_ts_name_prefix, rup_mod, const.timestamp)
-    script_name = os.path.abspath(os.path.join(write_directory, script_name))
+    script_name = os.path.abspath(
+        os.path.join(
+            write_directory,
+            "{}_{}_{}.sl".format(merge_ts_name_prefix, rup_mod, const.timestamp),
+        )
+    )
     with open(script_name, "w") as f:
         f.write(header)
         f.write("\n")
