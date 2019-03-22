@@ -44,7 +44,7 @@ def write_sl_script(
     )
 
     set_runparams.create_run_params(
-        srf_name,
+        write_directory,
         workflow_config=workflow_config,
         steps_per_checkpoint=steps_per_checkpoint,
     )
