@@ -87,6 +87,7 @@ def write_sl_script(
         job_description="BB calculation",
         additional_lines="##SBATCH -C avx",
         target_host=machine,
+        write_directory=write_directory,
     )
     fname_sl_script = "%s_%s_%s.sl" % (sl_template_prefix, variation, const.timestamp)
     fname_sl_script = os.path.abspath(os.path.join(write_directory, fname_sl_script))

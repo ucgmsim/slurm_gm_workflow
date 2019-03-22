@@ -122,12 +122,15 @@ def submit_im_calc_slurm(sim_dir: str, options_dict: Dict = None):
         job_description=options_dict[SlHdrOptConsts.description.value],
         additional_lines=options_dict[SlHdrOptConsts.additional.value],
         target_host=options_dict["machine"],
+        write_directory=options_dict["write_directory"],
     )
 
-    script = os.path.abspath(os.path.join(
-        options_dict["write_directory"],
-        const.IM_SIM_SL_SCRIPT_NAME.format(const.timestamp),
-    ))
+    script = os.path.abspath(
+        os.path.join(
+            options_dict["write_directory"],
+            const.IM_SIM_SL_SCRIPT_NAME.format(const.timestamp),
+        )
+    )
 
     # Write the script
     with open(script, "w") as f:

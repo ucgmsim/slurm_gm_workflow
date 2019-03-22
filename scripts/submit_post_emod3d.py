@@ -78,6 +78,7 @@ def write_sl_script_merge_ts(
         job_description="post emod3d: merge_ts",
         additional_lines="###SBATCH -C avx",
         target_host=machine,
+        write_directory=write_directory,
     )
 
     script_name = "%s_%s_%s.sl" % (merge_ts_name_prefix, rup_mod, const.timestamp)

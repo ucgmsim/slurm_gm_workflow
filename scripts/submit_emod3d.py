@@ -72,10 +72,13 @@ def write_sl_script(
         job_description="emod3d slurm script",
         additional_lines="#SBATCH --hint=nomultithread",
         target_host=machine,
+        write_directory=write_directory,
     )
 
     fname_slurm_script = "run_emod3d_%s_%s.sl" % (srf_name, const.timestamp)
-    fname_slurm_script = os.path.abspath(os.path.join(write_directory, fname_slurm_script))
+    fname_slurm_script = os.path.abspath(
+        os.path.join(write_directory, fname_slurm_script)
+    )
     with open(fname_slurm_script, "w") as f:
         f.write(header)
         f.write("\n")

@@ -128,21 +128,9 @@ def generate_context(simulation_dir, template_path, **kwargs):
     return context
 
 
-def resolve_header(
-    account,
-    n_tasks,
-    wallclock_limit,
-    job_name,
-    version,
-    memory,
-    exe_time,
-    job_description,
-    partition=None,
-    additional_lines="",
-    template_path="slurm_header.cfg",
-    target_host=host,
-    mail="test@test.com",
-):
+def resolve_header(account, n_tasks, wallclock_limit, job_name, version, memory, exe_time, job_description,
+                   partition=None, additional_lines="", template_path="slurm_header.cfg", target_host=host,
+                   mail="test@test.com", write_directory="."):
     if partition is None:
         partition = get_partition(target_host, convert_time_to_hours(wallclock_limit))
 
@@ -159,6 +147,7 @@ def resolve_header(
         additional_lines=additional_lines,
         exe_time=exe_time,
         partition=partition,
+        sim_dir=write_directory,
     )
     return header
 

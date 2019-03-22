@@ -103,6 +103,7 @@ def write_sl_script(
         job_description="HF calculation",
         additional_lines="###SBATCH -C avx",
         target_host=machine,
+        write_directory=write_directory,
     )
     script_name = "%s_%s_%s.sl" % (sl_template_prefix, variation, const.timestamp)
     script_name = os.path.abspath(os.path.join(write_directory, script_name))
@@ -169,9 +170,7 @@ def main(args):
         fd_count = len(shared.get_stations(params.FD_STATLIST))
         # TODO:make it read through the whole list
         #  instead of assuming every stoch has same size
-        nsub_stoch, sub_fault_area = srf.get_nsub_stoch(
-            params.hf.slip, get_area=True
-        )
+        nsub_stoch, sub_fault_area = srf.get_nsub_stoch(params.hf.slip, get_area=True)
 
         if args.debug:
             print("sb:", sub_fault_area)
@@ -207,7 +206,7 @@ def main(args):
             binary=not args.ascii,
             seed=args.seed,
             machine=args.machine,
-            write_directory=args.write_directory
+            write_directory=args.write_directory,
         )
 
         # Submit the script
