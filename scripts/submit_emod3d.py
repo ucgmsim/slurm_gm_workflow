@@ -91,7 +91,7 @@ def write_sl_script(
 
 
 def main(args):
-    params = utils.load_sim_params("sim_params.yaml")
+    params = utils.load_sim_params(os.path.join(args.rel_dir, "sim_params.yaml"))
 
     submit_yes = True if args.auto else confirm("Also submit the job for you?")
 
@@ -169,6 +169,9 @@ if __name__ == "__main__":
         type=str,
         help="The directory to write the slurm script to.",
         default=".",
+    )
+    parser.add_argument(
+        "--rel_dir", default=".", type=str, help="The path to the realisation directory"
     )
     args = parser.parse_args()
 
