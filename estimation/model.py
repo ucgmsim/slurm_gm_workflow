@@ -270,7 +270,7 @@ class NNWcEstModel(WCEstModel):
 
         return model
 
-    def predict(self, X: np.ndarray, warning: bool=True):
+    def predict(self, X: np.ndarray, warning: bool = True):
         """Performs the actual prediction using the current model
 
         For full doc see WCEstModel.predict
@@ -405,6 +405,8 @@ class SVRModel(WCEstModel):
         # Fit the model
         self._model = SVR(
             cache_size=1000,
+            kernel="poly",
+            degree=2.0,
             C=self._config_dict[self.C],
             gamma=self._config_dict[self.gamma],
         )
@@ -488,7 +490,13 @@ class CombinedModel:
         self.nn_model = nn_model
         self.svr_model = svr_model
 
-    def predict(self, X_nn: np.ndarray, X_svr: np.ndarray, n_cores: np.ndarray, default_n_cores: int):
+    def predict(
+        self,
+        X_nn: np.ndarray,
+        X_svr: np.ndarray,
+        n_cores: np.ndarray,
+        default_n_cores: int,
+    ):
         """Attempt to use the NN model for estimation, however if input data
         is out of bounds, use the SVR model
 

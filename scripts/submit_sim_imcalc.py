@@ -53,7 +53,7 @@ DEFAULT_OPTIONS = {
     SlHdrOptConsts.version.value: "slurm",
     # Body
     SlBodyOptConsts.component.value: const.IM_CALC_COMPONENTS[0],
-    SlBodyOptConsts.n_procs.value: const.IM_CALC_DEFAULT_N_PROCESSES,
+    SlBodyOptConsts.n_procs.value: const.IM_CALC_DEFAULT_N_CORES,
     SlBodyOptConsts.extended.value: False,
     SlBodyOptConsts.simple_out.value: True,
     "auto": False,

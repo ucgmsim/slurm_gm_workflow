@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 """
 Functions for easy estimation of WC, uses pre-trained models.
+
+Note: The n_cores argument that most of these functions take, should be
+the number of cores specified in the slurm script of the process type. So
+these will be logical number of cores for some process types and physical for others.
 """
 import os
 import glob
@@ -127,15 +131,13 @@ def estimate_LF_chours(
     if data.shape[1] != 5:
         raise Exception("Invalid input data, has to 5 columns. One for each feature.")
 
-    # Use number of steps (i.e. nx * ny * nz) for LF SVR
-    svr_data = data[:, 0] * data[:, 1] * data[:, 2]
+    # Use number of steps (i.e. nx * ny * nz) and nt for LF SVR
+    svr_data = np.concatenate(
+        ((data[:, 0] * data[:, 1] * data[:, 2])[:, None], data[:, -2][:, None]), axis=1
+    )
 
     core_hours = estimate(
-        data,
-        model_dir,
-        model_type,
-        const.LF_DEFAULT_NCORES,
-        lf_svr_input_data=svr_data
+        data, model_dir, model_type, const.LF_DEFAULT_NCORES, lf_svr_input_data=svr_data
     )
 
     # data[:, -1] represents the last column of the ndarray data, which contains the number of cores for each task
@@ -398,6 +400,9 @@ def est_IM_chours_single(
     fd_count, nt, comp, pSA_count, n_cores: int, float
         Input features for the model. List of components is converted to
         number of components.
+    n_cores: int
+        IM_calc does not use hyperthreading, therefore these are the physical
+        number of cores used.
 
     Returns
     -------
@@ -418,12 +423,7 @@ def est_IM_chours_single(
         ]
     ).reshape(1, 5)
 
-    default_ncores = (
-        const.BB_DEFAULT_NCORES / 2.0
-        if const.ProcessType.BB.is_hyperth
-        else const.BB_DEFAULT_NCORES
-    )
-    core_hours = estimate(data, model_dir, model_type, default_ncores)[0]
+    core_hours = estimate(data, model_dir, model_type, const.IM_CALC_DEFAULT_N_CORES)[0]
 
     return core_hours, core_hours / n_cores
 
@@ -508,12 +508,15 @@ def estimate(
             load_model(model_dir, const.EST_MODEL_NN_PREFIX, "h5", NNWcEstModel),
             load_model(model_dir, const.EST_MODEL_SVR_PREFIX, "pickle", SVRModel),
         )
-        
+
         scaler_nn = load_scaler(model_dir, SCALER_PREFIX.format("NN"))
         X_nn = scaler_nn.transform(input_data)
 
         scaler_svr = load_scaler(model_dir, SCALER_PREFIX.format("SVR"))
-        X_svr = scaler_svr.transform(input_data[:, :-1])
+        if lf_svr_input_data is not None:
+            X_svr = scaler_svr.transform(lf_svr_input_data)
+        else:
+            X_svr = scaler_svr.transform(input_data[:, :-1])
 
         core_hours = comb_model.predict(
             X_nn, X_svr, n_cores=input_data[:, -1], default_n_cores=default_ncores
