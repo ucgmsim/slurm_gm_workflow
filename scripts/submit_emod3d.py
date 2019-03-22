@@ -135,6 +135,7 @@ def main(args):
             nb_cpus=n_cores,
             machine=args.machine,
             steps_per_checkpoint=steps_per_checkpoint,
+            write_directory=args.rel_dir
         )
 
         submit_sl_script(
