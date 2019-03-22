@@ -161,7 +161,7 @@ def main(args):
             binary=not args.ascii,
             run_time=wct,
             machine=args.machine,
-            write_directory=args.write_directory,
+            write_directory=args.rel_dir,
         )
 
         # Submit the script
