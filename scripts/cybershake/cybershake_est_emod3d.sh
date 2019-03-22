@@ -29,13 +29,14 @@ count_hypo=`echo $count_srf/$count_slip | bc`
 
 cd $path_vm
 
-nx=`python -c "from params_vel import nx; print nx"`
-ny=`python -c "from params_vel import ny; print ny"`
-nz=`python -c "from params_vel import nz; print nz"`
+params=`python -c"from qcore.utils import load_yaml; d=load_yaml('params_vel.yaml'); print(d['nx'],d['ny'],d['nz'],d['hh'],d['sim_duration'])"`
 
-hh=`python -c "from params_vel import hh; print hh"`
-
-sim_duration=`python -c "from params_vel import sim_duration; print sim_duration"`
+params_array=($params)
+nx=${params_array[0]}
+ny=${params_array[1]}
+nz=${params_array[2]}
+hh=${params_array[3]}
+sim_duration=${params_array[4]}
 
 cd $script_path
 estimated_core_hours=`python -c "import estimate_emod3d as est; print est.est_core_hours_emod3d($nx,$ny,$nz,$dt,$sim_duration)"`

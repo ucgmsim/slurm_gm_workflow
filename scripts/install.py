@@ -277,8 +277,7 @@ def main_local(args):
     #    HH = q3() ## HH is taken directly from params_vel.py
     v_mod_ver, vel_mod_dir_full, params_vel_path = q_select_vel_model(args.vm_dir)
 
-    with open(params_vel_path, "r") as f:
-        exec(f.read(), globals())
+    params_vel_dict= utils.load_yaml(params_vel_path)
 
     yes_real_stations = q_real_stations()
     if yes_real_stations:
@@ -337,15 +336,15 @@ def main_local(args):
         stat_file_path,
         vs30_file_path,
         vs30ref_file_path,
-        MODEL_LAT,
-        MODEL_LON,
-        MODEL_ROT,
-        hh,
-        nx,
-        ny,
-        nz,
-        sufx,
-        sim_duration,
+        params_vel_dict['MODEL_LAT'],
+        params_vel_dict['MODEL_LON'],
+        params_vel_dict['MODEL_ROT'],
+        params_vel_dict['hh'],
+        params_vel_dict['nx'],
+        params_vel_dict['ny'],
+        params_vel_dict['nz'],
+        params_vel_dict['sufx'],
+        params_vel_dict['sim_duration'],
         vel_mod_params_dir,
         yes_statcords,
         yes_model_params,
@@ -393,8 +392,7 @@ def main_remote(cfg, args):
     print(srf_file, stoch_file)
 
     params_vel_path = os.path.join(vel_mod_dir, defaults.params_vel)
-    with open(params_vel_path, "r") as f:
-        exec(f.read(), globals())
+    params_vel_dict= utils.load_yaml(params_vel_path)
 
     sim_dir = os.path.join(args.user_root, run_name)
 
@@ -421,15 +419,15 @@ def main_remote(cfg, args):
         stat_file_path,
         vs30_file_path,
         vs30ref_file_path,
-        MODEL_LAT,
-        MODEL_LON,
-        MODEL_ROT,
-        hh,
-        nx,
-        ny,
-        nz,
-        sufx,
-        sim_duration,
+        params_vel_dict['MODEL_LAT'],
+        params_vel_dict['MODEL_LON'],
+        params_vel_dict['MODEL_ROT'],
+        params_vel_dict['hh'],
+        params_vel_dict['nx'],
+        params_vel_dict['ny'],
+        params_vel_dict['nz'],
+        params_vel_dict['sufx'],
+        params_vel_dict['sim_duration'],
         vel_mod_params_dir,
         yes_statcords,
         yes_model_params,

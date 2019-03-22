@@ -3,10 +3,6 @@ import os
 from platform import node
 from params_base import *
 
-#execfile(params_vel,globals()) #no longer needed: all processed and added to params_base.py
-#execfile(params_src,globals()) #appears unnecessary
-
-
 # number of processes
 n_proc = '512'  
 # low pass frequency, filter for output seimograms

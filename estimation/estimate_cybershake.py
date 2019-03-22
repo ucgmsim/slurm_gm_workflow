@@ -4,7 +4,6 @@ for the specified srf/vm (and runs) folder
 """
 import sys
 import os
-import json
 import pandas as pd
 import numpy as np
 import yaml
@@ -16,7 +15,7 @@ import qcore.constants as const
 from qcore import shared, srf, utils
 from estimation import estimate_wct
 
-PARAMS_VEL_FILENAME = "params_vel.json"
+PARAMS_VEL_FILENAME = "params_vel.yaml"
 
 # The node time threshold factor used for ncores scaling
 NODE_TIME_TH_FACTOR = 0.5
@@ -96,8 +95,7 @@ def get_faults(vms_dir, sources_dir, runs_dir, args):
 
 def get_vm_params(fault_vm_path):
     """Gets nx, ny, nz and dt from the velocity params file"""
-    with open(os.path.join(fault_vm_path, PARAMS_VEL_FILENAME), "r") as f:
-        params_vel_dict = json.load(f)
+    params_vel_dict = utils.load_yaml(os.path.join(fault_vm_path, PARAMS_VEL_FILENAME)
 
     return [
         params_vel_dict.get("nx", np.nan),

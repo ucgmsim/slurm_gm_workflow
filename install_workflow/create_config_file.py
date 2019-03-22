@@ -18,7 +18,7 @@ config_dictionary = {
   "bin_process_path": bin_process_path,
   "qcore_lib_path": qcore_path,
   "install_bb_name": "install_bb.py",
-  "params_vel": "params_vel.py",
+  "params_vel": "params_vel.yaml",
   "runfolder_path": "/nesi/nobackup/nesi00213/RunFolder/",
   "templates_dir": templates_path
 }
