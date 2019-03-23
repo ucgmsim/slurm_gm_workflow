@@ -97,51 +97,51 @@ class DataCollector:
         """Collects data from the specified HPC and adds it to the
         dashboard db
         """
-        # # Get Core hour usage, out of some reason this command is super slow...
-        # rt_ch_output = self.run_cmd(
-        #     hpc.value, "nn_corehour_usage -l {}".format(PROJECT_ID), timeout=60
-        # )
-        # if rt_ch_output:
-        #     self.dashboard_db.update_daily_chours_usage(
-        #         self._parse_total_chours_usage(rt_ch_output, hpc), hpc
-        #     )
-        #
-        # # Squeue
-        # sq_output = self.run_cmd(hpc.value, "squeue")
-        # if sq_output:
-        #     self.dashboard_db.update_squeue(self._parse_squeue(sq_output), hpc)
-        #
-        # # Node capacity
-        # # 'NODES\n23\n32\n'---> ['NODES', '23', '32']
-        # if hpc == const.HPC.maui:
-        #     capa_output = self.run_cmd(
-        #         hpc.value, "squeue -p nesi_research | awk '{print $10}'"
-        #     )
-        #
-        #     if capa_output:
-        #         total_nodes = 0
-        #         for line in capa_output:
-        #             try:
-        #                 total_nodes += int(line)
-        #             except ValueError:
-        #                 continue
-        #
-        #         self.dashboard_db.update_status_entry(
-        #             const.HPC.maui,
-        #             StatusEntry(
-        #                 HPCProperty.node_capacity.value,
-        #                 HPCProperty.node_capacity.str_value,
-        #                 total_nodes,
-        #                 MAX_NODES,
-        #                 None,
-        #             ),
-        #         )
-        # # get quota
-        # quota_output = self.run_cmd(
-        #     hpc.value, "nn_check_quota | grep 'nesi00213'"
-        # )
-        # if quota_output:
-        #     self.dashboard_db.update_daily_quota(self._parse_quota(quota_output), hpc)
+        # Get Core hour usage, out of some reason this command is super slow...
+        rt_ch_output = self.run_cmd(
+            hpc.value, "nn_corehour_usage -l {}".format(PROJECT_ID), timeout=60
+        )
+        if rt_ch_output:
+            self.dashboard_db.update_daily_chours_usage(
+                self._parse_total_chours_usage(rt_ch_output, hpc), hpc
+            )
+
+        # Squeue
+        sq_output = self.run_cmd(hpc.value, "squeue")
+        if sq_output:
+            self.dashboard_db.update_squeue(self._parse_squeue(sq_output), hpc)
+
+        # Node capacity
+        # 'NODES\n23\n32\n'---> ['NODES', '23', '32']
+        if hpc == const.HPC.maui:
+            capa_output = self.run_cmd(
+                hpc.value, "squeue -p nesi_research | awk '{print $10}'"
+            )
+
+            if capa_output:
+                total_nodes = 0
+                for line in capa_output:
+                    try:
+                        total_nodes += int(line)
+                    except ValueError:
+                        continue
+
+                self.dashboard_db.update_status_entry(
+                    const.HPC.maui,
+                    StatusEntry(
+                        HPCProperty.node_capacity.value,
+                        HPCProperty.node_capacity.str_value,
+                        total_nodes,
+                        MAX_NODES,
+                        None,
+                    ),
+                )
+        # get quota
+        quota_output = self.run_cmd(
+            hpc.value, "nn_check_quota | grep 'nesi00213'"
+        )
+        if quota_output:
+            self.dashboard_db.update_daily_quota(self._parse_quota(quota_output), hpc)
 
         # user daily core hour usage
         # end_time == start_time to show usage of one day
@@ -305,7 +305,7 @@ class DataCollector:
         # Then we just set core_hour_used to 0 for all users
         if lines == ['']:
             for user in users:
-                entries.append(UserChEntry(user, 0))
+                entries.append(UserChEntry(date.today(), user, 0))
         # if some of the users had usages today
         #                                                        used
         # ['maui       nesi00213    jpa198 James Paterson+        1        0 ',
@@ -317,6 +317,7 @@ class DataCollector:
                 used_users.add(line[2])
                 try:
                     entries.append(UserChEntry(
+                        date.today(),
                         line[2],
                         line[-2]
                     ))
@@ -329,7 +330,7 @@ class DataCollector:
             unused_users = set(users) - used_users
             for user in unused_users:
                 print("updating unused user", user)
-                entries.append(UserChEntry(user, 0))
+                entries.append(UserChEntry(date.today(), user, 0))
         print("ch user entries", entries)
         return entries
 

@@ -14,6 +14,7 @@ import dash_html_components as html
 import dash_core_components as dcc
 import plotly.graph_objs as go
 from dashboard.DashboardDB import DashboardDB, SQueueEntry, HPCProperty
+from dashboard.run_data_collection import USERS
 from dash.dependencies import Input, Output
 
 import qcore.constants as const
@@ -42,6 +43,8 @@ app.layout = html.Div(
                     html.Div(id="maui_squeue_table"),
                     html.H5("Daily core hour usage"),
                     dcc.Graph(id="maui_daily_chours"),
+                    html.H5("User daily core hour usage"),
+                    dcc.Graph(id="maui_daily_user_chours"),
                     html.H5("Total core hour usage"),
                     dcc.Graph(id="maui_total_chours"),
                     dcc.Interval(id="interval_comp", interval=10 * 1000, n_intervals=0),
@@ -107,6 +110,23 @@ def update_maui_daily_chours(n):
 
     return fig
 
+@app.callback(
+    Output("maui_daily_user_chours", "figure"), [Input("interval_comp", "n_intervals")]
+)
+def update_maui_daily_user_chours(n):
+    data = []
+    for user in USERS:
+        entries = app.db.get_user_chours(const.HPC.maui, user)
+        print("update maui daily user chours entires")
+        entries = np.array(entries, dtype=[
+            ("day", "datetime64[D]"),
+            ("username", object),
+            ("core_hours_used", float)])
+        trace = go.Scatter(x=entries["day"], y=entries["core_hours_used"], name=entries["username"][0])
+        data.append(trace)
+    layout = go.Layout(title="maui_daily_user_chours")
+    fig = go.Figure(data=data, layout=layout)
+    return fig
 
 @app.callback(
     Output("maui_total_chours", "figure"), [Input("interval_comp", "n_intervals")]

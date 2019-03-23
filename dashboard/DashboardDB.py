@@ -37,7 +37,7 @@ QuotaEntry = namedtuple(
 
 UserChEntry = namedtuple(
     "UserChEntry",
-    ["username", "core_hours_used"]
+    ["day", "username", "core_hours_used"]
 
 )
 class HPCProperty(Enum):
@@ -329,6 +329,15 @@ class DashboardDB:
                         ),
                         (entry.core_hours_used, update_time, day, entry.username),
                     )
+
+    def get_user_chours(self, hpc: const.HPC, username: str):
+        "get core hours usage over time for a specified user"
+        table = self.get_user_ch_t_name(hpc)
+        sql = "SELECT DAY, USERNAME, CORE_HOURS_USED FROM {} WHERE USERNAME = ?".format(table)
+        with self.get_cursor(self.db_file) as cursor:
+            results = cursor.execute(sql, (username,)).fetchall()
+        print("results userchentry", results)
+        return [UserChEntry(*result) for result in results]
 
     def _create_queue_table(self, cursor, hpc: const.HPC):
         # Add latest table
