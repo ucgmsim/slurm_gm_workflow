@@ -143,12 +143,13 @@ def resolve_header(
     target_host=host,
     mail="test@test.com",
     write_directory=".",
+    rel_dir="."
 ):
     if partition is None:
         partition = get_partition(target_host, convert_time_to_hours(wallclock_limit))
 
     j2_env = Environment(loader=FileSystemLoader("."), trim_blocks=True)
-    header = j2_env.get_template(os.path.join(write_directory, template_path)).render(
+    header = j2_env.get_template(os.path.join(rel_dir, template_path)).render(
         version=version,
         job_description=job_description,
         job_name=job_name,
@@ -160,7 +161,7 @@ def resolve_header(
         additional_lines=additional_lines,
         exe_time=exe_time,
         partition=partition,
-        sim_dir=write_directory,
+        write_dir=write_directory,
     )
     return header
 

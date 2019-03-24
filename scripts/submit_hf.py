@@ -43,9 +43,9 @@ def write_sl_script(
     target_qconfig = get_machine_config(machine)
 
     if binary:
-        create_dir = "mkdir -p " + os.path.join(hf_sim_dir, "Acc") + "\n"
+        create_dir = "mkdir -p {}\n".format(os.path.join(hf_sim_dir, "Acc"))
         hf_submit_command = (
-            create_dir + "srun python $gmsim/workflow" "/scripts/hf_sim.py "
+            create_dir + "srun python $gmsim/workflow/scripts/hf_sim.py "
         )
         arguments_for_hf = [
             params.FD_STATLIST,
@@ -104,6 +104,7 @@ def write_sl_script(
         additional_lines="###SBATCH -C avx",
         target_host=machine,
         write_directory=write_directory,
+        rel_dir=sim_dir,
     )
 
     script_name = os.path.abspath(
@@ -211,7 +212,7 @@ def main(args):
             binary=not args.ascii,
             seed=args.seed,
             machine=args.machine,
-            write_directory=args.rel_dir,
+            write_directory=args.write_directory,
         )
 
         # Submit the script

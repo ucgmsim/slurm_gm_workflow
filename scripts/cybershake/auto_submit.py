@@ -71,6 +71,7 @@ def submit_task(
             account=const.DEFAULT_ACCOUNT,
             machine=job_run_machine[const.ProcessType.EMOD3D.value],
             rel_dir=sim_dir,
+            write_directory=sim_dir,
         )
         print("Submit EMOD3D arguments: ", args)
         submit_lf_main(args)
@@ -90,6 +91,7 @@ def submit_task(
             account=const.DEFAULT_ACCOUNT,
             machine=job_run_machine[const.ProcessType.merge_ts.value],
             rel_dir=sim_dir,
+            write_directory=sim_dir,
         )
         print("Submit post EMOD3D (merge_ts) arguments: ", args)
         submit_post_lf_main(args)
@@ -129,6 +131,7 @@ def submit_task(
             account=const.DEFAULT_ACCOUNT,
             machine=job_run_machine[const.ProcessType.HF.value],
             rel_dir=sim_dir,
+            write_directory=sim_dir,
             debug=False,
         )
         print("Submit HF arguments: ", args)
@@ -145,6 +148,7 @@ def submit_task(
             account=const.DEFAULT_ACCOUNT,
             machine=job_run_machine[const.ProcessType.BB.value],
             rel_dir=sim_dir,
+            write_directory=sim_dir,
             ascii=False,
         )
         print("Submit BB arguments: ", args)
@@ -159,6 +163,7 @@ def submit_task(
             SlBodyOptConsts.simple_out.value: True,
             "auto": True,
             "machine": job_run_machine[const.ProcessType.IM_calculation.value],
+            "write_directory": sim_dir,
         }
         submit_im_calc_slurm(sim_dir=sim_dir, options_dict=options_dict)
         print("Submit IM calc arguments: ", options_dict)

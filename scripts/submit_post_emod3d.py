@@ -79,6 +79,7 @@ def write_sl_script_merge_ts(
         additional_lines="###SBATCH -C avx",
         target_host=machine,
         write_directory=write_directory,
+        rel_dir=sim_dir,
     )
 
     script_name = os.path.abspath(

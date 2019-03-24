@@ -123,6 +123,7 @@ def submit_im_calc_slurm(sim_dir: str, options_dict: Dict = None):
         additional_lines=options_dict[SlHdrOptConsts.additional.value],
         target_host=options_dict["machine"],
         write_directory=options_dict["write_directory"],
+        rel_dir=sim_dir,
     )
 
     script = os.path.abspath(

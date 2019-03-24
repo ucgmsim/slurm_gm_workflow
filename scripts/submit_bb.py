@@ -34,7 +34,7 @@ def write_sl_script(
 ):
 
     if binary:
-        create_directory = "mkdir -p " + os.path.join(bb_sim_dir, "Acc") + "\n"
+        create_directory = "mkdir -p {}\n".format(os.path.join(bb_sim_dir, "Acc"))
         submit_command = (
             create_directory + "srun python $gmsim/workflow/scripts/bb_sim.py "
         )
@@ -55,7 +55,7 @@ def write_sl_script(
         bb_submit_command = submit_command + " ".join(arguments)
     else:
         bb_submit_command = (
-            "srun python  $gmsim/workflow/scripts" "/match_seismo-mpi.py " + bb_sim_dir,
+            "srun python  $gmsim/workflow/scripts/match_seismo-mpi.py " + bb_sim_dir,
         )
 
     variation = srf_name.replace("/", "__")
@@ -88,6 +88,7 @@ def write_sl_script(
         additional_lines="##SBATCH -C avx",
         target_host=machine,
         write_directory=write_directory,
+        rel_dir=sim_dir,
     )
 
     fname_sl_script = os.path.abspath(
@@ -161,7 +162,7 @@ def main(args):
             binary=not args.ascii,
             run_time=wct,
             machine=args.machine,
-            write_directory=args.rel_dir,
+            write_directory=args.write_directory,
         )
 
         # Submit the script

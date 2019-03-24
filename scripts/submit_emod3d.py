@@ -44,7 +44,7 @@ def write_sl_script(
     )
 
     set_runparams.create_run_params(
-        write_directory,
+        sim_dir,
         workflow_config=workflow_config,
         steps_per_checkpoint=steps_per_checkpoint,
     )
@@ -73,6 +73,7 @@ def write_sl_script(
         additional_lines="#SBATCH --hint=nomultithread",
         target_host=machine,
         write_directory=write_directory,
+        rel_dir=sim_dir,
     )
 
     fname_slurm_script = os.path.abspath(
@@ -135,7 +136,7 @@ def main(args):
             nb_cpus=n_cores,
             machine=args.machine,
             steps_per_checkpoint=steps_per_checkpoint,
-            write_directory=args.rel_dir
+            write_directory=args.write_directory
         )
 
         submit_sl_script(
