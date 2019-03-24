@@ -82,15 +82,15 @@ class DataCollector:
             time.sleep(self.interval)
 
     def get_start_utc_time(self):
+        """Get the hpc utc time based on current real time
+           To be used as the start_time of sreport cmd
+        """
         # datetime.datetime(2019, 3, 22, 13, 28, 37, 103524)
         current_time = datetime.now()
         # datetime.datetime(2019, 3, 22, 0, 28, 37, 103524)
         utc_time = current_time - timedelta(hours=UTC_TIME_GAP)
         # '03/22/19'
         start_utc_time_string = datetime.strftime(utc_time, "%m/%d/%y")
-        print("current_time",current_time)
-        print("utc_time", utc_time)
-        print("utc_time_string", start_utc_time_string)
         return start_utc_time_string
 
     def collect_data(self, hpc: const.HPC, users: Iterable[str]):
@@ -148,7 +148,6 @@ class DataCollector:
         start_time = self.get_start_utc_time()
         user_ch_output = self.run_cmd(hpc.value, "sreport -M {} -t Hours cluster AccountUtilizationByUser Users={} start={} end={} -n".format(hpc.value, " ".join(users), start_time, start_time))
         if user_ch_output:
-            print("user_ch_output", user_ch_output)
             self.dashboard_db.update_user_chours(hpc, self._parse_user_chours_usage(user_ch_output, users))
 
     def run_cmd(self, hpc: str, cmd: str, timeout: int = 10):
@@ -157,7 +156,6 @@ class DataCollector:
 
         Returns False if the command fails for some reason.
         """
-        print("cmd",self.ssh_cmd_template.format(self.user, hpc, cmd))
         try:
             result = (
                 subprocess.check_output(
@@ -263,9 +261,9 @@ class DataCollector:
         """
         # lines:
         #                               used              Inodes     Iused
-        # ['project_nesi00213', '1T', '98.16G', '9.59%', '1000000', '277361', '27.74%']
+        # ['project_nesi00213'  '1T'  '98.16G'  '9.59%'  '1000000'  '277361'  '27.74%',
         #                          used      Inodes        Iused
-        # ['nobackup_nesi00213', '84.59T', '15000000', '10183142', '67.89%']
+        #  'nobackup_nesi00213'  '84.59T'  '15000000'  '10183142'  '67.89%']
         entries = []
         for ix, line in enumerate(lines):
             line = line.split()
@@ -299,7 +297,7 @@ class DataCollector:
         return entries
 
     def _parse_user_chours_usage(self, lines: Iterable[str], users: Iterable[str]):
-
+        """Get daily core hours usage for a list of users from cmd output"""
         entries = []
         # if none of the user had usage today, lines=['']
         # Then we just set core_hour_used to 0 for all users
@@ -329,9 +327,7 @@ class DataCollector:
             # get user that has usage 0
             unused_users = set(users) - used_users
             for user in unused_users:
-                print("updating unused user", user)
                 entries.append(UserChEntry(date.today(), user, 0))
-        print("ch user entries", entries)
         return entries
 
 

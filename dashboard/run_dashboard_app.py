@@ -43,8 +43,6 @@ app.layout = html.Div(
                     html.Div(id="maui_squeue_table"),
                     html.H5("Daily core hour usage"),
                     dcc.Graph(id="maui_daily_chours"),
-                    html.H5("User daily core hour usage"),
-                    dcc.Graph(id="maui_daily_user_chours"),
                     html.H5("Total core hour usage"),
                     dcc.Graph(id="maui_total_chours"),
                     dcc.Interval(id="interval_comp", interval=10 * 1000, n_intervals=0),
@@ -93,6 +91,7 @@ def update_maui_squeue(n):
 )
 def update_maui_daily_chours(n):
     # Get data points
+    data = []
     entries = app.db.get_chours_usage(
         date.today() - relativedelta(years=1), date.today(), const.HPC.maui
     )
@@ -104,29 +103,16 @@ def update_maui_daily_chours(n):
             ("total_chours", float),
         ],
     )
+    trace = go.Scatter(x=entries["day"], y=entries["daily_chours"], name="daily_chours")
+    data.append(trace)
 
-    fig = go.Figure()
-    fig.add_scatter(x=entries["day"], y=entries["daily_chours"])
+    # get core hours usage for each user
+    data += get_maui_daily_user_chours(const.HPC.maui, USERS)
+
+    fig = go.Figure(data=data)
 
     return fig
 
-@app.callback(
-    Output("maui_daily_user_chours", "figure"), [Input("interval_comp", "n_intervals")]
-)
-def update_maui_daily_user_chours(n):
-    data = []
-    for user in USERS:
-        entries = app.db.get_user_chours(const.HPC.maui, user)
-        print("update maui daily user chours entires")
-        entries = np.array(entries, dtype=[
-            ("day", "datetime64[D]"),
-            ("username", object),
-            ("core_hours_used", float)])
-        trace = go.Scatter(x=entries["day"], y=entries["core_hours_used"], name=entries["username"][0])
-        data.append(trace)
-    layout = go.Layout(title="maui_daily_user_chours")
-    fig = go.Figure(data=data, layout=layout)
-    return fig
 
 @app.callback(
     Output("maui_total_chours", "figure"), [Input("interval_comp", "n_intervals")]
@@ -159,6 +145,22 @@ def update_maui_daily_inodes(n):
     fig.add_scatter(x=entries["day"], y=entries["used_inodes"])
 
     return fig
+
+
+def get_maui_daily_user_chours(hpc: const.HPC, users: List[str]):
+    """get daily core hours usage for a list of users
+       return as a list of scatter plots
+    """
+    data = []
+    for user in users:
+        entries = app.db.get_user_chours(hpc, user)
+        entries = np.array(entries, dtype=[
+            ("day", "datetime64[D]"),
+            ("username", object),
+            ("core_hours_used", float)])
+        trace = go.Scatter(x=entries["day"], y=entries["core_hours_used"], name=entries["username"][0])
+        data.append(trace)
+    return data
 
 
 def get_chours_entries(hpc: const.HPC):
