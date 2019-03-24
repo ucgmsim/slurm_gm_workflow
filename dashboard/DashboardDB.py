@@ -104,7 +104,6 @@ class DashboardDB:
         table = self.get_daily_t_name(hpc)
 
         day = self.get_date(day)
-        print("day", day)
 
         with self.get_cursor(self.db_file) as cursor:
             row = cursor.execute(
