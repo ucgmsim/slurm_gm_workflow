@@ -5,6 +5,7 @@ import shutil
 import time
 import glob
 from collections import namedtuple
+from typing import List
 
 import pandas as pd
 import sqlite3 as sql
@@ -83,6 +84,9 @@ class E2ETests(object):
         "post_emod3d_merge_ts.sl.template",
         "post_emod3d_winbin_aio.sl.template",
     ]
+
+    # Extra test flags
+    test_checkpoint = "test_checkpoint"
 
     def __init__(self, config_file: str):
         """Constructor, reads input config."""
@@ -299,6 +303,11 @@ class E2ETests(object):
             sim_struct.get_cybershake_config(self.stage_dir),
         )
 
+        proc_type_cancel = None
+        if self.config_dict[self.test_checkpoint]:
+            proc_type_cancel = [const.ProcessType.EMOD3D, const.ProcessType.HF,
+                                const.ProcessType.HF]
+
         print("Running auto submit...")
         out_file = os.path.join(self.stage_dir, self.submit_out_file)
         err_file = os.path.join(self.stage_dir, self.submit_err_file)
@@ -325,6 +334,9 @@ class E2ETests(object):
                 )
             )
 
+            if proc_type_cancel:
+
+
             if total_count == (comp_count + failed_count):
                 break
             else:
@@ -336,6 +348,18 @@ class E2ETests(object):
             )
 
         p.terminate()
+
+    def cancel_running(self, proc_types: List[const.ProcessType]):
+        # Get all running jobs in the mgmt db
+        with connect_db_ctx(sim_struct.get_mgmt_db(self.stage_dir)) as cur:
+            entries = cur.execute(
+                "SELECT proc_type, job_id  FROM state WHERE status == 3 AND proc_type IN ?", ()
+            ).fetchall()
+
+        proc_types_int = [proc_type.value for proc_type in proc_types]
+        for entry in entries:
+            if entry[0] in proc_types_int:
+                exe("scancel -v {}".format(entry[1]))
 
     def check_mgmt_db(self):
         """Create errors for all entries in management db that did not complete"""
