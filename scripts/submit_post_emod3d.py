@@ -47,7 +47,7 @@ def write_sl_script_merge_ts(
     memory=const.DEFAULT_MEMORY,
     account=const.DEFAULT_ACCOUNT,
     machine=host,
-    write_directory=".",
+    write_directory=None,
 ):
     """Populates the template and writes the resulting slurm script to file"""
     target_config = get_machine_config(machine)
@@ -55,6 +55,9 @@ def write_sl_script_merge_ts(
         "merge_tsP3_par", target_config["tools_dir"]
     )
     lf_sim_dir = os.path.relpath(lf_sim_dir, sim_dir)
+
+    if not write_directory:
+        write_directory = sim_dir
 
     template = generate_context(
         sim_dir,
@@ -234,7 +237,7 @@ if __name__ == "__main__":
         "--write_directory",
         type=str,
         help="The directory to write the slurm script to.",
-        default=".",
+        default=None,
     )
 
     args = parser.parse_args()
