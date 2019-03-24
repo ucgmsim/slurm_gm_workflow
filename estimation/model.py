@@ -31,6 +31,8 @@ def mare(y, y_est, sample_weigths=None):
 
 
 class WCEstModel(object):
+    """Base class for core hours estimation models"""
+
     def __init__(self, model_config: str = None):
         self.is_trained = False
         self._model_config = model_config
@@ -118,6 +120,9 @@ class WCEstModel(object):
 
 
 class NNWcEstModel(WCEstModel):
+    """Represents Neural Network for core hour estimation, using keras/tensorflow
+    in the background.
+    """
 
     # Required fields in the config
     units_const = "units"
@@ -356,6 +361,11 @@ class NNWcEstModel(WCEstModel):
 
 
 class SVRModel(WCEstModel):
+    """Represents Support Vector Machine used for core hours estimation. Specifically,
+    for estimation for features that are out of bounds for the neural network.
+
+    SVR == Support Vector Regression
+    """
 
     # Required fields in the config
     C = "C"
@@ -387,6 +397,17 @@ class SVRModel(WCEstModel):
         val_data: Tuple[np.ndarray, np.ndarray] = None,
         **kwargs,
     ):
+        """
+        Training of the SVR, for the full train doc see WCEstModel.
+
+        Due to the imbalance in small and large trainings samples, weights are added to
+        all sources above the y_threshold, so that their combined weight is equal to the
+        combined weight of all sources than the threshold.
+
+        Note: The errors calculated as part of the training (if specified) are not
+        overly meaningful as they do not use the weights and are therefore
+        dominated by the small training samples.
+        """
         X_train, y_train = X, y
 
         # Check if input data needs to be split into train/val set
