@@ -79,6 +79,16 @@ class DashboardDB:
     def get_user_ch_t_name(hpc: const.HPC):
         return "{}_USER_CORE_HOURS".format(hpc.value.upper())
 
+    def get_date(self, day: Union[date, str] = None):
+        """Get current datetime
+           Note: will fail if day is str and not in the format 2019-03-21
+        """
+        if not day:
+            day = date.today().strftime(self.date_format)
+        elif isinstance(day, date):
+            day = day.strftime(self.date_format)
+        return day
+
     def update_daily_chours_usage(
         self, total_core_usage: float, hpc: const.HPC, day: Union[date, str] = None
     ):
@@ -92,11 +102,10 @@ class DashboardDB:
             return
 
         table = self.get_daily_t_name(hpc)
-        day = (
-            day.strftime(self.date_format)
-            if day is not None
-            else date.today().strftime(self.date_format)
-        )
+
+        day = self.get_date(day)
+        print("day", day)
+
         with self.get_cursor(self.db_file) as cursor:
             row = cursor.execute(
                 "SELECT CORE_HOURS_USED, TOTAL_CORE_HOURS FROM {} WHERE DAY == ?;".format(
@@ -129,14 +138,9 @@ class DashboardDB:
         self, start_date: Union[date, str], end_date: Union[date, str], hpc: const.HPC
     ):
         """Gets the usage and total usage for the date range"""
-        start_date = (
-            start_date.strftime(self.date_format)
-            if type(start_date) is date
-            else start_date
-        )
-        end_date = (
-            end_date.strftime(self.date_format) if type(end_date) is date else end_date
-        )
+        start_date = self.get_date(start_date)
+        end_date = self.get_date(end_date)
+
         with self.get_cursor(self.db_file) as cursor:
             results = cursor.execute(
                 "SELECT DAY, CORE_HOURS_USED, TOTAL_CORE_HOURS FROM {} "
@@ -277,11 +281,8 @@ class DashboardDB:
         self, hpc: const.HPC, day: Union[date, str] = None, file_system="nobackup"
     ):
         """Get daily quota usage for a particular file system eg.nobackup/project"""
-        day = (
-            day.strftime(self.date_format)
-            if day is not None
-            else date.today().strftime(self.date_format)
-        )
+        day = self.get_date(day)
+
         sql = "SELECT * FROM {} WHERE FILE_SYSTEM LIKE ? AND DAY = ?".format(
             self.get_quota_t_name(hpc)
         )
@@ -299,11 +300,8 @@ class DashboardDB:
     ):
         """update user_core_hours table for a specified user"""
         table = self.get_user_ch_t_name(hpc)
-        day = (
-            day.strftime(self.date_format)
-            if day is not None
-            else date.today().strftime(self.date_format)
-        )
+        day = self.get_date(day)
+
         for entry in entries:
             with self.get_cursor(self.db_file) as cursor:
                 row = cursor.execute(
