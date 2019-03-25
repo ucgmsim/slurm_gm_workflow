@@ -47,7 +47,7 @@ def write_sl_script(
         write_directory = sim_dir
 
     set_runparams.create_run_params(
-        srf_name,
+        sim_dir,
         workflow_config=workflow_config,
         steps_per_checkpoint=steps_per_checkpoint,
     )
@@ -76,6 +76,7 @@ def write_sl_script(
         additional_lines="#SBATCH --hint=nomultithread",
         target_host=machine,
         write_directory=write_directory,
+        rel_dir=sim_dir,
     )
 
     fname_slurm_script = os.path.abspath(
@@ -94,7 +95,7 @@ def write_sl_script(
 
 
 def main(args):
-    params = utils.load_sim_params("sim_params.yaml")
+    params = utils.load_sim_params(os.path.join(args.rel_dir, "sim_params.yaml"))
 
     submit_yes = True if args.auto else confirm("Also submit the job for you?")
 
@@ -104,8 +105,8 @@ def main(args):
     if args.srf is None or srf_name == args.srf:
         print("not set_params_only")
         # get lf_sim_dir
-        lf_sim_dir = os.path.join(params.sim_dir, "LF")
-        sim_dir = params.sim_dir
+        sim_dir = os.path.abspath(params.sim_dir)
+        lf_sim_dir = os.path.join(sim_dir, "LF")
 
         # default_core will be changed is user passes ncore
         n_cores = args.ncore
@@ -138,6 +139,7 @@ def main(args):
             nb_cpus=n_cores,
             machine=args.machine,
             steps_per_checkpoint=steps_per_checkpoint,
+            write_directory=args.write_directory
         )
 
         submit_sl_script(
@@ -172,6 +174,9 @@ if __name__ == "__main__":
         type=str,
         help="The directory to write the slurm script to.",
         default=None,
+    )
+    parser.add_argument(
+        "--rel_dir", default=".", type=str, help="The path to the realisation directory"
     )
     args = parser.parse_args()
 

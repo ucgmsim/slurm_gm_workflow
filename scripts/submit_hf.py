@@ -45,9 +45,9 @@ def write_sl_script(
         write_directory = sim_dir
 
     if binary:
-        create_dir = "mkdir -p " + os.path.join(hf_sim_dir, "Acc") + "\n"
+        create_dir = "mkdir -p {}\n".format(os.path.join(hf_sim_dir, "Acc"))
         hf_submit_command = (
-            create_dir + "srun python $gmsim/workflow" "/scripts/hf_sim.py "
+            create_dir + "srun python $gmsim/workflow/scripts/hf_sim.py "
         )
         arguments_for_hf = [
             params.FD_STATLIST,
@@ -106,6 +106,7 @@ def write_sl_script(
         additional_lines="###SBATCH -C avx",
         target_host=machine,
         write_directory=write_directory,
+        rel_dir=sim_dir,
     )
 
     script_name = os.path.abspath(
@@ -124,7 +125,7 @@ def write_sl_script(
 
 
 def main(args):
-    params = utils.load_sim_params("sim_params.yaml")
+    params = utils.load_sim_params(os.path.join(args.rel_dir, "sim_params.yaml"))
 
     # check if the args is none, if not, change the version
     ncore = args.ncore
@@ -271,6 +272,9 @@ if __name__ == "__main__":
         type=str,
         help="The directory to write the slurm script to.",
         default=None,
+    )
+    parser.add_argument(
+        "--rel_dir", default=".", type=str, help="The path to the realisation directory"
     )
     args = parser.parse_args()
 

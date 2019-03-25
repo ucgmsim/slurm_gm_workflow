@@ -37,7 +37,7 @@ def write_sl_script(
         write_directory = sim_dir
 
     if binary:
-        create_directory = "mkdir -p " + os.path.join(bb_sim_dir, "Acc") + "\n"
+        create_directory = "mkdir -p {}\n".format(os.path.join(bb_sim_dir, "Acc"))
         submit_command = (
             create_directory + "srun python $gmsim/workflow/scripts/bb_sim.py "
         )
@@ -58,7 +58,7 @@ def write_sl_script(
         bb_submit_command = submit_command + " ".join(arguments)
     else:
         bb_submit_command = (
-            "srun python  $gmsim/workflow/scripts" "/match_seismo-mpi.py " + bb_sim_dir,
+            "srun python  $gmsim/workflow/scripts/match_seismo-mpi.py " + bb_sim_dir,
         )
 
     variation = srf_name.replace("/", "__")
@@ -91,6 +91,7 @@ def write_sl_script(
         additional_lines="##SBATCH -C avx",
         target_host=machine,
         write_directory=write_directory,
+        rel_dir=sim_dir,
     )
 
     fname_sl_script = os.path.abspath(
@@ -109,7 +110,7 @@ def write_sl_script(
 
 
 def main(args):
-    params = utils.load_sim_params("sim_params.yaml")
+    params = utils.load_sim_params(os.path.join(args.rel_dir, "sim_params.yaml"))
 
     ncores = const.BB_DEFAULT_NCORES
     if args.version is not None:
@@ -202,6 +203,9 @@ if __name__ == "__main__":
         type=str,
         help="The directory to write the slurm script to.",
         default=None,
+    )
+    parser.add_argument(
+        "--rel_dir", default=".", type=str, help="The path to the realisation directory"
     )
     args = parser.parse_args()
 

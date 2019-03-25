@@ -92,7 +92,7 @@ def submit_im_calc_slurm(sim_dir: str, options_dict: Dict = None):
         est_run_time, options_dict[SlBodyOptConsts.n_procs.value], options_dict["auto"]
     )
 
-    with open("sim_im_calc.sl.template", "r") as f:
+    with open(os.path.join(options_dict["write_directory"], "sim_im_calc.sl.template"), "r") as f:
         template = f.read()
 
     extended = "-e" if options_dict[SlBodyOptConsts.extended.value] else ""
@@ -123,6 +123,7 @@ def submit_im_calc_slurm(sim_dir: str, options_dict: Dict = None):
         additional_lines=options_dict[SlHdrOptConsts.additional.value],
         target_host=options_dict["machine"],
         write_directory=options_dict["write_directory"],
+        rel_dir=sim_dir,
     )
 
     script = os.path.abspath(
