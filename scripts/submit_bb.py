@@ -30,8 +30,11 @@ def write_sl_script(
     account=const.DEFAULT_ACCOUNT,
     binary=False,
     machine=host,
-    write_directory=".",
+    write_directory=None,
 ):
+
+    if not write_directory:
+        write_directory = sim_dir
 
     if binary:
         create_directory = "mkdir -p {}\n".format(os.path.join(bb_sim_dir, "Acc"))
@@ -199,7 +202,7 @@ if __name__ == "__main__":
         "--write_directory",
         type=str,
         help="The directory to write the slurm script to.",
-        default=".",
+        default=None,
     )
     parser.add_argument(
         "--rel_dir", default=".", type=str, help="The path to the realisation directory"

@@ -36,11 +36,13 @@ def write_sl_script(
     binary=False,
     seed=None,
     machine=host,
-    write_directory=".",
+    write_directory=None,
 ):
     """Populates the template and writes the resulting slurm script to file"""
 
     target_qconfig = get_machine_config(machine)
+    if not write_directory:
+        write_directory = sim_dir
 
     if binary:
         create_dir = "mkdir -p {}\n".format(os.path.join(hf_sim_dir, "Acc"))
@@ -269,7 +271,7 @@ if __name__ == "__main__":
         "--write_directory",
         type=str,
         help="The directory to write the slurm script to.",
-        default=".",
+        default=None,
     )
     parser.add_argument(
         "--rel_dir", default=".", type=str, help="The path to the realisation directory"

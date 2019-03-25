@@ -36,12 +36,15 @@ def write_sl_script(
     account=const.DEFAULT_ACCOUNT,
     machine=host,
     steps_per_checkpoint=None,
-    write_directory=".",
+    write_directory=None,
 ):
     """Populates the template and writes the resulting slurm script to file"""
     workflow_config = load_config.load(
         os.path.dirname(os.path.realpath(__file__)), "workflow_config.json"
     )
+
+    if not write_directory:
+        write_directory = sim_dir
 
     set_runparams.create_run_params(
         sim_dir,
@@ -170,7 +173,7 @@ if __name__ == "__main__":
         "--write_directory",
         type=str,
         help="The directory to write the slurm script to.",
-        default=".",
+        default=None,
     )
     parser.add_argument(
         "--rel_dir", default=".", type=str, help="The path to the realisation directory"
