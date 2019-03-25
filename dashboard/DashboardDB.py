@@ -102,9 +102,7 @@ class DashboardDB:
             return
 
         table = self.get_daily_t_name(hpc)
-
         day = self.get_date(day)
-
         with self.get_cursor(self.db_file) as cursor:
             row = cursor.execute(
                 "SELECT CORE_HOURS_USED, TOTAL_CORE_HOURS FROM {} WHERE DAY == ?;".format(
@@ -274,6 +272,7 @@ class DashboardDB:
         )
         with self.get_cursor(self.db_file) as cursor:
             results = cursor.execute(sql, ("%{}%".format(file_system),)).fetchall()
+
         return results
 
     def get_daily_quota(
@@ -281,11 +280,9 @@ class DashboardDB:
     ):
         """Get daily quota usage for a particular file system eg.nobackup/project"""
         day = self.get_date(day)
-
         sql = "SELECT * FROM {} WHERE FILE_SYSTEM LIKE ? AND DAY = ?".format(
             self.get_quota_t_name(hpc)
         )
-
         with self.get_cursor(self.db_file) as cursor:
             results = cursor.execute(sql, ("%{}%".format(file_system), day)).fetchone()
 
@@ -326,7 +323,7 @@ class DashboardDB:
                     )
 
     def get_user_chours(self, hpc: const.HPC, username: str):
-        """get core hours usage over time for a specified user"""
+        """Gfet core hours usage over time for a specified user"""
         table = self.get_user_ch_t_name(hpc)
         sql = "SELECT DAY, USERNAME, CORE_HOURS_USED FROM {} WHERE USERNAME = ?".format(
             table

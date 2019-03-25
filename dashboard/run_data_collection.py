@@ -29,21 +29,7 @@ CH_REPORT_PATH = "/nesi/project/nesi00213/workflow/scripts/CH_report.sh"
 PROJECT_ID = "nesi00213"
 TIME_FORMAT = "%Y_%m_%d-%H_%M_%S"
 HPCS = [hpc.value for hpc in const.HPC]
-USERS = [
-    "ykh22",
-    "cbs51",
-    "melody.zhu",
-    "tdn27",
-    "jpa198",
-    "leer",
-    "baes",
-    "sjn87",
-    "tdn27",
-    "jmotha",
-    "jagdish.vyas",
-    "ddempsey",
-]
-USERS_REAL_NAME = {
+USERS = {
     "ykh22": "Jonney Huang",
     "cbs51": "Claudio Schill",
     "melody.zhu": "Melody Zhu",
@@ -53,10 +39,9 @@ USERS_REAL_NAME = {
     "baes": "Sung Bae",
     "sjn87": "Sarah Neill",
     "jmotha": "Jason Motha",
-    "jagdish.vyas": "jagdish Vyas",
+    "jagdish.vyas": "Jagdish Vyas",
     "ddempsey": "David Dempsey",
 }
-UTC_TIME_GAP = datetime.now() - datetime.utcnow()
 
 
 class DataCollector:
@@ -96,6 +81,8 @@ class DataCollector:
 
         self.ssh_cmd_template = "ssh {}@{} {}"
 
+        self.utc_time_gap = datetime.now() - datetime.utcnow()
+
     def run(self, users):
         """Runs the data collection"""
         while True:
@@ -114,7 +101,7 @@ class DataCollector:
         # datetime.datetime(2019, 3, 22, 13, 28, 37, 103524)
         current_time = datetime.now()
         # datetime.datetime(2019, 3, 22, 0, 28, 37, 103524)
-        utc_time = current_time - UTC_TIME_GAP
+        utc_time = current_time - self.utc_time_gap
         # '03/22/19'
         start_utc_time_string = datetime.strftime(utc_time, "%m/%d/%y")
         return start_utc_time_string
@@ -321,8 +308,8 @@ class DataCollector:
                     )
             except ValueError:
                 print(
-                    "Failed to convert squeue line \n{}\n to "
-                    "a valid SQueueEntry. Ignored!".format(line)
+                    "Failed to convert quota usage line \n{}\n to "
+                    "a valid QuotaEntry. Ignored!".format(line)
                 )
 
         return entries
@@ -348,8 +335,8 @@ class DataCollector:
                     entries.append(UserChEntry(date.today(), line[2], line[-2]))
                 except ValueError:
                     print(
-                        "Failed to convert squeue line \n{}\n to "
-                        "a valid SQueueEntry. Ignored!".format(line)
+                        "Failed to convert user core hours usage line \n{}\n to "
+                        "a valid UserChEntry. Ignored!".format(line)
                     )
             # get user that has usage 0
             unused_users = set(users) - used_users
@@ -390,9 +377,9 @@ if __name__ == "__main__":
     parser.add_argument(
         "--users",
         help="Specify the users to collect daily core hours usages for, default is {}".format(
-            USERS
+            USERS.keys()
         ),
-        default=USERS,
+        default=USERS.keys(),
     )
     args = parser.parse_args()
 
