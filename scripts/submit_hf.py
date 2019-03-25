@@ -8,6 +8,7 @@ import estimation.estimate_wct as est
 import qcore.constants as const
 from qcore import utils, shared, srf, binary_version
 from qcore.config import get_machine_config, host
+from shared_workflow.load_config import load
 from shared_workflow.shared import (
     confirm,
     set_wct,
@@ -193,8 +194,17 @@ def main(args):
             )
             wct = default_wct
         else:
+            workflow_config = load(
+                os.path.dirname(os.path.realpath(__file__)), "workflow_config.json"
+            )
+
             est_core_hours, est_run_time, est_cores = est.est_HF_chours_single(
-                fd_count, nsub_stoch, nt, ncore, scale_ncores=SCALE_NCORES
+                fd_count,
+                nsub_stoch,
+                nt,
+                ncore,
+                os.path.join(workflow_config["estimation_models_dir"], "HF"),
+                scale_ncores=SCALE_NCORES,
             )
             wct = set_wct(est_run_time, est_cores, args.auto)
 

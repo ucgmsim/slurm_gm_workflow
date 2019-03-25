@@ -7,6 +7,7 @@ import qcore.constants as const
 from estimation import estimate_wct as wc
 from qcore import shared, utils
 from qcore.config import host
+from shared_workflow.load_config import load
 from shared_workflow.shared import (
     set_wct,
     confirm,
@@ -147,7 +148,16 @@ def main(args):
             nt = int(float(params.sim_duration) / float(params.hf.dt))
             fd_count = len(shared.get_stations(params.FD_STATLIST))
 
-            est_core_hours, est_run_time = wc.est_BB_chours_single(fd_count, nt, ncores)
+            workflow_config = load(
+                os.path.dirname(os.path.realpath(__file__)), "workflow_config.json"
+            )
+
+            est_core_hours, est_run_time = wc.est_BB_chours_single(
+                fd_count,
+                nt,
+                ncores,
+                os.path.join(workflow_config["estimation_models_dir"], "BB"),
+            )
             wct = set_wct(est_run_time, ncores, args.auto)
 
         bb_sim_dir = os.path.join(params.sim_dir, "BB")
