@@ -49,7 +49,6 @@ def submit_task(
     if not os.path.exists(sqlite_tmpdir):
         os.makedirs(sqlite_tmpdir)
 
-    # change the working directory to the sim_dir
     ch_log_dir = os.path.abspath(os.path.join(sim_dir, "ch_log"))
 
     # create the folder if not exist

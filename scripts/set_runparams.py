@@ -23,7 +23,6 @@ sys.path.append(os.path.abspath(os.path.curdir))
 
 
 def create_run_params(sim_dir, srf_name=None, workflow_config=None, steps_per_checkpoint=None):
-    #sys.path.append(sim_dir)
     params = utils.load_sim_params(os.path.join(sim_dir, 'sim_params.yaml'))
 
     if workflow_config is None:
