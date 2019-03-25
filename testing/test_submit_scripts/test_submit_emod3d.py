@@ -21,7 +21,7 @@ def test_main(set_up, mocker):
     mocker.patch("scripts.submit_emod3d.confirm", lambda x: False)
     mocker.patch(
         "scripts.submit_emod3d.est.est_LF_chours_single",
-        lambda a, b, c, d, e, f: (2, 0.05, 40),
+        lambda a, b, c, d, e, f, g: (2, 0.05, 40),
     )
     mocker.patch(
         "scripts.set_runparams.utils.load_yaml",
