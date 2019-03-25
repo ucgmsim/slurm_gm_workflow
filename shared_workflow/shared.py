@@ -148,8 +148,8 @@ def resolve_header(
     if partition is None:
         partition = get_partition(target_host, convert_time_to_hours(wallclock_limit))
 
-    j2_env = Environment(loader=FileSystemLoader("."), trim_blocks=True)
-    header = j2_env.get_template(os.path.join(rel_dir, template_path)).render(
+    j2_env = Environment(loader=FileSystemLoader(rel_dir), trim_blocks=True)
+    header = j2_env.get_template(template_path).render(
         version=version,
         job_description=job_description,
         job_name=job_name,

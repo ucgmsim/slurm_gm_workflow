@@ -25,7 +25,7 @@ def test_create_run_params(set_up, mocker):
     for root_path, realisation in set_up:
         fault = get_fault_from_rel(realisation)
         get_mocked_sim_params = lambda x: mocked_load_sim_params(
-            os.path.join(root_path, "CSRoot", "Runs", fault, realisation, x)
+            os.path.join(root_path, "CSRoot", "Runs", fault, x)
         )
         mocker.patch(
             "scripts.set_runparams.utils.load_sim_params", get_mocked_sim_params

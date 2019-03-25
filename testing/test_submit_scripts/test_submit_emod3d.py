@@ -22,33 +22,6 @@ from testing.test_common_set_up import (
 
 import scripts.submit_emod3d
 
-
-def get_mocked_resolve_header(root_path, fault, realisation):
-    return lambda account, n_tasks, wallclock_limit, job_name, version, memory, exe_time, job_description, partition=None, additional_lines="", template_path="slurm_header.cfg", target_host=host, mail="test@test.com", write_directory=".": mocked_resolve_header(
-        account,
-        n_tasks,
-        wallclock_limit,
-        job_name,
-        version,
-        memory,
-        exe_time,
-        job_description,
-        partition=partition,
-        additional_lines=additional_lines,
-        template_path=os.path.join(
-            os.path.basename(root_path),
-            "CSRoot",
-            "Runs",
-            fault,
-            realisation,
-            template_path,
-        ),
-        target_host=target_host,
-        mail=mail,
-        write_directory=write_directory,
-    )
-
-
 def test_main(set_up, mocker):
     """No return value. Just check that it runs without crashing"""
     function = "main"
@@ -75,21 +48,8 @@ def test_main(set_up, mocker):
         )
 
         mocker.patch(
-            "scripts.submit_emod3d.resolve_header",
-            get_mocked_resolve_header(root_path, fault, realisation),
-        )
-
-        mocker.patch(
             "scripts.submit_emod3d.est.est_LF_chours_single",
-            lambda a, b, c, d, e, f: mocked_est_LF_chours_single(
-                a,
-                b,
-                c,
-                d,
-                e,
-                f,
-                model_dir=os.path.join(root_path, "AdditionalData", "models", "LF"),
-            ),
+            lambda a, b, c, d, e, f: (2, 0.05, 40)
         )
 
         mocker.patch(
@@ -119,11 +79,6 @@ def test_write_sl_script(set_up, mocker):
     params = inspect.getfullargspec(scripts.submit_emod3d.write_sl_script).args
     for root_path, realisation in set_up:
         fault = get_fault_from_rel(realisation)
-
-        mocker.patch(
-            "scripts.submit_emod3d.resolve_header",
-            get_mocked_resolve_header(root_path, fault, realisation),
-        )
 
         mocker.patch(
             "scripts.submit_emod3d.utils.load_sim_params",

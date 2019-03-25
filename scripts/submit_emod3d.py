@@ -105,8 +105,8 @@ def main(args):
     if args.srf is None or srf_name == args.srf:
         print("not set_params_only")
         # get lf_sim_dir
-        lf_sim_dir = os.path.join(params.sim_dir, "LF")
-        sim_dir = params.sim_dir
+        sim_dir = os.path.abspath(params.sim_dir)
+        lf_sim_dir = os.path.join(sim_dir, "LF")
 
         # default_core will be changed is user passes ncore
         n_cores = args.ncore
