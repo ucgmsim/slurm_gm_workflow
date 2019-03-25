@@ -29,8 +29,34 @@ CH_REPORT_PATH = "/nesi/project/nesi00213/workflow/scripts/CH_report.sh"
 PROJECT_ID = "nesi00213"
 TIME_FORMAT = "%Y_%m_%d-%H_%M_%S"
 HPCS = [hpc.value for hpc in const.HPC]
-USERS = ['ykh22', 'cbs51', 'melody.zhu', 'tdn27', 'jpa198']
-UTC_TIME_GAP = 13
+USERS = [
+    "ykh22",
+    "cbs51",
+    "melody.zhu",
+    "tdn27",
+    "jpa198",
+    "leer",
+    "baes",
+    "sjn87",
+    "tdn27",
+    "jmotha",
+    "jagdish.vyas",
+    "ddempsey",
+]
+USERS_REAL_NAME = {
+    "ykh22": "Jonney Huang",
+    "cbs51": "Claudio Schill",
+    "melody.zhu": "Melody Zhu",
+    "tdn27": "Andrei Nguyen",
+    "jpa198": "James Paterson",
+    "leer": "Robin Lee",
+    "baes": "Sung Bae",
+    "sjn87": "Sarah Neill",
+    "jmotha": "Jason Motha",
+    "jagdish.vyas": "jagdish.vyas",
+    "ddempsey": "David Dempsey",
+}
+UTC_TIME_GAP = datetime.now() - datetime.utcnow()
 
 
 class DataCollector:
@@ -88,7 +114,7 @@ class DataCollector:
         # datetime.datetime(2019, 3, 22, 13, 28, 37, 103524)
         current_time = datetime.now()
         # datetime.datetime(2019, 3, 22, 0, 28, 37, 103524)
-        utc_time = current_time - timedelta(hours=UTC_TIME_GAP)
+        utc_time = current_time - UTC_TIME_GAP
         # '03/22/19'
         start_utc_time_string = datetime.strftime(utc_time, "%m/%d/%y")
         return start_utc_time_string
@@ -137,18 +163,23 @@ class DataCollector:
                     ),
                 )
         # get quota
-        quota_output = self.run_cmd(
-            hpc.value, "nn_check_quota | grep 'nesi00213'"
-        )
+        quota_output = self.run_cmd(hpc.value, "nn_check_quota | grep 'nesi00213'")
         if quota_output:
             self.dashboard_db.update_daily_quota(self._parse_quota(quota_output), hpc)
 
         # user daily core hour usage
         # end_time == start_time to show usage of one day
         start_time = self.get_start_utc_time()
-        user_ch_output = self.run_cmd(hpc.value, "sreport -M {} -t Hours cluster AccountUtilizationByUser Users={} start={} end={} -n".format(hpc.value, " ".join(users), start_time, start_time))
+        user_ch_output = self.run_cmd(
+            hpc.value,
+            "sreport -M {} -t Hours cluster AccountUtilizationByUser Users={} start={} end={} -n".format(
+                hpc.value, " ".join(users), start_time, start_time
+            ),
+        )
         if user_ch_output:
-            self.dashboard_db.update_user_chours(hpc, self._parse_user_chours_usage(user_ch_output, users))
+            self.dashboard_db.update_user_chours(
+                hpc, self._parse_user_chours_usage(user_ch_output, users)
+            )
 
     def run_cmd(self, hpc: str, cmd: str, timeout: int = 10):
         """Runs the specified command remotely on the specified hpc using the
@@ -301,7 +332,7 @@ class DataCollector:
         entries = []
         # if none of the user had usage today, lines=['']
         # Then we just set core_hour_used to 0 for all users
-        if lines == ['']:
+        if lines == [""]:
             for user in users:
                 entries.append(UserChEntry(date.today(), user, 0))
         # if some of the users had usages today
@@ -314,11 +345,7 @@ class DataCollector:
                 line = line.split()
                 used_users.add(line[2])
                 try:
-                    entries.append(UserChEntry(
-                        date.today(),
-                        line[2],
-                        line[-2]
-                    ))
+                    entries.append(UserChEntry(date.today(), line[2], line[-2]))
                 except ValueError:
                     print(
                         "Failed to convert squeue line \n{}\n to "
@@ -362,7 +389,9 @@ if __name__ == "__main__":
 
     parser.add_argument(
         "--users",
-        help="Specify the users to collect daily core hours usages for, default is {}".format(USERS),
+        help="Specify the users to collect daily core hours usages for, default is {}".format(
+            USERS
+        ),
         default=USERS,
     )
     args = parser.parse_args()

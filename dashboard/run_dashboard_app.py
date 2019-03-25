@@ -14,7 +14,7 @@ import dash_html_components as html
 import dash_core_components as dcc
 import plotly.graph_objs as go
 from dashboard.DashboardDB import DashboardDB, SQueueEntry, HPCProperty
-from dashboard.run_data_collection import USERS
+from dashboard.run_data_collection import USERS, USERS_REAL_NAME
 from dash.dependencies import Input, Output
 
 import qcore.constants as const
@@ -158,7 +158,7 @@ def get_maui_daily_user_chours(hpc: const.HPC, users: List[str]):
             ("day", "datetime64[D]"),
             ("username", object),
             ("core_hours_used", float)])
-        trace = go.Scatter(x=entries["day"], y=entries["core_hours_used"], name=entries["username"][0])
+        trace = go.Scatter(x=entries["day"], y=entries["core_hours_used"], name=USERS_REAL_NAME[entries["username"][0]])
         data.append(trace)
     return data
 
