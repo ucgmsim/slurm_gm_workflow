@@ -53,7 +53,7 @@ USERS_REAL_NAME = {
     "baes": "Sung Bae",
     "sjn87": "Sarah Neill",
     "jmotha": "Jason Motha",
-    "jagdish.vyas": "jagdish.vyas",
+    "jagdish.vyas": "jagdish Vyas",
     "ddempsey": "David Dempsey",
 }
 UTC_TIME_GAP = datetime.now() - datetime.utcnow()
