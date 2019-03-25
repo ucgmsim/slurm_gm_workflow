@@ -23,8 +23,7 @@ sys.path.append(os.path.abspath(os.path.curdir))
 
 
 def create_run_params(sim_dir, srf_name=None, workflow_config=None, steps_per_checkpoint=None):
-    sys.path.append(sim_dir)
-    params = utils.load_sim_params('sim_params.yaml')
+    params = utils.load_sim_params(os.path.join(sim_dir, 'sim_params.yaml'))
 
     if workflow_config is None:
         workflow_config = load_config.load(
@@ -84,6 +83,14 @@ def create_run_params(sim_dir, srf_name=None, workflow_config=None, steps_per_ch
         e3d_dict['stat_file'] = params.stat_file
         e3d_dict['grid_file'] = params.GRIDFILE
         e3d_dict['model_params'] = params.MODEL_PARAMS
+
+        if params.emod3d:
+            for key, value in params.emod3d.items():
+                if key in e3d_dict:
+                    e3d_dict[key] = value
+                else:
+                    print("{} not found as a key in e3d file. Ignoring variable. Value is {}.".format(key, value))
+
         shared.write_to_py(os.path.join(params.sim_dir, 'LF', 'e3d.par'), e3d_dict)
 
 

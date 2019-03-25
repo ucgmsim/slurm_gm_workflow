@@ -142,11 +142,13 @@ def resolve_header(
     template_path="slurm_header.cfg",
     target_host=host,
     mail="test@test.com",
+    write_directory=".",
+    rel_dir="."
 ):
     if partition is None:
         partition = get_partition(target_host, convert_time_to_hours(wallclock_limit))
 
-    j2_env = Environment(loader=FileSystemLoader("."), trim_blocks=True)
+    j2_env = Environment(loader=FileSystemLoader(rel_dir), trim_blocks=True)
     header = j2_env.get_template(template_path).render(
         version=version,
         job_description=job_description,
@@ -159,6 +161,7 @@ def resolve_header(
         additional_lines=additional_lines,
         exe_time=exe_time,
         partition=partition,
+        write_dir=write_directory,
     )
     return header
 
@@ -454,7 +457,14 @@ def add_name_suffix(name, yes):
     return new_name
 
 
-def exe(cmd, debug=True, shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE, non_blocking=False):
+def exe(
+    cmd,
+    debug=True,
+    shell=False,
+    stdout=subprocess.PIPE,
+    stderr=subprocess.PIPE,
+    non_blocking=False,
+):
     """cmd is either a str or a list. but it will be processed as a list.
     this is to accommodate the default shell=False. (for security reason)
     If we wish to support a simple shell command like "echo hello"
@@ -485,6 +495,7 @@ def exe(cmd, debug=True, shell=False, stdout=subprocess.PIPE, stderr=subprocess.
 
     return out, err
 
+
 def submit_sl_script(
     script,
     process,
@@ -500,7 +511,9 @@ def submit_sl_script(
         print("Submitting {} on machine {}".format(script, target_machine))
         if target_machine and target_machine != host:
             res = exe(
-                "sbatch --export=CUR_ENV,CUR_HPC -M {} {}".format(target_machine, script),
+                "sbatch --export=CUR_ENV,CUR_HPC -M {} {}".format(
+                    target_machine, script
+                ),
                 debug=False,
             )
         else:
@@ -709,7 +722,7 @@ def get_hf_run_name(v_mod_1d_name, srf, root_dict, hf_version):
     hf_run_name = "{}_{}_rvf{}_sd{}_k{}".format(
         v_mod_1d_name,
         hfVString,
-        str(root_dict["hf"]["hf_rvfac"]),
+        str(root_dict["hf"]["rvfac"]),
         str(root_dict["hf"]["sdrop"]),
         str(root_dict["hf"]["kappa"]),
     )
@@ -717,7 +730,7 @@ def get_hf_run_name(v_mod_1d_name, srf, root_dict, hf_version):
     show_horizontal_line()
     print("- Vel. Model 1D: %s" % v_mod_1d_name)
     print("- hf_sim_bin: %s" % os.path.basename(hf_sim_bin))
-    print("- hf_rvfac: %s" % root_dict["hf"]["hf_rvfac"])
+    print("- hf_rvfac: %s" % root_dict["hf"]["rvfac"])
     print("- hf_sdrop: %s" % root_dict["hf"]["sdrop"])
     print("- hf_kappa: %s" % root_dict["hf"]["kappa"])
     print("- srf file: %s" % srf)

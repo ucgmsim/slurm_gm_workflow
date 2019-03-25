@@ -47,6 +47,7 @@ def write_sl_script_merge_ts(
     memory=const.DEFAULT_MEMORY,
     account=const.DEFAULT_ACCOUNT,
     machine=host,
+    write_directory=None,
 ):
     """Populates the template and writes the resulting slurm script to file"""
     target_config = get_machine_config(machine)
@@ -54,6 +55,9 @@ def write_sl_script_merge_ts(
         "merge_tsP3_par", target_config["tools_dir"]
     )
     lf_sim_dir = os.path.relpath(lf_sim_dir, sim_dir)
+
+    if not write_directory:
+        write_directory = sim_dir
 
     template = generate_context(
         sim_dir,
@@ -77,17 +81,23 @@ def write_sl_script_merge_ts(
         job_description="post emod3d: merge_ts",
         additional_lines="###SBATCH -C avx",
         target_host=machine,
+        write_directory=write_directory,
+        rel_dir=sim_dir,
     )
 
-    script_name = "%s_%s_%s.sl" % (merge_ts_name_prefix, rup_mod, const.timestamp)
+    script_name = os.path.abspath(
+        os.path.join(
+            write_directory,
+            "{}_{}_{}.sl".format(merge_ts_name_prefix, rup_mod, const.timestamp),
+        )
+    )
     with open(script_name, "w") as f:
         f.write(header)
         f.write("\n")
         f.write(template)
 
-    script_name_abs = os.path.join(os.path.abspath(os.path.curdir), script_name)
     print("Slurm script %s written" % script_name)
-    return script_name_abs
+    return script_name
 
 
 def write_sl_script_winbin_aio(
@@ -152,7 +162,7 @@ def write_sl_script_winbin_aio(
 
 
 def main(args):
-    params = utils.load_sim_params("sim_params.yaml")
+    params = utils.load_sim_params(os.path.join(args.rel_dir, "sim_params.yaml"))
     submit_yes = True if args.auto else confirm("Also submit the job for you?")
 
     # get the srf(rup) name without extensions
@@ -175,6 +185,7 @@ def main(args):
                 params.mgmt_db_location,
                 srf_name,
                 machine=args.machine,
+                write_directory=args.write_directory,
             )
             submit_sl_script(
                 script,
@@ -222,6 +233,15 @@ if __name__ == "__main__":
         type=str,
         default=host,
         help="The machine post_emod3d is to be submitted to.",
+    )
+    parser.add_argument(
+        "--write_directory",
+        type=str,
+        help="The directory to write the slurm script to.",
+        default=None,
+    )
+    parser.add_argument(
+        "--rel_dir", default=".", type=str, help="The path to the realisation directory"
     )
 
     args = parser.parse_args()

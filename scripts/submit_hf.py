@@ -37,18 +37,20 @@ def write_sl_script(
     binary=False,
     seed=None,
     machine=host,
+    write_directory=None,
 ):
     """Populates the template and writes the resulting slurm script to file"""
 
     target_qconfig = get_machine_config(machine)
+    if not write_directory:
+        write_directory = sim_dir
 
     if binary:
-        create_dir = "mkdir -p " + os.path.join(hf_sim_dir, "Acc") + "\n"
+        create_dir = "mkdir -p {}\n".format(os.path.join(hf_sim_dir, "Acc"))
         hf_submit_command = (
-            create_dir + "srun python $gmsim/workflow" "/scripts/hf_sim.py "
+            create_dir + "srun python $gmsim/workflow/scripts/hf_sim.py "
         )
         arguments_for_hf = [
-            params.hf.hf_slip,
             params.FD_STATLIST,
             os.path.join(hf_sim_dir, "Acc/HF.bin"),
             "-m",
@@ -56,17 +58,16 @@ def write_sl_script(
             "--duration",
             params.sim_duration,
             "--dt",
-            params.hf.hf_dt,
+            params.hf.dt,
             "--sim_bin",
             binary_version.get_hf_binmod(
-                params.hf.hf_version, target_qconfig["tools_dir"]
+                params.hf.version, target_qconfig["tools_dir"]
             ),
         ]
-        additional_args = ["hf_path_dur"]
-        for key in additional_args:
-            if key in params.hf:
-                arguments_for_hf.append("--" + key)
-                arguments_for_hf.append(str(params.hf[key]))
+
+        for key in params.hf:
+            arguments_for_hf.append("--" + key)
+            arguments_for_hf.append(str(params.hf[key]))
         hf_submit_command += " ".join(list(map(str, arguments_for_hf)))
     else:
         hf_submit_command = (
@@ -105,20 +106,27 @@ def write_sl_script(
         job_description="HF calculation",
         additional_lines="###SBATCH -C avx",
         target_host=machine,
+        write_directory=write_directory,
+        rel_dir=sim_dir,
     )
-    script_name = "%s_%s_%s.sl" % (sl_template_prefix, variation, const.timestamp)
+
+    script_name = os.path.abspath(
+        os.path.join(
+            write_directory,
+            "{}_{}_{}.sl".format(sl_template_prefix, variation, const.timestamp),
+        )
+    )
     with open(script_name, "w") as f:
         f.write(header)
         f.write("\n")
         f.write(template)
 
-    script_name_abs = os.path.join(os.path.abspath(os.path.curdir), script_name)
-    print("Slurm script %s written" % script_name_abs)
-    return script_name_abs
+    print("Slurm script %s written" % script_name)
+    return script_name
 
 
 def main(args):
-    params = utils.load_sim_params("sim_params.yaml")
+    params = utils.load_sim_params(os.path.join(args.rel_dir, "sim_params.yaml"))
 
     # check if the args is none, if not, change the version
     ncore = args.ncore
@@ -167,13 +175,11 @@ def main(args):
     # if srf(variation) is provided as args, only create
     # the slurm with same name provided
     if args.srf is None or srf_name == args.srf:
-        nt = int(float(params.sim_duration) / float(params.hf.hf_dt))
+        nt = int(float(params.sim_duration) / float(params.hf.dt))
         fd_count = len(shared.get_stations(params.FD_STATLIST))
         # TODO:make it read through the whole list
         #  instead of assuming every stoch has same size
-        nsub_stoch, sub_fault_area = srf.get_nsub_stoch(
-            params.hf.hf_slip, get_area=True
-        )
+        nsub_stoch, sub_fault_area = srf.get_nsub_stoch(params.hf.slip, get_area=True)
 
         if args.debug:
             print("sb:", sub_fault_area)
@@ -218,6 +224,7 @@ def main(args):
             binary=not args.ascii,
             seed=args.seed,
             machine=args.machine,
+            write_directory=args.write_directory,
         )
 
         # Submit the script
@@ -269,6 +276,15 @@ if __name__ == "__main__":
         type=str,
         default=host,
         help="The machine hf is to be submitted to.",
+    )
+    parser.add_argument(
+        "--write_directory",
+        type=str,
+        help="The directory to write the slurm script to.",
+        default=None,
+    )
+    parser.add_argument(
+        "--rel_dir", default=".", type=str, help="The path to the realisation directory"
     )
     args = parser.parse_args()
 

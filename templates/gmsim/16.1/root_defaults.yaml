@@ -1,17 +1,17 @@
 hf:
-  hf_version: 5.4.5
-  hf_dt: 0.005
-  hf_rvfac: 0.8
-  hf_sdrop: 50
-  hf_path_dur: 1
-  hf_kappa: 0.045
+  version: 5.4.5
+  dt: 0.005
+  rvfac: 0.8
+  sdrop: 50
+  path_dur: 1
+  kappa: 0.045
 bb:
-  bb_version: 3.0.4
+  version: 3.0.4
   site_specific: false
   fmin: 0.2
   fmidbot: 0.5
   lfvsref: 500.0
 emod3d:
-   emod3d_version: 3.0.4
+  emod3d_version: 3.0.4
 flo: 0.25
 dt: 0.02

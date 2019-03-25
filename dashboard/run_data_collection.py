@@ -12,10 +12,16 @@ import re
 import subprocess
 import argparse
 from typing import Iterable, List, Union
-from datetime import datetime
+from datetime import datetime, date
 
 import qcore.constants as const
-from dashboard.DashboardDB import DashboardDB, SQueueEntry, StatusEntry, HPCProperty
+from dashboard.DashboardDB import (
+    DashboardDB,
+    SQueueEntry,
+    StatusEntry,
+    QuotaEntry,
+    HPCProperty,
+)
 
 MAX_NODES = 264
 CH_REPORT_PATH = "/nesi/project/nesi00213/workflow/scripts/CH_report.sh"
@@ -78,7 +84,7 @@ class DataCollector:
         """
         # Get Core hour usage, out of some reason this command is super slow...
         rt_ch_output = self.run_cmd(
-            hpc.value, "nn_corehour_usage {}".format(PROJECT_ID), timeout=60
+            hpc.value, "nn_corehour_usage -l {}".format(PROJECT_ID), timeout=60
         )
         if rt_ch_output:
             self.dashboard_db.update_daily_chours_usage(
@@ -86,7 +92,7 @@ class DataCollector:
             )
 
         # Squeue
-        sq_output = self.run_cmd(self.user, hpc.value, "squeue")
+        sq_output = self.run_cmd(hpc.value, "squeue")
         if sq_output:
             self.dashboard_db.update_squeue(self._parse_squeue(sq_output), hpc)
 
@@ -115,6 +121,12 @@ class DataCollector:
                         None,
                     ),
                 )
+        # get quota
+        quota_output = self.run_cmd(
+            hpc.value, "nn_check_quota | grep 'nesi00213'"
+        )
+        if quota_output:
+            self.dashboard_db.update_daily_quota(self._parse_quota(quota_output), hpc)
 
     def run_cmd(self, hpc: str, cmd: str, timeout: int = 10):
         """Runs the specified command remotely on the specified hpc using the
@@ -158,7 +170,6 @@ class DataCollector:
             if ix == 0:
                 continue
             line = line.strip().split()
-
             try:
                 entries.append(
                     SQueueEntry(
@@ -168,8 +179,9 @@ class DataCollector:
                         line[3].strip(),
                         line[7].strip(),
                         line[8].strip(),
-                        int(line[9].strip()),
-                        int(line[10].strip()),
+                        # some usename has space, which increases the length of line after splitting
+                        int(line[-2].strip()),
+                        int(line[-1].strip()),
                     )
                 )
             except ValueError:
@@ -210,7 +222,7 @@ class DataCollector:
 
         # Get all lines starting with "Billed" then get the last one as it
         # shows the total core usage
-        line_interest = [line for line in lines_interest if line.startswith("Billed")][
+        line_interest = [line for line in lines_interest if line.startswith("Logical")][
             -1
         ]
 
@@ -219,6 +231,48 @@ class DataCollector:
         except ValueError:
             print("Failed to convert {} out of \n{}\n to integer.")
             return None
+
+    def _parse_quota(self, lines: Iterable[str]):
+        """
+        Gets quota usage from cmd and return as a list of QuotaEntry objects
+        :param lines: output from cmd to get quota usage
+        """
+        # lines:
+        #                               used              Inodes     Iused
+        # ['project_nesi00213', '1T', '98.16G', '9.59%', '1000000', '277361', '27.74%']
+        #                          used      Inodes        Iused
+        # ['nobackup_nesi00213', '84.59T', '15000000', '10183142', '67.89%']
+        entries = []
+        for ix, line in enumerate(lines):
+            line = line.split()
+            try:
+                if len(line) == 7:  # first line
+                    entries.append(
+                        QuotaEntry(
+                            line[0].strip(),
+                            line[2].strip(),
+                            int(line[4].strip()),
+                            int(line[5].strip()),
+                            date.today(),
+                        )
+                    )
+                elif len(line) == 5:
+                    entries.append(
+                        QuotaEntry(
+                            line[0].strip(),
+                            line[1].strip(),
+                            int(line[2].strip()),
+                            int(line[3].strip()),
+                            date.today(),
+                        )
+                    )
+            except ValueError:
+                print(
+                    "Failed to convert squeue line \n{}\n to "
+                    "a valid SQueueEntry. Ignored!".format(line)
+                )
+
+        return entries
 
 
 def main(args):

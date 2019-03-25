@@ -37,10 +37,14 @@ def write_sl_script(
     account=const.DEFAULT_ACCOUNT,
     machine=host,
     steps_per_checkpoint=None,
+    write_directory=None,
 ):
     """Populates the template and writes the resulting slurm script to file"""
+    if not write_directory:
+        write_directory = sim_dir
+
     set_runparams.create_run_params(
-        srf_name,
+        sim_dir,
         workflow_config=workflow_config,
         steps_per_checkpoint=steps_per_checkpoint,
     )
@@ -68,24 +72,27 @@ def write_sl_script(
         job_description="emod3d slurm script",
         additional_lines="#SBATCH --hint=nomultithread",
         target_host=machine,
+        write_directory=write_directory,
+        rel_dir=sim_dir,
     )
 
-    fname_slurm_script = "run_emod3d_%s_%s.sl" % (srf_name, const.timestamp)
+    fname_slurm_script = os.path.abspath(
+        os.path.join(
+            write_directory, "run_emod3d_{}_{}.sl".format(srf_name, const.timestamp)
+        )
+    )
     with open(fname_slurm_script, "w") as f:
         f.write(header)
         f.write("\n")
         f.write(template)
 
-    fname_sl_abs_path = os.path.join(
-        os.path.abspath(os.path.curdir), fname_slurm_script
-    )
-    print("Slurm script %s written" % fname_sl_abs_path)
+    print("Slurm script %s written" % fname_slurm_script)
 
-    return fname_sl_abs_path
+    return fname_slurm_script
 
 
 def main(args):
-    params = utils.load_sim_params("sim_params.yaml")
+    params = utils.load_sim_params(os.path.join(args.rel_dir, "sim_params.yaml"))
 
     submit_yes = True if args.auto else confirm("Also submit the job for you?")
 
@@ -99,8 +106,8 @@ def main(args):
     if args.srf is None or srf_name == args.srf:
         print("not set_params_only")
         # get lf_sim_dir
-        lf_sim_dir = os.path.join(params.sim_dir, "LF")
-        sim_dir = params.sim_dir
+        sim_dir = os.path.abspath(params.sim_dir)
+        lf_sim_dir = os.path.join(sim_dir, "LF")
 
         # default_core will be changed is user passes ncore
         n_cores = args.ncore
@@ -121,9 +128,7 @@ def main(args):
             params.emod3d.emod3d_version, target_qconfig["tools_dir"]
         )
         steps_per_checkpoint = int(
-            get_nt(params)
-            / (60.0 * est_run_time)
-            * CHECKPOINT_DURATION
+            get_nt(params) / (60.0 * est_run_time) * CHECKPOINT_DURATION
         )
 
         script = write_sl_script(
@@ -137,6 +142,7 @@ def main(args):
             nb_cpus=n_cores,
             machine=args.machine,
             steps_per_checkpoint=steps_per_checkpoint,
+            write_directory=args.write_directory
         )
 
         submit_sl_script(
@@ -165,6 +171,15 @@ if __name__ == "__main__":
         type=str,
         default=host,
         help="The machine emod3d is to be submitted to.",
+    )
+    parser.add_argument(
+        "--write_directory",
+        type=str,
+        help="The directory to write the slurm script to.",
+        default=None,
+    )
+    parser.add_argument(
+        "--rel_dir", default=".", type=str, help="The path to the realisation directory"
     )
     args = parser.parse_args()
 

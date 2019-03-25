@@ -31,10 +31,14 @@ def write_sl_script(
     account=const.DEFAULT_ACCOUNT,
     binary=False,
     machine=host,
+    write_directory=None,
 ):
 
+    if not write_directory:
+        write_directory = sim_dir
+
     if binary:
-        create_directory = "mkdir -p " + os.path.join(bb_sim_dir, "Acc") + "\n"
+        create_directory = "mkdir -p {}\n".format(os.path.join(bb_sim_dir, "Acc"))
         submit_command = (
             create_directory + "srun python $gmsim/workflow/scripts/bb_sim.py "
         )
@@ -47,22 +51,15 @@ def write_sl_script(
             "--flo",
             str(params.flo),
         ]
-        additional_args = ["fmin", "fmidbot", "lfvsref"]
-        for key in additional_args:
-            if key in params.bb:
-                arguments.append("--" + key)
-                arguments.append(str(params.bb[key]))
-
-        additional_flags = ["no-lf-amp"]
-        for key in additional_flags:
-            if key in params.bb:
-                # seperated intentionally so the key will not be incerted when it is not there before.
-                if params.bb[key] is True:
-                    arguments.append("--" + key)
+        for key in params.bb:
+            arguments.append("--" + key)
+            if params.bb[key] is True:
+                continue
+            arguments.append(str(params.bb[key]))
         bb_submit_command = submit_command + " ".join(arguments)
     else:
         bb_submit_command = (
-            "srun python  $gmsim/workflow/scripts" "/match_seismo-mpi.py " + bb_sim_dir,
+            "srun python  $gmsim/workflow/scripts/match_seismo-mpi.py " + bb_sim_dir,
         )
 
     variation = srf_name.replace("/", "__")
@@ -94,20 +91,27 @@ def write_sl_script(
         job_description="BB calculation",
         additional_lines="##SBATCH -C avx",
         target_host=machine,
+        write_directory=write_directory,
+        rel_dir=sim_dir,
     )
-    fname_sl_script = "%s_%s_%s.sl" % (sl_template_prefix, variation, const.timestamp)
+
+    fname_sl_script = os.path.abspath(
+        os.path.join(
+            write_directory,
+            "{}_{}_{}.sl".format(sl_template_prefix, variation, const.timestamp),
+        )
+    )
     with open(fname_sl_script, "w") as f:
         f.write(header)
         f.write("\n")
         f.write(template)
 
-    fname_sl_abs_path = os.path.join(os.path.abspath(os.path.curdir), fname_sl_script)
-    print("Slurm script %s written" % fname_sl_abs_path)
-    return fname_sl_abs_path
+    print("Slurm script %s written" % fname_sl_script)
+    return fname_sl_script
 
 
 def main(args):
-    params = utils.load_sim_params("sim_params.yaml")
+    params = utils.load_sim_params(os.path.join(args.rel_dir, "sim_params.yaml"))
 
     ncores = const.BB_DEFAULT_NCORES
     if args.version is not None:
@@ -141,7 +145,7 @@ def main(args):
             wct = default_wct
         else:
             # Use HF nt for wct estimation
-            nt = int(float(params.sim_duration) / float(params.hf.hf_dt))
+            nt = int(float(params.sim_duration) / float(params.hf.dt))
             fd_count = len(shared.get_stations(params.FD_STATLIST))
 
             workflow_config = load(
@@ -171,6 +175,7 @@ def main(args):
             binary=not args.ascii,
             run_time=wct,
             machine=args.machine,
+            write_directory=args.write_directory,
         )
 
         # Submit the script
@@ -202,6 +207,15 @@ if __name__ == "__main__":
         type=str,
         default=host,
         help="The machine bb is to be submitted to.",
+    )
+    parser.add_argument(
+        "--write_directory",
+        type=str,
+        help="The directory to write the slurm script to.",
+        default=None,
+    )
+    parser.add_argument(
+        "--rel_dir", default=".", type=str, help="The path to the realisation directory"
     )
     args = parser.parse_args()
 
