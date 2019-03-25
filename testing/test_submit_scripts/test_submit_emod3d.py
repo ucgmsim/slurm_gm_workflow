@@ -24,7 +24,7 @@ import scripts.submit_emod3d
 
 
 def get_mocked_resolve_header(root_path, fault, realisation):
-    return lambda account, n_tasks, wallclock_limit, job_name, version, memory, exe_time, job_description, partition=None, additional_lines="", template_path="slurm_header.cfg", target_host=host, mail="test@test.com": mocked_resolve_header(
+    return lambda account, n_tasks, wallclock_limit, job_name, version, memory, exe_time, job_description, partition=None, additional_lines="", template_path="slurm_header.cfg", target_host=host, mail="test@test.com", write_directory=".": mocked_resolve_header(
         account,
         n_tasks,
         wallclock_limit,
@@ -45,6 +45,7 @@ def get_mocked_resolve_header(root_path, fault, realisation):
         ),
         target_host=target_host,
         mail=mail,
+        write_directory=write_directory,
     )
 
 
@@ -80,9 +81,16 @@ def test_main(set_up, mocker):
 
         mocker.patch(
             "scripts.submit_emod3d.est.est_LF_chours_single",
-            lambda a,b,c,d,e,f:
-            mocked_est_LF_chours_single(a,b,c,d,e,f, model_dir=os.path.join(root_path, 'AdditionalData', 'models', 'LF'))
-                     )
+            lambda a, b, c, d, e, f: mocked_est_LF_chours_single(
+                a,
+                b,
+                c,
+                d,
+                e,
+                f,
+                model_dir=os.path.join(root_path, "AdditionalData", "models", "LF"),
+            ),
+        )
 
         mocker.patch(
             "scripts.set_runparams.utils.load_yaml",
@@ -144,7 +152,9 @@ def test_write_sl_script(set_up, mocker):
         input_params = get_input_params(root_path, func_name, params)
         print(input_params)
         for i in range(len(input_params)):
-            if isinstance(input_params[i], str) and input_params[i].startswith('CSRoot'):
+            if isinstance(input_params[i], str) and input_params[i].startswith(
+                "CSRoot"
+            ):
                 input_params[i] = os.path.join(root_path, input_params[i])
         script_location = scripts.submit_emod3d.write_sl_script(*input_params)
         os.remove(script_location)
