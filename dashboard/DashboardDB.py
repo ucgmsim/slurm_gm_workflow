@@ -80,7 +80,7 @@ class DashboardDB:
         return "{}_USER_CORE_HOURS".format(hpc.value.upper())
 
     def get_date(self, day: Union[date, str] = None):
-        """Get current datetime
+        """Gets the current datetime
            Note: will fail if day is str and not in the format 2019-03-21
         """
         if not day:
@@ -102,7 +102,6 @@ class DashboardDB:
             return
 
         table = self.get_daily_t_name(hpc)
-
         day = self.get_date(day)
 
         with self.get_cursor(self.db_file) as cursor:
@@ -268,7 +267,7 @@ class DashboardDB:
                     )
 
     def get_daily_inodes(self, hpc: const.HPC, file_system="nobackup"):
-        """Get inodes usage for a particular file system eg.nobackup/project"""
+        """Gets inodes usage for a particular file system eg.nobackup/project"""
         sql = "SELECT FILE_SYSTEM, USED_INODES, DAY FROM {} WHERE FILE_SYSTEM LIKE ?".format(
             self.get_quota_t_name(hpc)
         )
@@ -279,13 +278,11 @@ class DashboardDB:
     def get_daily_quota(
         self, hpc: const.HPC, day: Union[date, str] = None, file_system="nobackup"
     ):
-        """Get daily quota usage for a particular file system eg.nobackup/project"""
+        """Gets daily quota usage for a particular file system eg.nobackup/project"""
         day = self.get_date(day)
-
         sql = "SELECT * FROM {} WHERE FILE_SYSTEM LIKE ? AND DAY = ?".format(
             self.get_quota_t_name(hpc)
         )
-
         with self.get_cursor(self.db_file) as cursor:
             results = cursor.execute(sql, ("%{}%".format(file_system), day)).fetchone()
 
@@ -297,7 +294,7 @@ class DashboardDB:
         entries: Iterable[UserChEntry],
         day: Union[date, str] = None,
     ):
-        """update user_core_hours table for a specified user"""
+        """Updates user_core_hours table for a specified user"""
         table = self.get_user_ch_t_name(hpc)
         day = self.get_date(day)
 
@@ -326,7 +323,7 @@ class DashboardDB:
                     )
 
     def get_user_chours(self, hpc: const.HPC, username: str):
-        """get core hours usage over time for a specified user"""
+        """Gets core hours usage over time for a specified user"""
         table = self.get_user_ch_t_name(hpc)
         sql = "SELECT DAY, USERNAME, CORE_HOURS_USED FROM {} WHERE USERNAME = ?".format(
             table

@@ -4,7 +4,7 @@ The data comes from the specified dashboard db and
 the information is updated every x-seconds (currently hardcoded to 10)
 """
 import argparse
-from typing import List
+from typing import List, Dict
 from datetime import date
 from dateutil.relativedelta import relativedelta
 
@@ -14,7 +14,7 @@ import dash_html_components as html
 import dash_core_components as dcc
 import plotly.graph_objs as go
 from dashboard.DashboardDB import DashboardDB, SQueueEntry, HPCProperty
-from dashboard.run_data_collection import USERS, USERS_REAL_NAME
+from dashboard.run_data_collection import USERS
 from dash.dependencies import Input, Output
 
 import qcore.constants as const
@@ -147,18 +147,18 @@ def update_maui_daily_inodes(n):
     return fig
 
 
-def get_maui_daily_user_chours(hpc: const.HPC, users: List[str]):
+def get_maui_daily_user_chours(hpc: const.HPC, users_dict: Dict[str, str]=USERS):
     """get daily core hours usage for a list of users
        return as a list of scatter plots
     """
     data = []
-    for user in users:
-        entries = app.db.get_user_chours(hpc, user)
+    for username, real_name in users_dict.items():
+        entries = app.db.get_user_chours(hpc, username)
         entries = np.array(entries, dtype=[
             ("day", "datetime64[D]"),
             ("username", object),
             ("core_hours_used", float)])
-        trace = go.Scatter(x=entries["day"], y=entries["core_hours_used"], name=USERS_REAL_NAME[entries["username"][0]])
+        trace = go.Scatter(x=entries["day"], y=entries["core_hours_used"], name=real_name)
         data.append(trace)
     return data
 
