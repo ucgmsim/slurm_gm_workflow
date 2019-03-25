@@ -60,7 +60,7 @@ def test_main(set_up, mocker):
             ),
         )
 
-        scripts.submit_emod3d.main(args)
+        scripts.submit_emod3d.main(*args)
 
 
 def test_write_sl_script(set_up, mocker):
