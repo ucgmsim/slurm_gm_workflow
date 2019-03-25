@@ -36,11 +36,15 @@ def write_sl_script(
     account=const.DEFAULT_ACCOUNT,
     machine=host,
     steps_per_checkpoint=None,
+    write_directory=None,
 ):
     """Populates the template and writes the resulting slurm script to file"""
     workflow_config = load_config.load(
         os.path.dirname(os.path.realpath(__file__)), "workflow_config.json"
     )
+
+    if not write_directory:
+        write_directory = sim_dir
 
     set_runparams.create_run_params(
         srf_name,
@@ -71,20 +75,22 @@ def write_sl_script(
         job_description="emod3d slurm script",
         additional_lines="#SBATCH --hint=nomultithread",
         target_host=machine,
+        write_directory=write_directory,
     )
 
-    fname_slurm_script = "run_emod3d_%s_%s.sl" % (srf_name, const.timestamp)
+    fname_slurm_script = os.path.abspath(
+        os.path.join(
+            write_directory, "run_emod3d_{}_{}.sl".format(srf_name, const.timestamp)
+        )
+    )
     with open(fname_slurm_script, "w") as f:
         f.write(header)
         f.write("\n")
         f.write(template)
 
-    fname_sl_abs_path = os.path.join(
-        os.path.abspath(os.path.curdir), fname_slurm_script
-    )
-    print("Slurm script %s written" % fname_sl_abs_path)
+    print("Slurm script %s written" % fname_slurm_script)
 
-    return fname_sl_abs_path
+    return fname_slurm_script
 
 
 def main(args):
@@ -119,9 +125,7 @@ def main(args):
             params.emod3d.emod3d_version, target_qconfig["tools_dir"]
         )
         steps_per_checkpoint = int(
-            get_nt(params)
-            / (60.0 * est_run_time)
-            * CHECKPOINT_DURATION
+            get_nt(params) / (60.0 * est_run_time) * CHECKPOINT_DURATION
         )
 
         script = write_sl_script(
@@ -162,6 +166,12 @@ if __name__ == "__main__":
         type=str,
         default=host,
         help="The machine emod3d is to be submitted to.",
+    )
+    parser.add_argument(
+        "--write_directory",
+        type=str,
+        help="The directory to write the slurm script to.",
+        default=None,
     )
     args = parser.parse_args()
 

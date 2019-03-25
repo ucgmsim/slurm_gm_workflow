@@ -142,6 +142,7 @@ def resolve_header(
     template_path="slurm_header.cfg",
     target_host=host,
     mail="test@test.com",
+    write_directory=".",
 ):
     if partition is None:
         partition = get_partition(target_host, convert_time_to_hours(wallclock_limit))
@@ -159,6 +160,7 @@ def resolve_header(
         additional_lines=additional_lines,
         exe_time=exe_time,
         partition=partition,
+        sim_dir=write_directory,
     )
     return header
 
@@ -454,7 +456,14 @@ def add_name_suffix(name, yes):
     return new_name
 
 
-def exe(cmd, debug=True, shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE, non_blocking=False):
+def exe(
+    cmd,
+    debug=True,
+    shell=False,
+    stdout=subprocess.PIPE,
+    stderr=subprocess.PIPE,
+    non_blocking=False,
+):
     """cmd is either a str or a list. but it will be processed as a list.
     this is to accommodate the default shell=False. (for security reason)
     If we wish to support a simple shell command like "echo hello"
@@ -485,6 +494,7 @@ def exe(cmd, debug=True, shell=False, stdout=subprocess.PIPE, stderr=subprocess.
 
     return out, err
 
+
 def submit_sl_script(
     script,
     process,
@@ -500,7 +510,9 @@ def submit_sl_script(
         print("Submitting {} on machine {}".format(script, target_machine))
         if target_machine and target_machine != host:
             res = exe(
-                "sbatch --export=CUR_ENV,CUR_HPC -M {} {}".format(target_machine, script),
+                "sbatch --export=CUR_ENV,CUR_HPC -M {} {}".format(
+                    target_machine, script
+                ),
                 debug=False,
             )
         else:

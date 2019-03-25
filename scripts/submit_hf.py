@@ -36,10 +36,13 @@ def write_sl_script(
     binary=False,
     seed=None,
     machine=host,
+    write_directory=None,
 ):
     """Populates the template and writes the resulting slurm script to file"""
 
     target_qconfig = get_machine_config(machine)
+    if not write_directory:
+        write_directory = sim_dir
 
     if binary:
         create_dir = "mkdir -p " + os.path.join(hf_sim_dir, "Acc") + "\n"
@@ -102,16 +105,22 @@ def write_sl_script(
         job_description="HF calculation",
         additional_lines="###SBATCH -C avx",
         target_host=machine,
+        write_directory=write_directory,
     )
-    script_name = "%s_%s_%s.sl" % (sl_template_prefix, variation, const.timestamp)
+
+    script_name = os.path.abspath(
+        os.path.join(
+            write_directory,
+            "{}_{}_{}.sl".format(sl_template_prefix, variation, const.timestamp),
+        )
+    )
     with open(script_name, "w") as f:
         f.write(header)
         f.write("\n")
         f.write(template)
 
-    script_name_abs = os.path.join(os.path.abspath(os.path.curdir), script_name)
-    print("Slurm script %s written" % script_name_abs)
-    return script_name_abs
+    print("Slurm script %s written" % script_name)
+    return script_name
 
 
 def main(args):
@@ -168,9 +177,7 @@ def main(args):
         fd_count = len(shared.get_stations(params.FD_STATLIST))
         # TODO:make it read through the whole list
         #  instead of assuming every stoch has same size
-        nsub_stoch, sub_fault_area = srf.get_nsub_stoch(
-            params.hf.slip, get_area=True
-        )
+        nsub_stoch, sub_fault_area = srf.get_nsub_stoch(params.hf.slip, get_area=True)
 
         if args.debug:
             print("sb:", sub_fault_area)
@@ -206,6 +213,7 @@ def main(args):
             binary=not args.ascii,
             seed=args.seed,
             machine=args.machine,
+            write_directory=args.write_directory,
         )
 
         # Submit the script
@@ -257,6 +265,12 @@ if __name__ == "__main__":
         type=str,
         default=host,
         help="The machine hf is to be submitted to.",
+    )
+    parser.add_argument(
+        "--write_directory",
+        type=str,
+        help="The directory to write the slurm script to.",
+        default=None,
     )
     args = parser.parse_args()
 

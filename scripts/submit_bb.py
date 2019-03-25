@@ -30,7 +30,11 @@ def write_sl_script(
     account=const.DEFAULT_ACCOUNT,
     binary=False,
     machine=host,
+    write_directory=None,
 ):
+
+    if not write_directory:
+        write_directory = sim_dir
 
     if binary:
         create_directory = "mkdir -p " + os.path.join(bb_sim_dir, "Acc") + "\n"
@@ -86,16 +90,22 @@ def write_sl_script(
         job_description="BB calculation",
         additional_lines="##SBATCH -C avx",
         target_host=machine,
+        write_directory=write_directory,
     )
-    fname_sl_script = "%s_%s_%s.sl" % (sl_template_prefix, variation, const.timestamp)
+
+    fname_sl_script = os.path.abspath(
+        os.path.join(
+            write_directory,
+            "{}_{}_{}.sl".format(sl_template_prefix, variation, const.timestamp),
+        )
+    )
     with open(fname_sl_script, "w") as f:
         f.write(header)
         f.write("\n")
         f.write(template)
 
-    fname_sl_abs_path = os.path.join(os.path.abspath(os.path.curdir), fname_sl_script)
-    print("Slurm script %s written" % fname_sl_abs_path)
-    return fname_sl_abs_path
+    print("Slurm script %s written" % fname_sl_script)
+    return fname_sl_script
 
 
 def main(args):
@@ -154,6 +164,7 @@ def main(args):
             binary=not args.ascii,
             run_time=wct,
             machine=args.machine,
+            write_directory=args.write_directory,
         )
 
         # Submit the script
@@ -186,7 +197,12 @@ if __name__ == "__main__":
         default=host,
         help="The machine bb is to be submitted to.",
     )
+    parser.add_argument(
+        "--write_directory",
+        type=str,
+        help="The directory to write the slurm script to.",
+        default=None,
+    )
     args = parser.parse_args()
 
     main(args)
-
