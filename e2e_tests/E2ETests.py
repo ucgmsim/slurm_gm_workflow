@@ -5,6 +5,7 @@ import shutil
 import time
 import glob
 from collections import namedtuple
+from typing import List
 
 import pandas as pd
 import sqlite3 as sql
@@ -60,6 +61,7 @@ class E2ETests(object):
     cf_cybershake_config_key = "cybershake_config"
     cf_fault_list_key = "fault_list"
     cf_bench_folder_key = "bench_dir"
+    test_checkpoint = "test_checkpoint"
 
     # Benchmark folders
     bench_IM_csv_folder = "IM_csv"
@@ -83,6 +85,8 @@ class E2ETests(object):
         "post_emod3d_merge_ts.sl.template",
         "post_emod3d_winbin_aio.sl.template",
     ]
+
+
 
     def __init__(self, config_file: str):
         """Constructor, reads input config."""
@@ -299,43 +303,98 @@ class E2ETests(object):
             sim_struct.get_cybershake_config(self.stage_dir),
         )
 
+        proc_type_cancel = None
+        if self.config_dict[self.test_checkpoint]:
+            proc_type_cancel = [
+                const.ProcessType.EMOD3D,
+                const.ProcessType.HF,
+                const.ProcessType.BB,
+            ]
+
+        # Have to put this in a massive try block, to ensure that
+        # the run_queue_and_auto_submit process is terminated on any errors.
         print("Running auto submit...")
-        out_file = os.path.join(self.stage_dir, self.submit_out_file)
-        err_file = os.path.join(self.stage_dir, self.submit_err_file)
-        with open(out_file, "w") as out_f, open(err_file, "w") as err_f:
+        p, out_f, err_f = None, None, None
+        try:
+            out_f = open(os.path.join(self.stage_dir, self.submit_out_file), "w")
+            err_f = open(os.path.join(self.stage_dir, self.submit_err_file), "w")
             p = exe(cmd, debug=False, non_blocking=True, stdout=out_f, stderr=err_f)
 
-        # Monitor mgmt db
-        print("Mgmt DB progress: ")
-        timeout = timeout * 60
-        start_time = time.time()
-        while time.time() - start_time < timeout:
-            try:
-                total_count, comp_count, failed_count = self.check_mgmt_db_progress()
-            except sql.OperationalError as ex:
+            # Monitor mgmt db
+            print("Mgmt DB progress: ")
+            timeout = timeout * 60
+            start_time = time.time()
+            while time.time() - start_time < timeout:
+                try:
+                    total_count, comp_count, failed_count = (
+                        self.check_mgmt_db_progress()
+                    )
+                except sql.OperationalError as ex:
+                    print(
+                        "Operational error while accessing database. "
+                        "Retrying in {} seconds\n{}".format(sleep_time, ex)
+                    )
+                    continue
+
                 print(
-                    "Operational error while accessing database. "
-                    "Retrying in {} seconds\n{}".format(sleep_time, ex)
+                    "Completed: {}, Failed: {}, Total: {}".format(
+                        comp_count, failed_count, total_count
+                    )
                 )
-                continue
 
-            print(
-                "Completed: {}, Failed: {}, Total: {}".format(
-                    comp_count, failed_count, total_count
+                if proc_type_cancel:
+                    proc_type_cancel = self.cancel_running(proc_type_cancel)
+
+                if total_count == (comp_count + failed_count):
+                    break
+                else:
+                    time.sleep(sleep_time)
+
+            if time.time() - start_time > timeout:
+                self.errors.append(
+                    Error("Auto-submit timeout", "The auto-submit timeout expired.")
                 )
-            )
+        # Still display the exception
+        except Exception as ex:
+            raise ex
+        # Clean up
+        finally:
+            if p is not None:
+                p.terminate()
+            if out_f is not None:
+                out_f.close()
+            if err_f is not None:
+                err_f.close()
 
-            if total_count == (comp_count + failed_count):
-                break
-            else:
-                time.sleep(sleep_time)
+    def cancel_running(self, proc_types: List[const.ProcessType]):
+        """Looks for any running task of the specified process types
+        and attempts to cancel one of each.
+        """
+        # Get all running jobs in the mgmt db
+        proc_types_int = [proc_type.value for proc_type in proc_types]
+        with connect_db_ctx(sim_struct.get_mgmt_db(self.stage_dir)) as cur:
+            entries = cur.execute(
+                "SELECT proc_type, job_id  FROM state "
+                "WHERE status == 3 AND proc_type IN ("
+                + "?," * (len(proc_types_int) - 1)
+                + "?)",
+                (*proc_types_int,),
+            ).fetchall()
 
-        if time.time() - start_time > timeout:
-            self.errors.append(
-                Error("Auto-submit timeout", "The auto-submit timeout expired.")
-            )
+        # Cancel one for each process type
+        for entry in entries:
+            if entry[0] in proc_types_int:
+                print(
+                    "Checkpoint testing: Cancelling job-id {} "
+                    "with process type {}".format(entry[1], entry[0])
+                )
+                out, err = exe("scancel -v {}".format(entry[1]), debug=False)
 
-        p.terminate()
+                if "error" not in out.lower():
+                    proc_types.remove(const.ProcessType(entry[0]))
+                    proc_types_int.remove(entry[0])
+
+        return proc_types
 
     def check_mgmt_db(self):
         """Create errors for all entries in management db that did not complete"""

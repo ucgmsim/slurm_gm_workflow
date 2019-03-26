@@ -35,6 +35,9 @@ QuotaEntry = namedtuple(
 )
 
 
+UserChEntry = namedtuple("UserChEntry", ["day", "username", "core_hours_used"])
+
+
 class HPCProperty(Enum):
     node_capacity = 1, "node_capacity"
 
@@ -72,11 +75,22 @@ class DashboardDB:
     def get_quota_t_name(hpc: const.HPC):
         return "{}_QUOTA".format(hpc.value.upper())
 
+    @staticmethod
+    def get_user_ch_t_name(hpc: const.HPC):
+        return "{}_USER_CORE_HOURS".format(hpc.value.upper())
+
+    def get_date(self, day: Union[date, str] = None):
+        """Gets the current datetime
+           Note: will fail if day is str and not in the format 2019-03-21
+        """
+        if not day:
+            day = date.today().strftime(self.date_format)
+        elif isinstance(day, date):
+            day = day.strftime(self.date_format)
+        return day
+
     def update_daily_chours_usage(
-        self,
-        total_core_usage: float,
-        hpc: const.HPC,
-        day: Union[date, str] = None,
+        self, total_core_usage: float, hpc: const.HPC, day: Union[date, str] = None
     ):
         """Updates the daily core hours usage.
 
@@ -88,11 +102,8 @@ class DashboardDB:
             return
 
         table = self.get_daily_t_name(hpc)
-        day = (
-            day.strftime(self.date_format)
-            if day is not None
-            else date.today().strftime(self.date_format)
-        )
+        day = self.get_date(day)
+
         with self.get_cursor(self.db_file) as cursor:
             row = cursor.execute(
                 "SELECT CORE_HOURS_USED, TOTAL_CORE_HOURS FROM {} WHERE DAY == ?;".format(
@@ -125,14 +136,9 @@ class DashboardDB:
         self, start_date: Union[date, str], end_date: Union[date, str], hpc: const.HPC
     ):
         """Gets the usage and total usage for the date range"""
-        start_date = (
-            start_date.strftime(self.date_format)
-            if type(start_date) is date
-            else start_date
-        )
-        end_date = (
-            end_date.strftime(self.date_format) if type(end_date) is date else end_date
-        )
+        start_date = self.get_date(start_date)
+        end_date = self.get_date(end_date)
+
         with self.get_cursor(self.db_file) as cursor:
             results = cursor.execute(
                 "SELECT DAY, CORE_HOURS_USED, TOTAL_CORE_HOURS FROM {} "
@@ -261,7 +267,7 @@ class DashboardDB:
                     )
 
     def get_daily_inodes(self, hpc: const.HPC, file_system="nobackup"):
-        """Get inodes usage for a particular file system eg.nobackup/project"""
+        """Gets inodes usage for a particular file system eg.nobackup/project"""
         sql = "SELECT FILE_SYSTEM, USED_INODES, DAY FROM {} WHERE FILE_SYSTEM LIKE ?".format(
             self.get_quota_t_name(hpc)
         )
@@ -270,25 +276,62 @@ class DashboardDB:
         return results
 
     def get_daily_quota(
-        self,
-        hpc: const.HPC,
-        day: Union[date, str] = None,
-        file_system="nobackup",
+        self, hpc: const.HPC, day: Union[date, str] = None, file_system="nobackup"
     ):
-        """Get daily quota usage for a particular file system eg.nobackup/project"""
-        day = (
-            day.strftime(self.date_format)
-            if day is not None
-            else date.today().strftime(self.date_format)
-        )
+        """Gets daily quota usage for a particular file system eg.nobackup/project"""
+        day = self.get_date(day)
         sql = "SELECT * FROM {} WHERE FILE_SYSTEM LIKE ? AND DAY = ?".format(
             self.get_quota_t_name(hpc)
         )
-
         with self.get_cursor(self.db_file) as cursor:
             results = cursor.execute(sql, ("%{}%".format(file_system), day)).fetchone()
 
         return QuotaEntry(*results)
+
+    def update_user_chours(
+        self,
+        hpc: const.HPC,
+        entries: Iterable[UserChEntry],
+        day: Union[date, str] = None,
+    ):
+        """Updates user_core_hours table for a specified user"""
+        table = self.get_user_ch_t_name(hpc)
+        day = self.get_date(day)
+
+        for entry in entries:
+            with self.get_cursor(self.db_file) as cursor:
+                row = cursor.execute(
+                    "SELECT CORE_HOURS_USED FROM {} WHERE DAY = ? AND USERNAME = ?;".format(
+                        table
+                    ),
+                    (day, entry.username),
+                ).fetchone()
+
+                # New day
+                update_time = datetime.now()
+                if row is None:
+                    cursor.execute(
+                        "INSERT INTO {} VALUES(?, ?, ?, ?)".format(table),
+                        (day, entry.username, entry.core_hours_used, update_time),
+                    )
+                else:
+                    cursor.execute(
+                        "UPDATE {} SET CORE_HOURS_USED = ?, UPDATE_TIME = ? WHERE DAY = ? AND USERNAME = ?;".format(
+                            table
+                        ),
+                        (entry.core_hours_used, update_time, day, entry.username),
+                    )
+
+    def get_user_chours(self, hpc: const.HPC, username: str):
+        """Gets core hours usage over time for a specified user"""
+        table = self.get_user_ch_t_name(hpc)
+        sql = "SELECT DAY, USERNAME, CORE_HOURS_USED FROM {} WHERE USERNAME = ?".format(
+            table
+        )
+        with self.get_cursor(self.db_file) as cursor:
+            results = cursor.execute(sql, (username,)).fetchall()
+
+        return [UserChEntry(*result) for result in results]
 
     def _create_queue_table(self, cursor, hpc: const.HPC):
         # Add latest table
@@ -350,7 +393,21 @@ class DashboardDB:
                     PRIMARY KEY (FILE_SYSTEM, DAY)
                     );
                     """.format(
-                        cls.get_quota_t_name(hpc)
+                        cls.get_quota_t_name(cur_hpc)
+                    )
+                )
+
+                # Add user core hours usage table
+                cursor.execute(
+                    """CREATE TABLE IF NOT EXISTS {}(
+                       DAY DATE NOT NULL,
+                       USERNAME TEXT NOT NULL,
+                       CORE_HOURS_USED FLOAT,
+                       UPDATE_TIME DATE NOT NULL,
+                       PRIMARY KEY (DAY, USERNAME)
+                      );
+                    """.format(
+                        cls.get_user_ch_t_name(cur_hpc)
                     )
                 )
 

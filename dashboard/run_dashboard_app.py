@@ -4,7 +4,7 @@ The data comes from the specified dashboard db and
 the information is updated every x-seconds (currently hardcoded to 10)
 """
 import argparse
-from typing import List
+from typing import List, Dict
 from datetime import date
 from dateutil.relativedelta import relativedelta
 
@@ -14,6 +14,7 @@ import dash_html_components as html
 import dash_core_components as dcc
 import plotly.graph_objs as go
 from dashboard.DashboardDB import DashboardDB, SQueueEntry, HPCProperty
+from dashboard.run_data_collection import USERS
 from dash.dependencies import Input, Output
 
 import qcore.constants as const
@@ -90,6 +91,7 @@ def update_maui_squeue(n):
 )
 def update_maui_daily_chours(n):
     # Get data points
+    data = []
     entries = app.db.get_chours_usage(
         date.today() - relativedelta(years=1), date.today(), const.HPC.maui
     )
@@ -101,11 +103,14 @@ def update_maui_daily_chours(n):
             ("total_chours", float),
         ],
     )
+    trace = go.Scatter(x=entries["day"], y=entries["daily_chours"], name="daily_chours")
+    data.append(trace)
 
-    fig = go.Figure()
-    fig.add_scatter(x=entries["day"], y=entries["daily_chours"])
+    # get core hours usage for each user
+    data += get_maui_daily_user_chours(const.HPC.maui, USERS)
 
-    return fig
+    # uirevision preserve the UI state between update intervals
+    return {'data': data, 'layout': {'uirevision': "maui_daily_chours"}}
 
 
 @app.callback(
@@ -139,6 +144,22 @@ def update_maui_daily_inodes(n):
     fig.add_scatter(x=entries["day"], y=entries["used_inodes"])
 
     return fig
+
+
+def get_maui_daily_user_chours(hpc: const.HPC, users_dict: Dict[str, str]=USERS):
+    """get daily core hours usage for a list of users
+       return as a list of scatter plots
+    """
+    data = []
+    for username, real_name in users_dict.items():
+        entries = app.db.get_user_chours(hpc, username)
+        entries = np.array(entries, dtype=[
+            ("day", "datetime64[D]"),
+            ("username", object),
+            ("core_hours_used", float)])
+        trace = go.Scatter(x=entries["day"], y=entries["core_hours_used"], name=real_name)
+        data.append(trace)
+    return data
 
 
 def get_chours_entries(hpc: const.HPC):
@@ -175,12 +196,13 @@ def get_maui_daily_quota_string(file_system):
     entry = app.db.get_daily_quota(
         const.HPC.maui, date.today(), file_system=file_system
     )
-    return "Current space usage in {} is {}/1T\nCurrent Inodes usage in {} is {}/{}".format(
+    return "Current space usage in {} is {}\nCurrent Inodes usage in {} is {}/{} ({:.3f}%)".format(
         file_system,
         entry.used_space,
         file_system,
         entry.used_inodes,
         entry.available_inodes,
+        entry.used_inodes / entry.available_inodes * 100.
     )
 
 
