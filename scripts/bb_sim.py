@@ -10,10 +10,9 @@ import json
 
 from mpi4py import MPI
 import numpy as np
-import json
 
 from qcore.siteamp_models import nt2n, cb_amp
-from qcore import timeseries
+from qcore import timeseries, utils
 
 ampdeamp = timeseries.ampdeamp
 bwfilter = timeseries.bwfilter
@@ -102,8 +101,7 @@ if args.flo is None:
 # load vs30ref
 if args.lfvsref is None:
     # vs30ref from velocity model
-    with open("%s/params_vel.json" % (args.lf_vm), "r") as j:
-        vm_conf = json.load(j)
+    vm_conf = utils.load_yaml(os.path.join(args.lf_vm,"params_vel.yaml"))
     lfvs30refs = (
         np.memmap(
             "%s/vs3dfile.s" % (args.lf_vm),

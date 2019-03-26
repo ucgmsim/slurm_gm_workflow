@@ -70,7 +70,7 @@ def main():
     vs30ref_file_path = stat_file_path.replace('.ll', '.vs30ref')
 
     error_log = os.path.join(path_cybershake, "install_error.log")
-    params_vel = "params_vel.py"
+    params_vel = "params_vel.yaml"
 
     fault_name = args.vm
 
@@ -90,9 +90,7 @@ def main():
 
     # Load the variables from params_vel.py
     params_vel_path = os.path.join(vel_mod_dir, params_vel)
-    with open(params_vel_path, "r") as f:
-        exec(f.read(), globals())
-
+    params_vel_dict=utils.load_yaml(params_vel_path)
     yes_model_params = (
         False
     )  # statgrid should normally be already generated with Velocity Model
@@ -146,15 +144,15 @@ def main():
                 stat_file_path=stat_file_path,
                 vs30_file_path=vs30_file_path,
                 vs30ref_file_path=vs30ref_file_path,
-                MODEL_LAT=MODEL_LAT,
-                MODEL_LON=MODEL_LON,
-                MODEL_ROT=MODEL_ROT,
-                hh=hh,
-                nx=nx,
-                ny=ny,
-                nz=nz,
-                sufx=sufx,
-                sim_duration=sim_duration,
+                MODEL_LAT=params_vel_dict['MODEL_LAT'],
+                MODEL_LON=params_vel_dict['MODEL_LON'],
+                MODEL_ROT=params_vel_dict['MODEL_ROT'],
+                hh=params_vel_dict['hh'],
+                nx=params_vel_dict['nx'],
+                ny=params_vel_dict['ny'],
+                nz=params_vel_dict['nz'],
+                sufx=params_vel_dict['sufx'],
+                sim_duration=params_vel_dict['sim_duration'],
                 vel_mod_params_dir=vel_mod_dir,
                 yes_statcords=False,
                 yes_model_params=yes_model_params,

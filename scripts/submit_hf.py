@@ -8,6 +8,7 @@ import estimation.estimate_wct as est
 import qcore.constants as const
 from qcore import utils, shared, srf, binary_version
 from qcore.config import get_machine_config, host
+from shared_workflow.load_config import load
 from shared_workflow.shared import (
     confirm,
     set_wct,
@@ -45,9 +46,9 @@ def write_sl_script(
         write_directory = sim_dir
 
     if binary:
-        create_dir = "mkdir -p " + os.path.join(hf_sim_dir, "Acc") + "\n"
+        create_dir = "mkdir -p {}\n".format(os.path.join(hf_sim_dir, "Acc"))
         hf_submit_command = (
-            create_dir + "srun python $gmsim/workflow" "/scripts/hf_sim.py "
+            create_dir + "srun python $gmsim/workflow/scripts/hf_sim.py "
         )
         arguments_for_hf = [
             params.FD_STATLIST,
@@ -106,6 +107,7 @@ def write_sl_script(
         additional_lines="###SBATCH -C avx",
         target_host=machine,
         write_directory=write_directory,
+        rel_dir=sim_dir,
     )
 
     script_name = os.path.abspath(
@@ -124,7 +126,7 @@ def write_sl_script(
 
 
 def main(args):
-    params = utils.load_sim_params("sim_params.yaml")
+    params = utils.load_sim_params(os.path.join(args.rel_dir, "sim_params.yaml"))
 
     # check if the args is none, if not, change the version
     ncore = args.ncore
@@ -192,8 +194,17 @@ def main(args):
             )
             wct = default_wct
         else:
+            workflow_config = load(
+                os.path.dirname(os.path.realpath(__file__)), "workflow_config.json"
+            )
+
             est_core_hours, est_run_time, est_cores = est.est_HF_chours_single(
-                fd_count, nsub_stoch, nt, ncore, scale_ncores=SCALE_NCORES
+                fd_count,
+                nsub_stoch,
+                nt,
+                ncore,
+                os.path.join(workflow_config["estimation_models_dir"], "HF"),
+                scale_ncores=SCALE_NCORES,
             )
             wct = set_wct(est_run_time, est_cores, args.auto)
 
@@ -271,6 +282,9 @@ if __name__ == "__main__":
         type=str,
         help="The directory to write the slurm script to.",
         default=None,
+    )
+    parser.add_argument(
+        "--rel_dir", default=".", type=str, help="The path to the realisation directory"
     )
     args = parser.parse_args()
 

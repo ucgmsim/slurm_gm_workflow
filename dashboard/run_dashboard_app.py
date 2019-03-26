@@ -110,9 +110,8 @@ def update_maui_daily_chours(n):
     # get core hours usage for each user
     data += get_maui_daily_user_chours(const.HPC.maui, USERS)
 
-    fig = go.Figure(data=data)
-
-    return fig
+    # uirevision preserve the UI state between update intervals
+    return {'data': data, 'layout': {'uirevision': "maui_daily_chours"}}
 
 
 @app.callback(
