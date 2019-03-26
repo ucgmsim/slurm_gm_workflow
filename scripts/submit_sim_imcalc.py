@@ -98,12 +98,13 @@ def submit_im_calc_slurm(sim_dir: str, options_dict: Dict = None):
         "job_name": "{}_{}".format(
             options_dict[SlHdrOptConsts.job_name_prefix.value], fault_name
         ),
-        "exec_time": const.timestamp,
+        "exe_time": const.timestamp,
         "target_host": options_dict["machine"],
         "write_directory": options_dict["write_directory"],
         "rel_dir": sim_dir,
+        "n_tasks": options_dict[SlHdrOptConsts.n_tasks.value],
+        "job_description": options_dict[SlHdrOptConsts.description.value],
     }
-    header_dict.update(options_dict)
 
     command_template_parameters = {
         "sim_dir": sim_dir,
