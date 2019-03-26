@@ -96,6 +96,10 @@ def main(args):
             {"hf_sim_dir": hf_sim_dir, "test_hf_script": "test_hf_binary.sh"},
         )
 
+        add_args = dict(params.hf)
+        if args.seed is not None:
+            add_args.update({"seed": args.seed})
+
         script_prefix = "{}_{}".format(ll_name_prefix, underscored_srf)
         script_file_path = write_sl_script(
             write_directory,
@@ -106,7 +110,7 @@ def main(args):
             body_template_params,
             command_template_parameters,
             args,
-            params.hf,
+            add_args,
         )
 
         # Submit the script
