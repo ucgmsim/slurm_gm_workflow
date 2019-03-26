@@ -115,6 +115,47 @@ def get_vs(source_file):
     return vs
 
 
+def write_sl_script(write_directory, sim_dir, process: const.ProcessType, script_prefix, header_dict, body_dict,
+                    command_template, template_parameters, add_args={}):
+
+    script_name = os.path.abspath(
+        os.path.join(
+            write_directory,
+            "{}_{}.sl".format(script_prefix, const.timestamp),
+        )
+    )
+
+    body_dict["submit_command"] = generate_command(process, sim_dir, command_template, template_parameters, add_args)
+
+    header = resolve_header(**header_dict)
+    body = generate_context(**body_dict)
+
+    with open(script_name, "w") as f:
+        f.write(header)
+        f.write("\n")
+        f.write(body)
+
+    return script_name
+
+
+def generate_command(process: const.ProcessType, sim_dir, command_template, template_parameters, add_args={}):
+    command_parts = []
+
+    if process.usesAcc:
+        acc_dir = os.path.join(sim_dir, process.str_value, "Acc")
+        command_parts.append("mkdir -p {}\n".format(acc_dir))
+
+    command_parts.append(command_template.format(template_parameters))
+
+    for key in add_args:
+        command_parts.append("--" + key)
+        if add_args[key] is True:
+            continue
+        command_parts.append(str(add_args[key]))
+
+    return " ".join(list(map(str, command_parts)))
+
+
 def generate_context(simulation_dir, template_path, **kwargs):
     """
     return the template context for submission script
