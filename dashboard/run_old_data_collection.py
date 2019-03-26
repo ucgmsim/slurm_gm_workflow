@@ -34,10 +34,10 @@ class OldDataCollector(DataCollector):
         self.days_shift = days_shift
 
     def get_old_utc_times(self, day_shift):
-        """Get the hpc utc time based on current real time
+        """Get the hpc utc time based on current real time - day_shift
            To be used as the start_time of sreport cmd
         """
-        # 2019-03-26
+        # 2019-0
         local_date = datetime.today().date()
         # 2019-03-25 00:00:00
         local_start_datetime = datetime(local_date.year, local_date.month, local_date.day) - timedelta(days=day_shift)
