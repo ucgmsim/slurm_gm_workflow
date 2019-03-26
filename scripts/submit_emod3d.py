@@ -69,7 +69,7 @@ def main(args):
             os.path.dirname(os.path.realpath(__file__)), "workflow_config.json"
         )
         set_runparams.create_run_params(
-            srf_name,
+            sim_dir,
             workflow_config=workflow_config,
             steps_per_checkpoint=steps_per_checkpoint,
         )
