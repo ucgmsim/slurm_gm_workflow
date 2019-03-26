@@ -45,6 +45,10 @@ USERS = {
 
 
 class DataCollector:
+
+    utc_time_format = "%m/%d/%y-%H:%M:%S"
+    utc_time_gap = datetime.now() - datetime.utcnow()
+
     def __init__(
         self,
         user: str,
@@ -81,10 +85,6 @@ class DataCollector:
 
         self.ssh_cmd_template = "ssh {}@{} {}"
 
-        self.utc_time_gap = datetime.now() - datetime.utcnow()
-        self.utc_time_format = "%m/%d/%y-%H:%M:%S"
-        self.sreport_days = 1  # days between start and end time
-
     def run(self, users):
         """Runs the data collection"""
         while True:
@@ -109,7 +109,7 @@ class DataCollector:
         # 03/25/19-11:00:00
         start_utc_time_string = utc_start_datetime.strftime(self.utc_time_format)
         # 2019-03-26 11:00:00.000002
-        end_utc_datetime = utc_start_datetime + timedelta(days=self.sreport_days)
+        end_utc_datetime = utc_start_datetime + timedelta(days=1)
         # 03/26/19-11:00:00
         end_utc_time_string = end_utc_datetime.strftime(self.utc_time_format)
 
