@@ -83,6 +83,7 @@ class DashboardDB:
         """Gets the current datetime
            Note: will fail if day is str and not in the format 2019-03-21
         """
+        print("get date", day)
         if not day:
             day = date.today().strftime(self.date_format)
         elif isinstance(day, date):
@@ -296,8 +297,9 @@ class DashboardDB:
     ):
         """Updates user_core_hours table for a specified user"""
         table = self.get_user_ch_t_name(hpc)
+        print("updating user_chours day arg", day)
         day = self.get_date(day)
-
+        print("updating day", day)
         for entry in entries:
             with self.get_cursor(self.db_file) as cursor:
                 row = cursor.execute(
