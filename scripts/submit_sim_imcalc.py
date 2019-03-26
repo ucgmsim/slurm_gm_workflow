@@ -9,6 +9,7 @@ from qcore import utils, shared
 from qcore.config import host
 from typing import Dict
 from estimation.estimate_wct import est_IM_chours_single
+from qcore.utils import DotDictify
 from shared_workflow.load_config import load
 from shared_workflow.shared import submit_sl_script, set_wct, confirm, write_sl_script
 
@@ -133,7 +134,7 @@ def submit_im_calc_slurm(sim_dir: str, options_dict: Dict = None):
         header_dict,
         body_template_params,
         command_template_parameters,
-        args,
+        DotDictify({"account": None, "machine": None}),
     )
 
     submit_yes = (
