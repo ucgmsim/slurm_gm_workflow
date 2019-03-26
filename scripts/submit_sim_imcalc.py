@@ -10,12 +10,12 @@ from qcore.config import host
 from typing import Dict
 from estimation.estimate_wct import est_IM_chours_single
 from shared_workflow.load_config import load
-from shared_workflow.shared import (
-    submit_sl_script,
-    set_wct,
-    confirm,
-    resolve_header,
-    generate_context,
+from shared_workflow.shared import submit_sl_script, set_wct, confirm, write_sl_script
+
+SIM_IM_CALC_COMMAND_TEMPLATE = (
+    "time python $IMPATH/calculate_ims.py {{sim_dir}}/BB/Acc/BB.bin b "
+    "-o {{sim_dir}}/IM_calc/ -np {{np}} -i {{sim_name}} -r {{fault_name}} "
+    "-c {{component}} -t s {{extended}} {{simple}}"
 )
 
 
@@ -24,10 +24,10 @@ class SlHdrOptConsts(Enum):
     account = "account"
     n_tasks = "n_tasks"
     memory = "memory"
-    additional = "additional"
+    additional = "additional_lines"
     wallclock = "wallclock_limit"
     version = "version"
-    description = "description"
+    description = "job_description"
 
 
 class SlBodyOptConsts(Enum):
@@ -92,64 +92,63 @@ def submit_im_calc_slurm(sim_dir: str, options_dict: Dict = None):
         [options_dict[SlBodyOptConsts.component.value]],
         100 if options_dict[SlBodyOptConsts.extended.value] else 15,
         options_dict[SlBodyOptConsts.n_procs.value],
-        os.path.join(workflow_config["estimation_models_dir"], "IM")
+        os.path.join(workflow_config["estimation_models_dir"], "IM"),
     )
     wct = set_wct(
         est_run_time, options_dict[SlBodyOptConsts.n_procs.value], options_dict["auto"]
     )
 
-    with open(os.path.join(options_dict["write_directory"], "sim_im_calc.sl.template"), "r") as f:
-        template = f.read()
+    header_dict = {
+        "wallclock_limit": wct,
+        "job_name": "{}_{}".format(
+            options_dict[SlHdrOptConsts.job_name_prefix.value], fault_name
+        ),
+        "exec_time": const.timestamp,
+        "target_host": options_dict["machine"],
+        "write_directory": options_dict["write_directory"],
+        "rel_dir": sim_dir,
+    }
+    header_dict.update(options_dict)
 
-    extended = "-e" if options_dict[SlBodyOptConsts.extended.value] else ""
-    simple = "-s" if options_dict[SlBodyOptConsts.simple_out.value] else ""
-    template = generate_context(
-        sim_dir,
+    command_template_parameters = {
+        "sim_dir": sim_dir,
+        "component": options_dict[SlBodyOptConsts.component.value],
+        "sim_name": sim_name,
+        "fault_name": fault_name,
+        "np": options_dict[SlBodyOptConsts.n_procs.value],
+        "extended": "-e" if options_dict[SlBodyOptConsts.extended.value] else "",
+        "simple": "-s" if options_dict[SlBodyOptConsts.simple_out.value] else "",
+    }
+
+    body_template_params = (
         "sim_im_calc.sl.template",
-        component=options_dict[SlBodyOptConsts.component.value],
-        sim_dir=sim_dir,
-        sim_name=sim_name,
-        fault_name=fault_name,
-        np=options_dict[SlBodyOptConsts.n_procs.value],
-        extended=extended,
-        simple=simple,
-        mgmt_db_location=params.mgmt_db_location,
+        {
+            "component": options_dict[SlBodyOptConsts.component.value],
+            "sim_name": sim_name,
+            "fault_name": fault_name,
+            "np": options_dict[SlBodyOptConsts.n_procs.value],
+        },
     )
 
-    # slurm header
-    header = resolve_header(
-        options_dict[SlHdrOptConsts.account.value],
-        options_dict[SlHdrOptConsts.n_tasks.value],
-        wct,
-        "{}_{}".format(options_dict[SlHdrOptConsts.job_name_prefix.value], fault_name),
-        options_dict[SlHdrOptConsts.description.value],
-        options_dict[SlHdrOptConsts.memory.value],
-        const.timestamp,
-        job_description=options_dict[SlHdrOptConsts.description.value],
-        additional_lines=options_dict[SlHdrOptConsts.additional.value],
-        target_host=options_dict["machine"],
-        write_directory=options_dict["write_directory"],
-        rel_dir=sim_dir,
+    script_prefix = "sim_im_calc"
+    script_file_path = write_sl_script(
+        options_dict["write_directory"],
+        sim_dir,
+        const.ProcessType.merge_ts,
+        script_prefix,
+        header_dict,
+        body_template_params,
+        SIM_IM_CALC_COMMAND_TEMPLATE,
+        command_template_parameters,
+        args,
     )
-
-    script = os.path.abspath(
-        os.path.join(
-            options_dict["write_directory"],
-            const.IM_SIM_SL_SCRIPT_NAME.format(const.timestamp),
-        )
-    )
-
-    # Write the script
-    with open(script, "w") as f:
-        f.write(header)
-        f.write("\n")
-        f.write(template)
 
     submit_yes = (
         True if options_dict["auto"] else confirm("Also submit the job for you?")
     )
+
     submit_sl_script(
-        script,
+        script_file_path,
         "IM_calculation",
         "queued",
         params.mgmt_db_location,
@@ -159,7 +158,7 @@ def submit_im_calc_slurm(sim_dir: str, options_dict: Dict = None):
         target_machine=options_dict["machine"],
     )
 
-    return script
+    return script_file_path
 
 
 def main(args):
