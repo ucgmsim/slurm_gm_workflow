@@ -27,7 +27,7 @@ class OldDataCollector(DataCollector):
         error_th: int = 3,
     ):
         """
-        Sub class if DataCollector
+        Sub class of DataCollector
         :param days_shift: total days in the past from today to collect old core hours usage.
         """
         super().__init__(user, hpc, dashboard_db, interval, error_th)
