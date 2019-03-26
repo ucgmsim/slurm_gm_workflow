@@ -4,7 +4,6 @@ for the specified srf/vm (and runs) folder
 """
 import sys
 import os
-import json
 import pandas as pd
 import numpy as np
 import yaml
@@ -15,8 +14,9 @@ from typing import List
 import qcore.constants as const
 from qcore import shared, srf, utils
 from estimation import estimate_wct
+from shared_workflow.load_config import load
 
-PARAMS_VEL_FILENAME = "params_vel.json"
+PARAMS_VEL_FILENAME = "params_vel.yaml"
 
 # The node time threshold factor used for ncores scaling
 NODE_TIME_TH_FACTOR = 0.5
@@ -96,8 +96,7 @@ def get_faults(vms_dir, sources_dir, runs_dir, args):
 
 def get_vm_params(fault_vm_path):
     """Gets nx, ny, nz and dt from the velocity params file"""
-    with open(os.path.join(fault_vm_path, PARAMS_VEL_FILENAME), "r") as f:
-        params_vel_dict = json.load(f)
+    params_vel_dict = utils.load_yaml(os.path.join(fault_vm_path, PARAMS_VEL_FILENAME)
 
     return [
         params_vel_dict.get("nx", np.nan),
@@ -112,7 +111,8 @@ def run_estimations(
     fault_names,
     realisations,
     r_counts,
-    lf_input_data: np.ndarray,
+    model_dirs_dict,
+    lf_input_data,
     hf_input_data=None,
     bb_input_data=None,
 ):
@@ -122,7 +122,7 @@ def run_estimations(
     """
     print("Running estimation for LF")
     lf_core_hours, lf_run_time, lf_ncores = estimate_wct.estimate_LF_chours(
-        lf_input_data, scale_ncores=True
+        lf_input_data, model_dirs_dict["LF"], True
     )
     lf_result_data = np.concatenate(
         (lf_core_hours[:, None], lf_run_time[:, None], lf_ncores[:, None]), axis=1
@@ -156,7 +156,7 @@ def run_estimations(
     if hf_input_data is not None:
         print("Running HF estimation")
         hf_core_hours, hf_run_time, hf_cores = estimate_wct.estimate_HF_chours(
-            hf_input_data, scale_ncores=True
+            hf_input_data, model_dirs_dict["HF"], True
         )
     else:
         hf_core_hours, hf_run_time, hf_cores = np.nan, np.nan, np.nan
@@ -173,7 +173,9 @@ def run_estimations(
 
     if bb_input_data is not None:
         print("Running BB estimation")
-        bb_core_hours, bb_run_time = estimate_wct.estimate_BB_chours(bb_input_data)
+        bb_core_hours, bb_run_time = estimate_wct.estimate_BB_chours(
+            bb_input_data, model_dirs_dict["BB"]
+        )
         bb_cores = bb_input_data[:, -1]
     else:
         bb_core_hours, bb_run_time, bb_cores = np.nan, np.nan, np.nan
@@ -318,6 +320,15 @@ def main(args):
         args.vms_dir, args.sources_dir, args.runs_dir, args
     )
 
+    workflow_config = load(
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), "../", "scripts"),
+        "workflow_config.json",
+    )
+    model_dir = workflow_config["estimation_models_dir"]
+    model_dir_dict = {"LF": os.path.join(model_dir, "LF"),
+                      "HF": os.path.join(model_dir, "HF"),
+                      "BB": os.path.join(model_dir, "BB")}
+
     print("Collecting vm params")
     vm_params = (
         np.concatenate(
@@ -448,12 +459,19 @@ def main(args):
             fault_names,
             realisations,
             r_counts,
+            model_dir_dict,
             lf_input_data,
             hf_input_data,
             bb_input_data,
         )
     else:
-        results_df = run_estimations(fault_names, realisations, r_counts, lf_input_data)
+        results_df = run_estimations(
+            fault_names,
+            realisations,
+            r_counts,
+            model_dir_dict,
+            lf_input_data,
+        )
 
     results_df["fault_name"] = np.repeat(fault_names, r_counts)
     return results_df

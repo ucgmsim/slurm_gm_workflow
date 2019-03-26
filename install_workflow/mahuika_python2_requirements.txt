@@ -79,11 +79,11 @@ pytest==3.2.3
 python-dateutil==2.6.1
 pytz==2018.4
 PyWavelets==0.5.2
-PyYAML==3.12
+pyyaml>=4.2b1
 qcore==1.1
 qutip==4.2.0
 readline==6.2.4.1
-requests==2.18.4
+requests>=2.20.0
 scandir==1.6
 scikit-image==0.13.1
 scikit-learn==0.19.1
@@ -103,7 +103,7 @@ toolz==0.8.2
 traitlets==4.3.2
 typing==3.6.6
 ujson==1.35
-urllib3==1.22
+urllib3>=1.23
 virtualenv==15.1.0
 wcwidth==0.1.7
 xlrd==1.1.0
