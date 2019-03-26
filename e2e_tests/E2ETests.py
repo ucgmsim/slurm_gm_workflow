@@ -86,8 +86,6 @@ class E2ETests(object):
         "post_emod3d_winbin_aio.sl.template",
     ]
 
-
-
     def __init__(self, config_file: str):
         """Constructor, reads input config."""
 
@@ -375,9 +373,9 @@ class E2ETests(object):
         with connect_db_ctx(sim_struct.get_mgmt_db(self.stage_dir)) as cur:
             entries = cur.execute(
                 "SELECT proc_type, job_id  FROM state "
-                "WHERE status == 3 AND proc_type IN ("
-                + "?," * (len(proc_types_int) - 1)
-                + "?)",
+                "WHERE status == 3 AND proc_type IN ({}?)".format(
+                    "?," * (len(proc_types_int) - 1)
+                ),
                 (*proc_types_int,),
             ).fetchall()
 
