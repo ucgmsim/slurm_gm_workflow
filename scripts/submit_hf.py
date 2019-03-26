@@ -31,13 +31,13 @@ def main(args):
     params = utils.load_sim_params(os.path.join(args.rel_dir, "sim_params.yaml"))
 
     # check if the args is none, if not, change the version
-    ncore = args.ncore
-    version = args.version
-    if version is not None and version in ["mpi", "run_hf_mpi"]:
+
+    if args.version is not None and args.version in ["mpi", "run_hf_mpi"]:
+        version = args.version
         ll_name_prefix = "run_hf_mpi"
     else:
-        if version is not None:
-            print("{} cannot be recognize as a valid option".format(version))
+        if args.version is not None:
+            print("{} cannot be recognize as a valid option".format(args.version))
             print("version is set to default: {}".format(const.HF_DEFAULT_VERSION))
         version = const.HF_DEFAULT_VERSION
         ll_name_prefix = const.HF_DEFAULT_VERSION
@@ -65,7 +65,7 @@ def main(args):
             fd_count,
             nsub_stoch,
             nt,
-            ncore,
+            args.ncore,
             os.path.join(workflow_config["estimation_models_dir"], "HF"),
             scale_ncores=SCALE_NCORES,
         )
@@ -77,20 +77,14 @@ def main(args):
         underscored_srf = srf_name.replace("/", "__")
 
         header_dict = {
-            "account": args.account,
             "n_tasks": est_cores,
             "wallclock_limit": wct,
             "job_name": "sim_hf.{}".format(underscored_srf),
-            "version": "slurm",
-            "memory": const.DEFAULT_MEMORY,
-            "exe_time": const.timestamp,
             "job_description": "HF calculation",
             "additional_lines": "###SBATCH -C avx",
-            "target_host": args.machine,
-            "write_directory": write_directory,
         }
 
-        template_parameters = {
+        command_template_parameters = {
             "fd_statlist": params.FD_STATLIST,
             "hf_bin_path": os.path.join(hf_sim_dir, "Acc/HF.bin"),
             "v_mod_1d_name": params.v_mod_1d_name,
@@ -102,15 +96,10 @@ def main(args):
             ),
         }
 
-        body_dict = {
-            "simulation_dir": params.sim_dir,
-            "template_path": "{}.sl.template".format(ll_name_prefix),
-            "hf_sim_dir": hf_sim_dir,
-            "mgmt_db_location": params.mgmt_db_location,
-            "sim_dir": params.sim_dir,
-            "srf_name": srf_name,
-            "test_hf_script": "test_hf_binary.sh",
-        }
+        body_template_params = (
+            "{}.sl.template".format(ll_name_prefix),
+            {"hf_sim_dir": hf_sim_dir, "test_hf_script": "test_hf_binary.sh"},
+        )
 
         script_prefix = "{}_{}".format(ll_name_prefix, underscored_srf)
         script_file_path = write_sl_script(
@@ -119,9 +108,10 @@ def main(args):
             const.ProcessType.HF,
             script_prefix,
             header_dict,
-            body_dict,
+            body_template_params,
             HF_COMMAND_TEMPLATE,
-            template_parameters,
+            command_template_parameters,
+            args,
             params.hf,
         )
 

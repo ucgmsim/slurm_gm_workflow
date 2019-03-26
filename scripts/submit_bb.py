@@ -30,7 +30,7 @@ def main(args):
     ncores = const.BB_DEFAULT_NCORES
 
     version = args.version
-    if version == "mpi" or version == "run_bb_mpi":
+    if version in ["mpi", "run_bb_mpi"]:
         sl_name_prefix = "run_bb_mpi"
     else:
         if version is not None:
@@ -66,20 +66,14 @@ def main(args):
         underscored_srf = srf_name.replace("/", "__")
 
         header_dict = {
-            "account": args.account,
             "n_tasks": ncores,
             "wallclock_limit": wct,
             "job_name": "sim_bb.{}".format(underscored_srf),
-            "version": "slurm",
-            "memory": const.DEFAULT_MEMORY,
-            "exe_time": const.timestamp,
             "job_description": "BB calculation",
             "additional_lines": "###SBATCH -C avx",
-            "target_host": args.machine,
-            "write_directory": write_directory,
         }
 
-        template_parameters = {
+        command_template_parameters = {
             "outbin_dir": os.path.join(params.sim_dir, "LF", "OutBin"),
             "vel_mod_dir": params.vel_mod_dir,
             "hf_bin_path": os.path.join(params.sim_dir, "HF", "Acc/HF.bin"),
@@ -89,13 +83,8 @@ def main(args):
         }
 
         body_dict = {
-            "simulation_dir": params.sim_dir,
             "template_path": "{}.sl.template".format(sl_name_prefix),
-            "rup_mod": underscored_srf,
-            "mgmt_db_location": params.mgmt_db_location,
-            "sim_dir": params.sim_dir,
-            "srf_name": srf_name,
-            "test_bb_script": "test_bb_binary.sh",
+            "parameter_dict": {"test_bb_script": "test_bb_binary.sh"},
         }
 
         script_prefix = "{}_{}".format(sl_name_prefix, underscored_srf)
@@ -107,7 +96,8 @@ def main(args):
             header_dict,
             body_dict,
             BB_COMMAND_TEMPLATE,
-            template_parameters,
+            command_template_parameters,
+            args,
             params.bb,
         )
 

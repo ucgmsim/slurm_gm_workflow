@@ -15,9 +15,7 @@ from shared_workflow.shared import (
     confirm,
     set_wct,
     submit_sl_script,
-    resolve_header,
     get_nt,
-    generate_context,
     write_sl_script,
 )
 
@@ -46,17 +44,16 @@ def main(args):
         lf_sim_dir = os.path.join(sim_dir, "LF")
 
         # default_core will be changed is user passes ncore
-        n_cores = args.ncore
-        est_core_hours, est_run_time, n_cores = est.est_LF_chours_single(
+        est_core_hours, est_run_time, est_cores = est.est_LF_chours_single(
             int(params.nx),
             int(params.ny),
             int(params.nz),
             get_nt(params),
-            n_cores,
+            args.ncore,
             os.path.join(workflow_config["estimation_models_dir"], "LF"),
             True,
         )
-        wct = set_wct(est_run_time, n_cores, args.auto)
+        wct = set_wct(est_run_time, est_cores, args.auto)
 
         target_qconfig = get_machine_config(args.machine)
 
@@ -80,28 +77,19 @@ def main(args):
         )
 
         header_dict = {
-            "account": args.account,
-            "n_tasks": n_cores,
+            "n_tasks": est_cores,
             "wallclock_limit": wct,
             "job_name": "run_emod3d.{}".format(srf_name),
-            "version": "slurm",
-            "memory": const.DEFAULT_MEMORY,
-            "exe_time": const.timestamp,
             "job_description": "emod3d slurm script",
             "additional_lines": "#SBATCH --hint=nomultithread",
-            "target_host": args.machine,
-            "write_directory": write_directory,
         }
 
-        template_parameters = {"emod3d_bin": binary_path, "lf_sim_dir": lf_sim_dir}
-
-        body_dict = {
-            "simulation_dir": sim_dir,
-            "template_path": "run_emod3d.sl.template",
-            "mgmt_db_location": params.mgmt_db_location,
-            "sim_dir": sim_dir,
-            "srf_name": srf_name,
+        command_template_parameters = {
+            "emod3d_bin": binary_path,
+            "lf_sim_dir": lf_sim_dir,
         }
+
+        body_dict = {"template_path": "run_emod3d.sl.template", "parameter_dict": {}}
 
         script_prefix = "run_emod3d_{}".format(srf_name)
         script_file_path = write_sl_script(
@@ -112,7 +100,8 @@ def main(args):
             header_dict,
             body_dict,
             EMOD3D_COMMAND_TEMPLATE,
-            template_parameters,
+            command_template_parameters,
+            args,
         )
 
         submit_sl_script(
