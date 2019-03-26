@@ -142,7 +142,7 @@ def write_sl_script(write_directory, sim_dir, process: const.ProcessType, script
     }
 
     common_header_dict.update(header_dict)
-    header = resolve_header(**header_dict)
+    header = resolve_header(**common_header_dict)
 
     (template_name, template_params) = body_template_params
     common_template_params.update(template_params)
@@ -172,7 +172,7 @@ def generate_command(
         acc_dir = os.path.join(sim_dir, process.str_value, "Acc")
         command_parts.append("mkdir -p {}\n".format(acc_dir))
 
-    command_parts.append(command_template.format(template_parameters))
+    command_parts.append(command_template.format(**template_parameters))
 
     for key in add_args:
         command_parts.append("--" + key)

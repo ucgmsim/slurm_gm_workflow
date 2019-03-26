@@ -87,7 +87,7 @@ def main(args):
             "lf_sim_dir": lf_sim_dir,
         }
 
-        body_dict = {"template_path": "run_emod3d.sl.template", "parameter_dict": {}}
+        body_template_params = ("run_emod3d.sl.template",{})
 
         script_prefix = "run_emod3d_{}".format(srf_name)
         script_file_path = write_sl_script(
@@ -96,7 +96,7 @@ def main(args):
             const.ProcessType.EMOD3D,
             script_prefix,
             header_dict,
-            body_dict,
+            body_template_params,
             command_template_parameters,
             args,
         )

@@ -77,10 +77,10 @@ def main(args):
             "flo": params.flo,
         }
 
-        body_dict = {
-            "template_path": "{}.sl.template".format(sl_name_prefix),
-            "parameter_dict": {"test_bb_script": "test_bb_binary.sh"},
-        }
+        body_template_params = (
+            "{}.sl.template".format(sl_name_prefix),
+            {"test_bb_script": "test_bb_binary.sh"},
+        )
 
         script_prefix = "{}_{}".format(sl_name_prefix, underscored_srf)
         script_file_path = write_sl_script(
@@ -89,7 +89,7 @@ def main(args):
             const.ProcessType.BB,
             script_prefix,
             header_dict,
-            body_dict,
+            body_template_params,
             command_template_parameters,
             args,
             params.bb,
