@@ -129,7 +129,7 @@ def submit_im_calc_slurm(sim_dir: str, options_dict: Dict = None):
     script_file_path = write_sl_script(
         options_dict["write_directory"],
         sim_dir,
-        const.ProcessType.merge_ts,
+        const.ProcessType.IM_calculation,
         script_prefix,
         header_dict,
         body_template_params,
