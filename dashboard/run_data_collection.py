@@ -1,4 +1,3 @@
-
 #!/usr/bin/env python3
 """
 Script for dashboard data collection. Runs an never-ending with a sleep between
