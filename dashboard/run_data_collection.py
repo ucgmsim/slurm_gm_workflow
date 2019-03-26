@@ -82,6 +82,8 @@ class DataCollector:
         self.ssh_cmd_template = "ssh {}@{} {}"
 
         self.utc_time_gap = datetime.now() - datetime.utcnow()
+        self.utc_time_format = "%m/%d/%y-%H:%M:%S"
+        self.sreport_days = 1  # days between start and end time
 
     def run(self, users):
         """Runs the data collection"""
@@ -94,17 +96,24 @@ class DataCollector:
 
             time.sleep(self.interval)
 
-    def get_start_utc_time(self):
+    def get_utc_times(self):
         """Get the hpc utc time based on current real time
            To be used as the start_time of sreport cmd
         """
-        # datetime.datetime(2019, 3, 22, 13, 28, 37, 103524)
-        current_time = datetime.now()
-        # datetime.datetime(2019, 3, 22, 0, 28, 37, 103524)
-        utc_time = current_time - self.utc_time_gap
-        # '03/22/19'
-        start_utc_time_string = datetime.strftime(utc_time, "%m/%d/%y")
-        return start_utc_time_string
+        # 2019-03-26
+        local_date = datetime.today().date()
+        # 2019-03-26 00:00:00
+        local_start_datetime = datetime(local_date.year, local_date.month, local_date.day)
+        # 2019-03-25 11:00:00.000002
+        utc_start_datetime = local_start_datetime - self.utc_time_gap
+        # 03/25/19-11:00:00
+        start_utc_time_string = utc_start_datetime.strftime(self.utc_time_format)
+        # 2019-03-26 11:00:00.000002
+        end_utc_datetime = utc_start_datetime + timedelta(days=self.sreport_days)
+        # 03/26/19-11:00:00
+        end_utc_time_string = end_utc_datetime.strftime(self.utc_time_format)
+
+        return start_utc_time_string, end_utc_time_string
 
     def collect_data(self, hpc: const.HPC, users: Iterable[str]):
         """Collects data from the specified HPC and adds it to the
@@ -156,11 +165,11 @@ class DataCollector:
 
         # user daily core hour usage
         # end_time == start_time to show usage of one day
-        start_time = self.get_start_utc_time()
+        start_time, end_time = self.get_utc_times()
         user_ch_output = self.run_cmd(
             hpc.value,
             "sreport -M {} -t Hours cluster AccountUtilizationByUser Users={} start={} end={} -n".format(
-                hpc.value, " ".join(users), start_time, start_time
+                hpc.value, " ".join(users), start_time, end_time
             ),
         )
         if user_ch_output:
