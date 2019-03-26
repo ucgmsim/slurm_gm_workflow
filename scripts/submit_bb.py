@@ -13,10 +13,13 @@ from shared_workflow.shared import (
     confirm,
     submit_sl_script,
     write_sl_script,
-    get_nt)
+    get_nt,
+)
 
-BB_COMMAND_TEMPLATE = "srun python $gmsim/workflow/scripts/bb_sim.py {outbin_dir} {vel_mod_dir} {hf_bin_path} " \
-                      "{stat_vs_est} {bb_bin_path} --flo {flo}"
+BB_COMMAND_TEMPLATE = (
+    "srun python $gmsim/workflow/scripts/bb_sim.py {outbin_dir} {vel_mod_dir} {hf_bin_path} "
+    "{stat_vs_est} {bb_bin_path} --flo {flo}"
+)
 
 default_wct = "00:30:00"
 
@@ -45,18 +48,21 @@ def main(args):
         # Use HF nt for wct estimation
         nt = get_nt(params)
         fd_count = len(shared.get_stations(params.FD_STATLIST))
-workflow_config = load(
-                os.path.dirname(os.path.realpath(__file__)), "workflow_config.json"
-            )
+        workflow_config = load(
+            os.path.dirname(os.path.realpath(__file__)), "workflow_config.json"
+        )
 
-            est_core_hours, est_run_time = est.est_BB_chours_single(
-                fd_count,
-                nt,
-                ncores,
-                os.path.join(workflow_config["estimation_models_dir"], "BB"),)
+        est_core_hours, est_run_time = est.est_BB_chours_single(
+            fd_count,
+            nt,
+            ncores,
+            os.path.join(workflow_config["estimation_models_dir"], "BB"),
+        )
         wct = set_wct(est_run_time, ncores, args.auto)
         bb_sim_dir = os.path.join(params.sim_dir, "BB")
-        write_directory = args.write_directory if args.write_directory else params.sim_dir
+        write_directory = (
+            args.write_directory if args.write_directory else params.sim_dir
+        )
         underscored_srf = srf_name.replace("/", "__")
 
         header_dict = {
@@ -93,8 +99,17 @@ workflow_config = load(
         }
 
         script_prefix = "{}_{}".format(sl_name_prefix, underscored_srf)
-        script_file_path = write_sl_script(write_directory, params.sim_dir, const.ProcessType.BB, script_prefix,
-                                           header_dict, body_dict, BB_COMMAND_TEMPLATE, template_parameters, params.bb)
+        script_file_path = write_sl_script(
+            write_directory,
+            params.sim_dir,
+            const.ProcessType.BB,
+            script_prefix,
+            header_dict,
+            body_dict,
+            BB_COMMAND_TEMPLATE,
+            template_parameters,
+            params.bb,
+        )
 
         # Submit the script
         submit_yes = True if args.auto else confirm("Also submit the job for you?")

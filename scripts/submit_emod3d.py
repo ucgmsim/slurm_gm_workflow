@@ -66,7 +66,9 @@ def main(args):
         steps_per_checkpoint = int(
             get_nt(params) / (60.0 * est_run_time) * CHECKPOINT_DURATION
         )
-        write_directory = args.write_directory if args.write_directory else params.sim_dir
+        write_directory = (
+            args.write_directory if args.write_directory else params.sim_dir
+        )
 
         workflow_config = load_config.load(
             os.path.dirname(os.path.realpath(__file__)), "workflow_config.json"
@@ -91,10 +93,7 @@ def main(args):
             "write_directory": write_directory,
         }
 
-        template_parameters = {
-            "emod3d_bin": binary_path,
-            "lf_sim_dir": lf_sim_dir,
-        }
+        template_parameters = {"emod3d_bin": binary_path, "lf_sim_dir": lf_sim_dir}
 
         body_dict = {
             "simulation_dir": sim_dir,
@@ -105,8 +104,16 @@ def main(args):
         }
 
         script_prefix = "run_emod3d_{}".format(srf_name)
-        script_file_path = write_sl_script(write_directory, params.sim_dir, const.ProcessType.EMOD3D, script_prefix,
-                                           header_dict, body_dict, EMOD3D_COMMAND_TEMPLATE, template_parameters)
+        script_file_path = write_sl_script(
+            write_directory,
+            params.sim_dir,
+            const.ProcessType.EMOD3D,
+            script_prefix,
+            header_dict,
+            body_dict,
+            EMOD3D_COMMAND_TEMPLATE,
+            template_parameters,
+        )
 
         submit_sl_script(
             script_file_path,

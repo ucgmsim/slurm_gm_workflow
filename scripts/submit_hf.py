@@ -13,15 +13,18 @@ from shared_workflow.shared import (
     confirm,
     submit_sl_script,
     write_sl_script,
-    get_nt)
+    get_nt,
+)
 
 # default values
 # Scale the number of nodes to be used for the simulation component
 SCALE_NCORES = True
 default_wct = "00:30:00"
 
-HF_COMMAND_TEMPLATE = "srun python $gmsim/workflow /scripts/hf_sim.py {fd_statlist} {hf_bin_path} -m {v_mod_1d_name} " \
-                      "--duration {duration} --dt {dt} --sim_bin {sim_bin_path}"
+HF_COMMAND_TEMPLATE = (
+    "srun python $gmsim/workflow /scripts/hf_sim.py {fd_statlist} {hf_bin_path} -m {v_mod_1d_name} "
+    "--duration {duration} --dt {dt} --sim_bin {sim_bin_path}"
+)
 
 
 def main(args):
@@ -68,7 +71,9 @@ def main(args):
         )
         wct = set_wct(est_run_time, est_cores, args.auto)
         hf_sim_dir = os.path.join(params.sim_dir, "HF")
-        write_directory = args.write_directory if args.write_directory else params.sim_dir
+        write_directory = (
+            args.write_directory if args.write_directory else params.sim_dir
+        )
         underscored_srf = srf_name.replace("/", "__")
 
         header_dict = {
@@ -94,7 +99,7 @@ def main(args):
             "version": params.hf.version,
             "sim_bin_path": binary_version.get_hf_binmod(
                 params.hf.version, get_machine_config(args.machine)["tools_dir"]
-            )
+            ),
         }
 
         body_dict = {
@@ -108,8 +113,17 @@ def main(args):
         }
 
         script_prefix = "{}_{}".format(ll_name_prefix, underscored_srf)
-        script_file_path = write_sl_script(write_directory, params.sim_dir, const.ProcessType.HF, script_prefix,
-                                           header_dict, body_dict, HF_COMMAND_TEMPLATE, template_parameters, params.hf)
+        script_file_path = write_sl_script(
+            write_directory,
+            params.sim_dir,
+            const.ProcessType.HF,
+            script_prefix,
+            header_dict,
+            body_dict,
+            HF_COMMAND_TEMPLATE,
+            template_parameters,
+            params.hf,
+        )
 
         # Submit the script
         submit_yes = True if args.auto else confirm("Also submit the job for you?")
