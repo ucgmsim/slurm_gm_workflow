@@ -135,7 +135,12 @@ def submit_im_calc_slurm(sim_dir: str, options_dict: Dict = None):
         header_dict,
         body_template_params,
         command_template_parameters,
-        DotDictify({"account": None, "machine": None}),
+        DotDictify(
+            {
+                "account": options_dict[SlHdrOptConsts.account.value],
+                "machine": options_dict["machine"],
+            }
+        ),
     )
 
     submit_yes = (
