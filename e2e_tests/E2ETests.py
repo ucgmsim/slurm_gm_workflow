@@ -1,6 +1,5 @@
 """Contains class and helper functions for end to end test"""
 import os
-import signal
 import json
 import shutil
 import time
@@ -62,6 +61,7 @@ class E2ETests(object):
     cf_cybershake_config_key = "cybershake_config"
     cf_fault_list_key = "fault_list"
     cf_bench_folder_key = "bench_dir"
+    test_checkpoint = "test_checkpoint"
 
     # Benchmark folders
     bench_IM_csv_folder = "IM_csv"
@@ -86,8 +86,7 @@ class E2ETests(object):
         "post_emod3d_winbin_aio.sl.template",
     ]
 
-    # Extra test flags
-    test_checkpoint = "test_checkpoint"
+
 
     def __init__(self, config_file: str):
         """Constructor, reads input config."""
@@ -312,7 +311,7 @@ class E2ETests(object):
                 const.ProcessType.BB,
             ]
 
-        # Have to put this in a massive try block, as we have to ensure that
+        # Have to put this in a massive try block, to ensure that
         # the run_queue_and_auto_submit process is terminated on any errors.
         print("Running auto submit...")
         p, out_f, err_f = None, None, None
@@ -368,6 +367,9 @@ class E2ETests(object):
                 err_f.close()
 
     def cancel_running(self, proc_types: List[const.ProcessType]):
+        """Looks for any running task of the specified process types
+        and attempts to cancel one of each.
+        """
         # Get all running jobs in the mgmt db
         proc_types_int = [proc_type.value for proc_type in proc_types]
         with connect_db_ctx(sim_struct.get_mgmt_db(self.stage_dir)) as cur:
@@ -379,6 +381,7 @@ class E2ETests(object):
                 (*proc_types_int,),
             ).fetchall()
 
+        # Cancel one for each process type
         for entry in entries:
             if entry[0] in proc_types_int:
                 print(
