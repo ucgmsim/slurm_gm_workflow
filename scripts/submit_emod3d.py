@@ -22,8 +22,6 @@ from shared_workflow.shared import (
 # Estimated number of minutes between each checkpoint
 CHECKPOINT_DURATION = 10
 
-EMOD3D_COMMAND_TEMPLATE = 'srun {{emod3d_bin}} -args "par={{lf_sim_dir}}/e3d.par"'
-
 
 def main(args):
     params = utils.load_sim_params(os.path.join(args.rel_dir, "sim_params.yaml"))
@@ -99,7 +97,6 @@ def main(args):
             script_prefix,
             header_dict,
             body_dict,
-            EMOD3D_COMMAND_TEMPLATE,
             command_template_parameters,
             args,
         )

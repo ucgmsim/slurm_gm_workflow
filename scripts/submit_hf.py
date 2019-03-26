@@ -21,11 +21,6 @@ from shared_workflow.shared import (
 SCALE_NCORES = True
 default_wct = "00:30:00"
 
-HF_COMMAND_TEMPLATE = (
-    "srun python $gmsim/workflow /scripts/hf_sim.py {fd_statlist} {hf_bin_path} -m {v_mod_1d_name} "
-    "--duration {duration} --dt {dt} --sim_bin {sim_bin_path}"
-)
-
 
 def main(args):
     params = utils.load_sim_params(os.path.join(args.rel_dir, "sim_params.yaml"))
@@ -109,7 +104,6 @@ def main(args):
             script_prefix,
             header_dict,
             body_template_params,
-            HF_COMMAND_TEMPLATE,
             command_template_parameters,
             args,
             params.hf,

@@ -12,12 +12,6 @@ from estimation.estimate_wct import est_IM_chours_single
 from shared_workflow.load_config import load
 from shared_workflow.shared import submit_sl_script, set_wct, confirm, write_sl_script
 
-SIM_IM_CALC_COMMAND_TEMPLATE = (
-    "time python $IMPATH/calculate_ims.py {{sim_dir}}/BB/Acc/BB.bin b "
-    "-o {{sim_dir}}/IM_calc/ -np {{np}} -i {{sim_name}} -r {{fault_name}} "
-    "-c {{component}} -t s {{extended}} {{simple}}"
-)
-
 
 class SlHdrOptConsts(Enum):
     job_name_prefix = "job_name_prefix"
@@ -138,7 +132,6 @@ def submit_im_calc_slurm(sim_dir: str, options_dict: Dict = None):
         script_prefix,
         header_dict,
         body_template_params,
-        SIM_IM_CALC_COMMAND_TEMPLATE,
         command_template_parameters,
         args,
     )

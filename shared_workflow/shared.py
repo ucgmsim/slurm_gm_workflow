@@ -116,18 +116,8 @@ def get_vs(source_file):
     return vs
 
 
-def write_sl_script(
-    write_directory,
-    sim_dir,
-    process: const.ProcessType,
-    script_prefix,
-    header_dict,
-    body_template_params,
-    command_template,
-    command_template_parameters,
-    cmd_args,
-    add_args={},
-):
+def write_sl_script(write_directory, sim_dir, process: const.ProcessType, script_prefix, header_dict,
+                    body_template_params, command_template_parameters, cmd_args, add_args={}):
     params = load_sim_params(os.path.join(sim_dir, "sim_params.yaml"))
     common_header_dict = {
         "memory": const.DEFAULT_MEMORY,
@@ -145,7 +135,7 @@ def write_sl_script(
         "submit_command": generate_command(
             process,
             sim_dir,
-            command_template,
+            process.command_template,
             command_template_parameters,
             add_args,
         ),
@@ -178,7 +168,7 @@ def generate_command(
 ):
     command_parts = []
 
-    if process.usesAcc:
+    if process.uses_acc:
         acc_dir = os.path.join(sim_dir, process.str_value, "Acc")
         command_parts.append("mkdir -p {}\n".format(acc_dir))
 

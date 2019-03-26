@@ -16,11 +16,6 @@ from shared_workflow.shared import (
     get_nt,
 )
 
-BB_COMMAND_TEMPLATE = (
-    "srun python $gmsim/workflow/scripts/bb_sim.py {outbin_dir} {vel_mod_dir} {hf_bin_path} "
-    "{stat_vs_est} {bb_bin_path} --flo {flo}"
-)
-
 default_wct = "00:30:00"
 
 
@@ -95,7 +90,6 @@ def main(args):
             script_prefix,
             header_dict,
             body_dict,
-            BB_COMMAND_TEMPLATE,
             command_template_parameters,
             args,
             params.bb,

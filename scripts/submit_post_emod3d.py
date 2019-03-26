@@ -31,13 +31,6 @@ default_core_winbin_aio = "80"
 # this variable is critical to prevent crashes for winbin-aio
 max_tasks_per_node = "80"
 
-MERGE_TS_COMMAND_TEMPLATE = (
-    "time srun {{merge_ts_path}} filelist=$filelist outfile=$OUTFILE nfiles=$NFILES"
-)
-WINBIN_AIO_COMMAND_TEMPLATE = (
-    "srun python $gmsim/workflow/scripts/winbin-aio-mpi.py {{lf_sim_dir}}"
-)
-
 
 def get_seis_len(seis_path):
     filepattern = os.path.join(seis_path, "*_seis*.e3d")
@@ -96,7 +89,6 @@ def main(args):
             script_prefix,
             header_dict,
             body_template_params,
-            MERGE_TS_COMMAND_TEMPLATE,
             command_template_parameters,
             args,
         )
@@ -148,7 +140,6 @@ def main(args):
             script_prefix,
             header_dict,
             body_template_params,
-            WINBIN_AIO_COMMAND_TEMPLATE,
             command_template_parameters,
             args,
         )
