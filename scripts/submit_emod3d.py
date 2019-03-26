@@ -28,9 +28,13 @@ EMOD3D_COMMAND_TEMPLATE = 'srun {{emod3d_bin}} -args "par={{lf_sim_dir}}/e3d.par
 
 
 def main(args):
-    params = utils.load_sim_params("sim_params.yaml")
+    params = utils.load_sim_params(os.path.join(args.rel_dir, "sim_params.yaml"))
 
     submit_yes = True if args.auto else confirm("Also submit the job for you?")
+
+    workflow_config = load_config.load(
+        os.path.dirname(os.path.realpath(__file__)), "workflow_config.json"
+    )
 
     print("params.srf_file", params.srf_file)
     # Get the srf(rup) name without extensions
@@ -38,8 +42,8 @@ def main(args):
     if args.srf is None or srf_name == args.srf:
         print("not set_params_only")
         # get lf_sim_dir
-        lf_sim_dir = os.path.join(params.sim_dir, "LF")
-        sim_dir = params.sim_dir
+        sim_dir = os.path.abspath(params.sim_dir)
+        lf_sim_dir = os.path.join(sim_dir, "LF")
 
         # default_core will be changed is user passes ncore
         n_cores = args.ncore
@@ -49,6 +53,7 @@ def main(args):
             int(params.nz),
             get_nt(params),
             n_cores,
+            os.path.join(workflow_config["estimation_models_dir"], "LF"),
             True,
         )
         wct = set_wct(est_run_time, n_cores, args.auto)
@@ -98,7 +103,7 @@ def main(args):
             "sim_dir": sim_dir,
             "srf_name": srf_name,
         }
-        
+
         script_prefix = "run_emod3d_{}".format(srf_name)
         script_file_path = write_sl_script(write_directory, params.sim_dir, const.ProcessType.EMOD3D, script_prefix,
                                            header_dict, body_dict, EMOD3D_COMMAND_TEMPLATE, template_parameters)
@@ -135,6 +140,9 @@ if __name__ == "__main__":
         type=str,
         help="The directory to write the slurm script to.",
         default=None,
+    )
+    parser.add_argument(
+        "--rel_dir", default=".", type=str, help="The path to the realisation directory"
     )
     args = parser.parse_args()
 

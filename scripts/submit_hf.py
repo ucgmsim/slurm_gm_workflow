@@ -7,6 +7,7 @@ import estimation.estimate_wct as est
 import qcore.constants as const
 from qcore import utils, shared, srf, binary_version
 from qcore.config import host, get_machine_config
+from shared_workflow.load_config import load
 from shared_workflow.shared import (
     set_wct,
     confirm,
@@ -24,7 +25,7 @@ HF_COMMAND_TEMPLATE = "srun python $gmsim/workflow /scripts/hf_sim.py {fd_statli
 
 
 def main(args):
-    params = utils.load_sim_params("sim_params.yaml")
+    params = utils.load_sim_params(os.path.join(args.rel_dir, "sim_params.yaml"))
 
     # check if the args is none, if not, change the version
     ncore = args.ncore
@@ -53,8 +54,17 @@ def main(args):
         # TODO:make it read through the whole list
         #  instead of assuming every stoch has same size
         nsub_stoch, sub_fault_area = srf.get_nsub_stoch(params.hf.slip, get_area=True)
+        workflow_config = load(
+            os.path.dirname(os.path.realpath(__file__)), "workflow_config.json"
+        )
+
         est_core_hours, est_run_time, est_cores = est.est_HF_chours_single(
-            fd_count, nsub_stoch, nt, ncore, scale_ncores=SCALE_NCORES
+            fd_count,
+            nsub_stoch,
+            nt,
+            ncore,
+            os.path.join(workflow_config["estimation_models_dir"], "HF"),
+            scale_ncores=SCALE_NCORES,
         )
         wct = set_wct(est_run_time, est_cores, args.auto)
         hf_sim_dir = os.path.join(params.sim_dir, "HF")
@@ -149,6 +159,9 @@ if __name__ == "__main__":
         type=str,
         help="The directory to write the slurm script to.",
         default=None,
+    )
+    parser.add_argument(
+        "--rel_dir", default=".", type=str, help="The path to the realisation directory"
     )
     args = parser.parse_args()
 

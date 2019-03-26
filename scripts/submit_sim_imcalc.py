@@ -9,6 +9,7 @@ from qcore import utils, shared
 from qcore.config import host
 from typing import Dict
 from estimation.estimate_wct import est_IM_chours_single
+from shared_workflow.load_config import load
 from shared_workflow.shared import (
     submit_sl_script,
     set_wct,
@@ -52,7 +53,7 @@ DEFAULT_OPTIONS = {
     SlHdrOptConsts.version.value: "slurm",
     # Body
     SlBodyOptConsts.component.value: const.IM_CALC_COMPONENTS[0],
-    SlBodyOptConsts.n_procs.value: const.IM_CALC_DEFAULT_N_PROCESSES,
+    SlBodyOptConsts.n_procs.value: const.IM_CALC_DEFAULT_N_CORES,
     SlBodyOptConsts.extended.value: False,
     SlBodyOptConsts.simple_out.value: True,
     "auto": False,
@@ -79,6 +80,10 @@ def submit_im_calc_slurm(sim_dir: str, options_dict: Dict = None):
     sim_name = os.path.basename(sim_dir)
     fault_name = sim_name.split("_")[0]
 
+    workflow_config = load(
+        os.path.dirname(os.path.realpath(__file__)), "workflow_config.json"
+    )
+
     # Get wall clock estimation
     print("Running wall clock estimation for IM sim")
     est_core_hours, est_run_time = est_IM_chours_single(
@@ -87,12 +92,13 @@ def submit_im_calc_slurm(sim_dir: str, options_dict: Dict = None):
         [options_dict[SlBodyOptConsts.component.value]],
         100 if options_dict[SlBodyOptConsts.extended.value] else 15,
         options_dict[SlBodyOptConsts.n_procs.value],
+        os.path.join(workflow_config["estimation_models_dir"], "IM")
     )
     wct = set_wct(
         est_run_time, options_dict[SlBodyOptConsts.n_procs.value], options_dict["auto"]
     )
 
-    with open("sim_im_calc.sl.template", "r") as f:
+    with open(os.path.join(options_dict["write_directory"], "sim_im_calc.sl.template"), "r") as f:
         template = f.read()
 
     extended = "-e" if options_dict[SlBodyOptConsts.extended.value] else ""
@@ -123,6 +129,7 @@ def submit_im_calc_slurm(sim_dir: str, options_dict: Dict = None):
         additional_lines=options_dict[SlHdrOptConsts.additional.value],
         target_host=options_dict["machine"],
         write_directory=options_dict["write_directory"],
+        rel_dir=sim_dir,
     )
 
     script = os.path.abspath(
