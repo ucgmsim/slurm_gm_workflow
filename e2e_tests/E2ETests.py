@@ -335,7 +335,7 @@ class E2ETests(object):
             )
 
             if proc_type_cancel:
-
+                proc_type_cancel = self.cancel_running(proc_type_cancel)
 
             if total_count == (comp_count + failed_count):
                 break
@@ -359,7 +359,15 @@ class E2ETests(object):
         proc_types_int = [proc_type.value for proc_type in proc_types]
         for entry in entries:
             if entry[0] in proc_types_int:
-                exe("scancel -v {}".format(entry[1]))
+                print("Cancelling job-id {} with process type {}".format(entry[1], entry[0]))
+                out, err = exe("scancel -v {}".format(entry[1]))
+
+                if "error" not in out.lower():
+                    proc_types.remove(const.ProcessType(entry[0]))
+
+        return proc_types
+
+
 
     def check_mgmt_db(self):
         """Create errors for all entries in management db that did not complete"""
