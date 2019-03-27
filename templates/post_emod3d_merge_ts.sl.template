@@ -45,9 +45,6 @@ if [[ $? == 0 ]]; then
     #save meta data
     python $gmsim/workflow/metadata/log_metadata.py {{sim_dir}} merge_ts start_time=$start_time end_time=$end_time
 
-    echo "merge_ts submission successful, start cleaning up"
-    python $gmsim/workflow/scripts/clean_up.py {{sim_dir}}
-    echo "finished cleaning up"
 else
     echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} merge_ts failed --run_name {{srf_name}} --error '$res' --force" >> {{mgmt_db_location}}/mgmt_db_queue/$timestamp\_$SLURM_JOBID
 fi
