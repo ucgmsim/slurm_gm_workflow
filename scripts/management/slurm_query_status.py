@@ -23,14 +23,17 @@ t_status = {"R": "running", "PD": "queued"}
 
 
 def get_queued_tasks(user=None):
-    if user != None:
-        cmd = "squeue -A nesi00213 -o '%A %t' -h" + " -u " + user
-    else:
-        cmd = "squeue -A nesi00213 -o '%A %t' -h"
-    process = Popen(shlex.split(cmd), stdout=PIPE, encoding="utf-8")
-    (output, err) = process.communicate()
-    exit_code = process.wait()
-    return output
+    output_list = []
+    for machine in qcore.constants.HPC:
+        if user != None:
+            cmd = "squeue -A nesi00213 -o '%A %t' -h -M {} -u {}".format(machine.value, user)
+        else:
+            cmd = "squeue -A nesi00213 -o '%A %t' -h -M {}".format(machine.value)
+        process = Popen(shlex.split(cmd), stdout=PIPE, encoding="utf-8")
+        (output, err) = process.communicate()
+        exit_code = process.wait()
+        output_list.append(output)
+    return "\n".join(output_list)
 
 
 def get_submitted_db_tasks(db):
