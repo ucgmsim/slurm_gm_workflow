@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # script version: slurm
 #
-# must be run with sbatch clean_up.sl [realisation directory]
+# must be run with sbatch clean_up.sl [realisation directory] [realisation name] [management database location]
 
 #SBATCH --job-name=clean_up
 #SBATCH --account=nesi00213
 #SBATCH --partition=prepost
-#SBATCH --time=01:00:00
+#SBATCH --time=00:30:00
 #SBATCH --cpus-per-task=1
 
 SIM_DIR=$1

@@ -18,6 +18,7 @@ from scripts.submit_hf import main as submit_hf_main
 from scripts.submit_bb import main as submit_bb_main
 from scripts.submit_sim_imcalc import submit_im_calc_slurm, SlBodyOptConsts
 from scripts.clean_up import clean_up_submission_lf_files
+from shared_workflow import shared
 
 default_n_runs = 12
 default_1d_mod = "/nesi/transit/nesi00213/VelocityModel/Mod-1D/Cant1D_v2-midQ_leer.1d"
@@ -198,13 +199,29 @@ def submit_task(
 
     if proc_type == const.ProcessType.clean_up.value:
         clean_up_template = (
-            "sbatch -M mahuika --export=gmsim $gmsim/workflow/scripts/clean_up.sl {sim_dir} {"
-            "srf_name} {mgmt_db_loc} "
+            "--export=gmsim -o {output_file} -e {error_file} $gmsim/workflow/scripts/clean_up.sl "
+            "{sim_dir} {srf_name} {mgmt_db_loc} "
         )
         clean_up_submission_lf_files(sim_dir)
-        cmd = clean_up_template.format(
-            sim_dir=sim_dir, srf_name=run_name, mgmt_db_loc=mgmt_db_location
+        script = clean_up_template.format(
+            sim_dir=sim_dir,
+            srf_name=run_name,
+            mgmt_db_loc=mgmt_db_location,
+            machine=const.HPC.mahuika.value,
+            output_file=os.path.join(sim_dir, "merge_ts.out"),
+            error_file=os.path.join(sim_dir, "merge_ts.err"),
         )
+        shared.submit_sl_script(
+            script,
+            const.ProcessType.clean_up,
+            "queued",
+            mgmt_db_location,
+            run_name,
+            submitted_time,
+            submit_yes=True,
+            target_machine=const.HPC.mahuika.value,
+        )
+
         call(cmd, shell=True)
 
 
