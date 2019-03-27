@@ -17,6 +17,7 @@ from scripts.submit_post_emod3d import main as submit_post_lf_main
 from scripts.submit_hf import main as submit_hf_main
 from scripts.submit_bb import main as submit_bb_main
 from scripts.submit_sim_imcalc import submit_im_calc_slurm, SlBodyOptConsts
+from scripts.clean_up import clean_up_submission_lf_files
 
 default_n_runs = 12
 default_1d_mod = "/nesi/transit/nesi00213/VelocityModel/Mod-1D/Cant1D_v2-midQ_leer.1d"
@@ -195,6 +196,10 @@ def submit_task(
         if proc_type == const.ProcessType.Verification.value:
             pass
 
+    if proc_type == const.ProcessType.Tidy_up.value:
+        clean_up_submission_lf_files(sim_dir)
+        call("sbatch python $gmsim/workflow/scripts/clean_up.py sim_dir")
+
 
 # TODO: Requires updating, currently not working
 # def check_params_uncertain(params_uncertain_path):
@@ -231,6 +236,7 @@ def main():
     parser.add_argument("--no_im", action="store_true")
     parser.add_argument("--no_merge_ts", action="store_true")
     parser.add_argument("--user", type=str, default=None)
+    parser.add_argument("--tidy_up", action="store_true")
 
     args = parser.parse_args()
 
@@ -283,7 +289,7 @@ def main():
     db_tasks = slurm_query_status.get_submitted_db_tasks(db)
     ntask_to_run = n_runs_max - len(user_queued_tasks)
 
-    runnable_tasks = slurm_query_status.get_runnable_tasks(db, ntask_to_run)
+    runnable_tasks = slurm_query_status.get_runnable_tasks(db, ntask_to_run )
     print("runnable task:")
     print(runnable_tasks)
     submit_task_count = 0
@@ -301,10 +307,10 @@ def main():
         task_state = db_task_status[2]
 
         # skip im calcs if no_im == true
-        if args.no_im and proc_type == 6:
+        if args.no_im and proc_type == const.ProcessType.IM_calculation.value:
             task_num = task_num + 1
             continue
-        if args.no_merge_ts and proc_type == 2:
+        if args.no_merge_ts and proc_type == const.ProcessType.merge_ts.value:
             update_mgmt_db.update_db(db, "merge_ts", "completed", run_name=run_name)
             task_num = task_num + 1
             continue
