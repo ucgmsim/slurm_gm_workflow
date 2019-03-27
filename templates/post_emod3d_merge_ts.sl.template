@@ -21,6 +21,7 @@ if [[ ! "$(ls -A {{lf_sim_dir}}/OutBin)" ]]; then
      tar -xvf {{sim_dir}}/submission.tar
      mv {{sim_dir}}/submission_temp/* {{sim_dir}}/
      mv {{sim_dir}}/slurm_and_logs/* {{sim_dir}}/
+     rm -r slurm_and_logs
      rm {{sim_dir}}/submission.tar
 fi
 
