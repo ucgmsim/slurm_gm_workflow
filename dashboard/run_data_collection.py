@@ -174,7 +174,7 @@ class DataCollector:
         )
         if user_ch_output:
             self.dashboard_db.update_user_chours(
-                hpc, self._parse_user_chours_usage(user_ch_output, users)
+                hpc, self.parse_user_chours_usage(user_ch_output, users)
             )
 
     def run_cmd(self, hpc: str, cmd: str, timeout: int = 10):
@@ -323,7 +323,8 @@ class DataCollector:
 
         return entries
 
-    def _parse_user_chours_usage(self, lines: Iterable[str], users: Iterable[str], day: Union[date, str]=date.today()):
+    @staticmethod
+    def parse_user_chours_usage(lines: Iterable[str], users: Iterable[str], day: Union[date, str]=date.today()):
         """Get daily core hours usage for a list of users from cmd output"""
         entries = []
         # if none of the user had usage today, lines=['']
