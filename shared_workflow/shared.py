@@ -116,8 +116,23 @@ def get_vs(source_file):
     return vs
 
 
-def write_sl_script(write_directory, sim_dir, process: const.ProcessType, script_prefix, header_dict,
-                    body_template_params, command_template_parameters, cmd_args, add_args={}):
+def write_file(script_name, parts):
+    content = "\n".join(parts)
+    with open(script_name, "w") as f:
+        f.write(content)
+
+
+def write_sl_script(
+    write_directory,
+    sim_dir,
+    process: const.ProcessType,
+    script_prefix,
+    header_dict,
+    body_template_params,
+    command_template_parameters,
+    cmd_args,
+    add_args={},
+):
     params = load_sim_params(os.path.join(sim_dir, "sim_params.yaml"))
     common_header_dict = {
         "memory": const.DEFAULT_MEMORY,
@@ -151,10 +166,7 @@ def write_sl_script(write_directory, sim_dir, process: const.ProcessType, script
     script_name = os.path.abspath(
         os.path.join(write_directory, "{}_{}.sl".format(script_prefix, const.timestamp))
     )
-    with open(script_name, "w") as f:
-        f.write(header)
-        f.write("\n")
-        f.write(body)
+    write_file(script_name, [header, body])
 
     return script_name
 
