@@ -197,9 +197,13 @@ def submit_task(
             pass
 
     if proc_type == const.ProcessType.clean_up.value:
+        clean_up_template = (
+            "sbatch -M mahuika --export=gmsim $gmsim/workflow/scripts/clean_up.sl {sim_dir} {"
+            "srf_name} {mgmt_db_loc} "
+        )
         clean_up_submission_lf_files(sim_dir)
-        cmd = "sbatch -M mahuika --export=gmsim $gmsim/workflow/scripts/clean_up.sl {sim_dir}".format(
-            sim_dir=sim_dir
+        cmd = clean_up_template.format(
+            sim_dir=sim_dir, srf_name=run_name, mgmt_db_loc=mgmt_db_location
         )
         call(cmd, shell=True)
 
