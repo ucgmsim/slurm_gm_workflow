@@ -196,9 +196,12 @@ def submit_task(
         if proc_type == const.ProcessType.Verification.value:
             pass
 
-    if proc_type == const.ProcessType.Tidy_up.value:
+    if proc_type == const.ProcessType.clean_up.value:
         clean_up_submission_lf_files(sim_dir)
-        call("sbatch python $gmsim/workflow/scripts/clean_up.py sim_dir")
+        cmd = "sbatch -M mahuika --export=gmsim $gmsim/workflow/scripts/clean_up.sl {sim_dir}".format(
+            sim_dir=sim_dir
+        )
+        call(cmd, shell=True)
 
 
 # TODO: Requires updating, currently not working
@@ -286,10 +289,10 @@ def main():
     print("queued task:", queued_tasks)
     print("subbed task:", db_tasks)
     slurm_query_status.update_tasks(db, queued_tasks, db_tasks)
-    db_tasks = slurm_query_status.get_submitted_db_tasks(db)
+    # db_tasks = slurm_query_status.get_submitted_db_tasks(db)
     ntask_to_run = n_runs_max - len(user_queued_tasks)
 
-    runnable_tasks = slurm_query_status.get_runnable_tasks(db, ntask_to_run )
+    runnable_tasks = slurm_query_status.get_runnable_tasks(db, ntask_to_run)
     print("runnable task:")
     print(runnable_tasks)
     submit_task_count = 0
@@ -310,8 +313,23 @@ def main():
         if args.no_im and proc_type == const.ProcessType.IM_calculation.value:
             task_num = task_num + 1
             continue
-        if args.no_merge_ts and proc_type == const.ProcessType.merge_ts.value:
-            update_mgmt_db.update_db(db, "merge_ts", "completed", run_name=run_name)
+        if proc_type == const.ProcessType.merge_ts.value:
+            if args.no_merge_ts:
+                update_mgmt_db.update_db(db, "merge_ts", "completed", run_name=run_name)
+                task_num = task_num + 1
+                continue
+            elif slurm_query_status.is_task_complete(
+                [const.ProcessType.clean_up.value, run_name, "completed"],
+                slurm_query_status.get_db_tasks_to_be_run(db),
+            ):
+                # If clean_up has already run, then we should set it to be run again after merge_ts has run
+                update_mgmt_db.update_db(
+                    db,
+                    const.ProcessType.clean_up.str_value,
+                    "created",
+                    run_name=run_name,
+                )
+        if not args.tidy_up and proc_type == const.ProcessType.clean_up.value:
             task_num = task_num + 1
             continue
         vm_name = run_name.split("_")[0]
