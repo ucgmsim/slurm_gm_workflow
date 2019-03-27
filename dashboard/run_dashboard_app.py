@@ -84,7 +84,7 @@ def update_maui_quota(n):
 )
 def update_maui_squeue(n):
     entries = app.db.get_squeue_entries(const.HPC.maui)
-    return generate_table_interactive(entries)
+    return generate_table_drop_down(entries)
 
 
 @app.callback(
@@ -195,8 +195,7 @@ def generate_table(squeue_entries: List[SQueueEntry]):
 def generate_table_interactive(squeue_entries: List[SQueueEntry]):
     """Generates interactive dash table for the given squeue entries."""
     # Convert NamedTuple to OrderedDict
-    for i in range(len(squeue_entries)):
-        squeue_entries[i] = squeue_entries[i]._asdict()
+    print("before", squeue_entries)
 
     return html.Div([
         dash_table.DataTable(
@@ -223,6 +222,36 @@ def generate_table_interactive(squeue_entries: List[SQueueEntry]):
         html.Div(id='datatable-interactivity-container')
     ])
 
+
+# def generate_table_drop_down(squeue_entries: List[SQueueEntry]):
+#     usernames = set()
+#     for i in range(len(squeue_entries)):
+#         usernames.add(squeue_entries[i].username)
+#         squeue_entries[i] = squeue_entries[i]._asdict()
+#     print(usernames)
+#     cols = [{"name": i, "id": i, 'dropdown': {'label''value': list(usernames) if i == "username" else None} for i in SQueueEntry._fields]
+#     print("cols", cols)
+#
+#     return html.Div([
+#         dash_table.DataTable(
+#             id='table-dropdown',
+#             data=squeue_entries,
+#             columns=cols,
+#             editable=True,
+#             column_static_dropdown=[
+#                 {
+#                     'id': 'username',
+#                     'dropdown': [
+#                         {'label': i, 'value': i}
+#                         for i in usernames
+#                     ]
+#                 }
+#             ]
+#
+#         ),
+#         html.Div(id='table-dropdown-container')
+#     ])
+#
 
 def get_maui_daily_quota_string(file_system):
     """Get daily quota string for a particular file system eg.nobackup"""
