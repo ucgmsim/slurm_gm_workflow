@@ -12,10 +12,9 @@ from tempfile import mkstemp
 from mpi4py import MPI
 import numpy as np
 import logging
-import MPIFileHandler
 
 from shared_workflow import shared_defaults
-from qcore import binary_version
+from qcore import binary_version, MPIFileHandler
 
 comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
@@ -44,8 +43,9 @@ ic_flag = True
 velocity_name = "-1"
 
 
-logger = logging.getLogger("rank_%i"%comm.rank)
+logger = logging.getLogger("rank_%i" % comm.rank)
 logger.setLevel(logging.DEBUG)
+
 
 def random_seed():
     return random.randrange(1000000, 9999999)
@@ -65,7 +65,7 @@ if is_master:
     arg(
         "--sim_bin",
         help="high frequency binary (modified for binary out)",
-        default=binary_version.get_hf_binmod('5.4.5'),
+        default=binary_version.get_hf_binmod("5.4.5"),
     )
     arg("--t-sec", help="high frequency output start time", type=float, default=0.0)
     # HF IN, line 1
@@ -131,7 +131,9 @@ if is_master:
         "-m",
         "--velocity-model",
         help="path to velocity model (1D)",
-        default=os.path.join(shared_defaults.vel_mod_dir, "Mod-1D/Cant1D_v2-midQ_leer.1d"),
+        default=os.path.join(
+            shared_defaults.vel_mod_dir, "Mod-1D/Cant1D_v2-midQ_leer.1d"
+        ),
     )
     arg("-s", "--site-vm-dir", help="dir containing site specific velocity models (1D)")
     # HF IN, line 14
@@ -158,17 +160,19 @@ if is_master:
         # invalid arguments or -h
         comm.Abort()
 
-args = comm.bcast(args, root = master)
+args = comm.bcast(args, root=master)
 
 # if not args.independent:
 #     args.seed += rank
 
-mh=MPIFileHandler.MPIFileHandler(os.path.join(os.path.dirname(args.out_file),"HF.log"))
-formatter = logging.Formatter('%(asctime)s:%(name)s:%(levelname)s:%(message)s')
+mh = MPIFileHandler.MPIFileHandler(
+    os.path.join(os.path.dirname(args.out_file), "HF.log")
+)
+formatter = logging.Formatter("%(asctime)s:%(name)s:%(levelname)s:%(message)s")
 mh.setFormatter(formatter)
 logger.addHandler(mh)
 if is_master:
-    logger.debug("="*50)
+    logger.debug("=" * 50)
     # random seed
     seed_file = os.path.join(os.path.dirname(args.out_file), "SEED")
     if args.seed == -1:
@@ -184,7 +188,7 @@ if is_master:
         logger.debug("seed from command line: {}".format(args.seed))
     # Logging each argument
     for key in vars(args):
-        logger.debug("{} : {}".format(key,getattr(args,key)))
+        logger.debug("{} : {}".format(key, getattr(args, key)))
 
 nt = int(round(args.duration / args.dt))
 stations = np.loadtxt(
@@ -338,7 +342,8 @@ if is_master:
             initialise(check_only=True)
             logger.info(
                 "{} of {} stations completed. Resuming simulation.".format(
-                stations.size-sum(station_mask), stations.size)
+                    stations.size - sum(station_mask), stations.size
+                )
             )
         except AssertionError:
             logger.warning("Simulation parameters mismatch. Starting fresh simulation.")
@@ -359,7 +364,9 @@ def run_hf(local_statfile, n_stat, idx_0, velocity_model=args.velocity_model):
     else:
         seed = random_seed()
 
-    logger.debug("run_hf({}, {}, {}) seed: {}".format(local_statfile, n_stat, idx_0, seed))
+    logger.debug(
+        "run_hf({}, {}, {}) seed: {}".format(local_statfile, n_stat, idx_0, seed)
+    )
     stdin = "\n".join(
         [
             "",
@@ -436,6 +443,7 @@ def validate_end(idx_n):
             e.write(msg)
         logger.error("Validation failed: {}".format(msg))
         comm.Abort()
+
 
 # distribute work, must be sequential for optimisation,
 # and for validation function above to be thread safe
