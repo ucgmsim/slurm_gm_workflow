@@ -95,7 +95,7 @@ if is_master:
         comm.Abort()
     if not np.isclose(lf.dt * lf.nt, hf.dt * hf.nt, atol=min(lf.dt, hf.dt)):
         logger.error(
-            "LF duration != HF duration. {} vs i{}".format(lf.dt * lf.nt, hf.dt * hf.nt)
+            "LF duration != HF duration. {} vs {}".format(lf.dt * lf.nt, hf.dt * hf.nt)
         )
         comm.Abort()
 
@@ -291,7 +291,6 @@ fmidbot = args.fmidbot
 t0 = MPI.Wtime()
 bb_acc = np.empty((bb_nt, N_COMP), dtype="f4")
 for i, stat in enumerate(stations_todo):
-    #    logger.debug("Computing {} {} of {} stations".format(stat.name, i+1, len(stations_todo)))
     vs30 = vs30s[stations_todo_idx[i]]
     lfvs30ref = lfvs30refs[stations_todo_idx[i]]
     lf_acc = np.copy(lf.acc(stat.name, dt=bb_dt))
