@@ -318,7 +318,7 @@ def unfinished():
         try:
             logger.debug("Checkpoints found")
             initialise(check_only=True)
-            logger.error("HF Simulation already Completed")
+            logger.error("HF Simulation already completed")
             comm.Abort()
         except AssertionError:
             return
