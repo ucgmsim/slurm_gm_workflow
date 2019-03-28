@@ -15,80 +15,12 @@ from shared_workflow.shared import (
     confirm,
     set_wct,
     submit_sl_script,
-    resolve_header,
     get_nt,
-    generate_context,
+    write_sl_script,
 )
 
 # Estimated number of minutes between each checkpoint
 CHECKPOINT_DURATION = 10
-
-
-def write_sl_script(
-    lf_sim_dir,
-    sim_dir,
-    srf_name,
-    mgmt_db_location,
-    binary_path,
-    workflow_config,
-    run_time="02:00:00",
-    nb_cpus=const.LF_DEFAULT_NCORES,
-    memory=const.DEFAULT_MEMORY,
-    account=const.DEFAULT_ACCOUNT,
-    machine=host,
-    steps_per_checkpoint=None,
-    write_directory=None,
-):
-    """Populates the template and writes the resulting slurm script to file"""
-    if not write_directory:
-        write_directory = sim_dir
-
-    set_runparams.create_run_params(
-        sim_dir,
-        workflow_config=workflow_config,
-        steps_per_checkpoint=steps_per_checkpoint,
-    )
-
-    template = generate_context(
-        sim_dir,
-        "run_emod3d.sl.template",
-        lf_sim_dir=lf_sim_dir,
-        tools_dir=binary_path,
-        mgmt_db_location=mgmt_db_location,
-        sim_dir=sim_dir,
-        srf_name=srf_name,
-    )
-
-    # slurm header
-    job_name = "run_emod3d.%s" % srf_name
-    header = resolve_header(
-        account,
-        str(nb_cpus),
-        run_time,
-        job_name,
-        "slurm",
-        memory,
-        const.timestamp,
-        job_description="emod3d slurm script",
-        additional_lines="#SBATCH --hint=nomultithread",
-        target_host=machine,
-        write_directory=write_directory,
-        rel_dir=sim_dir,
-    )
-
-    fname_slurm_script = os.path.abspath(
-        os.path.join(
-            write_directory, "run_emod3d_{}_{}.sl".format(srf_name, const.timestamp)
-        )
-    )
-    with open(fname_slurm_script, "w") as f:
-        f.write(header)
-        f.write("\n")
-        f.write(template)
-
-    print("Slurm script %s written" % fname_slurm_script)
-
-    return fname_slurm_script
 
 
 def main(args):
@@ -110,17 +42,16 @@ def main(args):
         lf_sim_dir = os.path.join(sim_dir, "LF")
 
         # default_core will be changed is user passes ncore
-        n_cores = args.ncore
-        est_core_hours, est_run_time, n_cores = est.est_LF_chours_single(
+        est_core_hours, est_run_time, est_cores = est.est_LF_chours_single(
             int(params.nx),
             int(params.ny),
             int(params.nz),
             get_nt(params),
-            n_cores,
+            args.ncore,
             os.path.join(workflow_config["estimation_models_dir"], "LF"),
             True,
         )
-        wct = set_wct(est_run_time, n_cores, args.auto)
+        wct = set_wct(est_run_time, est_cores, args.auto)
 
         target_qconfig = get_machine_config(args.machine)
 
@@ -130,23 +61,48 @@ def main(args):
         steps_per_checkpoint = int(
             get_nt(params) / (60.0 * est_run_time) * CHECKPOINT_DURATION
         )
+        write_directory = (
+            args.write_directory if args.write_directory else params.sim_dir
+        )
 
-        script = write_sl_script(
-            lf_sim_dir,
+        workflow_config = load_config.load(
+            os.path.dirname(os.path.realpath(__file__)), "workflow_config.json"
+        )
+        set_runparams.create_run_params(
             sim_dir,
-            srf_name,
-            params.mgmt_db_location,
-            binary_path,
-            workflow_config,
-            run_time=wct,
-            nb_cpus=n_cores,
-            machine=args.machine,
+            workflow_config=workflow_config,
             steps_per_checkpoint=steps_per_checkpoint,
-            write_directory=args.write_directory
+        )
+
+        header_dict = {
+            "n_tasks": est_cores,
+            "wallclock_limit": wct,
+            "job_name": "run_emod3d.{}".format(srf_name),
+            "job_description": "emod3d slurm script",
+            "additional_lines": "#SBATCH --hint=nomultithread",
+        }
+
+        command_template_parameters = {
+            "emod3d_bin": binary_path,
+            "lf_sim_dir": lf_sim_dir,
+        }
+
+        body_template_params = ("run_emod3d.sl.template",{})
+
+        script_prefix = "run_emod3d_{}".format(srf_name)
+        script_file_path = write_sl_script(
+            write_directory,
+            params.sim_dir,
+            const.ProcessType.EMOD3D,
+            script_prefix,
+            header_dict,
+            body_template_params,
+            command_template_parameters,
+            args,
         )
 
         submit_sl_script(
-            script,
+            script_file_path,
             "EMOD3D",
             "queued",
             params.mgmt_db_location,
