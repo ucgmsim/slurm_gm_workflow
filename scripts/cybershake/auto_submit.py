@@ -257,13 +257,14 @@ def main():
     parser.add_argument("--no_im", action="store_true")
     parser.add_argument("--no_merge_ts", action="store_true")
     parser.add_argument("--user", type=str, default=None)
-    parser.add_argument("--tidy_up", action="store_true")
+    parser.add_argument("--no_tidy_up", action="store_true")
 
     args = parser.parse_args()
 
     n_runs_max = args.n_runs
     mgmt_db_location = args.run_folder
     db = connect_db(mgmt_db_location)
+    tidy_up = not args.no_tidy_up
 
     # Default values
     oneD_mod, hf_vs30_ref, binary_mode, hf_seed = default_1d_mod, None, True, None
@@ -347,7 +348,7 @@ def main():
                     "created",
                     run_name=run_name,
                 )
-        if not args.tidy_up and proc_type == const.ProcessType.clean_up.value:
+        if not tidy_up and proc_type == const.ProcessType.clean_up.value:
             task_num = task_num + 1
             continue
         vm_name = run_name.split("_")[0]
