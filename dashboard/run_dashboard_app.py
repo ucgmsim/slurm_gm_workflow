@@ -84,7 +84,7 @@ def update_maui_quota(n):
 )
 def update_maui_squeue(n):
     entries = app.db.get_squeue_entries(const.HPC.maui)
-    return generate_table_drop_down(entries)
+    return generate_table_interactive(entries)
 
 
 @app.callback(
@@ -196,21 +196,19 @@ def generate_table_interactive(squeue_entries: List[SQueueEntry]):
     """Generates interactive dash table for the given squeue entries."""
     # Convert NamedTuple to OrderedDict
     print("before", squeue_entries)
-
+    for i in range(len(squeue_entries)):
+        squeue_entries[i] = squeue_entries[i]._asdict()
     return html.Div([
         dash_table.DataTable(
             id='datatable-interactivity',
             columns=[
-                {"name": i, "id": i, "deletable": True} for i in SQueueEntry._fields
+                {"name": i, "id": i, "deletable": False} for i in SQueueEntry._fields
             ],
             data=squeue_entries,
-            editable=True,
             filtering=True,
+            filtering_settings="account eq 'nesi00213'",
             sorting=True,
             sorting_type="multi",
-            row_selectable="multi",
-            row_deletable=True,
-            selected_rows=[],
             pagination_mode="fe",
             pagination_settings={
                 "displayed_pages": 1,
@@ -222,36 +220,6 @@ def generate_table_interactive(squeue_entries: List[SQueueEntry]):
         html.Div(id='datatable-interactivity-container')
     ])
 
-
-# def generate_table_drop_down(squeue_entries: List[SQueueEntry]):
-#     usernames = set()
-#     for i in range(len(squeue_entries)):
-#         usernames.add(squeue_entries[i].username)
-#         squeue_entries[i] = squeue_entries[i]._asdict()
-#     print(usernames)
-#     cols = [{"name": i, "id": i, 'dropdown': {'label''value': list(usernames) if i == "username" else None} for i in SQueueEntry._fields]
-#     print("cols", cols)
-#
-#     return html.Div([
-#         dash_table.DataTable(
-#             id='table-dropdown',
-#             data=squeue_entries,
-#             columns=cols,
-#             editable=True,
-#             column_static_dropdown=[
-#                 {
-#                     'id': 'username',
-#                     'dropdown': [
-#                         {'label': i, 'value': i}
-#                         for i in usernames
-#                     ]
-#                 }
-#             ]
-#
-#         ),
-#         html.Div(id='table-dropdown-container')
-#     ])
-#
 
 def get_maui_daily_quota_string(file_system):
     """Get daily quota string for a particular file system eg.nobackup"""
