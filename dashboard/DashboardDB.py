@@ -51,10 +51,11 @@ class HPCProperty(Enum):
 class DashboardDB:
 
     date_format = "%Y-%m-%d"
+    previous_update_time = None
+    idle_times = 0
 
     def __init__(self, db_file: str):
         """Opens an existing dashboard database file."""
-
         if not os.path.isfile(db_file):
             raise FileNotFoundError(
                 "Specified database {} does not exist. Use static create_db "
@@ -332,6 +333,24 @@ class DashboardDB:
             results = cursor.execute(sql, (username,)).fetchall()
 
         return [UserChEntry(*result) for result in results]
+
+    def check_update_time(self, hpc: const.HPC):
+        table = self.get_user_ch_t_name(hpc)
+        sql = "SELECT UPDATE_TIME FROM {} WHERE DAY = ? LIMIT 1".format(
+            table
+        )
+        with self.get_cursor(self.db_file) as cursor:
+            current_update_time = cursor.execute(sql, (date.today(),)).fetchone()[0]
+        print("current_updating time is",current_update_time)
+        print("previous update time is", self.previous_update_time)
+
+        if self.previous_update_time != current_update_time:
+            self.previous_update_time = current_update_time
+            self.idle_times = 0  # reset
+        else:
+            self.idle_times += 1
+
+        return self.idle_times
 
     def _create_queue_table(self, cursor, hpc: const.HPC):
         # Add latest table

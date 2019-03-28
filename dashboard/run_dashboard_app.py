@@ -4,6 +4,7 @@ The data comes from the specified dashboard db and
 the information is updated every x-seconds (currently hardcoded to 10)
 """
 import argparse
+import json
 from typing import List, Dict
 from datetime import date
 from dateutil.relativedelta import relativedelta
@@ -34,7 +35,15 @@ app.layout = html.Div(
         [
             html.H3("Maui"),
             html.Div(
-                [
+                [ 
+                    html.Div([
+                        dcc.ConfirmDialog(
+                            id='confirm',
+                            message='Danger danger! Are you sure you want to continue?',
+                        ),
+                        html.Div(id='output-confirm')
+                    ]),
+
                     html.H5("Current status"),
                     html.Div(id="maui_node_usage"),
                     html.H5("Current quota"),
@@ -56,6 +65,18 @@ app.layout = html.Div(
 
 app.db = DashboardDB(args.db_file)
 
+
+@app.callback(Output('confirm', 'displayed'),
+              [Input("interval_comp", "n_intervals")])
+def display_confirm(n):
+    return app.db.check_update_time(const.HPC.maui)
+
+
+@app.callback(Output('output-confirm', 'children'),
+              [Input('confirm', 'submit_n_clicks')])
+def update_output(submit_n_clicks):
+    if submit_n_clicks:
+        return 'It wasnt easy but we did it {}'.format(submit_n_clicks)
 
 @app.callback(
     Output("maui_node_usage", "children"), [Input("interval_comp", "n_intervals")]
