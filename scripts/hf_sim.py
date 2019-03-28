@@ -44,7 +44,7 @@ ic_flag = True
 velocity_name = "-1"
 
 
-logger = logging.getLogger("rank[%i]"%comm.rank)
+logger = logging.getLogger("rank_%i"%comm.rank)
 logger.setLevel(logging.DEBUG)
 
 def random_seed():
@@ -182,10 +182,7 @@ if is_master:
         logger.debug("seed generated: {}".format(args.seed))
     else:
         logger.debug("seed from command line: {}".format(args.seed))
-#    arg_keys = vars(args).keys()
-#    arg_keys.sort()
-#    for arg_key in arg_keys:
-#        logger.debug("{} : {}".format(arg_key, getattr(args, arg_key)))
+    # Logging each argument
     for key in vars(args):
         logger.debug("{} : {}".format(key,getattr(args,key)))
 
@@ -361,6 +358,8 @@ def run_hf(local_statfile, n_stat, idx_0, velocity_model=args.velocity_model):
         seed = args.seed + idx_0
     else:
         seed = random_seed()
+
+    logger.debug("run_hf({}, {}, {}) seed: {}".format(local_statfile, n_stat, idx_0, seed))
     stdin = "\n".join(
         [
             "",
