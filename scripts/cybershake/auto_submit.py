@@ -199,14 +199,14 @@ def submit_task(
 
     if proc_type == const.ProcessType.clean_up.value:
         clean_up_template = (
-            "--export=gmsim -o {output_file} -e {error_file} {script_location}"
+            "--export=gmsim -o {output_file} -e {error_file} {script_location} "
             "{sim_dir} {srf_name} {mgmt_db_loc} "
         )
         script = clean_up_template.format(
             sim_dir=sim_dir,
             srf_name=run_name,
             mgmt_db_loc=mgmt_db_location,
-            script_location=os.path.abspath("$gmsim/workflow/scripts/clean_up.sl"),
+            script_location=os.path.expandvars("$gmsim/workflow/scripts/clean_up.sl"),
             output_file=os.path.join(sim_dir, "merge_ts.out"),
             error_file=os.path.join(sim_dir, "merge_ts.err"),
         )

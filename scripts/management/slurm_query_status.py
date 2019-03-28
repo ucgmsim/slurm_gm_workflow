@@ -32,7 +32,7 @@ def get_queued_tasks(user=None):
         process = Popen(shlex.split(cmd), stdout=PIPE, encoding="utf-8")
         (output, err) = process.communicate()
         exit_code = process.wait()
-        output_list.extend(output.split("\n")[2:])
+        output_list.extend(filter(None, output.split("\n")[1:]))
     return "\n".join(output_list)
 
 
