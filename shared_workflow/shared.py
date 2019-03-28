@@ -143,7 +143,7 @@ def resolve_header(
     target_host=host,
     mail="test@test.com",
     write_directory=".",
-    rel_dir="."
+    rel_dir=".",
 ):
     if partition is None:
         partition = get_partition(target_host, convert_time_to_hours(wallclock_limit))

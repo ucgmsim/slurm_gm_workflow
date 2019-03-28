@@ -26,7 +26,9 @@ def get_queued_tasks(user=None):
     output_list = []
     for machine in qcore.constants.HPC:
         if user != None:
-            cmd = "squeue -A nesi00213 -o '%A %t' -h -M {} -u {}".format(machine.value, user)
+            cmd = "squeue -A nesi00213 -o '%A %t' -h -M {} -u {}".format(
+                machine.value, user
+            )
         else:
             cmd = "squeue -A nesi00213 -o '%A %t' -h -M {}".format(machine.value)
         process = Popen(shlex.split(cmd), stdout=PIPE, encoding="utf-8")
@@ -165,7 +167,11 @@ def check_dependancy_met(task, task_list):
 
 def get_runnable_tasks(db, n_runs=N_TASKS_TO_RUN, retry_max=RETRY_MAX):
     do_verification = False
-    verification_tasks = [Process.rrup.value, Process.Empirical.value, Process.Verification.value]
+    verification_tasks = [
+        Process.rrup.value,
+        Process.Empirical.value,
+        Process.Verification.value,
+    ]
     db_tasks = get_db_tasks_to_be_run(db, retry_max)
     tasks_to_run = []
     for task in db_tasks:
