@@ -163,7 +163,7 @@ args = comm.bcast(args, root = master)
 # if not args.independent:
 #     args.seed += rank
 
-mh=MPIFileHandler.MPIFileHandler(os.path.join(os.path.dirname(args.out_file),"hf.log"))
+mh=MPIFileHandler.MPIFileHandler(os.path.join(os.path.dirname(args.out_file),"HF.log"))
 formatter = logging.Formatter('%(asctime)s:%(name)s:%(levelname)s:%(message)s')
 mh.setFormatter(formatter)
 logger.addHandler(mh)
