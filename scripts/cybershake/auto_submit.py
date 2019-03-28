@@ -106,7 +106,7 @@ def submit_task(
         # skipping winbin_aio if running binary mode
         if binary_mode:
             # update the mgmt_db
-            update_mgmt_db.update_db(db, "winbin_aio", "completed", run_name=run_name)
+            update_mgmt_db.update_db(db, "winbin_aio", const.State.completed.value[1], run_name=run_name)
         else:
             args = argparse.Namespace(
                 auto=True,
@@ -207,13 +207,13 @@ def submit_task(
             srf_name=run_name,
             mgmt_db_loc=mgmt_db_location,
             script_location=os.path.expandvars("$gmsim/workflow/scripts/clean_up.sl"),
-            output_file=os.path.join(sim_dir, "merge_ts.out"),
-            error_file=os.path.join(sim_dir, "merge_ts.err"),
+            output_file=os.path.join(sim_dir, "clean_up.out"),
+            error_file=os.path.join(sim_dir, "clean_up.err"),
         )
         shared.submit_sl_script(
             script,
             const.ProcessType.clean_up.str_value,
-            "queued",
+            const.State.queued.value[1],
             mgmt_db_location,
             run_name,
             submitted_time,
@@ -334,18 +334,18 @@ def main():
             continue
         if proc_type == const.ProcessType.merge_ts.value:
             if args.no_merge_ts:
-                update_mgmt_db.update_db(db, "merge_ts", "completed", run_name=run_name)
+                update_mgmt_db.update_db(db, "merge_ts", const.State.completed.value[1], run_name=run_name)
                 task_num = task_num + 1
                 continue
             elif slurm_query_status.is_task_complete(
-                [const.ProcessType.clean_up.value, run_name, "completed"],
+                [const.ProcessType.clean_up.value, run_name, const.State.completed.value[1]],
                 slurm_query_status.get_db_tasks_to_be_run(db),
             ):
                 # If clean_up has already run, then we should set it to be run again after merge_ts has run
                 update_mgmt_db.update_db(
                     db,
                     const.ProcessType.clean_up.str_value,
-                    "created",
+                    const.State.created.value[1],
                     run_name=run_name,
                 )
         if not tidy_up and proc_type == const.ProcessType.clean_up.value:
