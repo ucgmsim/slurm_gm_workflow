@@ -11,6 +11,8 @@ from tempfile import mkstemp
 
 from mpi4py import MPI
 import numpy as np
+import logging
+import MPIFileHandler
 
 from shared_workflow import shared_defaults
 from qcore import binary_version
@@ -41,6 +43,9 @@ ic_flag = True
 # seems to store details in {velocity_name}_{station_name}.1d if not '-1'
 velocity_name = "-1"
 
+
+logger = logging.getLogger("rank[%i]"%comm.rank)
+logger.setLevel(logging.DEBUG)
 
 def random_seed():
     return random.randrange(1000000, 9999999)
@@ -152,26 +157,37 @@ if is_master:
     except SystemExit:
         # invalid arguments or -h
         comm.Abort()
-    # random seed
-    seed_file = os.path.join(os.path.dirname(args.out_file), "SEED")
-    if args.seed == -1:
-        print("seed is always randomised")
-    elif os.path.isfile(seed_file):
-        args.seed = np.loadtxt(seed_file, dtype="i", ndmin=1)[0]
-        print("seed taken from file: %d" % (args.seed))
-    elif args.seed == 0:
-        args.seed = random_seed()
-        np.savetxt(seed_file, np.array([args.seed], dtype=np.int32), fmt="%i")
-        print("seed generated: %d" % (args.seed))
-    else:
-        print("seed from command line: %d" % (args.seed))
 
 args = comm.bcast(args, root = master)
 
 # if not args.independent:
 #     args.seed += rank
 
-print("Rank %d seed: %d" % (rank, args.seed))
+mh=MPIFileHandler.MPIFileHandler(os.path.join(os.path.dirname(args.out_file),"hf.log"))
+formatter = logging.Formatter('%(asctime)s:%(name)s:%(levelname)s:%(message)s')
+mh.setFormatter(formatter)
+logger.addHandler(mh)
+if is_master:
+    logger.debug("="*50)
+    # random seed
+    seed_file = os.path.join(os.path.dirname(args.out_file), "SEED")
+    if args.seed == -1:
+        logger.debug("seed is always randomised")
+    elif os.path.isfile(seed_file):
+        args.seed = np.loadtxt(seed_file, dtype="i", ndmin=1)[0]
+        logger.debug("seed taken from file: {}".format(args.seed))
+    elif args.seed == 0:
+        args.seed = random_seed()
+        np.savetxt(seed_file, np.array([args.seed], dtype=np.int32), fmt="%i")
+        logger.debug("seed generated: {}".format(args.seed))
+    else:
+        logger.debug("seed from command line: {}".format(args.seed))
+#    arg_keys = vars(args).keys()
+#    arg_keys.sort()
+#    for arg_key in arg_keys:
+#        logger.debug("{} : {}".format(arg_key, getattr(args, arg_key)))
+    for key in vars(args):
+        logger.debug("{} : {}".format(key,getattr(args,key)))
 
 nt = int(round(args.duration / args.dt))
 stations = np.loadtxt(
@@ -303,8 +319,9 @@ def unfinished():
         return
     if np.min(checkpoints):
         try:
+            logger.debug("Checkpoints found")
             initialise(check_only=True)
-            print("HF Simulation already completed.")
+            logger.error("HF Simulation already Completed")
             comm.Abort()
         except AssertionError:
             return
@@ -316,18 +333,18 @@ station_mask = None
 if is_master:
     station_mask = unfinished()
     if station_mask is None or sum(station_mask) == stations.size:
-        print("No valid checkpoints found. Starting fresh simulation.")
+        logger.debug("No valid checkpoints found. Starting fresh simulation.")
         initialise()
         station_mask = np.ones(stations.size, dtype=np.bool)
     else:
         try:
             initialise(check_only=True)
-            print(
-                "%d of %d stations completed. Resuming simulation."
-                % (stations.size - sum(station_mask), stations.size)
+            logger.info(
+                "{} of {} stations completed. Resuming simulation.".format(
+                stations.size-sum(station_mask), stations.size)
             )
         except AssertionError:
-            print("Simulation parameters mismatch. Starting fresh simulation.")
+            logger.warning("Simulation parameters mismatch. Starting fresh simulation.")
             initialise()
             station_mask = np.ones(stations.size, dtype=np.bool)
 station_mask = comm.bcast(station_mask, root=master)
@@ -386,8 +403,9 @@ def run_hf(local_statfile, n_stat, idx_0, velocity_model=args.velocity_model):
     try:
         assert e_dist.size == n_stat
     except AssertionError:
-        print("Expected %d e_dist values, got %d." % (n_stat, e_dist.size))
-        print("Dumping Fortran stderr to hf_err_%d..." % (idx_0))
+        logger.error("Expected {} e_dist values, got {}.".format(n_stat, e_dist.size))
+        logger.error("Dumping Fortran stderr to hf_err_{}...".format(idx_0))
+
         with open("hf_err_%d" % (idx_0), "w") as e:
             e.write(stderr)
         comm.Abort()
@@ -414,12 +432,11 @@ def validate_end(idx_n):
             idx_n,
             os.stat(args.out_file).st_size,
         )
-        print(msg)
         # this is here because kupe fails at stdio
         with open("hf_err_validate", "w") as e:
             e.write(msg)
+        logger.error("Validation failed: {}".format(msg))
         comm.Abort()
-
 
 # distribute work, must be sequential for optimisation,
 # and for validation function above to be thread safe
@@ -454,3 +471,5 @@ elif args.seed == -1:
             validate_end(work_idx[c0 - 1] + 1)
 os.remove(in_stats)
 print("Process %03d of %03d finished (%.2fs)." % (rank, size, MPI.Wtime() - t0))
+if is_master:
+    logger.debug("Simulation completed")
