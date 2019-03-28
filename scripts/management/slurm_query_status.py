@@ -19,7 +19,7 @@ RETRY_MAX = 2
 # TODO: Change the status strings to use the enum instead
 # TODO: create task class instead of a 'list'
 
-t_status = {'R': 'running', 'PD': 'queued'}
+t_status = {"R": "running", "PD": "queued"}
 
 
 def get_queued_tasks(user=None):
@@ -27,28 +27,33 @@ def get_queued_tasks(user=None):
         cmd = "squeue -A nesi00213 -o '%A %t' -h" + " -u " + user
     else:
         cmd = "squeue -A nesi00213 -o '%A %t' -h"
-    process = Popen(shlex.split(cmd), stdout=PIPE, encoding='utf-8')
+    process = Popen(shlex.split(cmd), stdout=PIPE, encoding="utf-8")
     (output, err) = process.communicate()
     exit_code = process.wait()
     return output
 
 
 def get_submitted_db_tasks(db):
-    db.execute('''SELECT proc_type_enum.proc_type, run_name, job_id, status_enum.state 
+    db.execute(
+        """SELECT proc_type_enum.proc_type, run_name, job_id, status_enum.state 
                   FROM status_enum, proc_type_enum, state 
                   WHERE state.status = status_enum.id AND state.proc_type = proc_type_enum.id 
-                   AND status_enum.state IN ('running', 'queued')''')
+                   AND status_enum.state IN ('running', 'queued')"""
+    )
     return db.fetchall()
 
 
 def get_db_tasks_to_be_run(db, retry_max=RETRY_MAX):
-    print('retry_max',retry_max)
-    db.execute('''SELECT proc_type, run_name, status_enum.state 
+    print("retry_max", retry_max)
+    db.execute(
+        """SELECT proc_type, run_name, status_enum.state 
                   FROM status_enum, state 
                   WHERE state.status = status_enum.id
                    AND ((status_enum.state = 'created' 
                          AND state.retries < ?)
-                    OR status_enum.state = 'completed')''', (retry_max,))
+                    OR status_enum.state = 'completed')""",
+        (retry_max,),
+    )
     return db.fetchall()
 
 
@@ -57,31 +62,57 @@ def update_tasks(db, tasks, db_tasks):
         found = False
         proc_type, run_name, job_id, db_state = db_task
         for task in tasks.splitlines():
-#            print "db_task: ",db_task
-#            print "task:    ",task
+            #            print "db_task: ",db_task
+            #            print "task:    ",task
             t_job_id, t_state = task.split()
             if job_id == int(t_job_id):
                 found = True
                 try:
                     t_state_str = t_status[t_state]
                 except KeyError:
-                    print("failed to recogize state code %s",t_state)
-                    t_state_str = ''
+                    print("failed to recogize state code %s", t_state)
+                    t_state_str = ""
                 if t_state_str == db_state:
-                    print("not updating status ({}) of '{}' on '{}' ({})".format(t_state_str, proc_type, run_name, job_id))
+                    print(
+                        "not updating status ({}) of '{}' on '{}' ({})".format(
+                            t_state_str, proc_type, run_name, job_id
+                        )
+                    )
                 else:
-                    print("updating '{}' on '{}' to the status of '{}' from '{}' ({})".format(proc_type, run_name, t_state_str, db_state, job_id))
-                    update_mgmt_db.update_db(db, proc_type, t_state_str, job_id, run_name)
+                    print(
+                        "updating '{}' on '{}' to the status of '{}' from '{}' ({})".format(
+                            proc_type, run_name, t_state_str, db_state, job_id
+                        )
+                    )
+                    update_mgmt_db.update_db(
+                        db, proc_type, t_state_str, job_id, run_name
+                    )
         if not found:
-            print("Task '{}' on '{}' not found on squeue; resetting the status to 'created' for resubmission".format(proc_type, run_name))
-            update_mgmt_db.force_update_db(db, proc_type, 'created', job_id, run_name, error='Task removed from squeue without completion', retry=True)
+            print(
+                "Task '{}' on '{}' not found on squeue; resetting the status to 'created' for resubmission".format(
+                    proc_type, run_name
+                )
+            )
+            update_mgmt_db.force_update_db(
+                db,
+                proc_type,
+                "created",
+                job_id,
+                run_name,
+                error="Task removed from squeue without completion",
+                retry=True,
+            )
         db.connection.commit()
 
 
 def is_task_complete(task, task_list):
     process, run_name, status = task
     for check_task in task_list:
-        if check_task[0] == process and check_task[1] == run_name and check_task[2] == status:
+        if (
+            check_task[0] == process
+            and check_task[1] == run_name
+            and check_task[2] == status
+        ):
             return True
     return False
 
@@ -93,20 +124,27 @@ def check_dependancy_met(task, task_list):
         return True
 
     # If the process has completed the one linearly before it
-    if process in (Process.merge_ts, Process.winbin_aio, Process.IM_calculation, Process.Empirical):
+    if process in (
+        Process.merge_ts,
+        Process.winbin_aio,
+        Process.IM_calculation,
+        Process.Empirical,
+    ):
         dependant_task = list(task)
         dependant_task[0] = process.value - 1
-        dependant_task[2] = 'completed'
+        dependant_task[2] = "completed"
         return is_task_complete(dependant_task, task_list)
 
     if process is Process.BB:
         LF_task = list(task)
         LF_task[0] = Process.EMOD3D.value
-        LF_task[2] = 'completed'
+        LF_task[2] = "completed"
         HF_task = list(task)
         HF_task[0] = Process.HF.value
-        HF_task[2] = 'completed'
-        return is_task_complete(LF_task, task_list) and is_task_complete(HF_task, task_list)
+        HF_task[2] = "completed"
+        return is_task_complete(LF_task, task_list) and is_task_complete(
+            HF_task, task_list
+        )
     return False
 
 
@@ -116,12 +154,12 @@ def get_runnable_tasks(db, n_runs=N_TASKS_TO_RUN, retry_max=RETRY_MAX):
     tasks_to_run = []
     for task in db_tasks:
         status = task[2]
-        if status == 'created' and check_dependancy_met(task, db_tasks):
+        if status == "created" and check_dependancy_met(task, db_tasks):
             if task[0] < Process.rrup.value or do_verification:
                 tasks_to_run.append(task)
         if len(tasks_to_run) >= n_runs:
             break
-                
+
     return tasks_to_run
 
 
@@ -129,7 +167,7 @@ def run_new_task(db, n_runs):
     tasks = get_runnable_tasks(db, n_runs)
     if len(tasks) > 0:
         print(tasks[0], len(tasks))
-        
+
         """####
             <insert code to run/submit a new task>
         ####"""
@@ -141,10 +179,11 @@ def run_new_task(db, n_runs):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('run_folder', type=str, 
-                        help="folder to the collection of runs on Kupe")
-    parser.add_argument('--n_runs', '-n', default=N_TASKS_TO_RUN, type=int)
-    
+    parser.add_argument(
+        "run_folder", type=str, help="folder to the collection of runs on Kupe"
+    )
+    parser.add_argument("--n_runs", "-n", default=N_TASKS_TO_RUN, type=int)
+
     args = parser.parse_args()
     f = args.run_folder
     poll_interval = args.poll_interval
@@ -157,9 +196,9 @@ def main():
     update_tasks(db, tasks, db_tasks)
 
     tasks_to_run = run_new_task(db, n_runs)
-        
+
     db.connection.commit()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
