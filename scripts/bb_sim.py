@@ -7,12 +7,12 @@ from argparse import ArgumentParser
 import os
 import sys
 import json
-
+import logging
 from mpi4py import MPI
 import numpy as np
 
 from qcore.siteamp_models import nt2n, cb_amp
-from qcore import timeseries, utils
+from qcore import MPIFileHandler, timeseries, utils
 
 ampdeamp = timeseries.ampdeamp
 bwfilter = timeseries.bwfilter
@@ -26,6 +26,9 @@ rank = comm.Get_rank()
 size = comm.Get_size()
 master = 0
 is_master = not rank
+
+logger = logging.getLogger("rank_%i" % comm.rank)
+logger.setLevel(logging.DEBUG)
 
 # collect required arguements
 args = None
@@ -54,6 +57,15 @@ if is_master:
         comm.Abort()
 
 args = comm.bcast(args, root=master)
+
+mh = MPIFileHandler.MPIFileHandler(
+    os.path.join(os.path.dirname(args.out_file), "BB.log")
+)
+formatter = logging.Formatter("%(asctime)s:%(name)s:%(levelname)s:%(message)s")
+mh.setFormatter(formatter)
+logger.addHandler(mh)
+
+
 if args.no_lf_amp:
 
     def ampdeamp_lf(series, *x, **y):
@@ -74,14 +86,17 @@ hf = timeseries.HFSeis(args.hf_file)
 # compatibility validation
 # abort if behaviour is undefined
 if is_master:
+    logger.debug("=" * 50)
     if not lf.nstat == hf.nstat:
-        print("LF nstat != HF nstat. %s vs %s" % (lf.nstat, hf.nstat))
+        logger.error("LF nstat != HF nstat. {} vs {}".format(lf.nstat, hf.nstat))
         comm.Abort()
     if not np.array_equiv(lf.stations.name, hf.stations.name):
-        print("LF and HF were run with different station files")
+        logger.error("LF and HF were run with different station files")
         comm.Abort()
     if not np.isclose(lf.dt * lf.nt, hf.dt * hf.nt, atol=min(lf.dt, hf.dt)):
-        print("LF duration != HF duration. %s vs %s" % (lf.dt * lf.nt, hf.dt * hf.nt))
+        logger.error(
+            "LF duration != HF duration. {} vs i{}".format(lf.dt * lf.nt, hf.dt * hf.nt)
+        )
         comm.Abort()
 
 # load metadata
@@ -98,10 +113,16 @@ if args.flo is None:
     # min_vs / (5.0 * hh)
     args.flo = 0.5 / (5.0 * lf.hh)
 
+if is_master:
+    # Logging each argument
+    for key in vars(args):
+        logger.debug("{} : {}".format(key, getattr(args, key)))
+
+comm.Barrier()
 # load vs30ref
 if args.lfvsref is None:
     # vs30ref from velocity model
-    vm_conf = utils.load_yaml(os.path.join(args.lf_vm,"params_vel.yaml"))
+    vm_conf = utils.load_yaml(os.path.join(args.lf_vm, "params_vel.yaml"))
     lfvs30refs = (
         np.memmap(
             "%s/vs3dfile.s" % (args.lf_vm),
@@ -111,9 +132,13 @@ if args.lfvsref is None:
         )[lf.stations.y, 0, lf.stations.x]
         * 1000.0
     )
+    if is_master:
+        logger.debug("vs30ref from velocity model")
 else:
     # fixed vs30ref
     lfvs30refs = np.ones(lf.stations.size, dtype=np.float32) * args.lfvsref
+    if is_master:
+        logger.debug("fixed vs30ref")
 
 # load vs30
 try:
@@ -130,12 +155,15 @@ try:
     assert not np.isnan(vs30s).any()
 except AssertionError:
     if is_master:
-        print("vsite file is missing stations")
+        logger.error("vsite file is missing stations")
         comm.Abort()
-
+else:
+    if is_master:
+        logger.debug("vs30 loaded successfully")
 
 # initialise output with general metadata
 def initialise(check_only=False):
+    logger.debug("Initialising")
     with open(args.out_file, mode="rb" if check_only else "w+b") as out:
         # int/bool parameters
         i = np.array([lf.stations.size, bb_nt], dtype="i4")
@@ -218,8 +246,9 @@ def unfinished():
         return
     if np.min(ckpoints):
         try:
+            logger.debug("Checkpoints found")
             initialise(check_only=True)
-            print("BB Simulation already completed.")
+            logger.error("BB Simulation already completed.")
             comm.Abort()
         except AssertionError:
             return
@@ -231,18 +260,20 @@ station_mask = None
 if is_master:
     station_mask = unfinished()
     if station_mask is None or sum(station_mask) == lf.stations.size:
-        print("No valid checkpoints found. Starting fresh simulation.")
+        logger.debug("No valid checkpoints found. Starting fresh simulation.")
         initialise()
         station_mask = np.ones(lf.stations.size, dtype=np.bool)
     else:
         try:
             initialise(check_only=True)
-            print(
-                "%d of %d stations completed. Resuming simulation."
-                % (lf.stations.size - sum(station_mask), lf.stations.size)
+            logger.info(
+                "{} of {} stations completed. Resuming simulation.".format(
+                    lf.stations.size - sum(station_mask), lf.stations.size
+                )
             )
+
         except AssertionError:
-            print("Simulation parameters mismatch. Starting fresh simulation.")
+            logger.warning("Simulation parameters mismatch. Starting fresh simulation.")
             initialise()
             station_mask = np.ones(lf.stations.size, dtype=np.bool)
 station_mask = comm.bcast(station_mask, root=master)
@@ -260,6 +291,7 @@ fmidbot = args.fmidbot
 t0 = MPI.Wtime()
 bb_acc = np.empty((bb_nt, N_COMP), dtype="f4")
 for i, stat in enumerate(stations_todo):
+    #    logger.debug("Computing {} {} of {} stations".format(stat.name, i+1, len(stations_todo)))
     vs30 = vs30s[stations_todo_idx[i]]
     lfvs30ref = lfvs30refs[stations_todo_idx[i]]
     lf_acc = np.copy(lf.acc(stat.name, dt=bb_dt))
@@ -314,4 +346,9 @@ for i, stat in enumerate(stations_todo):
     bin_data.seek(bin_seek_vsite[i])
     vs30.tofile(bin_data)
 bin_data.close()
+logger.debug("Completed {} stations".format(len(stations_todo)))
+
 print("Process %03d of %03d finished (%.2fs)." % (rank, size, MPI.Wtime() - t0))
+comm.Barrier()
+if is_master:
+    logger.debug("Simulation completed")
