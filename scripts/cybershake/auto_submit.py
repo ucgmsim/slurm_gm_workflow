@@ -213,7 +213,7 @@ def submit_task(
         )
         shared.submit_sl_script(
             script,
-            const.ProcessType.clean_up,
+            const.ProcessType.clean_up.str_value,
             "queued",
             mgmt_db_location,
             run_name,
@@ -221,8 +221,6 @@ def submit_task(
             submit_yes=True,
             target_machine=const.HPC.mahuika.value,
         )
-
-        call(cmd, shell=True)
 
 
 # TODO: Requires updating, currently not working
