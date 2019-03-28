@@ -11,7 +11,7 @@ start_time=`date +$runtime_fmt`
 echo $start_time
 
 echo "Computing BB"
-{{bb_submit_command}}
+{{submit_command}}
 
 end_time=`date +$runtime_fmt`
 echo $end_time

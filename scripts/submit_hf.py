@@ -1,20 +1,19 @@
 #!/usr/bin/env python3
 """Script to create and submit a slurm script for HF"""
 import os
-import os.path
 import argparse
 
 import estimation.estimate_wct as est
 import qcore.constants as const
 from qcore import utils, shared, srf, binary_version
-from qcore.config import get_machine_config, host
+from qcore.config import host, get_machine_config
 from shared_workflow.load_config import load
 from shared_workflow.shared import (
-    confirm,
     set_wct,
+    confirm,
     submit_sl_script,
-    resolve_header,
-    generate_context,
+    write_sl_script,
+    get_nt,
 )
 
 # default values
@@ -23,148 +22,21 @@ SCALE_NCORES = True
 default_wct = "00:30:00"
 
 
-def write_sl_script(
-    hf_sim_dir,
-    sim_dir,
-    stoch_name,
-    sl_template_prefix,
-    hf_option,
-    params,
-    nb_cpus=const.HF_DEFAULT_NCORES,
-    wct=default_wct,
-    memory=const.DEFAULT_MEMORY,
-    account=const.DEFAULT_ACCOUNT,
-    binary=False,
-    seed=None,
-    machine=host,
-    write_directory=None,
-):
-    """Populates the template and writes the resulting slurm script to file"""
-
-    target_qconfig = get_machine_config(machine)
-    if not write_directory:
-        write_directory = sim_dir
-
-    if binary:
-        create_dir = "mkdir -p {}\n".format(os.path.join(hf_sim_dir, "Acc"))
-        hf_submit_command = (
-            create_dir + "srun python $gmsim/workflow/scripts/hf_sim.py "
-        )
-        arguments_for_hf = [
-            params.FD_STATLIST,
-            os.path.join(hf_sim_dir, "Acc/HF.bin"),
-            "-m",
-            params.v_mod_1d_name,
-            "--duration",
-            params.sim_duration,
-            "--dt",
-            params.hf.dt,
-            "--sim_bin",
-            binary_version.get_hf_binmod(
-                params.hf.version, target_qconfig["tools_dir"]
-            ),
-        ]
-
-        for key in params.hf:
-            arguments_for_hf.append("--" + key)
-            arguments_for_hf.append(str(params.hf[key]))
-        hf_submit_command += " ".join(list(map(str, arguments_for_hf)))
-    else:
-        hf_submit_command = (
-            "srun python  $gmsim/workflow/scripts"
-            "/hfsims-stats-mpi.py " + hf_sim_dir + " " + str(hf_option)
-        )
-
-    if seed is not None:
-        hf_submit_command = "{} --seed {}".format(hf_submit_command, seed)
-
-    test_hf_script = "test_hf_binary.sh" if binary else "test_hf_ascii.sh"
-
-    template = generate_context(
-        sim_dir,
-        "%s.sl.template" % sl_template_prefix,
-        hf_sim_dir=hf_sim_dir,
-        mgmt_db_location=params.mgmt_db_location,
-        hf_submit_command=hf_submit_command,
-        sim_dir=sim_dir,
-        srf_name=stoch_name,
-        test_hf_script=test_hf_script,
-    )
-
-    variation = stoch_name.replace("/", "__")
-    print(variation)
-
-    job_name = "sim_hf.%s" % variation
-    header = resolve_header(
-        account,
-        str(nb_cpus),
-        wct,
-        job_name,
-        "slurm",
-        memory,
-        const.timestamp,
-        job_description="HF calculation",
-        additional_lines="###SBATCH -C avx",
-        target_host=machine,
-        write_directory=write_directory,
-        rel_dir=sim_dir,
-    )
-
-    script_name = os.path.abspath(
-        os.path.join(
-            write_directory,
-            "{}_{}_{}.sl".format(sl_template_prefix, variation, const.timestamp),
-        )
-    )
-    with open(script_name, "w") as f:
-        f.write(header)
-        f.write("\n")
-        f.write(template)
-
-    print("Slurm script %s written" % script_name)
-    return script_name
-
-
 def main(args):
     params = utils.load_sim_params(os.path.join(args.rel_dir, "sim_params.yaml"))
 
     # check if the args is none, if not, change the version
-    ncore = args.ncore
-    if args.version is not None:
+
+    if args.version is not None and args.version in ["mpi", "run_hf_mpi"]:
         version = args.version
-        if version == "serial" or version == "run_hf":
-            ll_name_prefix = "run_hf"
-            ncore = 1
-        if version == "mp" or version == "run_hf_mp":
-            wl_name_prefix = "run_hf_mp"
-        elif version == "mpi" or version == "run_hf_mpi":
-            ll_name_prefix = "run_hf_mpi"
-        else:
-            print("% cannot be recognize as a valide option" % version)
-            print("version is set to default: %", const.HF_DEFAULT_VERSION)
-            version = const.HF_DEFAULT_VERSION
-            ll_name_prefix = const.HF_DEFAULT_VERSION
+        ll_name_prefix = "run_hf_mpi"
     else:
+        if args.version is not None:
+            print("{} cannot be recognize as a valid option".format(args.version))
+            print("version is set to default: {}".format(const.HF_DEFAULT_VERSION))
         version = const.HF_DEFAULT_VERSION
         ll_name_prefix = const.HF_DEFAULT_VERSION
     print("version:", version)
-
-    # check rand_reset
-    if args.site_specific is not None or params.bb.site_specific:
-        print("Note: site_specific = True, rand_reset = True")
-        hf_option = 2
-    else:
-        try:
-            if args.rand_reset is not None or params.bb.rand_reset:
-                hf_option = 1
-            else:
-                hf_option = 0
-        except:
-            hf_option = 0
-            print(
-                "Note: rand_reset is not defined in params_base_bb.py. "
-                "We assume rand_reset=%s" % bool(hf_option)
-            )
 
     # modify the logic to use the same as in install_bb:
     # sniff through params_base to get the names of srf,
@@ -175,62 +47,76 @@ def main(args):
     # if srf(variation) is provided as args, only create
     # the slurm with same name provided
     if args.srf is None or srf_name == args.srf:
-        nt = int(float(params.sim_duration) / float(params.hf.dt))
+        nt = get_nt(params)
         fd_count = len(shared.get_stations(params.FD_STATLIST))
         # TODO:make it read through the whole list
         #  instead of assuming every stoch has same size
         nsub_stoch, sub_fault_area = srf.get_nsub_stoch(params.hf.slip, get_area=True)
+        workflow_config = load(
+            os.path.dirname(os.path.realpath(__file__)), "workflow_config.json"
+        )
 
-        if args.debug:
-            print("sb:", sub_fault_area)
-            print("nt:", nt)
-            print("fd:", fd_count)
-            print("nsub:", nsub_stoch)
-
-        if args.ascii:
-            print(
-                "No time estimation available for ascii. "
-                "Using default WCT {}".format(default_wct)
-            )
-            wct = default_wct
-        else:
-            workflow_config = load(
-                os.path.dirname(os.path.realpath(__file__)), "workflow_config.json"
-            )
-
-            est_core_hours, est_run_time, est_cores = est.est_HF_chours_single(
-                fd_count,
-                nsub_stoch,
-                nt,
-                ncore,
-                os.path.join(workflow_config["estimation_models_dir"], "HF"),
-                scale_ncores=SCALE_NCORES,
-            )
-            wct = set_wct(est_run_time, est_cores, args.auto)
-
+        est_core_hours, est_run_time, est_cores = est.est_HF_chours_single(
+            fd_count,
+            nsub_stoch,
+            nt,
+            args.ncore,
+            os.path.join(workflow_config["estimation_models_dir"], "HF"),
+            scale_ncores=SCALE_NCORES,
+        )
+        wct = set_wct(est_run_time, est_cores, args.auto)
         hf_sim_dir = os.path.join(params.sim_dir, "HF")
+        write_directory = (
+            args.write_directory if args.write_directory else params.sim_dir
+        )
+        underscored_srf = srf_name.replace("/", "__")
 
-        # Create/write the script
-        script_file = write_sl_script(
-            hf_sim_dir=hf_sim_dir,
-            sim_dir=params.sim_dir,
-            stoch_name=srf_name,
-            sl_template_prefix=ll_name_prefix,
-            hf_option=hf_option,
-            params=params,
-            nb_cpus=est_cores,
-            wct=wct,
-            account=args.account,
-            binary=not args.ascii,
-            seed=args.seed,
-            machine=args.machine,
-            write_directory=args.write_directory,
+        header_dict = {
+            "n_tasks": est_cores,
+            "wallclock_limit": wct,
+            "job_name": "sim_hf.{}".format(underscored_srf),
+            "job_description": "HF calculation",
+            "additional_lines": "###SBATCH -C avx",
+        }
+
+        command_template_parameters = {
+            "fd_statlist": params.FD_STATLIST,
+            "hf_bin_path": os.path.join(hf_sim_dir, "Acc/HF.bin"),
+            "v_mod_1d_name": params.v_mod_1d_name,
+            "duration": params.sim_duration,
+            "dt": params.hf.dt,
+            "version": params.hf.version,
+            "sim_bin_path": binary_version.get_hf_binmod(
+                params.hf.version, get_machine_config(args.machine)["tools_dir"]
+            ),
+        }
+
+        body_template_params = (
+            "{}.sl.template".format(ll_name_prefix),
+            {"hf_sim_dir": hf_sim_dir, "test_hf_script": "test_hf_binary.sh"},
+        )
+
+        add_args = dict(params.hf)
+        if args.seed is not None:
+            add_args.update({"seed": args.seed})
+
+        script_prefix = "{}_{}".format(ll_name_prefix, underscored_srf)
+        script_file_path = write_sl_script(
+            write_directory,
+            params.sim_dir,
+            const.ProcessType.HF,
+            script_prefix,
+            header_dict,
+            body_template_params,
+            command_template_parameters,
+            args,
+            add_args,
         )
 
         # Submit the script
         submit_yes = True if args.auto else confirm("Also submit the job for you?")
         submit_sl_script(
-            script_file,
+            script_file_path,
             "HF",
             "queued",
             params.mgmt_db_location,
@@ -253,18 +139,11 @@ if __name__ == "__main__":
     # submitted automatically
     parser.add_argument("--auto", type=int, nargs="?", default=None, const=True)
 
-    # rand_reset, if somehow the user decide to use it but not defined in
-    # params_base_bb the const is set to True, so that as long as --rand_reset
-    # is used, no more value needs to be provided
-    parser.add_argument("--rand_reset", type=int, nargs="?", default=None, const=True)
-
     parser.add_argument(
         "--site_specific", type=int, nargs="?", default=None, const=True
     )
     parser.add_argument("--account", type=str, default=const.DEFAULT_ACCOUNT)
     parser.add_argument("--srf", type=str, default=None)
-    parser.add_argument("--ascii", action="store_true", default=False)
-    parser.add_argument("--debug", action="store_true", default=False)
     parser.add_argument(
         "--seed",
         type=int,
