@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 """
+[ Obtained from https://gist.github.com/chengdi123000/42ec8ed2cbef09ee050766c2f25498cb ]
+
 Created on Wed Feb 14 16:17:38 2018
 This handler is used to deal with logging with mpi4py in Python3.
 
