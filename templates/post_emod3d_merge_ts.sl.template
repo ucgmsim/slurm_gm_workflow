@@ -14,17 +14,6 @@ start_time=`date +$runtime_fmt`
 
 echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} merge_ts running --run_name {{srf_name}} --job $SLURM_JOBID" >> {{mgmt_db_location}}/mgmt_db_queue/$timestamp\_$SLURM_JOBID
 
-if [[ ! "$(ls -A {{lf_sim_dir}}/OutBin)" ]]; then
-     tar -xvf {{sim_dir}}/LF.tar
-     mv {{sim_dir}}/LF_temp/* {{sim_dir}}/LF
-     rm {{sim_dir}}/LF.tar
-     tar -xvf {{sim_dir}}/submission.tar
-     mv {{sim_dir}}/submission_temp/* {{sim_dir}}/
-     mv {{sim_dir}}/slurm_and_logs/* {{sim_dir}}/
-     rm -r slurm_and_logs
-     rm {{sim_dir}}/submission.tar
-fi
-
 filelist=flist_`basename {{lf_sim_dir}}`
 #get tools dir from shared_defaults
 #exe=$E3D_TOOLS_DIR/merge_tsP3_par

@@ -107,7 +107,7 @@ def submit_task(
         if binary_mode:
             # update the mgmt_db
             update_mgmt_db.update_db(
-                db, "winbin_aio", const.State.completed.value[1], run_name=run_name
+                db, const.ProcessType.winbin_aio.str_value, const.State.completed.value[1], run_name=run_name
             )
         else:
             args = argparse.Namespace(
@@ -310,7 +310,6 @@ def main():
     print("queued task:", queued_tasks)
     print("subbed task:", db_tasks)
     slurm_query_status.update_tasks(db, queued_tasks, db_tasks)
-    # db_tasks = slurm_query_status.get_submitted_db_tasks(db)
     ntask_to_run = n_runs_max - len(user_queued_tasks)
 
     runnable_tasks = slurm_query_status.get_runnable_tasks(db, ntask_to_run)

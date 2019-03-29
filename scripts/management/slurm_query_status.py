@@ -24,6 +24,7 @@ t_status = {"R": "running", "PD": "queued"}
 
 def get_queued_tasks(user=None):
     output_list = []
+    # TODO: Treat Maui and Mahuika jobs seperately. See QSW-912
     for machine in qcore.constants.HPC:
         if user != None:
             cmd = "squeue -A nesi00213 -o '%A %t' -h -M {} -u {}".format(
