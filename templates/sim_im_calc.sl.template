@@ -26,7 +26,7 @@ python $gmsim/workflow/scripts/im_calc_checkpoint.py {{sim_dir}}/IM_calc/ `wc -l
 if [[ $? != 0 ]]; then
     # Run the script
     start_time=`date +$runtime_fmt`
-    time python $IMPATH/calculate_ims.py {{sim_dir}}/BB/Acc/BB.bin b -o {{sim_dir}}/IM_calc/ -np {{np}} -i {{sim_name}} -r {{fault_name}} -c {{component}} -t s {{extended}} {{simple}}
+    {{submit_command}}
     end_time=`date +$runtime_fmt`
 fi
 
@@ -54,10 +54,6 @@ if [[ $? == 0 ]]; then
     # log metadata
     python $gmsim/workflow/metadata/log_metadata.py {{sim_dir}} IM_calc cores={{np}} pSA_count=$pSA_count fd_count=$fd_count start_time=$start_time end_time=$end_time
 
-     # clean up, making .tar
-    echo "IM_calc submission successful, start cleaning up"
-    python $gmsim/workflow/scripts/clean_up.py {{sim_dir}}
-    echo "finished cleaning up"
 else
     #failed
     echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} IM_calculation failed --run_name {{sim_name}} --error '$res' --force"  >> {{mgmt_db_location}}/mgmt_db_queue/$timestamp\_$SLURM_JOBID

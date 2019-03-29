@@ -17,6 +17,7 @@ import plotly.graph_objs as go
 from dashboard.DashboardDB import DashboardDB, SQueueEntry, HPCProperty
 from dashboard.run_data_collection import USERS
 from dash.dependencies import Input, Output
+import dash_table
 
 import qcore.constants as const
 
@@ -92,7 +93,7 @@ def update_maui_quota(n):
 )
 def update_maui_squeue(n):
     entries = app.db.get_squeue_entries(const.HPC.maui)
-    return generate_table(entries)
+    return generate_table_interactive(entries)
 
 
 @app.callback(
@@ -212,6 +213,33 @@ def generate_table(squeue_entries: List[SQueueEntry]):
         # Body
         [html.Tr([html.Td(col_val) for col_val in entry]) for entry in squeue_entries]
     )
+
+
+def generate_table_interactive(squeue_entries: List[SQueueEntry]):
+    """Generates interactive dash table for the given squeue entries."""
+    # Convert NamedTuple to OrderedDict
+    squeue_entries = [entry._asdict() for entry in squeue_entries]
+    return html.Div([
+        dash_table.DataTable(
+            id='datatable-interactivity',
+            columns=[
+                {"name": i, "id": i, "deletable": False} for i in SQueueEntry._fields
+            ],
+            data=squeue_entries,
+            filtering=True,
+            filtering_settings="account eq 'nesi00213'",
+            sorting=True,
+            sorting_type="multi",
+            pagination_mode="fe",
+            pagination_settings={
+                "displayed_pages": 1,
+                "current_page": 0,
+                "page_size": 35,
+            },
+            navigation="page",
+        ),
+        html.Div(id='datatable-interactivity-container')
+    ])
 
 
 def get_maui_daily_quota_string(file_system):

@@ -11,13 +11,13 @@ from dashboard.DashboardDB import DashboardDB, SQueueEntry
 class TestDashboardDB:
 
     squeue_entry_1 = SQueueEntry(
-        12, "testUser", "R", "testName_1", "1:20", "16:20", 1, 80
+        12, "testUser", "test_1234", "R", "testName_1", "1:20", "16:20", 1, 80
     )
     squeue_entry_2 = SQueueEntry(
-        13, "testUser", "R", "testName_2", "11:20", "16:16:20", 1, 80
+        13, "testUser", "test_1234", "R", "testName_2", "11:20", "16:16:20", 1, 80
     )
     squeue_entry_3 = SQueueEntry(
-        14, "testUser", "R", "testName_3", "14:20", "12:16:20", 1, 80
+        14, "testUser", "test_1234", "R", "testName_3", "14:20", "12:16:20", 1, 80
     )
 
     hpc_1 = const.HPC.maui

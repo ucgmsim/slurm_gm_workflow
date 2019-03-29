@@ -3,7 +3,6 @@
 Script for dashboard data collection. Runs an never-ending with a sleep between
 data collection. If any of the ssh commands fail, then the script stops, to prevent
 HPC lockout of the user running this script.
-
 The collected data populates the specified dashboard db.
 """
 
@@ -119,7 +118,7 @@ class DataCollector:
         """Collects data from the specified HPC and adds it to the
         dashboard db
         """
-        # Get Core hour usage, out of some reason this command is super slow...
+        # Core hour usage, out of some reason this command is super slow...
         rt_ch_output = self.run_cmd(
             hpc.value, "nn_corehour_usage -l {}".format(PROJECT_ID), timeout=60
         )
@@ -128,8 +127,8 @@ class DataCollector:
                 self._parse_total_chours_usage(rt_ch_output, hpc), hpc
             )
 
-        # Squeue
-        sq_output = self.run_cmd(hpc.value, "squeue")
+        # Squeue, formatted to show full account name
+        sq_output = self.run_cmd(hpc.value, "squeue --format=%18i%12u%12a%60j%20T%25r%20S%18M%18L%10D%5C")
         if sq_output:
             self.dashboard_db.update_squeue(self._parse_squeue(sq_output), hpc)
 
@@ -174,13 +173,12 @@ class DataCollector:
         )
         if user_ch_output:
             self.dashboard_db.update_user_chours(
-                hpc, self._parse_user_chours_usage(user_ch_output, users)
+                hpc, self.parse_user_chours_usage(user_ch_output, users)
             )
 
     def run_cmd(self, hpc: str, cmd: str, timeout: int = 10):
         """Runs the specified command remotely on the specified hpc using the
         specified user id.
-
         Returns False if the command fails for some reason.
         """
         try:
@@ -224,6 +222,7 @@ class DataCollector:
                     SQueueEntry(
                         line[0].strip(),
                         line[1].strip(),
+                        line[2].strip(),
                         line[4].strip(),
                         line[3].strip(),
                         line[7].strip(),
@@ -244,7 +243,6 @@ class DataCollector:
     def _parse_total_chours_usage(self, lines: Iterable[str], hpc: const.HPC):
         """Gets the total core usage for the specified hpc
         from the output of the nn_corehour_usage command.
-
         If the output of nn_corehour_usage changes then this function
         will also have to be updated!
         """
@@ -323,14 +321,15 @@ class DataCollector:
 
         return entries
 
-    def _parse_user_chours_usage(self, lines: Iterable[str], users: Iterable[str]):
+    @staticmethod
+    def parse_user_chours_usage(lines: Iterable[str], users: Iterable[str], day: Union[date, str]=date.today()):
         """Get daily core hours usage for a list of users from cmd output"""
         entries = []
         # if none of the user had usage today, lines=['']
         # Then we just set core_hour_used to 0 for all users
         if lines == [""]:
             for user in users:
-                entries.append(UserChEntry(date.today(), user, 0))
+                entries.append(UserChEntry(day, user, 0))
         # if some of the users had usages today
         #                                                        used
         # ['maui       nesi00213    jpa198 James Paterson+        1        0 ',
@@ -341,7 +340,7 @@ class DataCollector:
                 line = line.split()
                 used_users.add(line[2])
                 try:
-                    entries.append(UserChEntry(date.today(), line[2], line[-2]))
+                    entries.append(UserChEntry(day, line[2], line[-2]))
                 except ValueError:
                     print(
                         "Failed to convert user core hours usage line \n{}\n to "
@@ -350,7 +349,7 @@ class DataCollector:
             # get user that has usage 0
             unused_users = set(users) - used_users
             for user in unused_users:
-                entries.append(UserChEntry(date.today(), user, 0))
+                entries.append(UserChEntry(day, user, 0))
         return entries
 
 
