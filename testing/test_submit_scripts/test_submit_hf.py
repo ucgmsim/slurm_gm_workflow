@@ -44,20 +44,3 @@ def test_main(set_up, mocker):
         )
 
         scripts.submit_hf.main(*args)
-
-
-def test_write_sl_script(set_up):
-    """The return value of write_sl_script is a filename that depends on the install location and current time and it
-    is there fore not practical to test it with """
-    func_name = "submit_hf.py_write_sl_script"
-    params = inspect.getfullargspec(scripts.submit_hf.write_sl_script).args
-    for root_path, realisation in set_up:
-
-        input_params = get_input_params(root_path, func_name, params)
-        for i in range(len(input_params)):
-            if isinstance(input_params[i], str) and input_params[i].startswith(
-                "CSRoot"
-            ):
-                input_params[i] = os.path.join(root_path, input_params[i])
-        script_location = scripts.submit_hf.write_sl_script(*input_params)
-        os.remove(script_location)

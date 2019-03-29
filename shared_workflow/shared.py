@@ -20,6 +20,7 @@ from jinja2 import Environment, FileSystemLoader
 from qcore import binary_version
 from qcore.config import host
 import qcore.constants as const
+from qcore.utils import load_sim_params
 
 if sys.version_info.major == 3:
     basestring = str
@@ -115,16 +116,95 @@ def get_vs(source_file):
     return vs
 
 
-def generate_context(simulation_dir, template_path, **kwargs):
+def write_file(script_name, parts):
+    content = "\n".join(parts)
+    with open(script_name, "w") as f:
+        f.write(content)
+
+
+def write_sl_script(
+    write_directory,
+    sim_dir,
+    process: const.ProcessType,
+    script_prefix,
+    header_dict,
+    body_template_params,
+    command_template_parameters,
+    cmd_args,
+    add_args={},
+):
+    params = load_sim_params(os.path.join(sim_dir, "sim_params.yaml"))
+    common_header_dict = {
+        "memory": const.DEFAULT_MEMORY,
+        "exe_time": const.timestamp,
+        "version": "slurm",
+        "account": cmd_args.account,
+        "target_host": cmd_args.machine,
+        "rel_dir": sim_dir,
+        "write_directory": write_directory,
+    }
+    common_template_params = {
+        "sim_dir": sim_dir,
+        "srf_name": os.path.splitext(os.path.basename(params.srf_file))[0],
+        "mgmt_db_location": params.mgmt_db_location,
+        "submit_command": generate_command(
+            process,
+            sim_dir,
+            process.command_template,
+            command_template_parameters,
+            add_args,
+        ),
+    }
+
+    common_header_dict.update(header_dict)
+    header = resolve_header(**common_header_dict)
+
+    (template_name, template_params) = body_template_params
+    common_template_params.update(template_params)
+    body = generate_context(sim_dir, template_name, common_template_params)
+
+    script_name = os.path.abspath(
+        os.path.join(write_directory, "{}_{}.sl".format(script_prefix, const.timestamp))
+    )
+    write_file(script_name, [header, body])
+
+    return script_name
+
+
+def generate_command(
+    process: const.ProcessType,
+    sim_dir,
+    command_template,
+    template_parameters,
+    add_args={},
+):
+    command_parts = []
+
+    if process.uses_acc:
+        acc_dir = os.path.join(sim_dir, process.str_value, "Acc")
+        command_parts.append("mkdir -p {}\n".format(acc_dir))
+
+    command_parts.append(command_template.format(**template_parameters))
+
+    for key in add_args:
+        command_parts.append("--" + key)
+        if add_args[key] is True:
+            continue
+        command_parts.append(str(add_args[key]))
+
+    return " ".join(list(map(str, command_parts)))
+
+
+def generate_context(simulation_dir, template_path, parameter_dict):
     """
     return the template context for submission script
     :param simulation_dir:
     :param template_path:
-    :param kwargs:
+    :param parameter_dict:
     :return:
     """
     j2_env = Environment(loader=FileSystemLoader(simulation_dir), trim_blocks=True)
-    context = j2_env.get_template(template_path).render(**kwargs)
+    context = j2_env.get_template(template_path).render(**parameter_dict)
     return context
 
 
@@ -143,7 +223,7 @@ def resolve_header(
     target_host=host,
     mail="test@test.com",
     write_directory=".",
-    rel_dir="."
+    rel_dir=".",
 ):
     if partition is None:
         partition = get_partition(target_host, convert_time_to_hours(wallclock_limit))
