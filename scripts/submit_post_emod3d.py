@@ -12,6 +12,7 @@ from shared_workflow.shared import (
     submit_sl_script,
     resolve_header,
     generate_context,
+    write_sl_script,
 )
 
 
@@ -37,185 +38,121 @@ def get_seis_len(seis_path):
     return len(seis_file_list)
 
 
-def write_sl_script_merge_ts(
-    lf_sim_dir,
-    sim_dir,
-    mgmt_db_location,
-    rup_mod,
-    run_time=default_run_time_merge_ts,
-    nb_cpus=const.MERGE_TS_DEFAULT_NCORES,
-    memory=const.DEFAULT_MEMORY,
-    account=const.DEFAULT_ACCOUNT,
-    machine=host,
-    write_directory=None,
-):
-    """Populates the template and writes the resulting slurm script to file"""
-    target_config = get_machine_config(machine)
-    tools_dir = binary_version.get_unversioned_bin(
-        "merge_tsP3_par", target_config["tools_dir"]
-    )
-    lf_sim_dir = os.path.relpath(lf_sim_dir, sim_dir)
-
-    if not write_directory:
-        write_directory = sim_dir
-
-    template = generate_context(
-        sim_dir,
-        "%s.sl.template" % merge_ts_name_prefix,
-        lf_sim_dir=lf_sim_dir,
-        tools_dir=tools_dir,
-        mgmt_db_location=mgmt_db_location,
-        sim_dir=sim_dir,
-        srf_name=rup_mod,
-    )
-
-    job_name = "post_emod3d.merge_ts.%s" % rup_mod
-    header = resolve_header(
-        account,
-        nb_cpus,
-        run_time,
-        job_name,
-        "Slurm",
-        memory,
-        const.timestamp,
-        job_description="post emod3d: merge_ts",
-        additional_lines="###SBATCH -C avx",
-        target_host=machine,
-        write_directory=write_directory,
-        rel_dir=sim_dir,
-    )
-
-    script_name = os.path.abspath(
-        os.path.join(
-            write_directory,
-            "{}_{}_{}.sl".format(merge_ts_name_prefix, rup_mod, const.timestamp),
-        )
-    )
-    with open(script_name, "w") as f:
-        f.write(header)
-        f.write("\n")
-        f.write(template)
-
-    print("Slurm script %s written" % script_name)
-    return script_name
-
-
-def write_sl_script_winbin_aio(
-    lf_sim_dir,
-    sim_dir,
-    mgmt_db_location,
-    rup_mod,
-    run_time=default_run_time_winbin_aio,
-    memory=const.DEFAULT_MEMORY,
-    account=const.DEFAULT_ACCOUNT,
-    machine=host,
-):
-    """Populates the template and writes the resulting slurm script to file"""
-    # Read template
-    with open("%s.sl.template" % winbin_aio_name_prefix) as f:
-        template = f.read()
-
-    # TODO: the merge_ts binrary needed to use relative path instead of
-    #  absolute, maybe fix this
-    template = (
-        template.replace("{{lf_sim_dir}}", os.path.relpath(lf_sim_dir, sim_dir))
-        .replace("{{mgmt_db_location}}", mgmt_db_location)
-        .replace("{{sim_dir}}", sim_dir)
-        .replace("{{srf_name}}", rup_mod)
-    )
-
-    # Get the file count of seis files
-    sfl_len = int(
-        get_seis_len(os.path.join(os.path.join(sim_dir, lf_sim_dir), "OutBin"))
-    )
-
-    # Round down to the max cpu per node
-    nodes = int(round((sfl_len / int(max_tasks_per_node)) - 0.5))
-    if nodes <= 0:
-        # Use the same cpu count as the seis files
-        nb_cpus = str(sfl_len)
-    else:
-        nb_cpus = str(nodes * int(max_tasks_per_node))
-
-    job_name = "post_emod3d.winbin_aio.%s" % rup_mod
-    header = resolve_header(
-        account,
-        nb_cpus,
-        run_time,
-        job_name,
-        "slurm",
-        memory,
-        const.timestamp,
-        job_description="post emod3d: winbin_aio",
-        additional_lines="###SBATCH -C avx",
-        target_host=machine,
-    )
-
-    script_name = "%s_%s_%s.sl" % (winbin_aio_name_prefix, rup_mod, const.timestamp)
-    with open(script_name, "w") as f:
-        f.write(header)
-        f.write(template)
-
-    script_name_abs = os.path.join(os.path.abspath(os.path.curdir), script_name)
-    print("Slurm script %s written" % script_name_abs)
-    return script_name_abs
-
-
 def main(args):
     params = utils.load_sim_params(os.path.join(args.rel_dir, "sim_params.yaml"))
+    sim_dir = params.sim_dir
+    mgmt_db_loc = params.mgmt_db_location
     submit_yes = True if args.auto else confirm("Also submit the job for you?")
 
     # get the srf(rup) name without extensions
     srf_name = os.path.splitext(os.path.basename(params.srf_file))[0]
     # if srf(variation) is provided as args, only create the slurm
     # with same name provided
-    if args.srf is None or srf_name == args.srf:
-        # get lf_sim_dir
-        lf_sim_dir = os.path.join(params.sim_dir, "LF")
+    if args.srf is not None and srf_name != args.srf:
+        return
 
-        # run merge_ts related scripts only
-        # if non of args are provided, run script related to both
-        if not args.winbin_aio and not args.merge_ts:
-            args.merge_ts, args.winbin_aio = True, True
+    write_directory = args.write_directory if args.write_directory else sim_dir
 
-        if args.merge_ts:
-            script = write_sl_script_merge_ts(
-                lf_sim_dir,
-                params.sim_dir,
-                params.mgmt_db_location,
-                srf_name,
-                machine=args.machine,
-                write_directory=args.write_directory,
-            )
-            submit_sl_script(
-                script,
-                "merge_ts",
-                "queued",
-                params.mgmt_db_location,
-                srf_name,
-                const.timestamp,
-                submit_yes=submit_yes,
-                target_machine=args.machine,
-            )
+    # get lf_sim_dir
+    lf_sim_dir = os.path.join(sim_dir, "LF")
 
-        # run winbin_aio related scripts only
-        if args.winbin_aio:
-            script = write_sl_script_winbin_aio(
-                lf_sim_dir,
-                params.sim_dir,
-                params.mgmt_db_location,
-                srf_name,
-                machine=args.machine,
+    # run merge_ts related scripts only
+    # if non of args are provided, run script related to both
+    if not args.winbin_aio and not args.merge_ts:
+        args.merge_ts, args.winbin_aio = True, True
+
+    if args.merge_ts:
+        header_dict = {
+            "n_tasks": const.MERGE_TS_DEFAULT_NCORES,
+            "wallclock_limit": default_run_time_merge_ts,
+            "job_name": "post_emod3d.merge_ts.{}".format(srf_name),
+            "job_description": "post emod3d: merge_ts",
+            "additional_lines": "###SBATCH -C avx",
+        }
+
+        command_template_parameters = {
+            "merge_ts_path": binary_version.get_unversioned_bin(
+                "merge_tsP3_par", get_machine_config(args.machine)["tools_dir"]
             )
-            submit_sl_script(
-                script,
-                "winbin_aio",
-                "queued",
-                params.mgmt_db_location,
-                srf_name,
-                const.timestamp,
-                submit_yes=submit_yes,
-            )
+        }
+
+        body_template_params = (
+            "{}.sl.template".format(merge_ts_name_prefix),
+            {"lf_sim_dir": "LF"},
+        )
+
+        script_prefix = "{}_{}".format(merge_ts_name_prefix, srf_name)
+        script_file_path = write_sl_script(
+            write_directory,
+            sim_dir,
+            const.ProcessType.merge_ts,
+            script_prefix,
+            header_dict,
+            body_template_params,
+            command_template_parameters,
+            args,
+        )
+
+        submit_sl_script(
+            script_file_path,
+            "merge_ts",
+            "queued",
+            mgmt_db_loc,
+            srf_name,
+            const.timestamp,
+            submit_yes=submit_yes,
+            target_machine=args.machine,
+        )
+
+    # run winbin_aio related scripts only
+    if args.winbin_aio:
+
+        # Get the file count of seis files
+        sfl_len = int(
+            get_seis_len(os.path.join(os.path.join(sim_dir, lf_sim_dir), "OutBin"))
+        )
+
+        # Round down to the max cpu per node
+        nodes = int(round((sfl_len / int(max_tasks_per_node)) - 0.5))
+        if nodes <= 0:
+            # Use the same cpu count as the seis files
+            nb_cpus = str(sfl_len)
+        else:
+            nb_cpus = str(nodes * int(max_tasks_per_node))
+
+        header_dict = {
+            "n_tasks": nb_cpus,
+            "wallclock_limit": default_run_time_winbin_aio,
+            "job_name": "post_emod3d.winbin_aio.{}".format(srf_name),
+            "job_description": "post emod3d: winbin_aio",
+            "additional_lines": "###SBATCH -C avx",
+        }
+
+        command_template_parameters = {"lf_sim_dir": lf_sim_dir}
+
+        body_template_params = ("{}.sl.template".format(winbin_aio_name_prefix), {})
+
+        script_prefix = "{}_{}".format(winbin_aio_name_prefix, srf_name)
+        script_file_path = write_sl_script(
+            write_directory,
+            sim_dir,
+            const.ProcessType.winbin_aio,
+            script_prefix,
+            header_dict,
+            body_template_params,
+            command_template_parameters,
+            args,
+        )
+
+        submit_sl_script(
+            script_file_path,
+            "winbin_aio",
+            "queued",
+            params.mgmt_db_location,
+            srf_name,
+            const.timestamp,
+            submit_yes=submit_yes,
+        )
 
 
 if __name__ == "__main__":

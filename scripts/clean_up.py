@@ -11,29 +11,44 @@ import argparse
 
 from qcore import utils
 
-SUBMISSION_DIR_NAME = 'submission_temp'
-SUBMISSION_SUBDIR_NAME = 'slurm_and_logs'
-SUBMISSION_TAR = 'submission.tar'
-SUBMISSION_FILES = ['flist_LF', 'slurm_header.cfg', 'machine_env.sh', 'submit.sh', '*.template', '*py', '*.pyc']
-SUBMISSION_SL_LOGS = ['*.sl', '*.err', '*.out']
+SUBMISSION_DIR_NAME = "submission_temp"
+SUBMISSION_SUBDIR_NAME = "slurm_and_logs"
+SUBMISSION_TAR = "submission.tar"
+SUBMISSION_FILES = [
+    "flist_LF",
+    "slurm_header.cfg",
+    "machine_env.sh",
+    "submit.sh",
+    "*.template",
+    "*py",
+    "*.pyc",
+]
+SUBMISSION_SL_LOGS = ["*.sl", "*.err", "*.out"]
 
-LF_DIR_NAME = 'LF_temp'
-LF_SUB_DIR_NAME = 'OutBin'
-LF_TAR = 'LF.tar'
-LF_FILES = ['Rlog', 'Restart', 'SlipOut']
+LF_DIR_NAME = "LF_temp"
+LF_SUB_DIR_NAME = "OutBin"
+LF_TAR = "LF.tar"
+LF_FILES = ["Rlog", "Restart", "SlipOut"]
 
 
-def make_tar(source_dir, out_dir):
-    """params: source_dir:source dir of all files to tar
-               out_dir: output dir for the tar.gz
+def tar_files(directory_to_tar, archive_name):
+    """params: directory_to_tar:source dir of all files to tar
+               archive_name: output dir for the tar.gz
     """
-    print("start making tar")
+    if os.path.isfile(archive_name):
+        open_type = "a"
+        print("Adding files to existing tar")
+    else:
+        open_type = "w"
+        print("Start making new tar")
+
     try:
-        with tarfile.open(out_dir,'w:gz') as tar:
-            tar.add(source_dir,arcname=os.path.basename(source_dir))
-            print("finished making csv tar")
+        with tarfile.open(archive_name, open_type) as tar:
+            tar.add(directory_to_tar, arcname=os.path.basename(directory_to_tar))
     except Exception as e:
-        print("Failed to make tart with exception {}".format(e))
+        print("Failed to make tar with exception {}".format(e))
+    else:
+        print("Finished adding files to tar")
 
 
 def move_files(sim_dir, dest_dir, file_patterns):
@@ -49,7 +64,11 @@ def move_files(sim_dir, dest_dir, file_patterns):
             try:
                 shutil.move(os.path.join(sim_dir, p), os.path.join(dest_dir, p))
             except Exception as e:
-                print("error while copy ing file from {} to {}\n{}".format(sim_dir, dest_dir, e))
+                print(
+                    "error while copy ing file from {} to {}\n{}".format(
+                        sim_dir, dest_dir, e
+                    )
+                )
 
 
 def create_temp_dirs(sim_dir, outer_dir_name, inner_dir_name):
@@ -67,7 +86,9 @@ def create_temp_dirs(sim_dir, outer_dir_name, inner_dir_name):
     return outer_dir, inner_dir
 
 
-def clean_up_submission_lf_files(sim_dir, submission_files_to_tar=[], lf_files_to_tar=[]):
+def clean_up_submission_lf_files(
+    sim_dir, submission_files_to_tar=[], lf_files_to_tar=[]
+):
     """
     main function for moving, taring submission/lf files and deleting any temporary dirs created
     :param submission_files_to_tar: a list of additional submission related files to tar
@@ -78,7 +99,9 @@ def clean_up_submission_lf_files(sim_dir, submission_files_to_tar=[], lf_files_t
     lf_files_to_tar += LF_FILES
 
     # create temporary submission dir
-    submission_dir, submission_sub_dir = create_temp_dirs(sim_dir, SUBMISSION_DIR_NAME, SUBMISSION_SUBDIR_NAME)
+    submission_dir, submission_sub_dir = create_temp_dirs(
+        sim_dir, SUBMISSION_DIR_NAME, SUBMISSION_SUBDIR_NAME
+    )
 
     # create temporary lf dir
     lf_dir, lf_sub_dir = create_temp_dirs(sim_dir, LF_DIR_NAME, LF_SUB_DIR_NAME)
@@ -88,17 +111,17 @@ def clean_up_submission_lf_files(sim_dir, submission_files_to_tar=[], lf_files_t
     # copy sl and err logs to submiison sub dir
     move_files(sim_dir, submission_sub_dir, SUBMISSION_SL_LOGS)
 
-    make_tar(submission_dir, os.path.join(sim_dir, SUBMISSION_TAR))
+    tar_files(submission_dir, os.path.join(sim_dir, SUBMISSION_TAR))
 
     # move files to lf dir
-    move_files(os.path.join(sim_dir, 'LF'), lf_dir, lf_files_to_tar)
+    move_files(os.path.join(sim_dir, "LF"), lf_dir, lf_files_to_tar)
     # copy e3d segemnts to lf sub dir
-    e3d_segs_dir = os.path.join(sim_dir, 'LF', 'OutBin')
+    e3d_segs_dir = os.path.join(sim_dir, "LF", "OutBin")
     for f in os.listdir(e3d_segs_dir):
-        if '-' in f:  # e3d segments have '-' in the name
+        if "-" in f:  # e3d segments have '-' in the name
             shutil.move(os.path.join(e3d_segs_dir, f), os.path.join(lf_sub_dir, f))
 
-    make_tar(lf_dir, os.path.join(sim_dir, LF_TAR))
+    tar_files(lf_dir, os.path.join(sim_dir, LF_TAR))
 
     # remove temporary submission and lf dir
     shutil.rmtree(lf_dir)
@@ -107,10 +130,32 @@ def clean_up_submission_lf_files(sim_dir, submission_files_to_tar=[], lf_files_t
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("sim_dir", help="path to realization dir eg./home/melody.zhu/Albury/Runs/Albury/Albury_HYP15-21_S1384")
-    parser.add_argument("-submission", "--submission_files_to_tar", nargs="+", default=[], help="Please specify additional submission related file(s)/file_pattern(with '*') to tar separated by a space(if more than one). Default is {}".format(" ".join(SUBMISSION_FILES + SUBMISSION_SL_LOGS)))
-    parser.add_argument("-lf", "--lf_files_to_tar", nargs="+", default=[], help="Please specify additional LF related file(s)/file_pattern(with '*')to tar separated by a space(if more than one). Default is {}".format(" ".join(LF_FILES)))
+    parser.add_argument(
+        "sim_dir",
+        help="path to realization dir eg./home/melody.zhu/Albury/Runs/Albury/Albury_HYP15-21_S1384",
+    )
+    parser.add_argument(
+        "-submission",
+        "--submission_files_to_tar",
+        nargs="+",
+        default=[],
+        help="Please specify additional submission related file(s)/file_pattern(with '*') to tar separated by a space(if more than one). Default is {}".format(
+            " ".join(SUBMISSION_FILES + SUBMISSION_SL_LOGS)
+        ),
+    )
+    parser.add_argument(
+        "-lf",
+        "--lf_files_to_tar",
+        nargs="+",
+        default=[],
+        help="Please specify additional LF related file(s)/file_pattern(with '*')to tar separated by a space(if more than one). Default is {}".format(
+            " ".join(LF_FILES)
+        ),
+    )
     args = parser.parse_args()
 
-    clean_up_submission_lf_files(args.sim_dir, submission_files_to_tar=args.submission_files_to_tar, lf_files_to_tar=args.lf_files_to_tar)
-
+    clean_up_submission_lf_files(
+        args.sim_dir,
+        submission_files_to_tar=args.submission_files_to_tar,
+        lf_files_to_tar=args.lf_files_to_tar,
+    )

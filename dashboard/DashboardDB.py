@@ -15,6 +15,7 @@ SQueueEntry = namedtuple(
     [
         "job_id",
         "username",
+        "account",
         "status",
         "name",
         "run_time",
@@ -93,7 +94,6 @@ class DashboardDB:
         self, total_core_usage: float, hpc: const.HPC, day: Union[date, str] = None
     ):
         """Updates the daily core hours usage.
-
         The core hour usage for a day is calculated as
         last saved (for current day) TOTAL_CORE_USAGE - current total_core_usage.
         """
@@ -160,11 +160,12 @@ class DashboardDB:
             update_time = datetime.now()
             for ix, entry in enumerate(squeue_entries):
                 cursor.execute(
-                    "INSERT INTO {} VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)".format(table),
+                    "INSERT INTO {} VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)".format(table),
                     (
                         entry.job_id,
                         update_time,
                         entry.username,
+                        entry.account,
                         entry.status,
                         entry.name,
                         entry.run_time,
@@ -220,7 +221,7 @@ class DashboardDB:
         """Gets all squeue entries"""
         with self.get_cursor(self.db_file) as cursor:
             results = cursor.execute(
-                "SELECT JOB_ID, USERNAME, STATUS, NAME, RUNTIME, \
+                "SELECT JOB_ID, USERNAME, ACCOUNT, STATUS, NAME, RUNTIME, \
                 ESTIMATED_TIME, NODES, CORES  FROM {};".format(
                     self.get_squeue_t_name(hpc)
                 )
@@ -340,6 +341,7 @@ class DashboardDB:
                   JOB_ID INTEGER PRIMARY KEY NOT NULL,
                   UPDATE_TIME DATE NOT NULL,
                   USERNAME TEXT NOT NULL,
+                  ACCOUNT TEXT NOT NULL ,
                   STATUS TEXT NOT NULL,
                   NAME TEXT NOT NULL,
                   RUNTIME FLOAT NOT NULL,
