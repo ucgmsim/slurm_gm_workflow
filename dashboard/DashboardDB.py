@@ -80,7 +80,7 @@ class DashboardDB:
         return "{}_USER_CORE_HOURS".format(hpc.value.upper())
 
     @staticmethod
-    def get_err_t_name(hpc:const.HPC):
+    def get_err_t_name(hpc: const.HPC):
         return "{}_ERRORS".format(hpc.value.upper())
 
     def get_date(self, day: Union[date, str] = None):
@@ -319,6 +319,7 @@ class DashboardDB:
                         (day, entry.username, entry.core_hours_used, update_time),
                     )
                 else:
+                    # first we checkout update time
                     err_table = self.get_err_t_name(hpc)
                     if not self.check_update_time(row[1], update_time):
                         err_row = cursor.execute(
@@ -327,13 +328,16 @@ class DashboardDB:
                             ),
                             (table, self.fail_reason),
                         ).fetchone()
+                        # if we first encounter the err, add err to err table;
+                        # if such error already exits in the err_table, do nothing, web app will still alert
                         if err_row is None:
                             cursor.execute(
                                     "INSERT INTO {} (NAME, REASON, LAST_UPDATE_TIME) VALUES(?, ?, ?)".format(err_table),
                                         (table, self.fail_reason, row[1], ),
                                     )
                     else:
-                        cursor.execute("DELETE * FROM {} WHERE NAME = ? AND REASON = ?".format(err_table), (table, self.fail_reason))
+                        # if error resolved, we delete the err record if there's any
+                        cursor.execute("DELETE FROM {} WHERE NAME = ? AND REASON = ?".format(err_table), (table, self.fail_reason))
                         cursor.execute(
                             "UPDATE {} SET CORE_HOURS_USED = ?, UPDATE_TIME = ? WHERE DAY = ? AND USERNAME = ?;".format(
                                 table
@@ -356,7 +360,7 @@ class DashboardDB:
     def check_update_time(last_update_time_string, current_update_time):
         # 2019-03-28 18:31:11.906576
         print("time diff",current_update_time - datetime.strptime(last_update_time_string, "%Y-%m-%d %H:%M:%S.%f"))
-        return (current_update_time - datetime.strptime(last_update_time_string, "%Y-%m-%d %H:%M:%S.%f")) < timedelta(seconds=3660)
+        return (current_update_time - datetime.strptime(last_update_time_string, "%Y-%m-%d %H:%M:%S.%f")) < timedelta(seconds=360)
 
     def get_collection_err(self, hpc: const.HPC):
         table = self.get_err_t_name(hpc)
@@ -441,6 +445,15 @@ class DashboardDB:
                         cls.get_user_ch_t_name(cur_hpc)
                     )
                 )
+                # Add error table
+                cursor.execute(
+                    """CREATE TABLE IF NOT EXISTS {}(
+                        NAME TEXT NOT NULL, 
+                        REASON TEXT NOT NULL,
+                        LAST_UPDATE_TIME DATE,
+                        PRIMARY KEY(NAME, REASON));                               
+                    """.format(cls.get_err_t_name(cur_hpc))
+                )
 
             # Maui current status
             cursor.execute(
@@ -453,14 +466,7 @@ class DashboardDB:
                 """
             )
 
-            cursor.execute(
-                """CREATE TABLE IF NOT EXISTS {}(
-                    NAME TEXT NOT NULL, 
-                    REASON TEXT NOT NULL,
-                    LAST_UPDATE_TIME DATE,
-                    PRIMARY KEY(NAME, REASON));                               
-                """.format(cls.get_err_t_name(hpc))
-            )
+
 
         return dashboard_db
 

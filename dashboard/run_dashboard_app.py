@@ -39,7 +39,7 @@ app.layout = html.Div(
                     html.Div([
                         dcc.ConfirmDialog(
                             id='confirm',
-                            message='Danger danger! Are you sure you want to continue?',
+                            message='Collection error! Check the database error table!',
                         ),
                         html.Div(id='output-confirm')
                     ]),
@@ -64,7 +64,6 @@ app.layout = html.Div(
 )
 
 app.db = DashboardDB(args.db_file)
-
 
 
 @app.callback(
@@ -146,7 +145,7 @@ def display_confirm(n):
               [Input('confirm', 'submit_n_clicks')])
 def update_output(submit_n_clicks):
     if submit_n_clicks:
-        return 'It wasnt easy but we did it {}'.format(submit_n_clicks)
+        return None
 
 
 @app.callback(
