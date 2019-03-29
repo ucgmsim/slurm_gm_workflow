@@ -321,16 +321,16 @@ class DashboardDB:
                 else:
                     err_table = self.get_err_t_name(hpc)
                     if not self.check_update_time(row[1], update_time):
-                        row = cursor.execute(
+                        err_row = cursor.execute(
                             "SELECT * FROM {} WHERE NAME = ? AND REASON = ?;".format(
                                 err_table
                             ),
                             (table, self.fail_reason),
                         ).fetchone()
-                        if row is None:
+                        if err_row is None:
                             cursor.execute(
                                     "INSERT INTO {} (NAME, REASON, LAST_UPDATE_TIME) VALUES(?, ?, ?)".format(err_table),
-                                        (table, self.fail_reason, self.last_update_time, day),
+                                        (table, self.fail_reason, row[1], ),
                                     )
                     else:
                         cursor.execute("DELETE * FROM {} WHERE NAME = ? AND REASON = ?".format(err_table), (table, self.fail_reason))
