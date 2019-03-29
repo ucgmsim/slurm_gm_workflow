@@ -321,25 +321,17 @@ class DashboardDB:
                 else:
                     err_table = self.get_err_t_name(hpc)
                     if not self.check_update_time(row[1], update_time):
-                        try:
+                        row = cursor.execute(
+                            "SELECT * FROM {} WHERE NAME = ? AND REASON = ?;".format(
+                                err_table
+                            ),
+                            (table, self.fail_reason),
+                        ).fetchone()
+                        if row is None:
                             cursor.execute(
-                                """CREATE TABLE IF NOT EXISTS {}(
-                                    NAME TEXT NOT NULL, 
-                                    REASON TEXT NOT NULL,
-                                    LAST_UPDATE_TIME DATE,
-                                    DAY DATE NOT NULL,
-                                    PRIMARY KEY(NAME, REASON));                               
-                                """.format(err_table)
-                            )
-                            # if check_update_time return False ---> collection failed
-
-                            print("collection_failed")
-                            cursor.execute(
-                                "INSERT INTO {} (NAME, REASON, LAST_UPDATE_TIME, DAY) VALUES(?, ?, ?, ?)".format(err_table),
-                                    (table, self.fail_reason, self.last_update_time, day),
-                                )
-                        except:
-                            print("error_table_exists")
+                                    "INSERT INTO {} (NAME, REASON, LAST_UPDATE_TIME) VALUES(?, ?, ?)".format(err_table),
+                                        (table, self.fail_reason, self.last_update_time, day),
+                                    )
                     else:
                         cursor.execute("DELETE * FROM {} WHERE NAME = ? AND REASON = ?".format(err_table), (table, self.fail_reason))
                         cursor.execute(
@@ -466,7 +458,6 @@ class DashboardDB:
                     NAME TEXT NOT NULL, 
                     REASON TEXT NOT NULL,
                     LAST_UPDATE_TIME DATE,
-                    DAY DATE NOT NULL,
                     PRIMARY KEY(NAME, REASON));                               
                 """.format(cls.get_err_t_name(hpc))
             )
