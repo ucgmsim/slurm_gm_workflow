@@ -173,7 +173,7 @@ class DataCollector:
         )
         if user_ch_output:
             self.dashboard_db.update_user_chours(
-                hpc, self._parse_user_chours_usage(user_ch_output, users)
+                hpc, self.parse_user_chours_usage(user_ch_output, users)
             )
 
     def run_cmd(self, hpc: str, cmd: str, timeout: int = 10):
@@ -321,14 +321,15 @@ class DataCollector:
 
         return entries
 
-    def _parse_user_chours_usage(self, lines: Iterable[str], users: Iterable[str]):
+    @staticmethod
+    def parse_user_chours_usage(lines: Iterable[str], users: Iterable[str], day: Union[date, str]=date.today()):
         """Get daily core hours usage for a list of users from cmd output"""
         entries = []
         # if none of the user had usage today, lines=['']
         # Then we just set core_hour_used to 0 for all users
         if lines == [""]:
             for user in users:
-                entries.append(UserChEntry(date.today(), user, 0))
+                entries.append(UserChEntry(day, user, 0))
         # if some of the users had usages today
         #                                                        used
         # ['maui       nesi00213    jpa198 James Paterson+        1        0 ',
@@ -339,7 +340,7 @@ class DataCollector:
                 line = line.split()
                 used_users.add(line[2])
                 try:
-                    entries.append(UserChEntry(date.today(), line[2], line[-2]))
+                    entries.append(UserChEntry(day, line[2], line[-2]))
                 except ValueError:
                     print(
                         "Failed to convert user core hours usage line \n{}\n to "
@@ -348,7 +349,7 @@ class DataCollector:
             # get user that has usage 0
             unused_users = set(users) - used_users
             for user in unused_users:
-                entries.append(UserChEntry(date.today(), user, 0))
+                entries.append(UserChEntry(day, user, 0))
         return entries
 
 
