@@ -31,17 +31,24 @@ LF_TAR = "LF.tar"
 LF_FILES = ["Rlog", "Restart", "SlipOut"]
 
 
-def make_tar(source_dir, out_dir):
-    """params: source_dir:source dir of all files to tar
-               out_dir: output dir for the tar.gz
+def tar_files(directory_to_tar, archive_name):
+    """params: directory_to_tar:source dir of all files to tar
+               archive_name: output dir for the tar.gz
     """
-    print("start making tar")
+    if os.path.isfile(archive_name):
+        open_type = "a"
+        print("Adding files to existing tar")
+    else:
+        open_type = "w"
+        print("Start making new tar")
+
     try:
-        with tarfile.open(out_dir, "w:gz") as tar:
-            tar.add(source_dir, arcname=os.path.basename(source_dir))
-            print("finished making csv tar")
+        with tarfile.open(archive_name, open_type) as tar:
+            tar.add(directory_to_tar, arcname=os.path.basename(directory_to_tar))
     except Exception as e:
-        print("Failed to make tart with exception {}".format(e))
+        print("Failed to make tar with exception {}".format(e))
+    else:
+        print("Finished adding files to tar")
 
 
 def move_files(sim_dir, dest_dir, file_patterns):
@@ -104,7 +111,7 @@ def clean_up_submission_lf_files(
     # copy sl and err logs to submiison sub dir
     move_files(sim_dir, submission_sub_dir, SUBMISSION_SL_LOGS)
 
-    make_tar(submission_dir, os.path.join(sim_dir, SUBMISSION_TAR))
+    tar_files(submission_dir, os.path.join(sim_dir, SUBMISSION_TAR))
 
     # move files to lf dir
     move_files(os.path.join(sim_dir, "LF"), lf_dir, lf_files_to_tar)
@@ -114,7 +121,7 @@ def clean_up_submission_lf_files(
         if "-" in f:  # e3d segments have '-' in the name
             shutil.move(os.path.join(e3d_segs_dir, f), os.path.join(lf_sub_dir, f))
 
-    make_tar(lf_dir, os.path.join(sim_dir, LF_TAR))
+    tar_files(lf_dir, os.path.join(sim_dir, LF_TAR))
 
     # remove temporary submission and lf dir
     shutil.rmtree(lf_dir)

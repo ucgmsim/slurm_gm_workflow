@@ -23,14 +23,20 @@ t_status = {"R": "running", "PD": "queued"}
 
 
 def get_queued_tasks(user=None):
-    if user != None:
-        cmd = "squeue -A nesi00213 -o '%A %t' -h" + " -u " + user
-    else:
-        cmd = "squeue -A nesi00213 -o '%A %t' -h"
-    process = Popen(shlex.split(cmd), stdout=PIPE, encoding="utf-8")
-    (output, err) = process.communicate()
-    exit_code = process.wait()
-    return output
+    output_list = []
+    # TODO: Treat Maui and Mahuika jobs seperately. See QSW-912
+    for machine in qcore.constants.HPC:
+        if user != None:
+            cmd = "squeue -A nesi00213 -o '%A %t' -h -M {} -u {}".format(
+                machine.value, user
+            )
+        else:
+            cmd = "squeue -A nesi00213 -o '%A %t' -h -M {}".format(machine.value)
+        process = Popen(shlex.split(cmd), stdout=PIPE, encoding="utf-8")
+        (output, err) = process.communicate()
+        exit_code = process.wait()
+        output_list.extend(filter(None, output.split("\n")[1:]))
+    return "\n".join(output_list)
 
 
 def get_submitted_db_tasks(db):
@@ -145,17 +151,34 @@ def check_dependancy_met(task, task_list):
         return is_task_complete(LF_task, task_list) and is_task_complete(
             HF_task, task_list
         )
+
+    if process is Process.clean_up:
+        IM_task = list(task)
+        IM_task[0] = Process.IM_calculation.value
+        IM_task[2] = "completed"
+        merge_ts_task = list(task)
+        merge_ts_task[0] = Process.merge_ts.value
+        merge_ts_task[2] = "completed"
+        return is_task_complete(IM_task, task_list) and is_task_complete(
+            merge_ts_task, task_list
+        )
+
     return False
 
 
 def get_runnable_tasks(db, n_runs=N_TASKS_TO_RUN, retry_max=RETRY_MAX):
     do_verification = False
+    verification_tasks = [
+        Process.rrup.value,
+        Process.Empirical.value,
+        Process.Verification.value,
+    ]
     db_tasks = get_db_tasks_to_be_run(db, retry_max)
     tasks_to_run = []
     for task in db_tasks:
         status = task[2]
         if status == "created" and check_dependancy_met(task, db_tasks):
-            if task[0] < Process.rrup.value or do_verification:
+            if task[0] not in verification_tasks or do_verification:
                 tasks_to_run.append(task)
         if len(tasks_to_run) >= n_runs:
             break
