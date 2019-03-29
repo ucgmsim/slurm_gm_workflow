@@ -68,7 +68,6 @@ def collect_old_data(
 def run_old_collection(dashboard_db, hpcs: Union[List[const.HPC], const.HPC], login_user: str, users: Iterable[str], days_shift: int):
     """Runs the data collection for a specified period"""
     # Iterate through the specifid days period
-    hpcs = [hpcs] if type(hpcs) is const.HPC else hpcs
     for day_shift in range(days_shift + 1):
         # Collect the data
         print("{} - Collecting data from HPC {}".format(datetime.now(), hpcs))
@@ -79,7 +78,7 @@ def run_old_collection(dashboard_db, hpcs: Union[List[const.HPC], const.HPC], lo
 
 def main(args):
     hpc = (
-        const.HPC(args.hpc)
+        [const.HPC(args.hpc)]
         if type(args.hpc) is str
         else [const.HPC(cur_hpc) for cur_hpc in args.hpc]
     )
@@ -106,7 +105,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--hpc",
         choices=HPCS,
-        help="Specify the HPCs on which to collect data, defaults to all HPCs",
+        help="Specify the HPC on which to collect data, defaults to all HPCs",
         default=HPCS,
     )
 
