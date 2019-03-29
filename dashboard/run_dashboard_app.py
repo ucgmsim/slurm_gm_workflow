@@ -195,9 +195,7 @@ def generate_table(squeue_entries: List[SQueueEntry]):
 def generate_table_interactive(squeue_entries: List[SQueueEntry]):
     """Generates interactive dash table for the given squeue entries."""
     # Convert NamedTuple to OrderedDict
-    print("before", squeue_entries)
-    for i in range(len(squeue_entries)):
-        squeue_entries[i] = squeue_entries[i]._asdict()
+    squeue_entries = [entry._asdict() for entry in squeue_entries]
     return html.Div([
         dash_table.DataTable(
             id='datatable-interactivity',
