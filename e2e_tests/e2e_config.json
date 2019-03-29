@@ -3,5 +3,6 @@
   "data_dir": "/nesi/nobackup/nesi00213/RunFolder/EndToEndTest/test_data/Data",
   "cybershake_config": "/nesi/nobackup/nesi00213/RunFolder/EndToEndTest/test_data/cybershake_config.json",
   "fault_list": "/nesi/nobackup/nesi00213/RunFolder/EndToEndTest/test_data/list.txt",
-  "bench_dir": "/nesi/nobackup/nesi00213/RunFolder/EndToEndTest/benchmark"
+  "bench_dir": "/nesi/nobackup/nesi00213/RunFolder/EndToEndTest/benchmark",
+  "test_checkpoint": true
 }

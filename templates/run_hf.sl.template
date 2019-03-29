@@ -1,5 +1,0 @@
-python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} HF running --r {{srf_name}}
-date
-srun python  $gmsim/workflow/scripts/hfsims-stats.py {{hf_sim_dir}} {{hf_option}}
-date
-python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} HF completed --r {{srf_name}}

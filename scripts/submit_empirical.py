@@ -56,10 +56,12 @@ def generate_sl(np, extended, cybershake_folder, account, realisations):
     context = generate_context(
         template_dir,
         "empirical.sl.template",
-        run_data=run_data,
-        np=np,
-        extended=extended,
-        mgmt_db_location=cybershake_folder,
+        {
+            "run_data": run_data,
+            "np": np,
+            "extended": extended,
+            "mgmt_db_location": cybershake_folder,
+        }
     )
     sl_name = "run_empirical_{}.sl".format(timestamp)
     content = "{}\n{}".format(header, context)
