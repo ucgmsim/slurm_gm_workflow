@@ -26,7 +26,7 @@ python $gmsim/workflow/scripts/im_calc_checkpoint.py {{sim_dir}}/IM_calc/ `wc -l
 if [[ $? != 0 ]]; then
     # Run the script
     start_time=`date +$runtime_fmt`
-    time python $IMPATH/calculate_ims.py {{sim_dir}}/BB/Acc/BB.bin b -o {{sim_dir}}/IM_calc/ -np {{np}} -i {{sim_name}} -r {{fault_name}} -c {{component}} -t s {{extended}} {{simple}}
+    {{submit_command}}
     end_time=`date +$runtime_fmt`
 fi
 

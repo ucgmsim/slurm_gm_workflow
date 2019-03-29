@@ -21,7 +21,7 @@ ls -X {{lf_sim_dir}}/OutBin/*xyts-?????.e3d >$filelist
 NFILES=`cat $filelist |wc -l|sed -e 's/ //g'`
 OUTFILE=`head -1 $filelist  |sed -e 's/-[0-9]*.e3d/.e3d/g'`
 echo "NFILES=$NFILES OUTFILE=$OUTFILE"
-time srun {{tools_dir}} filelist=$filelist outfile=$OUTFILE nfiles=$NFILES
+{{submit_command}}
 
 timestamp=`date +%Y%m%d_%H%M%S`
 end_time=`date +$runtime_fmt`
