@@ -614,6 +614,8 @@ def submit_sl_script(
 
             update_db_cmd(process, status, mgmt_db_loc, srf_name, jobid, timestamp)
             return jobid
+        else:
+            print("An error occurred during job submission: {}".format(res[1]))
     else:
         print("User chose to submit the job manually")
 
