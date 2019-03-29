@@ -118,7 +118,7 @@ if is_master:
     for key in vars(args):
         logger.debug("{} : {}".format(key, getattr(args, key)))
 
-comm.Barrier()
+comm.Barrier() # prevent other processes from messing log file until master is done with logging above
 # load vs30ref
 if args.lfvsref is None:
     # vs30ref from velocity model
@@ -133,12 +133,12 @@ if args.lfvsref is None:
         * 1000.0
     )
     if is_master:
-        logger.debug("vs30ref from velocity model")
+        logger.debug("vs30ref from velocity model.")
 else:
     # fixed vs30ref
     lfvs30refs = np.ones(lf.stations.size, dtype=np.float32) * args.lfvsref
     if is_master:
-        logger.debug("fixed vs30ref")
+        logger.debug("fixed vs30ref.")
 
 # load vs30
 try:
@@ -155,15 +155,15 @@ try:
     assert not np.isnan(vs30s).any()
 except AssertionError:
     if is_master:
-        logger.error("vsite file is missing stations")
+        logger.error("vsite file is missing stations.")
         comm.Abort()
 else:
     if is_master:
-        logger.debug("vs30 loaded successfully")
+        logger.debug("vs30 loaded successfully.")
 
 # initialise output with general metadata
 def initialise(check_only=False):
-    logger.debug("Initialising")
+    logger.debug("Initialising.")
     with open(args.out_file, mode="rb" if check_only else "w+b") as out:
         # int/bool parameters
         i = np.array([lf.stations.size, bb_nt], dtype="i4")
@@ -246,7 +246,7 @@ def unfinished():
         return
     if np.min(ckpoints):
         try:
-            logger.debug("Checkpoints found")
+            logger.debug("Checkpoints found.")
             initialise(check_only=True)
             logger.error("BB Simulation already completed.")
             comm.Abort()
@@ -345,9 +345,9 @@ for i, stat in enumerate(stations_todo):
     bin_data.seek(bin_seek_vsite[i])
     vs30.tofile(bin_data)
 bin_data.close()
-logger.debug("Completed {} stations".format(len(stations_todo)))
+logger.debug("Completed {} stations.".format(len(stations_todo)))
 
 print("Process %03d of %03d finished (%.2fs)." % (rank, size, MPI.Wtime() - t0))
-comm.Barrier()
+comm.Barrier() #all ranks wait here until rank 0 arrives to announce all completed
 if is_master:
-    logger.debug("Simulation completed")
+    logger.debug("Simulation completed.")

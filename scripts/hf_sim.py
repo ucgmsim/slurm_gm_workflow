@@ -176,7 +176,7 @@ if is_master:
     # random seed
     seed_file = os.path.join(os.path.dirname(args.out_file), "SEED")
     if args.seed == -1:
-        logger.debug("seed is always randomised")
+        logger.debug("seed is always randomised.")
     elif os.path.isfile(seed_file):
         args.seed = np.loadtxt(seed_file, dtype="i", ndmin=1)[0]
         logger.debug("seed taken from file: {}".format(args.seed))
@@ -320,9 +320,9 @@ def unfinished():
         return
     if np.min(checkpoints):
         try:
-            logger.debug("Checkpoints found")
+            logger.debug("Checkpoints found.")
             initialise(check_only=True)
-            logger.error("HF Simulation already completed")
+            logger.error("HF Simulation already completed.")
             comm.Abort()
         except AssertionError:
             return
@@ -409,8 +409,8 @@ def run_hf(local_statfile, n_stat, idx_0, velocity_model=args.velocity_model):
     try:
         assert e_dist.size == n_stat
     except AssertionError:
-        logger.error("Expected {} e_dist values, got {}.".format(n_stat, e_dist.size))
-        logger.error("Dumping Fortran stderr to hf_err_{}...".format(idx_0))
+        logger.error("Expected {} e_dist values, got {}".format(n_stat, e_dist.size))
+        logger.error("Dumping Fortran stderr to hf_err_{}".format(idx_0))
 
         with open("hf_err_%d" % (idx_0), "w") as e:
             e.write(stderr)
@@ -478,5 +478,6 @@ elif args.seed == -1:
             validate_end(work_idx[c0 - 1] + 1)
 os.remove(in_stats)
 print("Process %03d of %03d finished (%.2fs)." % (rank, size, MPI.Wtime() - t0))
+comm.Barrier() #all ranks wait here until rank 0 arrives to announce all completed
 if is_master:
-    logger.debug("Simulation completed")
+    logger.debug("Simulation completed.")
