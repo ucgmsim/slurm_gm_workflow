@@ -35,7 +35,7 @@ app.layout = html.Div(
         [
             html.H3("Maui"),
             html.Div(
-                [ 
+                [
                     html.Div([
                         dcc.ConfirmDialog(
                             id='confirm',
@@ -66,17 +66,6 @@ app.layout = html.Div(
 app.db = DashboardDB(args.db_file)
 
 
-@app.callback(Output('confirm', 'displayed'),
-              [Input("interval_comp", "n_intervals")])
-def display_confirm(n):
-    return app.db.check_update_time(const.HPC.maui)
-
-
-@app.callback(Output('output-confirm', 'children'),
-              [Input('confirm', 'submit_n_clicks')])
-def update_output(submit_n_clicks):
-    if submit_n_clicks:
-        return 'It wasnt easy but we did it {}'.format(submit_n_clicks)
 
 @app.callback(
     Output("maui_node_usage", "children"), [Input("interval_comp", "n_intervals")]
@@ -144,6 +133,20 @@ def update_maui_total_chours(n):
     fig.add_scatter(x=entries["day"], y=entries["total_chours"])
 
     return fig
+
+
+@app.callback(Output('confirm', 'displayed'),
+              [Input("interval_comp", "n_intervals")])
+def display_confirm(n):
+    print("get collection err",app.db.get_collection_err(const.HPC.maui))
+    return app.db.get_collection_err(const.HPC.maui) is not None
+
+
+@app.callback(Output('output-confirm', 'children'),
+              [Input('confirm', 'submit_n_clicks')])
+def update_output(submit_n_clicks):
+    if submit_n_clicks:
+        return 'It wasnt easy but we did it {}'.format(submit_n_clicks)
 
 
 @app.callback(

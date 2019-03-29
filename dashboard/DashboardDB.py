@@ -4,7 +4,7 @@ from collections import namedtuple
 from enum import Enum
 
 from typing import Iterable, Union
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from contextlib import contextmanager
 
 
@@ -51,8 +51,7 @@ class HPCProperty(Enum):
 class DashboardDB:
 
     date_format = "%Y-%m-%d"
-    previous_update_time = None
-    idle_times = 0
+    fail_reason = "collection_failure"
 
     def __init__(self, db_file: str):
         """Opens an existing dashboard database file."""
@@ -79,6 +78,10 @@ class DashboardDB:
     @staticmethod
     def get_user_ch_t_name(hpc: const.HPC):
         return "{}_USER_CORE_HOURS".format(hpc.value.upper())
+
+    @staticmethod
+    def get_err_t_name(hpc:const.HPC):
+        return "{}_ERRORS".format(hpc.value.upper())
 
     def get_date(self, day: Union[date, str] = None):
         """Gets the current datetime
@@ -107,7 +110,7 @@ class DashboardDB:
 
         with self.get_cursor(self.db_file) as cursor:
             row = cursor.execute(
-                "SELECT CORE_HOURS_USED, TOTAL_CORE_HOURS FROM {} WHERE DAY == ?;".format(
+                "SELECT CORE_HOURS_USED, TOTAL_CORE_HOURS, UPDATE_TIME FROM {} WHERE DAY == ?;".format(
                     table
                 ),
                 (day,),
@@ -302,7 +305,7 @@ class DashboardDB:
         for entry in entries:
             with self.get_cursor(self.db_file) as cursor:
                 row = cursor.execute(
-                    "SELECT CORE_HOURS_USED FROM {} WHERE DAY = ? AND USERNAME = ?;".format(
+                    "SELECT CORE_HOURS_USED, UPDATE_TIME FROM {} WHERE DAY = ? AND USERNAME = ?;".format(
                         table
                     ),
                     (day, entry.username),
@@ -316,12 +319,35 @@ class DashboardDB:
                         (day, entry.username, entry.core_hours_used, update_time),
                     )
                 else:
-                    cursor.execute(
-                        "UPDATE {} SET CORE_HOURS_USED = ?, UPDATE_TIME = ? WHERE DAY = ? AND USERNAME = ?;".format(
-                            table
-                        ),
-                        (entry.core_hours_used, update_time, day, entry.username),
-                    )
+                    err_table = self.get_err_t_name(hpc)
+                    if not self.check_update_time(row[1], update_time):
+                        try:
+                            cursor.execute(
+                                """CREATE TABLE IF NOT EXISTS {}(
+                                    NAME TEXT NOT NULL, 
+                                    REASON TEXT NOT NULL,
+                                    LAST_UPDATE_TIME DATE,
+                                    DAY DATE NOT NULL,
+                                    PRIMARY KEY(NAME, REASON));                               
+                                """.format(err_table)
+                            )
+                            # if check_update_time return False ---> collection failed
+
+                            print("collection_failed")
+                            cursor.execute(
+                                "INSERT INTO {} (NAME, REASON, LAST_UPDATE_TIME, DAY) VALUES(?, ?, ?, ?)".format(err_table),
+                                    (table, self.fail_reason, self.last_update_time, day),
+                                )
+                        except:
+                            print("error_table_exists")
+                    else:
+                        cursor.execute("DELETE * FROM {} WHERE NAME = ? AND REASON = ?".format(err_table), (table, self.fail_reason))
+                        cursor.execute(
+                            "UPDATE {} SET CORE_HOURS_USED = ?, UPDATE_TIME = ? WHERE DAY = ? AND USERNAME = ?;".format(
+                                table
+                            ),
+                            (entry.core_hours_used, update_time, day, entry.username),
+                        )
 
     def get_user_chours(self, hpc: const.HPC, username: str):
         """Gets core hours usage over time for a specified user"""
@@ -334,23 +360,17 @@ class DashboardDB:
 
         return [UserChEntry(*result) for result in results]
 
-    def check_update_time(self, hpc: const.HPC):
-        table = self.get_user_ch_t_name(hpc)
-        sql = "SELECT UPDATE_TIME FROM {} WHERE DAY = ? LIMIT 1".format(
-            table
-        )
+    @staticmethod
+    def check_update_time(last_update_time_string, current_update_time):
+        # 2019-03-28 18:31:11.906576
+        print("time diff",current_update_time - datetime.strptime(last_update_time_string, "%Y-%m-%d %H:%M:%S.%f"))
+        return (current_update_time - datetime.strptime(last_update_time_string, "%Y-%m-%d %H:%M:%S.%f")) < timedelta(seconds=3660)
+
+    def get_collection_err(self, hpc: const.HPC):
+        table = self.get_err_t_name(hpc)
         with self.get_cursor(self.db_file) as cursor:
-            current_update_time = cursor.execute(sql, (date.today(),)).fetchone()[0]
-        print("current_updating time is",current_update_time)
-        print("previous update time is", self.previous_update_time)
-
-        if self.previous_update_time != current_update_time:
-            self.previous_update_time = current_update_time
-            self.idle_times = 0  # reset
-        else:
-            self.idle_times += 1
-
-        return self.idle_times
+            result = cursor.execute("SELECT REASON FROM {}".format(table)).fetchone()
+        return result
 
     def _create_queue_table(self, cursor, hpc: const.HPC):
         # Add latest table
@@ -439,6 +459,16 @@ class DashboardDB:
                     INT_VALUE_2 INT NULL,
                     UPDATE_TIME DATE NOT NULL)
                 """
+            )
+
+            cursor.execute(
+                """CREATE TABLE IF NOT EXISTS {}(
+                    NAME TEXT NOT NULL, 
+                    REASON TEXT NOT NULL,
+                    LAST_UPDATE_TIME DATE,
+                    DAY DATE NOT NULL,
+                    PRIMARY KEY(NAME, REASON));                               
+                """.format(cls.get_err_t_name(hpc))
             )
 
         return dashboard_db
