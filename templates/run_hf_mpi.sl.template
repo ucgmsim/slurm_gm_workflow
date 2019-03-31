@@ -11,7 +11,7 @@ echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_loca
 runtime_fmt="%Y-%m-%d_%H:%M:%S"
 start_time=`date +$runtime_fmt`
 echo $start_time
-{{hf_submit_command}}
+{{submit_command}}
 end_time=`date +$runtime_fmt`
 echo $end_time 
 

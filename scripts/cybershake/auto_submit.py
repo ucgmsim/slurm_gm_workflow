@@ -17,6 +17,8 @@ from scripts.submit_post_emod3d import main as submit_post_lf_main
 from scripts.submit_hf import main as submit_hf_main
 from scripts.submit_bb import main as submit_bb_main
 from scripts.submit_sim_imcalc import submit_im_calc_slurm, SlBodyOptConsts
+from scripts.clean_up import clean_up_submission_lf_files
+from shared_workflow import shared
 
 default_n_runs = 12
 default_1d_mod = "/nesi/transit/nesi00213/VelocityModel/Mod-1D/Cant1D_v2-midQ_leer.1d"
@@ -104,7 +106,9 @@ def submit_task(
         # skipping winbin_aio if running binary mode
         if binary_mode:
             # update the mgmt_db
-            update_mgmt_db.update_db(db, "winbin_aio", "completed", run_name=run_name)
+            update_mgmt_db.update_db(
+                db, const.ProcessType.winbin_aio.str_value, const.State.completed.value[1], run_name=run_name
+            )
         else:
             args = argparse.Namespace(
                 auto=True,
@@ -195,6 +199,30 @@ def submit_task(
         if proc_type == const.ProcessType.Verification.value:
             pass
 
+    if proc_type == const.ProcessType.clean_up.value:
+        clean_up_template = (
+            "--export=gmsim -o {output_file} -e {error_file} {script_location} "
+            "{sim_dir} {srf_name} {mgmt_db_loc} "
+        )
+        script = clean_up_template.format(
+            sim_dir=sim_dir,
+            srf_name=run_name,
+            mgmt_db_loc=mgmt_db_location,
+            script_location=os.path.expandvars("$gmsim/workflow/scripts/clean_up.sl"),
+            output_file=os.path.join(sim_dir, "clean_up.out"),
+            error_file=os.path.join(sim_dir, "clean_up.err"),
+        )
+        shared.submit_sl_script(
+            script,
+            const.ProcessType.clean_up.str_value,
+            const.State.queued.value[1],
+            mgmt_db_location,
+            run_name,
+            submitted_time,
+            submit_yes=True,
+            target_machine=const.HPC.mahuika.value,
+        )
+
 
 # TODO: Requires updating, currently not working
 # def check_params_uncertain(params_uncertain_path):
@@ -231,12 +259,14 @@ def main():
     parser.add_argument("--no_im", action="store_true")
     parser.add_argument("--no_merge_ts", action="store_true")
     parser.add_argument("--user", type=str, default=None)
+    parser.add_argument("--no_tidy_up", action="store_true")
 
     args = parser.parse_args()
 
     n_runs_max = args.n_runs
     mgmt_db_location = args.run_folder
     db = connect_db(mgmt_db_location)
+    tidy_up = not args.no_tidy_up
 
     # Default values
     oneD_mod, hf_vs30_ref, binary_mode, hf_seed = default_1d_mod, None, True, None
@@ -280,7 +310,6 @@ def main():
     print("queued task:", queued_tasks)
     print("subbed task:", db_tasks)
     slurm_query_status.update_tasks(db, queued_tasks, db_tasks)
-    db_tasks = slurm_query_status.get_submitted_db_tasks(db)
     ntask_to_run = n_runs_max - len(user_queued_tasks)
 
     runnable_tasks = slurm_query_status.get_runnable_tasks(db, ntask_to_run)
@@ -301,11 +330,32 @@ def main():
         task_state = db_task_status[2]
 
         # skip im calcs if no_im == true
-        if args.no_im and proc_type == 6:
+        if args.no_im and proc_type == const.ProcessType.IM_calculation.value:
             task_num = task_num + 1
             continue
-        if args.no_merge_ts and proc_type == 2:
-            update_mgmt_db.update_db(db, "merge_ts", "completed", run_name=run_name)
+        if proc_type == const.ProcessType.merge_ts.value:
+            if args.no_merge_ts:
+                update_mgmt_db.update_db(
+                    db, "merge_ts", const.State.completed.value[1], run_name=run_name
+                )
+                task_num = task_num + 1
+                continue
+            elif slurm_query_status.is_task_complete(
+                [
+                    const.ProcessType.clean_up.value,
+                    run_name,
+                    const.State.completed.value[1],
+                ],
+                slurm_query_status.get_db_tasks_to_be_run(db),
+            ):
+                # If clean_up has already run, then we should set it to be run again after merge_ts has run
+                update_mgmt_db.update_db(
+                    db,
+                    const.ProcessType.clean_up.str_value,
+                    const.State.created.value[1],
+                    run_name=run_name,
+                )
+        if not tidy_up and proc_type == const.ProcessType.clean_up.value:
             task_num = task_num + 1
             continue
         vm_name = run_name.split("_")[0]

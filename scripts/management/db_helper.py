@@ -16,12 +16,15 @@ def connect_db(path):
 
 
 @contextmanager
-def connect_db_ctx(db_file):
+def connect_db_ctx(db_file, verbose=False):
     """Returns a db cursor. Use with a context (i.e. with statement)
 
     A commit is run at the end of the context.
     """
     conn = sql.connect(db_file)
+    if verbose:
+        conn.set_trace_callback(print)
+
     try:
         yield conn.cursor()
     except Exception:
