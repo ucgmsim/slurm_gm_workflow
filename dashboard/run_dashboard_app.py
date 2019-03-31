@@ -35,31 +35,20 @@ app.layout = html.Div(
     html.Div(
         [
             html.H3("Maui"),
-            html.Div(
-                [
-                    html.Div([
-                        dcc.ConfirmDialog(
-                            id='confirm',
-                            message='Collection error! Check the database error table!',
-                        ),
-                        html.Div(id='output-confirm')
-                    ]),
-
-                    html.H5("Current status"),
-                    html.Div(id="maui_node_usage"),
-                    html.H5("Current quota"),
-                    html.Div(id="maui_quota_usage"),
-                    html.H5("Current queue"),
-                    html.Div(id="maui_squeue_table"),
-                    html.H5("Daily core hour usage"),
-                    dcc.Graph(id="maui_daily_chours"),
-                    html.H5("Total core hour usage"),
-                    dcc.Graph(id="maui_total_chours"),
-                    dcc.Interval(id="interval_comp", interval=10 * 1000, n_intervals=0),
-                    html.H5("maui_daily_inodes"),
-                    dcc.Graph(id="maui_daily_inodes"),
-                ]
-            ),
+            html.Div(id="err"),
+            html.H5("Current status"),
+            html.Div(id="maui_node_usage"),
+            html.H5("Current quota"),
+            html.Div(id="maui_quota_usage"),
+            html.H5("Current queue"),
+            html.Div(id="maui_squeue_table"),
+            html.H5("Daily core hour usage"),
+            dcc.Graph(id="maui_daily_chours"),
+            html.H5("Total core hour usage"),
+            dcc.Graph(id="maui_total_chours"),
+            dcc.Interval(id="interval_comp", interval=10 * 1000, n_intervals=0),
+            html.H5("maui_daily_inodes"),
+            dcc.Graph(id="maui_daily_inodes"),
         ]
     )
 )
@@ -135,17 +124,12 @@ def update_maui_total_chours(n):
     return fig
 
 
-@app.callback(Output('confirm', 'displayed'),
+@app.callback(Output('err', 'children'),
               [Input("interval_comp", "n_intervals")])
-def display_confirm(n):
-    return app.db.get_collection_err(const.HPC.maui) is not None
-
-
-@app.callback(Output('output-confirm', 'children'),
-              [Input('confirm', 'submit_n_clicks')])
-def update_output(submit_n_clicks):
-    if submit_n_clicks:
-        return None
+def display_err(n):
+    """Displays data collection error when the gap between update_times exceeds acceptable limit"""
+    if app.db.get_collection_err(const.HPC.maui) is not None:
+        return html.Plaintext("Data collection err")
 
 
 @app.callback(
