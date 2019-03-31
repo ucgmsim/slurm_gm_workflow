@@ -53,6 +53,7 @@ class DashboardDB:
 
     date_format = "%Y-%m-%d"
     fail_reason = "collection_failure"
+    idling_time = 300
 
     def __init__(self, db_file: str):
         """Opens an existing dashboard database file."""
@@ -164,7 +165,9 @@ class DashboardDB:
             update_time = datetime.now()
             for ix, entry in enumerate(squeue_entries):
                 cursor.execute(
-                    "INSERT INTO {} VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)".format(table),
+                    "INSERT INTO {} VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)".format(
+                        table
+                    ),
                     (
                         entry.job_id,
                         update_time,
@@ -333,12 +336,19 @@ class DashboardDB:
                         # if such error already exits in the err_table, do nothing, web app will still alert
                         if err_row is None:
                             cursor.execute(
-                                    "INSERT INTO {} (NAME, REASON, LAST_UPDATE_TIME) VALUES(?, ?, ?)".format(err_table),
-                                        (table, self.fail_reason, row[1], ),
-                                    )
+                                "INSERT INTO {} (NAME, REASON, LAST_UPDATE_TIME) VALUES(?, ?, ?)".format(
+                                    err_table
+                                ),
+                                (table, self.fail_reason, row[1]),
+                            )
                     else:
                         # if error resolved, we delete the err record if there's any
-                        cursor.execute("DELETE FROM {} WHERE NAME = ? AND REASON = ?".format(err_table), (table, self.fail_reason))
+                        cursor.execute(
+                            "DELETE FROM {} WHERE NAME = ? AND REASON = ?".format(
+                                err_table
+                            ),
+                            (table, self.fail_reason),
+                        )
                         cursor.execute(
                             "UPDATE {} SET CORE_HOURS_USED = ?, UPDATE_TIME = ? WHERE DAY = ? AND USERNAME = ?;".format(
                                 table
@@ -357,13 +367,22 @@ class DashboardDB:
 
         return [UserChEntry(*result) for result in results]
 
-    @staticmethod
-    def check_update_time(last_update_time_string, current_update_time):
+    def check_update_time(self, last_update_time_string, current_update_time):
+        """
+        Checks whether the time gap between update times exceeds the idling time limit
+        if exceeds, regards as a collection error.
+        :param last_update_time_string:
+        :param current_update_time: datetime obj
+        :return: bool
+        """
         # 2019-03-28 18:31:11.906576
-        print("time diff",current_update_time - datetime.strptime(last_update_time_string, "%Y-%m-%d %H:%M:%S.%f"))
-        return (current_update_time - datetime.strptime(last_update_time_string, "%Y-%m-%d %H:%M:%S.%f")) < timedelta(seconds=360)
+        return (
+            current_update_time
+            - datetime.strptime(last_update_time_string, "%Y-%m-%d %H:%M:%S.%f")
+        ) < timedelta(seconds=self.idling_time)
 
     def get_collection_err(self, hpc: const.HPC):
+        """Gets collection err from err table"""
         table = self.get_err_t_name(hpc)
         with self.get_cursor(self.db_file) as cursor:
             result = cursor.execute("SELECT REASON FROM {}".format(table)).fetchone()
@@ -454,7 +473,9 @@ class DashboardDB:
                         REASON TEXT NOT NULL,
                         LAST_UPDATE_TIME DATE,
                         PRIMARY KEY(NAME, REASON));                               
-                    """.format(cls.get_err_t_name(cur_hpc))
+                    """.format(
+                        cls.get_err_t_name(cur_hpc)
+                    )
                 )
 
             # Maui current status
@@ -467,8 +488,6 @@ class DashboardDB:
                     UPDATE_TIME DATE NOT NULL)
                 """
             )
-
-
 
         return dashboard_db
 

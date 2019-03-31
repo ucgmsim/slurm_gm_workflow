@@ -138,7 +138,6 @@ def update_maui_total_chours(n):
 @app.callback(Output('confirm', 'displayed'),
               [Input("interval_comp", "n_intervals")])
 def display_confirm(n):
-    print("get collection err",app.db.get_collection_err(const.HPC.maui))
     return app.db.get_collection_err(const.HPC.maui) is not None
 
 
