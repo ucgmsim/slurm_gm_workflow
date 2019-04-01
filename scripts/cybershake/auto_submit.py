@@ -107,7 +107,7 @@ def submit_task(
         if binary_mode:
             # update the mgmt_db
             update_mgmt_db.update_db(
-                db, const.ProcessType.winbin_aio.str_value, const.State.completed.value[1], run_name=run_name
+                db, const.ProcessType.winbin_aio.str_value, const.State.completed.str_value, run_name=run_name
             )
         else:
             args = argparse.Namespace(
@@ -215,7 +215,7 @@ def submit_task(
         shared.submit_sl_script(
             script,
             const.ProcessType.clean_up.str_value,
-            const.State.queued.value[1],
+            const.State.queued.str_value,
             mgmt_db_location,
             run_name,
             submitted_time,
@@ -336,7 +336,7 @@ def main():
         if proc_type == const.ProcessType.merge_ts.value:
             if args.no_merge_ts:
                 update_mgmt_db.update_db(
-                    db, "merge_ts", const.State.completed.value[1], run_name=run_name
+                    db, "merge_ts", const.State.completed.str_value, run_name=run_name
                 )
                 task_num = task_num + 1
                 continue
@@ -344,7 +344,7 @@ def main():
                 [
                     const.ProcessType.clean_up.value,
                     run_name,
-                    const.State.completed.value[1],
+                    const.State.completed.str_value,
                 ],
                 slurm_query_status.get_db_tasks_to_be_run(db),
             ):
@@ -352,7 +352,7 @@ def main():
                 update_mgmt_db.update_db(
                     db,
                     const.ProcessType.clean_up.str_value,
-                    const.State.created.value[1],
+                    const.State.created.str_value,
                     run_name=run_name,
                 )
         if not tidy_up and proc_type == const.ProcessType.clean_up.value:

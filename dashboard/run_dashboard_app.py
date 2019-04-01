@@ -4,6 +4,7 @@ The data comes from the specified dashboard db and
 the information is updated every x-seconds (currently hardcoded to 10)
 """
 import argparse
+import json
 from typing import List, Dict
 from datetime import date
 from dateutil.relativedelta import relativedelta
@@ -34,23 +35,20 @@ app.layout = html.Div(
     html.Div(
         [
             html.H3("Maui"),
-            html.Div(
-                [
-                    html.H5("Current status"),
-                    html.Div(id="maui_node_usage"),
-                    html.H5("Current quota"),
-                    html.Div(id="maui_quota_usage"),
-                    html.H5("Current queue"),
-                    html.Div(id="maui_squeue_table"),
-                    html.H5("Daily core hour usage"),
-                    dcc.Graph(id="maui_daily_chours"),
-                    html.H5("Total core hour usage"),
-                    dcc.Graph(id="maui_total_chours"),
-                    dcc.Interval(id="interval_comp", interval=10 * 1000, n_intervals=0),
-                    html.H5("maui_daily_inodes"),
-                    dcc.Graph(id="maui_daily_inodes"),
-                ]
-            ),
+            html.Div(id="err"),
+            html.H5("Current status"),
+            html.Div(id="maui_node_usage"),
+            html.H5("Current quota"),
+            html.Div(id="maui_quota_usage"),
+            html.H5("Current queue"),
+            html.Div(id="maui_squeue_table"),
+            html.H5("Daily core hour usage"),
+            dcc.Graph(id="maui_daily_chours"),
+            html.H5("Total core hour usage"),
+            dcc.Graph(id="maui_total_chours"),
+            dcc.Interval(id="interval_comp", interval=10 * 1000, n_intervals=0),
+            html.H5("maui_daily_inodes"),
+            dcc.Graph(id="maui_daily_inodes"),
         ]
     )
 )
@@ -124,6 +122,14 @@ def update_maui_total_chours(n):
     fig.add_scatter(x=entries["day"], y=entries["total_chours"])
 
     return fig
+
+
+@app.callback(Output('err', 'children'),
+              [Input("interval_comp", "n_intervals")])
+def display_err(n):
+    """Displays data collection error when the gap between update_times exceeds acceptable limit"""
+    if app.db.get_collection_err(const.HPC.maui) is not None:
+        return html.Plaintext("Data collection error, check the error_table in database")
 
 
 @app.callback(
