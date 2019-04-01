@@ -3,7 +3,7 @@ import sqlite3 as sql
 from collections import namedtuple
 from enum import Enum
 
-from typing import Iterable, Union
+from typing import Iterable, Union, List
 from datetime import datetime, date, timedelta
 from contextlib import contextmanager
 
@@ -41,6 +41,7 @@ UserChEntry = namedtuple("UserChEntry", ["day", "username", "core_hours_used"])
 
 class HPCProperty(Enum):
     node_capacity = 1, "node_capacity"
+    hyper_threads = 2, "hyper_threads"
 
     def __new__(cls, value, str_value):
         obj = object.__new__(cls)
@@ -138,9 +139,11 @@ class DashboardDB:
                 )
 
     def get_chours_usage(
-        self, start_date: Union[date, str], end_date: Union[date, str], hpc: const.HPC
+        self, start_date: Union[date, str], end_date: Union[date, str], hpc: const.HPC, physical: bool=True
     ):
-        """Gets the usage and total usage for the date range"""
+        """Gets the usage and total usage for the date range,
+           If physical is set to True, returns physical core hours instead of virtual
+        """
         start_date = self.get_date(start_date)
         end_date = self.get_date(end_date)
 
@@ -151,6 +154,11 @@ class DashboardDB:
                 (start_date, end_date),
             ).fetchall()
 
+        # convert virtual core hours to physical
+        if physical:
+            results = [
+                (result[0], result[1] / HPCProperty.hyper_threads.value, result[2] / HPCProperty.hyper_threads.value)
+                for result in results]
         return results
 
     def update_squeue(self, squeue_entries: Iterable[SQueueEntry], hpc: const.HPC):
@@ -356,7 +364,7 @@ class DashboardDB:
                             (entry.core_hours_used, update_time, day, entry.username),
                         )
 
-    def get_user_chours(self, hpc: const.HPC, username: str):
+    def get_user_chours(self, hpc: const.HPC, username: str, physical: bool=True):
         """Gets core hours usage over time for a specified user"""
         table = self.get_user_ch_t_name(hpc)
         sql = "SELECT DAY, USERNAME, CORE_HOURS_USED FROM {} WHERE USERNAME = ?".format(
@@ -365,6 +373,11 @@ class DashboardDB:
         with self.get_cursor(self.db_file) as cursor:
             results = cursor.execute(sql, (username,)).fetchall()
 
+        # convert virtual core hours to physical
+        if physical:
+            results = [
+                (result[0], result[1], result[2] / HPCProperty.hyper_threads.value)
+                for result in results]
         return [UserChEntry(*result) for result in results]
 
     def check_update_time(self, last_update_time_string: str, current_update_time: datetime):
