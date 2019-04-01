@@ -129,7 +129,7 @@ def update_maui_total_chours(n):
 def display_err(n):
     """Displays data collection error when the gap between update_times exceeds acceptable limit"""
     if app.db.get_collection_err(const.HPC.maui) is not None:
-        return html.Plaintext("Data collection err")
+        return html.Plaintext("Data collection error, check the error_table in database")
 
 
 @app.callback(

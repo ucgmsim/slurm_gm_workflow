@@ -111,7 +111,7 @@ class DashboardDB:
 
         with self.get_cursor(self.db_file) as cursor:
             row = cursor.execute(
-                "SELECT CORE_HOURS_USED, TOTAL_CORE_HOURS, UPDATE_TIME FROM {} WHERE DAY == ?;".format(
+                "SELECT CORE_HOURS_USED, TOTAL_CORE_HOURS FROM {} WHERE DAY == ?;".format(
                     table
                 ),
                 (day,),
@@ -367,13 +367,9 @@ class DashboardDB:
 
         return [UserChEntry(*result) for result in results]
 
-    def check_update_time(self, last_update_time_string, current_update_time):
-        """
-        Checks whether the time gap between update times exceeds the idling time limit
+    def check_update_time(self, last_update_time_string: str, current_update_time: datetime):
+        """Checks whether the time gap between update times exceeds the idling time limit
         if exceeds, regards as a collection error.
-        :param last_update_time_string:
-        :param current_update_time: datetime obj
-        :return: bool
         """
         # 2019-03-28 18:31:11.906576
         return (
