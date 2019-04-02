@@ -97,9 +97,16 @@ class E2ETests(object):
             self.config_dict[self.cf_test_dir_key], "tmp_{}".format(const.timestamp)
         )
 
+        self.im_bench_folder = os.path.join(
+            self.config_dict[self.cf_bench_folder_key], self.bench_IM_csv_folder
+        )
+
         self.warnings, self.errors = [], []
         self.fault_dirs, self.sim_dirs = [], []
         self.runs_dir = None
+
+        self._sim_passed = []
+        self._stop_on_error = None
 
     def run(
         self,
@@ -115,6 +122,8 @@ class E2ETests(object):
         The test directory is deleted if there are no errors, unless no_clean_up
         is set.
         """
+        self._stop_on_error = stop_on_error
+
         # Setup folder structure
         self.setup()
 
@@ -126,16 +135,16 @@ class E2ETests(object):
             return False
 
         self.check_install()
-        if self.errors and stop_on_error:
+        if self.errors and self._stop_on_error:
             print("Quitting due to the following errors:")
             self.print_errors()
             return False
 
         # Run automated workflow
-        self.run_auto_submit(timeout=timeout, sleep_time=sleep_time)
+        if not self.run_auto_submit(timeout=timeout, sleep_time=sleep_time):
+            return False
 
         self.check_mgmt_db()
-        self.check_sim_results()
         if self.errors:
             print("The following errors occurred during the automated workflow:")
             self.print_errors()
@@ -319,7 +328,7 @@ class E2ETests(object):
             p = exe(cmd, debug=False, non_blocking=True, stdout=out_f, stderr=err_f)
 
             # Monitor mgmt db
-            print("Mgmt DB progress: ")
+            print("Progress: ")
             timeout = timeout * 60
             start_time = time.time()
             while time.time() - start_time < timeout:
@@ -327,6 +336,8 @@ class E2ETests(object):
                     total_count, comp_count, failed_count = (
                         self.check_mgmt_db_progress()
                     )
+                    if not self.check_completed():
+                        return False
                 except sql.OperationalError as ex:
                     print(
                         "Operational error while accessing database. "
@@ -363,6 +374,8 @@ class E2ETests(object):
                 out_f.close()
             if err_f is not None:
                 err_f.close()
+
+        return True
 
     def cancel_running(self, proc_types: List[const.ProcessType]):
         """Looks for any running task of the specified process types
@@ -420,58 +433,58 @@ class E2ETests(object):
                     )
                 )
 
-    def check_sim_results(self):
+    def check_sim_result(self, sim_dir: str):
         """Checks that all the LF, HF and BB binaries are there and that the
         IM values match up with the benchmark IMs
         """
-        im_bench_folder = os.path.join(
-            self.config_dict[self.cf_bench_folder_key], self.bench_IM_csv_folder
-        )
-        for sim_dir in self.sim_dirs:
-            # Check LF???
+        # Check HF binary
+        hf_bin = sim_struct.get_hf_bin_path(sim_dir)
+        if not os.path.isfile(hf_bin):
+            self.errors.append(
+                Error("HF - Binary", "The HF binary is not at {}".format(hf_bin))
+            )
 
-            # Check HF binary
-            hf_bin = sim_struct.get_hf_bin_path(sim_dir)
-            if not os.path.isfile(hf_bin):
-                self.errors.append(
-                    Error("HF - Binary", "The HF binary is not at {}".format(hf_bin))
+        # Check BB binary
+        bb_bin = sim_struct.get_bb_bin_path(sim_dir)
+        if not os.path.isfile(bb_bin):
+            self.errors.append(
+                Error("BB - Binary", "The BB binary is not at {}".format(hf_bin))
+            )
+
+        # Check IM
+        im_csv = sim_struct.get_IM_csv(sim_dir)
+        if not os.path.isfile(im_csv):
+            self.errors.append(
+                Error(
+                    "IM_calc - CSV", "The IM_calc csv file is not at {}".format(im_csv)
                 )
+            )
+        else:
+            bench_csv = os.path.join(
+                self.im_bench_folder,
+                "{}.csv".format(os.path.basename(sim_dir).split(".")[0]),
+            )
+            bench_df = pd.read_csv(bench_csv)
+            cur_df = pd.read_csv(im_csv)
 
-            # Check BB binary
-            bb_bin = sim_struct.get_bb_bin_path(sim_dir)
-            if not os.path.isfile(bb_bin):
-                self.errors.append(
-                    Error("BB - Binary", "The BB binary is not at {}".format(hf_bin))
-                )
-
-            # Check IM
-            im_csv = sim_struct.get_IM_csv(sim_dir)
-            if not os.path.isfile(im_csv):
+            try:
+                assert_frame_equal(cur_df, bench_df)
+            except AssertionError:
                 self.errors.append(
                     Error(
-                        "IM_calc - CSV",
-                        "The IM_calc csv file is not at {}".format(im_csv),
+                        "IM - Values",
+                        "The IMs for {} are not equal to the benchmark {}".format(
+                            im_csv, bench_csv
+                        ),
                     )
                 )
-            else:
-                bench_csv = os.path.join(
-                    im_bench_folder,
-                    "{}.csv".format(os.path.basename(sim_dir).split(".")[0]),
-                )
-                bench_df = pd.read_csv(bench_csv)
-                cur_df = pd.read_csv(im_csv)
 
-                try:
-                    assert_frame_equal(cur_df, bench_df)
-                except AssertionError:
-                    self.errors.append(
-                        Error(
-                            "IM - Values",
-                            "The IMs for {} are not equal to the benchmark {}".format(
-                                im_csv, bench_csv
-                            ),
-                        )
-                    )
+        if self._stop_on_error and self.errors:
+            print("Quitting as the following errors occured: ")
+            self.print_errors()
+            return False
+
+        return True
 
     def check_mgmt_db_progress(self):
         """Checks auto submit progress in the management db"""
@@ -487,6 +500,34 @@ class E2ETests(object):
             ).fetchone()[0]
 
         return total_count, comp_count, failed_count
+
+    def check_completed(self):
+        """Checks all simulations that have completed"""
+        with connect_db_ctx(sim_struct.get_mgmt_db(self.stage_dir)) as cur:
+            completed_sims = cur.execute(
+                "SELECT run_name FROM state WHERE proc_type == 6 AND status = 4"
+            ).fetchall()
+        completed_sims = [sim_t[0] for sim_t in completed_sims]
+
+        # Only check the ones that haven't been checked already
+        completed_new = set(completed_sims) - set(self._sim_passed)
+
+        for sim in completed_new:
+            if not self.check_sim_result(
+                os.path.join(
+                    self.runs_dir, sim_struct.get_fault_from_realisation(sim), sim
+                )
+            ):
+                return False
+            self._sim_passed.append(sim)
+
+        print(
+            "Passed simulations: {}/{}".format(
+                len(self._sim_passed), len(self.sim_dirs)
+            )
+        )
+
+        return True
 
     def teardown(self):
         """Remove all files created during the end-to-end test"""
