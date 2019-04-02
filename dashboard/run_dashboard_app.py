@@ -46,6 +46,7 @@ app.layout = html.Div(
             dcc.Graph(id="maui_daily_chours"),
             html.H5("Total core hour usage"),
             dcc.Graph(id="maui_total_chours"),
+            dcc.Graph(id="mahuika_total_chours"),
             dcc.Interval(id="interval_comp", interval=10 * 1000, n_intervals=0),
             html.H5("maui_daily_inodes"),
             dcc.Graph(id="maui_daily_inodes"),
@@ -113,10 +114,22 @@ def update_maui_daily_chours(n):
 
 
 @app.callback(
+    Output("mahuika_total_chours", "figure"), [Input("interval_comp", "n_intervals")]
+)
+def update_mahuika_total_chours(n):
+    entries = get_chours_entries(const.HPC.mahuika)
+
+    fig = go.Figure()
+    fig.add_scatter(x=entries["day"], y=entries["total_chours"])
+
+    return fig
+
+
+@app.callback(
     Output("maui_total_chours", "figure"), [Input("interval_comp", "n_intervals")]
 )
 def update_maui_total_chours(n):
-    entries = get_chours_entries(const.HPC.maui)
+    entries = get_chours_entries(const.HPC.mahuika)
 
     fig = go.Figure()
     fig.add_scatter(x=entries["day"], y=entries["total_chours"])

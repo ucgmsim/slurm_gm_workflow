@@ -11,13 +11,13 @@ from dashboard.DashboardDB import DashboardDB, SQueueEntry
 class TestDashboardDB:
 
     squeue_entry_1 = SQueueEntry(
-        12, "testUser", "test_1234", "R", "testName_1", "1:20", "16:20", 1, 80
+        '12', "testUser", "test_1234", "R", "testName_1", "1:20", "16:20", 1, 80
     )
     squeue_entry_2 = SQueueEntry(
-        13, "testUser", "test_1234", "R", "testName_2", "11:20", "16:16:20", 1, 80
+        '13', "testUser", "test_1234", "R", "testName_2", "11:20", "16:16:20", 1, 80
     )
     squeue_entry_3 = SQueueEntry(
-        14, "testUser", "test_1234", "R", "testName_3", "14:20", "12:16:20", 1, 80
+        '14', "testUser", "test_1234", "R", "testName_3", "14:20", "12:16:20", 1, 80
     )
 
     hpc_1 = const.HPC.maui
@@ -84,7 +84,7 @@ class TestDashboardDB:
         db.update_daily_chours_usage(self.total_core_usage_1, hpc, day_1)
 
         # Check the entry has been added & daily usage is zero
-        day, daily_usage, total_core_hours = db.get_chours_usage(day_1, day_1, hpc)[0]
+        day, daily_usage, total_core_hours = db.get_chours_usage(day_1, day_1, hpc, physical=False)[0]
         assert day == day_1
         assert daily_usage == 0
         assert total_core_hours == self.total_core_usage_1
@@ -97,13 +97,13 @@ class TestDashboardDB:
         db.update_daily_chours_usage(self.total_core_usage_2, hpc, day_2)
 
         # Check that entry for day 1 has been updated correctly
-        day, daily_usage, total_core_hours = db.get_chours_usage(day_1, day_1, hpc)[0]
+        day, daily_usage, total_core_hours = db.get_chours_usage(day_1, day_1, hpc, physical=False)[0]
         assert day == day_1
         assert daily_usage == self.total_core_usage_2 - self.total_core_usage_1
         assert total_core_hours == self.total_core_usage_2
 
         # Check that new entry has been created for day 2
-        day, daily_usage, total_core_hours = db.get_chours_usage(day_2, day_2, hpc)[0]
+        day, daily_usage, total_core_hours = db.get_chours_usage(day_2, day_2, hpc, physical=False)[0]
         assert day == day_2
         assert daily_usage == 0
         assert total_core_hours == self.total_core_usage_2
@@ -119,7 +119,7 @@ class TestDashboardDB:
 
         # Check the entry has been added & daily usage is null
         day, daily_usage, total_core_hours = dashboard_db.get_chours_usage(
-            day_1, day_1, self.hpc_1
+            day_1, day_1, self.hpc_1, physical=False
         )[0]
         assert day == day_1
         assert daily_usage == 0
@@ -132,7 +132,7 @@ class TestDashboardDB:
 
         # Check that entry for day 1 has been updated correctly
         day, daily_usage, total_core_hours = dashboard_db.get_chours_usage(
-            day_1, day_1, self.hpc_1
+            day_1, day_1, self.hpc_1, physical=False
         )[0]
         assert day == day_1
         assert daily_usage == self.total_core_usage_2 - self.total_core_usage_1
@@ -145,7 +145,7 @@ class TestDashboardDB:
 
         # Check that nothing has changed
         day, daily_usage, total_core_hours = dashboard_db.get_chours_usage(
-            day_1, day_1, self.hpc_1
+            day_1, day_1, self.hpc_1, physical=False
         )[0]
         assert day == day_1
         assert daily_usage == self.total_core_usage_2 - self.total_core_usage_1

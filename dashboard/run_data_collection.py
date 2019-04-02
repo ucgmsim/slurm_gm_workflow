@@ -128,7 +128,7 @@ class DataCollector:
             )
 
         # Squeue, formatted to show full account name
-        sq_output = self.run_cmd(hpc.value, "squeue --format=%18i%12u%12a%60j%20T%25r%20S%18M%18L%10D%5C")
+        sq_output = self.run_cmd(hpc.value, "squeue --format=%18i%25u%12a%60j%20T%25r%20S%18M%18L%10D%10C")
         if sq_output:
             self.dashboard_db.update_squeue(self._parse_squeue(sq_output), hpc)
 
@@ -176,11 +176,12 @@ class DataCollector:
                 hpc, self.parse_user_chours_usage(user_ch_output, users)
             )
 
-    def run_cmd(self, hpc: str, cmd: str, timeout: int = 10):
+    def run_cmd(self, hpc: str, cmd: str, timeout: int = 60):
         """Runs the specified command remotely on the specified hpc using the
         specified user id.
         Returns False if the command fails for some reason.
         """
+        print("cmd", self.ssh_cmd_template.format(self.user, hpc, cmd))
         try:
             result = (
                 subprocess.check_output(
@@ -272,9 +273,8 @@ class DataCollector:
         line_interest = [line for line in lines_interest if line.startswith("Logical")][
             -1
         ]
-
         try:
-            return int(line_interest.split(" ")[-4].strip().replace(",", ""))
+            return int(line_interest.strip().split(" ")[-4].strip().replace(",", ""))
         except ValueError:
             print("Failed to convert {} out of \n{}\n to integer.")
             return None

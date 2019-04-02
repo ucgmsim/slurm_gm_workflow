@@ -401,7 +401,7 @@ class DashboardDB:
         # Add latest table
         cursor.execute(
             """CREATE TABLE IF NOT EXISTS {}(
-                  JOB_ID INTEGER PRIMARY KEY NOT NULL,
+                  JOB_ID TEXT PRIMARY KEY NOT NULL,
                   UPDATE_TIME DATE NOT NULL,
                   USERNAME TEXT NOT NULL,
                   ACCOUNT TEXT NOT NULL ,
