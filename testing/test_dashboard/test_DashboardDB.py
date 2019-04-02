@@ -75,7 +75,6 @@ class TestDashboardDB:
                 - check daily usage is null
             Insert 2nd time
                 - check daily usage updates
-
             Add entry for different day,
             make sure this creates a new entry
         """
@@ -84,7 +83,7 @@ class TestDashboardDB:
         db.update_daily_chours_usage(self.total_core_usage_1, hpc, day_1)
 
         # Check the entry has been added & daily usage is zero
-        day, daily_usage, total_core_hours = db.get_chours_usage(day_1, day_1, hpc)[0]
+        day, daily_usage, total_core_hours = db.get_chours_usage(day_1, day_1, hpc, physical=False)[0]
         assert day == day_1
         assert daily_usage == 0
         assert total_core_hours == self.total_core_usage_1
@@ -97,13 +96,13 @@ class TestDashboardDB:
         db.update_daily_chours_usage(self.total_core_usage_2, hpc, day_2)
 
         # Check that entry for day 1 has been updated correctly
-        day, daily_usage, total_core_hours = db.get_chours_usage(day_1, day_1, hpc)[0]
+        day, daily_usage, total_core_hours = db.get_chours_usage(day_1, day_1, hpc, physical=False)[0]
         assert day == day_1
         assert daily_usage == self.total_core_usage_2 - self.total_core_usage_1
         assert total_core_hours == self.total_core_usage_2
 
         # Check that new entry has been created for day 2
-        day, daily_usage, total_core_hours = db.get_chours_usage(day_2, day_2, hpc)[0]
+        day, daily_usage, total_core_hours = db.get_chours_usage(day_2, day_2, hpc, physical=False)[0]
         assert day == day_2
         assert daily_usage == 0
         assert total_core_hours == self.total_core_usage_2
@@ -119,7 +118,7 @@ class TestDashboardDB:
 
         # Check the entry has been added & daily usage is null
         day, daily_usage, total_core_hours = dashboard_db.get_chours_usage(
-            day_1, day_1, self.hpc_1
+            day_1, day_1, self.hpc_1, physical=False
         )[0]
         assert day == day_1
         assert daily_usage == 0
@@ -132,7 +131,7 @@ class TestDashboardDB:
 
         # Check that entry for day 1 has been updated correctly
         day, daily_usage, total_core_hours = dashboard_db.get_chours_usage(
-            day_1, day_1, self.hpc_1
+            day_1, day_1, self.hpc_1, physical=False
         )[0]
         assert day == day_1
         assert daily_usage == self.total_core_usage_2 - self.total_core_usage_1
@@ -145,7 +144,7 @@ class TestDashboardDB:
 
         # Check that nothing has changed
         day, daily_usage, total_core_hours = dashboard_db.get_chours_usage(
-            day_1, day_1, self.hpc_1
+            day_1, day_1, self.hpc_1, physical=False
         )[0]
         assert day == day_1
         assert daily_usage == self.total_core_usage_2 - self.total_core_usage_1

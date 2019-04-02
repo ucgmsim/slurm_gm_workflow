@@ -41,7 +41,6 @@ UserChEntry = namedtuple("UserChEntry", ["day", "username", "core_hours_used"])
 
 class HPCProperty(Enum):
     node_capacity = 1, "node_capacity"
-    hyper_threads = 2, "hyper_threads"
 
     def __new__(cls, value, str_value):
         obj = object.__new__(cls)
@@ -157,7 +156,7 @@ class DashboardDB:
         # convert virtual core hours to physical
         if physical:
             results = [
-                (result[0], result[1] / HPCProperty.hyper_threads.value, result[2] / HPCProperty.hyper_threads.value)
+                (result[0], result[1] / 2., result[2] / 2.)
                 for result in results]
         return results
 
@@ -357,12 +356,12 @@ class DashboardDB:
                             ),
                             (table, self.fail_reason),
                         )
-                        cursor.execute(
-                            "UPDATE {} SET CORE_HOURS_USED = ?, UPDATE_TIME = ? WHERE DAY = ? AND USERNAME = ?;".format(
-                                table
-                            ),
-                            (entry.core_hours_used, update_time, day, entry.username),
-                        )
+                    cursor.execute(
+                        "UPDATE {} SET CORE_HOURS_USED = ?, UPDATE_TIME = ? WHERE DAY = ? AND USERNAME = ?;".format(
+                            table
+                        ),
+                        (entry.core_hours_used, update_time, day, entry.username),
+                    )
 
     def get_user_chours(self, hpc: const.HPC, username: str, physical: bool=True):
         """Gets core hours usage over time for a specified user"""
@@ -376,7 +375,7 @@ class DashboardDB:
         # convert virtual core hours to physical
         if physical:
             results = [
-                (result[0], result[1], result[2] / HPCProperty.hyper_threads.value)
+                (result[0], result[1], result[2] / 2.)
                 for result in results]
         return [UserChEntry(*result) for result in results]
 
