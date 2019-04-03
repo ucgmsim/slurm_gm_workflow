@@ -6,7 +6,7 @@ the information is updated every x-seconds (currently hardcoded to 10)
 import argparse
 import json
 from typing import List, Dict
-from datetime import date
+from datetime import date, datetime, timedelta
 from dateutil.relativedelta import relativedelta
 
 import numpy as np
@@ -128,7 +128,7 @@ def update_maui_total_chours(n):
               [Input("interval_comp", "n_intervals")])
 def display_err(n):
     """Displays data collection error when the gap between update_times exceeds acceptable limit"""
-    if app.db.get_collection_err(const.HPC.maui) is not None:
+    if not check_update_time(app.db.get_update_time(const.HPC.maui)[0], datetime.now()):
         return html.Plaintext("Data collection error, check the error_table in database")
 
 
@@ -240,6 +240,17 @@ def get_maui_daily_quota_string(file_system):
         entry.available_inodes,
         entry.used_inodes / entry.available_inodes * 100.
     )
+
+
+def check_update_time(last_update_time_string: str, current_update_time: datetime):
+    """Checks whether the time gap between update times exceeds the idling time limit(300s)
+    if exceeds, regards as a collection error.
+    """
+    # 2019-03-28 18:31:11.906576
+    return (
+        current_update_time
+        - datetime.strptime(last_update_time_string, "%Y-%m-%d %H:%M:%S.%f")
+    ) < timedelta(seconds=300)
 
 
 if __name__ == "__main__":

@@ -52,8 +52,6 @@ class HPCProperty(Enum):
 class DashboardDB:
 
     date_format = "%Y-%m-%d"
-    fail_reason = "collection_failure"
-    idling_time = 300
 
     def __init__(self, db_file: str):
         """Opens an existing dashboard database file."""
@@ -316,7 +314,7 @@ class DashboardDB:
         for entry in entries:
             with self.get_cursor(self.db_file) as cursor:
                 row = cursor.execute(
-                    "SELECT CORE_HOURS_USED, UPDATE_TIME FROM {} WHERE DAY = ? AND USERNAME = ?;".format(
+                    "SELECT CORE_HOURS_USED FROM {} WHERE DAY = ? AND USERNAME = ?;".format(
                         table
                     ),
                     (day, entry.username),
@@ -330,32 +328,6 @@ class DashboardDB:
                         (day, entry.username, entry.core_hours_used, update_time),
                     )
                 else:
-                    # first we checkout update time
-                    err_table = self.get_err_t_name(hpc)
-                    if not self.check_update_time(row[1], update_time):
-                        err_row = cursor.execute(
-                            "SELECT * FROM {} WHERE NAME = ? AND REASON = ?;".format(
-                                err_table
-                            ),
-                            (table, self.fail_reason),
-                        ).fetchone()
-                        # if we first encounter the err, add err to err table;
-                        # if such error already exits in the err_table, do nothing, web app will still alert
-                        if err_row is None:
-                            cursor.execute(
-                                "INSERT INTO {} (NAME, REASON, LAST_UPDATE_TIME) VALUES(?, ?, ?)".format(
-                                    err_table
-                                ),
-                                (table, self.fail_reason, row[1]),
-                            )
-                    else:
-                        # if error resolved, we delete the err record if there's any
-                        cursor.execute(
-                            "DELETE FROM {} WHERE NAME = ? AND REASON = ?".format(
-                                err_table
-                            ),
-                            (table, self.fail_reason),
-                        )
                     cursor.execute(
                         "UPDATE {} SET CORE_HOURS_USED = ?, UPDATE_TIME = ? WHERE DAY = ? AND USERNAME = ?;".format(
                             table
@@ -379,21 +351,12 @@ class DashboardDB:
                 for result in results]
         return [UserChEntry(*result) for result in results]
 
-    def check_update_time(self, last_update_time_string: str, current_update_time: datetime):
-        """Checks whether the time gap between update times exceeds the idling time limit
-        if exceeds, regards as a collection error.
-        """
-        # 2019-03-28 18:31:11.906576
-        return (
-            current_update_time
-            - datetime.strptime(last_update_time_string, "%Y-%m-%d %H:%M:%S.%f")
-        ) < timedelta(seconds=self.idling_time)
-
-    def get_collection_err(self, hpc: const.HPC):
-        """Gets collection err from err table"""
-        table = self.get_err_t_name(hpc)
+    def get_update_time(self, hpc: const.HPC):
+        """Get update_time from db"""
         with self.get_cursor(self.db_file) as cursor:
-            result = cursor.execute("SELECT REASON FROM {}".format(table)).fetchone()
+            result = cursor.execute(
+                "SELECT UPDATE_TIME FROM {} ORDER BY UPDATE_TIME DESC LIMIT 1".format(self.get_daily_t_name(hpc)),
+            ).fetchone()
         return result
 
     def _create_queue_table(self, cursor, hpc: const.HPC):
