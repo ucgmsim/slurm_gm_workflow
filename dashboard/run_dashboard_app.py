@@ -109,7 +109,7 @@ def update_maui_daily_chours(n):
     data += get_maui_daily_user_chours(const.HPC.maui, USERS)
 
     # uirevision preserve the UI state between update intervals
-    return {'data': data, 'layout': {'uirevision': "maui_daily_chours"}}
+    return {"data": data, "layout": {"uirevision": "maui_daily_chours"}}
 
 
 @app.callback(
@@ -124,12 +124,13 @@ def update_maui_total_chours(n):
     return fig
 
 
-@app.callback(Output('err', 'children'),
-              [Input("interval_comp", "n_intervals")])
+@app.callback(Output("err", "children"), [Input("interval_comp", "n_intervals")])
 def display_err(n):
     """Displays data collection error when the gap between update_times exceeds acceptable limit"""
     if not check_update_time(app.db.get_update_time(const.HPC.maui)[0], datetime.now()):
-        return html.Plaintext("Data collection error, check the error_table in database")
+        return html.Plaintext(
+            "Data collection error, check the error_table in database"
+        )
 
 
 @app.callback(
@@ -147,26 +148,40 @@ def update_maui_daily_inodes(n):
         ],
     )
     data = []
-    trace = go.Scatter(x=entries["day"], y=entries["used_inodes"], name="maui_daily_inodes")
+    trace = go.Scatter(
+        x=entries["day"], y=entries["used_inodes"], name="maui_nobackup_daily_inodes"
+    )
     data.append(trace)
-    trace = go.Scatter(x=entries["day"], y=np.tile(15000000, (1, 5)), name='available inodes')
-    data.append(trace)
+    # max available nodes on maui
+    trace2 = go.Scatter(
+        x=entries["day"],
+        y=np.tile(15000000, entries["used_inodes"].size),
+        name="maui_nobackup_available inodes",
+        fillcolor="red",
+    )
+    data.append(trace2)
+    fig = go.Figure(data=data)
+    return fig
 
-    return data
 
-
-def get_maui_daily_user_chours(hpc: const.HPC, users_dict: Dict[str, str]=USERS):
+def get_maui_daily_user_chours(hpc: const.HPC, users_dict: Dict[str, str] = USERS):
     """get daily core hours usage for a list of users
        return as a list of scatter plots
     """
     data = []
     for username, real_name in users_dict.items():
         entries = app.db.get_user_chours(hpc, username)
-        entries = np.array(entries, dtype=[
-            ("day", "datetime64[D]"),
-            ("username", object),
-            ("core_hours_used", float)])
-        trace = go.Scatter(x=entries["day"], y=entries["core_hours_used"], name=real_name)
+        entries = np.array(
+            entries,
+            dtype=[
+                ("day", "datetime64[D]"),
+                ("username", object),
+                ("core_hours_used", float),
+            ],
+        )
+        trace = go.Scatter(
+            x=entries["day"], y=entries["core_hours_used"], name=real_name
+        )
         data.append(trace)
     return data
 
@@ -204,27 +219,30 @@ def generate_table_interactive(squeue_entries: List[SQueueEntry]):
     """Generates interactive dash table for the given squeue entries."""
     # Convert NamedTuple to OrderedDict
     squeue_entries = [entry._asdict() for entry in squeue_entries]
-    return html.Div([
-        dash_table.DataTable(
-            id='datatable-interactivity',
-            columns=[
-                {"name": i, "id": i, "deletable": False} for i in SQueueEntry._fields
-            ],
-            data=squeue_entries,
-            filtering=True,
-            filtering_settings="account eq 'nesi00213'",
-            sorting=True,
-            sorting_type="multi",
-            pagination_mode="fe",
-            pagination_settings={
-                "displayed_pages": 1,
-                "current_page": 0,
-                "page_size": 35,
-            },
-            navigation="page",
-        ),
-        html.Div(id='datatable-interactivity-container')
-    ])
+    return html.Div(
+        [
+            dash_table.DataTable(
+                id="datatable-interactivity",
+                columns=[
+                    {"name": i, "id": i, "deletable": False}
+                    for i in SQueueEntry._fields
+                ],
+                data=squeue_entries,
+                filtering=True,
+                filtering_settings="account eq 'nesi00213'",
+                sorting=True,
+                sorting_type="multi",
+                pagination_mode="fe",
+                pagination_settings={
+                    "displayed_pages": 1,
+                    "current_page": 0,
+                    "page_size": 35,
+                },
+                navigation="page",
+            ),
+            html.Div(id="datatable-interactivity-container"),
+        ]
+    )
 
 
 def get_maui_daily_quota_string(file_system):
@@ -238,7 +256,7 @@ def get_maui_daily_quota_string(file_system):
         file_system,
         entry.used_inodes,
         entry.available_inodes,
-        entry.used_inodes / entry.available_inodes * 100.
+        entry.used_inodes / entry.available_inodes * 100.0,
     )
 
 
