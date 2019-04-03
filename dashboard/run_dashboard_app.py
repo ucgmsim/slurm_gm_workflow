@@ -146,11 +146,13 @@ def update_maui_daily_inodes(n):
             ("day", "datetime64[D]"),
         ],
     )
-    fig = go.Figure()
-    fig.layout.title = entries["file_system"][0]
-    fig.add_scatter(x=entries["day"], y=entries["used_inodes"])
+    data = []
+    trace = go.Scatter(x=entries["day"], y=entries["used_inodes"], name="maui_daily_inodes")
+    data.append(trace)
+    trace = go.Scatter(x=entries["day"], y=np.tile(15000000, (1, 5)), name='available inodes')
+    data.append(trace)
 
-    return fig
+    return data
 
 
 def get_maui_daily_user_chours(hpc: const.HPC, users_dict: Dict[str, str]=USERS):
