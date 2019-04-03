@@ -152,7 +152,7 @@ def update_maui_daily_inodes(n):
         x=entries["day"], y=entries["used_inodes"], name="maui_nobackup_daily_inodes"
     )
     data.append(trace)
-    # max available nodes on maui
+    # max available inodes on maui nobackup
     trace2 = go.Scatter(
         x=entries["day"],
         y=np.tile(15000000, entries["used_inodes"].size),
