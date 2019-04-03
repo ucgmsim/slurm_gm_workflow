@@ -11,12 +11,6 @@ if __name__ == "__main__":
         "config_file", type=str, help="Config file for the end-to-end test"
     )
     parser.add_argument(
-        "--timeout",
-        type=int,
-        default=10,
-        help="The maximum time (in minutes) allowed for execution of the slurm scripts",
-    )
-    parser.add_argument(
         "--sleep_time",
         type=int,
         default=10,
@@ -45,7 +39,6 @@ if __name__ == "__main__":
 
     e2e_test = E2ETests(args.config_file)
     e2e_test.run(
-        timeout=args.timeout,
         sleep_time=args.sleep_time,
         stop_on_error=args.stop_on_error,
         stop_on_warning=args.stop_on_warning,

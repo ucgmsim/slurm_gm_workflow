@@ -61,7 +61,8 @@ class E2ETests(object):
     cf_cybershake_config_key = "cybershake_config"
     cf_fault_list_key = "fault_list"
     cf_bench_folder_key = "bench_dir"
-    test_checkpoint = "test_checkpoint"
+    test_checkpoint_key = "test_checkpoint"
+    timeout_key = "timeout"
 
     # Benchmark folders
     bench_IM_csv_folder = "IM_csv"
@@ -72,6 +73,9 @@ class E2ETests(object):
 
     submit_out_file = "submit_out_log.txt"
     submit_err_file = "submit_err_log.txt"
+
+    warnings_file = "warnings_log.txt"
+    errors_file = "errors_log.txt"
 
     # Error Keywords
     error_keywords = ["error", "traceback", "exception"]
@@ -100,6 +104,7 @@ class E2ETests(object):
         self.im_bench_folder = os.path.join(
             self.config_dict[self.cf_bench_folder_key], self.bench_IM_csv_folder
         )
+        self.timeout = self.config_dict[self.timeout_key] * 60
 
         self.warnings, self.errors = [], []
         self.fault_dirs, self.sim_dirs = [], []
@@ -110,7 +115,6 @@ class E2ETests(object):
 
     def run(
         self,
-        timeout: int = 10,
         sleep_time: int = 10,
         stop_on_error: bool = True,
         stop_on_warning: bool = False,
@@ -141,10 +145,13 @@ class E2ETests(object):
             return False
 
         # Run automated workflow
-        if not self.run_auto_submit(timeout=timeout, sleep_time=sleep_time):
+        if not self.run_auto_submit(sleep_time=sleep_time):
             return False
+        # Only check that everything is completed, when auto submit does not
+        # exit early
+        else:
+            self.check_mgmt_db()
 
-        self.check_mgmt_db()
         if self.errors:
             print("The following errors occurred during the automated workflow:")
             self.print_errors()
@@ -156,14 +163,18 @@ class E2ETests(object):
         return True
 
     def print_warnings(self):
-        for warn in self.warnings:
-            print("WARNING: {}, {}".format(warn.location, warn.warning))
-            print()
+        with open(os.path.join(self.stage_dir, self.warnings_file), 'a') as f:
+            for warn in self.warnings:
+                text = "WARNING: {}, {}".format(warn.location, warn.warning)
+                print(text)
+                f.write(text)
 
     def print_errors(self):
-        for err in self.errors:
-            print("ERROR: {}, {}".format(err.location, err.error))
-            print()
+        with open(os.path.join(self.stage_dir, self.errors_file), 'a') as f:
+            for err in self.errors:
+                text = "ERROR: {}, {}\n".format(err.location, err.error)
+                print(text)
+                f.write(text)
 
     def setup(self):
         """Setup for automatic workflow
@@ -289,14 +300,12 @@ class E2ETests(object):
             "Root params are missing in {}".format(self.runs_dir),
         )
 
-    def run_auto_submit(self, timeout: int = 10, sleep_time: int = 10):
+    def run_auto_submit(self, sleep_time: int = 10):
         """
         Runs auto submit
 
         Parameters
         ----------
-        timeout: int
-            Maximum time (in minutes) allowed for auto submit to finish all tasks
         sleep_time: int
             Time (in seconds) between progress checks
         """
@@ -311,7 +320,7 @@ class E2ETests(object):
         )
 
         proc_type_cancel = None
-        if self.config_dict[self.test_checkpoint]:
+        if self.config_dict[self.test_checkpoint_key]:
             proc_type_cancel = [
                 const.ProcessType.EMOD3D,
                 const.ProcessType.HF,
@@ -329,9 +338,8 @@ class E2ETests(object):
 
             # Monitor mgmt db
             print("Progress: ")
-            timeout = timeout * 60
             start_time = time.time()
-            while time.time() - start_time < timeout:
+            while time.time() - start_time < self.timeout:
                 try:
                     total_count, comp_count, failed_count = (
                         self.check_mgmt_db_progress()
@@ -359,10 +367,12 @@ class E2ETests(object):
                 else:
                     time.sleep(sleep_time)
 
-            if time.time() - start_time > timeout:
+            if time.time() - start_time > self.timeout:
                 self.errors.append(
                     Error("Auto-submit timeout", "The auto-submit timeout expired.")
                 )
+                return False
+
         # Still display the exception
         except Exception as ex:
             raise ex

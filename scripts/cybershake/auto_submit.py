@@ -20,7 +20,7 @@ from scripts.submit_sim_imcalc import submit_im_calc_slurm, SlBodyOptConsts
 from scripts.clean_up import clean_up_submission_lf_files
 from shared_workflow import shared
 
-default_n_runs = 12
+default_n_runs = 20
 default_1d_mod = "/nesi/transit/nesi00213/VelocityModel/Mod-1D/Cant1D_v2-midQ_leer.1d"
 
 job_run_machine = {
