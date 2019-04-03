@@ -75,6 +75,7 @@ fi
 # packages are still installed. However, this is slower.
 xargs -n 1 -a ${env_path}/workflow/install_workflow/maui_python3_requirements.txt pip install
 
-# Install qcore
-pip install ./qcore
+# Install qcore & Empirical Engine
+pip install -I --no-deps ./qcore
+pip install -I --no-deps ./Empirical_Engine
 

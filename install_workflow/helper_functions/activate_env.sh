@@ -13,9 +13,6 @@ else
     exit
 fi
 
-# PYTHONPATH (this can be removed once qcore is installed as a pip package)
-export PYTHONPATH=$PYTHONPATH:${env_path}/qcore
-
 # PYTHONPATH for workflow
 export PYTHONPATH=$PYTHONPATH:${env_path}/workflow
 
