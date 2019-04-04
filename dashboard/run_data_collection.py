@@ -119,14 +119,22 @@ class DataCollector:
         dashboard db
         """
         # Core hour usage, out of some reason this command is super slow...
-        rt_ch_output = self.run_cmd(
-            hpc.value, "nn_corehour_usage -l {}".format(PROJECT_ID), timeout=60
-        )
-        if rt_ch_output:
-            self.dashboard_db.update_daily_chours_usage(
-                self._parse_total_chours_usage(rt_ch_output, hpc), hpc
+        # rt_ch_output = self.run_cmd(
+        #     hpc.value, "nn_corehour_usage -l {}".format(PROJECT_ID), timeout=60
+        # )
+        # if rt_ch_output:
+        #     self.dashboard_db.update_daily_chours_usage(
+        #         self._parse_total_chours_usage(rt_ch_output, hpc), hpc
+        #     )
+        start_time, end_time = self.get_utc_times()
+        total_start_time = (datetime.strptime(start_time, self.utc_time_format) - timedelta(days=188)).strftime(self.utc_time_format)
+        print("total_chours start time", total_start_time)
+        rt_daily_ch_output = self.run_cmd(hpc.value, "sreport -n -t Hours cluster AccountUtilizationByUser Accounts={} start={} end={}".format(PROJECT_ID, start_time, end_time), timeout=60)
+        rt_total_ch_output = self.run_cmd(hpc.value, "sreport -n -t Hours cluster AccountUtilizationByUser Accounts={} start={} end={}".format(PROJECT_ID, total_start_time, end_time), timeout=60)
+        if rt_daily_ch_output and rt_total_ch_output:
+            self.dashboard_db.update_chours_usage(
+                *(self._parse_chours_usage(rt_daily_ch_output, rt_total_ch_output)), hpc
             )
-
         # Squeue, formatted to show full account name
         sq_output = self.run_cmd(hpc.value, "squeue --format=%18i%12u%12a%60j%20T%25r%20S%18M%18L%10D%5C")
         if sq_output:
@@ -164,7 +172,7 @@ class DataCollector:
 
         # user daily core hour usage
         # end_time == start_time to show usage of one day
-        start_time, end_time = self.get_utc_times()
+
         user_ch_output = self.run_cmd(
             hpc.value,
             "sreport -M {} -t Hours cluster AccountUtilizationByUser Users={} start={} end={} -n".format(
@@ -181,6 +189,7 @@ class DataCollector:
         specified user id.
         Returns False if the command fails for some reason.
         """
+        print("cmd", self.ssh_cmd_template.format(self.user, hpc, cmd))
         try:
             result = (
                 subprocess.check_output(
@@ -278,6 +287,16 @@ class DataCollector:
         except ValueError:
             print("Failed to convert {} out of \n{}\n to integer.")
             return None
+
+    def _parse_chours_usage(self, daily_ch_lines: List, total_ch_lines: List):
+        try:
+            print("cmd chours", daily_ch_lines, total_ch_lines)
+            print("parsing chours usage", daily_ch_lines[0].strip().split()[-2], total_ch_lines[0].strip().split()[-2])
+            return daily_ch_lines[0].strip().split()[-2], total_ch_lines[0].strip().split()[-2]  # ['maui', 'nesi00213', '2023', '0']
+        except IndexError:  # no core hours used, lines=['']
+            return 0, 0
+        except ValueError:
+            print("Failed to convert total core hours to integer.")
 
     def _parse_quota(self, lines: Iterable[str]):
         """

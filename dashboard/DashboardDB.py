@@ -93,6 +93,38 @@ class DashboardDB:
             day = day.strftime(self.date_format)
         return day
 
+    def update_chours_usage(
+            self, daily_core_usage, total_core_usage: float, hpc: const.HPC, day: Union[date, str] = None
+    ):
+        if total_core_usage is None or daily_core_usage is None:
+            return
+
+        table = self.get_daily_t_name(hpc)
+        day = self.get_date(day)
+        with self.get_cursor(self.db_file) as cursor:
+            row = cursor.execute(
+                "SELECT CORE_HOURS_USED, TOTAL_CORE_HOURS FROM {} WHERE DAY == ?;".format(
+                    table
+                ),
+                (day,),
+            ).fetchone()
+
+            # New day
+            update_time = datetime.now()
+            if row is None:
+                cursor.execute(
+                    "INSERT INTO {} VALUES(?, ?, ?, ?)".format(table),
+                    (day, 0, total_core_usage, update_time),
+                )
+            else:
+                cursor.execute(
+                    "UPDATE {} SET CORE_HOURS_USED = ?, TOTAL_CORE_HOURS = ?, \
+                    UPDATE_TIME = ? WHERE DAY == ?;".format(
+                        table
+                    ),
+                    (daily_core_usage, total_core_usage, update_time, day),
+                )
+
     def update_daily_chours_usage(
         self, total_core_usage: float, hpc: const.HPC, day: Union[date, str] = None
     ):
