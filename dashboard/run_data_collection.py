@@ -180,7 +180,6 @@ class DataCollector:
         specified user id.
         Returns False if the command fails for some reason.
         """
-        print("cmd", self.ssh_cmd_template.format(self.user, hpc, cmd))
         try:
             result = (
                 subprocess.check_output(
