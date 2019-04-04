@@ -1,7 +1,6 @@
 import os
 import sqlite3 as sql
 from contextlib import contextmanager
-from collections import namedtuple
 
 
 def connect_db(path):
@@ -34,11 +33,6 @@ def connect_db_ctx(db_file, verbose=False):
         conn.commit()
     finally:
         conn.close()
-
-
-SlurmTask = namedtuple(
-    "SlurmTask", ["run_name", "proc_type", "status", "job_id", "retries"]
-)
 
 
 def enum_to_list(enum):

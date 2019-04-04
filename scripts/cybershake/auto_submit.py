@@ -4,23 +4,26 @@ import argparse
 import os
 import sys
 from datetime import datetime
-from subprocess import call
+from subprocess import call, Popen, PIPE
+from typing import List
+
+import shlex
 
 import shared_workflow.load_config as ldcfg
-from scripts.management.db_helper import connect_db
 import qcore.constants as const
-from scripts.management import slurm_query_status, update_mgmt_db
+import qcore.simulation_structure as sim_struct
+from scripts.management.MgmtDB import MgmtDB, SlurmTask
 from metadata.log_metadata import store_metadata
+from shared_workflow import shared
 
 from scripts.submit_emod3d import main as submit_lf_main
 from scripts.submit_post_emod3d import main as submit_post_lf_main
 from scripts.submit_hf import main as submit_hf_main
 from scripts.submit_bb import main as submit_bb_main
 from scripts.submit_sim_imcalc import submit_im_calc_slurm, SlBodyOptConsts
-from scripts.clean_up import clean_up_submission_lf_files
-from shared_workflow import shared
 
-default_n_runs = 12
+DEFAULT_N_RUNS = 12
+DEFAULT_N_MAX_RETRIES = 2
 default_1d_mod = "/nesi/transit/nesi00213/VelocityModel/Mod-1D/Cant1D_v2-midQ_leer.1d"
 
 job_run_machine = {
@@ -32,13 +35,104 @@ job_run_machine = {
     const.ProcessType.IM_calculation.value: const.HPC.maui.value,
 }
 
+SLURM_TO_STATUS_DICT = {"R": 3, "PD": 2}
+
+def get_queued_tasks(user=None):
+    output_list = []
+    # TODO: Treat Maui and Mahuika jobs seperately. See QSW-912
+    for machine in const.HPC:
+        if user != None:
+            cmd = "squeue -A nesi00213 -o '%A %t' -h -M {} -u {}".format(
+                machine.value, user
+            )
+        else:
+            cmd = "squeue -A nesi00213 -o '%A %t' -h -M {}".format(machine.value)
+        process = Popen(shlex.split(cmd), stdout=PIPE, encoding="utf-8")
+        (output, err) = process.communicate()
+        process.wait()
+        output_list.extend(filter(None, output.split("\n")[1:]))
+    return output_list
+
+
+def check_queue(queue_folder: str, run_name: str, proc_type: int):
+    """Returns True if there are any queued entries for this run_name and process type,
+    otherwise returns False.
+    """
+    queue_entries = os.listdir(queue_folder)
+
+    for entry in queue_entries:
+        _, entry_run_name, entry_proc_type = entry.split()
+        if entry_run_name == run_name and entry_proc_type == proc_type:
+            return True
+    return False
+
+
+def update_tasks(queue_folder: str, squeue_tasks, db_tasks: List[SlurmTask]):
+    """Updates the mgmt db entries based on the HPC queue"""
+    for db_task in db_tasks:
+        found = False
+        for queue_task in squeue_tasks:
+            queue_job_id, queue_status = queue_task.split()
+            if db_task.job_id == int(queue_job_id):
+                found = True
+                try:
+                    queue_status = SLURM_TO_STATUS_DICT[queue_status]
+                except KeyError:
+                    print(
+                        "Failed to recogize state code {}, updating to {}".format(
+                            queue_status, const.Status.unkown.value
+                        )
+                    )
+                    queue_status = const.Status.unkown.value
+                if queue_status == db_task.status:
+                    print(
+                        "Not updating status ({}) of '{}' on '{}' ({})".format(
+                            queue_status,
+                            db_task.proc_type,
+                            db_task.run_name,
+                            db_task.job_id,
+                        )
+                    )
+                else:
+                    print(
+                        "Updating status of {}, {} from {} to {}".format(
+                            db_task.run_name,
+                            const.ProcessType(db_task.proc_type).str_value,
+                            const.Status(db_task.status).str_value,
+                            queue_status,
+                        )
+                    )
+                    shared.add_to_queue(
+                        queue_folder,
+                        db_task.run_name,
+                        db_task.proc_type,
+                        queue_status,
+                    )
+        # Only reset if there is no entry on the mgmt queue for this
+        # realisation/proc combination
+        if not found and not check_queue(
+            queue_folder, db_task.run_name, db_task.proc_type
+        ):
+            print(
+                "Task '{}' on '{}' not found on squeue; resetting the status "
+                "to 'created' for resubmission".format(
+                    const.ProcessType(db_task.proc_type).str_value, db_task.run_name
+                )
+            )
+            shared.add_to_queue(
+                queue_folder,
+                db_task.run_name,
+                db_task.proc_type,
+                const.Status.created.value,
+                job_id=-1
+            )
 
 def submit_task(
     sim_dir,
     proc_type,
     run_name,
-    db,
-    mgmt_db_location,
+    root_folder,
+    queue_folder,
     binary_mode=True,
     rand_reset=True,
     hf_seed=None,
@@ -51,19 +145,14 @@ def submit_task(
     if not os.path.exists(sqlite_tmpdir):
         os.makedirs(sqlite_tmpdir)
 
+    # Metadata logging setup
     ch_log_dir = os.path.abspath(os.path.join(sim_dir, "ch_log"))
-
-    # create the folder if not exist
     if not os.path.isdir(ch_log_dir):
         os.mkdir(ch_log_dir)
     submitted_time = datetime.now().strftime(const.METADATA_TIMESTAMP_FMT)
     log_file = os.path.join(sim_dir, "ch_log", const.METADATA_LOG_FILENAME)
 
-    # LF
-    # params_uncertain_path = os.path.join(sim_dir, "LF", "params_uncertain.py")
     if proc_type == const.ProcessType.EMOD3D.value:
-        # check_params_uncertain(params_uncertain_path)
-
         # These have to include the default values (same for all other process types)!
         args = argparse.Namespace(
             auto=True,
@@ -82,7 +171,6 @@ def submit_task(
             {"submit_time": submitted_time},
         )
 
-    # Merge ts
     if proc_type == const.ProcessType.merge_ts.value:
         args = argparse.Namespace(
             auto=True,
@@ -105,9 +193,14 @@ def submit_task(
     if proc_type == const.ProcessType.winbin_aio.value:
         # skipping winbin_aio if running binary mode
         if binary_mode:
-            # update the mgmt_db
-            update_mgmt_db.update_db(
-                db, const.ProcessType.winbin_aio.str_value, const.State.completed.str_value, run_name=run_name
+            # Update mgmt db
+            shared.add_to_queue(
+                queue_folder,
+                run_name,
+                proc_type,
+                const.Status.completed.value,
+                None,
+                None,
             )
         else:
             args = argparse.Namespace(
@@ -120,7 +213,6 @@ def submit_task(
             )
             print("Submit post EMOD3D (winbin_aio) arguments: ", args)
             submit_post_lf_main(args)
-    # HF
     if proc_type == const.ProcessType.HF.value:
         args = argparse.Namespace(
             auto=True,
@@ -142,7 +234,6 @@ def submit_task(
         store_metadata(
             log_file, const.ProcessType.HF.str_value, {"submit_time": submitted_time}
         )
-    # BB
     if proc_type == const.ProcessType.BB.value:
         args = argparse.Namespace(
             auto=True,
@@ -159,7 +250,6 @@ def submit_task(
         store_metadata(
             log_file, const.ProcessType.BB.str_value, {"submit_time": submitted_time}
         )
-    # IM_calc
     if proc_type == const.ProcessType.IM_calculation.value:
         options_dict = {
             SlBodyOptConsts.extended.value: True if extended_period else False,
@@ -175,30 +265,23 @@ def submit_task(
             const.ProcessType.IM_calculation.str_value,
             {"submit_time": submitted_time},
         )
-
-    fault = run_name.split("_")[0]
-
     if do_verification:
         if proc_type == const.ProcessType.rrup.value:
-            realisation_directory = os.path.join(
-                mgmt_db_location, "Runs", fault, run_name
-            )
             cmd = "sbatch $gmsim/workflow/scripts/calc_rrups_single.sl {} {}".format(
-                realisation_directory, mgmt_db_location
+                sim_dir, root_folder
             )
             print(cmd)
             call(cmd, shell=True)
 
         if proc_type == const.ProcessType.Empirical.value:
             cmd = "$gmsim/workflow/scripts/submit_empirical.py -np 40 -i {} {}".format(
-                run_name, mgmt_db_location
+                run_name, root_folder
             )
             print(cmd)
             call(cmd, shell=True)
 
         if proc_type == const.ProcessType.Verification.value:
             pass
-
     if proc_type == const.ProcessType.clean_up.value:
         clean_up_template = (
             "--export=gmsim -o {output_file} -e {error_file} {script_location} "
@@ -207,66 +290,26 @@ def submit_task(
         script = clean_up_template.format(
             sim_dir=sim_dir,
             srf_name=run_name,
-            mgmt_db_loc=mgmt_db_location,
+            mgmt_db_loc=root_folder,
             script_location=os.path.expandvars("$gmsim/workflow/scripts/clean_up.sl"),
             output_file=os.path.join(sim_dir, "clean_up.out"),
             error_file=os.path.join(sim_dir, "clean_up.err"),
         )
         shared.submit_sl_script(
             script,
-            const.ProcessType.clean_up.str_value,
-            const.State.queued.str_value,
-            mgmt_db_location,
+            const.ProcessType.clean_up.value,
+            root_folder,
             run_name,
-            submitted_time,
             submit_yes=True,
             target_machine=const.HPC.mahuika.value,
         )
 
 
-# TODO: Requires updating, currently not working
-# def check_params_uncertain(params_uncertain_path):
-#     if not os.path.isfile(params_uncertain_path):
-#         print(params_uncertain_path, " missing, creating")
-#         cmd = "python $gmsim/workflow/scripts/submit_emod3d.py --set_params_only"
-#         call(cmd, shell=True)
-#         print(cmd)
 
-
-def get_vmname(srf_name):
-    """
-        this function is mainly used for cybershake perpose
-        get vm name from srf
-        can be removed if mgmt_DB is updated to store vm name
-    """
-    vm_name = srf_name.split("_")[0]
-    return vm_name
-
-
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("run_folder", type=str, help="folder to the collection of runs")
-    parser.add_argument("--n_runs", default=default_n_runs, type=int)
-
-    # cybershake-like simulations store mgmnt_db at different locations
-    parser.add_argument("--single_sim", nargs="?", type=str, const=True)
-    parser.add_argument(
-        "--config",
-        type=str,
-        default=None,
-        help="a path to a config file that constains all the required values.",
-    )
-    parser.add_argument("--no_im", action="store_true")
-    parser.add_argument("--no_merge_ts", action="store_true")
-    parser.add_argument("--user", type=str, default=None)
-    parser.add_argument("--no_tidy_up", action="store_true")
-
-    args = parser.parse_args()
-
-    n_runs_max = args.n_runs
-    mgmt_db_location = args.run_folder
-    db = connect_db(mgmt_db_location)
-    tidy_up = not args.no_tidy_up
+def main(args):
+    root_folder = args.root_folder
+    queue_folder = sim_struct.get_mgmt_db_queue(root_folder)
+    mgmt_db = MgmtDB(sim_struct.get_mgmt_db(root_folder))
 
     # Default values
     oneD_mod, hf_vs30_ref, binary_mode, hf_seed = default_1d_mod, None, True, None
@@ -279,10 +322,10 @@ def main():
                 directory=os.path.dirname(args.config),
                 cfg_name=os.path.basename(args.config),
             )
-            print(cybershake_cfg)
+            print("Cybershake config: \n", cybershake_cfg)
         except Exception as e:
-            print(e)
             print("Error while parsing the config file, please double check inputs.")
+            print(e)
             sys.exit()
 
         binary_mode = (
@@ -301,90 +344,119 @@ def main():
             if "extended_period" in cybershake_cfg
             else extended_period
         )
-        # append more logic here if more variables are requested
 
-    print("hf_seed", hf_seed)
-    queued_tasks = slurm_query_status.get_queued_tasks()
-    user_queued_tasks = slurm_query_status.get_queued_tasks(user=args.user).split("\n")
-    db_tasks = slurm_query_status.get_submitted_db_tasks(db)
-    print("queued task:", queued_tasks)
-    print("subbed task:", db_tasks)
-    slurm_query_status.update_tasks(db, queued_tasks, db_tasks)
-    ntask_to_run = n_runs_max - len(user_queued_tasks)
-
-    runnable_tasks = slurm_query_status.get_runnable_tasks(db, ntask_to_run)
-    print("runnable task:")
-    print(runnable_tasks)
-    submit_task_count = 0
-    task_num = 0
-    print(submit_task_count)
-    print(ntask_to_run)
-    while (
-        submit_task_count < ntask_to_run
-        and submit_task_count < len(runnable_tasks)
-        and task_num < len(runnable_tasks)
-    ):
-        db_task_status = runnable_tasks[task_num]
-        proc_type = db_task_status[0]
-        run_name = db_task_status[1]
-        task_state = db_task_status[2]
-
-        # skip im calcs if no_im == true
-        if args.no_im and proc_type == const.ProcessType.IM_calculation.value:
-            task_num = task_num + 1
-            continue
-        if proc_type == const.ProcessType.merge_ts.value:
-            if args.no_merge_ts:
-                update_mgmt_db.update_db(
-                    db, "merge_ts", const.State.completed.str_value, run_name=run_name
-                )
-                task_num = task_num + 1
-                continue
-            elif slurm_query_status.is_task_complete(
+    while True:
+        # Get in progress tasks in the db and the HPC queue
+        queue_tasks = get_queued_tasks(user=args.user)
+        db_in_progress_tasks = mgmt_db.get_submitted_tasks()
+        print(
+            "Squeue user tasks: ",
+            ", ".join(["{}-{}".format(entry[0], entry[1]) for entry in queue_tasks]),
+        )
+        print(
+            "In progress tasks in mgmt db:",
+            ", ".join(
                 [
-                    const.ProcessType.clean_up.value,
-                    run_name,
-                    const.State.completed.str_value,
-                ],
-                slurm_query_status.get_db_tasks_to_be_run(db),
-            ):
-                # If clean_up has already run, then we should set it to be run again after merge_ts has run
-                update_mgmt_db.update_db(
-                    db,
-                    const.ProcessType.clean_up.str_value,
-                    const.State.created.str_value,
-                    run_name=run_name,
-                )
-        if not tidy_up and proc_type == const.ProcessType.clean_up.value:
-            task_num = task_num + 1
-            continue
-        vm_name = run_name.split("_")[0]
-
-        if args.single_sim:
-            # TODO: if the directory changed, this may break. make this more robust
-            sim_dir = mgmt_db_location
-        else:
-            # non-cybershake, db is the same loc as sim_dir
-            sim_dir = os.path.join(mgmt_db_location, "Runs", vm_name, run_name)
-
-        # submit the job
-        submit_task(
-            sim_dir,
-            proc_type,
-            run_name,
-            db,
-            mgmt_db_location,
-            binary_mode=binary_mode,
-            hf_seed=hf_seed,
-            rand_reset=rand_reset,
-            extended_period=extended_period,
+                    "{}-{}-{}-{}".format(
+                        entry.run_name,
+                        const.ProcessType(entry.proc_type).str_value,
+                        entry.job_id,
+                        const.Status(entry.status).str_value,
+                    )
+                    for entry in db_in_progress_tasks
+                ]
+            ),
         )
 
-        submit_task_count = submit_task_count + 1
-        task_num = task_num + 1
+        # Update the slurm mgmt based on squeue
+        update_tasks(queue_folder, queue_tasks, db_in_progress_tasks)
+        ntask_to_run = args.n_runs - len(queue_tasks)
+        runnable_tasks = mgmt_db.get_runnable_tasks(ntask_to_run, args.n_max_retry)
+        print(
+            "runnable task: ",
+            ", ".join(["{}-{}".format(entry[1], entry[0]) for entry in runnable_tasks]),
+        )
 
-    db.connection.close()
+        # Submit the runnable tasks
+        for task in runnable_tasks:
+            proc_type, run_name, _ = task
+
+            # Skip im calcs if no_im == true
+            if args.no_im and proc_type == const.ProcessType.IM_calculation.value:
+                continue
+
+            # Special handling for merge-ts
+            if proc_type == const.ProcessType.merge_ts.value:
+                # Mark merge-ts as complete if --no_merge_ts flag is set
+                if args.no_merge_ts:
+                    shared.add_to_queue(
+                        queue_folder,
+                        run_name,
+                        const.ProcessType.merge_ts.value,
+                        const.Status.completed.value,
+                    )
+                    continue
+                # Check if clean up has already run
+                elif MgmtDB.is_task_complete(
+                    [
+                        const.ProcessType.clean_up.value,
+                        run_name,
+                        const.Status.completed.str_value,
+                    ],
+                    mgmt_db.get_runnable_tasks(args.n_runs, args.n_max_retries),
+                ):
+                    # If clean_up has already run, then we should set it to
+                    # be run again after merge_ts has run
+                    shared.add_to_queue(
+                        queue_folder,
+                        run_name,
+                        const.ProcessType.clean_up.value,
+                        const.Status.created.value,
+                        job_id=-1,
+                    )
+
+            # Skip tidy up
+            if args.no_tidy_up and proc_type == const.ProcessType.clean_up.value:
+                continue
+
+            # submit the job
+            submit_task(
+                sim_struct.get_sim_dir(root_folder, run_name),
+                proc_type,
+                run_name,
+                root_folder,
+                queue_folder,
+                binary_mode=binary_mode,
+                hf_seed=hf_seed,
+                rand_reset=rand_reset,
+                extended_period=extended_period,
+            )
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument("root_folder", type=str, help="The cybershake root folder")
+    parser.add_argument(
+        "user", type=str, help="The username under which the jobs will be submitted."
+    )
+    parser.add_argument(
+        "--n_runs",
+        help="Maximum number of tasks allowed to be in progress at any given time",
+        default=DEFAULT_N_RUNS,
+        type=int,
+    )
+    parser.add_argument(
+        "--n_max_retries",
+        help="The maximum number of retries for any given task",
+        default=DEFAULT_N_MAX_RETRIES,
+        type=int,
+    )
+    parser.add_argument("--config", type=str, default=None, help="Cybershake config")
+    parser.add_argument("--no_im", action="store_true")
+    parser.add_argument("--no_merge_ts", action="store_true")
+    parser.add_argument("--no_tidy_up", action="store_true")
+
+    args = parser.parse_args()
+
+    main(args)

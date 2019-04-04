@@ -149,8 +149,7 @@ def submit_im_calc_slurm(sim_dir: str, options_dict: Dict = None):
 
     submit_sl_script(
         script_file_path,
-        "IM_calculation",
-        "queued",
+        const.ProcessType.IM_calculation.value,
         params.mgmt_db_location,
         os.path.splitext(os.path.basename(params.srf_file))[0],
         const.timestamp,

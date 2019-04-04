@@ -99,11 +99,9 @@ def main(args):
         submit_yes = True if args.auto else confirm("Also submit the job for you?")
         submit_sl_script(
             script_file_path,
-            "BB",
-            "queued",
+            const.ProcessType.BB.value,
             params.mgmt_db_location,
             srf_name,
-            const.timestamp,
             submit_yes=submit_yes,
             target_machine=args.machine,
         )

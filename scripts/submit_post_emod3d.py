@@ -95,11 +95,9 @@ def main(args):
 
         submit_sl_script(
             script_file_path,
-            "merge_ts",
-            "queued",
+            const.ProcessType.merge_ts.value,
             mgmt_db_loc,
             srf_name,
-            const.timestamp,
             submit_yes=submit_yes,
             target_machine=args.machine,
         )
@@ -146,11 +144,9 @@ def main(args):
 
         submit_sl_script(
             script_file_path,
-            "winbin_aio",
-            "queued",
+            const.ProcessType.winbin_aio.value,
             params.mgmt_db_location,
             srf_name,
-            const.timestamp,
             submit_yes=submit_yes,
         )
 

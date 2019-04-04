@@ -103,11 +103,9 @@ def main(args):
 
         submit_sl_script(
             script_file_path,
-            "EMOD3D",
-            "queued",
+            const.ProcessType.EMOD3D.value,
             params.mgmt_db_location,
             srf_name,
-            const.timestamp,
             submit_yes=submit_yes,
             target_machine=args.machine,
         )
