@@ -96,6 +96,7 @@ class DashboardDB:
     def update_chours_usage(
             self, daily_core_usage, total_core_usage: float, hpc: const.HPC, day: Union[date, str] = None
     ):
+        """Updates daily and total core hours usage"""
         if total_core_usage is None or daily_core_usage is None:
             return
 

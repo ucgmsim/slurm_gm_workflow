@@ -118,18 +118,11 @@ class DataCollector:
         """Collects data from the specified HPC and adds it to the
         dashboard db
         """
-        # Core hour usage, out of some reason this command is super slow...
-        # rt_ch_output = self.run_cmd(
-        #     hpc.value, "nn_corehour_usage -l {}".format(PROJECT_ID), timeout=60
-        # )
-        # if rt_ch_output:
-        #     self.dashboard_db.update_daily_chours_usage(
-        #         self._parse_total_chours_usage(rt_ch_output, hpc), hpc
-        #     )
         start_time, end_time = self.get_utc_times()
+        # Get total core hours usage, start from 188 days ago
         total_start_time = (datetime.strptime(start_time, self.utc_time_format) - timedelta(days=188)).strftime(self.utc_time_format)
-        print("total_chours start time", total_start_time)
         rt_daily_ch_output = self.run_cmd(hpc.value, "sreport -n -t Hours cluster AccountUtilizationByUser Accounts={} start={} end={}".format(PROJECT_ID, start_time, end_time), timeout=60)
+        # Get daily core hours usage
         rt_total_ch_output = self.run_cmd(hpc.value, "sreport -n -t Hours cluster AccountUtilizationByUser Accounts={} start={} end={}".format(PROJECT_ID, total_start_time, end_time), timeout=60)
         if rt_daily_ch_output and rt_total_ch_output:
             self.dashboard_db.update_chours_usage(
@@ -171,8 +164,6 @@ class DataCollector:
             self.dashboard_db.update_daily_quota(self._parse_quota(quota_output), hpc)
 
         # user daily core hour usage
-        # end_time == start_time to show usage of one day
-
         user_ch_output = self.run_cmd(
             hpc.value,
             "sreport -M {} -t Hours cluster AccountUtilizationByUser Users={} start={} end={} -n".format(
@@ -289,10 +280,10 @@ class DataCollector:
             return None
 
     def _parse_chours_usage(self, daily_ch_lines: List, total_ch_lines: List):
+        """Get daily and total core hours usage from cmd output"""
+        # ['maui', 'nesi00213', '2023', '0']
         try:
-            print("cmd chours", daily_ch_lines, total_ch_lines)
-            print("parsing chours usage", daily_ch_lines[0].strip().split()[-2], total_ch_lines[0].strip().split()[-2])
-            return daily_ch_lines[0].strip().split()[-2], total_ch_lines[0].strip().split()[-2]  # ['maui', 'nesi00213', '2023', '0']
+            return daily_ch_lines[0].strip().split()[-2], total_ch_lines[0].strip().split()[-2]
         except IndexError:  # no core hours used, lines=['']
             return 0, 0
         except ValueError:
