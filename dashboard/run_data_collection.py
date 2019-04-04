@@ -129,7 +129,7 @@ class DataCollector:
                 *(self._parse_chours_usage(rt_daily_ch_output, rt_total_ch_output)), hpc
             )
         # Squeue, formatted to show full account name
-        sq_output = self.run_cmd(hpc.value, "squeue --format=%18i%12u%12a%60j%20T%25r%20S%18M%18L%10D%5C")
+        sq_output = self.run_cmd(hpc.value, "squeue --format=%18i%25u%12a%60j%20T%25r%20S%18M%18L%10D%10C")
         if sq_output:
             self.dashboard_db.update_squeue(self._parse_squeue(sq_output), hpc)
 
@@ -180,6 +180,7 @@ class DataCollector:
         specified user id.
         Returns False if the command fails for some reason.
         """
+        print("cmd", self.ssh_cmd_template.format(self.user, hpc, cmd))
         try:
             result = (
                 subprocess.check_output(
@@ -281,6 +282,8 @@ class DataCollector:
     def _parse_chours_usage(self, daily_ch_lines: List, total_ch_lines: List):
         """Get daily and total core hours usage from cmd output"""
         # ['maui', 'nesi00213', '2023', '0']
+        print("daily", daily_ch_lines)
+        print("total", total_ch_lines)
         try:
             return daily_ch_lines[0].strip().split()[-2], total_ch_lines[0].strip().split()[-2]
         except IndexError:  # no core hours used, lines=['']

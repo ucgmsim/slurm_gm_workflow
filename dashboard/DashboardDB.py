@@ -97,6 +97,8 @@ class DashboardDB:
             self, daily_core_usage, total_core_usage: float, hpc: const.HPC, day: Union[date, str] = None
     ):
         """Updates daily and total core hours usage"""
+        print("update daily", daily_core_usage)
+        print("update total", total_core_usage)
         if total_core_usage is None or daily_core_usage is None:
             return
 
@@ -396,7 +398,7 @@ class DashboardDB:
         # Add latest table
         cursor.execute(
             """CREATE TABLE IF NOT EXISTS {}(
-                  JOB_ID INTEGER PRIMARY KEY NOT NULL,
+                  JOB_ID TEXT PRIMARY KEY NOT NULL,
                   UPDATE_TIME DATE NOT NULL,
                   USERNAME TEXT NOT NULL,
                   ACCOUNT TEXT NOT NULL ,

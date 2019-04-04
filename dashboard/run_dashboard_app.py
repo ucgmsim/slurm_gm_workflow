@@ -34,21 +34,24 @@ app = dash.Dash(__name__, external_stylesheets=EXTERNAL_STYLESHEETS)
 app.layout = html.Div(
     html.Div(
         [
-            html.H3("Maui"),
+            html.H3("Maui & Mahuika"),
             html.Div(id="err"),
-            html.H5("Current status"),
+            html.H5("Maui current status"),
             html.Div(id="maui_node_usage"),
-            html.H5("Current quota"),
+            html.H5("Maui current quota"),
             html.Div(id="maui_quota_usage"),
-            html.H5("Current queue"),
+            html.H5("Maui current queue"),
             html.Div(id="maui_squeue_table"),
-            html.H5("Daily core hour usage"),
-            dcc.Graph(id="maui_daily_chours"),
-            html.H5("Total core hour usage"),
-            dcc.Graph(id="maui_total_chours"),
-            dcc.Interval(id="interval_comp", interval=10 * 1000, n_intervals=0),
-            html.H5("maui_daily_inodes"),
+            html.H5("Maui_daily_inodes"),
             dcc.Graph(id="maui_daily_inodes"),
+            html.H5("Maui daily core hour usage"),
+            dcc.Graph(id="maui_daily_chours"),
+            html.H5("Maui total core hour usage"),
+            dcc.Graph(id="maui_total_chours"),
+            html.H5("Mahuika total core hour usage"),
+            dcc.Graph(id="mahuika_total_chours"),
+            dcc.Interval(id="interval_comp", interval=10 * 1000, n_intervals=0),
+
         ]
     )
 )
@@ -123,6 +126,16 @@ def update_maui_total_chours(n):
 
     return fig
 
+@app.callback(
+    Output("mahuika_total_chours", "figure"), [Input("interval_comp", "n_intervals")]
+)
+def update_mahuika_total_chours(n):
+    entries = get_chours_entries(const.HPC.mahuika)
+
+    fig = go.Figure()
+    fig.add_scatter(x=entries["day"], y=entries["total_chours"])
+
+    return fig
 
 @app.callback(Output("err", "children"), [Input("interval_comp", "n_intervals")])
 def display_err(n):
