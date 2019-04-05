@@ -20,7 +20,7 @@ from scripts.submit_sim_imcalc import submit_im_calc_slurm, SlBodyOptConsts
 from scripts.clean_up import clean_up_submission_lf_files
 from shared_workflow import shared
 
-default_n_runs = 12
+default_n_runs = {const.HPC.maui: 12, const.HPC.mahuika: 12}
 default_1d_mod = "/nesi/transit/nesi00213/VelocityModel/Mod-1D/Cant1D_v2-midQ_leer.1d"
 
 job_run_machine = {
@@ -246,7 +246,7 @@ def get_vmname(srf_name):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("run_folder", type=str, help="folder to the collection of runs")
-    parser.add_argument("--n_runs", default=default_n_runs, type=int)
+    parser.add_argument("--n_runs", default=None, type=list, nargs="+")
 
     # cybershake-like simulations store mgmnt_db at different locations
     parser.add_argument("--single_sim", nargs="?", type=str, const=True)
@@ -263,7 +263,7 @@ def main():
 
     args = parser.parse_args()
 
-    n_runs_max = args.n_runs
+
     mgmt_db_location = args.run_folder
     db = connect_db(mgmt_db_location)
     tidy_up = not args.no_tidy_up
@@ -271,6 +271,16 @@ def main():
     # Default values
     oneD_mod, hf_vs30_ref, binary_mode, hf_seed = default_1d_mod, None, True, None
     rand_reset, extended_period = True, False
+
+    if args.n_runs is not None:
+        if len(args.n_runs) == 1:
+            n_runs_max = {hpc: args.n_runs[0] for hpc in const.HPC}
+        elif len(args.n_runs) == len(list(const.HPC)):
+            n_runs_max = {const.HPC[i]: args.n_runs[i] for i in range(len(args.n_runs))}
+        else:
+            parser.error("You must specify wither one common --n_runs, or one for each in the following list: {}".format(list(const.HPC)))
+    else:
+        n_runs_max = args.n_runs
 
     if args.config is not None:
         # parse and check for variables in config
@@ -304,24 +314,28 @@ def main():
         # append more logic here if more variables are requested
 
     print("hf_seed", hf_seed)
-    queued_tasks = slurm_query_status.get_queued_tasks()
-    user_queued_tasks = slurm_query_status.get_queued_tasks(user=args.user).split("\n")
     db_tasks = slurm_query_status.get_submitted_db_tasks(db)
-    print("queued task:", queued_tasks)
-    print("subbed task:", db_tasks)
-    slurm_query_status.update_tasks(db, queued_tasks, db_tasks)
-    ntask_to_run = n_runs_max - len(user_queued_tasks)
+    print("subbed tasks:", db_tasks)
+    ntask_to_run = 0
+
+    for hpc in list(const.HPC):
+        queued_tasks = slurm_query_status.get_queued_tasks(machine=hpc)
+        user_queued_tasks = slurm_query_status.get_queued_tasks(user=args.user, machine=hpc).split("\n")
+        print("{} queued tasks: {}".format(hpc.value, queued_tasks))
+        slurm_query_status.update_tasks(db, queued_tasks, db_tasks)
+        ntask_to_run += (n_runs_max[hpc] - len(user_queued_tasks))
 
     runnable_tasks = slurm_query_status.get_runnable_tasks(db, ntask_to_run)
-    print("runnable task:")
+    print("runnable tasks:")
     print(runnable_tasks)
-    submit_task_count = 0
+    submit_task_count = {const.HPC.maui: 0, const.HPC.mahuika: 0}
     task_num = 0
     print(submit_task_count)
     print(ntask_to_run)
+
     while (
-        submit_task_count < ntask_to_run
-        and submit_task_count < len(runnable_tasks)
+        all([submit_task_count[hpc] < ntask_to_run[hpc] for hpc in list(const.HPC)])
+        and all([submit_task_count[hpc] < len(runnable_tasks) for hpc in list(const.HPC)])
         and task_num < len(runnable_tasks)
     ):
         db_task_status = runnable_tasks[task_num]
@@ -380,7 +394,7 @@ def main():
             extended_period=extended_period,
         )
 
-        submit_task_count = submit_task_count + 1
+        submit_task_count[job_run_machine[proc_type]] = submit_task_count[job_run_machine[proc_type]] + 1
         task_num = task_num + 1
 
     db.connection.close()

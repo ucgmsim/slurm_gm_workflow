@@ -22,20 +22,19 @@ RETRY_MAX = 2
 t_status = {"R": "running", "PD": "queued"}
 
 
-def get_queued_tasks(user=None):
+def get_queued_tasks(user=None, machine=qcore.constants.HPC.maui):
     output_list = []
     # TODO: Treat Maui and Mahuika jobs seperately. See QSW-912
-    for machine in qcore.constants.HPC:
-        if user != None:
-            cmd = "squeue -A nesi00213 -o '%A %t' -h -M {} -u {}".format(
-                machine.value, user
-            )
-        else:
-            cmd = "squeue -A nesi00213 -o '%A %t' -h -M {}".format(machine.value)
-        process = Popen(shlex.split(cmd), stdout=PIPE, encoding="utf-8")
-        (output, err) = process.communicate()
-        exit_code = process.wait()
-        output_list.extend(filter(None, output.split("\n")[1:]))
+    if user is not None:
+        cmd = "squeue -A nesi00213 -o '%A %t' -h -M {} -u {}".format(
+            machine.value, user
+        )
+    else:
+        cmd = "squeue -A nesi00213 -o '%A %t' -h -M {}".format(machine.value)
+    process = Popen(shlex.split(cmd), stdout=PIPE, encoding="utf-8")
+    (output, err) = process.communicate()
+    exit_code = process.wait()
+    output_list.extend(filter(None, output.split("\n")[1:]))
     return "\n".join(output_list)
 
 
