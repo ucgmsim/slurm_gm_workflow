@@ -349,14 +349,14 @@ def main():
 
     print("runnable tasks:")
     print(runnable_tasks)
-    submit_task_count = {const.HPC.maui: 0, const.HPC.mahuika: 0}
+    submit_task_count = {hpc: 0 for hpc in list(const.HPC)}
     task_num = 0
     print(submit_task_count)
     print(ntask_to_run)
 
     while (
-        all([submit_task_count[hpc] < ntask_to_run[hpc] for hpc in list(const.HPC)])
-        and all(
+        any([submit_task_count[hpc] < ntask_to_run[hpc] for hpc in list(const.HPC)])
+        and any(
             [submit_task_count[hpc] < len(runnable_tasks) for hpc in list(const.HPC)]
         )
         and task_num < len(runnable_tasks)
