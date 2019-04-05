@@ -36,6 +36,12 @@ app.layout = html.Div(
         [
             html.H3("Maui & Mahuika"),
             html.Div(id="err"),
+            html.H5("Maui & Mahuika total core hours usage (since 188 days ago)"),
+            html.Div(id="maui_mahuika_chours"),
+            html.H5("Maui total core hour usage"),
+            dcc.Graph(id="maui_total_chours"),
+            html.H5("Mahuika total core hour usage"),
+            dcc.Graph(id="mahuika_total_chours"),
             html.H5("Maui current status"),
             html.Div(id="maui_node_usage"),
             html.H5("Maui current quota"),
@@ -46,10 +52,7 @@ app.layout = html.Div(
             dcc.Graph(id="maui_daily_inodes"),
             html.H5("Maui daily core hour usage"),
             dcc.Graph(id="maui_daily_chours"),
-            html.H5("Maui total core hour usage"),
-            dcc.Graph(id="maui_total_chours"),
-            html.H5("Mahuika total core hour usage"),
-            dcc.Graph(id="mahuika_total_chours"),
+
             dcc.Interval(id="interval_comp", interval=10 * 1000, n_intervals=0),
 
         ]
@@ -57,6 +60,18 @@ app.layout = html.Div(
 )
 
 app.db = DashboardDB(args.db_file)
+
+
+@app.callback(
+    Output("maui_mahuika_chours", "children"), [Input("interval_comp", "n_intervals")]
+)
+def update_maui_total_chours(n):
+    maui_total_chours = get_chours_entries(const.HPC.maui)[-1][-1]
+    mahuika_total_chours = get_chours_entries(const.HPC.mahuika)[-1][-1]
+
+    return html.Plaintext("Maui: {} hours\nMahuika: {} hours".format(maui_total_chours, mahuika_total_chours))
+
+
 
 
 @app.callback(
@@ -126,6 +141,7 @@ def update_maui_total_chours(n):
 
     return fig
 
+
 @app.callback(
     Output("mahuika_total_chours", "figure"), [Input("interval_comp", "n_intervals")]
 )
@@ -136,6 +152,7 @@ def update_mahuika_total_chours(n):
     fig.add_scatter(x=entries["day"], y=entries["total_chours"])
 
     return fig
+
 
 @app.callback(Output("err", "children"), [Input("interval_comp", "n_intervals")])
 def display_err(n):
@@ -205,7 +222,7 @@ def get_chours_entries(hpc: const.HPC):
     """
     # Get data points
     entries = app.db.get_chours_usage(
-        date.today() - relativedelta(years=1), date.today(), const.HPC.maui
+        date.today() - relativedelta(days=188), date.today(), hpc
     )
     return np.array(
         entries,
