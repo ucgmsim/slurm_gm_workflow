@@ -165,7 +165,12 @@ def check_dependancy_met(task, task_list):
     return False
 
 
-def get_runnable_tasks(db, n_runs=N_TASKS_TO_RUN, retry_max=RETRY_MAX):
+def get_runnable_tasks(
+    db,
+    n_runs=N_TASKS_TO_RUN,
+    retry_max=RETRY_MAX,
+    task_types=list(qcore.constants.ProcessType),
+):
     do_verification = False
     verification_tasks = [
         Process.rrup.value,
@@ -176,7 +181,11 @@ def get_runnable_tasks(db, n_runs=N_TASKS_TO_RUN, retry_max=RETRY_MAX):
     tasks_to_run = []
     for task in db_tasks:
         status = task[2]
-        if status == "created" and check_dependancy_met(task, db_tasks):
+        if (
+            status == "created"
+            and check_dependancy_met(task, db_tasks)
+            and qcore.constants.ProcessType(task[0]) in task_types
+        ):
             if task[0] not in verification_tasks or do_verification:
                 tasks_to_run.append(task)
         if len(tasks_to_run) >= n_runs:

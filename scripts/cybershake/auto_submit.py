@@ -30,6 +30,7 @@ job_run_machine = {
     const.ProcessType.HF.value: const.HPC.maui.value,
     const.ProcessType.BB.value: const.HPC.maui.value,
     const.ProcessType.IM_calculation.value: const.HPC.maui.value,
+    const.ProcessType.clean_up.value: const.HPC.mahuika.value,
 }
 
 
@@ -107,7 +108,10 @@ def submit_task(
         if binary_mode:
             # update the mgmt_db
             update_mgmt_db.update_db(
-                db, const.ProcessType.winbin_aio.str_value, const.State.completed.str_value, run_name=run_name
+                db,
+                const.ProcessType.winbin_aio.str_value,
+                const.State.completed.str_value,
+                run_name=run_name,
             )
         else:
             args = argparse.Namespace(
@@ -263,7 +267,6 @@ def main():
 
     args = parser.parse_args()
 
-
     mgmt_db_location = args.run_folder
     db = connect_db(mgmt_db_location)
     tidy_up = not args.no_tidy_up
@@ -278,7 +281,11 @@ def main():
         elif len(args.n_runs) == len(list(const.HPC)):
             n_runs_max = {const.HPC[i]: args.n_runs[i] for i in range(len(args.n_runs))}
         else:
-            parser.error("You must specify wither one common --n_runs, or one for each in the following list: {}".format(list(const.HPC)))
+            parser.error(
+                "You must specify wither one common --n_runs, or one for each in the following list: {}".format(
+                    list(const.HPC)
+                )
+            )
     else:
         n_runs_max = args.n_runs
 
@@ -317,15 +324,29 @@ def main():
     db_tasks = slurm_query_status.get_submitted_db_tasks(db)
     print("subbed tasks:", db_tasks)
     ntask_to_run = 0
+    runnable_tasks = []
 
     for hpc in list(const.HPC):
         queued_tasks = slurm_query_status.get_queued_tasks(machine=hpc)
-        user_queued_tasks = slurm_query_status.get_queued_tasks(user=args.user, machine=hpc).split("\n")
+        user_queued_tasks = slurm_query_status.get_queued_tasks(
+            user=args.user, machine=hpc
+        ).split("\n")
         print("{} queued tasks: {}".format(hpc.value, queued_tasks))
         slurm_query_status.update_tasks(db, queued_tasks, db_tasks)
-        ntask_to_run += (n_runs_max[hpc] - len(user_queued_tasks))
+        hpc_ntasks_to_run = n_runs_max[hpc] - len(user_queued_tasks)
+        ntask_to_run += hpc_ntasks_to_run
+        runnable_tasks.extend(
+            slurm_query_status.get_runnable_tasks(
+                db,
+                hpc_ntasks_to_run,
+                task_types=[
+                    const.ProcessType(x)
+                    for x, y in job_run_machine.items()
+                    if y == hpc.value
+                ],
+            )
+        )
 
-    runnable_tasks = slurm_query_status.get_runnable_tasks(db, ntask_to_run)
     print("runnable tasks:")
     print(runnable_tasks)
     submit_task_count = {const.HPC.maui: 0, const.HPC.mahuika: 0}
@@ -335,7 +356,9 @@ def main():
 
     while (
         all([submit_task_count[hpc] < ntask_to_run[hpc] for hpc in list(const.HPC)])
-        and all([submit_task_count[hpc] < len(runnable_tasks) for hpc in list(const.HPC)])
+        and all(
+            [submit_task_count[hpc] < len(runnable_tasks) for hpc in list(const.HPC)]
+        )
         and task_num < len(runnable_tasks)
     ):
         db_task_status = runnable_tasks[task_num]
@@ -394,7 +417,9 @@ def main():
             extended_period=extended_period,
         )
 
-        submit_task_count[job_run_machine[proc_type]] = submit_task_count[job_run_machine[proc_type]] + 1
+        submit_task_count[job_run_machine[proc_type]] = (
+            submit_task_count[job_run_machine[proc_type]] + 1
+        )
         task_num = task_num + 1
 
     db.connection.close()
