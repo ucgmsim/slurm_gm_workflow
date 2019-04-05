@@ -232,12 +232,6 @@ def generate_table_interactive(squeue_entries: List[SQueueEntry]):
                 filtering_settings="account eq 'nesi00213'",
                 sorting=True,
                 sorting_type="multi",
-                pagination_mode="fe",
-                pagination_settings={
-                    "displayed_pages": 1,
-                    "current_page": 0,
-                    "page_size": 35,
-                },
             ),
             html.Div(id="datatable-interactivity-container"),
         ]
