@@ -323,7 +323,7 @@ def main():
     print("hf_seed", hf_seed)
     db_tasks = slurm_query_status.get_submitted_db_tasks(db)
     print("subbed tasks:", db_tasks)
-    ntask_to_run = 0
+    ntask_to_run = {}
     runnable_tasks = []
 
     for hpc in list(const.HPC):
@@ -334,7 +334,7 @@ def main():
         print("{} queued tasks: {}".format(hpc.value, queued_tasks))
         slurm_query_status.update_tasks(db, queued_tasks, db_tasks)
         hpc_ntasks_to_run = n_runs_max[hpc] - len(user_queued_tasks)
-        ntask_to_run += hpc_ntasks_to_run
+        ntask_to_run.update({hpc:hpc_ntasks_to_run})
         runnable_tasks.extend(
             slurm_query_status.get_runnable_tasks(
                 db,
