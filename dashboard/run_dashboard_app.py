@@ -238,7 +238,6 @@ def generate_table_interactive(squeue_entries: List[SQueueEntry]):
                     "current_page": 0,
                     "page_size": 35,
                 },
-                navigation="page",
             ),
             html.Div(id="datatable-interactivity-container"),
         ]
