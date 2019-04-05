@@ -326,6 +326,15 @@ def main():
     ntask_to_run = {}
     runnable_tasks = []
 
+    # If any flags to ignore steps are given, add them to the list of skipped processes
+    skipped = []
+    if not tidy_up:
+        skipped.append(const.ProcessType.clean_up.value)
+    if args.no_im:
+        skipped.append(const.ProcessType.IM_calculation.value)
+    if args.no_merge_ts:
+        skipped.append(const.ProcessType.merge_ts.value)
+
     for hpc in list(const.HPC):
         queued_tasks = slurm_query_status.get_queued_tasks(machine=hpc)
         user_queued_tasks = slurm_query_status.get_queued_tasks(
@@ -334,7 +343,7 @@ def main():
         print("{} queued tasks: {}".format(hpc.value, queued_tasks))
         slurm_query_status.update_tasks(db, queued_tasks, db_tasks)
         hpc_ntasks_to_run = n_runs_max[hpc] - len(user_queued_tasks)
-        ntask_to_run.update({hpc:hpc_ntasks_to_run})
+        ntask_to_run.update({hpc: hpc_ntasks_to_run})
         runnable_tasks.extend(
             slurm_query_status.get_runnable_tasks(
                 db,
@@ -342,7 +351,7 @@ def main():
                 task_types=[
                     const.ProcessType(x)
                     for x, y in job_run_machine.items()
-                    if y == hpc.value
+                    if y == hpc.value and x not in skipped
                 ],
             )
         )
@@ -354,47 +363,38 @@ def main():
     print(submit_task_count)
     print(ntask_to_run)
 
-    while (
-        any([submit_task_count[hpc] < ntask_to_run[hpc] for hpc in list(const.HPC)])
-        and any(
-            [submit_task_count[hpc] < len(runnable_tasks) for hpc in list(const.HPC)]
-        )
-        and task_num < len(runnable_tasks)
-    ):
+    while any(
+        [submit_task_count[hpc] < ntask_to_run[hpc] for hpc in list(const.HPC)]
+    ) and task_num < len(runnable_tasks):
         db_task_status = runnable_tasks[task_num]
         proc_type = db_task_status[0]
         run_name = db_task_status[1]
         task_state = db_task_status[2]
 
-        # skip im calcs if no_im == true
-        if args.no_im and proc_type == const.ProcessType.IM_calculation.value:
+        hpc = job_run_machine[proc_type]
+        if submit_task_count[hpc] >= ntask_to_run[hpc]:
             task_num = task_num + 1
             continue
-        if proc_type == const.ProcessType.merge_ts.value:
-            if args.no_merge_ts:
-                update_mgmt_db.update_db(
-                    db, "merge_ts", const.State.completed.str_value, run_name=run_name
-                )
-                task_num = task_num + 1
-                continue
-            elif slurm_query_status.is_task_complete(
+
+        if (
+            proc_type == const.ProcessType.merge_ts.value
+            and slurm_query_status.is_task_complete(
                 [
                     const.ProcessType.clean_up.value,
                     run_name,
                     const.State.completed.str_value,
                 ],
                 slurm_query_status.get_db_tasks_to_be_run(db),
-            ):
-                # If clean_up has already run, then we should set it to be run again after merge_ts has run
-                update_mgmt_db.update_db(
-                    db,
-                    const.ProcessType.clean_up.str_value,
-                    const.State.created.str_value,
-                    run_name=run_name,
-                )
-        if not tidy_up and proc_type == const.ProcessType.clean_up.value:
-            task_num = task_num + 1
-            continue
+            )
+        ):
+            # If clean_up has already run, then we should set it to be run again after merge_ts has run
+            update_mgmt_db.update_db(
+                db,
+                const.ProcessType.clean_up.str_value,
+                const.State.created.str_value,
+                run_name=run_name,
+            )
+
         vm_name = run_name.split("_")[0]
 
         if args.single_sim:

@@ -166,10 +166,7 @@ def check_dependancy_met(task, task_list):
 
 
 def get_runnable_tasks(
-    db,
-    n_runs=N_TASKS_TO_RUN,
-    retry_max=RETRY_MAX,
-    task_types=list(qcore.constants.ProcessType),
+    db, n_runs=None, retry_max=RETRY_MAX, task_types=list(qcore.constants.ProcessType)
 ):
     do_verification = False
     verification_tasks = [
@@ -188,7 +185,7 @@ def get_runnable_tasks(
         ):
             if task[0] not in verification_tasks or do_verification:
                 tasks_to_run.append(task)
-        if len(tasks_to_run) >= n_runs:
+        if n_runs is not None and len(tasks_to_run) >= n_runs:
             break
 
     return tasks_to_run
