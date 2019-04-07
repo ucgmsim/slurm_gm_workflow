@@ -614,12 +614,19 @@ def submit_sl_script(
                 )
                 sys.exit()
 
-            add_to_queue(queue_folder, run_name, proc_type, const.Status.queued.value)
+            add_to_queue(
+                queue_folder,
+                run_name,
+                proc_type,
+                const.Status.queued.value,
+                job_id=jobid,
+            )
             return jobid
         else:
             print("An error occurred during job submission: {}".format(res[1]))
     else:
         print("User chose to submit the job manually")
+
 
 def add_to_queue(
     queue_folder: str,
@@ -632,7 +639,7 @@ def add_to_queue(
     """Adds an update entry to the queue"""
     filename = os.path.join(
         queue_folder,
-        "{}_{}_{}".format(datetime.now().strftime(DATE_FORMAT), run_name, proc_type),
+        "{}.{}.{}".format(datetime.now().strftime(DATE_FORMAT), run_name, proc_type),
     )
 
     if os.path.exists(filename):
@@ -644,7 +651,6 @@ def add_to_queue(
 
     with open(os.path.join(queue_folder, filename), "w") as f:
         json.dump(
-            f,
             {
                 MgmtDB.col_run_name: run_name,
                 MgmtDB.col_proc_type: proc_type,
@@ -652,6 +658,7 @@ def add_to_queue(
                 MgmtDB.col_job_id: job_id,
                 MgmtDB.col_retries: retries,
             },
+            f,
         )
 
 
@@ -831,5 +838,3 @@ def get_hf_run_name(v_mod_1d_name, srf, root_dict, hf_version):
     #    yes = confirm_name(hf_run_name)
     yes = True
     return yes, hf_run_name
-
-

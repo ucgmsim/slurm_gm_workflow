@@ -5,6 +5,7 @@ import argparse
 from enum import Enum
 
 import qcore.constants as const
+import qcore.simulation_structure as sim_struct
 from qcore import utils, shared
 from qcore.config import host
 from typing import Dict
@@ -150,9 +151,8 @@ def submit_im_calc_slurm(sim_dir: str, options_dict: Dict = None):
     submit_sl_script(
         script_file_path,
         const.ProcessType.IM_calculation.value,
-        params.mgmt_db_location,
+        sim_struct.get_mgmt_db_queue(params.mgmt_db_location),
         os.path.splitext(os.path.basename(params.srf_file))[0],
-        const.timestamp,
         submit_yes=submit_yes,
         target_machine=options_dict["machine"],
     )

@@ -7,6 +7,7 @@ import argparse
 
 import scripts.set_runparams as set_runparams
 import qcore.constants as const
+import qcore.simulation_structure as sim_struct
 import estimation.estimate_wct as est
 from qcore import utils, binary_version
 from qcore.config import get_machine_config, host
@@ -23,7 +24,7 @@ from shared_workflow.shared import (
 CHECKPOINT_DURATION = 10
 
 
-def main(args):
+def main(args, est_model = None):
     params = utils.load_sim_params(os.path.join(args.rel_dir, "sim_params.yaml"))
 
     submit_yes = True if args.auto else confirm("Also submit the job for you?")
@@ -104,7 +105,7 @@ def main(args):
         submit_sl_script(
             script_file_path,
             const.ProcessType.EMOD3D.value,
-            params.mgmt_db_location,
+            sim_struct.get_mgmt_db_queue(params.mgmt_db_location),
             srf_name,
             submit_yes=submit_yes,
             target_machine=args.machine,

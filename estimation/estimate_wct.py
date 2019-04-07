@@ -486,9 +486,6 @@ def estimate(
     wc: np.ndarray
         Estimated wall clock time
     """
-    # Load the scaler and scale the input data
-
-    # Load the data and run estimation
     if model_type is const.EstModelType.NN:
         scaler = load_scaler(model_dir, SCALER_PREFIX.format("NN"))
         X = scaler.transform(input_data)

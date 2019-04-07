@@ -9,6 +9,13 @@ import os
 
 from scripts.management.MgmtDB import MgmtDB
 
+def create_mgmt_db(realisations, db_file, srf_files=[]):
+    mgmt_db = MgmtDB.init_db(
+        db_file,
+        os.path.join(os.path.dirname(os.path.realpath(__file__)), "slurm_mgmt.db.sql"),
+    )
+    mgmt_db.populate(realisations, srf_files)
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -19,11 +26,7 @@ def main():
     )
     args = parser.parse_args()
 
-    mgmt_db = MgmtDB.init_db(
-        args.mgmt_db_file,
-        os.path.join(os.path.dirname(os.path.realpath(__file__)), "slurm_mgmt.db.sql"),
-    )
-    mgmt_db.populate(args.realisations)
+    create_mgmt_db(args.realisation, args.mgmt_db_file)
 
 
 if __name__ == "__main__":

@@ -10,6 +10,7 @@ import glob
 import argparse
 
 import shared_workflow.load_config as ldcfg
+import qcore.simulation_structure as sim_struct
 from qcore import utils, validate_vm, simulation_structure
 from qcore.constants import FaultParams
 from scripts.management import create_mgmt_db
@@ -54,10 +55,10 @@ def main():
     ldcfg.check_cfg_params_path(cybershake_cfg, "dt", "hf_dt", "version")
 
     # Load variables from cybershake config
-    path_cybershake = args.path_cybershake
-    sim_root_dir = os.path.join(path_cybershake, "Runs/")
-    srf_root_dir = os.path.join(path_cybershake, "Data/Sources/")
-    vm_root_dir = os.path.join(path_cybershake, "Data/VMs/")
+    root_folder = args.path_cybershake
+    sim_root_dir = os.path.join(root_folder, "Runs/")
+    srf_root_dir = os.path.join(root_folder, "Data/Sources/")
+    vm_root_dir = os.path.join(root_folder, "Data/VMs/")
 
     version = cybershake_cfg["version"]
     v1d_full_path = cybershake_cfg["v_1d_mod"]
@@ -69,7 +70,7 @@ def main():
     vs30_file_path = stat_file_path.replace('.ll', '.vs30')
     vs30ref_file_path = stat_file_path.replace('.ll', '.vs30ref')
 
-    error_log = os.path.join(path_cybershake, "install_error.log")
+    error_log = os.path.join(root_folder, "install_error.log")
     params_vel = "params_vel.yaml"
 
     fault_name = args.vm
@@ -158,27 +159,25 @@ def main():
                 yes_model_params=yes_model_params,
                 fault_yaml_path=fault_yaml_path,
                 root_yaml_path=root_yaml_path,
-                user_root=path_cybershake,
+                user_root=root_folder,
                 site_v1d_dir=site_v1d_dir,
                 hf_stat_vs_ref=hf_stat_vs_ref,
                 v1d_full_path=v1d_full_path,
                 sim_params_file=sim_params_file,
             )
 
-            create_mgmt_db.create_mgmt_db([], path_cybershake, srf_files=srf)
-            utils.setup_dir(os.path.join(path_cybershake, "mgmt_db_queue"))
-            root_params_dict["mgmt_db_location"] = path_cybershake
+            create_mgmt_db.create_mgmt_db([], sim_struct.get_mgmt_db(root_folder), srf_files=srf)
+            utils.setup_dir(os.path.join(root_folder, "mgmt_db_queue"))
+            root_params_dict["mgmt_db_location"] = root_folder
 
             # Generate the fd files, create these at the fault level
             fd_statcords, fd_statlist = generate_fd_files(
-                simulation_structure.get_fault_dir(path_cybershake, fault_name),
+                simulation_structure.get_fault_dir(root_folder, fault_name),
                 vm_params_dict, stat_file=stat_file_path)
 
             fault_params_dict[FaultParams.stat_coords.value] = fd_statcords
             fault_params_dict[FaultParams.FD_STATLIST.value] = fd_statlist
 
-            # store extra params provided. This step has been moved into install_bb function
-            # if 'hf_stat_vs_ref' in cybershake_cfg:
             #     root_params_dict['hf_stat_vs_ref'] = cybershake_cfg['hf_stat_vs_ref']
             dump_all_yamls(
                 sim_dir,

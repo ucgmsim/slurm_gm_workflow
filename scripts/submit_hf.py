@@ -5,6 +5,7 @@ import argparse
 
 import estimation.estimate_wct as est
 import qcore.constants as const
+import qcore.simulation_structure as sim_struct
 from qcore import utils, shared, srf, binary_version
 from qcore.config import host, get_machine_config
 from shared_workflow.load_config import load
@@ -118,7 +119,7 @@ def main(args):
         submit_sl_script(
             script_file_path,
             const.ProcessType.HF.value,
-            params.mgmt_db_location,
+            sim_struct.get_mgmt_db_queue(params.mgmt_db_location),
             srf_name,
             submit_yes=submit_yes,
             target_machine=args.machine,

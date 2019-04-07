@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Script for automatic submission of gm simulation jobs"""
 import argparse
+import time
 import os
 import sys
 from datetime import datetime
@@ -37,6 +38,7 @@ job_run_machine = {
 
 SLURM_TO_STATUS_DICT = {"R": 3, "PD": 2}
 
+
 def get_queued_tasks(user=None):
     output_list = []
     # TODO: Treat Maui and Mahuika jobs seperately. See QSW-912
@@ -59,10 +61,9 @@ def check_queue(queue_folder: str, run_name: str, proc_type: int):
     otherwise returns False.
     """
     queue_entries = os.listdir(queue_folder)
-
     for entry in queue_entries:
-        _, entry_run_name, entry_proc_type = entry.split()
-        if entry_run_name == run_name and entry_proc_type == proc_type:
+        _, entry_run_name, entry_proc_type = entry.split(".")
+        if entry_run_name == run_name and entry_proc_type == str(proc_type):
             return True
     return False
 
@@ -80,20 +81,23 @@ def update_tasks(queue_folder: str, squeue_tasks, db_tasks: List[SlurmTask]):
                 except KeyError:
                     print(
                         "Failed to recogize state code {}, updating to {}".format(
-                            queue_status, const.Status.unkown.value
+                            queue_status, const.Status.unknown.value
                         )
                     )
-                    queue_status = const.Status.unkown.value
+                    queue_status = const.Status.unknown.value
                 if queue_status == db_task.status:
                     print(
-                        "Not updating status ({}) of '{}' on '{}' ({})".format(
-                            queue_status,
-                            db_task.proc_type,
+                        "No need to update status {} for {}, {} ({}) as it "
+                        "has not changed.".format(
+                            const.Status(queue_status).str_value,
                             db_task.run_name,
+                            const.ProcessType(db_task.proc_type).str_value,
                             db_task.job_id,
                         )
                     )
-                else:
+                # Do nothing if there is a pending update for
+                # this run & process type combination
+                elif not check_queue(queue_folder, db_task.run_name, db_task.proc_type):
                     print(
                         "Updating status of {}, {} from {} to {}".format(
                             db_task.run_name,
@@ -103,16 +107,15 @@ def update_tasks(queue_folder: str, squeue_tasks, db_tasks: List[SlurmTask]):
                         )
                     )
                     shared.add_to_queue(
-                        queue_folder,
-                        db_task.run_name,
-                        db_task.proc_type,
-                        queue_status,
+                        queue_folder, db_task.run_name, db_task.proc_type, queue_status
                     )
         # Only reset if there is no entry on the mgmt queue for this
         # realisation/proc combination
+        # Ignore cleanup for now as it runs on mahuika
         if not found and not check_queue(
             queue_folder, db_task.run_name, db_task.proc_type
-        ):
+        ) and const.ProcessType(db_task.proc_type) != const.ProcessType.clean_up:
+            print("DEBUG: RESETTING TASK!!!! SHOULD NOT HAPPEN ATM!!!")
             print(
                 "Task '{}' on '{}' not found on squeue; resetting the status "
                 "to 'created' for resubmission".format(
@@ -124,8 +127,8 @@ def update_tasks(queue_folder: str, squeue_tasks, db_tasks: List[SlurmTask]):
                 db_task.run_name,
                 db_task.proc_type,
                 const.Status.created.value,
-                job_id=-1
             )
+
 
 def submit_task(
     sim_dir,
@@ -298,12 +301,11 @@ def submit_task(
         shared.submit_sl_script(
             script,
             const.ProcessType.clean_up.value,
-            root_folder,
+            sim_struct.get_mgmt_db_queue(root_folder),
             run_name,
             submit_yes=True,
             target_machine=const.HPC.mahuika.value,
         )
-
 
 
 def main(args):
@@ -349,10 +351,7 @@ def main(args):
         # Get in progress tasks in the db and the HPC queue
         queue_tasks = get_queued_tasks(user=args.user)
         db_in_progress_tasks = mgmt_db.get_submitted_tasks()
-        print(
-            "Squeue user tasks: ",
-            ", ".join(["{}-{}".format(entry[0], entry[1]) for entry in queue_tasks]),
-        )
+        print("\nSqueue user tasks: ", ", ".join(queue_tasks))
         print(
             "In progress tasks in mgmt db:",
             ", ".join(
@@ -371,14 +370,32 @@ def main(args):
         # Update the slurm mgmt based on squeue
         update_tasks(queue_folder, queue_tasks, db_in_progress_tasks)
         ntask_to_run = args.n_runs - len(queue_tasks)
-        runnable_tasks = mgmt_db.get_runnable_tasks(ntask_to_run, args.n_max_retry)
+
+        # Gets all runnable tasks based on mgmt db state
+        runnable_tasks = mgmt_db.get_runnable_tasks(ntask_to_run, args.n_max_retries)
+        print("Number of runnable tasks: ", len(runnable_tasks))
+
+        # Select the first ntask_to_run that are not waiting for mgmt db updates (i.e. items in the queue)
+        tasks_to_run = []
+        for task in runnable_tasks:
+            if not check_queue(queue_folder, task[1], task[0]):
+                tasks_to_run.append(task)
+            if len(tasks_to_run) >= ntask_to_run:
+                break
+
         print(
-            "runnable task: ",
-            ", ".join(["{}-{}".format(entry[1], entry[0]) for entry in runnable_tasks]),
+            "Tasks to run this iteration: ",
+            ", ".join(
+                [
+                    "{}-{}".format(entry[1], const.ProcessType(entry[0]).str_value)
+                    for entry in tasks_to_run
+                ]
+            ),
+            "\n",
         )
 
         # Submit the runnable tasks
-        for task in runnable_tasks:
+        for task in tasks_to_run:
             proc_type, run_name, _ = task
 
             # Skip im calcs if no_im == true
@@ -412,7 +429,6 @@ def main(args):
                         run_name,
                         const.ProcessType.clean_up.value,
                         const.Status.created.value,
-                        job_id=-1,
                     )
 
             # Skip tidy up
@@ -420,6 +436,7 @@ def main(args):
                 continue
 
             # submit the job
+            start_time = time.time()
             submit_task(
                 sim_struct.get_sim_dir(root_folder, run_name),
                 proc_type,
@@ -431,6 +448,12 @@ def main(args):
                 rand_reset=rand_reset,
                 extended_period=extended_period,
             )
+            print("Submitting took {}".format(time.time() - start_time))
+
+
+        # Sleept time
+        print("Sleeping zzzzzzzzzzzZZZZZZZZZZZZZZZZZZZZZZZZ")
+        time.sleep(args.sleep_time)
 
 
 if __name__ == "__main__":
@@ -439,6 +462,12 @@ if __name__ == "__main__":
     parser.add_argument("root_folder", type=str, help="The cybershake root folder")
     parser.add_argument(
         "user", type=str, help="The username under which the jobs will be submitted."
+    )
+    parser.add_argument(
+        "--sleep_time",
+        type=int,
+        help="Seconds sleeping between checking queue and " "adding more jobs",
+        default=10,
     )
     parser.add_argument(
         "--n_runs",

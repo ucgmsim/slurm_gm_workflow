@@ -37,8 +37,8 @@ class MgmtDB:
         """
         try:
             if self._conn is None:
+                print("Aquiring db connection.")
                 self._conn = sql.connect(self._db_file)
-
             cur = self._conn.cursor()
 
             for entry in entries:
@@ -50,6 +50,7 @@ class MgmtDB:
                     entry, ex
                 )
             )
+            return False
         else:
             self._conn.commit()
         finally:
@@ -69,7 +70,10 @@ class MgmtDB:
 
     def get_runnable_tasks(self, n_runs, retry_max):
         """Gets all runnable tasks based on their status and their associated
-        dependencies (i.e. other tasks have to be finished first)"""
+        dependencies (i.e. other tasks have to be finished first)
+
+        Returns a list of tuples (proc_type, run_name, state_str)
+        """
         do_verification = False
         verification_tasks = [
             Process.rrup.value,
@@ -94,8 +98,8 @@ class MgmtDB:
             if status == "created" and self._check_dependancy_met(task, db_tasks):
                 if task[0] not in verification_tasks or do_verification:
                     tasks_to_run.append(task)
-            if len(tasks_to_run) >= n_runs:
-                break
+            # if len(tasks_to_run) >= n_runs:
+            #     break
 
         return tasks_to_run
 
@@ -137,9 +141,9 @@ class MgmtDB:
             HF_task = list(task)
             HF_task[0] = Process.HF.value
             HF_task[2] = "completed"
-            return self.is_task_complete(
-                LF_task, task_list
-            ) and self.is_task_complete(HF_task, task_list)
+            return self.is_task_complete(LF_task, task_list) and self.is_task_complete(
+                HF_task, task_list
+            )
 
         if process is Process.clean_up:
             IM_task = list(task)
@@ -148,24 +152,24 @@ class MgmtDB:
             merge_ts_task = list(task)
             merge_ts_task[0] = Process.merge_ts.value
             merge_ts_task[2] = "completed"
-            return self.is_task_complete(
-                IM_task, task_list
-            ) and self.is_task_complete(merge_ts_task, task_list)
+            return self.is_task_complete(IM_task, task_list) and self.is_task_complete(
+                merge_ts_task, task_list
+            )
 
         return False
 
     def _update_entry(self, cur: sql.Cursor, entry: SlurmTask):
         """Updates all fields that have a value for the specific entry"""
         for field, value in zip(
-            [
-                (self.col_status, self.col_job_id, self.col_retries),
-                (entry.status, entry.job_id, entry.retries),
-            ]
+            (self.col_status, self.col_job_id, self.col_retries),
+            (entry.status, entry.job_id, entry.retries),
         ):
             if value is not None:
                 cur.execute(
-                    "UPDATE state SET ? = ? WHERE run_name = ? AND proc_type = ?",
-                    (field, value, entry.run_name, entry.proc_type),
+                    "UPDATE state SET {} = ? WHERE run_name = ? AND proc_type = ?".format(
+                        field
+                    ),
+                    (value, entry.run_name, entry.proc_type),
                 )
 
     def populate(self, realisations, srf_files: Union[List[str], str] = []):
@@ -201,7 +205,6 @@ class MgmtDB:
             last_modified, retries) VALUES(?, ?, 1, strftime('%s','now'), 0)""",
             (run_name, proc_type),
         )
-
 
     @classmethod
     def init_db(cls, db_file: str, init_script: str):
