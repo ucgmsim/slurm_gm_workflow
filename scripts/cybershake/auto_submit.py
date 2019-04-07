@@ -17,7 +17,6 @@ from scripts.submit_post_emod3d import main as submit_post_lf_main
 from scripts.submit_hf import main as submit_hf_main
 from scripts.submit_bb import main as submit_bb_main
 from scripts.submit_sim_imcalc import submit_im_calc_slurm, SlBodyOptConsts
-from scripts.clean_up import clean_up_submission_lf_files
 from shared_workflow import shared
 
 default_n_runs = {const.HPC.maui: 12, const.HPC.mahuika: 12}
@@ -260,34 +259,33 @@ def main():
         default=None,
         help="a path to a config file that constains all the required values.",
     )
+    parser.add_argument("--user", type=str, default=None)
     parser.add_argument("--no_im", action="store_true")
     parser.add_argument("--no_merge_ts", action="store_true")
-    parser.add_argument("--user", type=str, default=None)
-    parser.add_argument("--no_tidy_up", action="store_true")
+    parser.add_argument("--no_clean_up", action="store_true")
 
     args = parser.parse_args()
 
     mgmt_db_location = args.run_folder
     db = connect_db(mgmt_db_location)
-    tidy_up = not args.no_tidy_up
+    # clean_up = not args.no_clean_up
 
     # Default values
     oneD_mod, hf_vs30_ref, binary_mode, hf_seed = default_1d_mod, None, True, None
     rand_reset, extended_period = True, False
 
+    n_runs_max = default_n_runs
     if args.n_runs is not None:
         if len(args.n_runs) == 1:
-            n_runs_max = {hpc: args.n_runs[0] for hpc in const.HPC}
-        elif len(args.n_runs) == len(list(const.HPC)):
-            n_runs_max = {const.HPC[i]: args.n_runs[i] for i in range(len(args.n_runs))}
+            n_runs_max = {hpc.value: args.n_runs[0] for hpc in const.HPC}
+        elif len(args.n_runs) == len(const.HPC):
+            n_runs_max = {hpc.value: args.n_runs[index] for index, hpc in enumerate(const.HPC)}
         else:
             parser.error(
-                "You must specify wither one common --n_runs, or one for each in the following list: {}".format(
+                "You must specify wither one common value for --n_runs, or one for each in the following list: {}".format(
                     list(const.HPC)
                 )
             )
-    else:
-        n_runs_max = args.n_runs
 
     if args.config is not None:
         # parse and check for variables in config
@@ -328,28 +326,28 @@ def main():
 
     # If any flags to ignore steps are given, add them to the list of skipped processes
     skipped = []
-    if not tidy_up:
-        skipped.append(const.ProcessType.clean_up.value)
-    if args.no_im:
-        skipped.append(const.ProcessType.IM_calculation.value)
     if args.no_merge_ts:
         skipped.append(const.ProcessType.merge_ts.value)
+    if args.no_im:
+        skipped.append(const.ProcessType.IM_calculation.value)
+    if args.no_clean_up:
+        skipped.append(const.ProcessType.clean_up.value)
 
-    for hpc in list(const.HPC):
+    for hpc in const.HPC:
         queued_tasks = slurm_query_status.get_queued_tasks(machine=hpc)
         user_queued_tasks = slurm_query_status.get_queued_tasks(
             user=args.user, machine=hpc
         ).split("\n")
         print("{} queued tasks: {}".format(hpc.value, queued_tasks))
         slurm_query_status.update_tasks(db, queued_tasks, db_tasks)
-        hpc_ntasks_to_run = n_runs_max[hpc] - len(user_queued_tasks)
-        ntask_to_run.update({hpc: hpc_ntasks_to_run})
+        hpc_ntasks_to_run = n_runs_max[hpc.value] - len(user_queued_tasks)
+        ntask_to_run.update({hpc.value: hpc_ntasks_to_run})
         runnable_tasks.extend(
             slurm_query_status.get_runnable_tasks(
                 db,
                 hpc_ntasks_to_run,
                 task_types=[
-                    const.ProcessType(x)
+                    x
                     for x, y in job_run_machine.items()
                     if y == hpc.value and x not in skipped
                 ],
@@ -358,13 +356,13 @@ def main():
 
     print("runnable tasks:")
     print(runnable_tasks)
-    submit_task_count = {hpc: 0 for hpc in list(const.HPC)}
+    submit_task_count = {hpc.value: 0 for hpc in const.HPC}
     task_num = 0
     print(submit_task_count)
     print(ntask_to_run)
 
     while any(
-        [submit_task_count[hpc] < ntask_to_run[hpc] for hpc in list(const.HPC)]
+        [submit_task_count[hpc.value] < ntask_to_run[hpc.value] for hpc in const.HPC]
     ) and task_num < len(runnable_tasks):
         db_task_status = runnable_tasks[task_num]
         proc_type = db_task_status[0]
@@ -373,6 +371,7 @@ def main():
 
         hpc = job_run_machine[proc_type]
         if submit_task_count[hpc] >= ntask_to_run[hpc]:
+            # This job is for a machine with a full queue. Skip to the next job
             task_num = task_num + 1
             continue
 
@@ -417,9 +416,7 @@ def main():
             extended_period=extended_period,
         )
 
-        submit_task_count[job_run_machine[proc_type]] = (
-            submit_task_count[job_run_machine[proc_type]] + 1
-        )
+        submit_task_count[job_run_machine[proc_type]] += 1
         task_num = task_num + 1
 
     db.connection.close()

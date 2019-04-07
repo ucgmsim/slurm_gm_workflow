@@ -11,6 +11,8 @@ from subprocess import Popen, PIPE
 import shlex
 from scripts.management import db_helper
 
+CONSTANTS_TASK_TYPE_ = (x.str_value for x in qcore.constants.ProcessType)
+
 Process = qcore.constants.ProcessType
 
 N_TASKS_TO_RUN = 20
@@ -166,7 +168,7 @@ def check_dependancy_met(task, task_list):
 
 
 def get_runnable_tasks(
-    db, n_runs=None, retry_max=RETRY_MAX, task_types=list(qcore.constants.ProcessType)
+    db, n_runs=None, retry_max=RETRY_MAX, task_types=CONSTANTS_TASK_TYPE_
 ):
     do_verification = False
     verification_tasks = [
@@ -181,7 +183,7 @@ def get_runnable_tasks(
         if (
             status == "created"
             and check_dependancy_met(task, db_tasks)
-            and qcore.constants.ProcessType(task[0]) in task_types
+            and task[0] in task_types
         ):
             if task[0] not in verification_tasks or do_verification:
                 tasks_to_run.append(task)
