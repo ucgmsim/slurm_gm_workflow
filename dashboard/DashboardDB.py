@@ -94,10 +94,11 @@ class DashboardDB:
         return day
 
     def update_chours_usage(
-            self, daily_core_usage, total_core_usage: float, hpc: const.HPC, day: Union[date, str] = None
+            self, daily_ch_usage, total_ch_usage: float, hpc: const.HPC, day: Union[date, str] = None
     ):
         """Updates daily and total core hours usage"""
-        if total_core_usage is None or daily_core_usage is None:
+        # daily usage will be None if total is None
+        if total_ch_usage is None:
             return
 
         table = self.get_daily_t_name(hpc)
@@ -115,7 +116,7 @@ class DashboardDB:
             if row is None:
                 cursor.execute(
                     "INSERT INTO {} VALUES(?, ?, ?, ?)".format(table),
-                    (day, 0, total_core_usage, update_time),
+                    (day, 0, total_ch_usage, update_time),
                 )
             else:
                 cursor.execute(
@@ -123,7 +124,7 @@ class DashboardDB:
                     UPDATE_TIME = ? WHERE DAY == ?;".format(
                         table
                     ),
-                    (daily_core_usage, total_core_usage, update_time, day),
+                    (daily_ch_usage, total_ch_usage, update_time, day),
                 )
 
     def get_chours_usage(
