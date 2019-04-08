@@ -97,8 +97,6 @@ class DashboardDB:
             self, daily_core_usage, total_core_usage: float, hpc: const.HPC, day: Union[date, str] = None
     ):
         """Updates daily and total core hours usage"""
-        print("update daily", daily_core_usage)
-        print("update total", total_core_usage)
         if total_core_usage is None or daily_core_usage is None:
             return
 
@@ -126,48 +124,6 @@ class DashboardDB:
                         table
                     ),
                     (daily_core_usage, total_core_usage, update_time, day),
-                )
-
-    def update_daily_chours_usage(
-        self, total_core_usage: float, hpc: const.HPC, day: Union[date, str] = None
-    ):
-        """Updates the daily core hours usage.
-        The core hour usage for a day is calculated as
-        last saved (for current day) TOTAL_CORE_USAGE - current total_core_usage.
-        """
-        # Do nothing if total_core_usage is None
-        if total_core_usage is None:
-            return
-
-        table = self.get_daily_t_name(hpc)
-        day = self.get_date(day)
-
-        with self.get_cursor(self.db_file) as cursor:
-            row = cursor.execute(
-                "SELECT CORE_HOURS_USED, TOTAL_CORE_HOURS FROM {} WHERE DAY == ?;".format(
-                    table
-                ),
-                (day,),
-            ).fetchone()
-
-            # New day
-            update_time = datetime.now()
-            if row is None:
-                cursor.execute(
-                    "INSERT INTO {} VALUES(?, ?, ?, ?)".format(table),
-                    (day, 0, total_core_usage, update_time),
-                )
-            else:
-                chours_usage = total_core_usage - row[1] if row[1] is not None else 0
-                if row[0] is not None:
-                    chours_usage = row[0] + chours_usage
-
-                cursor.execute(
-                    "UPDATE {} SET CORE_HOURS_USED = ?, TOTAL_CORE_HOURS = ?, \
-                    UPDATE_TIME = ? WHERE DAY == ?;".format(
-                        table
-                    ),
-                    (chours_usage, total_core_usage, update_time, day),
                 )
 
     def get_chours_usage(
