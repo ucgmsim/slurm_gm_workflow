@@ -275,7 +275,6 @@ def main():
 
     mgmt_db_location = args.run_folder
     db = connect_db(mgmt_db_location)
-    # clean_up = not args.no_clean_up
 
     # Default values
     oneD_mod, hf_vs30_ref, binary_mode, hf_seed = default_1d_mod, None, True, None
