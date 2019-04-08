@@ -295,8 +295,17 @@ class NNWcEstModel(WCEstModel):
     def get_out_of_bounds_mask(self, X: np.ndarray):
         """Checks that the input data is within the bounds of the data
         used for training of the neural network.
+
+        Have to use isclose due to minor floating point differences.
         """
-        return (X > self._train_max) | (X < self._train_min)
+        print(np.isclose(X, np.repeat(self._train_max, X.shape[0], axis=0)))
+        return (
+            (X > self._train_max)
+            & ~np.isclose(X, np.repeat(self._train_max, X.shape[0], axis=0))
+        ) | (
+            (X < self._train_min)
+            & ~np.isclose(X, np.repeat(self._train_min, X.shape[0], axis=0))
+        )
 
     def save_model(self, output_file: str):
         """Saves the model in a hdf5 file"""
@@ -542,19 +551,23 @@ class CombinedModel:
                 # Identify all entries that are out of bounds
                 mask = np.any(self.nn_model.get_out_of_bounds_mask(X_nn), axis=1)
 
-                # Estimate
+                # Estimate using NN
                 results = np.ones(X_nn.shape[0], dtype=np.float) * np.nan
-                results[~mask] = self.nn_model.predict(X_nn[~mask, :], warning=False)
+                if np.any(~mask):
+                    results[~mask] = self.nn_model.predict(
+                        X_nn[~mask, :], warning=False
+                    )
 
-                # Ignore number of cores
+                # Estimate out of bounds using SVR
                 if np.any(mask):
                     print(
                         "Some entries are out of bounds, these will be "
                         "estimated using the SVR model."
                     )
 
+                    # Ignore number of cores
                     results[mask] = (
-                        self.svr_model.predict(X_svr[mask, :-1]) * default_n_cores
+                        self.svr_model.predict(X_svr[mask, :]) * default_n_cores
                     ) / n_cores[mask]
 
                 return results

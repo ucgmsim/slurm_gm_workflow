@@ -37,7 +37,7 @@ job_run_machine = {
     const.ProcessType.IM_calculation.value: const.HPC.maui.value,
 }
 
-SLURM_TO_STATUS_DICT = {"R": 3, "PD": 2}
+SLURM_TO_STATUS_DICT = {"R": 3, "PD": 2, "CG": 2}
 
 
 def get_queued_tasks(user=None):
@@ -299,10 +299,10 @@ def submit_task(
         script = clean_up_template.format(
             sim_dir=sim_dir,
             srf_name=run_name,
-            mgmt_db_loc=root_folder,
+            mgmt_db_loc=sim_dir,
             script_location=os.path.expandvars("$gmsim/workflow/scripts/clean_up.sl"),
-            output_file=os.path.join(root_folder, "clean_up.out"),
-            error_file=os.path.join(root_folder, "clean_up.err"),
+            output_file=os.path.join(sim_dir, "clean_up.out"),
+            error_file=os.path.join(sim_dir, "clean_up.err"),
         )
         shared.submit_sl_script(
             script,
