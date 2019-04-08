@@ -17,10 +17,9 @@ from scripts.submit_post_emod3d import main as submit_post_lf_main
 from scripts.submit_hf import main as submit_hf_main
 from scripts.submit_bb import main as submit_bb_main
 from scripts.submit_sim_imcalc import submit_im_calc_slurm, SlBodyOptConsts
-from scripts.clean_up import clean_up_submission_lf_files
 from shared_workflow import shared
 
-default_n_runs = 12
+default_n_runs = {const.HPC.maui.value: 12, const.HPC.mahuika.value: 12}
 default_1d_mod = "/nesi/transit/nesi00213/VelocityModel/Mod-1D/Cant1D_v2-midQ_leer.1d"
 
 job_run_machine = {
@@ -30,6 +29,7 @@ job_run_machine = {
     const.ProcessType.HF.value: const.HPC.maui.value,
     const.ProcessType.BB.value: const.HPC.maui.value,
     const.ProcessType.IM_calculation.value: const.HPC.maui.value,
+    const.ProcessType.clean_up.value: const.HPC.mahuika.value,
 }
 
 
@@ -107,7 +107,10 @@ def submit_task(
         if binary_mode:
             # update the mgmt_db
             update_mgmt_db.update_db(
-                db, const.ProcessType.winbin_aio.str_value, const.State.completed.str_value, run_name=run_name
+                db,
+                const.ProcessType.winbin_aio.str_value,
+                const.State.completed.str_value,
+                run_name=run_name,
             )
         else:
             args = argparse.Namespace(
@@ -246,7 +249,16 @@ def get_vmname(srf_name):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("run_folder", type=str, help="folder to the collection of runs")
-    parser.add_argument("--n_runs", default=default_n_runs, type=int)
+    parser.add_argument(
+        "--n_runs",
+        default=None,
+        type=list,
+        nargs="+",
+        help="The number of processes each machine can run at once. If a single value is given this is used for all "
+        "machines, otherwise one value per machine must be given. The current order is: {}".format(
+            (x.str_value for x in const.HPC)
+        ),
+    )
 
     # cybershake-like simulations store mgmnt_db at different locations
     parser.add_argument("--single_sim", nargs="?", type=str, const=True)
@@ -256,21 +268,34 @@ def main():
         default=None,
         help="a path to a config file that constains all the required values.",
     )
+    parser.add_argument("--user", type=str, default=None)
     parser.add_argument("--no_im", action="store_true")
     parser.add_argument("--no_merge_ts", action="store_true")
-    parser.add_argument("--user", type=str, default=None)
-    parser.add_argument("--no_tidy_up", action="store_true")
+    parser.add_argument("--no_clean_up", action="store_true")
 
     args = parser.parse_args()
 
-    n_runs_max = args.n_runs
     mgmt_db_location = args.run_folder
     db = connect_db(mgmt_db_location)
-    tidy_up = not args.no_tidy_up
 
     # Default values
     oneD_mod, hf_vs30_ref, binary_mode, hf_seed = default_1d_mod, None, True, None
     rand_reset, extended_period = True, False
+
+    n_runs_max = default_n_runs
+    if args.n_runs is not None:
+        if len(args.n_runs) == 1:
+            n_runs_max = {hpc.value: args.n_runs[0] for hpc in const.HPC}
+        elif len(args.n_runs) == len(const.HPC):
+            n_runs_max = {
+                hpc.value: args.n_runs[index] for index, hpc in enumerate(const.HPC)
+            }
+        else:
+            parser.error(
+                "You must specify wither one common value for --n_runs, or one for each in the following list: {}".format(
+                    list(const.HPC)
+                )
+            )
 
     if args.config is not None:
         # parse and check for variables in config
@@ -304,60 +329,104 @@ def main():
         # append more logic here if more variables are requested
 
     print("hf_seed", hf_seed)
-    queued_tasks = slurm_query_status.get_queued_tasks()
-    user_queued_tasks = slurm_query_status.get_queued_tasks(user=args.user).split("\n")
     db_tasks = slurm_query_status.get_submitted_db_tasks(db)
-    print("queued task:", queued_tasks)
-    print("subbed task:", db_tasks)
-    slurm_query_status.update_tasks(db, queued_tasks, db_tasks)
-    ntask_to_run = n_runs_max - len(user_queued_tasks)
+    print("subbed tasks:", db_tasks)
+    ntask_to_run = {}
+    runnable_tasks = []
 
-    runnable_tasks = slurm_query_status.get_runnable_tasks(db, ntask_to_run)
-    print("runnable task:")
+    # If any flags to ignore steps are given, add them to the list of skipped processes
+    skipped = []
+    if args.no_merge_ts:
+        print("Not doing merge_ts")
+        skipped.append(const.ProcessType.merge_ts.value)
+    if args.no_im:
+        print("Not calculating IMs")
+        skipped.append(const.ProcessType.IM_calculation.value)
+    if args.no_clean_up:
+        print("Not cleaning up")
+        skipped.append(const.ProcessType.clean_up.value)
+    skip_procs = slurm_query_status.get_runnable_tasks(
+        db, max(default_n_runs.values()), task_types=skipped
+    )
+
+    for proc in skip_procs:
+        # TODO: Add Skipped to enum in db and allow this state as a 'completed' state
+        update_mgmt_db.update_db(
+            db,
+            list(const.ProcessType)[proc[0]].str_value,
+            const.State.completed.str_value,
+            run_name=proc[1],
+        )
+
+    all_queued_tasks = []
+    for hpc in const.HPC:
+        queued_tasks = slurm_query_status.get_queued_tasks(machine=hpc)
+        user_queued_tasks = slurm_query_status.get_queued_tasks(
+            user=args.user, machine=hpc
+        ).split("\n")
+        print("{} queued tasks: {}".format(hpc.value, queued_tasks))
+        print(
+            "{} user queued tasks: {}".format(hpc.value, "\n".join(user_queued_tasks))
+        )
+        all_queued_tasks.append(queued_tasks)
+        hpc_ntasks_to_run = n_runs_max[hpc.value] - len(filter(None, user_queued_tasks))
+        ntask_to_run.update({hpc.value: hpc_ntasks_to_run})
+        runnable_tasks.extend(
+            slurm_query_status.get_runnable_tasks(
+                db,
+                hpc_ntasks_to_run,
+                task_types=[
+                    x
+                    for x, y in job_run_machine.items()
+                    if y == hpc.value and x not in skipped
+                ],
+            )
+        )
+    # Remove all empty strings from the list of queued tasks, then join them with newline
+    slurm_query_status.update_tasks(
+        db, "\n".join(filter(None, all_queued_tasks)), db_tasks
+    )
+
+    print("Runnable tasks:")
     print(runnable_tasks)
-    submit_task_count = 0
+    submit_task_count = {hpc.value: 0 for hpc in const.HPC}
     task_num = 0
-    print(submit_task_count)
+    print("ntask to run:")
     print(ntask_to_run)
-    while (
-        submit_task_count < ntask_to_run
-        and submit_task_count < len(runnable_tasks)
-        and task_num < len(runnable_tasks)
-    ):
+
+    while any(
+        [submit_task_count[hpc.value] < ntask_to_run[hpc.value] for hpc in const.HPC]
+    ) and task_num < len(runnable_tasks):
         db_task_status = runnable_tasks[task_num]
         proc_type = db_task_status[0]
         run_name = db_task_status[1]
         task_state = db_task_status[2]
 
-        # skip im calcs if no_im == true
-        if args.no_im and proc_type == const.ProcessType.IM_calculation.value:
+        hpc = job_run_machine[proc_type]
+        if submit_task_count[hpc] >= ntask_to_run[hpc]:
+            # This job is for a machine with a full queue. Skip to the next job
             task_num = task_num + 1
             continue
-        if proc_type == const.ProcessType.merge_ts.value:
-            if args.no_merge_ts:
-                update_mgmt_db.update_db(
-                    db, "merge_ts", const.State.completed.str_value, run_name=run_name
-                )
-                task_num = task_num + 1
-                continue
-            elif slurm_query_status.is_task_complete(
+
+        if (
+            proc_type == const.ProcessType.merge_ts.value
+            and slurm_query_status.is_task_complete(
                 [
                     const.ProcessType.clean_up.value,
                     run_name,
                     const.State.completed.str_value,
                 ],
                 slurm_query_status.get_db_tasks_to_be_run(db),
-            ):
-                # If clean_up has already run, then we should set it to be run again after merge_ts has run
-                update_mgmt_db.update_db(
-                    db,
-                    const.ProcessType.clean_up.str_value,
-                    const.State.created.str_value,
-                    run_name=run_name,
-                )
-        if not tidy_up and proc_type == const.ProcessType.clean_up.value:
-            task_num = task_num + 1
-            continue
+            )
+        ):
+            # If clean_up has already run, then we should set it to be run again after merge_ts has run
+            update_mgmt_db.update_db(
+                db,
+                const.ProcessType.clean_up.str_value,
+                const.State.created.str_value,
+                run_name=run_name,
+            )
+
         vm_name = run_name.split("_")[0]
 
         if args.single_sim:
@@ -380,7 +449,7 @@ def main():
             extended_period=extended_period,
         )
 
-        submit_task_count = submit_task_count + 1
+        submit_task_count[job_run_machine[proc_type]] += 1
         task_num = task_num + 1
 
     db.connection.close()
