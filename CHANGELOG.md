@@ -6,4 +6,12 @@ Slurm Ground Motion Workflow
 ### Changed
     Changes to autosubmit: 
     - Machine queues are maintained individually
-    - The desired maximum length for all or each machine queue can be set with the -n flag 
+    - The desired maximum length for all or each machine queue can be set with the -n flag
+
+## [19.4.2] - 2019-04-09 -- Dashboard
+### Changed
+    Changes to dashboard:
+    - Changed to use sreport to get total & daily core hours usage
+    - Changed dashboard test functions & test zip file download path
+    - Tidied up Maui dashboard
+    - Added Mahuika total core hours usage to dashboard
