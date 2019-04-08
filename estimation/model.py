@@ -298,7 +298,6 @@ class NNWcEstModel(WCEstModel):
 
         Have to use isclose due to minor floating point differences.
         """
-        print(np.isclose(X, np.repeat(self._train_max, X.shape[0], axis=0)))
         return (
             (X > self._train_max)
             & ~np.isclose(X, np.repeat(self._train_max, X.shape[0], axis=0))
@@ -535,7 +534,7 @@ class CombinedModel:
         X_nn: array of floats, shape [number of entries, number of features]
             Input data for NN, last column has to be the number of cores
         X_svr: array of floats, shape [number of entries, number of features]
-            Input data for SVR, last column has to be the number of cores
+            Input data for SVR
         n_cores: array of integers
             The non-normalised number of cores (i.e. actual number of
             physical cores to estimate for)
@@ -544,31 +543,27 @@ class CombinedModel:
         """
         assert X_nn.shape[0] == X_svr.shape[0]
 
-        if np.all(~self.nn_model.get_out_of_bounds_mask(X_nn)):
+        out_bound_mask = np.any(self.nn_model.get_out_of_bounds_mask(X_nn), axis=1)
+        if np.all(~out_bound_mask):
             return self.nn_model.predict(X_nn, warning=False)
         else:
-            if X_nn.shape[0] > 1:
+            if np.any(~out_bound_mask):
                 # Identify all entries that are out of bounds
-                mask = np.any(self.nn_model.get_out_of_bounds_mask(X_nn), axis=1)
 
                 # Estimate using NN
                 results = np.ones(X_nn.shape[0], dtype=np.float) * np.nan
-                if np.any(~mask):
-                    results[~mask] = self.nn_model.predict(
-                        X_nn[~mask, :], warning=False
-                    )
+                results[~out_bound_mask] = self.nn_model.predict(
+                    X_nn[~out_bound_mask, :], warning=False
+                )
 
                 # Estimate out of bounds using SVR
-                if np.any(mask):
-                    print(
-                        "Some entries are out of bounds, these will be "
-                        "estimated using the SVR model."
-                    )
-
-                    # Ignore number of cores
-                    results[mask] = (
-                        self.svr_model.predict(X_svr[mask, :]) * default_n_cores
-                    ) / n_cores[mask]
+                print(
+                    "Some entries are out of bounds, these will be "
+                    "estimated using the SVR model."
+                )
+                results[out_bound_mask] = (
+                    self.svr_model.predict(X_svr[out_bound_mask, :]) * default_n_cores
+                ) / n_cores[out_bound_mask]
 
                 return results
             else:

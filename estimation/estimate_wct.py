@@ -541,11 +541,17 @@ def estimate(
 
 
 def load_full_model(dir: str, model_type: const.EstModelType = DEFAULT_MODEL_TYPE):
+    """Loads the full model, i.e. the estimation model(s) and their associated scaler.
+
+    Returns an EstModel object.
+    """
+    # Load just NN
     if model_type is const.EstModelType.NN:
         return EstModel(
             load_model(dir, const.EST_MODEL_NN_PREFIX, "h5", NNWcEstModel),
             load_scaler(dir, SCALER_PREFIX.format("NN")), None, None
         )
+    # Load just SVR
     elif model_type is const.EstModelType.SVR:
         return EstModel(
             load_model(dir, const.EST_MODEL_SVR_PREFIX, "pickle", SVRModel),
@@ -553,6 +559,7 @@ def load_full_model(dir: str, model_type: const.EstModelType = DEFAULT_MODEL_TYP
             None,
             None,
         )
+    # Load both
     elif model_type is const.EstModelType.NN_SVR:
         return EstModel(
             load_model(dir, const.EST_MODEL_NN_PREFIX, "h5", NNWcEstModel),

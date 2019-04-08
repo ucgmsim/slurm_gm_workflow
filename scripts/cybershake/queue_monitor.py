@@ -39,7 +39,6 @@ def get_queue_entries(entry_files: List[str]):
             )
         )
 
-    print(queue_entries)
     return queue_entries
 
 

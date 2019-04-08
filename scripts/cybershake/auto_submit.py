@@ -37,7 +37,7 @@ job_run_machine = {
     const.ProcessType.IM_calculation.value: const.HPC.maui.value,
 }
 
-SLURM_TO_STATUS_DICT = {"R": 3, "PD": 2, "CG": 2}
+SLURM_TO_STATUS_DICT = {"R": 3, "PD": 2, "CG": 3}
 
 
 def get_queued_tasks(user=None):
@@ -457,7 +457,6 @@ def main(args):
                 continue
 
             # submit the job
-            start_time = time.time()
             submit_task(
                 sim_struct.get_sim_dir(root_folder, run_name),
                 proc_type,
@@ -470,10 +469,8 @@ def main(args):
                 extended_period=extended_period,
                 models=(lf_est_model, hf_est_model, bb_est_model, im_est_model),
             )
-            print("Submitting took {}".format(time.time() - start_time))
 
-        # Sleept time
-        print("Sleeping zzzzzzzzzzzZZZZZZZZZZZZZZZZZZZZZZZZ")
+        print("Sleeping for {}".format(args.sleep_time))
         time.sleep(args.sleep_time)
 
 
