@@ -249,7 +249,14 @@ def get_vmname(srf_name):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("run_folder", type=str, help="folder to the collection of runs")
-    parser.add_argument("--n_runs", default=None, type=list, nargs="+")
+    parser.add_argument(
+        "--n_runs",
+        default=None,
+        type=list,
+        nargs="+",
+        help="The number of processes each machine can run at once. If a single value is given this is used for all "
+             "machines, otherwise one value per machine must be given.",
+    )
 
     # cybershake-like simulations store mgmnt_db at different locations
     parser.add_argument("--single_sim", nargs="?", type=str, const=True)
