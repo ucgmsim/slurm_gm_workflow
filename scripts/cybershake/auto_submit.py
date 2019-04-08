@@ -361,7 +361,7 @@ def main():
             "{} user queued tasks: {}".format(hpc.value, "\n".join(user_queued_tasks))
         )
         all_queued_tasks.append(queued_tasks)
-        hpc_ntasks_to_run = n_runs_max[hpc.value] - len(user_queued_tasks)
+        hpc_ntasks_to_run = n_runs_max[hpc.value] - len(filter(None, user_queued_tasks))
         ntask_to_run.update({hpc.value: hpc_ntasks_to_run})
         runnable_tasks.extend(
             slurm_query_status.get_runnable_tasks(
@@ -383,8 +383,6 @@ def main():
     print(runnable_tasks)
     submit_task_count = {hpc.value: 0 for hpc in const.HPC}
     task_num = 0
-    print("submit task count:")
-    print(submit_task_count)
     print("ntask to run:")
     print(ntask_to_run)
 
