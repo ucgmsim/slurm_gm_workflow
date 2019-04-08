@@ -258,45 +258,6 @@ class DataCollector:
 
         return entries
 
-    def _parse_total_chours_usage(self, lines: Iterable[str], hpc: const.HPC):
-        """Gets the total core usage for the specified hpc
-        from the output of the nn_corehour_usage command.
-        If the output of nn_corehour_usage changes then this function
-        will also have to be updated!
-        """
-        pattern = "Project .* on the {} cluster"
-        hpc_pattern, cur_hpc_pattern = pattern.format(".*"), pattern.format(hpc.value)
-
-        hpc_start_lines, cur_hpc_start_line = [], None
-
-        for ix, line in enumerate(lines):
-            if re.match(hpc_pattern, line):
-                hpc_start_lines.append(ix)
-                if re.match(cur_hpc_pattern, line):
-                    cur_hpc_start_line = ix
-
-        # Get all lines between hpc of interest and next hpc entry (if there is one)
-        if hpc_start_lines[-1] == cur_hpc_start_line:
-            lines_interest = lines[cur_hpc_start_line:]
-        else:
-            lines_interest = lines[
-                cur_hpc_start_line : hpc_start_lines[
-                    hpc_start_lines.index(cur_hpc_start_line) + 1
-                ]
-            ]
-
-        # Get all lines starting with "Billed" then get the last one as it
-        # shows the total core usage
-        line_interest = [line for line in lines_interest if line.startswith("Logical")][
-            -1
-        ]
-
-        try:
-            return int(line_interest.split(" ")[-4].strip().replace(",", ""))
-        except ValueError:
-            print("Failed to convert {} out of \n{}\n to integer.")
-            return None
-
     def _parse_chours_usage(self, ch_lines: List):
         """Get daily/total core hours usage from cmd output"""
         # ['maui', 'nesi00213', '2023', '0']
