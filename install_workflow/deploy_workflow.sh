@@ -25,7 +25,7 @@ mkdir -p -v ${ROOT}/{VelocityModel,VelocityModels,StationInfo,workflow,RunFolder
 chmod g+w ${ROOT}/{VelocityModel,VelocityModels,StationInfo,workflow,RunFolder,RupModel,share}
 
 # preparing the file bashrc.uceq
-rm -f ${ROOT}/share/bashrc.uceq
+mv ${ROOT}/share/bashrc.uceq ${ROOT}/share/bashrc.uceq_`date +%Y%m%d_%H%M%S`
 touch ${ROOT}/share/bashrc.uceq
 
 echo "export gmsim='$ROOT'" >> ${ROOT}/share/bashrc.uceq
