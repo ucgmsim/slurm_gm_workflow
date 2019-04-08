@@ -93,20 +93,16 @@ class DashboardDB:
             day = day.strftime(self.date_format)
         return day
 
-    def update_daily_chours_usage(
-        self, total_core_usage: float, hpc: const.HPC, day: Union[date, str] = None
+    def update_chours_usage(
+            self, daily_ch_usage, total_ch_usage: float, hpc: const.HPC, day: Union[date, str] = None
     ):
-        """Updates the daily core hours usage.
-        The core hour usage for a day is calculated as
-        last saved (for current day) TOTAL_CORE_USAGE - current total_core_usage.
-        """
-        # Do nothing if total_core_usage is None
-        if total_core_usage is None:
+        """Updates daily and total core hours usage"""
+        # daily usage will be None if total is None
+        if total_ch_usage is None:
             return
 
         table = self.get_daily_t_name(hpc)
         day = self.get_date(day)
-
         with self.get_cursor(self.db_file) as cursor:
             row = cursor.execute(
                 "SELECT CORE_HOURS_USED, TOTAL_CORE_HOURS FROM {} WHERE DAY == ?;".format(
@@ -120,19 +116,15 @@ class DashboardDB:
             if row is None:
                 cursor.execute(
                     "INSERT INTO {} VALUES(?, ?, ?, ?)".format(table),
-                    (day, 0, total_core_usage, update_time),
+                    (day, 0, total_ch_usage, update_time),
                 )
             else:
-                chours_usage = total_core_usage - row[1] if row[1] is not None else 0
-                if row[0] is not None:
-                    chours_usage = row[0] + chours_usage
-
                 cursor.execute(
                     "UPDATE {} SET CORE_HOURS_USED = ?, TOTAL_CORE_HOURS = ?, \
                     UPDATE_TIME = ? WHERE DAY == ?;".format(
                         table
                     ),
-                    (chours_usage, total_core_usage, update_time, day),
+                    (daily_ch_usage, total_ch_usage, update_time, day),
                 )
 
     def get_chours_usage(
@@ -363,7 +355,7 @@ class DashboardDB:
         # Add latest table
         cursor.execute(
             """CREATE TABLE IF NOT EXISTS {}(
-                  JOB_ID INTEGER PRIMARY KEY NOT NULL,
+                  JOB_ID TEXT PRIMARY KEY NOT NULL,
                   UPDATE_TIME DATE NOT NULL,
                   USERNAME TEXT NOT NULL,
                   ACCOUNT TEXT NOT NULL ,
