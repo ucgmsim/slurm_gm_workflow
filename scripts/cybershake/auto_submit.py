@@ -279,7 +279,9 @@ def main():
         if len(args.n_runs) == 1:
             n_runs_max = {hpc.value: args.n_runs[0] for hpc in const.HPC}
         elif len(args.n_runs) == len(const.HPC):
-            n_runs_max = {hpc.value: args.n_runs[index] for index, hpc in enumerate(const.HPC)}
+            n_runs_max = {
+                hpc.value: args.n_runs[index] for index, hpc in enumerate(const.HPC)
+            }
         else:
             parser.error(
                 "You must specify wither one common value for --n_runs, or one for each in the following list: {}".format(
@@ -327,11 +329,26 @@ def main():
     # If any flags to ignore steps are given, add them to the list of skipped processes
     skipped = []
     if args.no_merge_ts:
+        print("Not doing merge_ts")
         skipped.append(const.ProcessType.merge_ts.value)
     if args.no_im:
+        print("Not calculating IMs")
         skipped.append(const.ProcessType.IM_calculation.value)
     if args.no_clean_up:
+        print("Not cleaning up")
         skipped.append(const.ProcessType.clean_up.value)
+    skip_procs = slurm_query_status.get_runnable_tasks(
+        db, max(default_n_runs.values()), task_types=skipped
+    )
+
+    for proc in skip_procs:
+        # TODO: Add Skipped to enum in db and allow this state as a 'completed' state
+        update_mgmt_db.update_db(
+            db,
+            list(const.ProcessType)[proc[0]].str_value,
+            const.State.completed.str_value,
+            run_name=proc[1],
+        )
 
     all_queued_tasks = []
     for hpc in const.HPC:
@@ -340,8 +357,10 @@ def main():
             user=args.user, machine=hpc
         ).split("\n")
         print("{} queued tasks: {}".format(hpc.value, queued_tasks))
-        print("{} user queued tasks: {}".format(hpc.value, "\n".join(user_queued_tasks)))
-        all_queued_tasks.extend(queued_tasks)
+        print(
+            "{} user queued tasks: {}".format(hpc.value, "\n".join(user_queued_tasks))
+        )
+        all_queued_tasks.append(queued_tasks)
         hpc_ntasks_to_run = n_runs_max[hpc.value] - len(user_queued_tasks)
         ntask_to_run.update({hpc.value: hpc_ntasks_to_run})
         runnable_tasks.extend(
@@ -355,7 +374,10 @@ def main():
                 ],
             )
         )
-    slurm_query_status.update_tasks(db, all_queued_tasks, db_tasks)
+    # Remove all empty strings from the list of queued tasks, then join them with newline
+    slurm_query_status.update_tasks(
+        db, "\n".join(filter(None, all_queued_tasks)), db_tasks
+    )
 
     print("Runnable tasks:")
     print(runnable_tasks)
