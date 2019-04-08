@@ -19,7 +19,7 @@ from scripts.submit_bb import main as submit_bb_main
 from scripts.submit_sim_imcalc import submit_im_calc_slurm, SlBodyOptConsts
 from shared_workflow import shared
 
-default_n_runs = {const.HPC.maui: 12, const.HPC.mahuika: 12}
+default_n_runs = {const.HPC.maui.value: 12, const.HPC.mahuika.value: 12}
 default_1d_mod = "/nesi/transit/nesi00213/VelocityModel/Mod-1D/Cant1D_v2-midQ_leer.1d"
 
 job_run_machine = {
@@ -333,13 +333,15 @@ def main():
     if args.no_clean_up:
         skipped.append(const.ProcessType.clean_up.value)
 
+    all_queued_tasks = []
     for hpc in const.HPC:
         queued_tasks = slurm_query_status.get_queued_tasks(machine=hpc)
         user_queued_tasks = slurm_query_status.get_queued_tasks(
             user=args.user, machine=hpc
         ).split("\n")
         print("{} queued tasks: {}".format(hpc.value, queued_tasks))
-        slurm_query_status.update_tasks(db, queued_tasks, db_tasks)
+        print("{} user queued tasks: {}".format(hpc.value, "\n".join(user_queued_tasks)))
+        all_queued_tasks.extend(queued_tasks)
         hpc_ntasks_to_run = n_runs_max[hpc.value] - len(user_queued_tasks)
         ntask_to_run.update({hpc.value: hpc_ntasks_to_run})
         runnable_tasks.extend(
@@ -353,12 +355,15 @@ def main():
                 ],
             )
         )
+    slurm_query_status.update_tasks(db, all_queued_tasks, db_tasks)
 
-    print("runnable tasks:")
+    print("Runnable tasks:")
     print(runnable_tasks)
     submit_task_count = {hpc.value: 0 for hpc in const.HPC}
     task_num = 0
+    print("submit task count:")
     print(submit_task_count)
+    print("ntask to run:")
     print(ntask_to_run)
 
     while any(

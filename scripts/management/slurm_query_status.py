@@ -51,7 +51,6 @@ def get_submitted_db_tasks(db):
 
 
 def get_db_tasks_to_be_run(db, retry_max=RETRY_MAX):
-    print("retry_max", retry_max)
     db.execute(
         """SELECT proc_type, run_name, status_enum.state 
                   FROM status_enum, state 
