@@ -102,7 +102,9 @@ class DataCollector:
         # 2019-03-26
         local_date = datetime.today().date()
         # 2019-03-26 00:00:00
-        local_start_datetime = datetime(local_date.year, local_date.month, local_date.day)
+        local_start_datetime = datetime(
+            local_date.year, local_date.month, local_date.day
+        )
         # 2019-03-25 11:00:00.000002
         utc_start_datetime = local_start_datetime - self.utc_time_gap
         # 03/25/19-11:00:00
@@ -118,17 +120,35 @@ class DataCollector:
         """Collects data from the specified HPC and adds it to the
         dashboard db
         """
-        # Core hour usage, out of some reason this command is super slow...
-        rt_ch_output = self.run_cmd(
-            hpc.value, "nn_corehour_usage -l {}".format(PROJECT_ID), timeout=60
+        start_time, end_time = self.get_utc_times()
+        # Get daily core hours usage
+        rt_daily_ch_output = self.run_cmd(
+            hpc.value,
+            "sreport -n -t Hours cluster AccountUtilizationByUser Accounts={} start={} end={}".format(
+                PROJECT_ID, start_time, end_time
+            ),
+            timeout=60,
         )
-        if rt_ch_output:
-            self.dashboard_db.update_daily_chours_usage(
-                self._parse_total_chours_usage(rt_ch_output, hpc), hpc
-            )
+        rt_daily_ch = self._parse_chours_usage(rt_daily_ch_output)
+        # Get total core hours usage, start from 188 days ago
+        total_start_time = (
+            datetime.strptime(start_time, self.utc_time_format) - timedelta(days=188)
+        ).strftime(self.utc_time_format)
+        rt_total_ch_output = self.run_cmd(
+            hpc.value,
+            "sreport -n -t Hours cluster AccountUtilizationByUser Accounts={} start={} end={}".format(
+                PROJECT_ID, total_start_time, end_time
+            ),
+            timeout=60,
+        )
+        rt_total_ch = self._parse_chours_usage(rt_total_ch_output)
 
+        if rt_total_ch_output:
+            self.dashboard_db.update_chours_usage(rt_daily_ch, rt_total_ch, hpc)
         # Squeue, formatted to show full account name
-        sq_output = self.run_cmd(hpc.value, "squeue --format=%18i%12u%12a%60j%20T%25r%20S%18M%18L%10D%5C")
+        sq_output = self.run_cmd(
+            hpc.value, "squeue --format=%18i%25u%12a%60j%20T%25r%20S%18M%18L%10D%10C"
+        )
         if sq_output:
             self.dashboard_db.update_squeue(self._parse_squeue(sq_output), hpc)
 
@@ -163,8 +183,6 @@ class DataCollector:
             self.dashboard_db.update_daily_quota(self._parse_quota(quota_output), hpc)
 
         # user daily core hour usage
-        # end_time == start_time to show usage of one day
-        start_time, end_time = self.get_utc_times()
         user_ch_output = self.run_cmd(
             hpc.value,
             "sreport -M {} -t Hours cluster AccountUtilizationByUser Users={} start={} end={} -n".format(
@@ -240,44 +258,16 @@ class DataCollector:
 
         return entries
 
-    def _parse_total_chours_usage(self, lines: Iterable[str], hpc: const.HPC):
-        """Gets the total core usage for the specified hpc
-        from the output of the nn_corehour_usage command.
-        If the output of nn_corehour_usage changes then this function
-        will also have to be updated!
-        """
-        pattern = "Project .* on the {} cluster"
-        hpc_pattern, cur_hpc_pattern = pattern.format(".*"), pattern.format(hpc.value)
-
-        hpc_start_lines, cur_hpc_start_line = [], None
-
-        for ix, line in enumerate(lines):
-            if re.match(hpc_pattern, line):
-                hpc_start_lines.append(ix)
-                if re.match(cur_hpc_pattern, line):
-                    cur_hpc_start_line = ix
-
-        # Get all lines between hpc of interest and next hpc entry (if there is one)
-        if hpc_start_lines[-1] == cur_hpc_start_line:
-            lines_interest = lines[cur_hpc_start_line:]
-        else:
-            lines_interest = lines[
-                cur_hpc_start_line : hpc_start_lines[
-                    hpc_start_lines.index(cur_hpc_start_line) + 1
-                ]
-            ]
-
-        # Get all lines starting with "Billed" then get the last one as it
-        # shows the total core usage
-        line_interest = [line for line in lines_interest if line.startswith("Logical")][
-            -1
-        ]
-
+    def _parse_chours_usage(self, ch_lines: List):
+        """Get daily/total core hours usage from cmd output"""
+        # ['maui', 'nesi00213', '2023', '0']
         try:
-            return int(line_interest.split(" ")[-4].strip().replace(",", ""))
+            return ch_lines[0].strip().split()[-2]
+        # no core hours used, lines=['']
+        except IndexError:
+            return 0
         except ValueError:
-            print("Failed to convert {} out of \n{}\n to integer.")
-            return None
+            print("Failed to convert total core hours to integer.")
 
     def _parse_quota(self, lines: Iterable[str]):
         """
@@ -322,7 +312,9 @@ class DataCollector:
         return entries
 
     @staticmethod
-    def parse_user_chours_usage(lines: Iterable[str], users: Iterable[str], day: Union[date, str]=date.today()):
+    def parse_user_chours_usage(
+        lines: Iterable[str], users: Iterable[str], day: Union[date, str] = date.today()
+    ):
         """Get daily core hours usage for a list of users from cmd output"""
         entries = []
         # if none of the user had usage today, lines=['']
