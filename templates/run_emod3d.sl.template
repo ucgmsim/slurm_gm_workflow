@@ -38,7 +38,7 @@ if [[ $? == 0 ]]; then
 else
     #reformat $res to remove '\n'
     res=`echo $res | tr -d '\n'`
-    python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py {{mgmt_db_location}}/mgmt_db_queue {{srf_name}} 1 5
+    python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py {{mgmt_db_location}}/mgmt_db_queue {{srf_name}} 1 5 --error '$res'
     #echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} EMOD3D failed --run_name {{srf_name}} --error '$res' --force " >> {{mgmt_db_location}}/mgmt_db_queue/$timestamp\_$SLURM_JOBID
 fi
 

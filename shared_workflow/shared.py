@@ -635,6 +635,7 @@ def add_to_queue(
     status: int,
     job_id: int = None,
     retries: int = None,
+    error: str = None
 ):
     """Adds an update entry to the queue"""
     filename = os.path.join(
@@ -657,6 +658,7 @@ def add_to_queue(
                 MgmtDB.col_status: status,
                 MgmtDB.col_job_id: job_id,
                 MgmtDB.col_retries: retries,
+                "error": error
             },
             f,
         )

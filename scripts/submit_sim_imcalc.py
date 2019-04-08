@@ -9,7 +9,7 @@ import qcore.simulation_structure as sim_struct
 from qcore import utils, shared
 from qcore.config import host
 from typing import Dict
-from estimation.estimate_wct import est_IM_chours_single
+from estimation.estimate_wct import est_IM_chours_single, EstModel
 from qcore.utils import DotDictify
 from shared_workflow.load_config import load
 from shared_workflow.shared import submit_sl_script, set_wct, confirm, write_sl_script
@@ -58,7 +58,7 @@ DEFAULT_OPTIONS = {
 }
 
 
-def submit_im_calc_slurm(sim_dir: str, options_dict: Dict = None):
+def submit_im_calc_slurm(sim_dir: str, options_dict: Dict = None, est_model: EstModel = None):
     """Creates the IM calc slurm scrip, also submits if specified
 
     The options_dict is populated by the DEFAULT_OPTIONS, values can be changed by
@@ -76,9 +76,11 @@ def submit_im_calc_slurm(sim_dir: str, options_dict: Dict = None):
     sim_name = os.path.basename(sim_dir)
     fault_name = sim_name.split("_")[0]
 
-    workflow_config = load(
-        os.path.dirname(os.path.realpath(__file__)), "workflow_config.json"
-    )
+    if est_model is None:
+        workflow_config = load(
+            os.path.dirname(os.path.realpath(__file__)), "workflow_config.json"
+        )
+        est_model = os.path.join(workflow_config["estimation_models_dir"], "IM")
 
     # Get wall clock estimation
     print("Running wall clock estimation for IM sim")
@@ -88,7 +90,7 @@ def submit_im_calc_slurm(sim_dir: str, options_dict: Dict = None):
         [options_dict[SlBodyOptConsts.component.value]],
         100 if options_dict[SlBodyOptConsts.extended.value] else 15,
         options_dict[SlBodyOptConsts.n_procs.value],
-        os.path.join(workflow_config["estimation_models_dir"], "IM"),
+        est_model,
     )
     wct = set_wct(
         est_run_time, options_dict[SlBodyOptConsts.n_procs.value], options_dict["auto"]

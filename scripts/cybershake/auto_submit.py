@@ -13,6 +13,7 @@ import shlex
 import shared_workflow.load_config as ldcfg
 import qcore.constants as const
 import qcore.simulation_structure as sim_struct
+import estimation.estimate_wct as est
 from scripts.management.MgmtDB import MgmtDB, SlurmTask
 from metadata.log_metadata import store_metadata
 from shared_workflow import shared
@@ -112,9 +113,11 @@ def update_tasks(queue_folder: str, squeue_tasks, db_tasks: List[SlurmTask]):
         # Only reset if there is no entry on the mgmt queue for this
         # realisation/proc combination
         # Ignore cleanup for now as it runs on mahuika
-        if not found and not check_queue(
-            queue_folder, db_task.run_name, db_task.proc_type
-        ) and const.ProcessType(db_task.proc_type) != const.ProcessType.clean_up:
+        if (
+            not found
+            and not check_queue(queue_folder, db_task.run_name, db_task.proc_type)
+            and const.ProcessType(db_task.proc_type) != const.ProcessType.clean_up
+        ):
             print("DEBUG: RESETTING TASK!!!! SHOULD NOT HAPPEN ATM!!!")
             print(
                 "Task '{}' on '{}' not found on squeue; resetting the status "
@@ -141,6 +144,7 @@ def submit_task(
     hf_seed=None,
     extended_period=False,
     do_verification=False,
+    models=None,
 ):
     # create the tmp folder
     # TODO: fix this issue
@@ -167,7 +171,7 @@ def submit_task(
             write_directory=sim_dir,
         )
         print("Submit EMOD3D arguments: ", args)
-        submit_lf_main(args)
+        submit_lf_main(args, est_model=models[0])
         store_metadata(
             log_file,
             const.ProcessType.EMOD3D.str_value,
@@ -233,7 +237,7 @@ def submit_task(
             debug=False,
         )
         print("Submit HF arguments: ", args)
-        submit_hf_main(args)
+        submit_hf_main(args, models[1])
         store_metadata(
             log_file, const.ProcessType.HF.str_value, {"submit_time": submitted_time}
         )
@@ -249,7 +253,7 @@ def submit_task(
             ascii=False,
         )
         print("Submit BB arguments: ", args)
-        submit_bb_main(args)
+        submit_bb_main(args, models[2])
         store_metadata(
             log_file, const.ProcessType.BB.str_value, {"submit_time": submitted_time}
         )
@@ -261,7 +265,9 @@ def submit_task(
             "machine": job_run_machine[const.ProcessType.IM_calculation.value],
             "write_directory": sim_dir,
         }
-        submit_im_calc_slurm(sim_dir=sim_dir, options_dict=options_dict)
+        submit_im_calc_slurm(
+            sim_dir=sim_dir, options_dict=options_dict, est_model=models[3]
+        )
         print("Submit IM calc arguments: ", options_dict)
         store_metadata(
             log_file,
@@ -287,7 +293,7 @@ def submit_task(
             pass
     if proc_type == const.ProcessType.clean_up.value:
         clean_up_template = (
-            "--export=gmsim -o {output_file} -e {error_file} {script_location} "
+            "--export=CUR_ENV -o {output_file} -e {error_file} {script_location} "
             "{sim_dir} {srf_name} {mgmt_db_loc} "
         )
         script = clean_up_template.format(
@@ -295,8 +301,8 @@ def submit_task(
             srf_name=run_name,
             mgmt_db_loc=root_folder,
             script_location=os.path.expandvars("$gmsim/workflow/scripts/clean_up.sl"),
-            output_file=os.path.join(sim_dir, "clean_up.out"),
-            error_file=os.path.join(sim_dir, "clean_up.err"),
+            output_file=os.path.join(root_folder, "clean_up.out"),
+            error_file=os.path.join(root_folder, "clean_up.err"),
         )
         shared.submit_sl_script(
             script,
@@ -346,6 +352,21 @@ def main(args):
             if "extended_period" in cybershake_cfg
             else extended_period
         )
+
+    # Load estimation models
+    workflow_config = ldcfg.load()
+    lf_est_model = est.load_full_model(
+        os.path.join(workflow_config["estimation_models_dir"], "LF")
+    )
+    hf_est_model = est.load_full_model(
+        os.path.join(workflow_config["estimation_models_dir"], "HF")
+    )
+    bb_est_model = est.load_full_model(
+        os.path.join(workflow_config["estimation_models_dir"], "BB")
+    )
+    im_est_model = est.load_full_model(
+        os.path.join(workflow_config["estimation_models_dir"], "IM")
+    )
 
     while True:
         # Get in progress tasks in the db and the HPC queue
@@ -447,9 +468,9 @@ def main(args):
                 hf_seed=hf_seed,
                 rand_reset=rand_reset,
                 extended_period=extended_period,
+                models=(lf_est_model, hf_est_model, bb_est_model, im_est_model),
             )
             print("Submitting took {}".format(time.time() - start_time))
-
 
         # Sleept time
         print("Sleeping zzzzzzzzzzzZZZZZZZZZZZZZZZZZZZZZZZZ")

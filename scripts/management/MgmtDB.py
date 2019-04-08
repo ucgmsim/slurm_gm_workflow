@@ -10,8 +10,10 @@ from scripts.management.db_helper import connect_db_ctx
 Process = const.ProcessType
 
 SlurmTask = namedtuple(
-    "SlurmTask", ["run_name", "proc_type", "status", "job_id", "retries"]
+    "SlurmTask", ["run_name", "proc_type", "status", "job_id", "retries", "error"]
 )
+# Make error an optional value, once we are using Python 3.7 then this can be made nicer..
+SlurmTask.__new__.__defaults__ = (None,)
 
 
 class MgmtDB:
@@ -171,6 +173,13 @@ class MgmtDB:
                     ),
                     (value, entry.run_name, entry.proc_type),
                 )
+        if entry.error is not None:
+            cur.execute(
+                """INSERT INTO error (task_id, error)
+                  VALUES (
+                  (SELECT id from state WHERE proc_type = ? AND run_name = ?), ?)""",
+                (entry.proc_type, entry.run_name, entry.error),
+            )
 
     def populate(self, realisations, srf_files: Union[List[str], str] = []):
         """Initial population of the database with all realisations"""

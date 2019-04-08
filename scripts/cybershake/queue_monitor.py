@@ -35,9 +35,11 @@ def get_queue_entries(entry_files: List[str]):
                 status=data_dict[MgmtDB.col_status],
                 job_id=data_dict[MgmtDB.col_job_id],
                 retries=data_dict[MgmtDB.col_retries],
+                error=data_dict.get("error")
             )
         )
 
+    print(queue_entries)
     return queue_entries
 
 

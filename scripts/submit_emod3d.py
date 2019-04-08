@@ -24,7 +24,7 @@ from shared_workflow.shared import (
 CHECKPOINT_DURATION = 10
 
 
-def main(args, est_model = None):
+def main(args: argparse.Namespace, est_model: est.EstModel = None):
     params = utils.load_sim_params(os.path.join(args.rel_dir, "sim_params.yaml"))
 
     submit_yes = True if args.auto else confirm("Also submit the job for you?")
@@ -43,13 +43,18 @@ def main(args, est_model = None):
         lf_sim_dir = os.path.join(sim_dir, "LF")
 
         # default_core will be changed is user passes ncore
+        model = (
+            est_model
+            if est_model is not None
+            else os.path.join(workflow_config["estimation_models_dir"], "LF")
+        )
         est_core_hours, est_run_time, est_cores = est.est_LF_chours_single(
             int(params.nx),
             int(params.ny),
             int(params.nz),
             get_nt(params),
             args.ncore,
-            os.path.join(workflow_config["estimation_models_dir"], "LF"),
+            model,
             True,
         )
         wct = set_wct(est_run_time, est_cores, args.auto)
@@ -66,9 +71,6 @@ def main(args, est_model = None):
             args.write_directory if args.write_directory else params.sim_dir
         )
 
-        workflow_config = load_config.load(
-            os.path.dirname(os.path.realpath(__file__)), "workflow_config.json"
-        )
         set_runparams.create_run_params(
             sim_dir,
             workflow_config=workflow_config,
@@ -88,7 +90,7 @@ def main(args, est_model = None):
             "lf_sim_dir": lf_sim_dir,
         }
 
-        body_template_params = ("run_emod3d.sl.template",{})
+        body_template_params = ("run_emod3d.sl.template", {})
 
         script_prefix = "run_emod3d_{}".format(srf_name)
         script_file_path = write_sl_script(

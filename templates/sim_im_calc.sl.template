@@ -58,7 +58,7 @@ if [[ $? == 0 ]]; then
 
 else
     #failed
-    python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py {{mgmt_db_location}}/mgmt_db_queue {{srf_name}} 6 5
+    python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py {{mgmt_db_location}}/mgmt_db_queue {{srf_name}} 6 5 --error '$res'
     #echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} IM_calculation failed --run_name {{sim_name}} --error '$res' --force"  >> {{mgmt_db_location}}/mgmt_db_queue/$timestamp\_$SLURM_JOBID
 fi
 
