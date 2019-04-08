@@ -6,7 +6,7 @@ services:
 
 # command to install dependencies
 before_install:
-  - REMOTESOURCE=http://ec2-54-206-55-199.ap-southeast-2.compute.amazonaws.com/static/public/testing/slurm_gm_workflow
+  - REMOTESOURCE=http://ec2-13-211-174-16.ap-southeast-2.compute.amazonaws.com:5000/static/public/testing/slurm_gm_workflow
   - BUILDDIR=/home/travis/build/
   - docker pull sungeunbae/qcore-ubuntu-tiny
   - cd $BUILDDIR
