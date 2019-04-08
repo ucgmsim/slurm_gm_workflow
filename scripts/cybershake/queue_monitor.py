@@ -10,7 +10,8 @@ import qcore.simulation_structure as sim_struct
 from scripts.management.MgmtDB import MgmtDB, SlurmTask
 
 
-DATE_FORMAT = "%Y%m%d%H%M%S"
+# Have to include sub-seconds, as clean up can run sub one second.
+DATE_FORMAT = "%Y%m%d%H%M%S_%f"
 
 
 def get_queue_entries(entry_files: List[str]):

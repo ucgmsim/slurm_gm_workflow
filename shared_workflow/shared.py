@@ -23,7 +23,7 @@ from qcore import binary_version
 from qcore.config import host
 import qcore.constants as const
 from qcore.utils import load_sim_params
-from scripts.cybershake.queue_monitor import DATE_FORMAT
+from scripts.cybershake.queue_monitor import DATE_FORMAT as QUEUE_DATE_FORMAT
 from scripts.management.MgmtDB import MgmtDB
 
 if sys.version_info.major == 3:
@@ -640,7 +640,7 @@ def add_to_queue(
     """Adds an update entry to the queue"""
     filename = os.path.join(
         queue_folder,
-        "{}.{}.{}".format(datetime.now().strftime(DATE_FORMAT), run_name, proc_type),
+        "{}.{}.{}".format(datetime.now().strftime(QUEUE_DATE_FORMAT), run_name, proc_type),
     )
 
     if os.path.exists(filename):

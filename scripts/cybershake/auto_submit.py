@@ -470,7 +470,7 @@ def main(args):
                 models=(lf_est_model, hf_est_model, bb_est_model, im_est_model),
             )
 
-        print("Sleeping for {}".format(args.sleep_time))
+        print("Sleeping for {} second(s)".format(args.sleep_time))
         time.sleep(args.sleep_time)
 
 
