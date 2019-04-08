@@ -255,7 +255,9 @@ def main():
         type=list,
         nargs="+",
         help="The number of processes each machine can run at once. If a single value is given this is used for all "
-             "machines, otherwise one value per machine must be given.",
+        "machines, otherwise one value per machine must be given. The current order is: {}".format(
+            (x.str_value for x in const.HPC)
+        ),
     )
 
     # cybershake-like simulations store mgmnt_db at different locations
