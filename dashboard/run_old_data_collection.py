@@ -68,7 +68,7 @@ def collect_old_data(
 def run_old_collection(dashboard_db, hpcs: Union[List[const.HPC], const.HPC], login_user: str, users: Iterable[str], days_shift: int):
     """Runs the data collection for a specified period"""
     # Iterate through the specifid days period
-    for day_shift in range(days_shift + 1):
+    for day_shift in reversed(range(days_shift + 1)):
         # Collect the data
         print("{} - Collecting data from HPC {}".format(datetime.now(), hpcs))
         for hpc in hpcs:

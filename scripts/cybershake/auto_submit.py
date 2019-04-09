@@ -9,6 +9,7 @@ from subprocess import call, Popen, PIPE
 from typing import List
 
 import shlex
+import numpy as np
 
 import shared_workflow.load_config as ldcfg
 import qcore.constants as const
@@ -16,44 +17,45 @@ import qcore.simulation_structure as sim_struct
 import estimation.estimate_wct as est
 from scripts.management.MgmtDB import MgmtDB, SlurmTask
 from metadata.log_metadata import store_metadata
-from shared_workflow import shared
 
 from scripts.submit_emod3d import main as submit_lf_main
 from scripts.submit_post_emod3d import main as submit_post_lf_main
 from scripts.submit_hf import main as submit_hf_main
 from scripts.submit_bb import main as submit_bb_main
 from scripts.submit_sim_imcalc import submit_im_calc_slurm, SlBodyOptConsts
+from shared_workflow import shared
 
-DEFAULT_N_RUNS = 12
 DEFAULT_N_MAX_RETRIES = 2
-default_1d_mod = "/nesi/transit/nesi00213/VelocityModel/Mod-1D/Cant1D_v2-midQ_leer.1d"
+DEFAULT_N_RUNS = {const.HPC.maui.value: 12, const.HPC.mahuika.value: 12}
+DEFAULT_1D_MOD = "/nesi/transit/nesi00213/VelocityModel/Mod-1D/Cant1D_v2-midQ_leer.1d"
 
-job_run_machine = {
+JOB_RUN_MACHINE = {
     const.ProcessType.EMOD3D.value: const.HPC.maui.value,
     const.ProcessType.merge_ts.value: const.HPC.mahuika.value,
     const.ProcessType.winbin_aio.value: const.HPC.maui.value,
     const.ProcessType.HF.value: const.HPC.maui.value,
     const.ProcessType.BB.value: const.HPC.maui.value,
     const.ProcessType.IM_calculation.value: const.HPC.maui.value,
+    const.ProcessType.clean_up.value: const.HPC.mahuika.value,
 }
 
 SLURM_TO_STATUS_DICT = {"R": 3, "PD": 2, "CG": 3}
 
 
-def get_queued_tasks(user=None):
-    output_list = []
+def get_queued_tasks(user=None, machine=const.HPC.maui):
     # TODO: Treat Maui and Mahuika jobs seperately. See QSW-912
-    for machine in const.HPC:
-        if user != None:
-            cmd = "squeue -A nesi00213 -o '%A %t' -h -M {} -u {}".format(
-                machine.value, user
-            )
-        else:
-            cmd = "squeue -A nesi00213 -o '%A %t' -h -M {}".format(machine.value)
-        process = Popen(shlex.split(cmd), stdout=PIPE, encoding="utf-8")
-        (output, err) = process.communicate()
-        process.wait()
-        output_list.extend(filter(None, output.split("\n")[1:]))
+    if user is not None:
+        cmd = "squeue -A nesi00213 -o '%A %t' -h -M {} -u {}".format(
+            machine.value, user
+        )
+    else:
+        cmd = "squeue -A nesi00213 -o '%A %t' -h -M {}".format(machine.value)
+
+    process = Popen(shlex.split(cmd), stdout=PIPE, encoding="utf-8")
+    (output, err) = process.communicate()
+    process.wait()
+
+    output_list = list(filter(None, output.split("\n")[1:]))
     return output_list
 
 
@@ -166,7 +168,7 @@ def submit_task(
             srf=run_name,
             ncore=const.LF_DEFAULT_NCORES,
             account=const.DEFAULT_ACCOUNT,
-            machine=job_run_machine[const.ProcessType.EMOD3D.value],
+            machine=JOB_RUN_MACHINE[const.ProcessType.EMOD3D.value],
             rel_dir=sim_dir,
             write_directory=sim_dir,
         )
@@ -185,7 +187,7 @@ def submit_task(
             winbin_aio=False,
             srf=run_name,
             account=const.DEFAULT_ACCOUNT,
-            machine=job_run_machine[const.ProcessType.merge_ts.value],
+            machine=JOB_RUN_MACHINE[const.ProcessType.merge_ts.value],
             rel_dir=sim_dir,
             write_directory=sim_dir,
         )
@@ -216,7 +218,7 @@ def submit_task(
                 merge_ts=False,
                 srf=run_name,
                 account=const.DEFAULT_ACCOUNT,
-                machine=job_run_machine[const.ProcessType.winbin_aio.value],
+                machine=JOB_RUN_MACHINE[const.ProcessType.winbin_aio.value],
             )
             print("Submit post EMOD3D (winbin_aio) arguments: ", args)
             submit_post_lf_main(args)
@@ -231,7 +233,7 @@ def submit_task(
             version=const.HF_DEFAULT_VERSION,
             site_specific=None,
             account=const.DEFAULT_ACCOUNT,
-            machine=job_run_machine[const.ProcessType.HF.value],
+            machine=JOB_RUN_MACHINE[const.ProcessType.HF.value],
             rel_dir=sim_dir,
             write_directory=sim_dir,
             debug=False,
@@ -247,7 +249,7 @@ def submit_task(
             srf=run_name,
             version=const.BB_DEFAULT_VERSION,
             account=const.DEFAULT_ACCOUNT,
-            machine=job_run_machine[const.ProcessType.BB.value],
+            machine=JOB_RUN_MACHINE[const.ProcessType.BB.value],
             rel_dir=sim_dir,
             write_directory=sim_dir,
             ascii=False,
@@ -262,7 +264,7 @@ def submit_task(
             SlBodyOptConsts.extended.value: True if extended_period else False,
             SlBodyOptConsts.simple_out.value: True,
             "auto": True,
-            "machine": job_run_machine[const.ProcessType.IM_calculation.value],
+            "machine": JOB_RUN_MACHINE[const.ProcessType.IM_calculation.value],
             "write_directory": sim_dir,
         }
         submit_im_calc_slurm(
@@ -320,8 +322,22 @@ def main(args):
     mgmt_db = MgmtDB(sim_struct.get_mgmt_db(root_folder))
 
     # Default values
-    oneD_mod, hf_vs30_ref, binary_mode, hf_seed = default_1d_mod, None, True, None
+    oneD_mod, hf_vs30_ref, binary_mode, hf_seed = DEFAULT_1D_MOD, None, True, None
     rand_reset, extended_period = True, False
+
+    machine_max_tasks = DEFAULT_N_RUNS
+    if args.n_runs is not None:
+        if len(args.n_runs) == 1:
+            machine_max_tasks = {hpc.value: args.n_runs[0] for hpc in const.HPC}
+        elif len(args.n_runs) == len(const.HPC):
+            machine_max_tasks = {
+                hpc.value: args.n_runs[index] for index, hpc in enumerate(const.HPC)
+            }
+        else:
+            parser.error(
+                "You must specify wither one common value for --n_runs, or one "
+                "for each in the following list: {}".format(list(const.HPC))
+            )
 
     if args.config is not None:
         # parse and check for variables in config
@@ -368,9 +384,26 @@ def main(args):
         os.path.join(workflow_config["estimation_models_dir"], "IM")
     )
 
+    # If any flags to ignore steps are given, add them to the list of skipped processes
+    skipped = []
+    if args.no_merge_ts:
+        print("Not doing merge_ts")
+        skipped.append(const.ProcessType.merge_ts.value)
+    if args.no_im:
+        print("Not calculating IMs")
+        skipped.append(const.ProcessType.IM_calculation.value)
+    if args.no_clean_up:
+        print("Not cleaning up")
+        skipped.append(const.ProcessType.clean_up.value)
+
     while True:
         # Get in progress tasks in the db and the HPC queue
-        queue_tasks = get_queued_tasks(user=args.user)
+        queue_tasks, n_tasks_to_run = [], {}
+        for hpc in const.HPC:
+            cur_tasks = get_queued_tasks(user=args.user, machine=hpc)
+            ntask_to_run = machine_max_tasks[hpc] - len(cur_tasks)
+            queue_tasks.extend(cur_tasks)
+
         db_in_progress_tasks = mgmt_db.get_submitted_tasks()
         print("\nSqueue user tasks: ", ", ".join(queue_tasks))
         print(
@@ -390,18 +423,41 @@ def main(args):
 
         # Update the slurm mgmt based on squeue
         update_tasks(queue_folder, queue_tasks, db_in_progress_tasks)
-        ntask_to_run = args.n_runs - len(queue_tasks)
 
         # Gets all runnable tasks based on mgmt db state
-        runnable_tasks = mgmt_db.get_runnable_tasks(ntask_to_run, args.n_max_retries)
+        runnable_tasks = mgmt_db.get_runnable_tasks(args.n_max_retries)
         print("Number of runnable tasks: ", len(runnable_tasks))
 
         # Select the first ntask_to_run that are not waiting for mgmt db updates (i.e. items in the queue)
-        tasks_to_run = []
-        for task in runnable_tasks:
-            if not check_queue(queue_folder, task[1], task[0]):
+        # Add machine dependency
+        tasks_to_run, task_counter = [], {}
+        for task in runnable_tasks[:100]:
+            cur_run_name, cur_proc_type = task[1], task[0]
+
+            # Set to complete in db
+            if task[0] in skipped:
+                shared.add_to_queue(
+                    queue_folder,
+                    cur_run_name,
+                    cur_proc_type,
+                    const.Status.completed.value,
+                )
+                continue
+
+            cur_hpc = JOB_RUN_MACHINE[cur_proc_type]
+            if (
+                not check_queue(queue_folder, task[1], task[0])
+                and task_counter.get(cur_hpc, 0) < machine_max_tasks[cur_hpc]
+            ):
                 tasks_to_run.append(task)
-            if len(tasks_to_run) >= ntask_to_run:
+
+            # Open to better suggestions
+            if np.all(
+                [
+                    True if task_counter[hpc] >= machine_max_tasks[hpc] else False
+                    for hpc in machine_max_tasks.keys()
+                ]
+            ):
                 break
 
         print(
@@ -441,7 +497,7 @@ def main(args):
                         run_name,
                         const.Status.completed.str_value,
                     ],
-                    mgmt_db.get_runnable_tasks(args.n_runs, args.n_max_retries),
+                    mgmt_db.get_runnable_tasks(args.n_max_retries),
                 ):
                     # If clean_up has already run, then we should set it to
                     # be run again after merge_ts has run
@@ -479,6 +535,16 @@ if __name__ == "__main__":
 
     parser.add_argument("root_folder", type=str, help="The cybershake root folder")
     parser.add_argument(
+        "--n_runs",
+        default=None,
+        type=list,
+        nargs="+",
+        help="The number of processes each machine can run at once. If a single value is given this is used for all "
+        "machines, otherwise one value per machine must be given. The current order is: {}".format(
+            (x.str_value for x in const.HPC)
+        ),
+    )
+    parser.add_argument(
         "user", type=str, help="The username under which the jobs will be submitted."
     )
     parser.add_argument(
@@ -486,12 +552,6 @@ if __name__ == "__main__":
         type=int,
         help="Seconds sleeping between checking queue and " "adding more jobs",
         default=10,
-    )
-    parser.add_argument(
-        "--n_runs",
-        help="Maximum number of tasks allowed to be in progress at any given time",
-        default=DEFAULT_N_RUNS,
-        type=int,
     )
     parser.add_argument(
         "--n_max_retries",
@@ -502,7 +562,7 @@ if __name__ == "__main__":
     parser.add_argument("--config", type=str, default=None, help="Cybershake config")
     parser.add_argument("--no_im", action="store_true")
     parser.add_argument("--no_merge_ts", action="store_true")
-    parser.add_argument("--no_tidy_up", action="store_true")
+    parser.add_argument("--no_clean_up", action="store_true")
 
     args = parser.parse_args()
 
