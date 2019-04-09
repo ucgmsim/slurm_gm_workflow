@@ -10,7 +10,6 @@
 #SBATCH --cpus-per-task=1
 
 if [[ ! -z ${CUR_ENV} && ${CUR_HPC} != "mahuika" ]]; then
-    echo "Hello???"
     source $CUR_ENV/workflow/install_workflow/helper_functions/activate_env.sh $CUR_ENV "mahuika"
 fi
 

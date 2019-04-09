@@ -15,8 +15,6 @@ SlurmTask = namedtuple(
 # Make error an optional value, once we are using Python 3.7 then this can be made nicer..
 SlurmTask.__new__.__defaults__ = (None,)
 
-CONSTANTS_TASK_TYPE_ = (x.value for x in const.ProcessType)
-
 
 class MgmtDB:
 
@@ -110,10 +108,7 @@ class MgmtDB:
         tasks_to_run = []
         for task in db_tasks:
             status = task[2]
-            if (
-                status == "created"
-                and self._check_dependancy_met(task, db_tasks)
-            ):
+            if status == "created" and self._check_dependancy_met(task, db_tasks):
                 if task[0] not in verification_tasks or do_verification:
                     tasks_to_run.append(task)
 
@@ -182,7 +177,8 @@ class MgmtDB:
         ):
             if value is not None:
                 cur.execute(
-                    "UPDATE state SET {} = ? WHERE run_name = ? AND proc_type = ?".format(
+                    "UPDATE state SET {} = ?, last_modified = strftime('%s','now') "
+                    "WHERE run_name = ? AND proc_type = ?".format(
                         field
                     ),
                     (value, entry.run_name, entry.proc_type),

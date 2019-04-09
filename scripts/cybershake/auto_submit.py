@@ -120,7 +120,6 @@ def update_tasks(queue_folder: str, squeue_tasks, db_tasks: List[SlurmTask]):
             and not check_queue(queue_folder, db_task.run_name, db_task.proc_type)
             and const.ProcessType(db_task.proc_type) != const.ProcessType.clean_up
         ):
-            print("DEBUG: RESETTING TASK!!!! SHOULD NOT HAPPEN ATM!!!")
             print(
                 "Task '{}' on '{}' not found on squeue; resetting the status "
                 "to 'created' for resubmission".format(
@@ -325,20 +324,6 @@ def main(args):
     oneD_mod, hf_vs30_ref, binary_mode, hf_seed = DEFAULT_1D_MOD, None, True, None
     rand_reset, extended_period = True, False
 
-    machine_max_tasks = DEFAULT_N_RUNS
-    if args.n_runs is not None:
-        if len(args.n_runs) == 1:
-            machine_max_tasks = {hpc: args.n_runs[0] for hpc in const.HPC}
-        elif len(args.n_runs) == len(const.HPC):
-            machine_max_tasks = {
-                hpc: args.n_runs[index] for index, hpc in enumerate(const.HPC)
-            }
-        else:
-            parser.error(
-                "You must specify wither one common value for --n_runs, or one "
-                "for each in the following list: {}".format(list(const.HPC))
-            )
-
     if args.config is not None:
         # parse and check for variables in config
         try:
@@ -369,7 +354,7 @@ def main(args):
             else extended_period
         )
 
-    # Load estimation models
+    print("Loading estimation models")
     workflow_config = ldcfg.load()
     lf_est_model = est.load_full_model(
         os.path.join(workflow_config["estimation_models_dir"], "LF")
@@ -401,7 +386,7 @@ def main(args):
         queue_tasks, n_tasks_to_run = [], {}
         for hpc in const.HPC:
             cur_tasks = get_queued_tasks(user=args.user, machine=hpc)
-            n_tasks_to_run[hpc] = machine_max_tasks[hpc] - len(cur_tasks)
+            n_tasks_to_run[hpc] = args.n_runs[hpc] - len(cur_tasks)
             queue_tasks.extend(cur_tasks)
 
         db_in_progress_tasks = mgmt_db.get_submitted_tasks()
@@ -445,7 +430,7 @@ def main(args):
                 continue
 
             cur_hpc = JOB_RUN_MACHINE[const.ProcessType(cur_proc_type)]
-            # Add task if limit has not been reached and there are not
+            # Add task if limit has not been reached and there are no
             # outstanding mgmt db updates
             if (
                 not check_queue(queue_folder, cur_run_name, cur_proc_type)
@@ -479,23 +464,10 @@ def main(args):
         for task in tasks_to_run:
             proc_type, run_name, _ = task
 
-            # Skip im calcs if no_im == true
-            if args.no_im and proc_type == const.ProcessType.IM_calculation.value:
-                continue
-
             # Special handling for merge-ts
             if proc_type == const.ProcessType.merge_ts.value:
-                # Mark merge-ts as complete if --no_merge_ts flag is set
-                if args.no_merge_ts:
-                    shared.add_to_queue(
-                        queue_folder,
-                        run_name,
-                        const.ProcessType.merge_ts.value,
-                        const.Status.completed.value,
-                    )
-                    continue
                 # Check if clean up has already run
-                elif MgmtDB.is_task_complete(
+                if MgmtDB.is_task_complete(
                     [
                         const.ProcessType.clean_up.value,
                         run_name,
@@ -511,10 +483,6 @@ def main(args):
                         const.ProcessType.clean_up.value,
                         const.Status.created.value,
                     )
-
-            # Skip tidy up
-            if args.no_clean_up and proc_type == const.ProcessType.clean_up.value:
-                continue
 
             # submit the job
             submit_task(
@@ -554,8 +522,8 @@ if __name__ == "__main__":
     parser.add_argument(
         "--sleep_time",
         type=int,
-        help="Seconds sleeping between checking queue and " "adding more jobs",
-        default=10,
+        help="Seconds sleeping between checking queue and adding more jobs",
+        default=5,
     )
     parser.add_argument(
         "--n_max_retries",
@@ -569,5 +537,20 @@ if __name__ == "__main__":
     parser.add_argument("--no_clean_up", action="store_true")
 
     args = parser.parse_args()
+
+    if args.n_runs is not None:
+        if len(args.n_runs) == 1:
+            args.n_runs = {hpc: args.n_runs[0] for hpc in const.HPC}
+        elif len(args.n_runs) == len(const.HPC):
+            args.n_runs = {
+                hpc: args.n_runs[index] for index, hpc in enumerate(const.HPC)
+            }
+        else:
+            parser.error(
+                "You must specify wither one common value for --n_runs, or one "
+                "for each in the following list: {}".format(list(const.HPC))
+            )
+    else:
+        args.n_runs = DEFAULT_N_RUNS
 
     main(args)

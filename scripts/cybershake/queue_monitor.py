@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Script for continuously update the slurm mgmt db from the queue."""
+"""Script for continuously updating the slurm mgmt db from the queue."""
 import os
 import json
 import argparse
@@ -83,7 +83,7 @@ if __name__ == "__main__":
         "--sleep_time",
         type=int,
         help="Sleep time (in seconds) between queue checks.",
-        default=10,
+        default=5,
     )
 
     args = parser.parse_args()
