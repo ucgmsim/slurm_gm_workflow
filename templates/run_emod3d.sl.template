@@ -4,9 +4,9 @@ if [[ ! -d {{mgmt_db_location}}/mgmt_db_queue ]]; then
     mkdir {{mgmt_db_location}}/mgmt_db_queue
 fi
 
-if [[ -d "{{lf_sim_dir}}/Restart" ]] && [[ `ls -1 {{lf_sim_dir}}/Restart | wc -l` != 0 ]]; then
+if [[ -d "{{sim_dir}}/LF/Restart" ]] && [[ `ls -1 {{sim_dir}}/LF/Restart | wc -l` != 0 ]]; then
     echo "Checkpointed run found, attempting to resume from checkpoint"
-    sed -i 's/read_restart=.*/read_restart="1"/' {{lf_sim_dir}}/e3d.par
+    sed -i 's/read_restart=.*/read_restart="1"/' {{sim_dir}}/LF/e3d.par
 fi
 
 timestamp=`date +%Y%m%d_%H%M%S`
