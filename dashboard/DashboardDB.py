@@ -3,7 +3,7 @@ import sqlite3 as sql
 from collections import namedtuple
 from enum import Enum
 
-from typing import Iterable, Union
+from typing import Iterable, Union, List
 from datetime import datetime, date, timedelta
 from contextlib import contextmanager
 
@@ -52,8 +52,6 @@ class HPCProperty(Enum):
 class DashboardDB:
 
     date_format = "%Y-%m-%d"
-    fail_reason = "collection_failure"
-    idling_time = 300
 
     def __init__(self, db_file: str):
         """Opens an existing dashboard database file."""
@@ -95,20 +93,16 @@ class DashboardDB:
             day = day.strftime(self.date_format)
         return day
 
-    def update_daily_chours_usage(
-        self, total_core_usage: float, hpc: const.HPC, day: Union[date, str] = None
+    def update_chours_usage(
+            self, daily_ch_usage, total_ch_usage: float, hpc: const.HPC, day: Union[date, str] = None
     ):
-        """Updates the daily core hours usage.
-        The core hour usage for a day is calculated as
-        last saved (for current day) TOTAL_CORE_USAGE - current total_core_usage.
-        """
-        # Do nothing if total_core_usage is None
-        if total_core_usage is None:
+        """Updates daily and total core hours usage"""
+        # daily usage will be None if total is None
+        if total_ch_usage is None:
             return
 
         table = self.get_daily_t_name(hpc)
         day = self.get_date(day)
-
         with self.get_cursor(self.db_file) as cursor:
             row = cursor.execute(
                 "SELECT CORE_HOURS_USED, TOTAL_CORE_HOURS FROM {} WHERE DAY == ?;".format(
@@ -122,25 +116,23 @@ class DashboardDB:
             if row is None:
                 cursor.execute(
                     "INSERT INTO {} VALUES(?, ?, ?, ?)".format(table),
-                    (day, 0, total_core_usage, update_time),
+                    (day, 0, total_ch_usage, update_time),
                 )
             else:
-                chours_usage = total_core_usage - row[1] if row[1] is not None else 0
-                if row[0] is not None:
-                    chours_usage = row[0] + chours_usage
-
                 cursor.execute(
                     "UPDATE {} SET CORE_HOURS_USED = ?, TOTAL_CORE_HOURS = ?, \
                     UPDATE_TIME = ? WHERE DAY == ?;".format(
                         table
                     ),
-                    (chours_usage, total_core_usage, update_time, day),
+                    (daily_ch_usage, total_ch_usage, update_time, day),
                 )
 
     def get_chours_usage(
-        self, start_date: Union[date, str], end_date: Union[date, str], hpc: const.HPC
+        self, start_date: Union[date, str], end_date: Union[date, str], hpc: const.HPC, physical: bool=True
     ):
-        """Gets the usage and total usage for the date range"""
+        """Gets the usage and total usage for the date range,
+           If physical is set to True, returns physical core hours instead of virtual
+        """
         start_date = self.get_date(start_date)
         end_date = self.get_date(end_date)
 
@@ -151,6 +143,11 @@ class DashboardDB:
                 (start_date, end_date),
             ).fetchall()
 
+        # convert virtual core hours to physical
+        if physical:
+            results = [
+                (result[0], result[1] / 2., result[2] / 2.)
+                for result in results]
         return results
 
     def update_squeue(self, squeue_entries: Iterable[SQueueEntry], hpc: const.HPC):
@@ -309,7 +306,7 @@ class DashboardDB:
         for entry in entries:
             with self.get_cursor(self.db_file) as cursor:
                 row = cursor.execute(
-                    "SELECT CORE_HOURS_USED, UPDATE_TIME FROM {} WHERE DAY = ? AND USERNAME = ?;".format(
+                    "SELECT CORE_HOURS_USED FROM {} WHERE DAY = ? AND USERNAME = ?;".format(
                         table
                     ),
                     (day, entry.username),
@@ -323,40 +320,14 @@ class DashboardDB:
                         (day, entry.username, entry.core_hours_used, update_time),
                     )
                 else:
-                    # first we checkout update time
-                    err_table = self.get_err_t_name(hpc)
-                    if not self.check_update_time(row[1], update_time):
-                        err_row = cursor.execute(
-                            "SELECT * FROM {} WHERE NAME = ? AND REASON = ?;".format(
-                                err_table
-                            ),
-                            (table, self.fail_reason),
-                        ).fetchone()
-                        # if we first encounter the err, add err to err table;
-                        # if such error already exits in the err_table, do nothing, web app will still alert
-                        if err_row is None:
-                            cursor.execute(
-                                "INSERT INTO {} (NAME, REASON, LAST_UPDATE_TIME) VALUES(?, ?, ?)".format(
-                                    err_table
-                                ),
-                                (table, self.fail_reason, row[1]),
-                            )
-                    else:
-                        # if error resolved, we delete the err record if there's any
-                        cursor.execute(
-                            "DELETE FROM {} WHERE NAME = ? AND REASON = ?".format(
-                                err_table
-                            ),
-                            (table, self.fail_reason),
-                        )
-                        cursor.execute(
-                            "UPDATE {} SET CORE_HOURS_USED = ?, UPDATE_TIME = ? WHERE DAY = ? AND USERNAME = ?;".format(
-                                table
-                            ),
-                            (entry.core_hours_used, update_time, day, entry.username),
-                        )
+                    cursor.execute(
+                        "UPDATE {} SET CORE_HOURS_USED = ?, UPDATE_TIME = ? WHERE DAY = ? AND USERNAME = ?;".format(
+                            table
+                        ),
+                        (entry.core_hours_used, update_time, day, entry.username),
+                    )
 
-    def get_user_chours(self, hpc: const.HPC, username: str):
+    def get_user_chours(self, hpc: const.HPC, username: str, physical: bool=True):
         """Gets core hours usage over time for a specified user"""
         table = self.get_user_ch_t_name(hpc)
         sql = "SELECT DAY, USERNAME, CORE_HOURS_USED FROM {} WHERE USERNAME = ?".format(
@@ -365,30 +336,26 @@ class DashboardDB:
         with self.get_cursor(self.db_file) as cursor:
             results = cursor.execute(sql, (username,)).fetchall()
 
+        # convert virtual core hours to physical
+        if physical:
+            results = [
+                (result[0], result[1], result[2] / 2.)
+                for result in results]
         return [UserChEntry(*result) for result in results]
 
-    def check_update_time(self, last_update_time_string: str, current_update_time: datetime):
-        """Checks whether the time gap between update times exceeds the idling time limit
-        if exceeds, regards as a collection error.
-        """
-        # 2019-03-28 18:31:11.906576
-        return (
-            current_update_time
-            - datetime.strptime(last_update_time_string, "%Y-%m-%d %H:%M:%S.%f")
-        ) < timedelta(seconds=self.idling_time)
-
-    def get_collection_err(self, hpc: const.HPC):
-        """Gets collection err from err table"""
-        table = self.get_err_t_name(hpc)
+    def get_update_time(self, hpc: const.HPC):
+        """Get update_time from db"""
         with self.get_cursor(self.db_file) as cursor:
-            result = cursor.execute("SELECT REASON FROM {}".format(table)).fetchone()
+            result = cursor.execute(
+                "SELECT UPDATE_TIME FROM {} ORDER BY UPDATE_TIME DESC LIMIT 1".format(self.get_daily_t_name(hpc)),
+            ).fetchone()
         return result
 
     def _create_queue_table(self, cursor, hpc: const.HPC):
         # Add latest table
         cursor.execute(
             """CREATE TABLE IF NOT EXISTS {}(
-                  JOB_ID INTEGER PRIMARY KEY NOT NULL,
+                  JOB_ID TEXT PRIMARY KEY NOT NULL,
                   UPDATE_TIME DATE NOT NULL,
                   USERNAME TEXT NOT NULL,
                   ACCOUNT TEXT NOT NULL ,

@@ -15,6 +15,8 @@ SlurmTask = namedtuple(
 # Make error an optional value, once we are using Python 3.7 then this can be made nicer..
 SlurmTask.__new__.__defaults__ = (None,)
 
+CONSTANTS_TASK_TYPE_ = (x.value for x in const.ProcessType)
+
 
 class MgmtDB:
 
@@ -70,7 +72,7 @@ class MgmtDB:
 
         return [SlurmTask(*entry) for entry in result]
 
-    def get_runnable_tasks(self, n_runs, retry_max):
+    def get_runnable_tasks(self, retry_max):
         """Gets all runnable tasks based on their status and their associated
         dependencies (i.e. other tasks have to be finished first)
 
@@ -97,11 +99,12 @@ class MgmtDB:
         tasks_to_run = []
         for task in db_tasks:
             status = task[2]
-            if status == "created" and self._check_dependancy_met(task, db_tasks):
+            if (
+                status == "created"
+                and self._check_dependancy_met(task, db_tasks)
+            ):
                 if task[0] not in verification_tasks or do_verification:
                     tasks_to_run.append(task)
-            # if len(tasks_to_run) >= n_runs:
-            #     break
 
         return tasks_to_run
 
