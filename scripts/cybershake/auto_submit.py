@@ -26,17 +26,17 @@ from scripts.submit_sim_imcalc import submit_im_calc_slurm, SlBodyOptConsts
 from shared_workflow import shared
 
 DEFAULT_N_MAX_RETRIES = 2
-DEFAULT_N_RUNS = {const.HPC.maui.value: 12, const.HPC.mahuika.value: 12}
+DEFAULT_N_RUNS = {const.HPC.maui: 12, const.HPC.mahuika: 12}
 DEFAULT_1D_MOD = "/nesi/transit/nesi00213/VelocityModel/Mod-1D/Cant1D_v2-midQ_leer.1d"
 
 JOB_RUN_MACHINE = {
-    const.ProcessType.EMOD3D.value: const.HPC.maui.value,
-    const.ProcessType.merge_ts.value: const.HPC.mahuika.value,
-    const.ProcessType.winbin_aio.value: const.HPC.maui.value,
-    const.ProcessType.HF.value: const.HPC.maui.value,
-    const.ProcessType.BB.value: const.HPC.maui.value,
-    const.ProcessType.IM_calculation.value: const.HPC.maui.value,
-    const.ProcessType.clean_up.value: const.HPC.mahuika.value,
+    const.ProcessType.EMOD3D: const.HPC.maui,
+    const.ProcessType.merge_ts: const.HPC.mahuika,
+    const.ProcessType.winbin_aio: const.HPC.maui,
+    const.ProcessType.HF: const.HPC.maui,
+    const.ProcessType.BB: const.HPC.maui,
+    const.ProcessType.IM_calculation: const.HPC.maui,
+    const.ProcessType.clean_up: const.HPC.mahuika,
 }
 
 SLURM_TO_STATUS_DICT = {"R": 3, "PD": 2, "CG": 3}
@@ -168,7 +168,7 @@ def submit_task(
             srf=run_name,
             ncore=const.LF_DEFAULT_NCORES,
             account=const.DEFAULT_ACCOUNT,
-            machine=JOB_RUN_MACHINE[const.ProcessType.EMOD3D.value],
+            machine=JOB_RUN_MACHINE[const.ProcessType.EMOD3D].value,
             rel_dir=sim_dir,
             write_directory=sim_dir,
         )
@@ -187,7 +187,7 @@ def submit_task(
             winbin_aio=False,
             srf=run_name,
             account=const.DEFAULT_ACCOUNT,
-            machine=JOB_RUN_MACHINE[const.ProcessType.merge_ts.value],
+            machine=JOB_RUN_MACHINE[const.ProcessType.merge_ts].value,
             rel_dir=sim_dir,
             write_directory=sim_dir,
         )
@@ -218,7 +218,7 @@ def submit_task(
                 merge_ts=False,
                 srf=run_name,
                 account=const.DEFAULT_ACCOUNT,
-                machine=JOB_RUN_MACHINE[const.ProcessType.winbin_aio.value],
+                machine=JOB_RUN_MACHINE[const.ProcessType.winbin_aio].value,
             )
             print("Submit post EMOD3D (winbin_aio) arguments: ", args)
             submit_post_lf_main(args)
@@ -233,7 +233,7 @@ def submit_task(
             version=const.HF_DEFAULT_VERSION,
             site_specific=None,
             account=const.DEFAULT_ACCOUNT,
-            machine=JOB_RUN_MACHINE[const.ProcessType.HF.value],
+            machine=JOB_RUN_MACHINE[const.ProcessType.HF].value,
             rel_dir=sim_dir,
             write_directory=sim_dir,
             debug=False,
@@ -249,7 +249,7 @@ def submit_task(
             srf=run_name,
             version=const.BB_DEFAULT_VERSION,
             account=const.DEFAULT_ACCOUNT,
-            machine=JOB_RUN_MACHINE[const.ProcessType.BB.value],
+            machine=JOB_RUN_MACHINE[const.ProcessType.BB].value,
             rel_dir=sim_dir,
             write_directory=sim_dir,
             ascii=False,
@@ -264,7 +264,7 @@ def submit_task(
             SlBodyOptConsts.extended.value: True if extended_period else False,
             SlBodyOptConsts.simple_out.value: True,
             "auto": True,
-            "machine": JOB_RUN_MACHINE[const.ProcessType.IM_calculation.value],
+            "machine": JOB_RUN_MACHINE[const.ProcessType.IM_calculation].value,
             "write_directory": sim_dir,
         }
         submit_im_calc_slurm(
@@ -328,10 +328,10 @@ def main(args):
     machine_max_tasks = DEFAULT_N_RUNS
     if args.n_runs is not None:
         if len(args.n_runs) == 1:
-            machine_max_tasks = {hpc.value: args.n_runs[0] for hpc in const.HPC}
+            machine_max_tasks = {hpc: args.n_runs[0] for hpc in const.HPC}
         elif len(args.n_runs) == len(const.HPC):
             machine_max_tasks = {
-                hpc.value: args.n_runs[index] for index, hpc in enumerate(const.HPC)
+                hpc: args.n_runs[index] for index, hpc in enumerate(const.HPC)
             }
         else:
             parser.error(
@@ -401,7 +401,7 @@ def main(args):
         queue_tasks, n_tasks_to_run = [], {}
         for hpc in const.HPC:
             cur_tasks = get_queued_tasks(user=args.user, machine=hpc)
-            ntask_to_run = machine_max_tasks[hpc] - len(cur_tasks)
+            n_tasks_to_run[hpc] = machine_max_tasks[hpc] - len(cur_tasks)
             queue_tasks.extend(cur_tasks)
 
         db_in_progress_tasks = mgmt_db.get_submitted_tasks()
@@ -428,13 +428,13 @@ def main(args):
         runnable_tasks = mgmt_db.get_runnable_tasks(args.n_max_retries)
         print("Number of runnable tasks: ", len(runnable_tasks))
 
-        # Select the first ntask_to_run that are not waiting for mgmt db updates (i.e. items in the queue)
-        # Add machine dependency
-        tasks_to_run, task_counter = [], {}
+        # Select the first ntask_to_run that are not waiting
+        # for mgmt db updates (i.e. items in the queue)
+        tasks_to_run, task_counter = [], {key:0 for key in const.HPC}
         for task in runnable_tasks[:100]:
             cur_run_name, cur_proc_type = task[1], task[0]
 
-            # Set to complete in db
+            # Set task that are set to be skipped to complete in db
             if task[0] in skipped:
                 shared.add_to_queue(
                     queue_folder,
@@ -444,18 +444,22 @@ def main(args):
                 )
                 continue
 
-            cur_hpc = JOB_RUN_MACHINE[cur_proc_type]
+            cur_hpc = JOB_RUN_MACHINE[const.ProcessType(cur_proc_type)]
+            # Add task if limit has not been reached and there are not
+            # outstanding mgmt db updates
             if (
-                not check_queue(queue_folder, task[1], task[0])
-                and task_counter.get(cur_hpc, 0) < machine_max_tasks[cur_hpc]
+                not check_queue(queue_folder, cur_run_name, cur_proc_type)
+                and task_counter.get(cur_hpc, 0) < n_tasks_to_run[cur_hpc]
             ):
                 tasks_to_run.append(task)
+                task_counter[cur_hpc] += 1
 
             # Open to better suggestions
+            # Break if enough tasks for each HPC have been added
             if np.all(
                 [
-                    True if task_counter[hpc] >= machine_max_tasks[hpc] else False
-                    for hpc in machine_max_tasks.keys()
+                    True if task_counter.get(hpc, 0) >= n_tasks_to_run[hpc] else False
+                    for hpc in n_tasks_to_run.keys()
                 ]
             ):
                 break
@@ -509,7 +513,7 @@ def main(args):
                     )
 
             # Skip tidy up
-            if args.no_tidy_up and proc_type == const.ProcessType.clean_up.value:
+            if args.no_clean_up and proc_type == const.ProcessType.clean_up.value:
                 continue
 
             # submit the job
