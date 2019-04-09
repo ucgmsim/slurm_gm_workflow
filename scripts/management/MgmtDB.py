@@ -35,6 +35,10 @@ class MgmtDB:
         # statement.
         self._conn = None
 
+    @property
+    def db_file(self):
+        return self._db_file
+
     def update_entries_live(self, entries: List[SlurmTask]):
         """Updates the specified entries in the db. Leaves the connection open,
         so this should only be used when continuously updating entries.
