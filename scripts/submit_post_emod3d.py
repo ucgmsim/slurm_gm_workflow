@@ -79,7 +79,7 @@ def main(args):
 
         body_template_params = (
             "{}.sl.template".format(merge_ts_name_prefix),
-            {"lf_sim_dir": "LF"},
+            {"lf_sim_dir": lf_sim_dir},
         )
 
         script_prefix = "{}_{}".format(merge_ts_name_prefix, srf_name)
