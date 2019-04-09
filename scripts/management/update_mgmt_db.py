@@ -21,7 +21,7 @@ def update_db(db, process, status, job=None, run_name=None, error=None):
                    AND status <= (SELECT id FROM status_enum WHERE state = ?)''',
                (status, job, job, run_name, process, status))
 
-    if run_name is not None and (status == const.State.running.name or status == const.State.completed.name):
+    if run_name is not None and (status == const.Status.running.name or status == const.Status.completed.name):
         update_task_time(db, run_name, process, status)
 
     if type(error) is str:
@@ -75,7 +75,7 @@ def force_update_db(db, process, status, job=None, run_name=None, error='', retr
     if type(error) is str:
         update_error(db, process, run_name, error)
 
-    if run_name is not None and (status == const.State.running or status == const.State.completed):
+    if run_name is not None and (status == const.Status.running or status == const.Status.completed):
         update_task_time(db, run_name, process, status)
 
     db.connection.commit()
@@ -87,7 +87,7 @@ def main():
                         help="folder to the collection of runs on Kupe")
     parser.add_argument('process', choices=db_helper.enum_to_list(
         qcore.constants.ProcessType))
-    parser.add_argument('status', type=str, choices=db_helper.enum_to_list(const.State))
+    parser.add_argument('status', type=str, choices=db_helper.enum_to_list(const.Status))
     parser.add_argument('-r', '--run_name', type=str,
                         help='name of run to be updated')
     parser.add_argument('-j', '--job', type=int)

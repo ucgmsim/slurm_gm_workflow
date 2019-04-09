@@ -66,6 +66,13 @@ class MgmtDB:
 
         return True
 
+    def close_conn(self):
+        """Close the db connection. Note, this ONLY has to be done if
+        update_entries_live was used. In all other scenarios the connection is
+        closed by default."""
+        if self._conn is not None:
+            self._conn.close()
+
     def get_submitted_tasks(self):
         """Gets all in progress tasks i.e. (running or queued)"""
         with connect_db_ctx(self._db_file) as cur:
