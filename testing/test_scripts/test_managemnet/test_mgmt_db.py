@@ -2,6 +2,8 @@ import os
 import shutil
 import pytest
 
+import sqlite3 as sql
+
 from scripts.management import create_mgmt_db, update_mgmt_db
 from scripts.management.MgmtDB import SlurmTask
 from qcore import utils
@@ -32,14 +34,14 @@ def mgmt_db():
 
 
 def get_rows(mgmt_db, table, col_name, col_value, selected_col="*"):
-    sql = "SELECT {} from {} where {} = ?".format(selected_col, table, col_name)
-    rows = mgmt_db.execute(sql, (col_value,)).fetchall()
-    return rows
+    query = "SELECT {} from {} where {} = ?".format(selected_col, table, col_name)
 
+    conn = sql.connect(mgmt_db)
+    rows = conn.execute(query, (col_value,)).fetchall()
+    return rows
 
 def test_create_mgmt_db(mgmt_db):
     assert len(get_rows(mgmt_db, "state", "run_name", TEST_RUN_NAME)) == INIT_DB_ROWS
-
 
 def test_insert_task(mgmt_db):
     mgmt_db.insert(TEST_RUN_NAME, TEST_PROC[0])
@@ -54,18 +56,22 @@ def test_update_live_db(mgmt_db):
 
 
 def test_update_db_error(mgmt_db):
+    conn = sql.connect(mgmt_db.db_file)
     update_mgmt_db.update_error(
-        mgmt_db.db_file, TEST_PROC[1], run_name=TEST_RUN_NAME, error="test_err"
+        conn, TEST_PROC[1], run_name=TEST_RUN_NAME, error="test_err"
     )
-    value = get_rows(mgmt_db, "error", "task_id", TEST_PROC[0], selected_col="error")[
+    value = get_rows(mgmt_db.db_file, "error", "task_id", TEST_PROC[0], selected_col="error")[
         0
     ][0]
     assert value == "test_err"
 
+    conn.close()
+
 
 def test_update_task_time(mgmt_db):
+    conn = sql.connect(mgmt_db.db_file)
     update_mgmt_db.update_task_time(
-        mgmt_db.db_file, TEST_RUN_NAME, TEST_PROC[1], TEST_STATUS[1]
+        conn, TEST_RUN_NAME, TEST_PROC[1], TEST_STATUS[1]
     )
     test_time = get_rows(
         mgmt_db.db_file, "task_time_log", "state_id", TEST_PROC[0], selected_col="time"
@@ -75,20 +81,26 @@ def test_update_task_time(mgmt_db):
     )[0][0]
     assert test_time == bench_time
 
+    conn.close()
+
 
 def test_force_update_db(mgmt_db):
+    conn = sql.connect(mgmt_db.db_file)
     update_mgmt_db.force_update_db(
-        mgmt_db.db_file, TEST_PROC[1], FORCE_STATUS[1], run_name=TEST_RUN_NAME
+        conn, TEST_PROC[1], FORCE_STATUS[1], run_name=TEST_RUN_NAME
     )
     value = get_rows(
         mgmt_db.db_file, "state", "proc_type", TEST_PROC[0], selected_col="status"
     )[0][0]
     assert value == FORCE_STATUS[0]
 
+    conn.close()
+
 
 def test_force_update_db_error(mgmt_db):
+    conn = sql.connect(mgmt_db.db_file)
     update_mgmt_db.force_update_db(
-        mgmt_db,
+        conn,
         TEST_PROC[1],
         FORCE_STATUS[1],
         run_name=TEST_RUN_NAME,
@@ -102,6 +114,8 @@ def test_force_update_db_error(mgmt_db):
         for err in row:
             errors.append(err)
     assert errors == EXPECTED_ERROS
+
+    conn.close()
 
 
 def teardown_module(module):
