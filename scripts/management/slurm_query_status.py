@@ -11,6 +11,8 @@ from subprocess import Popen, PIPE
 import shlex
 from scripts.management import db_helper
 
+CONSTANTS_TASK_TYPE_ = (x.str_value for x in qcore.constants.ProcessType)
+
 Process = qcore.constants.ProcessType
 
 N_TASKS_TO_RUN = 20
@@ -22,20 +24,19 @@ RETRY_MAX = 2
 t_status = {"R": "running", "PD": "queued"}
 
 
-def get_queued_tasks(user=None):
+def get_queued_tasks(user=None, machine=qcore.constants.HPC.maui):
     output_list = []
     # TODO: Treat Maui and Mahuika jobs seperately. See QSW-912
-    for machine in qcore.constants.HPC:
-        if user != None:
-            cmd = "squeue -A nesi00213 -o '%A %t' -h -M {} -u {}".format(
-                machine.value, user
-            )
-        else:
-            cmd = "squeue -A nesi00213 -o '%A %t' -h -M {}".format(machine.value)
-        process = Popen(shlex.split(cmd), stdout=PIPE, encoding="utf-8")
-        (output, err) = process.communicate()
-        exit_code = process.wait()
-        output_list.extend(filter(None, output.split("\n")[1:]))
+    if user is not None:
+        cmd = "squeue -A nesi00213 -o '%A %t' -h -M {} -u {}".format(
+            machine.value, user
+        )
+    else:
+        cmd = "squeue -A nesi00213 -o '%A %t' -h -M {}".format(machine.value)
+    process = Popen(shlex.split(cmd), stdout=PIPE, encoding="utf-8")
+    (output, err) = process.communicate()
+    exit_code = process.wait()
+    output_list.extend(filter(None, output.split("\n")[1:]))
     return "\n".join(output_list)
 
 
@@ -50,7 +51,6 @@ def get_submitted_db_tasks(db):
 
 
 def get_db_tasks_to_be_run(db, retry_max=RETRY_MAX):
-    print("retry_max", retry_max)
     db.execute(
         """SELECT proc_type, run_name, status_enum.state 
                   FROM status_enum, state 
@@ -166,7 +166,9 @@ def check_dependancy_met(task, task_list):
     return False
 
 
-def get_runnable_tasks(db, n_runs=N_TASKS_TO_RUN, retry_max=RETRY_MAX):
+def get_runnable_tasks(
+    db, n_runs=None, retry_max=RETRY_MAX, task_types=CONSTANTS_TASK_TYPE_
+):
     do_verification = False
     verification_tasks = [
         Process.rrup.value,
@@ -177,10 +179,14 @@ def get_runnable_tasks(db, n_runs=N_TASKS_TO_RUN, retry_max=RETRY_MAX):
     tasks_to_run = []
     for task in db_tasks:
         status = task[2]
-        if status == "created" and check_dependancy_met(task, db_tasks):
+        if (
+            status == "created"
+            and check_dependancy_met(task, db_tasks)
+            and task[0] in task_types
+        ):
             if task[0] not in verification_tasks or do_verification:
                 tasks_to_run.append(task)
-        if len(tasks_to_run) >= n_runs:
+        if n_runs is not None and len(tasks_to_run) >= n_runs:
             break
 
     return tasks_to_run
