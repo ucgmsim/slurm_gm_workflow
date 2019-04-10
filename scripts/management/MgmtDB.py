@@ -203,15 +203,15 @@ class MgmtDB:
 
         if len(realisations) == 0:
             print("No realisations found - no entries inserted into db")
+        else:
+            with connect_db_ctx(self._db_file) as cur:
+                procs_to_be_done = cur.execute(
+                    """select * from proc_type_enum"""
+                ).fetchall()
 
-        with connect_db_ctx(self._db_file) as cur:
-            procs_to_be_done = cur.execute(
-                """select * from proc_type_enum"""
-            ).fetchall()
-
-            for run_name in realisations:
-                for proc in procs_to_be_done:
-                    self._insert_task(cur, run_name, proc[0])
+                for run_name in realisations:
+                    for proc in procs_to_be_done:
+                        self._insert_task(cur, run_name, proc[0])
 
     def insert(self, run_name: str, proc_type: int):
         """Inserts a task into the mgmt db"""

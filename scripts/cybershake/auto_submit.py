@@ -43,7 +43,6 @@ SLURM_TO_STATUS_DICT = {"R": 3, "PD": 2, "CG": 3}
 
 
 def get_queued_tasks(user=None, machine=const.HPC.maui):
-    # TODO: Treat Maui and Mahuika jobs seperately. See QSW-912
     if user is not None:
         cmd = "squeue -A nesi00213 -o '%A %t' -h -M {} -u {}".format(
             machine.value, user
@@ -114,11 +113,9 @@ def update_tasks(queue_folder: str, squeue_tasks, db_tasks: List[SlurmTask]):
                     )
         # Only reset if there is no entry on the mgmt queue for this
         # realisation/proc combination
-        # Ignore cleanup for now as it runs on mahuika
         if (
             not found
             and not check_queue(queue_folder, db_task.run_name, db_task.proc_type)
-            and const.ProcessType(db_task.proc_type) != const.ProcessType.clean_up
         ):
             print(
                 "Task '{}' on '{}' not found on squeue; resetting the status "
