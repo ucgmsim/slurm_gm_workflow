@@ -300,7 +300,7 @@ def submit_task(
         script = clean_up_template.format(
             sim_dir=sim_dir,
             srf_name=run_name,
-            mgmt_db_loc=sim_dir,
+            mgmt_db_loc=root_folder,
             script_location=os.path.expandvars("$gmsim/workflow/scripts/clean_up.sl"),
             output_file=os.path.join(sim_dir, "clean_up.out"),
             error_file=os.path.join(sim_dir, "clean_up.err"),
@@ -415,12 +415,14 @@ def main(args):
 
         # Select the first ntask_to_run that are not waiting
         # for mgmt db updates (i.e. items in the queue)
-        tasks_to_run, task_counter = [], {key:0 for key in const.HPC}
+        tasks_to_run, task_counter = [], {key: 0 for key in const.HPC}
         for task in runnable_tasks[:100]:
             cur_run_name, cur_proc_type = task[1], task[0]
 
             # Set task that are set to be skipped to complete in db
-            if task[0] in skipped:
+            if cur_proc_type in skipped and not check_queue(
+                queue_folder, cur_run_name, cur_proc_type
+            ):
                 shared.add_to_queue(
                     queue_folder,
                     cur_run_name,
