@@ -13,7 +13,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "proc_type", type=str, help="The string value of the process type."
     )
-    parser.add_argument("status", type=int, help="The integer value for the status")
+    parser.add_argument("status", type=str, help="The string value of the status")
     parser.add_argument(
         "--error",
         type=str,
