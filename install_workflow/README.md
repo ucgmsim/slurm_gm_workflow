@@ -26,7 +26,7 @@ can be created as follows:
     ```bash
     ./create_env.sh environment_name config_to_use
     ```
-    where a default config is located in the same directory, which should
+    where a default config (env_config.json) is located in the same directory, which should
     work without requiring any changes.  
     Note: The environment is installed into /nesi/project/nesi00213/Environments/
     so if an environment with the same already exists the script will exit.
@@ -34,7 +34,7 @@ can be created as follows:
 4) Check that the script ran to completion without any errors, 
 apart from the IM_calculation setup warning and the pip qcore error.
 5) Log into mahuika
-6) Navigate to the new environment
+6) Navigate to the new environment, and into the slurm_gm_workflow/install_workflow
 7) Run
     ```bash
     ./create_python_virtenv_mahuika.sh env_path
