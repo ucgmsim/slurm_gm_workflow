@@ -4,7 +4,7 @@ if [[ ! -d {{mgmt_db_location}}/mgmt_db_queue ]]; then
     mkdir {{mgmt_db_location}}/mgmt_db_queue
 fi
 timestamp=`date +%Y%m%d_%H%M%S`
-python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py {{mgmt_db_location}}/mgmt_db_queue {{srf_name}} 5 3
+python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py {{mgmt_db_location}}/mgmt_db_queue {{srf_name}} BB 3
 
 runtime_fmt="%Y-%m-%d_%H:%M:%S"
 start_time=`date +$runtime_fmt`
@@ -21,7 +21,7 @@ timestamp=`date +%Y%m%d_%H%M%S`
 res=`$gmsim/workflow/scripts/{{test_bb_script}} {{sim_dir}} `
 if [[ $? == 0 ]]; then
     #passed
-    python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py {{mgmt_db_location}}/mgmt_db_queue {{srf_name}} 5 4
+    python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py {{mgmt_db_location}}/mgmt_db_queue {{srf_name}} BB 4
 
     if [[ ! -d {{sim_dir}}/ch_log ]]; then
         mkdir {{sim_dir}}/ch_log
@@ -34,5 +34,5 @@ if [[ $? == 0 ]]; then
 else
     #reformat $res to remove '\n'
     res=`echo $res | tr -d '\n'`
-    python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py {{mgmt_db_location}}/mgmt_db_queue {{srf_name}} 5 5 --error "$res"
+    python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py {{mgmt_db_location}}/mgmt_db_queue {{srf_name}} BB 5 --error "$res"
 fi

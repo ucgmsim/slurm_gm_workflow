@@ -14,7 +14,7 @@ echo "script started running at: $script_start"
 
 # Update db to running
 timestamp=`date +%Y%m%d_%H%M%S`
-python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py {{mgmt_db_location}}/mgmt_db_queue {{srf_name}} 6 3
+python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py {{mgmt_db_location}}/mgmt_db_queue {{srf_name}} IM_calc 3
 
 # Create the results directory if required
 if [[ ! -d {{sim_dir}}/IM_calc ]]; then
@@ -41,7 +41,7 @@ fi
 # Passed
 if [[ $? == 0 ]]; then
     timestamp=`date +%Y%m%d_%H%M%S`
-    python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py {{mgmt_db_location}}/mgmt_db_queue {{srf_name}} 6 4
+    python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py {{mgmt_db_location}}/mgmt_db_queue {{srf_name}} IM_calc 4
 
     if [[ ! -d {{sim_dir}}/ch_log ]]; then
         mkdir {{sim_dir}}/ch_log
@@ -55,7 +55,7 @@ if [[ $? == 0 ]]; then
     python $gmsim/workflow/metadata/log_metadata.py {{sim_dir}} IM_calc cores={{np}} pSA_count=$pSA_count fd_count=$fd_count start_time=$start_time end_time=$end_time
 else
     #failed
-    python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py {{mgmt_db_location}}/mgmt_db_queue {{srf_name}} 6 5 --error "$res"
+    python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py {{mgmt_db_location}}/mgmt_db_queue {{srf_name}} IM_calc 5 --error "$res"
 fi
 
 
