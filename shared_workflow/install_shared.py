@@ -57,11 +57,6 @@ def install_simulation(
 
     shared.verify_user_dirs(dir_list)
 
-    for filename in glob.glob(os.path.join(defaults.recipe_dir, "*.*")):
-        if filename == "README.md":
-            continue
-        shutil.copy(filename, sim_dir)
-
     shutil.copy(os.path.join(defaults.workflow_root, "version"), sim_dir)
     shutil.copy(os.path.join(defaults.bin_process_dir, "submit.sh"), sim_dir)
 

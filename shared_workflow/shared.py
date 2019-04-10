@@ -25,6 +25,7 @@ import qcore.constants as const
 from qcore.utils import load_sim_params
 from scripts.cybershake.queue_monitor import DATE_FORMAT as QUEUE_DATE_FORMAT
 from scripts.management.MgmtDB import MgmtDB
+from shared_workflow.shared_defaults import recipe_dir
 
 if sys.version_info.major == 3:
     basestring = str
@@ -165,7 +166,7 @@ def write_sl_script(
 
     (template_name, template_params) = body_template_params
     common_template_params.update(template_params)
-    body = generate_context(sim_dir, template_name, common_template_params)
+    body = generate_context(recipe_dir, template_name, common_template_params)
 
     script_name = os.path.abspath(
         os.path.join(write_directory, "{}_{}.sl".format(script_prefix, const.timestamp))
