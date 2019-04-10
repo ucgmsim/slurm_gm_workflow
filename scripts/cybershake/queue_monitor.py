@@ -14,11 +14,9 @@ from scripts.management.MgmtDB import MgmtDB, SlurmTask
 # Have to include sub-seconds, as clean up can run sub one second.
 DATE_FORMAT = "%Y%m%d%H%M%S_%f"
 
-terminate = False
-
 def on_exit(signum, frame):
-    global terminate
-    terminate = True
+    print("Exiting queue-monitor.")
+    exit()
 
 def get_queue_entries(entry_files: List[str]):
     queue_entries = []
@@ -78,10 +76,6 @@ def main(args):
         else:
             print("No entries in the mgmt db queue.")
 
-        if terminate:
-            print("Exiting queue-monitor.")
-            break
-
         # Nap time
         time.sleep(args.sleep_time)
 
@@ -99,4 +93,5 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
+    signal.signal(signal.SIGINT, on_exit)
     main(args)
