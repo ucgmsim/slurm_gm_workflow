@@ -5,6 +5,7 @@ import argparse
 
 import estimation.estimate_wct as est
 import qcore.constants as const
+import qcore.simulation_structure as sim_struct
 from qcore import utils, shared, srf, binary_version
 from qcore.config import host, get_machine_config
 from shared_workflow.load_config import load
@@ -22,7 +23,7 @@ SCALE_NCORES = True
 default_wct = "00:30:00"
 
 
-def main(args):
+def main(args, est_model=None):
     params = utils.load_sim_params(os.path.join(args.rel_dir, "sim_params.yaml"))
 
     # check if the args is none, if not, change the version
@@ -52,16 +53,18 @@ def main(args):
         # TODO:make it read through the whole list
         #  instead of assuming every stoch has same size
         nsub_stoch, sub_fault_area = srf.get_nsub_stoch(params.hf.slip, get_area=True)
-        workflow_config = load(
-            os.path.dirname(os.path.realpath(__file__)), "workflow_config.json"
-        )
 
+        if est_model is None:
+            workflow_config = load(
+                os.path.dirname(os.path.realpath(__file__)), "workflow_config.json"
+            )
+            est_model = os.path.join(workflow_config["estimation_models_dir"], "HF")
         est_core_hours, est_run_time, est_cores = est.est_HF_chours_single(
             fd_count,
             nsub_stoch,
             nt,
             args.ncore,
-            os.path.join(workflow_config["estimation_models_dir"], "HF"),
+            est_model,
             scale_ncores=SCALE_NCORES,
         )
         wct = set_wct(est_run_time, est_cores, args.auto)
@@ -117,11 +120,9 @@ def main(args):
         submit_yes = True if args.auto else confirm("Also submit the job for you?")
         submit_sl_script(
             script_file_path,
-            "HF",
-            "queued",
-            params.mgmt_db_location,
+            const.ProcessType.HF.value,
+            sim_struct.get_mgmt_db_queue(params.mgmt_db_location),
             srf_name,
-            const.timestamp,
             submit_yes=submit_yes,
             target_machine=args.machine,
         )

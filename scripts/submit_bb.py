@@ -5,6 +5,7 @@ import argparse
 
 import estimation.estimate_wct as est
 import qcore.constants as const
+import qcore.simulation_structure as sim_struct
 from qcore import utils, shared
 from qcore.config import host
 from shared_workflow.load_config import load
@@ -19,9 +20,8 @@ from shared_workflow.shared import (
 default_wct = "00:30:00"
 
 
-def main(args):
+def main(args, est_model=None):
     params = utils.load_sim_params(os.path.join(args.rel_dir, "sim_params.yaml"))
-
     ncores = const.BB_DEFAULT_NCORES
 
     version = args.version
@@ -37,21 +37,22 @@ def main(args):
 
     srf_name = os.path.splitext(os.path.basename(params.srf_file))[0]
     if args.srf is None or srf_name == args.srf:
-
         # TODO: save status as HF. refer to submit_hf
-
         # Use HF nt for wct estimation
         nt = get_nt(params)
         fd_count = len(shared.get_stations(params.FD_STATLIST))
-        workflow_config = load(
-            os.path.dirname(os.path.realpath(__file__)), "workflow_config.json"
-        )
+
+        if est_model is None:
+            workflow_config = load(
+                os.path.dirname(os.path.realpath(__file__)), "workflow_config.json"
+            )
+            est_model = os.path.join(workflow_config["estimation_models_dir"], "BB")
 
         est_core_hours, est_run_time = est.est_BB_chours_single(
             fd_count,
             nt,
             ncores,
-            os.path.join(workflow_config["estimation_models_dir"], "BB"),
+            est_model,
         )
         wct = set_wct(est_run_time, ncores, args.auto)
         bb_sim_dir = os.path.join(params.sim_dir, "BB")
@@ -99,11 +100,9 @@ def main(args):
         submit_yes = True if args.auto else confirm("Also submit the job for you?")
         submit_sl_script(
             script_file_path,
-            "BB",
-            "queued",
-            params.mgmt_db_location,
+            const.ProcessType.BB.value,
+            sim_struct.get_mgmt_db_queue(params.mgmt_db_location),
             srf_name,
-            const.timestamp,
             submit_yes=submit_yes,
             target_machine=args.machine,
         )

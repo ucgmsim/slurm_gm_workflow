@@ -9,7 +9,8 @@ these will be logical number of cores for some process types and physical for ot
 import os
 import glob
 import pickle
-from typing import List
+from typing import List, Union
+from collections import namedtuple
 
 import numpy as np
 
@@ -24,6 +25,8 @@ PHYSICAL_NCORES_PER_NODE = 40
 
 OVERESTIMATE_FRACTION = 0.5
 DEFAULT_MODEL_TYPE = const.EstModelType.NN_SVR
+
+EstModel = namedtuple("EstModel", ["nn_model", "nn_scaler", "svr_model", "svr_scaler"])
 
 
 def get_wct(run_time, overestimate_factor=OVERESTIMATE_FRACTION):
@@ -49,7 +52,7 @@ def est_LF_chours_single(
     nz: int,
     nt: int,
     ncores: int,
-    model_dir: str,
+    model: Union[str, EstModel],
     scale_ncores: bool,
     node_time_th_factor: float = 0.25,
     model_type: const.EstModelType = DEFAULT_MODEL_TYPE,
@@ -66,6 +69,8 @@ def est_LF_chours_single(
     scale_ncores: bool
         If True then the number of cores is adjusted until
         n_nodes * node_time_th == run_time
+    model: str or EstModel
+        Either the path to the model directory, or the loaded model.
     node_time_th: float
         Node time threshold factor, does nothing if scale_ncores is not set
 
@@ -87,7 +92,7 @@ def est_LF_chours_single(
 
     core_hours, run_time, ncores = estimate_LF_chours(
         data,
-        model_dir,
+        model,
         scale_ncores,
         node_time_th_factor=node_time_th_factor,
         model_type=model_type,
@@ -98,7 +103,7 @@ def est_LF_chours_single(
 
 def estimate_LF_chours(
     data: np.ndarray,
-    model_dir: str,
+    model: Union[str, EstModel],
     scale_ncores: bool,
     node_time_th_factor: float = 0.25,
     model_type: const.EstModelType = DEFAULT_MODEL_TYPE,
@@ -112,6 +117,8 @@ def estimate_LF_chours(
     data: np.ndarray of float, int
         Input data for the model in the order nx, ny, nz, nt, n_cores
         Has to have a shape of [-1, 5]
+    model: str or EstModel
+        Either the path to the model directory, or the loaded model.
     scale_ncores: bool
         If True then the number of cores is adjusted until
         n_nodes * node_time_th >= run_time
@@ -137,7 +144,7 @@ def estimate_LF_chours(
     )
 
     core_hours = estimate(
-        data, model_dir, model_type, const.LF_DEFAULT_NCORES, lf_svr_input_data=svr_data
+        data, model, model_type, const.LF_DEFAULT_NCORES, lf_svr_input_data=svr_data
     )
 
     # data[:, -1] represents the last column of the ndarray data, which contains the number of cores for each task
@@ -371,7 +378,7 @@ def estimate_BB_chours(
     data[:, -1] = data[:, -1] / 2.0 if const.ProcessType.BB.is_hyperth else data[:, -1]
     core_hours = estimate(
         data,
-        model_dir=model_dir,
+        model=model_dir,
         model_type=model_type,
         default_ncores=const.BB_DEFAULT_NCORES / 2.0
         if const.ProcessType.BB.is_hyperth
@@ -458,7 +465,7 @@ def get_IM_comp_count(comp: List[str]):
 
 def estimate(
     input_data: np.ndarray,
-    model_dir: str,
+    model: Union[str, EstModel],
     model_type: const.EstModelType,
     default_ncores: int,
     lf_svr_input_data: np.ndarray = None,
@@ -475,6 +482,8 @@ def estimate(
         have to be the same (and in the same order) as when the model
         was trained)
         Last column has to be the number of cores
+    model: str or EstModel
+        Either the path to the model directory, or the loaded model.
     default_ncores: int
         The default number of cores for the process type
     lf_svr_input_data: np.ndarray
@@ -486,33 +495,22 @@ def estimate(
     wc: np.ndarray
         Estimated wall clock time
     """
-    # Load the scaler and scale the input data
+    if isinstance(model, str):
+        model = load_full_model(model, model_type)
 
-    # Load the data and run estimation
     if model_type is const.EstModelType.NN:
-        scaler = load_scaler(model_dir, SCALER_PREFIX.format("NN"))
+        scaler, nn_model = model.nn_scaler, model.nn_model
         X = scaler.transform(input_data)
-
-        nn_model = load_model(model_dir, const.EST_MODEL_NN_PREFIX, "h5", NNWcEstModel)
         core_hours = nn_model.predict(X)
     elif model_type is const.EstModelType.SVR:
-        scaler = load_scaler(model_dir, SCALER_PREFIX.format("SVR"))
+        scaler, svr_model = model.svr_scaler, model.svr_model
         X = scaler.transform(input_data)
-
-        svr_model, scaler = load_model(
-            model_dir, const.EST_MODEL_SVR_PREFIX, "pickle", SVRModel
-        )
         core_hours = svr_model.predict(X)
     else:
-        comb_model = CombinedModel(
-            load_model(model_dir, const.EST_MODEL_NN_PREFIX, "h5", NNWcEstModel),
-            load_model(model_dir, const.EST_MODEL_SVR_PREFIX, "pickle", SVRModel),
-        )
+        comb_model = CombinedModel(model.nn_model, model.svr_model)
+        scaler_nn, scaler_svr = model.nn_scaler, model.svr_scaler
 
-        scaler_nn = load_scaler(model_dir, SCALER_PREFIX.format("NN"))
         X_nn = scaler_nn.transform(input_data)
-
-        scaler_svr = load_scaler(model_dir, SCALER_PREFIX.format("SVR"))
         if lf_svr_input_data is not None:
             X_svr = scaler_svr.transform(lf_svr_input_data)
         else:
@@ -524,6 +522,34 @@ def estimate(
 
     return core_hours
 
+
+def load_full_model(dir: str, model_type: const.EstModelType = DEFAULT_MODEL_TYPE):
+    """Loads the full model, i.e. the estimation model(s) and their associated scaler.
+
+    Returns an EstModel object.
+    """
+    # Load just NN
+    if model_type is const.EstModelType.NN:
+        return EstModel(
+            load_model(dir, const.EST_MODEL_NN_PREFIX, "h5", NNWcEstModel),
+            load_scaler(dir, SCALER_PREFIX.format("NN")), None, None
+        )
+    # Load just SVR
+    elif model_type is const.EstModelType.SVR:
+        return EstModel(
+            load_model(dir, const.EST_MODEL_SVR_PREFIX, "pickle", SVRModel),
+            load_scaler(dir, SCALER_PREFIX.format("SVR")),
+            None,
+            None,
+        )
+    # Load both
+    elif model_type is const.EstModelType.NN_SVR:
+        return EstModel(
+            load_model(dir, const.EST_MODEL_NN_PREFIX, "h5", NNWcEstModel),
+            load_scaler(dir, SCALER_PREFIX.format("NN")),
+            load_model(dir, const.EST_MODEL_SVR_PREFIX, "pickle", SVRModel),
+            load_scaler(dir, SCALER_PREFIX.format("SVR")),
+        )
 
 def load_scaler(dir: str, scaler_prefix: str):
     """Loads the latest scaler
