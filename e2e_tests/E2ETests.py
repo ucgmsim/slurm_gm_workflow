@@ -75,6 +75,9 @@ class E2ETests(object):
     submit_out_file = "submit_out_log.txt"
     submit_err_file = "submit_err_log.txt"
 
+    queue_out_file = "queue_out_log.txt"
+    queue_err_file = "queue_err_log.txt"
+
     warnings_file = "warnings_log.txt"
     errors_file = "errors_log.txt"
 
@@ -116,16 +119,23 @@ class E2ETests(object):
 
     def run(
         self,
+        user: str,
         sleep_time: int = 10,
         stop_on_error: bool = True,
         stop_on_warning: bool = False,
         no_clean_up: bool = False,
     ):
-        """Runs the full automated workflow and checks that everything works as
+        """
+        Runs the full automated workflow and checks that everything works as
         expected. Prints out a list of errors, if there are any.
 
         The test directory is deleted if there are no errors, unless no_clean_up
         is set.
+
+        Parameters
+        ----------
+        user: str
+            The username under which to run the tasks
         """
         self._stop_on_error = stop_on_error
 
@@ -146,7 +156,7 @@ class E2ETests(object):
             return False
 
         # Run automated workflow
-        if not self.run_auto_submit(sleep_time=sleep_time):
+        if not self._run_auto(user, sleep_time=sleep_time):
             return False
         # Only check that everything is completed, when auto submit does not
         # exit early
@@ -164,14 +174,14 @@ class E2ETests(object):
         return True
 
     def print_warnings(self):
-        with open(os.path.join(self.stage_dir, self.warnings_file), 'a') as f:
+        with open(os.path.join(self.stage_dir, self.warnings_file), "a") as f:
             for warn in self.warnings:
                 text = "WARNING: {}, {}".format(warn.location, warn.warning)
                 print(text)
                 f.write(text)
 
     def print_errors(self):
-        with open(os.path.join(self.stage_dir, self.errors_file), 'a') as f:
+        with open(os.path.join(self.stage_dir, self.errors_file), "a") as f:
             for err in self.errors:
                 text = "ERROR: {}, {}\n".format(err.location, err.error)
                 print(text)
@@ -301,25 +311,36 @@ class E2ETests(object):
             "Root params are missing in {}".format(self.runs_dir),
         )
 
-    def run_auto_submit(self, sleep_time: int = 10):
+    def _run_auto(self, user: str, sleep_time: int = 10):
         """
         Runs auto submit
 
         Parameters
         ----------
+        user: str
+            The username under which to run the tasks
         sleep_time: int
             Time (in seconds) between progress checks
         """
-        script_path = os.path.join(
-            os.path.dirname(os.path.abspath(__file__)),
-            "../scripts/cybershake/run_queue_and_auto_submit.sh",
-        )
-        cmd = "{} {} 1 {}".format(
-            script_path,
+        submit_cmd = "python {} {} {} --sleep_time 2 --config {} " \
+                     "--no_merge_ts --no_clean_up".format(
+            os.path.join(
+                os.path.dirname(os.path.abspath(__file__)),
+                "../scripts/cybershake/auto_submit.py",
+            ),
             self.stage_dir,
+            user,
             sim_struct.get_cybershake_config(self.stage_dir),
         )
+        queue_cmd = "python {} {}".format(
+            os.path.join(
+                os.path.dirname(os.path.abspath(__file__)),
+                "../scripts/cybershake/queue_monitor.py",
+            ),
+            self.stage_dir,
+        )
 
+        # Different process types for which canceling/resume is tested
         proc_type_cancel = None
         if self.config_dict[self.test_checkpoint_key]:
             proc_type_cancel = [
@@ -330,12 +351,30 @@ class E2ETests(object):
 
         # Have to put this in a massive try block, to ensure that
         # the run_queue_and_auto_submit process is terminated on any errors.
-        print("Running auto submit...")
-        p, out_f, err_f = None, None, None
+        p_submit, out_submit_f, err_submit_f = None, None, None
+        p_queue, out_queue_f, err_queue_f = None, None, None
         try:
-            out_f = open(os.path.join(self.stage_dir, self.submit_out_file), "w")
-            err_f = open(os.path.join(self.stage_dir, self.submit_err_file), "w")
-            p = exe(cmd, debug=False, non_blocking=True, stdout=out_f, stderr=err_f)
+            print("Starting auto submit...")
+            out_submit_f = open(os.path.join(self.stage_dir, self.submit_out_file), "w")
+            err_submit_f = open(os.path.join(self.stage_dir, self.submit_err_file), "w")
+            p_submit = exe(
+                submit_cmd,
+                debug=False,
+                non_blocking=True,
+                stdout=out_submit_f,
+                stderr=err_submit_f,
+            )
+
+            print("Starting mgmt queue monitor...")
+            out_queue_f = open(os.path.join(self.stage_dir, self.queue_out_file), "w")
+            err_queue_f = open(os.path.join(self.stage_dir, self.queue_err_file), "w")
+            p_queue = exe(
+                queue_cmd,
+                debug=False,
+                non_blocking=True,
+                stdout=out_queue_f,
+                stderr=err_queue_f,
+            )
 
             # Monitor mgmt db
             print("Progress: ")
@@ -373,18 +412,15 @@ class E2ETests(object):
                     Error("Auto-submit timeout", "The auto-submit timeout expired.")
                 )
                 return False
-
         # Still display the exception
         except Exception as ex:
             raise ex
         # Clean up
         finally:
-            if p is not None:
+            for p in [p_submit, p_queue]:
                 p.terminate()
-            if out_f is not None:
-                out_f.close()
-            if err_f is not None:
-                err_f.close()
+            for f in [out_submit_f, err_submit_f, out_queue_f, err_queue_f]:
+                f.close()
 
         return True
 
