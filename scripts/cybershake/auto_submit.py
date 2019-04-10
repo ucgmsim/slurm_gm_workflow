@@ -58,7 +58,7 @@ def get_queued_tasks(user=None, machine=const.HPC.maui):
     return output_list
 
 
-def check_queue(queue_folder: str, run_name: str, proc_type: int):
+def check_mgmt_queue(queue_folder: str, run_name: str, proc_type: int):
     """Returns True if there are any queued entries for this run_name and process type,
     otherwise returns False.
     """
@@ -99,7 +99,7 @@ def update_tasks(queue_folder: str, squeue_tasks, db_tasks: List[SlurmTask]):
                     )
                 # Do nothing if there is a pending update for
                 # this run & process type combination
-                elif not check_queue(queue_folder, db_task.run_name, db_task.proc_type):
+                elif not check_mgmt_queue(queue_folder, db_task.run_name, db_task.proc_type):
                     print(
                         "Updating status of {}, {} from {} to {}".format(
                             db_task.run_name,
@@ -115,7 +115,7 @@ def update_tasks(queue_folder: str, squeue_tasks, db_tasks: List[SlurmTask]):
         # realisation/proc combination
         if (
             not found
-            and not check_queue(queue_folder, db_task.run_name, db_task.proc_type)
+            and not check_mgmt_queue(queue_folder, db_task.run_name, db_task.proc_type)
         ):
             print(
                 "Task '{}' on '{}' not found on squeue; resetting the status "
@@ -417,7 +417,7 @@ def main(args):
             cur_run_name, cur_proc_type = task[1], task[0]
 
             # Set task that are set to be skipped to complete in db
-            if cur_proc_type in skipped and not check_queue(
+            if cur_proc_type in skipped and not check_mgmt_queue(
                 queue_folder, cur_run_name, cur_proc_type
             ):
                 shared.add_to_queue(
@@ -432,7 +432,7 @@ def main(args):
             # Add task if limit has not been reached and there are no
             # outstanding mgmt db updates
             if (
-                not check_queue(queue_folder, cur_run_name, cur_proc_type)
+                not check_mgmt_queue(queue_folder, cur_run_name, cur_proc_type)
                 and task_counter.get(cur_hpc, 0) < n_tasks_to_run[cur_hpc]
             ):
                 tasks_to_run.append(task)
