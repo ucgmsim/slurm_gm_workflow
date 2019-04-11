@@ -27,7 +27,6 @@ from shared_workflow import shared
 
 DEFAULT_N_MAX_RETRIES = 2
 DEFAULT_N_RUNS = {const.HPC.maui: 12, const.HPC.mahuika: 12}
-DEFAULT_1D_MOD = "/nesi/transit/nesi00213/VelocityModel/Mod-1D/Cant1D_v2-midQ_leer.1d"
 
 JOB_RUN_MACHINE = {
     const.ProcessType.EMOD3D: const.HPC.maui,
@@ -318,7 +317,7 @@ def main(args):
     mgmt_db = MgmtDB(sim_struct.get_mgmt_db(root_folder))
 
     # Default values
-    oneD_mod, hf_vs30_ref, binary_mode, hf_seed = DEFAULT_1D_MOD, None, True, None
+    binary_mode, hf_seed = True, None
     rand_reset, extended_period = True, False
 
     if args.config is not None:
