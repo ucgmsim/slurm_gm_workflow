@@ -22,6 +22,9 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     shared.add_to_queue(
-        args.queue_folder, args.run_name,
-        const.ProcessType.from_str(args.proc_type).value, args.status, error=args.error
+        args.queue_folder,
+        args.run_name,
+        const.ProcessType.from_str(args.proc_type).value,
+        const.Status.from_str(args.status).value,
+        error=args.error,
     )
