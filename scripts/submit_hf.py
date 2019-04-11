@@ -23,7 +23,7 @@ SCALE_NCORES = True
 default_wct = "00:30:00"
 
 
-def main(args, est_model=None):
+def main(args: argparse.Namespace, est_model: est.EstModel = None):
     params = utils.load_sim_params(os.path.join(args.rel_dir, "sim_params.yaml"))
 
     # check if the args is none, if not, change the version
