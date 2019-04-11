@@ -4,9 +4,10 @@ import os
 import glob
 import argparse
 
+import qcore.constants as const
+import qcore.simulation_structure as sim_struct
 from qcore import utils, binary_version
 from qcore.config import get_machine_config, host
-import qcore.constants as const
 from shared_workflow.shared import (
     confirm,
     submit_sl_script,
@@ -95,11 +96,9 @@ def main(args):
 
         submit_sl_script(
             script_file_path,
-            "merge_ts",
-            "queued",
-            mgmt_db_loc,
+            const.ProcessType.merge_ts.value,
+            sim_struct.get_mgmt_db_queue(mgmt_db_loc),
             srf_name,
-            const.timestamp,
             submit_yes=submit_yes,
             target_machine=args.machine,
         )
@@ -146,11 +145,9 @@ def main(args):
 
         submit_sl_script(
             script_file_path,
-            "winbin_aio",
-            "queued",
-            params.mgmt_db_location,
+            const.ProcessType.winbin_aio.value,
+            sim_struct.get_mgmt_db_queue(params.mgmt_db_location),
             srf_name,
-            const.timestamp,
             submit_yes=submit_yes,
         )
 

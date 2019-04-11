@@ -7,6 +7,7 @@ Module which contains shared functions/values.
 """
 from __future__ import print_function
 
+import json
 import os
 import shutil
 import subprocess
@@ -14,6 +15,7 @@ import sys
 import re
 import datetime
 import glob
+from datetime import datetime
 
 from jinja2 import Environment, FileSystemLoader
 
@@ -21,6 +23,8 @@ from qcore import binary_version
 from qcore.config import host
 import qcore.constants as const
 from qcore.utils import load_sim_params
+from scripts.cybershake.queue_monitor import DATE_FORMAT as QUEUE_DATE_FORMAT
+from scripts.management.MgmtDB import MgmtDB
 
 if sys.version_info.major == 3:
     basestring = str
@@ -577,12 +581,10 @@ def exe(
 
 
 def submit_sl_script(
-    script,
-    process,
-    status,
-    mgmt_db_loc,
-    srf_name,
-    timestamp,
+    script: str,
+    proc_type: int,
+    queue_folder: str,
+    run_name: str,
     submit_yes=False,
     target_machine=None,
 ):
@@ -612,7 +614,13 @@ def submit_sl_script(
                 )
                 sys.exit()
 
-            update_db_cmd(process, status, mgmt_db_loc, srf_name, jobid, timestamp)
+            add_to_queue(
+                queue_folder,
+                run_name,
+                proc_type,
+                const.Status.queued.value,
+                job_id=jobid,
+            )
             return jobid
         else:
             print("An error occurred during job submission: {}".format(res[1]))
@@ -620,26 +628,39 @@ def submit_sl_script(
         print("User chose to submit the job manually")
 
 
-def update_db_cmd(process, status, mgmt_db_loc, srf_name, jobid, timestamp):
-    """Adds the command to update the mgmt db to the queue"""
-    # Update the db
-    if mgmt_db_loc is not None and os.path.isdir(mgmt_db_loc):
-        db_queue_path = os.path.join(mgmt_db_loc, "mgmt_db_queue")
-        cmd_name = os.path.join(db_queue_path, "%s_%s_q" % (timestamp, jobid))
-        cmd = (
-            "python $gmsim/workflow/scripts/management/"
-            "update_mgmt_db.py {} {} {} --run_name {}  --job {}".format(
-                mgmt_db_loc, process, status, srf_name, jobid
+def add_to_queue(
+    queue_folder: str,
+    run_name: str,
+    proc_type: int,
+    status: int,
+    job_id: int = None,
+    retries: int = None,
+    error: str = None
+):
+    """Adds an update entry to the queue"""
+    filename = os.path.join(
+        queue_folder,
+        "{}.{}.{}".format(datetime.now().strftime(QUEUE_DATE_FORMAT), run_name, proc_type),
+    )
+
+    if os.path.exists(filename):
+        raise Exception(
+            "An update with the name {} already exists. This should never happen. Quitting!".format(
+                os.path.basename(filename)
             )
         )
-        with open(cmd_name, "w+") as f:
-            f.write(cmd)
-            f.close()
-    else:
-        print(
-            "{} is not a valid mgmt db location. No update cmd was created.".format(
-                mgmt_db_loc
-            )
+
+    with open(os.path.join(queue_folder, filename), "w") as f:
+        json.dump(
+            {
+                MgmtDB.col_run_name: run_name,
+                MgmtDB.col_proc_type: proc_type,
+                MgmtDB.col_status: status,
+                MgmtDB.col_job_id: job_id,
+                MgmtDB.col_retries: retries,
+                "error": error
+            },
+            f,
         )
 
 

@@ -3,31 +3,23 @@
 
 A script that updates a slurm mgmt db and inserts a new task to run
 """
-
 import argparse
-import create_mgmt_db
-import scripts.management.db_helper
+from scripts.management.MgmtDB import MgmtDB
+import qcore.constants as const
 
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('run_folder', type=str, 
-                        help="folder to the collection of runs on Kupe")
+    parser.add_argument(
+        "mgmt_db_file", type=str, help="Path to the management db to use"
+    )
     parser.add_argument('run_name', type=str,
                         help='name of run to be updated')
-    parser.add_argument('process', choices=['EMOD3D', 'post_EMOD3D', 'HF', 'BB', 'IM_calculation'])
-    
+    parser.add_argument('process', choices=[proc_type.str_value for proc_type in const.ProcessType])
     args = parser.parse_args()
-    f = args.run_folder
-    process = args.process
-    run_name = args.run_name
-    db = scripts.management.db_helper.connect_db(f)
-    
-    create_mgmt_db.insert_task(db, run_name, process)
 
-    db.connection.commit()
-    db.connection.close()
-
+    mgmt_db = MgmtDB(args.mgmt_db_file)
+    mgmt_db.insert(args.run_name, const.ProcessType.from_str(args.process).value)
 
 if __name__ == '__main__':
     main()
