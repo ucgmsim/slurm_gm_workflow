@@ -114,7 +114,7 @@ class E2ETests(object):
         self.fault_dirs, self.sim_dirs = [], []
         self.runs_dir = None
 
-        self._sim_passed = []
+        self._sim_passed, self._sim_failed = set(), set()
         self._stop_on_error = None
 
     def run(
@@ -484,12 +484,15 @@ class E2ETests(object):
         """Checks that all the LF, HF and BB binaries are there and that the
         IM values match up with the benchmark IMs
         """
+        result = True
+
         # Check HF binary
         hf_bin = sim_struct.get_hf_bin_path(sim_dir)
         if not os.path.isfile(hf_bin):
             self.errors.append(
                 Error("HF - Binary", "The HF binary is not at {}".format(hf_bin))
             )
+            result = False
 
         # Check BB binary
         bb_bin = sim_struct.get_bb_bin_path(sim_dir)
@@ -497,6 +500,7 @@ class E2ETests(object):
             self.errors.append(
                 Error("BB - Binary", "The BB binary is not at {}".format(hf_bin))
             )
+            result = False
 
         # Check IM
         im_csv = sim_struct.get_IM_csv(sim_dir)
@@ -506,6 +510,7 @@ class E2ETests(object):
                     "IM_calc - CSV", "The IM_calc csv file is not at {}".format(im_csv)
                 )
             )
+            result = False
         else:
             bench_csv = os.path.join(
                 self.im_bench_folder,
@@ -525,13 +530,9 @@ class E2ETests(object):
                         ),
                     )
                 )
+                result = False
 
-        if self._stop_on_error and self.errors:
-            print("Quitting as the following errors occured: ")
-            self.print_errors()
-            return False
-
-        return True
+        return result
 
     def check_mgmt_db_progress(self):
         """Checks auto submit progress in the management db"""
@@ -557,20 +558,28 @@ class E2ETests(object):
         completed_sims = [sim_t[0] for sim_t in completed_sims]
 
         # Only check the ones that haven't been checked already
-        completed_new = set(completed_sims) - set(self._sim_passed)
+        completed_new = set(completed_sims) - (self._sim_passed + self._sim_failed)
 
         for sim in completed_new:
-            if not self.check_sim_result(
+            result = self.check_sim_result(
                 os.path.join(
                     self.runs_dir, sim_struct.get_fault_from_realisation(sim), sim
                 )
-            ):
-                return False
-            self._sim_passed.append(sim)
+            )
+
+            if not result:
+                self._sim_failed.add(sim)
+
+                if self._stop_on_error:
+                    print("Quitting as the following errors occured: ")
+                    self.print_errors()
+                    return False
+            else:
+                self._sim_passed.add(sim)
 
         print(
-            "Passed simulations: {}/{}".format(
-                len(self._sim_passed), len(self.sim_dirs)
+            "Passed/Failed/Total simulations: {}/{}/{}, ".format(
+                len(self._sim_passed), len(self._sim_failed), len(self.sim_dirs)
             )
         )
 
