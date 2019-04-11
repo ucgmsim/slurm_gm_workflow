@@ -27,7 +27,6 @@ from shared_workflow import shared
 
 DEFAULT_N_MAX_RETRIES = 2
 DEFAULT_N_RUNS = {const.HPC.maui: 12, const.HPC.mahuika: 12}
-DEFAULT_1D_MOD = "/nesi/transit/nesi00213/VelocityModel/Mod-1D/Cant1D_v2-midQ_leer.1d"
 
 JOB_RUN_MACHINE = {
     const.ProcessType.EMOD3D: const.HPC.maui,
@@ -43,7 +42,6 @@ SLURM_TO_STATUS_DICT = {"R": 3, "PD": 2, "CG": 3}
 
 
 def get_queued_tasks(user=None, machine=const.HPC.maui):
-    # TODO: Treat Maui and Mahuika jobs seperately. See QSW-912
     if user is not None:
         cmd = "squeue -A nesi00213 -o '%A %t' -h -M {} -u {}".format(
             machine.value, user
@@ -59,7 +57,7 @@ def get_queued_tasks(user=None, machine=const.HPC.maui):
     return output_list
 
 
-def check_queue(queue_folder: str, run_name: str, proc_type: int):
+def check_mgmt_queue(queue_folder: str, run_name: str, proc_type: int):
     """Returns True if there are any queued entries for this run_name and process type,
     otherwise returns False.
     """
@@ -100,7 +98,7 @@ def update_tasks(queue_folder: str, squeue_tasks, db_tasks: List[SlurmTask]):
                     )
                 # Do nothing if there is a pending update for
                 # this run & process type combination
-                elif not check_queue(queue_folder, db_task.run_name, db_task.proc_type):
+                elif not check_mgmt_queue(queue_folder, db_task.run_name, db_task.proc_type):
                     print(
                         "Updating status of {}, {} from {} to {}".format(
                             db_task.run_name,
@@ -114,13 +112,10 @@ def update_tasks(queue_folder: str, squeue_tasks, db_tasks: List[SlurmTask]):
                     )
         # Only reset if there is no entry on the mgmt queue for this
         # realisation/proc combination
-        # Ignore cleanup for now as it runs on mahuika
         if (
             not found
-            and not check_queue(queue_folder, db_task.run_name, db_task.proc_type)
-            and const.ProcessType(db_task.proc_type) != const.ProcessType.clean_up
+            and not check_mgmt_queue(queue_folder, db_task.run_name, db_task.proc_type)
         ):
-            print("DEBUG: RESETTING TASK!!!! SHOULD NOT HAPPEN ATM!!!")
             print(
                 "Task '{}' on '{}' not found on squeue; resetting the status "
                 "to 'created' for resubmission".format(
@@ -301,7 +296,7 @@ def submit_task(
         script = clean_up_template.format(
             sim_dir=sim_dir,
             srf_name=run_name,
-            mgmt_db_loc=sim_dir,
+            mgmt_db_loc=root_folder,
             script_location=os.path.expandvars("$gmsim/workflow/scripts/clean_up.sl"),
             output_file=os.path.join(sim_dir, "clean_up.out"),
             error_file=os.path.join(sim_dir, "clean_up.err"),
@@ -322,22 +317,8 @@ def main(args):
     mgmt_db = MgmtDB(sim_struct.get_mgmt_db(root_folder))
 
     # Default values
-    oneD_mod, hf_vs30_ref, binary_mode, hf_seed = DEFAULT_1D_MOD, None, True, None
+    binary_mode, hf_seed = True, None
     rand_reset, extended_period = True, False
-
-    machine_max_tasks = DEFAULT_N_RUNS
-    if args.n_runs is not None:
-        if len(args.n_runs) == 1:
-            machine_max_tasks = {hpc: args.n_runs[0] for hpc in const.HPC}
-        elif len(args.n_runs) == len(const.HPC):
-            machine_max_tasks = {
-                hpc: args.n_runs[index] for index, hpc in enumerate(const.HPC)
-            }
-        else:
-            parser.error(
-                "You must specify wither one common value for --n_runs, or one "
-                "for each in the following list: {}".format(list(const.HPC))
-            )
 
     if args.config is not None:
         # parse and check for variables in config
@@ -369,7 +350,7 @@ def main(args):
             else extended_period
         )
 
-    # Load estimation models
+    print("Loading estimation models")
     workflow_config = ldcfg.load()
     lf_est_model = est.load_full_model(
         os.path.join(workflow_config["estimation_models_dir"], "LF")
@@ -401,7 +382,7 @@ def main(args):
         queue_tasks, n_tasks_to_run = [], {}
         for hpc in const.HPC:
             cur_tasks = get_queued_tasks(user=args.user, machine=hpc)
-            n_tasks_to_run[hpc] = machine_max_tasks[hpc] - len(cur_tasks)
+            n_tasks_to_run[hpc] = args.n_runs[hpc] - len(cur_tasks)
             queue_tasks.extend(cur_tasks)
 
         db_in_progress_tasks = mgmt_db.get_submitted_tasks()
@@ -430,12 +411,14 @@ def main(args):
 
         # Select the first ntask_to_run that are not waiting
         # for mgmt db updates (i.e. items in the queue)
-        tasks_to_run, task_counter = [], {key:0 for key in const.HPC}
+        tasks_to_run, task_counter = [], {key: 0 for key in const.HPC}
         for task in runnable_tasks[:100]:
             cur_run_name, cur_proc_type = task[1], task[0]
 
             # Set task that are set to be skipped to complete in db
-            if task[0] in skipped:
+            if cur_proc_type in skipped and not check_mgmt_queue(
+                queue_folder, cur_run_name, cur_proc_type
+            ):
                 shared.add_to_queue(
                     queue_folder,
                     cur_run_name,
@@ -445,10 +428,10 @@ def main(args):
                 continue
 
             cur_hpc = JOB_RUN_MACHINE[const.ProcessType(cur_proc_type)]
-            # Add task if limit has not been reached and there are not
+            # Add task if limit has not been reached and there are no
             # outstanding mgmt db updates
             if (
-                not check_queue(queue_folder, cur_run_name, cur_proc_type)
+                not check_mgmt_queue(queue_folder, cur_run_name, cur_proc_type)
                 and task_counter.get(cur_hpc, 0) < n_tasks_to_run[cur_hpc]
             ):
                 tasks_to_run.append(task)
@@ -479,23 +462,10 @@ def main(args):
         for task in tasks_to_run:
             proc_type, run_name, _ = task
 
-            # Skip im calcs if no_im == true
-            if args.no_im and proc_type == const.ProcessType.IM_calculation.value:
-                continue
-
             # Special handling for merge-ts
             if proc_type == const.ProcessType.merge_ts.value:
-                # Mark merge-ts as complete if --no_merge_ts flag is set
-                if args.no_merge_ts:
-                    shared.add_to_queue(
-                        queue_folder,
-                        run_name,
-                        const.ProcessType.merge_ts.value,
-                        const.Status.completed.value,
-                    )
-                    continue
                 # Check if clean up has already run
-                elif MgmtDB.is_task_complete(
+                if MgmtDB.is_task_complete(
                     [
                         const.ProcessType.clean_up.value,
                         run_name,
@@ -511,10 +481,6 @@ def main(args):
                         const.ProcessType.clean_up.value,
                         const.Status.created.value,
                     )
-
-            # Skip tidy up
-            if args.no_clean_up and proc_type == const.ProcessType.clean_up.value:
-                continue
 
             # submit the job
             submit_task(
@@ -554,8 +520,8 @@ if __name__ == "__main__":
     parser.add_argument(
         "--sleep_time",
         type=int,
-        help="Seconds sleeping between checking queue and " "adding more jobs",
-        default=10,
+        help="Seconds sleeping between checking queue and adding more jobs",
+        default=5,
     )
     parser.add_argument(
         "--n_max_retries",
@@ -569,5 +535,20 @@ if __name__ == "__main__":
     parser.add_argument("--no_clean_up", action="store_true")
 
     args = parser.parse_args()
+
+    if args.n_runs is not None:
+        if len(args.n_runs) == 1:
+            args.n_runs = {hpc: args.n_runs[0] for hpc in const.HPC}
+        elif len(args.n_runs) == len(const.HPC):
+            args.n_runs = {
+                hpc: args.n_runs[index] for index, hpc in enumerate(const.HPC)
+            }
+        else:
+            parser.error(
+                "You must specify wither one common value for --n_runs, or one "
+                "for each in the following list: {}".format(list(const.HPC))
+            )
+    else:
+        args.n_runs = DEFAULT_N_RUNS
 
     main(args)

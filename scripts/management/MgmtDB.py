@@ -15,8 +15,6 @@ SlurmTask = namedtuple(
 # Make error an optional value, once we are using Python 3.7 then this can be made nicer..
 SlurmTask.__new__.__defaults__ = (None,)
 
-CONSTANTS_TASK_TYPE_ = (x.value for x in const.ProcessType)
-
 
 class MgmtDB:
 
@@ -66,6 +64,13 @@ class MgmtDB:
 
         return True
 
+    def close_conn(self):
+        """Close the db connection. Note, this ONLY has to be done if
+        update_entries_live was used. In all other scenarios the connection is
+        closed by default."""
+        if self._conn is not None:
+            self._conn.close()
+
     def get_submitted_tasks(self):
         """Gets all in progress tasks i.e. (running or queued)"""
         with connect_db_ctx(self._db_file) as cur:
@@ -103,10 +108,7 @@ class MgmtDB:
         tasks_to_run = []
         for task in db_tasks:
             status = task[2]
-            if (
-                status == "created"
-                and self._check_dependancy_met(task, db_tasks)
-            ):
+            if status == "created" and self._check_dependancy_met(task, db_tasks):
                 if task[0] not in verification_tasks or do_verification:
                     tasks_to_run.append(task)
 
@@ -175,7 +177,8 @@ class MgmtDB:
         ):
             if value is not None:
                 cur.execute(
-                    "UPDATE state SET {} = ? WHERE run_name = ? AND proc_type = ?".format(
+                    "UPDATE state SET {} = ?, last_modified = strftime('%s','now') "
+                    "WHERE run_name = ? AND proc_type = ?".format(
                         field
                     ),
                     (value, entry.run_name, entry.proc_type),
@@ -200,15 +203,15 @@ class MgmtDB:
 
         if len(realisations) == 0:
             print("No realisations found - no entries inserted into db")
+        else:
+            with connect_db_ctx(self._db_file) as cur:
+                procs_to_be_done = cur.execute(
+                    """select * from proc_type_enum"""
+                ).fetchall()
 
-        with connect_db_ctx(self._db_file) as cur:
-            procs_to_be_done = cur.execute(
-                """select * from proc_type_enum"""
-            ).fetchall()
-
-            for run_name in realisations:
-                for proc in procs_to_be_done:
-                    self._insert_task(cur, run_name, proc[0])
+                for run_name in realisations:
+                    for proc in procs_to_be_done:
+                        self._insert_task(cur, run_name, proc[0])
 
     def insert(self, run_name: str, proc_type: int):
         """Inserts a task into the mgmt db"""

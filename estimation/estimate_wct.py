@@ -495,37 +495,20 @@ def estimate(
     wc: np.ndarray
         Estimated wall clock time
     """
-    if model_type is const.EstModelType.NN:
-        if isinstance(model, EstModel):
-            scaler, nn_model = model.nn_scaler, model.nn_model
-        else:
-            scaler = load_scaler(model, SCALER_PREFIX.format("NN"))
-            nn_model = load_model(model, const.EST_MODEL_NN_PREFIX, "h5", NNWcEstModel)
+    if isinstance(model, str):
+        model = load_full_model(model, model_type)
 
+    if model_type is const.EstModelType.NN:
+        scaler, nn_model = model.nn_scaler, model.nn_model
         X = scaler.transform(input_data)
         core_hours = nn_model.predict(X)
     elif model_type is const.EstModelType.SVR:
-        if isinstance(model, EstModel):
-            scaler, svr_model = model.svr_scaler, model.svr_model
-        else:
-            scaler = load_scaler(model, SCALER_PREFIX.format("SVR"))
-            svr_model = load_model(
-                model, const.EST_MODEL_SVR_PREFIX, "pickle", SVRModel
-            )
-
+        scaler, svr_model = model.svr_scaler, model.svr_model
         X = scaler.transform(input_data)
         core_hours = svr_model.predict(X)
     else:
-        if isinstance(model, EstModel):
-            comb_model = CombinedModel(model.nn_model, model.svr_model)
-            scaler_nn, scaler_svr = model.nn_scaler, model.svr_scaler
-        else:
-            comb_model = CombinedModel(
-                load_model(model, const.EST_MODEL_NN_PREFIX, "h5", NNWcEstModel),
-                load_model(model, const.EST_MODEL_SVR_PREFIX, "pickle", SVRModel),
-            )
-            scaler_nn = load_scaler(model, SCALER_PREFIX.format("NN"))
-            scaler_svr = load_scaler(model, SCALER_PREFIX.format("SVR"))
+        comb_model = CombinedModel(model.nn_model, model.svr_model)
+        scaler_nn, scaler_svr = model.nn_scaler, model.svr_scaler
 
         X_nn = scaler_nn.transform(input_data)
         if lf_svr_input_data is not None:
