@@ -57,9 +57,6 @@ def install_simulation(
 
     shared.verify_user_dirs(dir_list)
 
-    shutil.copy(os.path.join(defaults.workflow_root, "version"), sim_dir)
-    shutil.copy(os.path.join(defaults.bin_process_dir, "submit.sh"), sim_dir)
-
     if not yes_model_params:
         print("Generation of model params has been skipped.")
         print("Re-directing related params to files under %s" % vel_mod_dir)
