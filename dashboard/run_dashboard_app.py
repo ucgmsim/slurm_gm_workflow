@@ -70,7 +70,7 @@ def update_maui_total_chours(n):
     maui_total_chours = get_chours_entries(const.HPC.maui)[-1][-1]
     mahuika_total_chours = get_chours_entries(const.HPC.mahuika)[-1][-1]
 
-    return html.Plaintext("Mahuika: {} hours\nMaui: {} hours".format(mahuika_total_chours, maui_total_chours))
+    return html.Plaintext("Mahuika: {}/18000 hours\nMaui: {}/950000 hours".format(mahuika_total_chours, maui_total_chours))
 
 
 
@@ -219,7 +219,8 @@ def update_maui_daily_inodes(n):
         fillcolor="red",
     )
     data.append(trace2)
-    fig = go.Figure(data=data)
+    layout = go.Layout(yaxis=dict(range=[0, 16000000]))
+    fig = go.Figure(data=data, layout=layout)
     return fig
 
 
@@ -325,3 +326,4 @@ def check_update_time(last_update_time_string: str, current_update_time: datetim
 
 if __name__ == "__main__":
     app.run_server(host="0.0.0.0")
+
