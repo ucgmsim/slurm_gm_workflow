@@ -27,7 +27,6 @@ from shared_workflow import shared
 
 DEFAULT_N_MAX_RETRIES = 2
 DEFAULT_N_RUNS = {const.HPC.maui: 12, const.HPC.mahuika: 12}
-DEFAULT_1D_MOD = "/nesi/transit/nesi00213/VelocityModel/Mod-1D/Cant1D_v2-midQ_leer.1d"
 
 JOB_RUN_MACHINE = {
     const.ProcessType.EMOD3D: const.HPC.maui,
@@ -43,7 +42,6 @@ SLURM_TO_STATUS_DICT = {"R": 3, "PD": 2, "CG": 3}
 
 
 def get_queued_tasks(user=None, machine=const.HPC.maui):
-    # TODO: Treat Maui and Mahuika jobs seperately. See QSW-912
     if user is not None:
         cmd = "squeue -A nesi00213 -o '%A %t' -h -M {} -u {}".format(
             machine.value, user
@@ -59,7 +57,7 @@ def get_queued_tasks(user=None, machine=const.HPC.maui):
     return output_list
 
 
-def check_queue(queue_folder: str, run_name: str, proc_type: int):
+def check_mgmt_queue(queue_folder: str, run_name: str, proc_type: int):
     """Returns True if there are any queued entries for this run_name and process type,
     otherwise returns False.
     """
@@ -100,7 +98,7 @@ def update_tasks(queue_folder: str, squeue_tasks, db_tasks: List[SlurmTask]):
                     )
                 # Do nothing if there is a pending update for
                 # this run & process type combination
-                elif not check_queue(queue_folder, db_task.run_name, db_task.proc_type):
+                elif not check_mgmt_queue(queue_folder, db_task.run_name, db_task.proc_type):
                     print(
                         "Updating status of {}, {} from {} to {}".format(
                             db_task.run_name,
@@ -114,11 +112,9 @@ def update_tasks(queue_folder: str, squeue_tasks, db_tasks: List[SlurmTask]):
                     )
         # Only reset if there is no entry on the mgmt queue for this
         # realisation/proc combination
-        # Ignore cleanup for now as it runs on mahuika
         if (
             not found
-            and not check_queue(queue_folder, db_task.run_name, db_task.proc_type)
-            and const.ProcessType(db_task.proc_type) != const.ProcessType.clean_up
+            and not check_mgmt_queue(queue_folder, db_task.run_name, db_task.proc_type)
         ):
             print(
                 "Task '{}' on '{}' not found on squeue; resetting the status "
@@ -321,7 +317,7 @@ def main(args):
     mgmt_db = MgmtDB(sim_struct.get_mgmt_db(root_folder))
 
     # Default values
-    oneD_mod, hf_vs30_ref, binary_mode, hf_seed = DEFAULT_1D_MOD, None, True, None
+    binary_mode, hf_seed = True, None
     rand_reset, extended_period = True, False
 
     if args.config is not None:
@@ -420,7 +416,7 @@ def main(args):
             cur_run_name, cur_proc_type = task[1], task[0]
 
             # Set task that are set to be skipped to complete in db
-            if cur_proc_type in skipped and not check_queue(
+            if cur_proc_type in skipped and not check_mgmt_queue(
                 queue_folder, cur_run_name, cur_proc_type
             ):
                 shared.add_to_queue(
@@ -435,7 +431,7 @@ def main(args):
             # Add task if limit has not been reached and there are no
             # outstanding mgmt db updates
             if (
-                not check_queue(queue_folder, cur_run_name, cur_proc_type)
+                not check_mgmt_queue(queue_folder, cur_run_name, cur_proc_type)
                 and task_counter.get(cur_hpc, 0) < n_tasks_to_run[cur_hpc]
             ):
                 tasks_to_run.append(task)
