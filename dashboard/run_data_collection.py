@@ -47,6 +47,7 @@ class DataCollector:
 
     utc_time_format = "%m/%d/%y-%H:%M:%S"
     utc_time_gap = datetime.now() - datetime.utcnow()
+    total_start_time = "09/25/18-12:00:00"
 
     def __init__(
         self,
@@ -129,19 +130,16 @@ class DataCollector:
             ),
             timeout=60,
         )
-        rt_daily_ch = self._parse_chours_usage(rt_daily_ch_output)
-        # Get total core hours usage, start from 188 days ago
-        total_start_time = (
-            datetime.strptime(start_time, self.utc_time_format) - timedelta(days=188)
-        ).strftime(self.utc_time_format)
+        rt_daily_ch = self.parse_chours_usage(rt_daily_ch_output)
+
         rt_total_ch_output = self.run_cmd(
             hpc.value,
             "sreport -n -t Hours cluster AccountUtilizationByUser Accounts={} start={} end={}".format(
-                PROJECT_ID, total_start_time, end_time
+                PROJECT_ID, self.total_start_time, end_time
             ),
             timeout=60,
         )
-        rt_total_ch = self._parse_chours_usage(rt_total_ch_output)
+        rt_total_ch = self.parse_chours_usage(rt_total_ch_output)
 
         if rt_total_ch_output:
             self.dashboard_db.update_chours_usage(rt_daily_ch, rt_total_ch, hpc)
@@ -259,7 +257,8 @@ class DataCollector:
 
         return entries
 
-    def _parse_chours_usage(self, ch_lines: List):
+    @staticmethod
+    def parse_chours_usage(ch_lines: List):
         """Get daily/total core hours usage from cmd output"""
         # ['maui', 'nesi00213', '2023', '0']
         try:

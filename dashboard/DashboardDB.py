@@ -103,6 +103,7 @@ class DashboardDB:
 
         table = self.get_daily_t_name(hpc)
         day = self.get_date(day)
+
         with self.get_cursor(self.db_file) as cursor:
             row = cursor.execute(
                 "SELECT CORE_HOURS_USED, TOTAL_CORE_HOURS FROM {} WHERE DAY == ?;".format(
@@ -116,7 +117,7 @@ class DashboardDB:
             if row is None:
                 cursor.execute(
                     "INSERT INTO {} VALUES(?, ?, ?, ?)".format(table),
-                    (day, 0, total_ch_usage, update_time),
+                    (day, daily_ch_usage, total_ch_usage, update_time),
                 )
             else:
                 cursor.execute(

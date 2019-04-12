@@ -34,14 +34,18 @@ app = dash.Dash(__name__, external_stylesheets=EXTERNAL_STYLESHEETS)
 app.layout = html.Div(
     html.Div(
         [
-            html.H3("Maui & Mahuika"),
+            html.H3("Mahuika & Maui"),
             html.Div(id="err"),
-            html.H5("Maui & Mahuika total core hours usage (since 188 days ago)"),
+            html.H5("Mahuika & Maui total core hours usage (since 188 days ago)"),
             html.Div(id="maui_mahuika_chours"),
-            html.H5("Maui total core hour usage"),
-            dcc.Graph(id="maui_total_chours"),
             html.H5("Mahuika total core hour usage"),
             dcc.Graph(id="mahuika_total_chours"),
+            html.H5("Mahuika daily core hour usage"),
+            dcc.Graph(id="mahuika_daily_chours"),
+            html.H5("Maui total core hour usage"),
+            dcc.Graph(id="maui_total_chours"),
+            html.H5("Maui daily core hour usage"),
+            dcc.Graph(id="maui_daily_chours"),
             html.H5("Maui current status"),
             html.Div(id="maui_node_usage"),
             html.H5("Maui current quota"),
@@ -50,9 +54,6 @@ app.layout = html.Div(
             html.Div(id="maui_squeue_table"),
             html.H5("Maui_daily_inodes"),
             dcc.Graph(id="maui_daily_inodes"),
-            html.H5("Maui daily core hour usage"),
-            dcc.Graph(id="maui_daily_chours"),
-
             dcc.Interval(id="interval_comp", interval=10 * 1000, n_intervals=0),
 
         ]
@@ -69,7 +70,7 @@ def update_maui_total_chours(n):
     maui_total_chours = get_chours_entries(const.HPC.maui)[-1][-1]
     mahuika_total_chours = get_chours_entries(const.HPC.mahuika)[-1][-1]
 
-    return html.Plaintext("Maui: {} hours\nMahuika: {} hours".format(maui_total_chours, mahuika_total_chours))
+    return html.Plaintext("Mahuika: {} hours\nMaui: {} hours".format(mahuika_total_chours, maui_total_chours))
 
 
 
@@ -124,10 +125,38 @@ def update_maui_daily_chours(n):
     data.append(trace)
 
     # get core hours usage for each user
-    data += get_maui_daily_user_chours(const.HPC.maui, USERS)
+    data += get_daily_user_chours(const.HPC.maui, USERS)
 
     # uirevision preserve the UI state between update intervals
     return {"data": data, "layout": {"uirevision": "maui_daily_chours"}}
+
+
+@app.callback(
+    Output("mahuika_daily_chours", "figure"), [Input("interval_comp", "n_intervals")]
+)
+def update_maui_daily_chours(n):
+    # Get data points
+    data = []
+    entries = app.db.get_chours_usage(
+        date.today() - relativedelta(years=1), date.today(), const.HPC.mahuika
+    )
+    entries = np.array(
+        entries,
+        dtype=[
+            ("day", "datetime64[D]"),
+            ("daily_chours", float),
+            ("total_chours", float),
+        ],
+    )
+    trace = go.Scatter(x=entries["day"], y=entries["daily_chours"], name="daily_chours")
+    data.append(trace)
+
+    # get core hours usage for each user
+    data += get_daily_user_chours(const.HPC.mahuika, USERS)
+
+    # uirevision preserve the UI state between update intervals
+    return {"data": data, "layout": {"uirevision": "mahuika_daily_chours"}}
+
 
 
 @app.callback(
@@ -194,7 +223,7 @@ def update_maui_daily_inodes(n):
     return fig
 
 
-def get_maui_daily_user_chours(hpc: const.HPC, users_dict: Dict[str, str] = USERS):
+def get_daily_user_chours(hpc: const.HPC, users_dict: Dict[str, str] = USERS):
     """get daily core hours usage for a list of users
        return as a list of scatter plots
     """
