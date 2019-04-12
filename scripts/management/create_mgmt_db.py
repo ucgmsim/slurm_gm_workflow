@@ -16,6 +16,8 @@ def create_mgmt_db(realisations, db_file, srf_files=[]):
     )
     mgmt_db.populate(realisations, srf_files)
 
+    return mgmt_db
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(

@@ -406,7 +406,7 @@ class E2ETests(object):
         entries = [SlurmTask(*entry) for entry in entries]
 
         for entry in entries:
-            if entry.status != const.State.completed.value:
+            if entry.status != const.Status.completed.value:
                 self.errors.append(
                     Error(
                         "Slrum task",
@@ -414,7 +414,7 @@ class E2ETests(object):
                         "(Status {}, Retries {}, JobId {}".format(
                             entry.run_name,
                             const.ProcessType(entry.proc_type),
-                            const.State(entry.status),
+                            const.Status(entry.status),
                             entry.retries,
                             entry.job_id,
                         ),
