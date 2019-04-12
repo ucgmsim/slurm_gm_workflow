@@ -68,10 +68,9 @@ def test_write_sl_script(set_up, mocker):
             os.path.join(root_path, OUTPUT, "write_sl_script.sl")
         ).readlines()
 
-        assert len(bench_output) == len(test_output)
-        for i in range(len(test_output)):
-            if i not in variable_lines:
-                assert test_output[i] == bench_output[i]
+        #assert len(bench_output) == len(test_output)
+        for test_line, bench_line in zip(test_output, bench_output):
+            assert test_line == bench_line
 
 
 def test_generate_command(set_up):
@@ -104,4 +103,5 @@ def test_resolve_header(set_up):
         input_params = get_input_params(root_path, func_name, params)
         test_output = func(*input_params)
         bench_output = get_bench_output(root_path, func_name)
-        assert test_output == bench_output
+        for test_line, bench_line in zip(test_output.split(), bench_output.split()):
+            assert test_line == bench_line
