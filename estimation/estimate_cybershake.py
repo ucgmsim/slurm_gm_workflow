@@ -16,7 +16,7 @@ from qcore import shared, srf, utils
 from estimation import estimate_wct
 from shared_workflow.load_config import load
 
-PARAMS_VEL_FILENAME = "vm_params.yaml"
+PARAMS_VEL_FILENAME = "params_vel.yaml"
 
 # The node time threshold factor used for ncores scaling
 NODE_TIME_TH_FACTOR = 0.5
@@ -320,14 +320,19 @@ def main(args):
         args.vms_dir, args.sources_dir, args.runs_dir, args
     )
 
-    workflow_config = load(
-        os.path.join(os.path.dirname(os.path.abspath(__file__)), "../", "scripts"),
-        "workflow_config.json",
-    )
-    model_dir = workflow_config["estimation_models_dir"]
-    model_dir_dict = {"LF": os.path.join(model_dir, "LF"),
-                      "HF": os.path.join(model_dir, "HF"),
-                      "BB": os.path.join(model_dir, "BB")}
+    if args.models_dir is None:
+        workflow_config = load(
+            os.path.join(os.path.dirname(os.path.abspath(__file__)), "../", "scripts"),
+            "workflow_config.json",
+        )
+        models_dir = workflow_config["estimation_models_dir"]
+    else:
+        models_dir = args.models_dir
+    model_dir_dict = {
+        "LF": os.path.join(models_dir, "LF"),
+        "HF": os.path.join(models_dir, "HF"),
+        "BB": os.path.join(models_dir, "BB"),
+    }
 
     print("Collecting vm params")
     vm_params = (
@@ -424,10 +429,7 @@ def main(args):
 
         r_nsub_stochs = np.repeat(
             np.asarray(
-                [
-                    srf.get_nsub_stoch(slip, get_area=False)
-                    for slip in runs_params.slip
-                ]
+                [srf.get_nsub_stoch(slip, get_area=False) for slip in runs_params.slip]
             ),
             r_counts,
         )
@@ -466,11 +468,7 @@ def main(args):
         )
     else:
         results_df = run_estimations(
-            fault_names,
-            realisations,
-            r_counts,
-            model_dir_dict,
-            lf_input_data,
+            fault_names, realisations, r_counts, model_dir_dict, lf_input_data
         )
 
     results_df["fault_name"] = np.repeat(fault_names, r_counts)
@@ -517,6 +515,12 @@ if __name__ == "__main__":
         default=False,
         help="Print estimation on a per fault basis instead of just "
         "the final estimation.",
+    )
+    parser.add_argument(
+        "--models_dir",
+        type=str,
+        help="The models directory (i.e. ..../estimation/models/. If not specified"
+             "then the model dir from the workflow config is used.",
     )
 
     args = parser.parse_args()

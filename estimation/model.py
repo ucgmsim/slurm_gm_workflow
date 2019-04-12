@@ -295,8 +295,16 @@ class NNWcEstModel(WCEstModel):
     def get_out_of_bounds_mask(self, X: np.ndarray):
         """Checks that the input data is within the bounds of the data
         used for training of the neural network.
+
+        Have to use isclose due to minor floating point differences.
         """
-        return (X > self._train_max) | (X < self._train_min)
+        return (
+            (X > self._train_max)
+            & ~np.isclose(X, np.repeat(self._train_max, X.shape[0], axis=0))
+        ) | (
+            (X < self._train_min)
+            & ~np.isclose(X, np.repeat(self._train_min, X.shape[0], axis=0))
+        )
 
     def save_model(self, output_file: str):
         """Saves the model in a hdf5 file"""
@@ -526,7 +534,7 @@ class CombinedModel:
         X_nn: array of floats, shape [number of entries, number of features]
             Input data for NN, last column has to be the number of cores
         X_svr: array of floats, shape [number of entries, number of features]
-            Input data for SVR, last column has to be the number of cores
+            Input data for SVR
         n_cores: array of integers
             The non-normalised number of cores (i.e. actual number of
             physical cores to estimate for)
@@ -535,27 +543,27 @@ class CombinedModel:
         """
         assert X_nn.shape[0] == X_svr.shape[0]
 
-        if np.all(~self.nn_model.get_out_of_bounds_mask(X_nn)):
+        out_bound_mask = np.any(self.nn_model.get_out_of_bounds_mask(X_nn), axis=1)
+        if np.all(~out_bound_mask):
             return self.nn_model.predict(X_nn, warning=False)
         else:
-            if X_nn.shape[0] > 1:
+            if np.any(~out_bound_mask):
                 # Identify all entries that are out of bounds
-                mask = np.any(self.nn_model.get_out_of_bounds_mask(X_nn), axis=1)
 
-                # Estimate
+                # Estimate using NN
                 results = np.ones(X_nn.shape[0], dtype=np.float) * np.nan
-                results[~mask] = self.nn_model.predict(X_nn[~mask, :], warning=False)
+                results[~out_bound_mask] = self.nn_model.predict(
+                    X_nn[~out_bound_mask, :], warning=False
+                )
 
-                # Ignore number of cores
-                if np.any(mask):
-                    print(
-                        "Some entries are out of bounds, these will be "
-                        "estimated using the SVR model."
-                    )
-
-                    results[mask] = (
-                        self.svr_model.predict(X_svr[mask, :-1]) * default_n_cores
-                    ) / n_cores[mask]
+                # Estimate out of bounds using SVR
+                print(
+                    "Some entries are out of bounds, these will be "
+                    "estimated using the SVR model."
+                )
+                results[out_bound_mask] = (
+                    self.svr_model.predict(X_svr[out_bound_mask, :]) * default_n_cores
+                ) / n_cores[out_bound_mask]
 
                 return results
             else:
