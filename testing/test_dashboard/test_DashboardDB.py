@@ -92,7 +92,7 @@ class TestDashboardDB:
             day_1, day_1, hpc, physical=False
         )[0]
         assert day == day_1
-        assert daily_usage == 0
+        assert daily_usage == self.daily_core_usage_1
         assert total_core_hours == self.total_core_usage_1
 
         # Add 2nd entry for day 1
@@ -119,7 +119,7 @@ class TestDashboardDB:
             day_2, day_2, hpc, physical=False
         )[0]
         assert day == day_2
-        assert daily_usage == 0
+        assert daily_usage == self.daily_core_usage_2
         assert total_core_hours == self.total_core_usage_2
 
     def test_daily_same_total_chours(self, dashboard_db: DashboardDB):
