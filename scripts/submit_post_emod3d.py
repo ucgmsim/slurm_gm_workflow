@@ -11,9 +11,8 @@ from qcore.config import get_machine_config, host
 from shared_workflow.shared import (
     confirm,
     submit_sl_script,
-    write_sl_script,
 )
-
+from shared_workflow.shared_template import write_sl_script
 
 merge_ts_name_prefix = "post_emod3d_merge_ts"
 winbin_aio_name_prefix = "post_emod3d_winbin_aio"
