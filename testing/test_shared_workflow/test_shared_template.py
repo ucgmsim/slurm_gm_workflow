@@ -77,7 +77,6 @@ def test_resolve_header(set_up):
     variable_lines = [11, 12]
     for root_path, realisation in set_up:
         input_params = get_input_params(root_path, func_name, params)
-        input_params[0] = "/home/jpa198/PycharmProjects/slurm_gm_workflow/templates"
         test_output = func(*input_params)
         bench_output = get_bench_output(root_path, func_name)
         for test_line, bench_line in zip(
