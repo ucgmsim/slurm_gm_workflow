@@ -1,11 +1,15 @@
 """Contains class and helper functions for end to end test"""
+import sys
 import os
 import json
 import shutil
 import time
 import glob
+import subprocess
 from collections import namedtuple
 from typing import List
+from threading import Thread
+from queue import Queue, Empty
 
 import pandas as pd
 import sqlite3 as sql
@@ -116,6 +120,10 @@ class E2ETests(object):
 
         self._sim_passed, self._sim_failed = set(), set()
         self._stop_on_error = None
+
+        # Resources that need to be dealt with on close
+        self._processes = []
+        self._files = []
 
     def run(
         self,
@@ -322,17 +330,19 @@ class E2ETests(object):
         sleep_time: int
             Time (in seconds) between progress checks
         """
-        submit_cmd = "python {} {} {} --sleep_time 2 --config {} " \
-                     "--no_merge_ts --no_clean_up".format(
-            os.path.join(
-                os.path.dirname(os.path.abspath(__file__)),
-                "../scripts/cybershake/auto_submit.py",
-            ),
-            self.stage_dir,
-            user,
-            sim_struct.get_cybershake_config(self.stage_dir),
+        submit_cmd = (
+            "python3 {} {} {} --sleep_time 2 --config {} "
+            "--no_merge_ts --no_clean_up".format(
+                os.path.join(
+                    os.path.dirname(os.path.abspath(__file__)),
+                    "../scripts/cybershake/auto_submit.py",
+                ),
+                self.stage_dir,
+                user,
+                sim_struct.get_cybershake_config(self.stage_dir),
+            )
         )
-        queue_cmd = "python {} {}".format(
+        queue_cmd = "python3 {} {}".format(
             os.path.join(
                 os.path.dirname(os.path.abspath(__file__)),
                 "../scripts/cybershake/queue_monitor.py",
@@ -351,30 +361,37 @@ class E2ETests(object):
 
         # Have to put this in a massive try block, to ensure that
         # the run_queue_and_auto_submit process is terminated on any errors.
-        p_submit, out_submit_f, err_submit_f = None, None, None
-        p_queue, out_queue_f, err_queue_f = None, None, None
         try:
             print("Starting auto submit...")
-            out_submit_f = open(os.path.join(self.stage_dir, self.submit_out_file), "w")
-            err_submit_f = open(os.path.join(self.stage_dir, self.submit_err_file), "w")
             p_submit = exe(
                 submit_cmd,
                 debug=False,
                 non_blocking=True,
-                stdout=out_submit_f,
-                stderr=err_submit_f,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
             )
+            self._processes.append(p_submit)
+            p_submit_out_nbsr = NonBlockingStreamReader(p_submit.stdout)
+            p_submit_err_nbsr = NonBlockingStreamReader(p_submit.stderr)
 
             print("Starting mgmt queue monitor...")
-            out_queue_f = open(os.path.join(self.stage_dir, self.queue_out_file), "w")
-            err_queue_f = open(os.path.join(self.stage_dir, self.queue_err_file), "w")
             p_queue = exe(
                 queue_cmd,
                 debug=False,
                 non_blocking=True,
-                stdout=out_queue_f,
-                stderr=err_queue_f,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
             )
+            self._processes.append(p_queue)
+            p_queue_out_nbsr = NonBlockingStreamReader(p_queue.stdout)
+            p_queue_err_nbsr = NonBlockingStreamReader(p_queue.stderr)
+
+            # Create and open the log files
+            out_submit_f = open(os.path.join(self.stage_dir, self.submit_out_file), "w")
+            err_submit_f = open(os.path.join(self.stage_dir, self.submit_err_file), "w")
+            out_queue_f = open(os.path.join(self.stage_dir, self.queue_out_file), "w")
+            err_queue_f = open(os.path.join(self.stage_dir, self.queue_err_file), "w")
+            self._files.extend((out_submit_f, err_submit_f, out_queue_f, err_queue_f))
 
             # Monitor mgmt db
             print("Progress: ")
@@ -399,6 +416,18 @@ class E2ETests(object):
                     )
                 )
 
+                # Get the log data
+                for file, reader in [
+                    (out_submit_f, p_submit_out_nbsr),
+                    (err_submit_f, p_submit_err_nbsr),
+                    (out_queue_f, p_queue_out_nbsr),
+                    (err_queue_f, p_queue_err_nbsr),
+                ]:
+                    lines = reader.readlines()
+                    if lines:
+                        file.writelines(lines)
+                        file.flush()
+
                 if proc_type_cancel:
                     proc_type_cancel = self.cancel_running(proc_type_cancel)
 
@@ -417,12 +446,18 @@ class E2ETests(object):
             raise ex
         # Clean up
         finally:
-            for p in [p_submit, p_queue]:
-                p.terminate()
-            for f in [out_submit_f, err_submit_f, out_queue_f, err_queue_f]:
-                f.close()
+            self.close()
 
         return True
+
+    def close(self):
+        """Terminates any running processes and closes any open files"""
+        for p in self._processes:
+            if p is not None:
+                p.terminate()
+        for f in self._files:
+            if f is not None:
+                f.close()
 
     def cancel_running(self, proc_types: List[const.ProcessType]):
         """Looks for any running task of the specified process types
@@ -432,7 +467,7 @@ class E2ETests(object):
         proc_types_int = [proc_type.value for proc_type in proc_types]
         with connect_db_ctx(sim_struct.get_mgmt_db(self.stage_dir)) as cur:
             entries = cur.execute(
-                "SELECT proc_type, job_id  FROM state "
+                "SELECT proc_type, job_id, run_name  FROM state "
                 "WHERE status == 3 AND proc_type IN ({}?)".format(
                     "?," * (len(proc_types_int) - 1)
                 ),
@@ -444,13 +479,15 @@ class E2ETests(object):
             if entry[0] in proc_types_int:
                 print(
                     "Checkpoint testing: Cancelling job-id {} "
-                    "with process type {}".format(entry[1], entry[0])
+                    "for {} and process type {}".format(entry[1], entry[2], entry[0])
                 )
                 out, err = exe("scancel -v {}".format(entry[1]), debug=False)
 
-                if "error" not in out.lower():
+                print("Scancel out: ", out, err)
+                if "error" not in out.lower() and "error" not in err.lower():
                     proc_types.remove(const.ProcessType(entry[0]))
                     proc_types_int.remove(entry[0])
+                    print("Cancelled job-id {}".format(entry[1]))
 
         return proc_types
 
@@ -558,7 +595,7 @@ class E2ETests(object):
         completed_sims = [sim_t[0] for sim_t in completed_sims]
 
         # Only check the ones that haven't been checked already
-        completed_new = set(completed_sims) - (self._sim_passed + self._sim_failed)
+        completed_new = set(completed_sims) - (self._sim_passed | self._sim_failed)
 
         for sim in completed_new:
             result = self.check_sim_result(
@@ -589,3 +626,54 @@ class E2ETests(object):
         """Remove all files created during the end-to-end test"""
         print("Deleting everything under {}".format(self.stage_dir))
         shutil.rmtree(self.stage_dir)
+
+
+class NonBlockingStreamReader:
+    """A non-blocking stream reader.
+
+    Based on http://eyalarubas.com/python-subproc-nonblock.html
+    """
+
+    def __init__(self, stream):
+        """
+        stream: the stream to read from.
+                Usually a process' stdout or stderr.
+        """
+
+        self._s = stream
+        self._q = Queue()
+
+        def _populate_queue(stream, queue):
+            """
+            Collect lines from 'stream' and put them in 'queue'.
+            """
+
+            while True:
+                line = stream.readline()
+                if line:
+                    queue.put(line)
+                else:
+                    print("Stream has been closed.")
+                    sys.exit()
+
+
+        self._t = Thread(target=_populate_queue, args=(self._s, self._q))
+        self._t.daemon = True
+        self._t.start()  # start collecting lines from the stream
+
+    def readlines(self):
+        """Reads the lines from the queue, returns None if the queue is empty"""
+        lines = []
+        cur_line = ""
+        while cur_line is not None:
+            try:
+                cur_line = self._q.get(block=False)
+            except Empty:
+                cur_line = None
+
+            if cur_line is not None:
+                lines.append(cur_line)
+
+        if lines:
+            return lines
+        return None

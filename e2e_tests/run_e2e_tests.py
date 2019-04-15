@@ -1,8 +1,13 @@
 #!/usr/bin/env python3
 """Script to run end-to-end tests"""
 import argparse
+import signal
 
 from e2e_tests.E2ETests import E2ETests
+
+def on_exit(signum, frame):
+    e2e_test.close()
+    exit()
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -16,7 +21,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--sleep_time",
         type=int,
-        default=10,
+        default=5,
         help="Sleep time (in seconds) between mgmt db progress checks.",
     )
     parser.add_argument(
@@ -39,6 +44,8 @@ if __name__ == "__main__":
     )
 
     args = parser.parse_args()
+
+    signal.signal(signal.SIGINT, on_exit)
 
     e2e_test = E2ETests(args.config_file)
     e2e_test.run(

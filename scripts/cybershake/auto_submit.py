@@ -122,11 +122,22 @@ def update_tasks(queue_folder: str, squeue_tasks, db_tasks: List[SlurmTask]):
                     const.ProcessType(db_task.proc_type).str_value, db_task.run_name
                 )
             )
+            # Add an error first
+            shared.add_to_queue(
+                queue_folder,
+                db_task.run_name,
+                db_task.proc_type,
+                const.Status.failed.value,
+                error="Disappeared from squeue. Reset to created."
+            )
+
+            # Then reset
             shared.add_to_queue(
                 queue_folder,
                 db_task.run_name,
                 db_task.proc_type,
                 const.Status.created.value,
+                retries=db_task.retries + 1
             )
 
 
