@@ -104,7 +104,6 @@ def submit_im_calc_slurm(sim_dir: str, options_dict: Dict = None, est_model: Est
         "exe_time": const.timestamp,
         "target_host": options_dict["machine"],
         "write_directory": options_dict["write_directory"],
-        "rel_dir": sim_dir,
         "n_tasks": options_dict[SlHdrOptConsts.n_tasks.value],
         "job_description": options_dict[SlHdrOptConsts.description.value],
     }
