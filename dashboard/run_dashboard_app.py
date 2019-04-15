@@ -4,7 +4,6 @@ The data comes from the specified dashboard db and
 the information is updated every x-seconds (currently hardcoded to 10)
 """
 import argparse
-import json
 from typing import List, Dict
 from datetime import date, datetime, timedelta
 from dateutil.relativedelta import relativedelta
@@ -70,7 +69,7 @@ def update_maui_total_chours(n):
     maui_total_chours = get_chours_entries(const.HPC.maui)[-1][-1]
     mahuika_total_chours = get_chours_entries(const.HPC.mahuika)[-1][-1]
 
-    return html.Plaintext("Mahuika: {} hours\nMaui: {} hours".format(mahuika_total_chours, maui_total_chours))
+    return html.Plaintext("Mahuika: {} / 18,000 hours\nMaui: {} / 950,000 hours".format(mahuika_total_chours, maui_total_chours))
 
 
 
@@ -108,55 +107,14 @@ def update_maui_squeue(n):
     Output("maui_daily_chours", "figure"), [Input("interval_comp", "n_intervals")]
 )
 def update_maui_daily_chours(n):
-    # Get data points
-    data = []
-    entries = app.db.get_chours_usage(
-        date.today() - relativedelta(years=1), date.today(), const.HPC.maui
-    )
-    entries = np.array(
-        entries,
-        dtype=[
-            ("day", "datetime64[D]"),
-            ("daily_chours", float),
-            ("total_chours", float),
-        ],
-    )
-    trace = go.Scatter(x=entries["day"], y=entries["daily_chours"], name="daily_chours")
-    data.append(trace)
-
-    # get core hours usage for each user
-    data += get_daily_user_chours(const.HPC.maui, USERS)
-
-    # uirevision preserve the UI state between update intervals
-    return {"data": data, "layout": {"uirevision": "maui_daily_chours"}}
+    return update_daily_chours(const.HPC.maui)
 
 
 @app.callback(
     Output("mahuika_daily_chours", "figure"), [Input("interval_comp", "n_intervals")]
 )
-def update_maui_daily_chours(n):
-    # Get data points
-    data = []
-    entries = app.db.get_chours_usage(
-        date.today() - relativedelta(years=1), date.today(), const.HPC.mahuika
-    )
-    entries = np.array(
-        entries,
-        dtype=[
-            ("day", "datetime64[D]"),
-            ("daily_chours", float),
-            ("total_chours", float),
-        ],
-    )
-    trace = go.Scatter(x=entries["day"], y=entries["daily_chours"], name="daily_chours")
-    data.append(trace)
-
-    # get core hours usage for each user
-    data += get_daily_user_chours(const.HPC.mahuika, USERS)
-
-    # uirevision preserve the UI state between update intervals
-    return {"data": data, "layout": {"uirevision": "mahuika_daily_chours"}}
-
+def update_mahuika_daily_chours(n):
+    return update_daily_chours(const.HPC.mahuika)
 
 
 @app.callback(
@@ -219,8 +177,33 @@ def update_maui_daily_inodes(n):
         fillcolor="red",
     )
     data.append(trace2)
+    layout = go.Layout(yaxis=dict(range(0, 15000000)))
     fig = go.Figure(data=data)
     return fig
+
+
+def update_daily_chours(hpc):
+    # Get data points
+    data = []
+    entries = app.db.get_chours_usage(
+        date.today() - relativedelta(years=1), date.today(), hpc
+    )
+    entries = np.array(
+        entries,
+        dtype=[
+            ("day", "datetime64[D]"),
+            ("daily_chours", float),
+            ("total_chours", float),
+        ],
+    )
+    trace = go.Scatter(x=entries["day"], y=entries["daily_chours"], name="daily_chours")
+    data.append(trace)
+
+    # get core hours usage for each user
+    data += get_daily_user_chours(hpc, USERS)
+
+    # uirevision preserve the UI state between update intervals
+    return {"data": data, "layout": {"uirevision": "{}_daily_chours".format(hpc)}}
 
 
 def get_daily_user_chours(hpc: const.HPC, users_dict: Dict[str, str] = USERS):
