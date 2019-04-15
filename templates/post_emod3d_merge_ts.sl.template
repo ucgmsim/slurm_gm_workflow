@@ -17,7 +17,7 @@ python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py {{mgmt_db_locatio
 filelist=flist_`basename {{lf_sim_dir}}`
 #get tools dir from shared_defaults
 #exe=$E3D_TOOLS_DIR/merge_tsP3_par
-ls -X {{lf_sim_dir}}/OutBin/*xyts-?????.e3d | xargs -n 1 basename >$filelist
+ls -X {{lf_sim_dir}}/OutBin/*xyts-?????.e3d >$filelist
 NFILES=`cat $filelist |wc -l|sed -e 's/ //g'`
 OUTFILE=`head -1 $filelist  |sed -e 's/-[0-9]*.e3d/.e3d/g'`
 echo "NFILES=$NFILES OUTFILE=$OUTFILE"
