@@ -3,7 +3,7 @@
 import argparse
 
 import qcore.constants as const
-import shared_workflow.shared.add_to_queue as add_to_queue
+from shared_workflow.shared import add_to_queue
 
 
 if __name__ == "__main__":
