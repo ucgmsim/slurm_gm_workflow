@@ -286,17 +286,6 @@ class E2ETests(object):
         """Checks that all required templates exists, along with the yaml params """
 
         for sim_dir in self.sim_dirs:
-            templates = glob.glob(os.path.join(sim_dir, "*.template"))
-            templates = [os.path.basename(temp) for temp in templates]
-
-            # Check templates are there
-            for cur_temp in self.expected_templates:
-                self._check_true(
-                    cur_temp in templates,
-                    "Install - Templates",
-                    "Template {} is missing in sim dir {}".format(cur_temp, sim_dir),
-                )
-
             # Check sim_params.yaml are there
             self._check_true(
                 "sim_params.yaml" in os.listdir(sim_dir),
