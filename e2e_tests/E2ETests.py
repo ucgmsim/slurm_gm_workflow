@@ -66,6 +66,7 @@ class E2ETests(object):
     cf_cybershake_config_key = "cybershake_config"
     cf_fault_list_key = "fault_list"
     cf_bench_folder_key = "bench_dir"
+    cf_version_key = "version"
     test_checkpoint_key = "test_checkpoint"
     timeout_key = "timeout"
 
@@ -104,6 +105,7 @@ class E2ETests(object):
         with open(config_file, "r") as f:
             self.config_dict = json.load(f)
 
+        self.version = self.config_dict[self.cf_version_key]
         # Add tmp directory
         self.stage_dir = os.path.join(
             self.config_dict[self.cf_test_dir_key], "tmp_{}".format(const.timestamp)
@@ -237,7 +239,7 @@ class E2ETests(object):
             os.path.dirname(os.path.abspath(__file__)),
             "../scripts/cybershake/install_cybershake.sh",
         )
-        cmd = "{} {} {} {}".format(
+        cmd = "{} {} {} {} {}".format(
             script_path,
             self.stage_dir,
             os.path.join(
@@ -248,6 +250,7 @@ class E2ETests(object):
                 self.stage_dir,
                 os.path.basename(self.config_dict[self.cf_fault_list_key]),
             ),
+            self.version
         )
 
         print("Running install...")

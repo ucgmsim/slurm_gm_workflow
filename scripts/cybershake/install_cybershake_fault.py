@@ -37,6 +37,9 @@ def main():
     parser.add_argument(
         "--n_rel", type=int, default=None, help="the number of realisations expected"
     )
+    parser.add_argument(
+        "--version", type=str, default="16.1", help="Please specify GMSim version"
+    )
 
     args = parser.parse_args()
     try:
@@ -52,7 +55,7 @@ def main():
         )
         sys.exit()
 
-    ldcfg.check_cfg_params_path(cybershake_cfg, "dt", "hf_dt", "version")
+    ldcfg.check_cfg_params_path(cybershake_cfg, "dt", "hf_dt")
 
     # Load variables from cybershake config
     root_folder = args.path_cybershake
@@ -60,7 +63,6 @@ def main():
     srf_root_dir = os.path.join(root_folder, "Data/Sources/")
     vm_root_dir = os.path.join(root_folder, "Data/VMs/")
 
-    version = cybershake_cfg["version"]
     v1d_full_path = cybershake_cfg["v_1d_mod"]
 
     site_v1d_dir = cybershake_cfg.get("site_v1d_dir")
@@ -133,7 +135,7 @@ def main():
             # install pairs one by one to fit the new structure
             sim_dir = os.path.join(os.path.join(sim_root_dir, fault_name), srf_name)
             root_params_dict, fault_params_dict, sim_params_dict, vm_params_dict = install_simulation(
-                version=version,
+                version=args.version,
                 sim_dir=sim_dir,
                 event_name=event_name,
                 run_name=fault_name,
