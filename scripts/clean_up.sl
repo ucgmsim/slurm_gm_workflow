@@ -26,7 +26,7 @@ start_time=`date +${runtime_fmt}`
 echo ___cleaning up___
 
 python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $SRF_NAME clean_up running
-
+rm -r $SIM_DIR/LF/Restart
 res=`python $gmsim/workflow/scripts/clean_up.py $SIM_DIR`
 exit_val=$?
 
@@ -35,6 +35,7 @@ echo $end_time
 
 if [[ $exit_val == 0 ]]; then
     #passed
+
     python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $SRF_NAME clean_up completed
 
     #save meta data
