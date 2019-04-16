@@ -11,8 +11,6 @@ from qcore.config import get_machine_config, host
 from shared_workflow.shared import (
     confirm,
     submit_sl_script,
-    resolve_header,
-    generate_context,
     write_sl_script,
 )
 
