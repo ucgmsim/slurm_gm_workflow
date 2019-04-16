@@ -611,6 +611,14 @@ class E2ETests(object):
                     print("Quitting as the following errors occured: ")
                     self.print_errors()
                     return False
+                else:
+                    print("The following error occured for simulation {}:".format(sim))
+                    print(
+                        "ERROR: {}, {}\n".format(
+                            self.errors[-1].location, self.errors[-1].error
+                        )
+                    )
+
             else:
                 self._sim_passed.add(sim)
 
@@ -655,7 +663,6 @@ class NonBlockingStreamReader:
                 else:
                     print("Stream has been closed.")
                     sys.exit()
-
 
         self._t = Thread(target=_populate_queue, args=(self._s, self._q))
         self._t.daemon = True

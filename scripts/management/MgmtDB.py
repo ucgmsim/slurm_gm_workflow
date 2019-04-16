@@ -124,7 +124,8 @@ class MgmtDB:
                         "SELECT retries from state "
                         "WHERE run_name = ? AND proc_type = ?",
                         (task[1], task[0]),
-                    )
+                    ).fetchone()[0]
+
                     cur.execute(
                         "UPDATE state SET retries = ? "
                         "WHERE run_name = ? AND proc_type = ?",
