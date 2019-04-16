@@ -22,11 +22,17 @@ Note: The auto-submit reads from the mgmt db, but NEVER writes or updates
 
 ## [19.4.4] - 2019-04-12 -- Dashboard
 ### Changed
-    Changes to dashboard:
-    - Changed to use sreport to get total & daily core hours usage
-    - Changed dashboard test functions & test zip file download path
-    - Tidied up Maui dashboard
-    - Added Mahuika total core hours usage to dashboard
-    - Added functionalities to collection of old total core hours usgae
-    - fixed logic bug in inserting into maui/mahuika daily table
+Changes to dashboard:
+- Changed to use sreport to get total & daily core hours usage
+- Changed dashboard test functions & test zip file download path
+- Tidied up Maui dashboard
+- Added Mahuika total core hours usage to dashboard
+- Added functionalities to collection of old total core hours usgae
+- fixed logic bug in inserting into maui/mahuika daily table
+
+## [19.4.5] - 2019-04-16 -- End to End test improvements
+Changes to End to End test:
+- Improved submit and mgmt queue logging
+- Changed to work with new automated workflow submit (see [19.4.2])
+- Lots of minor improvements so it can handle running/testing a large quantity of simulations. 
 
