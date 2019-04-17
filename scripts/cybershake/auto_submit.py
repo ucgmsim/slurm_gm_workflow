@@ -139,6 +139,8 @@ def update_tasks(
                 error="Disappeared from squeue. Reset to created.",
             )
 
+
+            # TODO: Add retry check!!
             # Then reset
             shared.add_to_queue(
                 mgmt_queue_folder,
@@ -401,7 +403,6 @@ def main(args):
         # checking the directory real-time to prevent timing issues,
         # which can result in dual-submission
         mgmt_queue_entries = os.listdir(mgmt_queue_folder)
-        print(mgmt_queue_entries)
 
         # Get in progress tasks in the db and the HPC queue
         squeue_tasks, n_tasks_to_run = [], {}
@@ -522,6 +523,7 @@ def main(args):
                 extended_period=extended_period,
                 models=(lf_est_model, hf_est_model, bb_est_model, im_est_model),
             )
+            print()
 
         print("Sleeping for {} second(s)".format(args.sleep_time))
         time.sleep(args.sleep_time)

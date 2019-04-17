@@ -1,4 +1,5 @@
 import os
+from datetime import datetime
 
 from jinja2 import Environment, FileSystemLoader
 from qcore import constants as const
@@ -50,7 +51,12 @@ def write_sl_script(
     body = generate_context(recipe_dir, template_name, common_template_params)
 
     script_name = os.path.abspath(
-        os.path.join(write_directory, "{}_{}.sl".format(script_prefix, const.timestamp))
+        os.path.join(
+            write_directory,
+            "{}_{}.sl".format(
+                script_prefix, datetime.now().strftime(const.TIMESTAMP_FORMAT)
+            ),
+        )
     )
     write_file(script_name, [header, body])
 
