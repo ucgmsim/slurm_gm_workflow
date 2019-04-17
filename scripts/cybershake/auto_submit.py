@@ -57,11 +57,10 @@ def get_queued_tasks(user=None, machine=const.HPC.maui):
     return output_list
 
 
-def check_mgmt_queue(queue_folder: str, run_name: str, proc_type: int):
+def check_mgmt_queue(queue_entries: List[str], run_name: str, proc_type: int):
     """Returns True if there are any queued entries for this run_name and process type,
     otherwise returns False.
     """
-    queue_entries = os.listdir(queue_folder)
     for entry in queue_entries:
         _, entry_run_name, entry_proc_type = entry.split(".")
         if entry_run_name == run_name and entry_proc_type == str(proc_type):
@@ -69,7 +68,12 @@ def check_mgmt_queue(queue_folder: str, run_name: str, proc_type: int):
     return False
 
 
-def update_tasks(queue_folder: str, squeue_tasks, db_tasks: List[SlurmTask]):
+def update_tasks(
+    mgmt_queue_folder: str,
+    mgmt_queue_entries: List[str],
+    squeue_tasks,
+    db_tasks: List[SlurmTask],
+):
     """Updates the mgmt db entries based on the HPC queue"""
     for db_task in db_tasks:
         found = False
@@ -98,7 +102,9 @@ def update_tasks(queue_folder: str, squeue_tasks, db_tasks: List[SlurmTask]):
                     )
                 # Do nothing if there is a pending update for
                 # this run & process type combination
-                elif not check_mgmt_queue(queue_folder, db_task.run_name, db_task.proc_type):
+                elif not check_mgmt_queue(
+                    mgmt_queue_entries, db_task.run_name, db_task.proc_type
+                ):
                     print(
                         "Updating status of {}, {} from {} to {}".format(
                             db_task.run_name,
@@ -108,13 +114,15 @@ def update_tasks(queue_folder: str, squeue_tasks, db_tasks: List[SlurmTask]):
                         )
                     )
                     shared.add_to_queue(
-                        queue_folder, db_task.run_name, db_task.proc_type, queue_status
+                        mgmt_queue_folder,
+                        db_task.run_name,
+                        db_task.proc_type,
+                        queue_status,
                     )
         # Only reset if there is no entry on the mgmt queue for this
         # realisation/proc combination
-        if (
-            not found
-            and not check_mgmt_queue(queue_folder, db_task.run_name, db_task.proc_type)
+        if not found and not check_mgmt_queue(
+            mgmt_queue_entries, db_task.run_name, db_task.proc_type
         ):
             print(
                 "Task '{}' on '{}' not found on squeue; resetting the status "
@@ -124,20 +132,20 @@ def update_tasks(queue_folder: str, squeue_tasks, db_tasks: List[SlurmTask]):
             )
             # Add an error first
             shared.add_to_queue(
-                queue_folder,
+                mgmt_queue_folder,
                 db_task.run_name,
                 db_task.proc_type,
                 const.Status.failed.value,
-                error="Disappeared from squeue. Reset to created."
+                error="Disappeared from squeue. Reset to created.",
             )
 
             # Then reset
             shared.add_to_queue(
-                queue_folder,
+                mgmt_queue_folder,
                 db_task.run_name,
                 db_task.proc_type,
                 const.Status.created.value,
-                retries=db_task.retries + 1
+                retries=db_task.retries + 1,
             )
 
 
@@ -324,7 +332,7 @@ def submit_task(
 
 def main(args):
     root_folder = args.root_folder
-    queue_folder = sim_struct.get_mgmt_db_queue(root_folder)
+    mgmt_queue_folder = sim_struct.get_mgmt_db_queue(root_folder)
     mgmt_db = MgmtDB(sim_struct.get_mgmt_db(root_folder))
 
     # Default values
@@ -389,15 +397,21 @@ def main(args):
         skipped.append(const.ProcessType.clean_up.value)
 
     while True:
+        # Get items in the mgmt queue, have to get a snapshot instead of
+        # checking the directory real-time to prevent timing issues,
+        # which can result in dual-submission
+        mgmt_queue_entries = os.listdir(mgmt_queue_folder)
+        print(mgmt_queue_entries)
+
         # Get in progress tasks in the db and the HPC queue
-        queue_tasks, n_tasks_to_run = [], {}
+        squeue_tasks, n_tasks_to_run = [], {}
         for hpc in const.HPC:
             cur_tasks = get_queued_tasks(user=args.user, machine=hpc)
             n_tasks_to_run[hpc] = args.n_runs[hpc] - len(cur_tasks)
-            queue_tasks.extend(cur_tasks)
+            squeue_tasks.extend(cur_tasks)
 
         db_in_progress_tasks = mgmt_db.get_submitted_tasks()
-        print("\nSqueue user tasks: ", ", ".join(queue_tasks))
+        print("\nSqueue user tasks: ", ", ".join(squeue_tasks))
         print(
             "In progress tasks in mgmt db:",
             ", ".join(
@@ -414,7 +428,9 @@ def main(args):
         )
 
         # Update the slurm mgmt based on squeue
-        update_tasks(queue_folder, queue_tasks, db_in_progress_tasks)
+        update_tasks(
+            mgmt_queue_folder, mgmt_queue_entries, squeue_tasks, db_in_progress_tasks
+        )
 
         # Gets all runnable tasks based on mgmt db state
         runnable_tasks = mgmt_db.get_runnable_tasks(args.n_max_retries)
@@ -428,10 +444,10 @@ def main(args):
 
             # Set task that are set to be skipped to complete in db
             if cur_proc_type in skipped and not check_mgmt_queue(
-                queue_folder, cur_run_name, cur_proc_type
+                mgmt_queue_entries, cur_run_name, cur_proc_type
             ):
                 shared.add_to_queue(
-                    queue_folder,
+                    mgmt_queue_folder,
                     cur_run_name,
                     cur_proc_type,
                     const.Status.completed.value,
@@ -442,7 +458,7 @@ def main(args):
             # Add task if limit has not been reached and there are no
             # outstanding mgmt db updates
             if (
-                not check_mgmt_queue(queue_folder, cur_run_name, cur_proc_type)
+                not check_mgmt_queue(mgmt_queue_entries, cur_run_name, cur_proc_type)
                 and task_counter.get(cur_hpc, 0) < n_tasks_to_run[cur_hpc]
             ):
                 tasks_to_run.append(task)
@@ -487,7 +503,7 @@ def main(args):
                     # If clean_up has already run, then we should set it to
                     # be run again after merge_ts has run
                     shared.add_to_queue(
-                        queue_folder,
+                        mgmt_queue_folder,
                         run_name,
                         const.ProcessType.clean_up.value,
                         const.Status.created.value,
@@ -499,7 +515,7 @@ def main(args):
                 proc_type,
                 run_name,
                 root_folder,
-                queue_folder,
+                mgmt_queue_folder,
                 binary_mode=binary_mode,
                 hf_seed=hf_seed,
                 rand_reset=rand_reset,
