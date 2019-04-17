@@ -3,6 +3,14 @@ Slurm Ground Motion Workflow
 (Based on https://wiki.canterbury.ac.nz/download/attachments/58458136/CodeVersioning_v18p2.pdf?version=1&modificationDate=1519269238437&api=v2 )
 
 
+## [19.4.5] - 2019-04-17 -- HF seed propagated
+### Changed
+    - Installation paths can now be provided as relative paths 
+    - Files in the management db folder are not deleted if they are not valid update files
+    - HF seeds are now correctly communicated to the child processes
+    - LF checkpoint files are now removed when clean up occurs
+    - merge_ts now accepts absolute paths 
+
 ## [19.4.4] - 2019-04-16 -- Install path update
 ### Changed
     - The relative path to the cybershake directory can now be passed to install_cybershake
