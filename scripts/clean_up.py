@@ -15,7 +15,7 @@ SUBMISSION_DIR_NAME = "submission_temp"
 SUBMISSION_SUBDIR_NAME = "slurm_and_logs"
 SUBMISSION_TAR = "submission.tar"
 SUBMISSION_FILES = [
-    "flist_LF",
+    "flist_*",
     "slurm_header.cfg",
     "machine_env.sh",
     "submit.sh",

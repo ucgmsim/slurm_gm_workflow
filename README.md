@@ -79,7 +79,7 @@ this will start submitting the different task on the HPC.
 In order to keep the management DB up to date the following has to be run in a seperate 
 process:
 ```bash
-$gimsim/workflow/scripts/cybershake/queue_monitor /path/to/rootDir
+$gmsim/workflow/scripts/cybershake/queue_monitor /path/to/rootDir
 ```
 
 
