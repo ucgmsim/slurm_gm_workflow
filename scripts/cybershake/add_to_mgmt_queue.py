@@ -3,7 +3,8 @@
 import argparse
 
 import qcore.constants as const
-from shared_workflow import shared
+from shared_workflow.shared import add_to_queue
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -29,7 +30,7 @@ if __name__ == "__main__":
     )
 
     args = parser.parse_args()
-    shared.add_to_queue(
+    add_to_queue(
         args.queue_folder,
         args.run_name,
         const.ProcessType.from_str(args.proc_type).value,
