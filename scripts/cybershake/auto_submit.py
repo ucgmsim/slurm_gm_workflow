@@ -110,7 +110,7 @@ def update_tasks(
                             db_task.run_name,
                             const.ProcessType(db_task.proc_type).str_value,
                             const.Status(db_task.status).str_value,
-                            queue_status,
+                            const.Status(queue_status).str_value,
                         )
                     )
                     shared.add_to_queue(

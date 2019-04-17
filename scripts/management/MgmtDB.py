@@ -100,7 +100,7 @@ class MgmtDB:
                           FROM status_enum, state 
                           WHERE state.status = status_enum.id
                            AND (((status_enum.state = 'created' OR status_enum.state = 'failed')  
-                                 AND state.retries < ?)
+                                 AND state.retries <= ?)
                             OR status_enum.state = 'completed')""",
                 (retry_max,),
             ).fetchall()
