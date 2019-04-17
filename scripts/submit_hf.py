@@ -13,9 +13,9 @@ from shared_workflow.shared import (
     set_wct,
     confirm,
     submit_sl_script,
-    write_sl_script,
     get_nt,
 )
+from shared_workflow.shared_template import write_sl_script
 
 # default values
 # Scale the number of nodes to be used for the simulation component

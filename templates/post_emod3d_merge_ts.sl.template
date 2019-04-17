@@ -12,12 +12,12 @@ timestamp=`date +%Y%m%d_%H%M%S`
 runtime_fmt="%Y-%m-%d_%H:%M:%S"
 start_time=`date +$runtime_fmt`
 
-echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} merge_ts running --run_name {{srf_name}} --job $SLURM_JOBID" >> {{mgmt_db_location}}/mgmt_db_queue/$timestamp\_$SLURM_JOBID
+python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py {{mgmt_db_location}}/mgmt_db_queue {{srf_name}} merge_ts running
 
-filelist=flist_`basename {{lf_sim_dir}}`
+filelist={{sim_dir}}/LF/flist_{{srf_name}}
 #get tools dir from shared_defaults
 #exe=$E3D_TOOLS_DIR/merge_tsP3_par
-ls -X {{lf_sim_dir}}/OutBin/*xyts-?????.e3d >$filelist
+ls -X {{sim_dir}}/LF/OutBin/*xyts-?????.e3d >$filelist
 NFILES=`cat $filelist |wc -l|sed -e 's/ //g'`
 OUTFILE=`head -1 $filelist  |sed -e 's/-[0-9]*.e3d/.e3d/g'`
 echo "NFILES=$NFILES OUTFILE=$OUTFILE"
@@ -26,15 +26,16 @@ echo "NFILES=$NFILES OUTFILE=$OUTFILE"
 timestamp=`date +%Y%m%d_%H%M%S`
 end_time=`date +$runtime_fmt`
 
+rm $filelist
 #test before update
 res=`$gmsim/workflow/scripts/test_merge_ts.sh {{sim_dir}} {{srf_name}}`
 if [[ $? == 0 ]]; then
     #passed
-    echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} merge_ts completed --run_name {{srf_name}} --force " >> {{mgmt_db_location}}/mgmt_db_queue/$timestamp\_$SLURM_JOBID
+    python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py {{mgmt_db_location}}/mgmt_db_queue {{srf_name}} merge_ts completed
 
     #save meta data
     python $gmsim/workflow/metadata/log_metadata.py {{sim_dir}} merge_ts start_time=$start_time end_time=$end_time
 
 else
-    echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} merge_ts failed --run_name {{srf_name}} --error '$res' --force" >> {{mgmt_db_location}}/mgmt_db_queue/$timestamp\_$SLURM_JOBID
+    python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py {{mgmt_db_location}}/mgmt_db_queue {{srf_name}} merge_ts failed --error "$res"
 fi
