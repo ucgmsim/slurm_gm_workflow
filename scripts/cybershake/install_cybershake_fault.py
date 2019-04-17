@@ -58,7 +58,7 @@ def main():
     ldcfg.check_cfg_params_path(cybershake_cfg, "dt", "hf_dt")
 
     # Load variables from cybershake config
-    root_folder = args.path_cybershake
+    root_folder = os.path.abspath(args.path_cybershake)
     sim_root_dir = os.path.join(root_folder, "Runs/")
     srf_root_dir = os.path.join(root_folder, "Data/Sources/")
     vm_root_dir = os.path.join(root_folder, "Data/VMs/")
