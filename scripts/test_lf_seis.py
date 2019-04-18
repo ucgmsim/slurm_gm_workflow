@@ -39,7 +39,7 @@ def main(args):
         lf_data = LFSeis(args.outbin)
     except Exception as ex:
         print(
-            "At least one file of the OutBin/ seis files the integrity check, with exception\n{}".format(
+            "At least one file of the OutBin/seis files fails the integrity check, with exception\n{}".format(
                 ex
             )
         )
