@@ -507,7 +507,7 @@ def add_to_queue(
             )
         )
 
-    with open(os.path.join(queue_folder, filename), "w") as f:
+    with open(filename, "w") as f:
         json.dump(
             {
                 MgmtDB.col_run_name: run_name,
