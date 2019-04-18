@@ -106,6 +106,7 @@ class E2ETests(object):
             self.config_dict = json.load(f)
 
         self.version = self.config_dict[self.cf_version_key]
+        print("version is", self.version)
         # Add tmp directory
         self.stage_dir = os.path.join(
             self.config_dict[self.cf_test_dir_key], "tmp_{}".format(const.timestamp)
@@ -157,12 +158,6 @@ class E2ETests(object):
         if self.warnings and stop_on_warning:
             print("Quitting due to warnings following warnings:")
             self.print_warnings()
-            return False
-
-        self.check_install()
-        if self.errors and self._stop_on_error:
-            print("Quitting due to the following errors:")
-            self.print_errors()
             return False
 
         # Run automated workflow
@@ -252,7 +247,7 @@ class E2ETests(object):
             ),
             self.version
         )
-
+        print("cmd", cmd)
         print("Running install...")
         out_file = os.path.join(self.stage_dir, self.install_out_file)
         err_file = os.path.join(self.stage_dir, self.install_err_file)
@@ -287,11 +282,11 @@ class E2ETests(object):
 
     def check_install(self):
         """Checks that all required templates exists, along with the yaml params """
-
+        print("sim_dirs", self.sim_dirs)
         for sim_dir in self.sim_dirs:
             templates = glob.glob(os.path.join(sim_dir, "*.template"))
             templates = [os.path.basename(temp) for temp in templates]
-
+            print("templates", templates)
             # Check templates are there
             for cur_temp in self.expected_templates:
                 self._check_true(
@@ -342,7 +337,7 @@ class E2ETests(object):
                 ),
                 self.stage_dir,
                 user,
-                sim_struct.get_cybershake_config(self.stage_dir),
+                os.path.join(self.stage_dir, os.path.basename(self.config_dict[self.cf_cybershake_config_key]))
             )
         )
         queue_cmd = "python3 {} {}".format(

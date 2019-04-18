@@ -4,7 +4,7 @@ import argparse
 from datetime import datetime
 import os
 
-from shared_workflow.shared import resolve_header, generate_context
+from shared_workflow.shared_template import generate_context, resolve_header
 
 DEFAULT_ACCOUNT = "nesi00213"
 

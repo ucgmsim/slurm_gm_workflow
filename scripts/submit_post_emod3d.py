@@ -11,9 +11,8 @@ from qcore.config import get_machine_config, host
 from shared_workflow.shared import (
     confirm,
     submit_sl_script,
-    write_sl_script,
 )
-
+from shared_workflow.shared_template import write_sl_script
 
 merge_ts_name_prefix = "post_emod3d_merge_ts"
 winbin_aio_name_prefix = "post_emod3d_winbin_aio"
@@ -77,7 +76,7 @@ def main(args):
 
         body_template_params = (
             "{}.sl.template".format(merge_ts_name_prefix),
-            {"lf_sim_dir": "LF"},
+            {"lf_sim_dir": lf_sim_dir},
         )
 
         script_prefix = "{}_{}".format(merge_ts_name_prefix, srf_name)
