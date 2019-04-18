@@ -12,10 +12,9 @@ import argparse
 from qcore import utils
 
 SUBMISSION_DIR_NAME = "submission_temp"
-SUBMISSION_SUBDIR_NAME = "slurm_and_logs"
 SUBMISSION_TAR = "submission.tar"
 SUBMISSION_FILES = [
-    "flist_LF",
+    "flist_*",
     "slurm_header.cfg",
     "machine_env.sh",
     "submit.sh",
@@ -71,7 +70,7 @@ def move_files(sim_dir, dest_dir, file_patterns):
                 )
 
 
-def create_temp_dirs(sim_dir, outer_dir_name, inner_dir_name):
+def create_temp_dirs(sim_dir, outer_dir_name, inner_dir_name=''):
     """
     creates two nested temp dirs containing files to be tared
     :param sim_dir: path to realization folder
@@ -80,9 +79,11 @@ def create_temp_dirs(sim_dir, outer_dir_name, inner_dir_name):
     :return: paths to outer_dir and inner dir
     """
     outer_dir = os.path.join(sim_dir, outer_dir_name)
-    inner_dir = os.path.join(sim_dir, outer_dir_name, inner_dir_name)
     utils.setup_dir(outer_dir)
-    utils.setup_dir(inner_dir)
+    inner_dir = ''
+    if inner_dir_name is not '':
+        inner_dir = os.path.join(sim_dir, outer_dir_name, inner_dir_name)
+        utils.setup_dir(inner_dir)
     return outer_dir, inner_dir
 
 
@@ -95,27 +96,25 @@ def clean_up_submission_lf_files(
     :param lf_files_to_tar: a list of additional lf related files to tar
     :return: creates submisson and lf tar.gz
     """
-    submission_files_to_tar += SUBMISSION_FILES
+    submission_files_to_tar += SUBMISSION_FILES+SUBMISSION_SL_LOGS
     lf_files_to_tar += LF_FILES
 
     # create temporary submission dir
-    submission_dir, submission_sub_dir = create_temp_dirs(
-        sim_dir, SUBMISSION_DIR_NAME, SUBMISSION_SUBDIR_NAME
+    submission_dir, _ = create_temp_dirs(
+        sim_dir, SUBMISSION_DIR_NAME
     )
 
     # create temporary lf dir
     lf_dir, lf_sub_dir = create_temp_dirs(sim_dir, LF_DIR_NAME, LF_SUB_DIR_NAME)
 
-    # move files to submisson dir
+    # move files to submission dir
     move_files(sim_dir, submission_dir, submission_files_to_tar)
-    # copy sl and err logs to submiison sub dir
-    move_files(sim_dir, submission_sub_dir, SUBMISSION_SL_LOGS)
 
     tar_files(submission_dir, os.path.join(sim_dir, SUBMISSION_TAR))
 
     # move files to lf dir
     move_files(os.path.join(sim_dir, "LF"), lf_dir, lf_files_to_tar)
-    # copy e3d segemnts to lf sub dir
+    # copy e3d segments to lf sub dir
     e3d_segs_dir = os.path.join(sim_dir, "LF", "OutBin")
     for f in os.listdir(e3d_segs_dir):
         if "-" in f:  # e3d segments have '-' in the name

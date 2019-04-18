@@ -160,17 +160,6 @@ if is_master:
         # invalid arguments or -h
         comm.Abort()
 
-args = comm.bcast(args, root=master)
-
-# if not args.independent:
-#     args.seed += rank
-
-mh = MPIFileHandler.MPIFileHandler(
-    os.path.join(os.path.dirname(args.out_file), "HF.log")
-)
-formatter = logging.Formatter("%(asctime)s:%(name)s:%(levelname)s:%(message)s")
-mh.setFormatter(formatter)
-logger.addHandler(mh)
 if is_master:
     logger.debug("=" * 50)
     # random seed
@@ -189,6 +178,18 @@ if is_master:
     # Logging each argument
     for key in vars(args):
         logger.debug("{} : {}".format(key, getattr(args, key)))
+
+args = comm.bcast(args, root=master)
+
+# if not args.independent:
+#     args.seed += rank
+
+mh = MPIFileHandler.MPIFileHandler(
+    os.path.join(os.path.dirname(args.out_file), "HF.log")
+)
+formatter = logging.Formatter("%(asctime)s:%(name)s:%(levelname)s:%(message)s")
+mh.setFormatter(formatter)
+logger.addHandler(mh)
 
 nt = int(round(args.duration / args.dt))
 stations = np.loadtxt(
