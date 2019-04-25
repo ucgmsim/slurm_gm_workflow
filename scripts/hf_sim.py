@@ -155,7 +155,7 @@ if is_master:
         default=1,
     )
     try:
-        args = parser.parse_known_args()[0]
+        args = parser.parse_args()
     except SystemExit:
         # invalid arguments or -h
         comm.Abort()
