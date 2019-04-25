@@ -193,7 +193,7 @@ class DataCollector:
                 hpc, self.parse_user_chours_usage(user_ch_output, users)
             )
 
-    def run_cmd(self, hpc: str, cmd: str, timeout: int = 10):
+    def run_cmd(self, hpc: str, cmd: str, timeout: int = 60):
         """Runs the specified command remotely on the specified hpc using the
         specified user id.
         Returns False if the command fails for some reason.
