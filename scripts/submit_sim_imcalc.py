@@ -12,7 +12,8 @@ from typing import Dict
 from estimation.estimate_wct import est_IM_chours_single, EstModel
 from qcore.utils import DotDictify
 from shared_workflow.load_config import load
-from shared_workflow.shared import submit_sl_script, set_wct, confirm, write_sl_script
+from shared_workflow.shared import submit_sl_script, set_wct, confirm
+from shared_workflow.shared_template import write_sl_script
 
 
 class SlHdrOptConsts(Enum):

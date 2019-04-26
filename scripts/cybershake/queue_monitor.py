@@ -14,37 +14,31 @@ from scripts.management.MgmtDB import MgmtDB, SlurmTask
 # Have to include sub-seconds, as clean up can run sub one second.
 DATE_FORMAT = "%Y%m%d%H%M%S_%f"
 
+
 def on_exit(signum, frame):
     print("Exiting queue-monitor.")
     exit()
 
-def get_queue_entries(entry_files: List[str]):
-    queue_entries = []
-    for entry_file in entry_files:
-        try:
-            with open(entry_file, "r") as f:
-                data_dict = json.load(f)
-        except json.JSONDecodeError as ex:
-            print(
-                "Failed to decode the file {} as json. Check that this is "
-                "valid json. Ignored!".format(
-                    entry_file
-                )
-            )
-            continue
 
-        queue_entries.append(
-            SlurmTask(
-                run_name=os.path.basename(entry_file).split(".")[1],
-                proc_type=data_dict[MgmtDB.col_proc_type],
-                status=data_dict[MgmtDB.col_status],
-                job_id=data_dict[MgmtDB.col_job_id],
-                retries=data_dict[MgmtDB.col_retries],
-                error=data_dict.get("error")
-            )
+def get_queue_entry(entry_file: str):
+    try:
+        with open(entry_file, "r") as f:
+            data_dict = json.load(f)
+    except json.JSONDecodeError as ex:
+        print(
+            "Failed to decode the file {} as json. Check that this is "
+            "valid json. Ignored!".format(entry_file)
         )
+        return None
 
-    return queue_entries
+    return SlurmTask(
+        run_name=os.path.basename(entry_file).split(".")[1],
+        proc_type=data_dict[MgmtDB.col_proc_type],
+        status=data_dict[MgmtDB.col_status],
+        job_id=data_dict[MgmtDB.col_job_id],
+        retries=data_dict[MgmtDB.col_retries],
+        error=data_dict.get("error"),
+    )
 
 
 def main(args):
@@ -56,18 +50,17 @@ def main(args):
         entry_files = os.listdir(queue_folder)
         entry_files.sort()
 
-        entries = get_queue_entries(
-            [os.path.join(queue_folder, file) for file in entry_files]
-        )
+        entries = []
+        for file in entry_files:
+            entry = get_queue_entry(os.path.join(queue_folder, file))
+            if entry is not None:
+                entries.append(entry)
+                os.remove(os.path.join(queue_folder, file))
 
         if len(entries) > 0:
             print("Updating {} mgmt db tasks.".format(len(entries)))
-            if mgmt_db.update_entries_live(entries):
-                print("Removing {} queue entry files".format(len(entry_files)))
-                for file in entry_files:
-                    os.remove(os.path.join(queue_folder, file))
-            # Failed to update
-            else:
+            if not mgmt_db.update_entries_live(entries):
+                # Failed to update
                 print(
                     "ERROR: Failed to update the current entries in the mgmt db queue. "
                     "Please investigate and fix. If this is a repeating error, then this "
