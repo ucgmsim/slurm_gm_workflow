@@ -147,7 +147,7 @@ def display_err(n):
     if not check_update_time(app.db.get_update_time(const.HPC.maui)[0], datetime.now()):
         return html.Plaintext(
             "Data collection error, check the error_table in database",
-            style={"color": "red", "font-size": 20},
+            style={"background-color": "red", "font-size": 20},
         )
 
 
