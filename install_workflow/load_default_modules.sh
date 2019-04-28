@@ -1,7 +1,7 @@
 #scripts to load some basic modules on different machines
 module load slurm
 
-if [[ `hostname` == mahuika* ]] || [[ $HOSTNAME == wb* ]];then
+if [[ `hostname` == mahuika* ]] || [[ $HOSTNAME == wb* ]] || [[ $HOSTNAME == vgpuwb* ]];then
     module load PrgEnv-cray/1.0.4
     module load GDAL/2.2.2-gimkl-2017a-GEOS-3.5.1
     module del LibTIFF/4.0.7-gimkl-2017a
@@ -16,6 +16,9 @@ elif [[ `hostname` == maui* ]] || [[ $HOSTNAME == ni* ]];then
     #python libs
     export PATH=/nesi/project/nesi00213/opt/maui/python-packages/bin:$PATH
     load_python3_maui
+elif [[ `hostname` == 'w-maui*']] || [[ $HOSTNAME == ws* ]] || [[ $HOSTNAME == vgpuws* ]];then
+    # On a Maui ancillary node
+    :
 else
     #Failed to indentify hostname, print out for debug
     echo "cannot identiy hostname."
