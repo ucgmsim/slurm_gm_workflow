@@ -64,13 +64,14 @@ for bb in bb_files:
     bb_flac = os.path.join(args.out_dir, "{}.flac".format(new_name))
     if args.ll is not None:
         cmd = [os.path.join(SCRIPT_DIR, "bbbin2shrink.py"), bb, bb_new, args.ll]
-        print(cmd)
+        print(" ".join(cmd))
         call(cmd)
     elif args.noflac:
         copyfile(bb, bb_new)
     else:
         bb_new = bb
 
-    if not args.noflac:
+    if not args.noflac and os.path.isfile(bb_new):
         cmd = [os.path.join(SCRIPT_DIR, "bbbin2bbflac.py"), bb_new, bb_flac]
+        print(" ".join(cmd))
         call(cmd)
