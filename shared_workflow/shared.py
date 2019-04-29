@@ -13,7 +13,6 @@ import shutil
 import subprocess
 import sys
 import re
-import datetime
 import glob
 from datetime import datetime
 
