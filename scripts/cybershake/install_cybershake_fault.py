@@ -132,7 +132,7 @@ def main():
         else:
             # install pairs one by one to fit the new structure
             sim_dir = os.path.join(os.path.join(sim_root_dir, fault_name), srf_name)
-            root_params_dict, fault_params_dict, sim_params_dict, vm_params_dict = install_simulation(
+            root_params_dict, fault_params_dict, sim_params_dict, vm_add_params_dict = install_simulation(
                 version=version,
                 sim_dir=sim_dir,
                 event_name=event_name,
@@ -159,7 +159,7 @@ def main():
                 sim_params_file=sim_params_file,
             )
 
-            vm_params_dict.update(vm_params_dict)
+            vm_params_dict.update(vm_add_params_dict)
 
             create_mgmt_db.create_mgmt_db([], sim_struct.get_mgmt_db(root_folder), srf_files=srf)
             utils.setup_dir(os.path.join(root_folder, "mgmt_db_queue"))

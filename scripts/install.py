@@ -324,7 +324,7 @@ def main_local(args):
     fault_yaml_path = simulation_structure.get_fault_yaml_path(sim_dir)
     root_yaml_path = simulation_structure.get_root_yaml_path(sim_dir)
 
-    root_params_dict, fault_params_dict, sim_params_dict, vm_params_dict = install_simulation(
+    root_params_dict, fault_params_dict, sim_params_dict, vm_add_params_dict = install_simulation(
         args.version,
         sim_dir,
         event_name,
@@ -351,6 +351,8 @@ def main_local(args):
         hf_stat_vs_ref=args.hf_stat_vs_ref,
         v1d_full_path=args.v1d_full_path,
     )
+
+    vm_params_dict.update(vm_add_params_dict)
 
     create_mgmt_db.create_mgmt_db([], os.path.join(sim_dir, const.SLURM_MGMT_DB_NAME), srf_files=srf_file)
     utils.setup_dir(os.path.join(sim_dir, "mgmt_db_queue"))
@@ -399,7 +401,7 @@ def main_remote(cfg, args):
 
     # TODO action will return 4 params dict and they will be dumped into yamls.
     # TODO to implement when install_manual is merged
-    root_params_dict, fault_params_dict, sim_params_dict, vm_params_dict = install_simulation(
+    root_params_dict, fault_params_dict, sim_params_dict, vm_add_params_dict = install_simulation(
         args.version,
         sim_dir,
         event_name,
@@ -426,6 +428,8 @@ def main_remote(cfg, args):
         hf_stat_vs_ref=args.hf_stat_vs_ref,
         v1d_full_path=args.v1d_full_path,
     )
+
+    vm_params_dict.update(vm_add_params_dict)
 
     utils.setup_dir(os.path.join(sim_dir, "mgmt_db_queue"))
     dump_all_yamls(
