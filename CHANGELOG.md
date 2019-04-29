@@ -8,6 +8,18 @@ Slurm Ground Motion Workflow
     - Changed to work with new automated workflow submit (see [19.4.2])
     - Lots of minor improvements so it can handle running/testing a large quantity of simulations. 
 
+## [19.4.6] - 2019-04-18 -- LF zero test
+### Changed
+    - Added extra LF test that checks if there are any zeros in the velocities 
+
+## [19.4.5] - 2019-04-17 -- HF seed propagated
+### Changed
+    - Installation paths can now be provided as relative paths 
+    - Files in the management db folder are not deleted if they are not valid update files
+    - HF seeds are now correctly communicated to the child processes
+    - LF checkpoint files are now removed when clean up occurs
+    - merge_ts now accepts absolute paths 
+
 ## [19.4.4] - 2019-04-16 -- Install path update
 ### Changed
     - The relative path to the cybershake directory can now be passed to install_cybershake
