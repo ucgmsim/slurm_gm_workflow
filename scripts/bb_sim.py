@@ -5,14 +5,13 @@ Combines low frequency and high frequency seismograms.
 
 from argparse import ArgumentParser
 import os
-import sys
-import json
 import logging
 from mpi4py import MPI
 import numpy as np
 
 from qcore.siteamp_models import nt2n, cb_amp
 from qcore import MPIFileHandler, timeseries, utils
+from qcore.constants import VM_PARAMS_FILE_NAME
 
 ampdeamp = timeseries.ampdeamp
 bwfilter = timeseries.bwfilter
@@ -30,7 +29,7 @@ is_master = not rank
 logger = logging.getLogger("rank_%i" % comm.rank)
 logger.setLevel(logging.DEBUG)
 
-# collect required arguements
+# collect required arguments
 args = None
 if is_master:
     parser = ArgumentParser()
@@ -122,7 +121,7 @@ comm.Barrier() # prevent other processes from messing log file until master is d
 # load vs30ref
 if args.lfvsref is None:
     # vs30ref from velocity model
-    vm_conf = utils.load_yaml(os.path.join(args.lf_vm, "vm_params.yaml"))
+    vm_conf = utils.load_yaml(os.path.join(args.lf_vm, VM_PARAMS_FILE_NAME))
     lfvs30refs = (
         np.memmap(
             "%s/vs3dfile.s" % (args.lf_vm),

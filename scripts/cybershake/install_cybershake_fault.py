@@ -12,7 +12,7 @@ import argparse
 import shared_workflow.load_config as ldcfg
 import qcore.simulation_structure as sim_struct
 from qcore import utils, validate_vm, simulation_structure
-from qcore.constants import FaultParams
+from qcore.constants import FaultParams, VM_PARAMS_FILE_NAME
 from scripts.management import create_mgmt_db
 from shared_workflow.install_shared import install_simulation, generate_fd_files, dump_all_yamls
 
@@ -71,7 +71,6 @@ def main():
     vs30ref_file_path = stat_file_path.replace('.ll', '.vs30ref')
 
     error_log = os.path.join(root_folder, "install_error.log")
-    vm_params = "vm_params.yaml"
 
     fault_name = args.vm
 
@@ -90,7 +89,7 @@ def main():
         exit()
 
     # Load the variables from vm_params.yaml
-    vm_params_path = os.path.join(vel_mod_dir, vm_params)
+    vm_params_path = os.path.join(vel_mod_dir, VM_PARAMS_FILE_NAME)
     vm_params_dict = utils.load_yaml(vm_params_path)
     yes_model_params = (
         False

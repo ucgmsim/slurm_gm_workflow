@@ -29,7 +29,7 @@ count_hypo=`echo $count_srf/$count_slip | bc`
 
 cd $path_vm
 
-params=`python -c"from qcore.utils import load_yaml; d=load_yaml('vm_params.yaml'); print(d['nx'],d['ny'],d['nz'],d['hh'],d['sim_duration'])"`
+params=`python -c"from qcore.utils import load_yaml; from qcore.constants import VM_PARAMS_FILE_NAME; d=load_yaml(VM_PARAMS_FILE_NAME); print(d['nx'],d['ny'],d['nz'],d['hh'],d['sim_duration'])"`
 
 params_array=($params)
 nx=${params_array[0]}
