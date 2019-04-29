@@ -145,13 +145,6 @@ def main():
                 stat_file_path=stat_file_path,
                 vs30_file_path=vs30_file_path,
                 vs30ref_file_path=vs30ref_file_path,
-                MODEL_LAT=params_vel_dict['MODEL_LAT'],
-                MODEL_LON=params_vel_dict['MODEL_LON'],
-                MODEL_ROT=params_vel_dict['MODEL_ROT'],
-                hh=params_vel_dict['hh'],
-                nx=params_vel_dict['nx'],
-                ny=params_vel_dict['ny'],
-                nz=params_vel_dict['nz'],
                 sufx=params_vel_dict['sufx'],
                 sim_duration=params_vel_dict['sim_duration'],
                 vel_mod_params_dir=vel_mod_dir,
@@ -166,6 +159,8 @@ def main():
                 sim_params_file=sim_params_file,
             )
 
+            params_vel_dict.update(vm_params_dict)
+
             create_mgmt_db.create_mgmt_db([], sim_struct.get_mgmt_db(root_folder), srf_files=srf)
             utils.setup_dir(os.path.join(root_folder, "mgmt_db_queue"))
             root_params_dict["mgmt_db_location"] = root_folder
@@ -173,7 +168,7 @@ def main():
             # Generate the fd files, create these at the fault level
             fd_statcords, fd_statlist = generate_fd_files(
                 simulation_structure.get_fault_dir(root_folder, fault_name),
-                vm_params_dict, stat_file=stat_file_path)
+                params_vel_dict, stat_file=stat_file_path)
 
             fault_params_dict[FaultParams.stat_coords.value] = fd_statcords
             fault_params_dict[FaultParams.FD_STATLIST.value] = fd_statlist
@@ -184,7 +179,7 @@ def main():
                 root_params_dict,
                 fault_params_dict,
                 sim_params_dict,
-                vm_params_dict,
+                params_vel_dict,
             )
 
 
