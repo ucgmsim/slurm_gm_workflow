@@ -20,7 +20,7 @@ def install_simulation(
     vel_mod_dir,
     srf_file,
     stoch_file,
-    params_vel_path,
+    vm_params_path,
     stat_file_path,
     vs30_file_path,
     vs30ref_file_path,
@@ -79,7 +79,7 @@ def install_simulation(
 
     sim_params_dict[SimParams.srf_file.value] = srf_file
     fault_params_dict[FaultParams.vel_mod_dir.value] = vel_mod_dir
-    sim_params_dict[SimParams.params_vel.value] = params_vel_path
+    sim_params_dict[SimParams.vm_params.value] = vm_params_path
     sim_params_dict[SimParams.sim_duration.value] = sim_duration
 
     vm_params_dict[VMParams.gridfile.value] = os.path.join(

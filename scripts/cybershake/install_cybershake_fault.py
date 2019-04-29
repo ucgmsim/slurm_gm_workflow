@@ -71,7 +71,7 @@ def main():
     vs30ref_file_path = stat_file_path.replace('.ll', '.vs30ref')
 
     error_log = os.path.join(root_folder, "install_error.log")
-    params_vel = "params_vel.yaml"
+    vm_params = "vm_params.yaml"
 
     fault_name = args.vm
 
@@ -89,9 +89,9 @@ def main():
             error_fp.write(message)
         exit()
 
-    # Load the variables from params_vel.py
-    params_vel_path = os.path.join(vel_mod_dir, params_vel)
-    params_vel_dict=utils.load_yaml(params_vel_path)
+    # Load the variables from vm_params.py
+    vm_params_path = os.path.join(vel_mod_dir, vm_params)
+    vm_params_dict = utils.load_yaml(vm_params_path)
     yes_model_params = (
         False
     )  # statgrid should normally be already generated with Velocity Model
@@ -141,12 +141,12 @@ def main():
                 vel_mod_dir=vel_mod_dir,
                 srf_file=srf,
                 stoch_file=stoch_file_path,
-                params_vel_path=params_vel_path,
+                vm_params_path=vm_params_path,
                 stat_file_path=stat_file_path,
                 vs30_file_path=vs30_file_path,
                 vs30ref_file_path=vs30ref_file_path,
-                sufx=params_vel_dict['sufx'],
-                sim_duration=params_vel_dict['sim_duration'],
+                sufx=vm_params_dict['sufx'],
+                sim_duration=vm_params_dict['sim_duration'],
                 vel_mod_params_dir=vel_mod_dir,
                 yes_statcords=False,
                 yes_model_params=yes_model_params,
@@ -159,7 +159,7 @@ def main():
                 sim_params_file=sim_params_file,
             )
 
-            params_vel_dict.update(vm_params_dict)
+            vm_params_dict.update(vm_params_dict)
 
             create_mgmt_db.create_mgmt_db([], sim_struct.get_mgmt_db(root_folder), srf_files=srf)
             utils.setup_dir(os.path.join(root_folder, "mgmt_db_queue"))
@@ -168,7 +168,7 @@ def main():
             # Generate the fd files, create these at the fault level
             fd_statcords, fd_statlist = generate_fd_files(
                 simulation_structure.get_fault_dir(root_folder, fault_name),
-                params_vel_dict, stat_file=stat_file_path)
+                vm_params_dict, stat_file=stat_file_path)
 
             fault_params_dict[FaultParams.stat_coords.value] = fd_statcords
             fault_params_dict[FaultParams.FD_STATLIST.value] = fd_statlist
@@ -179,7 +179,7 @@ def main():
                 root_params_dict,
                 fault_params_dict,
                 sim_params_dict,
-                params_vel_dict,
+                vm_params_dict,
             )
 
 

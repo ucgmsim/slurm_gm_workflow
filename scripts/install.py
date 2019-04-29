@@ -114,8 +114,8 @@ def q_select_vel_model(vel_mod_dir):
 
     v_mod_ver_options = []
     for root, dirnames, filenames in os.walk(vel_mod_dir):
-        # returns the folder that contains params_vel.py
-        for filename in fnmatch.filter(filenames, defaults.params_vel):
+        # returns the folder that contains vm_params.py
+        for filename in fnmatch.filter(filenames, defaults.vm_params):
             v_mod_ver_options.append(root)
 
     v_mod_ver_options.sort()
@@ -123,12 +123,12 @@ def q_select_vel_model(vel_mod_dir):
 
     vel_mod_dir = os.path.join(vel_mod_dir, v_mod_ver)
 
-    params_vel_path = os.path.join(vel_mod_dir, defaults.params_vel)
-    if not os.path.exists(params_vel_path):
-        print("Error: %s doesn't exist" % params_vel_path)
+    vm_params_path = os.path.join(vel_mod_dir, defaults.vm_params)
+    if not os.path.exists(vm_params_path):
+        print("Error: %s doesn't exist" % vm_params_path)
         sys.exit()
 
-    return v_mod_ver, vel_mod_dir, params_vel_path
+    return v_mod_ver, vel_mod_dir, vm_params_path
 
 
 def q_real_stations():
@@ -275,10 +275,10 @@ def main_local(args):
         srf_selected_dir, srf_file_options
     )
 
-    #    HH = q3() ## HH is taken directly from params_vel.py
-    v_mod_ver, vel_mod_dir_full, params_vel_path = q_select_vel_model(args.vm_dir)
+    #    HH = q3() ## HH is taken directly from vm_params.py
+    v_mod_ver, vel_mod_dir_full, vm_params_path = q_select_vel_model(args.vm_dir)
 
-    params_vel_dict= utils.load_yaml(params_vel_path)
+    vm_params_dict = utils.load_yaml(vm_params_path)
 
     yes_real_stations = q_real_stations()
     if yes_real_stations:
@@ -333,19 +333,12 @@ def main_local(args):
         vel_mod_dir_full,
         srf_file,
         stoch_file,
-        params_vel_path,
+        vm_params_path,
         stat_file_path,
         vs30_file_path,
         vs30ref_file_path,
-        params_vel_dict['MODEL_LAT'],
-        params_vel_dict['MODEL_LON'],
-        params_vel_dict['MODEL_ROT'],
-        params_vel_dict['hh'],
-        params_vel_dict['nx'],
-        params_vel_dict['ny'],
-        params_vel_dict['nz'],
-        params_vel_dict['sufx'],
-        params_vel_dict['sim_duration'],
+        vm_params_dict['sufx'],
+        vm_params_dict['sim_duration'],
         vel_mod_params_dir,
         yes_statcords,
         yes_model_params,
@@ -391,8 +384,8 @@ def main_remote(cfg, args):
 
     print(srf_file, stoch_file)
 
-    params_vel_path = os.path.join(vel_mod_dir, defaults.params_vel)
-    params_vel_dict= utils.load_yaml(params_vel_path)
+    vm_params_path = os.path.join(vel_mod_dir, defaults.vm_params)
+    vm_params_dict = utils.load_yaml(vm_params_path)
 
     sim_dir = os.path.join(args.user_root, run_name)
 
@@ -415,19 +408,12 @@ def main_remote(cfg, args):
         vel_mod_dir,
         srf_file,
         stoch_file,
-        params_vel_path,
+        vm_params_path,
         stat_file_path,
         vs30_file_path,
         vs30ref_file_path,
-        params_vel_dict['MODEL_LAT'],
-        params_vel_dict['MODEL_LON'],
-        params_vel_dict['MODEL_ROT'],
-        params_vel_dict['hh'],
-        params_vel_dict['nx'],
-        params_vel_dict['ny'],
-        params_vel_dict['nz'],
-        params_vel_dict['sufx'],
-        params_vel_dict['sim_duration'],
+        vm_params_dict['sufx'],
+        vm_params_dict['sim_duration'],
         vel_mod_params_dir,
         yes_statcords,
         yes_model_params,
@@ -477,7 +463,7 @@ if __name__ == "__main__":
         "--vm_dir",
         type=str,
         default=defaults.vel_mod_dir,
-        help="path that contains VMs, params_vel must " "be present",
+        help="path that contains VMs, vm_params must " "be present",
     )
     parser.add_argument(
         "--v1d_dir",

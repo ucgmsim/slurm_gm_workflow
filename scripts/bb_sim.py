@@ -122,7 +122,7 @@ comm.Barrier() # prevent other processes from messing log file until master is d
 # load vs30ref
 if args.lfvsref is None:
     # vs30ref from velocity model
-    vm_conf = utils.load_yaml(os.path.join(args.lf_vm, "params_vel.yaml"))
+    vm_conf = utils.load_yaml(os.path.join(args.lf_vm, "vm_params.yaml"))
     lfvs30refs = (
         np.memmap(
             "%s/vs3dfile.s" % (args.lf_vm),
