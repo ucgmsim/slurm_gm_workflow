@@ -13,7 +13,6 @@ import shutil
 import subprocess
 import sys
 import re
-import datetime
 import glob
 from datetime import datetime
 
@@ -341,7 +340,7 @@ def confirm_name(name):
 def get_input_wc():
     show_horizontal_line()
     try:
-        user_input_wc = datetime.datetime.strptime(
+        user_input_wc = datetime.strptime(
             str(input("Enter the WallClock time limit you " "would like to use: ")),
             "%H:%M:%S",
         ).time()

@@ -33,6 +33,7 @@ stat64 = args.bb_flac + ".b64stat"
 
 # extract station data
 stat_dtype = bb.stations.dtype.descr
+stat_dtype[2] = ("name", "|S7")
 stat_dtype.append(('scale', np.float64))
 stations = np.empty(bb.stations.size, dtype=stat_dtype)
 for col in bb.stations.dtype.names:
