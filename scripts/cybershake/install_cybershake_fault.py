@@ -89,7 +89,7 @@ def main():
             error_fp.write(message)
         exit()
 
-    # Load the variables from vm_params.py
+    # Load the variables from vm_params.yaml
     vm_params_path = os.path.join(vel_mod_dir, vm_params)
     vm_params_dict = utils.load_yaml(vm_params_path)
     yes_model_params = (
