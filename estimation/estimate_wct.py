@@ -64,23 +64,23 @@ def est_LF_chours_single(
 
     Params
     ------
-    nx, ny, nz, nt, n_cores: float, int
+    nx, ny, nz, nt, n_cores : float, int
         Input features for the model
-    scale_ncores: bool
+    scale_ncores : bool
         If True then the number of cores is adjusted until
         n_nodes * node_time_th == run_time
-    model: str or EstModel
+    model : str or EstModel
         Either the path to the model directory, or the loaded model.
-    node_time_th: float
+    node_time_th : float
         Node time threshold factor, does nothing if scale_ncores is not set
 
     Returns
     -------
-    core_hours: float
+    core_hours : float
         Estimated number of core hours
-    run time: float
+    run time : float
         Estimated run time (hours)
-    n_cores: int
+    n_cores : int
         The number of cores to use, returns the argument n_cores
         if scale_ncores is not set. Otherwise returns the updated ncores.
     """
@@ -164,7 +164,7 @@ def est_HF_chours_single(
     nsub_stoch: float,
     nt: int,
     n_logical_cores: int,
-    model_dir: str,
+    model: Union[str, EstModel],
     scale_ncores: bool,
     node_time_th_factor: float = 1.0,
     model_type: const.EstModelType = DEFAULT_MODEL_TYPE,
@@ -194,7 +194,7 @@ def est_HF_chours_single(
 
     core_hours, run_time, n_cpus = estimate_HF_chours(
         data,
-        model_dir,
+        model,
         scale_ncores,
         node_time_th_factor=node_time_th_factor,
         model_type=model_type,
@@ -205,7 +205,7 @@ def est_HF_chours_single(
 
 def estimate_HF_chours(
     data: np.ndarray,
-    model_dir: str,
+    model: Union[str, EstModel],
     scale_ncores: bool,
     node_time_th_factor: float = 1.0,
     model_type: const.EstModelType = DEFAULT_MODEL_TYPE,
@@ -244,7 +244,7 @@ def estimate_HF_chours(
     # Adjust the number of cores to estimate physical core hours
     data[:, -1] = data[:, -1] / hyperthreading_factor
     core_hours = estimate(
-        data, model_dir, model_type, const.HF_DEFAULT_NCORES / hyperthreading_factor
+        data, model, model_type, const.HF_DEFAULT_NCORES / hyperthreading_factor
     )
 
     wct = core_hours / data[:, -1]
@@ -317,8 +317,8 @@ def scale_core_hours(
 def est_BB_chours_single(
     fd_count: int,
     nt: int,
-    n_cores: int,
-    model_dir: str,
+    n_logical_cores: int,
+    model: Union[str, EstModel],
     model_type: const.EstModelType = DEFAULT_MODEL_TYPE,
 ):
     """Convenience function to make a single estimation
@@ -341,16 +341,16 @@ def est_BB_chours_single(
     """
     # Make a numpy array of the input data in the right shape
     # The order of the features has to the same as for training!!
-    data = np.array([float(fd_count), float(nt), float(n_cores)]).reshape(1, 3)
+    data = np.array([float(fd_count), float(nt), float(n_logical_cores)]).reshape(1, 3)
 
-    core_hours, run_time = estimate_BB_chours(data, model_dir, model_type=model_type)
+    core_hours, run_time = estimate_BB_chours(data, model, model_type=model_type)
 
     return core_hours[0], run_time[0]
 
 
 def estimate_BB_chours(
     data: np.ndarray,
-    model_dir: str,
+    model: Union[str, EstModel],
     model_type: const.EstModelType = DEFAULT_MODEL_TYPE,
 ):
     """Make bulk BB estimations, requires data to be
@@ -378,7 +378,7 @@ def estimate_BB_chours(
     data[:, -1] = data[:, -1] / 2.0 if const.ProcessType.BB.is_hyperth else data[:, -1]
     core_hours = estimate(
         data,
-        model=model_dir,
+        model=model,
         model_type=model_type,
         default_ncores=const.BB_DEFAULT_NCORES / 2.0
         if const.ProcessType.BB.is_hyperth
@@ -391,10 +391,10 @@ def estimate_BB_chours(
 def est_IM_chours_single(
     fd_count: int,
     nt: int,
-    comp: List[str],
+    comp: Union[List[str], int],
     pSA_count: int,
     n_cores: int,
-    model_dir: str,
+    model: Union[str, EstModel],
     model_type: const.EstModelType = DEFAULT_MODEL_TYPE,
 ):
     """Convenience function to make a single estimation
@@ -418,19 +418,22 @@ def est_IM_chours_single(
     run_time: float
         Estimated run time (hours)
     """
+    if isinstance(comp, list):
+        comp = get_IM_comp_count(comp)
+
     # Make a numpy array of the input data in the right shape
     # The order of the features has to the same as for training!!
     data = np.array(
         [
             float(fd_count),
             float(nt),
-            get_IM_comp_count(comp),
+            comp,
             float(pSA_count),
             float(n_cores),
         ]
     ).reshape(1, 5)
 
-    core_hours = estimate(data, model_dir, model_type, const.IM_CALC_DEFAULT_N_CORES)[0]
+    core_hours = estimate(data, model, model_type, const.IM_CALC_DEFAULT_N_CORES)[0]
 
     return core_hours, core_hours / n_cores
 
@@ -504,7 +507,10 @@ def estimate(
         core_hours = nn_model.predict(X)
     elif model_type is const.EstModelType.SVR:
         scaler, svr_model = model.svr_scaler, model.svr_model
-        X = scaler.transform(input_data)
+        if lf_svr_input_data is not None:
+            X = scaler.transform(lf_svr_input_data)
+        else:
+            X = scaler.transform(input_data[:, :-1])
         core_hours = svr_model.predict(X)
     else:
         comb_model = CombinedModel(model.nn_model, model.svr_model)
@@ -537,10 +543,10 @@ def load_full_model(dir: str, model_type: const.EstModelType = DEFAULT_MODEL_TYP
     # Load just SVR
     elif model_type is const.EstModelType.SVR:
         return EstModel(
+            None,
+            None,
             load_model(dir, const.EST_MODEL_SVR_PREFIX, "pickle", SVRModel),
             load_scaler(dir, SCALER_PREFIX.format("SVR")),
-            None,
-            None,
         )
     # Load both
     elif model_type is const.EstModelType.NN_SVR:
