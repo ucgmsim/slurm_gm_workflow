@@ -56,9 +56,9 @@ def main():
 
     # Load variables from cybershake config
     root_folder = os.path.abspath(args.path_cybershake)
-    sim_root_dir = os.path.join(root_folder, "Runs/")
-    srf_root_dir = os.path.join(root_folder, "Data/Sources/")
-    vm_root_dir = os.path.join(root_folder, "Data/VMs/")
+    sim_root_dir = simulation_structure.get_runs_dir(root_folder)
+    srf_root_dir = simulation_structure.get_sources_dir(root_folder)
+    vm_root_dir = simulation_structure.get_VM_dir(root_folder)
 
     version = cybershake_cfg["version"]
     v1d_full_path = cybershake_cfg["v_1d_mod"]
@@ -80,7 +80,7 @@ def main():
 
     # Get & validate velocity model directory
     vel_mod_dir = os.path.join(vm_root_dir, fault_name)
-    valid_vm, message = validate_vm.validate_vm(vel_mod_dir)
+    valid_vm, message = validate_vm.validate_vm(root_folder, fault_name)
     if not valid_vm:
         message = "Error: VM {} failed {}".format(fault_name, message)
         print(message)
