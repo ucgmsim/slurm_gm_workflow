@@ -8,7 +8,6 @@ workflow_root = workflow_config['gm_sim_workflow_root']
 global_root = workflow_config["global_root"]
 bin_process_dir = os.path.join(global_root, 'workflow/scripts')
 emod3d_version = workflow_config["emod3d_version"]
-vm_params = workflow_config['vm_params']
 
 run_dir = workflow_config['runfolder_path']
 user = getpass.getuser()

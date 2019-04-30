@@ -115,7 +115,7 @@ def q_select_vel_model(vel_mod_dir):
     v_mod_ver_options = []
     for root, dirnames, filenames in os.walk(vel_mod_dir):
         # returns the folder that contains vm_params.py
-        for filename in fnmatch.filter(filenames, defaults.vm_params):
+        for filename in fnmatch.filter(filenames, const.VM_PARAMS_FILE_NAME):
             v_mod_ver_options.append(root)
 
     v_mod_ver_options.sort()
@@ -123,7 +123,7 @@ def q_select_vel_model(vel_mod_dir):
 
     vel_mod_dir = os.path.join(vel_mod_dir, v_mod_ver)
 
-    vm_params_path = os.path.join(vel_mod_dir, defaults.vm_params)
+    vm_params_path = os.path.join(vel_mod_dir, const.VM_PARAMS_FILE_NAME)
     if not os.path.exists(vm_params_path):
         print("Error: %s doesn't exist" % vm_params_path)
         sys.exit()
