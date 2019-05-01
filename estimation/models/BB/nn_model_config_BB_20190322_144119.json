@@ -1,0 +1,13 @@
+{
+  "input_cols": [["BB","fd_count"], ["HF","nt"], ["BB", "cores"]],
+  "target_col": ["BB","core_hours"],
+
+  "units": [64, 32],
+  "dropout": 0.05,
+  "activation": "relu",
+
+  "batch_size": 64,
+  "n_epochs": 50,
+  "loss": "msle",
+  "metrics": ["msle","mse", "mae"]
+}
