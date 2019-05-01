@@ -2,11 +2,15 @@ Slurm Ground Motion Workflow
 # Changelog
 (Based on https://wiki.canterbury.ac.nz/download/attachments/58458136/CodeVersioning_v18p2.pdf?version=1&modificationDate=1519269238437&api=v2 )
 
-## [19.4.7] - 2019-05-01 -- End to End test improvements
+## [19.4.8] - 2019-05-01 -- End to End test improvements
     Changes to End to End test:
     - Improved submit and mgmt queue logging
     - Changed to work with new automated workflow submit (see [19.4.2])
-    - Lots of minor improvements so it can handle running/testing a large quantity of simulations. 
+    - Lots of minor improvements so it can handle running/testing a large quantity of simulations.
+     
+## [19.4.7] - 2019-04-30 -- Estimation unit tests
+### Changed
+    - Added core hours estimation unit tests 
 
 ## [19.4.6] - 2019-04-18 -- LF zero test
 ### Changed
