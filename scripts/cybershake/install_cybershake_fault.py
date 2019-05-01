@@ -82,7 +82,7 @@ def main():
 
     # Get & validate velocity model directory
     vel_mod_dir = os.path.join(vm_root_dir, fault_name)
-    valid_vm, message = validate_vm.validate_vm(root_folder, fault_name)
+    valid_vm, message = validate_vm.validate_vm(vel_mod_dir)
     if not valid_vm:
         message = "Error: VM {} failed {}".format(fault_name, message)
         print(message)
