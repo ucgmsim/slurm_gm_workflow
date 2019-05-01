@@ -20,17 +20,10 @@ def install_simulation(
     vel_mod_dir,
     srf_file,
     stoch_file,
-    params_vel_path,
+    vm_params_path,
     stat_file_path,
     vs30_file_path,
     vs30ref_file_path,
-    MODEL_LAT,
-    MODEL_LON,
-    MODEL_ROT,
-    hh,
-    nx,
-    ny,
-    nz,
     sufx,
     sim_duration,
     vel_mod_params_dir,
@@ -86,18 +79,9 @@ def install_simulation(
 
     sim_params_dict[SimParams.srf_file.value] = srf_file
     fault_params_dict[FaultParams.vel_mod_dir.value] = vel_mod_dir
-    sim_params_dict[SimParams.params_vel.value] = params_vel_path
+    sim_params_dict[SimParams.vm_params.value] = vm_params_path
     sim_params_dict[SimParams.sim_duration.value] = sim_duration
 
-    vm_params_dict[VMParams.model_lat.value] = MODEL_LAT
-    vm_params_dict[VMParams.model_lon.value] = MODEL_LON
-    vm_params_dict[VMParams.model_rot.value] = MODEL_ROT
-    vm_params_dict[VMParams.hh.value] = hh
-    vm_params_dict[VMParams.nx.value] = nx
-    vm_params_dict[VMParams.ny.value] = ny
-    vm_params_dict[VMParams.nz.value] = nz
-
-    vm_params_dict[VMParams.sufx.value] = sufx
     vm_params_dict[VMParams.gridfile.value] = os.path.join(
         vel_mod_params_dir, "gridfile%s" % sufx
     )
