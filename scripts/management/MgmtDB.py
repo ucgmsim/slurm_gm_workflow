@@ -99,8 +99,8 @@ class MgmtDB:
                 """SELECT proc_type, run_name, status_enum.state 
                           FROM status_enum, state 
                           WHERE state.status = status_enum.id
-                           AND ((status_enum.state = 'created' 
-                                 AND state.retries < ?)
+                           AND (((status_enum.state = 'created' OR status_enum.state = 'failed')  
+                                 AND state.retries <= ?)
                             OR status_enum.state = 'completed')""",
                 (retry_max,),
             ).fetchall()
@@ -108,9 +108,36 @@ class MgmtDB:
         tasks_to_run = []
         for task in db_tasks:
             status = task[2]
-            if status == "created" and self._check_dependancy_met(task, db_tasks):
+            if status == const.Status.created.str_value and self._check_dependancy_met(
+                task, db_tasks
+            ):
                 if task[0] not in verification_tasks or do_verification:
                     tasks_to_run.append(task)
+
+            # Retry failed tasks
+            if status == const.Status.failed.str_value:
+                tasks_to_run.append(task)
+
+                # Update the number of retries
+                with connect_db_ctx(self._db_file) as cur:
+                    cur_retries = cur.execute(
+                        "SELECT retries from state "
+                        "WHERE run_name = ? AND proc_type = ?",
+                        (task[1], task[0]),
+                    ).fetchone()[0]
+
+                    # Also set it to created to ensure the number of retries does not
+                    # increase without actually running.
+                    cur.execute(
+                        "UPDATE state SET status = ?, retries = ? "
+                        "WHERE run_name = ? AND proc_type = ?",
+                        (
+                            const.Status.created.value,
+                            cur_retries + 1,
+                            task[1],
+                            task[0],
+                        ),
+                    )
 
         return tasks_to_run
 
@@ -178,9 +205,7 @@ class MgmtDB:
             if value is not None:
                 cur.execute(
                     "UPDATE state SET {} = ?, last_modified = strftime('%s','now') "
-                    "WHERE run_name = ? AND proc_type = ?".format(
-                        field
-                    ),
+                    "WHERE run_name = ? AND proc_type = ?".format(field),
                     (value, entry.run_name, entry.proc_type),
                 )
         if entry.error is not None:

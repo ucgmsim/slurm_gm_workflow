@@ -59,3 +59,11 @@ To use a different set of realisations, create a new data dir and an different
 config file.  
 It might be worth updating this approach in the future to allow specifying
 which faults to run from the available test data.
+
+
+#### Currently setup tests
+##### Simple
+5 realisations from the Hossack, RepongaereF4 and Mangatete fault.
+
+#### Validation
+Runs the realisations from the v19p3p12 validation run.
