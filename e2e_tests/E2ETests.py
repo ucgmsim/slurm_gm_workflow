@@ -247,7 +247,6 @@ class E2ETests(object):
             ),
             self.version
         )
-        print("cmd", cmd)
         print("Running install...")
         out_file = os.path.join(self.stage_dir, self.install_out_file)
         err_file = os.path.join(self.stage_dir, self.install_err_file)
@@ -282,7 +281,6 @@ class E2ETests(object):
 
     def check_install(self):
         """Checks that all required templates exists, along with the yaml params """
-        print("sim_dirs", self.sim_dirs)
         for sim_dir in self.sim_dirs:
             # Check sim_params.yaml are there
             self._check_true(
