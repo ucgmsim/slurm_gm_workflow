@@ -74,12 +74,8 @@ done
 # This is done by attempting to load them into LFSeis which will check them
 if [[ $rlog_check == 0 ]];
 then
-    python3 -c "from qcore import timeseries; timeseries.LFSeis('../OutBin');" 2>/dev/null
+    python3 $gmsim/workflow/scripts/test_lf_seis.py ../OutBin
     seisIntegrity=$?
-    if [[ $seisIntegrity != 0 ]];
-    then
-        echo "At least one file failed the integrity check"
-    fi
 fi
 
 # EMOD3D is considered to be completed if:

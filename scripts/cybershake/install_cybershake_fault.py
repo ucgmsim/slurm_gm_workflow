@@ -12,7 +12,7 @@ import argparse
 import shared_workflow.load_config as ldcfg
 import qcore.simulation_structure as sim_struct
 from qcore import utils, validate_vm, simulation_structure
-from qcore.constants import FaultParams
+from qcore.constants import FaultParams, VM_PARAMS_FILE_NAME
 from scripts.management import create_mgmt_db
 from shared_workflow.install_shared import install_simulation, generate_fd_files, dump_all_yamls
 
@@ -59,9 +59,9 @@ def main():
 
     # Load variables from cybershake config
     root_folder = os.path.abspath(args.path_cybershake)
-    sim_root_dir = os.path.join(root_folder, "Runs/")
-    srf_root_dir = os.path.join(root_folder, "Data/Sources/")
-    vm_root_dir = os.path.join(root_folder, "Data/VMs/")
+    sim_root_dir = simulation_structure.get_runs_dir(root_folder)
+    srf_root_dir = simulation_structure.get_sources_dir(root_folder)
+    vm_root_dir = simulation_structure.get_VM_dir(root_folder)
 
     v1d_full_path = cybershake_cfg["v_1d_mod"]
 
@@ -73,7 +73,6 @@ def main():
     vs30ref_file_path = stat_file_path.replace('.ll', '.vs30ref')
 
     error_log = os.path.join(root_folder, "install_error.log")
-    params_vel = "params_vel.yaml"
 
     fault_name = args.vm
 
@@ -83,7 +82,7 @@ def main():
 
     # Get & validate velocity model directory
     vel_mod_dir = os.path.join(vm_root_dir, fault_name)
-    valid_vm, message = validate_vm.validate_vm(vel_mod_dir)
+    valid_vm, message = validate_vm.validate_vm(root_folder, fault_name)
     if not valid_vm:
         message = "Error: VM {} failed {}".format(fault_name, message)
         print(message)
@@ -91,9 +90,9 @@ def main():
             error_fp.write(message)
         exit()
 
-    # Load the variables from params_vel.py
-    params_vel_path = os.path.join(vel_mod_dir, params_vel)
-    params_vel_dict=utils.load_yaml(params_vel_path)
+    # Load the variables from vm_params.yaml
+    vm_params_path = os.path.join(vel_mod_dir, VM_PARAMS_FILE_NAME)
+    vm_params_dict = utils.load_yaml(vm_params_path)
     yes_model_params = (
         False
     )  # statgrid should normally be already generated with Velocity Model
@@ -134,7 +133,7 @@ def main():
         else:
             # install pairs one by one to fit the new structure
             sim_dir = os.path.join(os.path.join(sim_root_dir, fault_name), srf_name)
-            root_params_dict, fault_params_dict, sim_params_dict, vm_params_dict = install_simulation(
+            root_params_dict, fault_params_dict, sim_params_dict, vm_add_params_dict = install_simulation(
                 version=args.version,
                 sim_dir=sim_dir,
                 event_name=event_name,
@@ -143,19 +142,12 @@ def main():
                 vel_mod_dir=vel_mod_dir,
                 srf_file=srf,
                 stoch_file=stoch_file_path,
-                params_vel_path=params_vel_path,
+                vm_params_path=vm_params_path,
                 stat_file_path=stat_file_path,
                 vs30_file_path=vs30_file_path,
                 vs30ref_file_path=vs30ref_file_path,
-                MODEL_LAT=params_vel_dict['MODEL_LAT'],
-                MODEL_LON=params_vel_dict['MODEL_LON'],
-                MODEL_ROT=params_vel_dict['MODEL_ROT'],
-                hh=params_vel_dict['hh'],
-                nx=params_vel_dict['nx'],
-                ny=params_vel_dict['ny'],
-                nz=params_vel_dict['nz'],
-                sufx=params_vel_dict['sufx'],
-                sim_duration=params_vel_dict['sim_duration'],
+                sufx=vm_params_dict['sufx'],
+                sim_duration=vm_params_dict['sim_duration'],
                 vel_mod_params_dir=vel_mod_dir,
                 yes_statcords=False,
                 yes_model_params=yes_model_params,
@@ -167,6 +159,8 @@ def main():
                 v1d_full_path=v1d_full_path,
                 sim_params_file=sim_params_file,
             )
+
+            vm_params_dict.update(vm_add_params_dict)
 
             create_mgmt_db.create_mgmt_db([], sim_struct.get_mgmt_db(root_folder), srf_files=srf)
             utils.setup_dir(os.path.join(root_folder, "mgmt_db_queue"))

@@ -284,17 +284,6 @@ class E2ETests(object):
         """Checks that all required templates exists, along with the yaml params """
         print("sim_dirs", self.sim_dirs)
         for sim_dir in self.sim_dirs:
-            templates = glob.glob(os.path.join(sim_dir, "*.template"))
-            templates = [os.path.basename(temp) for temp in templates]
-            print("templates", templates)
-            # Check templates are there
-            for cur_temp in self.expected_templates:
-                self._check_true(
-                    cur_temp in templates,
-                    "Install - Templates",
-                    "Template {} is missing in sim dir {}".format(cur_temp, sim_dir),
-                )
-
             # Check sim_params.yaml are there
             self._check_true(
                 "sim_params.yaml" in os.listdir(sim_dir),
@@ -609,6 +598,14 @@ class E2ETests(object):
                     print("Quitting as the following errors occured: ")
                     self.print_errors()
                     return False
+                else:
+                    print("The following error occured for simulation {}:".format(sim))
+                    print(
+                        "ERROR: {}, {}\n".format(
+                            self.errors[-1].location, self.errors[-1].error
+                        )
+                    )
+
             else:
                 self._sim_passed.add(sim)
 
@@ -653,7 +650,6 @@ class NonBlockingStreamReader:
                 else:
                     print("Stream has been closed.")
                     sys.exit()
-
 
         self._t = Thread(target=_populate_queue, args=(self._s, self._q))
         self._t.daemon = True
