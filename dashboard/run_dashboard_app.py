@@ -20,6 +20,11 @@ import dash_table
 
 import qcore.constants as const
 
+LAST_YEAR = datetime.strftime(datetime.now()-timedelta(days=365), "%y")
+CURRENT_YEAR = datetime.strftime(datetime.now(), "%y")
+ALLOCATION_TEMPLATE = ["01/06/{}-12:00:00", "01/12/{}-12:00:00"]
+ALLOCATIONS = [a.format(y) for y in [LAST_YEAR, CURRENT_YEAR] for a in ALLOCATION_TEMPLATE]
+
 EXTERNAL_STYLESHEETS = [
     "https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
 ]
@@ -35,7 +40,14 @@ app.layout = html.Div(
         [
             html.H3("Mahuika & Maui"),
             html.Div(id="err"),
-            html.H5("Mahuika & Maui total core hours usage (since 188 days ago)"),
+            dcc.Dropdown(
+                    id='my-dropdown',
+                    options=[
+                        {'label': i, 'value': i} for i in ALLOCATIONS
+                    ],
+                    # placeholder='Select an allocation period'
+                ),
+            html.H5("Mahuika & Maui total core hours usage"),
             html.Div(id="maui_mahuika_chours"),
             html.H5("Mahuika total core hour usage"),
             dcc.Graph(id="mahuika_total_chours"),

@@ -47,7 +47,7 @@ class DataCollector:
 
     utc_time_format = "%m/%d/%y-%H:%M:%S"
     utc_time_gap = datetime.now() - datetime.utcnow()
-    total_start_time = "09/25/18-12:00:00"
+    total_start_time = "01/07/{}-12:00:00".format(datetime.strftime(datetime.now()-timedelta(days=365), "%y"))
 
     def __init__(
         self,

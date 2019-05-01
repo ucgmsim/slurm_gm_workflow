@@ -352,6 +352,12 @@ class DashboardDB:
             ).fetchone()
         return result
 
+    def get_allocation_periods(self, hpc: const.HPC):
+        with self.get_cursor(self.db_file) as cursor:
+            result = cursor.execute(
+                "SELECT START, END from ALLOCATION where machine = ?", (hpc,)).fetchall()
+        return result
+
     def _create_queue_table(self, cursor, hpc: const.HPC):
         # Add latest table
         cursor.execute(
