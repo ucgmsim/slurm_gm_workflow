@@ -2,6 +2,7 @@
 a) ensure that the estimate_wct workflow works and
 b) prevent models with large errors from being used
 """
+import os
 import pytest
 
 import estimation.estimate_wct as est
@@ -45,51 +46,70 @@ IM_MED = ((4164.0, 20636.0, 2.5, 15.0, 40), 1.2776)
 # AlpineF2K_HYP03-47_S1264
 IM_LARGE = ((13621.0, 71820.0, 2.5, 15.0, 40), 11.4888)
 
+FILE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # Fixtures for loading the different models
 @pytest.fixture(scope="module")
 def lf_NN_model():
-    return est.load_full_model("../../estimation/models/LF/", const.EstModelType.NN)
+    return est.load_full_model(
+        os.path.join(FILE_DIR, "../../estimation/models/LF/"), const.EstModelType.NN
+    )
 
 
 @pytest.fixture(scope="module")
 def lf_SVR_model():
-    return est.load_full_model("../../estimation/models/LF/", const.EstModelType.SVR)
+    return est.load_full_model(
+        os.path.join(FILE_DIR, "../../estimation/models/LF/"), const.EstModelType.SVR
+    )
 
 
 @pytest.fixture(scope="module")
 def lf_combined_model():
-    return est.load_full_model("../../estimation/models/LF/", const.EstModelType.NN_SVR)
+    return est.load_full_model(
+        os.path.join(FILE_DIR, "../../estimation/models/LF/"), const.EstModelType.NN_SVR
+    )
 
 
 @pytest.fixture(scope="module")
 def hf_NN_model():
-    return est.load_full_model("../../estimation/models/HF/", const.EstModelType.NN)
+    return est.load_full_model(
+        os.path.join(FILE_DIR, "../../estimation/models/HF/"), const.EstModelType.NN
+    )
 
 
 @pytest.fixture(scope="module")
 def hf_SVR_model():
-    return est.load_full_model("../../estimation/models/HF/", const.EstModelType.SVR)
+    return est.load_full_model(
+        os.path.join(FILE_DIR, "../../estimation/models/HF/"), const.EstModelType.SVR
+    )
 
 
 @pytest.fixture(scope="module")
 def bb_NN_model():
-    return est.load_full_model("../../estimation/models/BB/", const.EstModelType.NN)
+    return est.load_full_model(
+        os.path.join(FILE_DIR, "../../estimation/models/BB/"), const.EstModelType.NN
+    )
 
 
 @pytest.fixture(scope="module")
 def bb_SVR_model():
-    return est.load_full_model("../../estimation/models/BB/", const.EstModelType.SVR)
+    return est.load_full_model(
+        os.path.join(FILE_DIR, "../../estimation/models/BB/"), const.EstModelType.SVR
+    )
 
 
 @pytest.fixture(scope="module")
 def im_NN_model():
-    return est.load_full_model("../../estimation/models/IM/", const.EstModelType.NN)
+    return est.load_full_model(
+        os.path.join(FILE_DIR, "../../estimation/models/IM/"), const.EstModelType.NN
+    )
 
 
 @pytest.fixture(scope="module")
 def im_SVR_model():
-    return est.load_full_model("../../estimation/models/IM/", const.EstModelType.SVR)
+    return est.load_full_model(
+        os.path.join(FILE_DIR, "../../estimation/models/IM/"), const.EstModelType.SVR
+    )
 
 
 def check_chours(est, true, tol):
@@ -220,6 +240,7 @@ def test_IM_NN_single(data, true, tolerance, im_NN_model):
     )
 
     check_chours(chours, true, tolerance)
+
 
 @pytest.mark.parametrize(
     ["data", "true", "tolerance"], [(*IM_MED, 0.25), (*IM_LARGE, 0.2)]
