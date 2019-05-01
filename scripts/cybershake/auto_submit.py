@@ -323,7 +323,7 @@ def submit_task(
 
 
 def main(args):
-    root_folder = args.root_folder
+    root_folder = os.path.abspath(args.root_folder)
     queue_folder = sim_struct.get_mgmt_db_queue(root_folder)
     mgmt_db = MgmtDB(sim_struct.get_mgmt_db(root_folder))
 

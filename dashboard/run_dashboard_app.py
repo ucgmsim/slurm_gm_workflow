@@ -54,7 +54,6 @@ app.layout = html.Div(
             html.H5("Maui_daily_inodes"),
             dcc.Graph(id="maui_daily_inodes"),
             dcc.Interval(id="interval_comp", interval=10 * 1000, n_intervals=0),
-
         ]
     )
 )
@@ -68,10 +67,11 @@ app.db = DashboardDB(args.db_file)
 def update_maui_total_chours(n):
     maui_total_chours = get_chours_entries(const.HPC.maui)[-1][-1]
     mahuika_total_chours = get_chours_entries(const.HPC.mahuika)[-1][-1]
-    return html.Plaintext("Mahuika: {} / 18,000 hours\nMaui: {} / 950,000 hours".format(mahuika_total_chours, maui_total_chours))
-
-
-
+    return html.Plaintext(
+        "Mahuika: {} / 18,000 hours\nMaui: {} / 950,000 hours".format(
+            mahuika_total_chours, maui_total_chours
+        )
+    )
 
 
 @app.callback(
@@ -146,7 +146,8 @@ def display_err(n):
     """Displays data collection error when the gap between update_times exceeds acceptable limit"""
     if not check_update_time(app.db.get_update_time(const.HPC.maui)[0], datetime.now()):
         return html.Plaintext(
-            "Data collection error, check the error_table in database"
+            "Data collection error, check the error_table in database",
+            style={"background-color": "red", "font-size": 20},
         )
 
 
@@ -308,4 +309,3 @@ def check_update_time(last_update_time_string: str, current_update_time: datetim
 
 if __name__ == "__main__":
     app.run_server(host="0.0.0.0")
-

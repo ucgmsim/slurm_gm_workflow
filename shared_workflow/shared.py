@@ -13,7 +13,6 @@ import shutil
 import subprocess
 import sys
 import re
-import datetime
 import glob
 from datetime import datetime
 
@@ -341,7 +340,7 @@ def confirm_name(name):
 def get_input_wc():
     show_horizontal_line()
     try:
-        user_input_wc = datetime.datetime.strptime(
+        user_input_wc = datetime.strptime(
             str(input("Enter the WallClock time limit you " "would like to use: ")),
             "%H:%M:%S",
         ).time()
@@ -507,7 +506,7 @@ def add_to_queue(
             )
         )
 
-    with open(os.path.join(queue_folder, filename), "w") as f:
+    with open(filename, "w") as f:
         json.dump(
             {
                 MgmtDB.col_run_name: run_name,
