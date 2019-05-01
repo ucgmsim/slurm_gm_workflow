@@ -1,0 +1,18 @@
+{
+  "input_cols": [
+    ["EMOD3D","nx"],
+    ["EMOD3D","ny"],
+    ["EMOD3D","nz"],
+    ["EMOD3D","nt"],
+    ["EMOD3D", "cores"]],
+  "target_col": ["EMOD3D","core_hours"],
+
+  "units": [64, 64, 32],
+  "dropout": 0.01,
+  "activation": "relu",
+
+  "batch_size": 64,
+  "n_epochs": 100,
+  "loss": "msle",
+  "metrics": ["msle", "mse", "mae"]
+}
