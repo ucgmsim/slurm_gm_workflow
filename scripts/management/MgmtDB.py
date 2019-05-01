@@ -126,10 +126,17 @@ class MgmtDB:
                         (task[1], task[0]),
                     ).fetchone()[0]
 
+                    # Also set it to created to ensure the number of retries does not
+                    # increase without actually running.
                     cur.execute(
-                        "UPDATE state SET retries = ? "
+                        "UPDATE state SET status = ?, retries = ? "
                         "WHERE run_name = ? AND proc_type = ?",
-                        (cur_retries + 1, task[1], task[0]),
+                        (
+                            const.Status.created.value,
+                            cur_retries + 1,
+                            task[1],
+                            task[0],
+                        ),
                     )
 
         return tasks_to_run
