@@ -9,13 +9,13 @@ import sys
 import glob
 import argparse
 
-import shared_workflow.load_config as ldcfg
 import qcore.simulation_structure as sim_struct
 from qcore import utils, validate_vm, simulation_structure
 from qcore.constants import FaultParams, ROOT_DEFAULTS_FILE_NAME, VM_PARAMS_FILE_NAME
 from scripts.management import create_mgmt_db
 from shared_workflow.install_shared import install_simulation, generate_fd_files, dump_all_yamls
 from shared_workflow.shared_defaults import recipe_dir
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -80,9 +80,10 @@ def main():
     )  # statgrid should normally be already generated with Velocity Model
 
     # get all srf from source
-    srf_dir = os.path.join(os.path.join(srf_root_dir, fault_name), "Srf")
-    stoch_dir = os.path.join(os.path.join(srf_root_dir, fault_name), "Stoch")
-    sim_params_dir = os.path.join(os.path.join(srf_root_dir, fault_name), "Sim_params")
+    srf_dir = simulation_structure.get_srf_path(root_folder, fault_name)
+    stoch_dir = simulation_structure.get_stoch_path(root_folder, fault_name)
+    sim_params_dir = simulation_structure.get_source_params_path(root_folder, fault_name)
+
     list_srf = glob.glob(os.path.join(srf_dir, "*.srf"))
 
     if args.n_rel is not None and len(list_srf) != args.n_rel:
