@@ -106,7 +106,7 @@ class E2ETests(object):
             self.config_dict = json.load(f)
 
         self.version = self.config_dict[self.cf_version_key]
-        print("version is", self.version)
+
         # Add tmp directory
         self.stage_dir = os.path.join(
             self.config_dict[self.cf_test_dir_key], "tmp_{}".format(const.timestamp)
