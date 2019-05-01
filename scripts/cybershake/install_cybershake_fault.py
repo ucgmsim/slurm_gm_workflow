@@ -80,9 +80,9 @@ def main():
     )  # statgrid should normally be already generated with Velocity Model
 
     # get all srf from source
-    srf_dir = simulation_structure.get_srf_path(root_folder, fault_name)
-    stoch_dir = simulation_structure.get_stoch_path(root_folder, fault_name)
-    sim_params_dir = simulation_structure.get_source_params_path(root_folder, fault_name)
+    srf_dir = simulation_structure.get_srf_dir(root_folder, fault_name)
+    stoch_dir = simulation_structure.get_stoch_dir(root_folder, fault_name)
+    sim_params_dir = simulation_structure.get_source_params_dir(root_folder, fault_name)
 
     list_srf = glob.glob(os.path.join(srf_dir, "*.srf"))
 
