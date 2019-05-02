@@ -11,9 +11,11 @@ from typing import List
 import shlex
 import numpy as np
 
+from shared_workflow.shared_defaults import recipe_dir
 import shared_workflow.load_config as ldcfg
 import qcore.constants as const
 import qcore.simulation_structure as sim_struct
+from qcore import utils
 import estimation.estimate_wct as est
 from scripts.management.MgmtDB import MgmtDB, SlurmTask
 from metadata.log_metadata import store_metadata
@@ -138,7 +140,6 @@ def update_tasks(
                 const.Status.failed.value,
                 error="Disappeared from squeue. Reset to created.",
             )
-
 
             # TODO: Add retry check!!
             # Then reset
@@ -336,40 +337,20 @@ def main(args):
     root_folder = os.path.abspath(args.root_folder)
     mgmt_queue_folder = sim_struct.get_mgmt_db_queue(root_folder)
     mgmt_db = MgmtDB(sim_struct.get_mgmt_db(root_folder))
-
+    config = utils.load_yaml(
+        os.path.join(sim_struct.get_runs_dir(root_folder), "root_params.yaml")
+    )
     # Default values
-    binary_mode, hf_seed = True, None
-    rand_reset, extended_period = True, False
+    binary_mode, hf_seed, rand_reset, extended_period = True, None, True, False
 
-    if args.config is not None:
-        # parse and check for variables in config
-        try:
-            cybershake_cfg = ldcfg.load(
-                directory=os.path.dirname(args.config),
-                cfg_name=os.path.basename(args.config),
-            )
-            print("Cybershake config: \n", cybershake_cfg)
-        except Exception as e:
-            print("Error while parsing the config file, please double check inputs.")
-            print(e)
-            sys.exit()
-
-        binary_mode = (
-            cybershake_cfg["binary_mode"]
-            if "binary_mode" in cybershake_cfg
-            else binary_mode
-        )
-        hf_seed = cybershake_cfg["hf_seed"] if "hf_seed" in cybershake_cfg else hf_seed
-        rand_reset = (
-            cybershake_cfg["rand_reset"]
-            if "rand_reset" in cybershake_cfg
-            else rand_reset
-        )
-        extended_period = (
-            cybershake_cfg["extended_period"]
-            if "extended_period" in cybershake_cfg
-            else extended_period
-        )
+    if "binary_mode" in config:
+        binary_mode = config["binary_mode"]
+    if "seed" in config["hf"]:
+        hf_seed = config["hf"]["seed"]
+    if "rand_reset" in config:
+        rand_reset = config["rand_reset"]
+    if "extended_period" in config:
+        extended_period = config["extended_period"]
 
     print("Loading estimation models")
     workflow_config = ldcfg.load()
@@ -558,7 +539,6 @@ if __name__ == "__main__":
         default=DEFAULT_N_MAX_RETRIES,
         type=int,
     )
-    parser.add_argument("--config", type=str, default=None, help="Cybershake config")
     parser.add_argument("--no_im", action="store_true")
     parser.add_argument("--no_merge_ts", action="store_true")
     parser.add_argument("--no_clean_up", action="store_true")

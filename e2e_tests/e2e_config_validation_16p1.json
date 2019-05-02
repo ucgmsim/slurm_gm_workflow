@@ -1,7 +1,6 @@
 {
   "test_dir": "/nesi/nobackup/nesi00213/RunFolder/EndToEndTest/tests/",
   "data_dir": "/nesi/project/nesi00213/EndToEndTest/test_data_validation/Data",
-  "cybershake_config": "/nesi/project/nesi00213/EndToEndTest/test_data_validation/cybershake_config.json",
   "fault_list": "/nesi/project/nesi00213/EndToEndTest/test_data_validation/list.txt",
   "bench_dir": "/nesi/project/nesi00213/EndToEndTest/test_data_validation/benchmark",
   "test_checkpoint": true,

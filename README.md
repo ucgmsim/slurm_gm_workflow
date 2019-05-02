@@ -45,23 +45,10 @@ and [cybershake manual](https://wiki.canterbury.ac.nz/display/QuakeCore/Cybersha
 Run the install_cybershake.sh bash script, e.g.
 ```bash
 $gmsim/workflow/scripts/cybershake/install_cybershake path/to/rootDir 
-/path/to/cybershake_config.json /path/to/list.txt 
+cybershake_version /path/to/list.txt 
 ```
-where the cybershake config looks something like this
-
-```json
-{
-    "global_root" : "/nesi/project/nesi00213" ,
-    "stat_file_path" : "/nesi/project/nesi00213/StationInfo/non_uniform_whole_nz_with_real_stations-hh400_v18p6.ll",
-    "v_1d_mod"  :   "/nesi/project/nesi00213/VelocityModel/Mod-1D/Cant1D_v3-midQ_OneRay.1d",
-    "dt"    : 0.02,
-    "hf_dt" : 0.005,
-    "rand_reset" : true,
-    "hf_seed": 0,
-    "extended_period": false,
-    "version": "16.1"
-}
-```
+where the cybershake version is a string with a relevant subdirectory in the templates folder.
+Current valid options are 16.1
 
 and list.txt is a list of the faults to run, along with the number of realisations, e.g.
 ```
@@ -72,8 +59,7 @@ RepongaereF4 10r
 ### Running
 To run the installed simulations, navigate to the rootDir and run
 ```bash
-python $gmsim/workflow/scripts/cybershake/auto_submit.py /path/to/rootDir username 
---config /path/to/cybershake_config.json 
+python $gmsim/workflow/scripts/cybershake/auto_submit.py /path/to/rootDir username  
 ```
 this will start submitting the different task on the HPC.
 In order to keep the management DB up to date the following has to be run in a seperate 
