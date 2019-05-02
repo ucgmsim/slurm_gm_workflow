@@ -75,6 +75,9 @@ def test_generate_context(set_up):
     params = inspect.getfullargspec(func).args
     for root_path, realisation in set_up:
         input_params = get_input_params(root_path, func_name, params)
+        input_params[0] = os.path.join(
+            os.path.dirname(os.path.realpath(__file__)), "..", "..", "templates"
+        )
         test_output = func(*input_params)
         bench_output = get_bench_output(root_path, func_name)
         assert test_output == bench_output
