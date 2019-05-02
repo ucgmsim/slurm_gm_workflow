@@ -56,7 +56,6 @@ def install_simulation(
         vel_mod_params_dir = vel_mod_dir
 
     template_path = os.path.join(defaults.recipe_dir, "gmsim", version)
-    print("template_path",template_path)
     root_params_dict = utils.load_yaml(
         os.path.join(template_path, "root_defaults.yaml")
     )
