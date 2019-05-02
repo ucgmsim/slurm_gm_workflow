@@ -20,10 +20,10 @@ import dash_table
 
 import qcore.constants as const
 
-LAST_YEAR = datetime.strftime(datetime.now()-timedelta(days=365), "%y")
-CURRENT_YEAR = datetime.strftime(datetime.now(), "%y")
-ALLOCATION_TEMPLATE = ["01/06/{}-12:00:00", "01/12/{}-12:00:00"]
-ALLOCATIONS = [a.format(y) for y in [LAST_YEAR, CURRENT_YEAR] for a in ALLOCATION_TEMPLATE]
+# LAST_YEAR = datetime.strftime(datetime.now()-timedelta(days=365), "%y")
+# CURRENT_YEAR = datetime.strftime(datetime.now(), "%y")
+# ALLOCATION_TEMPLATE = ["01/06/{}-12:00:00", "01/12/{}-12:00:00"]
+# ALLOCATIONS = [a.format(y) for y in [LAST_YEAR, CURRENT_YEAR] for a in ALLOCATION_TEMPLATE]
 
 EXTERNAL_STYLESHEETS = [
     "https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
@@ -35,18 +35,25 @@ args = parser.parse_args()
 
 # Creating the Dashboard app
 app = dash.Dash(__name__, external_stylesheets=EXTERNAL_STYLESHEETS)
+app.db = DashboardDB(args.db_file)
+
+ALLOCATIONS_MAHUIKA = ['{}---{}'.format(i[0], i[1]) for i in app.db.get_allocation_periods(const.HPC.mahuika)]
+ALLOCATIONS_MAUI = ['{}---{}'.format(i[0], i[1]) for i in app.db.get_allocation_periods(const.HPC.maui)]
+
 app.layout = html.Div(
     html.Div(
         [
             html.H3("Mahuika & Maui"),
             html.Div(id="err"),
+            html.H5("Mahuika Allocation"),
+            html.Div(id="mahuika_selection"),
             dcc.Dropdown(
-                    id='my-dropdown',
-                    options=[
-                        {'label': i, 'value': i} for i in ALLOCATIONS
-                    ],
-                    # placeholder='Select an allocation period'
-                ),
+                            id='mahuika-dropdown',
+                            options=[
+                                {'label': i, 'value': i} for i in ALLOCATIONS_MAHUIKA
+                            ],
+                            value=ALLOCATIONS_MAHUIKA[0]
+                    ),
             html.H5("Mahuika & Maui total core hours usage"),
             html.Div(id="maui_mahuika_chours"),
             html.H5("Mahuika total core hour usage"),
@@ -69,8 +76,6 @@ app.layout = html.Div(
         ]
     )
 )
-
-app.db = DashboardDB(args.db_file)
 
 
 @app.callback(
@@ -142,10 +147,13 @@ def update_maui_total_chours(n):
 
 
 @app.callback(
-    Output("mahuika_total_chours", "figure"), [Input("interval_comp", "n_intervals")]
+    Output("mahuika_total_chours", "figure"), [Input("mahuika-dropdown", "value")]
 )
-def update_mahuika_total_chours(n):
-    entries = get_chours_entries(const.HPC.mahuika)
+def update_mahuika_total_chours(value):
+    print("value from dripdown", value)
+    start_date, end_date = value.split('---')
+    print(value, "start end for mahuika total_chours", start_date, end_date)
+    entries = get_chours_entries(const.HPC.mahuika, start_date, end_date)
 
     fig = go.Figure()
     fig.add_scatter(x=entries["day"], y=entries["total_chours"])
@@ -219,13 +227,13 @@ def update_daily_chours(hpc):
     return {"data": data, "layout": {"uirevision": "{}_daily_chours".format(hpc)}}
 
 
-def get_daily_user_chours(hpc: const.HPC, users_dict: Dict[str, str] = USERS):
+def get_daily_user_chours(hpc: const.HPC, users_dict: Dict[str, str] = USERS, start_date=date.today() - relativedelta(days=188), end_date=date.today()):
     """get daily core hours usage for a list of users
        return as a list of scatter plots
     """
     data = []
     for username, real_name in users_dict.items():
-        entries = app.db.get_user_chours(hpc, username)
+        entries = app.db.get_user_chours(hpc, username, start_date, end_date)
         entries = np.array(
             entries,
             dtype=[
@@ -241,13 +249,13 @@ def get_daily_user_chours(hpc: const.HPC, users_dict: Dict[str, str] = USERS):
     return data
 
 
-def get_chours_entries(hpc: const.HPC):
+def get_chours_entries(hpc: const.HPC, start_date=date.today() - relativedelta(days=188), end_date=date.today()):
     """Gets the core hours entries for the specified HPC
     Note: Only maui is currently supported
     """
     # Get data points
     entries = app.db.get_chours_usage(
-        date.today() - relativedelta(days=188), date.today(), hpc
+        start_date, end_date, hpc
     )
     return np.array(
         entries,

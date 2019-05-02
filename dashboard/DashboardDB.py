@@ -328,14 +328,17 @@ class DashboardDB:
                         (entry.core_hours_used, update_time, day, entry.username),
                     )
 
-    def get_user_chours(self, hpc: const.HPC, username: str, physical: bool=True):
+    def get_user_chours(self, hpc: const.HPC, username: str, start_date: Union[date, str], end_date: Union[date, str], physical: bool=True):
         """Gets core hours usage over time for a specified user"""
+        start_date = self.get_date(start_date)
+        end_date = self.get_date(end_date)
+
         table = self.get_user_ch_t_name(hpc)
-        sql = "SELECT DAY, USERNAME, CORE_HOURS_USED FROM {} WHERE USERNAME = ?".format(
+        sql = "SELECT DAY, USERNAME, CORE_HOURS_USED FROM {} WHERE USERNAME = ? AND DAY BETWEEN ? AND ?".format(
             table
         )
         with self.get_cursor(self.db_file) as cursor:
-            results = cursor.execute(sql, (username,)).fetchall()
+            results = cursor.execute(sql, (username, start_date, end_date)).fetchall()
 
         # convert virtual core hours to physical
         if physical:
@@ -353,9 +356,10 @@ class DashboardDB:
         return result
 
     def get_allocation_periods(self, hpc: const.HPC):
+        print("hpc is ", hpc)
+        sql = "SELECT START, END from ALLOCATION where machine = ?"
         with self.get_cursor(self.db_file) as cursor:
-            result = cursor.execute(
-                "SELECT START, END from ALLOCATION where machine = ?", (hpc,)).fetchall()
+            result = cursor.execute(sql, (hpc.value,)).fetchall()
         return result
 
     def _create_queue_table(self, cursor, hpc: const.HPC):
