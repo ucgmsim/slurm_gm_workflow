@@ -89,6 +89,7 @@ class MgmtDB:
         """
         do_verification = False
         verification_tasks = [
+            Process.IM_plot.value,
             Process.rrup.value,
             Process.Empirical.value,
             Process.Verification.value,

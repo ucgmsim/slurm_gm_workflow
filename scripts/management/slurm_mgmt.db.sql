@@ -35,14 +35,14 @@ CREATE TABLE IF NOT EXISTS "proc_type_enum" (
 );
 INSERT OR IGNORE INTO `proc_type_enum` (id,proc_type) VALUES (1,'EMOD3D');
 INSERT OR IGNORE INTO `proc_type_enum` (id,proc_type) VALUES (2,'merge_ts');
-INSERT OR IGNORE INTO `proc_type_enum` (id,proc_type) VALUES (3,'winbin_aio');
+--INSERT OR IGNORE INTO `proc_type_enum` (id,proc_type) VALUES (3,'winbin_aio');
 INSERT OR IGNORE INTO `proc_type_enum` (id,proc_type) VALUES (4,'HF');
 INSERT OR IGNORE INTO `proc_type_enum` (id,proc_type) VALUES (5,'BB');
 INSERT OR IGNORE INTO `proc_type_enum` (id,proc_type) VALUES (6,'IM_calculation');
-INSERT OR IGNORE INTO `proc_type_enum` (id,proc_type) VALUES (7,'IM_plot');
-INSERT OR IGNORE INTO `proc_type_enum` (id,proc_type) VALUES (8,'rrup');
-INSERT OR IGNORE INTO `proc_type_enum` (id,proc_type) VALUES (9,'Empirical');
-INSERT OR IGNORE INTO `proc_type_enum` (id,proc_type) VALUES (10,'Verification');
+--INSERT OR IGNORE INTO `proc_type_enum` (id,proc_type) VALUES (7,'IM_plot');
+--INSERT OR IGNORE INTO `proc_type_enum` (id,proc_type) VALUES (8,'rrup');
+--INSERT OR IGNORE INTO `proc_type_enum` (id,proc_type) VALUES (9,'Empirical');
+--INSERT OR IGNORE INTO `proc_type_enum` (id,proc_type) VALUES (10,'Verification');
 INSERT OR IGNORE INTO `proc_type_enum` (id,proc_type) VALUES (11,'clean_up');
 CREATE TABLE IF NOT EXISTS `task_time_log` (
 	`id`	INTEGER NOT NULL UNIQUE,
