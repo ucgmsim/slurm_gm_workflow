@@ -231,7 +231,7 @@ class E2ETests(object):
             os.path.dirname(os.path.abspath(__file__)),
             "../scripts/cybershake/install_cybershake.sh",
         )
-        cmd = "{} {} {} {} {}".format(
+        cmd = "{} {} {} {}".format(
             script_path,
             self.stage_dir,
             self.version,
