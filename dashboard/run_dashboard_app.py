@@ -46,7 +46,6 @@ app.layout = html.Div(
             html.H3("Mahuika & Maui"),
             html.Div(id="err"),
             html.H5("Mahuika Allocation"),
-            html.Div(id="mahuika_selection"),
             dcc.Dropdown(
                             id='mahuika-dropdown',
                             options=[
@@ -60,6 +59,14 @@ app.layout = html.Div(
             dcc.Graph(id="mahuika_total_chours"),
             html.H5("Mahuika daily core hour usage"),
             dcc.Graph(id="mahuika_daily_chours"),
+            html.H5("Maui Allocation"),
+            dcc.Dropdown(
+                            id='maui-dropdown',
+                            options=[
+                                {'label': i, 'value': i} for i in ALLOCATIONS_MAUI
+                            ],
+                            value=ALLOCATIONS_MAUI[0]
+                    ),
             html.H5("Maui total core hour usage"),
             dcc.Graph(id="maui_total_chours"),
             html.H5("Maui daily core hour usage"),
@@ -121,25 +128,27 @@ def update_maui_squeue(n):
 
 
 @app.callback(
-    Output("maui_daily_chours", "figure"), [Input("interval_comp", "n_intervals")]
+    Output("maui_daily_chours", "figure"), [Input("maui-dropdown", "value")]
 )
-def update_maui_daily_chours(n):
-    return update_daily_chours(const.HPC.maui)
+def update_maui_daily_chours(value):
+    start_date, end_date = value.split('---')
+    return update_daily_chours(const.HPC.maui, start_date, end_date)
 
 
 @app.callback(
-    Output("mahuika_daily_chours", "figure"), [Input("interval_comp", "n_intervals")]
+    Output("mahuika_daily_chours", "figure"), [Input("mahuika-dropdown", "value")]
 )
-def update_mahuika_daily_chours(n):
-    return update_daily_chours(const.HPC.mahuika)
+def update_mahuika_daily_chours(value):
+    start_date, end_date = value.split('---')
+    return update_daily_chours(const.HPC.mahuika, start_date, end_date)
 
 
 @app.callback(
-    Output("maui_total_chours", "figure"), [Input("interval_comp", "n_intervals")]
+    Output("maui_total_chours", "figure"), [Input("maui-dropdown", "value")]
 )
-def update_maui_total_chours(n):
-    entries = get_chours_entries(const.HPC.maui)
-
+def update_maui_total_chours(value):
+    start_date, end_date = value.split('---')
+    entries = get_chours_entries(const.HPC.maui, start_date, end_date)
     fig = go.Figure()
     fig.add_scatter(x=entries["day"], y=entries["total_chours"])
 
@@ -154,7 +163,6 @@ def update_mahuika_total_chours(value):
     start_date, end_date = value.split('---')
     print(value, "start end for mahuika total_chours", start_date, end_date)
     entries = get_chours_entries(const.HPC.mahuika, start_date, end_date)
-
     fig = go.Figure()
     fig.add_scatter(x=entries["day"], y=entries["total_chours"])
 
@@ -203,11 +211,11 @@ def update_maui_daily_inodes(n):
     return fig
 
 
-def update_daily_chours(hpc):
+def update_daily_chours(hpc, start_date=date.today() - relativedelta(days=188), end_date=date.today()):
     # Get data points
     data = []
     entries = app.db.get_chours_usage(
-        date.today() - relativedelta(years=1), date.today(), hpc
+        start_date, end_date, hpc
     )
     entries = np.array(
         entries,
@@ -221,7 +229,7 @@ def update_daily_chours(hpc):
     data.append(trace)
 
     # get core hours usage for each user
-    data += get_daily_user_chours(hpc, USERS)
+    data += get_daily_user_chours(hpc, USERS, start_date, end_date)
 
     # uirevision preserve the UI state between update intervals
     return {"data": data, "layout": {"uirevision": "{}_daily_chours".format(hpc)}}
