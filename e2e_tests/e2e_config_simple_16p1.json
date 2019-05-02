@@ -5,6 +5,6 @@
   "bench_dir": "/nesi/project/nesi00213/EndToEndTest/test_data_simple/benchmark",
   "test_checkpoint": true,
   "timeout": 10,
-  "version": "16.1",
+  "version": "end2end",
   "seed": 34580
 }

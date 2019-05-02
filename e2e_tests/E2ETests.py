@@ -269,10 +269,6 @@ class E2ETests(object):
 
         self.fault_dirs, self.sim_dirs = get_sim_dirs(self.runs_dir)
 
-        root_params = load_yaml(os.path.join(self.runs_dir, "root_params.yaml"))
-        root_params["hf"]["seed"] = self.config_dict["seed"]
-        dump_yaml(root_params, os.path.join(self.runs_dir, "root_params.yaml"))
-
     def _check_true(self, check: bool, location: str, error_msg: str):
         if not check:
             self.errors.append(Error(location, error_msg))
