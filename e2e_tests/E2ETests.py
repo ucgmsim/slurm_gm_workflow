@@ -66,6 +66,7 @@ class E2ETests(object):
     cf_cybershake_config_key = "cybershake_config"
     cf_fault_list_key = "fault_list"
     cf_bench_folder_key = "bench_dir"
+    cf_version_key = "version"
     test_checkpoint_key = "test_checkpoint"
     timeout_key = "timeout"
 
@@ -103,6 +104,8 @@ class E2ETests(object):
 
         with open(config_file, "r") as f:
             self.config_dict = json.load(f)
+
+        self.version = self.config_dict[self.cf_version_key]
 
         # Add tmp directory
         self.stage_dir = os.path.join(
@@ -155,12 +158,6 @@ class E2ETests(object):
         if self.warnings and stop_on_warning:
             print("Quitting due to warnings following warnings:")
             self.print_warnings()
-            return False
-
-        self.check_install()
-        if self.errors and self._stop_on_error:
-            print("Quitting due to the following errors:")
-            self.print_errors()
             return False
 
         # Run automated workflow
@@ -237,7 +234,7 @@ class E2ETests(object):
             os.path.dirname(os.path.abspath(__file__)),
             "../scripts/cybershake/install_cybershake.sh",
         )
-        cmd = "{} {} {} {}".format(
+        cmd = "{} {} {} {} {}".format(
             script_path,
             self.stage_dir,
             os.path.join(
@@ -248,8 +245,8 @@ class E2ETests(object):
                 self.stage_dir,
                 os.path.basename(self.config_dict[self.cf_fault_list_key]),
             ),
+            self.version
         )
-
         print("Running install...")
         out_file = os.path.join(self.stage_dir, self.install_out_file)
         err_file = os.path.join(self.stage_dir, self.install_err_file)
@@ -284,7 +281,6 @@ class E2ETests(object):
 
     def check_install(self):
         """Checks that all required templates exists, along with the yaml params """
-
         for sim_dir in self.sim_dirs:
             # Check sim_params.yaml are there
             self._check_true(
@@ -328,7 +324,7 @@ class E2ETests(object):
                 ),
                 self.stage_dir,
                 user,
-                sim_struct.get_cybershake_config(self.stage_dir),
+                os.path.join(self.stage_dir, os.path.basename(self.config_dict[self.cf_cybershake_config_key]))
             )
         )
         queue_cmd = "python3 {} {}".format(
