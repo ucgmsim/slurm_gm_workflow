@@ -20,6 +20,7 @@ from scripts.management.MgmtDB import SlurmTask
 from shared_workflow.shared import exe
 import qcore.constants as const
 import qcore.simulation_structure as sim_struct
+from qcore.utils import load_yaml, dump_yaml
 
 
 def get_sim_dirs(runs_dir):
@@ -267,6 +268,10 @@ class E2ETests(object):
             self.warnings.append(Warning("Install - Stderr", msg))
 
         self.fault_dirs, self.sim_dirs = get_sim_dirs(self.runs_dir)
+
+        root_params = load_yaml(os.path.join(self.runs_dir, "root_params.yaml"))
+        root_params["hf"]["seed"] = self.config_dict["seed"]
+        dump_yaml(root_params, os.path.join(self.runs_dir, "root_params.yaml"))
 
     def _check_true(self, check: bool, location: str, error_msg: str):
         if not check:

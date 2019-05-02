@@ -89,7 +89,7 @@ if is_master:
         "--seed",
         help="random seed (0:randomised reproducible, -1:fully randomised)",
         type=int,
-        default=5481190,
+        default=0,
     )
     # HF IN, line 9
     arg("--duration", help="output length (seconds)", type=float, default=100.0)

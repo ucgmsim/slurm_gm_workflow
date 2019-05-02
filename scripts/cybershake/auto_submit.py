@@ -11,7 +11,6 @@ from typing import List
 import shlex
 import numpy as np
 
-from shared_workflow.shared_defaults import recipe_dir
 import shared_workflow.load_config as ldcfg
 import qcore.constants as const
 import qcore.simulation_structure as sim_struct
