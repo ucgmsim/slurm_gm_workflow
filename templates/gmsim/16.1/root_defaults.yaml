@@ -18,5 +18,4 @@ dt: 0.02
 global_root: /nesi/project/nesi00213
 stat_file_path: /nesi/project/nesi00213/StationInfo/non_uniform_whole_nz_with_real_stations-hh400_v18p6.ll
 v_1d_mod: /nesi/project/nesi00213/VelocityModel/Mod-1D/Cant1D_v3-midQ_OneRay.1d
-rand_reset: true
 extended_period: false

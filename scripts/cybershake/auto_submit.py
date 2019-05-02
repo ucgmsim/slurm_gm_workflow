@@ -158,7 +158,6 @@ def submit_task(
     root_folder,
     queue_folder,
     binary_mode=True,
-    rand_reset=True,
     hf_seed=None,
     extended_period=False,
     do_verification=False,
@@ -244,7 +243,6 @@ def submit_task(
             srf=run_name,
             ascii=not binary_mode,
             seed=hf_seed,
-            rand_reset=rand_reset,
             ncore=const.HF_DEFAULT_NCORES,
             version=const.HF_DEFAULT_VERSION,
             site_specific=None,
@@ -340,14 +338,12 @@ def main(args):
         os.path.join(sim_struct.get_runs_dir(root_folder), "root_params.yaml")
     )
     # Default values
-    binary_mode, hf_seed, rand_reset, extended_period = True, None, True, False
+    binary_mode, hf_seed, extended_period = True, None, False
 
     if "binary_mode" in config:
         binary_mode = config["binary_mode"]
     if "seed" in config["hf"]:
         hf_seed = config["hf"]["seed"]
-    if "rand_reset" in config:
-        rand_reset = config["rand_reset"]
     if "extended_period" in config:
         extended_period = config["extended_period"]
 
@@ -499,7 +495,6 @@ def main(args):
                 mgmt_queue_folder,
                 binary_mode=binary_mode,
                 hf_seed=hf_seed,
-                rand_reset=rand_reset,
                 extended_period=extended_period,
                 models=(lf_est_model, hf_est_model, bb_est_model, im_est_model),
             )

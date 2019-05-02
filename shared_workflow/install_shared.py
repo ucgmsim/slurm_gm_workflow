@@ -209,7 +209,6 @@ def install_bb(
         root_dict["bb"]["site_specific"] = True
         root_dict["v_mod_1d_name"] = v_mod_1d_path
         root_dict["hf_stat_vs_ref"] = hf_stat_vs_ref
-        root_dict["bb"]["rand_reset"] = True
     else:
         is_site_specific_id = q_site_specific()
         if is_site_specific_id:
@@ -219,7 +218,6 @@ def install_bb(
             root_dict["bb"]["site_specific"] = True
             root_dict["v_mod_1d_name"] = v_mod_1d_path
             root_dict["hf_stat_vs_ref"] = hf_stat_vs_ref
-            root_dict["bb"]["rand_reset"] = True
         else:
             v_mod_1d_name, v_mod_1d_selected = q_1d_velocity_model(v1d_dir)
             root_dict["bb"]["site_specific"] = False
