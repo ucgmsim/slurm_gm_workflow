@@ -229,9 +229,9 @@ class E2ETests(object):
         # Why is this a script? Make it all python?
         script_path = os.path.join(
             os.path.dirname(os.path.abspath(__file__)),
-            "../scripts/cybershake/install_cybershake.sh",
+            "../scripts/cybershake/install_cybershake.py",
         )
-        cmd = "{} {} {} {} --seed {}".format(
+        cmd = "python3 {} {} {} {} --seed {}".format(
             script_path,
             self.stage_dir,
             self.version,

@@ -95,7 +95,7 @@ def install_fault(fault_name, n_rel, root_folder, version, seed=0):
     for srf in list_srf:
         # try to match find the stoch with same basename
         srf_name = os.path.splitext(os.path.basename(srf))[0]
-        stoch_file_path = simulation_structure.get_srf_path(root_folder, srf_name)
+        stoch_file_path = simulation_structure.get_stoch_path(root_folder, srf_name)
         sim_params_file = simulation_structure.get_source_params_path(root_folder, srf_name)
 
         if not os.path.isfile(stoch_file_path):
