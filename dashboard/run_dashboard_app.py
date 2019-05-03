@@ -54,7 +54,8 @@ app.layout = html.Div(
                             value=ALLOCATIONS_MAHUIKA[0]
                     ),
             html.H5("Mahuika & Maui total core hours usage"),
-            html.Div(id="maui_mahuika_chours"),
+            html.Div(id="maui_chours"),
+            html.Div(id="mahuika_chours"),
             html.H5("Mahuika total core hour usage"),
             dcc.Graph(id="mahuika_total_chours"),
             html.H5("Mahuika daily core hour usage"),
@@ -86,17 +87,28 @@ app.layout = html.Div(
 
 
 @app.callback(
-    Output("maui_mahuika_chours", "children"), [Input("interval_comp", "n_intervals")]
+    Output("maui_chours", "children"), [Input("maui-dropdown", "value")]
 )
-def update_maui_total_chours(n):
-    maui_total_chours = get_chours_entries(const.HPC.maui)[-1][-1]
-    mahuika_total_chours = get_chours_entries(const.HPC.mahuika)[-1][-1]
+def update_maui_total_chours(value):
+    start_date, end_date = value.split('---')
+    maui_total_chours = get_chours_entries(const.HPC.maui, start_date, end_date)[-1][-1]
     return html.Plaintext(
-        "Mahuika: {} / 18,000 hours\nMaui: {} / 950,000 hours".format(
-            mahuika_total_chours, maui_total_chours
+        "Maui: {} to {} used {} / 950,000 hours".format(start_date, end_date,
+            maui_total_chours
         )
     )
 
+@app.callback(
+    Output("mahuika_chours", "children"), [Input("mahuika-dropdown", "value")]
+)
+def update_maui_total_chours(value):
+    start_date, end_date = value.split('---')
+    mahuika_total_chours = get_chours_entries(const.HPC.mahuika, start_date, end_date)[-1][-1]
+    return html.Plaintext(
+        "Mahuika: {} to {} / 18,000 hours".format(start_date, end_date,
+            mahuika_total_chours
+        )
+    )
 
 @app.callback(
     Output("maui_node_usage", "children"), [Input("interval_comp", "n_intervals")]
@@ -159,9 +171,7 @@ def update_maui_total_chours(value):
     Output("mahuika_total_chours", "figure"), [Input("mahuika-dropdown", "value")]
 )
 def update_mahuika_total_chours(value):
-    print("value from dripdown", value)
     start_date, end_date = value.split('---')
-    print(value, "start end for mahuika total_chours", start_date, end_date)
     entries = get_chours_entries(const.HPC.mahuika, start_date, end_date)
     fig = go.Figure()
     fig.add_scatter(x=entries["day"], y=entries["total_chours"])
@@ -265,6 +275,13 @@ def get_chours_entries(hpc: const.HPC, start_date=date.today() - relativedelta(d
     entries = app.db.get_chours_usage(
         start_date, end_date, hpc
     )
+    # reset start of a new allocation to 0 hours
+    start_total = entries[0][-1]
+    for i in range(len(entries)):
+        entries[i] = list(entries[i])
+        entries[i][-1] -= start_total
+        entries[i] = tuple(entries[i])
+
     return np.array(
         entries,
         dtype=[

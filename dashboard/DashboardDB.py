@@ -140,10 +140,9 @@ class DashboardDB:
         with self.get_cursor(self.db_file) as cursor:
             results = cursor.execute(
                 "SELECT DAY, CORE_HOURS_USED, TOTAL_CORE_HOURS FROM {} "
-                "WHERE DAY BETWEEN ? AND ?".format(self.get_daily_t_name(hpc)),
+                "WHERE DAY BETWEEN ? AND ? ORDER BY DAY".format(self.get_daily_t_name(hpc)),
                 (start_date, end_date),
             ).fetchall()
-
         # convert virtual core hours to physical
         if physical:
             results = [
@@ -334,7 +333,7 @@ class DashboardDB:
         end_date = self.get_date(end_date)
 
         table = self.get_user_ch_t_name(hpc)
-        sql = "SELECT DAY, USERNAME, CORE_HOURS_USED FROM {} WHERE USERNAME = ? AND DAY BETWEEN ? AND ?".format(
+        sql = "SELECT DAY, USERNAME, CORE_HOURS_USED FROM {} WHERE USERNAME = ? AND DAY BETWEEN ? AND ? ORDER BY DAY".format(
             table
         )
         with self.get_cursor(self.db_file) as cursor:
