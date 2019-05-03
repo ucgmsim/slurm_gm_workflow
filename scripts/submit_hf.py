@@ -100,8 +100,7 @@ def main(args: argparse.Namespace, est_model: est.EstModel = None):
         )
 
         add_args = dict(params.hf)
-        if args.seed is not None:
-            add_args.update({"seed": args.seed})
+        add_args.update({const.RootParams.seed.value: args.seed})
 
         script_prefix = "{}_{}".format(ll_name_prefix, underscored_srf)
         script_file_path = write_sl_script(
@@ -148,7 +147,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--seed",
         type=int,
-        default=None,
+        default=0,
         help="random seed number(0 for randomized seed)",
     )
     parser.add_argument(

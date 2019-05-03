@@ -66,6 +66,7 @@ class E2ETests(object):
     cf_cybershake_config_key = "cybershake_config"
     cf_fault_list_key = "fault_list"
     cf_bench_folder_key = "bench_dir"
+    cf_version_key = "version"
     test_checkpoint_key = "test_checkpoint"
     timeout_key = "timeout"
 
@@ -103,6 +104,8 @@ class E2ETests(object):
 
         with open(config_file, "r") as f:
             self.config_dict = json.load(f)
+
+        self.version = self.config_dict[self.cf_version_key]
 
         # Add tmp directory
         self.stage_dir = os.path.join(
@@ -157,12 +160,6 @@ class E2ETests(object):
             self.print_warnings()
             return False
 
-        self.check_install()
-        if self.errors and self._stop_on_error:
-            print("Quitting due to the following errors:")
-            self.print_errors()
-            return False
-
         # Run automated workflow
         if not self._run_auto(user, sleep_time=sleep_time):
             return False
@@ -210,9 +207,6 @@ class E2ETests(object):
         data_dir = os.path.join(self.stage_dir, "Data")
         shutil.copytree(self.config_dict[self.cf_data_dir_key], data_dir)
 
-        # Cybershake config
-        shutil.copy(self.config_dict[self.cf_cybershake_config_key], self.stage_dir)
-
         # Fault list
         shutil.copy(self.config_dict[self.cf_fault_list_key], self.stage_dir)
 
@@ -235,21 +229,18 @@ class E2ETests(object):
         # Why is this a script? Make it all python?
         script_path = os.path.join(
             os.path.dirname(os.path.abspath(__file__)),
-            "../scripts/cybershake/install_cybershake.sh",
+            "../scripts/cybershake/install_cybershake.py",
         )
-        cmd = "{} {} {} {}".format(
+        cmd = "python3 {} {} {} {} --seed {}".format(
             script_path,
             self.stage_dir,
-            os.path.join(
-                self.stage_dir,
-                os.path.basename(self.config_dict[self.cf_cybershake_config_key]),
-            ),
+            self.version,
             os.path.join(
                 self.stage_dir,
                 os.path.basename(self.config_dict[self.cf_fault_list_key]),
             ),
+            self.config_dict[const.RootParams.seed.value],
         )
-
         print("Running install...")
         out_file = os.path.join(self.stage_dir, self.install_out_file)
         err_file = os.path.join(self.stage_dir, self.install_err_file)
@@ -284,7 +275,6 @@ class E2ETests(object):
 
     def check_install(self):
         """Checks that all required templates exists, along with the yaml params """
-
         for sim_dir in self.sim_dirs:
             # Check sim_params.yaml are there
             self._check_true(
@@ -320,7 +310,7 @@ class E2ETests(object):
             Time (in seconds) between progress checks
         """
         submit_cmd = (
-            "python3 {} {} {} --sleep_time 2 --config {} "
+            "python3 {} {} {} --sleep_time 2 "
             "--no_merge_ts --no_clean_up".format(
                 os.path.join(
                     os.path.dirname(os.path.abspath(__file__)),
@@ -328,7 +318,6 @@ class E2ETests(object):
                 ),
                 self.stage_dir,
                 user,
-                sim_struct.get_cybershake_config(self.stage_dir),
             )
         )
         queue_cmd = "python3 {} {}".format(

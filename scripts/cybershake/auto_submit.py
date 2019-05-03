@@ -14,6 +14,7 @@ import numpy as np
 import shared_workflow.load_config as ldcfg
 import qcore.constants as const
 import qcore.simulation_structure as sim_struct
+from qcore import utils
 import estimation.estimate_wct as est
 from scripts.management.MgmtDB import MgmtDB, SlurmTask
 from metadata.log_metadata import store_metadata
@@ -139,7 +140,6 @@ def update_tasks(
                 error="Disappeared from squeue. Reset to created.",
             )
 
-
             # TODO: Add retry check!!
             # Then reset
             shared.add_to_queue(
@@ -158,7 +158,6 @@ def submit_task(
     root_folder,
     queue_folder,
     binary_mode=True,
-    rand_reset=True,
     hf_seed=None,
     extended_period=False,
     do_verification=False,
@@ -244,7 +243,6 @@ def submit_task(
             srf=run_name,
             ascii=not binary_mode,
             seed=hf_seed,
-            rand_reset=rand_reset,
             ncore=const.HF_DEFAULT_NCORES,
             version=const.HF_DEFAULT_VERSION,
             site_specific=None,
@@ -336,40 +334,18 @@ def main(args):
     root_folder = os.path.abspath(args.root_folder)
     mgmt_queue_folder = sim_struct.get_mgmt_db_queue(root_folder)
     mgmt_db = MgmtDB(sim_struct.get_mgmt_db(root_folder))
-
+    config = utils.load_yaml(
+        os.path.join(sim_struct.get_runs_dir(root_folder), "root_params.yaml")
+    )
     # Default values
-    binary_mode, hf_seed = True, None
-    rand_reset, extended_period = True, False
+    binary_mode, hf_seed, extended_period = True, None, False
 
-    if args.config is not None:
-        # parse and check for variables in config
-        try:
-            cybershake_cfg = ldcfg.load(
-                directory=os.path.dirname(args.config),
-                cfg_name=os.path.basename(args.config),
-            )
-            print("Cybershake config: \n", cybershake_cfg)
-        except Exception as e:
-            print("Error while parsing the config file, please double check inputs.")
-            print(e)
-            sys.exit()
-
-        binary_mode = (
-            cybershake_cfg["binary_mode"]
-            if "binary_mode" in cybershake_cfg
-            else binary_mode
-        )
-        hf_seed = cybershake_cfg["hf_seed"] if "hf_seed" in cybershake_cfg else hf_seed
-        rand_reset = (
-            cybershake_cfg["rand_reset"]
-            if "rand_reset" in cybershake_cfg
-            else rand_reset
-        )
-        extended_period = (
-            cybershake_cfg["extended_period"]
-            if "extended_period" in cybershake_cfg
-            else extended_period
-        )
+    if "binary_mode" in config:
+        binary_mode = config["binary_mode"]
+    if const.RootParams.seed.value in config["hf"]:
+        hf_seed = config["hf"][const.RootParams.seed.value]
+    if "extended_period" in config:
+        extended_period = config["extended_period"]
 
     print("Loading estimation models")
     workflow_config = ldcfg.load()
@@ -519,7 +495,6 @@ def main(args):
                 mgmt_queue_folder,
                 binary_mode=binary_mode,
                 hf_seed=hf_seed,
-                rand_reset=rand_reset,
                 extended_period=extended_period,
                 models=(lf_est_model, hf_est_model, bb_est_model, im_est_model),
             )
@@ -558,7 +533,6 @@ if __name__ == "__main__":
         default=DEFAULT_N_MAX_RETRIES,
         type=int,
     )
-    parser.add_argument("--config", type=str, default=None, help="Cybershake config")
     parser.add_argument("--no_im", action="store_true")
     parser.add_argument("--no_merge_ts", action="store_true")
     parser.add_argument("--no_clean_up", action="store_true")
