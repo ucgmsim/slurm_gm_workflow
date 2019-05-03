@@ -97,10 +97,10 @@ def install_simulation(
         os.path.join(template_path, ROOT_DEFAULTS_FILE_NAME)
     )
     root_params_dict[RootParams.version.value] = version
-    root_params_dict[RootParams.seed.value] = seed
     root_params_dict[RootParams.stat_file.value] = stat_file_path
     root_params_dict[RootParams.stat_vs_est.value] = vs30_file_path
     root_params_dict[RootParams.stat_vs_ref.value] = vs30ref_file_path
+    root_params_dict["hf"][RootParams.seed.value] = seed
 
     # Fault params
     fault_params_dict = {}
