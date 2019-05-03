@@ -89,6 +89,7 @@ class MgmtDB:
         """
         do_verification = False
         verification_tasks = [
+            Process.IM_plot.value,
             Process.rrup.value,
             Process.Empirical.value,
             Process.Verification.value,
@@ -157,44 +158,14 @@ class MgmtDB:
         """Checks if all dependencies for the specified are met"""
         process, run_name, status = task
         process = Process(process)
-        if process in (Process.EMOD3D, Process.HF, Process.rrup):
-            return True
 
-        # If the process has completed the one linearly before it
-        if process in (
-            Process.merge_ts,
-            Process.winbin_aio,
-            Process.IM_calculation,
-            Process.Empirical,
-        ):
+        for dep in process.dependencies:
             dependant_task = list(task)
-            dependant_task[0] = process.value - 1
+            dependant_task[0] = dep
             dependant_task[2] = "completed"
-            return self.is_task_complete(dependant_task, task_list)
-
-        if process is Process.BB:
-            LF_task = list(task)
-            LF_task[0] = Process.EMOD3D.value
-            LF_task[2] = "completed"
-            HF_task = list(task)
-            HF_task[0] = Process.HF.value
-            HF_task[2] = "completed"
-            return self.is_task_complete(LF_task, task_list) and self.is_task_complete(
-                HF_task, task_list
-            )
-
-        if process is Process.clean_up:
-            IM_task = list(task)
-            IM_task[0] = Process.IM_calculation.value
-            IM_task[2] = "completed"
-            merge_ts_task = list(task)
-            merge_ts_task[0] = Process.merge_ts.value
-            merge_ts_task[2] = "completed"
-            return self.is_task_complete(IM_task, task_list) and self.is_task_complete(
-                merge_ts_task, task_list
-            )
-
-        return False
+            if not self.is_task_complete(dependant_task, task_list):
+                return False
+        return True
 
     def _update_entry(self, cur: sql.Cursor, entry: SlurmTask):
         """Updates all fields that have a value for the specific entry"""
