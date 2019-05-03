@@ -20,7 +20,6 @@ from scripts.management.MgmtDB import SlurmTask
 from shared_workflow.shared import exe
 import qcore.constants as const
 import qcore.simulation_structure as sim_struct
-from qcore.utils import load_yaml, dump_yaml
 
 
 def get_sim_dirs(runs_dir):
@@ -232,7 +231,7 @@ class E2ETests(object):
             os.path.dirname(os.path.abspath(__file__)),
             "../scripts/cybershake/install_cybershake.sh",
         )
-        cmd = "{} {} {} {}".format(
+        cmd = "{} {} {} {} --seed {}".format(
             script_path,
             self.stage_dir,
             self.version,
@@ -240,6 +239,7 @@ class E2ETests(object):
                 self.stage_dir,
                 os.path.basename(self.config_dict[self.cf_fault_list_key]),
             ),
+            self.config_dict[const.RootParams.seed.value],
         )
         print("Running install...")
         out_file = os.path.join(self.stage_dir, self.install_out_file)

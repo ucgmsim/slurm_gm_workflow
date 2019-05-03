@@ -342,8 +342,8 @@ def main(args):
 
     if "binary_mode" in config:
         binary_mode = config["binary_mode"]
-    if "seed" in config["hf"]:
-        hf_seed = config["hf"]["seed"]
+    if const.RootParams.seed.value in config["hf"]:
+        hf_seed = config["hf"][const.RootParams.seed.value]
     if "extended_period" in config:
         extended_period = config["extended_period"]
 

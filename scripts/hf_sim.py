@@ -14,7 +14,7 @@ import numpy as np
 import logging
 
 from shared_workflow import shared_defaults
-from qcore import binary_version, MPIFileHandler
+from qcore import binary_version, MPIFileHandler, constants
 
 comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
@@ -163,7 +163,7 @@ if is_master:
 if is_master:
     logger.debug("=" * 50)
     # random seed
-    seed_file = os.path.join(os.path.dirname(args.out_file), "SEED")
+    seed_file = os.path.join(os.path.dirname(args.out_file), constants.RootParams.seed.value)
     if args.seed == -1:
         logger.debug("seed is always randomised.")
     elif os.path.isfile(seed_file):

@@ -2,9 +2,10 @@ Slurm Ground Motion Workflow
 # Changelog
 (Based on https://wiki.canterbury.ac.nz/download/attachments/58458136/CodeVersioning_v18p2.pdf?version=1&modificationDate=1519269238437&api=v2 )
 
-## [19.5.2] - 2019-05-02 -- Cybershake file removed
+## [19.5.2] - 2019-05-03 -- Cybershake file removed
 ### Changed
-    - HF seed is now read from the root params yaml, and should be added to the group "HF" with the key "seed"
+    - HF seed is now an optional parameter to the install script
+    - Instead of passing the path to a cybershake config file, the required version should be passed to the install script
 ### Removed
     - Cybershake_config.json no longer needed. All relevant values have been moved to the root_defaults.yaml in the gmsim templates subdirectory.
 

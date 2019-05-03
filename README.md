@@ -45,7 +45,7 @@ and [cybershake manual](https://wiki.canterbury.ac.nz/display/QuakeCore/Cybersha
 Run the install_cybershake.sh bash script, e.g.
 ```bash
 $gmsim/workflow/scripts/cybershake/install_cybershake path/to/rootDir 
-cybershake_version /path/to/list.txt 
+cybershake_version /path/to/list.txt --seed [seed]
 ```
 where the cybershake version is a string with a relevant subdirectory in the templates folder.
 Current valid options are 16.1
@@ -55,6 +55,7 @@ and list.txt is a list of the faults to run, along with the number of realisatio
 Hossack 4r
 RepongaereF4 10r
 ```
+seed is an optional integer argument to specify the seed to be used for HF calculations. If it is not given a random one will be chosen
 
 ### Running
 To run the installed simulations, navigate to the rootDir and run
