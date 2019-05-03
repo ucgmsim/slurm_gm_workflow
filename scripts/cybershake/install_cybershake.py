@@ -8,14 +8,13 @@ def main():
     parser.add_argument(
         "path_cybershake",
         type=str,
-        default=None,
         help="the path to the root of a specific version cybershake.",
     )
     parser.add_argument(
         "version", type=str, default="16.1", help="Please specify GMSim version"
     )
     parser.add_argument(
-        "fault_selection_list", type=str, default=None, help="The fault selection file"
+        "fault_selection_list", type=str, help="The fault selection file"
     )
     parser.add_argument(
         "--seed", type=str, default=0, help="The seed to be used for HF simulations. Default is to request a random seed."
@@ -31,10 +30,8 @@ def main():
             faults.update({fault: count})
 
     for fault, count in faults.items():
-        try:
-            install_fault(fault, count, args.path_cybershake, args.version, args.seed)
-        except RuntimeError as e:
-            print(e)
+        install_fault(fault, count, args.path_cybershake, args.version, args.seed)
+
 
 if __name__ == '__main__':
     main()

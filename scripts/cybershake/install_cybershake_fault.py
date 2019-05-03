@@ -35,7 +35,7 @@ def main():
         "--n_rel", type=int, default=None, help="the number of realisations expected"
     )
     parser.add_argument(
-        "--seed", type=int, default=None, help="The seed to be used for HF simulations"
+        "--seed", type=int, default=0, help="The seed to be used for HF simulations"
     )
 
     args = parser.parse_args()
@@ -105,7 +105,7 @@ def install_fault(fault_name, n_rel, root_folder, version, seed=0):
             print(message)
             with open(error_log, "a") as error_fp:
                 error_fp.write(message)
-            continue
+            raise RuntimeError(message)
 
         # install pairs one by one to fit the new structure
         sim_dir = simulation_structure.get_sim_dir(root_folder, srf_name)

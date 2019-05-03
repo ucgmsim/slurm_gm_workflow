@@ -163,7 +163,7 @@ if is_master:
 if is_master:
     logger.debug("=" * 50)
     # random seed
-    seed_file = os.path.join(os.path.dirname(args.out_file), constants.RootParams.seed.value)
+    seed_file = os.path.join(os.path.dirname(args.out_file), "SEED")
     if args.seed == -1:
         logger.debug("seed is always randomised.")
     elif os.path.isfile(seed_file):
