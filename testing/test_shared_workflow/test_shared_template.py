@@ -3,7 +3,12 @@ import io
 import os
 
 from shared_workflow import shared_template
-from testing.test_common_set_up import get_input_params, OUTPUT, get_bench_output, set_up
+from testing.test_common_set_up import (
+    get_input_params,
+    OUTPUT,
+    get_bench_output,
+    set_up,
+)
 
 
 def test_get_partition():
@@ -20,7 +25,12 @@ def test_write_sl_script(set_up, mocker):
     func_name = "write_sl_script"
     func = shared_template.write_sl_script
     params = inspect.getfullargspec(func).args
-
+    mocker.patch(
+        "shared_workflow.shared_template.recipe_dir",
+        os.path.join(
+            os.path.dirname(os.path.realpath(__file__)), "..", "..", "templates"
+        ),
+    )
     variable_lines = [11, 12]
     for root_path, realisation in set_up:
         input_params = get_input_params(root_path, func_name, params)
@@ -65,6 +75,9 @@ def test_generate_context(set_up):
     params = inspect.getfullargspec(func).args
     for root_path, realisation in set_up:
         input_params = get_input_params(root_path, func_name, params)
+        input_params[0] = os.path.join(
+            os.path.dirname(os.path.realpath(__file__)), "..", "..", "templates"
+        )
         test_output = func(*input_params)
         bench_output = get_bench_output(root_path, func_name)
         assert test_output == bench_output
@@ -77,6 +90,9 @@ def test_resolve_header(set_up):
     variable_lines = [11, 12]
     for root_path, realisation in set_up:
         input_params = get_input_params(root_path, func_name, params)
+        input_params[0] = os.path.join(
+            os.path.dirname(os.path.realpath(__file__)), "..", "..", "templates"
+        )
         test_output = func(*input_params)
         bench_output = get_bench_output(root_path, func_name)
         for test_line, bench_line in zip(

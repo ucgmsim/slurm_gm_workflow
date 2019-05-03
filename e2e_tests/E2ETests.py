@@ -207,9 +207,6 @@ class E2ETests(object):
         data_dir = os.path.join(self.stage_dir, "Data")
         shutil.copytree(self.config_dict[self.cf_data_dir_key], data_dir)
 
-        # Cybershake config
-        shutil.copy(self.config_dict[self.cf_cybershake_config_key], self.stage_dir)
-
         # Fault list
         shutil.copy(self.config_dict[self.cf_fault_list_key], self.stage_dir)
 
@@ -232,20 +229,17 @@ class E2ETests(object):
         # Why is this a script? Make it all python?
         script_path = os.path.join(
             os.path.dirname(os.path.abspath(__file__)),
-            "../scripts/cybershake/install_cybershake.sh",
+            "../scripts/cybershake/install_cybershake.py",
         )
-        cmd = "{} {} {} {} {}".format(
+        cmd = "python3 {} {} {} {} --seed {}".format(
             script_path,
             self.stage_dir,
-            os.path.join(
-                self.stage_dir,
-                os.path.basename(self.config_dict[self.cf_cybershake_config_key]),
-            ),
+            self.version,
             os.path.join(
                 self.stage_dir,
                 os.path.basename(self.config_dict[self.cf_fault_list_key]),
             ),
-            self.version
+            self.config_dict[const.RootParams.seed.value],
         )
         print("Running install...")
         out_file = os.path.join(self.stage_dir, self.install_out_file)
@@ -316,7 +310,7 @@ class E2ETests(object):
             Time (in seconds) between progress checks
         """
         submit_cmd = (
-            "python3 {} {} {} --sleep_time 2 --config {} "
+            "python3 {} {} {} --sleep_time 2 "
             "--no_merge_ts --no_clean_up".format(
                 os.path.join(
                     os.path.dirname(os.path.abspath(__file__)),
@@ -324,7 +318,6 @@ class E2ETests(object):
                 ),
                 self.stage_dir,
                 user,
-                os.path.join(self.stage_dir, os.path.basename(self.config_dict[self.cf_cybershake_config_key]))
             )
         )
         queue_cmd = "python3 {} {}".format(
