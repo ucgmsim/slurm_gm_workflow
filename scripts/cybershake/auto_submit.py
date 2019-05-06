@@ -14,6 +14,7 @@ import numpy as np
 import shared_workflow.load_config as ldcfg
 import qcore.constants as const
 import qcore.simulation_structure as sim_struct
+from qcore import utils
 import estimation.estimate_wct as est
 from scripts.management.MgmtDB import MgmtDB, SlurmTask
 from metadata.log_metadata import store_metadata
@@ -57,11 +58,10 @@ def get_queued_tasks(user=None, machine=const.HPC.maui):
     return output_list
 
 
-def check_mgmt_queue(queue_folder: str, run_name: str, proc_type: int):
+def check_mgmt_queue(queue_entries: List[str], run_name: str, proc_type: int):
     """Returns True if there are any queued entries for this run_name and process type,
     otherwise returns False.
     """
-    queue_entries = os.listdir(queue_folder)
     for entry in queue_entries:
         _, entry_run_name, entry_proc_type = entry.split(".")
         if entry_run_name == run_name and entry_proc_type == str(proc_type):
@@ -69,7 +69,12 @@ def check_mgmt_queue(queue_folder: str, run_name: str, proc_type: int):
     return False
 
 
-def update_tasks(queue_folder: str, squeue_tasks, db_tasks: List[SlurmTask]):
+def update_tasks(
+    mgmt_queue_folder: str,
+    mgmt_queue_entries: List[str],
+    squeue_tasks,
+    db_tasks: List[SlurmTask],
+):
     """Updates the mgmt db entries based on the HPC queue"""
     for db_task in db_tasks:
         found = False
@@ -98,23 +103,27 @@ def update_tasks(queue_folder: str, squeue_tasks, db_tasks: List[SlurmTask]):
                     )
                 # Do nothing if there is a pending update for
                 # this run & process type combination
-                elif not check_mgmt_queue(queue_folder, db_task.run_name, db_task.proc_type):
+                elif not check_mgmt_queue(
+                    mgmt_queue_entries, db_task.run_name, db_task.proc_type
+                ):
                     print(
                         "Updating status of {}, {} from {} to {}".format(
                             db_task.run_name,
                             const.ProcessType(db_task.proc_type).str_value,
                             const.Status(db_task.status).str_value,
-                            queue_status,
+                            const.Status(queue_status).str_value,
                         )
                     )
                     shared.add_to_queue(
-                        queue_folder, db_task.run_name, db_task.proc_type, queue_status
+                        mgmt_queue_folder,
+                        db_task.run_name,
+                        db_task.proc_type,
+                        queue_status,
                     )
         # Only reset if there is no entry on the mgmt queue for this
         # realisation/proc combination
-        if (
-            not found
-            and not check_mgmt_queue(queue_folder, db_task.run_name, db_task.proc_type)
+        if not found and not check_mgmt_queue(
+            mgmt_queue_entries, db_task.run_name, db_task.proc_type
         ):
             print(
                 "Task '{}' on '{}' not found on squeue; resetting the status "
@@ -122,11 +131,23 @@ def update_tasks(queue_folder: str, squeue_tasks, db_tasks: List[SlurmTask]):
                     const.ProcessType(db_task.proc_type).str_value, db_task.run_name
                 )
             )
+            # Add an error first
             shared.add_to_queue(
-                queue_folder,
+                mgmt_queue_folder,
+                db_task.run_name,
+                db_task.proc_type,
+                const.Status.failed.value,
+                error="Disappeared from squeue. Reset to created.",
+            )
+
+            # TODO: Add retry check!!
+            # Then reset
+            shared.add_to_queue(
+                mgmt_queue_folder,
                 db_task.run_name,
                 db_task.proc_type,
                 const.Status.created.value,
+                retries=db_task.retries + 1,
             )
 
 
@@ -137,7 +158,6 @@ def submit_task(
     root_folder,
     queue_folder,
     binary_mode=True,
-    rand_reset=True,
     hf_seed=None,
     extended_period=False,
     do_verification=False,
@@ -223,7 +243,6 @@ def submit_task(
             srf=run_name,
             ascii=not binary_mode,
             seed=hf_seed,
-            rand_reset=rand_reset,
             ncore=const.HF_DEFAULT_NCORES,
             version=const.HF_DEFAULT_VERSION,
             site_specific=None,
@@ -313,42 +332,20 @@ def submit_task(
 
 def main(args):
     root_folder = os.path.abspath(args.root_folder)
-    queue_folder = sim_struct.get_mgmt_db_queue(root_folder)
+    mgmt_queue_folder = sim_struct.get_mgmt_db_queue(root_folder)
     mgmt_db = MgmtDB(sim_struct.get_mgmt_db(root_folder))
-
+    config = utils.load_yaml(
+        os.path.join(sim_struct.get_runs_dir(root_folder), "root_params.yaml")
+    )
     # Default values
-    binary_mode, hf_seed = True, None
-    rand_reset, extended_period = True, False
+    binary_mode, hf_seed, extended_period = True, None, False
 
-    if args.config is not None:
-        # parse and check for variables in config
-        try:
-            cybershake_cfg = ldcfg.load(
-                directory=os.path.dirname(args.config),
-                cfg_name=os.path.basename(args.config),
-            )
-            print("Cybershake config: \n", cybershake_cfg)
-        except Exception as e:
-            print("Error while parsing the config file, please double check inputs.")
-            print(e)
-            sys.exit()
-
-        binary_mode = (
-            cybershake_cfg["binary_mode"]
-            if "binary_mode" in cybershake_cfg
-            else binary_mode
-        )
-        hf_seed = cybershake_cfg["hf_seed"] if "hf_seed" in cybershake_cfg else hf_seed
-        rand_reset = (
-            cybershake_cfg["rand_reset"]
-            if "rand_reset" in cybershake_cfg
-            else rand_reset
-        )
-        extended_period = (
-            cybershake_cfg["extended_period"]
-            if "extended_period" in cybershake_cfg
-            else extended_period
-        )
+    if "binary_mode" in config:
+        binary_mode = config["binary_mode"]
+    if const.RootParams.seed.value in config["hf"]:
+        hf_seed = config["hf"][const.RootParams.seed.value]
+    if "extended_period" in config:
+        extended_period = config["extended_period"]
 
     print("Loading estimation models")
     workflow_config = ldcfg.load()
@@ -378,15 +375,20 @@ def main(args):
         skipped.append(const.ProcessType.clean_up.value)
 
     while True:
+        # Get items in the mgmt queue, have to get a snapshot instead of
+        # checking the directory real-time to prevent timing issues,
+        # which can result in dual-submission
+        mgmt_queue_entries = os.listdir(mgmt_queue_folder)
+
         # Get in progress tasks in the db and the HPC queue
-        queue_tasks, n_tasks_to_run = [], {}
+        squeue_tasks, n_tasks_to_run = [], {}
         for hpc in const.HPC:
             cur_tasks = get_queued_tasks(user=args.user, machine=hpc)
             n_tasks_to_run[hpc] = args.n_runs[hpc] - len(cur_tasks)
-            queue_tasks.extend(cur_tasks)
+            squeue_tasks.extend(cur_tasks)
 
         db_in_progress_tasks = mgmt_db.get_submitted_tasks()
-        print("\nSqueue user tasks: ", ", ".join(queue_tasks))
+        print("\nSqueue user tasks: ", ", ".join(squeue_tasks))
         print(
             "In progress tasks in mgmt db:",
             ", ".join(
@@ -403,7 +405,9 @@ def main(args):
         )
 
         # Update the slurm mgmt based on squeue
-        update_tasks(queue_folder, queue_tasks, db_in_progress_tasks)
+        update_tasks(
+            mgmt_queue_folder, mgmt_queue_entries, squeue_tasks, db_in_progress_tasks
+        )
 
         # Gets all runnable tasks based on mgmt db state
         runnable_tasks = mgmt_db.get_runnable_tasks(args.n_max_retries)
@@ -417,10 +421,10 @@ def main(args):
 
             # Set task that are set to be skipped to complete in db
             if cur_proc_type in skipped and not check_mgmt_queue(
-                queue_folder, cur_run_name, cur_proc_type
+                mgmt_queue_entries, cur_run_name, cur_proc_type
             ):
                 shared.add_to_queue(
-                    queue_folder,
+                    mgmt_queue_folder,
                     cur_run_name,
                     cur_proc_type,
                     const.Status.completed.value,
@@ -431,7 +435,7 @@ def main(args):
             # Add task if limit has not been reached and there are no
             # outstanding mgmt db updates
             if (
-                not check_mgmt_queue(queue_folder, cur_run_name, cur_proc_type)
+                not check_mgmt_queue(mgmt_queue_entries, cur_run_name, cur_proc_type)
                 and task_counter.get(cur_hpc, 0) < n_tasks_to_run[cur_hpc]
             ):
                 tasks_to_run.append(task)
@@ -476,7 +480,7 @@ def main(args):
                     # If clean_up has already run, then we should set it to
                     # be run again after merge_ts has run
                     shared.add_to_queue(
-                        queue_folder,
+                        mgmt_queue_folder,
                         run_name,
                         const.ProcessType.clean_up.value,
                         const.Status.created.value,
@@ -488,13 +492,13 @@ def main(args):
                 proc_type,
                 run_name,
                 root_folder,
-                queue_folder,
+                mgmt_queue_folder,
                 binary_mode=binary_mode,
                 hf_seed=hf_seed,
-                rand_reset=rand_reset,
                 extended_period=extended_period,
                 models=(lf_est_model, hf_est_model, bb_est_model, im_est_model),
             )
+            print()
 
         print("Sleeping for {} second(s)".format(args.sleep_time))
         time.sleep(args.sleep_time)
@@ -529,7 +533,6 @@ if __name__ == "__main__":
         default=DEFAULT_N_MAX_RETRIES,
         type=int,
     )
-    parser.add_argument("--config", type=str, default=None, help="Cybershake config")
     parser.add_argument("--no_im", action="store_true")
     parser.add_argument("--no_merge_ts", action="store_true")
     parser.add_argument("--no_clean_up", action="store_true")

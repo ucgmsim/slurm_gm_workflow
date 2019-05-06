@@ -89,6 +89,7 @@ class MgmtDB:
         """
         do_verification = False
         verification_tasks = [
+            Process.IM_plot.value,
             Process.rrup.value,
             Process.Empirical.value,
             Process.Verification.value,
@@ -99,8 +100,8 @@ class MgmtDB:
                 """SELECT proc_type, run_name, status_enum.state 
                           FROM status_enum, state 
                           WHERE state.status = status_enum.id
-                           AND ((status_enum.state = 'created' 
-                                 AND state.retries < ?)
+                           AND (((status_enum.state = 'created' OR status_enum.state = 'failed')  
+                                 AND state.retries <= ?)
                             OR status_enum.state = 'completed')""",
                 (retry_max,),
             ).fetchall()
@@ -108,9 +109,36 @@ class MgmtDB:
         tasks_to_run = []
         for task in db_tasks:
             status = task[2]
-            if status == "created" and self._check_dependancy_met(task, db_tasks):
+            if status == const.Status.created.str_value and self._check_dependancy_met(
+                task, db_tasks
+            ):
                 if task[0] not in verification_tasks or do_verification:
                     tasks_to_run.append(task)
+
+            # Retry failed tasks
+            if status == const.Status.failed.str_value:
+                tasks_to_run.append(task)
+
+                # Update the number of retries
+                with connect_db_ctx(self._db_file) as cur:
+                    cur_retries = cur.execute(
+                        "SELECT retries from state "
+                        "WHERE run_name = ? AND proc_type = ?",
+                        (task[1], task[0]),
+                    ).fetchone()[0]
+
+                    # Also set it to created to ensure the number of retries does not
+                    # increase without actually running.
+                    cur.execute(
+                        "UPDATE state SET status = ?, retries = ? "
+                        "WHERE run_name = ? AND proc_type = ?",
+                        (
+                            const.Status.created.value,
+                            cur_retries + 1,
+                            task[1],
+                            task[0],
+                        ),
+                    )
 
         return tasks_to_run
 
@@ -130,44 +158,14 @@ class MgmtDB:
         """Checks if all dependencies for the specified are met"""
         process, run_name, status = task
         process = Process(process)
-        if process in (Process.EMOD3D, Process.HF, Process.rrup):
-            return True
 
-        # If the process has completed the one linearly before it
-        if process in (
-            Process.merge_ts,
-            Process.winbin_aio,
-            Process.IM_calculation,
-            Process.Empirical,
-        ):
+        for dep in process.dependencies:
             dependant_task = list(task)
-            dependant_task[0] = process.value - 1
+            dependant_task[0] = dep
             dependant_task[2] = "completed"
-            return self.is_task_complete(dependant_task, task_list)
-
-        if process is Process.BB:
-            LF_task = list(task)
-            LF_task[0] = Process.EMOD3D.value
-            LF_task[2] = "completed"
-            HF_task = list(task)
-            HF_task[0] = Process.HF.value
-            HF_task[2] = "completed"
-            return self.is_task_complete(LF_task, task_list) and self.is_task_complete(
-                HF_task, task_list
-            )
-
-        if process is Process.clean_up:
-            IM_task = list(task)
-            IM_task[0] = Process.IM_calculation.value
-            IM_task[2] = "completed"
-            merge_ts_task = list(task)
-            merge_ts_task[0] = Process.merge_ts.value
-            merge_ts_task[2] = "completed"
-            return self.is_task_complete(IM_task, task_list) and self.is_task_complete(
-                merge_ts_task, task_list
-            )
-
-        return False
+            if not self.is_task_complete(dependant_task, task_list):
+                return False
+        return True
 
     def _update_entry(self, cur: sql.Cursor, entry: SlurmTask):
         """Updates all fields that have a value for the specific entry"""
@@ -178,9 +176,7 @@ class MgmtDB:
             if value is not None:
                 cur.execute(
                     "UPDATE state SET {} = ?, last_modified = strftime('%s','now') "
-                    "WHERE run_name = ? AND proc_type = ?".format(
-                        field
-                    ),
+                    "WHERE run_name = ? AND proc_type = ?".format(field),
                     (value, entry.run_name, entry.proc_type),
                 )
         if entry.error is not None:

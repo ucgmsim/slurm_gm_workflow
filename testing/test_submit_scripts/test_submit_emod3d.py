@@ -39,6 +39,15 @@ def test_main(set_up, mocker):
         if "emod3d_defaults.yaml" in x
         else mocked_load_yaml(x),
     )
+    mocker.patch(
+        "shared_workflow.shared_template.recipe_dir",
+        os.path.join(
+            os.path.dirname(os.path.realpath(__file__)),
+            "..",
+            "..",
+            "templates",
+        )
+    )
 
     for root_path, realisation in set_up:
         args = get_input_params(

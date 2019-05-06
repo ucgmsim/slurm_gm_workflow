@@ -1,8 +1,13 @@
 #!/usr/bin/env python3
 """Script to run end-to-end tests"""
 import argparse
+import signal
 
 from e2e_tests.E2ETests import E2ETests
+
+def on_exit(signum, frame):
+    e2e_test.close()
+    exit()
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -11,15 +16,12 @@ if __name__ == "__main__":
         "config_file", type=str, help="Config file for the end-to-end test"
     )
     parser.add_argument(
-        "--timeout",
-        type=int,
-        default=10,
-        help="The maximum time (in minutes) allowed for execution of the slurm scripts",
+        "user", type=str, help="The username under which to run the tasks"
     )
     parser.add_argument(
         "--sleep_time",
         type=int,
-        default=10,
+        default=5,
         help="Sleep time (in seconds) between mgmt db progress checks.",
     )
     parser.add_argument(
@@ -43,9 +45,11 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
+    signal.signal(signal.SIGINT, on_exit)
+
     e2e_test = E2ETests(args.config_file)
     e2e_test.run(
-        timeout=args.timeout,
+        args.user,
         sleep_time=args.sleep_time,
         stop_on_error=args.stop_on_error,
         stop_on_warning=args.stop_on_warning,
