@@ -300,10 +300,10 @@ class NNWcEstModel(WCEstModel):
         """
         return (
             (X > self._train_max)
-            & ~np.isclose(X, np.repeat(self._train_max, X.shape[0], axis=0))
+            & ~np.isclose(X, np.repeat(self._train_max.reshape(1, 5), X.shape[0], axis=0))
         ) | (
             (X < self._train_min)
-            & ~np.isclose(X, np.repeat(self._train_min, X.shape[0], axis=0))
+            & ~np.isclose(X, np.repeat(self._train_min.reshape(1, 5), X.shape[0], axis=0))
         )
 
     def save_model(self, output_file: str):
