@@ -38,11 +38,16 @@ args = parser.parse_args()
 app = dash.Dash(__name__, external_stylesheets=EXTERNAL_STYLESHEETS)
 app.db = DashboardDB(args.db_file)
 
-ALLOCATIONS_MAHUIKA = ['{}---{}'.format(i[0], i[1]) for i in app.db.get_allocation_periods(const.HPC.mahuika)]
-ALLOCATIONS_MAUI = ['{}---{}'.format(i[0], i[1]) for i in app.db.get_allocation_periods(const.HPC.maui)]
+ALLOCATIONS_MAHUIKA = [
+    "{}---{}".format(i[0], i[1])
+    for i in app.db.get_allocation_periods(const.HPC.mahuika)
+]
+ALLOCATIONS_MAUI = [
+    "{}---{}".format(i[0], i[1]) for i in app.db.get_allocation_periods(const.HPC.maui)
+]
 
-MAUI_MAX_CHOURS = 950000.
-MAHUIKA_MAX_CHOURS = 18000.
+MAUI_MAX_CHOURS = 950000.0
+MAHUIKA_MAX_CHOURS = 18000.0
 
 DEFAULT_START = date.today() - relativedelta(days=188)
 DEFAULT_END = date.today()
@@ -57,44 +62,43 @@ app.layout = html.Div(
             html.H4("Mahuika & Maui total core hours usage"),
             html.Div(id="mahuika_chours"),
             html.Div(id="maui_chours"),
-            html.H4("Mahuika Allocation", style={'padding-top': 30}),
+            html.H4("Mahuika Allocation", style={"padding-top": 30}),
             dcc.Dropdown(
-                            id='mahuika-dropdown',
-                            options=[
-                                {'label': i, 'value': i} for i in ALLOCATIONS_MAHUIKA
-                            ],
-                            value=ALLOCATIONS_MAHUIKA[0],
-                    ),
-
-            html.H5("Mahuika allocation start date: (yyyy-mm-dd)", style={'padding-top': 25}),
-            dcc.Input(id='mahuika-input-start', type='text'),
+                id="mahuika-dropdown",
+                options=[{"label": i, "value": i} for i in ALLOCATIONS_MAHUIKA],
+                value=ALLOCATIONS_MAHUIKA[0],
+            ),
+            html.H5(
+                "Mahuika allocation start date: (yyyy-mm-dd)", style={"padding-top": 25}
+            ),
+            dcc.Input(id="mahuika-input-start", type="text"),
             html.H5("Mahuika allocation end date: (yyyy-mm-dd)"),
-            dcc.Input(id='mahuika-input-end', type='text'),
-            html.Button(id='mahuika-submit-button', n_clicks=0, children='Submit'),
-            html.Button(id='mahuika-reset-button', n_clicks=0, children='Clear'),
-            html.H5("Mahuika total core hour usage", style={'padding-top': 25}),
+            dcc.Input(id="mahuika-input-end", type="text"),
+            html.Button(id="mahuika-submit-button", n_clicks=0, children="Submit"),
+            html.Button(id="mahuika-reset-button", n_clicks=0, children="Clear"),
+            html.H5("Mahuika total core hour usage", style={"padding-top": 25}),
             dcc.Graph(id="mahuika_total_chours"),
             html.Div(id="mahuika_total_user_chours"),
-            html.H5("Mahuika daily core hour usage", style={'padding-top': 30}),
+            html.H5("Mahuika daily core hour usage", style={"padding-top": 30}),
             dcc.Graph(id="mahuika_daily_chours"),
             html.H4("Maui Allocation"),
             dcc.Dropdown(
-                            id='maui-dropdown',
-                            options=[
-                                {'label': i, 'value': i} for i in ALLOCATIONS_MAUI
-                            ],
-                            value=ALLOCATIONS_MAUI[0]
-                    ),
-            html.H5("Maui allocation start date: (yyyy-mm-dd)", style={'padding-top': 25}),
-            dcc.Input(id='maui-input-start', type='text'),
+                id="maui-dropdown",
+                options=[{"label": i, "value": i} for i in ALLOCATIONS_MAUI],
+                value=ALLOCATIONS_MAUI[0],
+            ),
+            html.H5(
+                "Maui allocation start date: (yyyy-mm-dd)", style={"padding-top": 25}
+            ),
+            dcc.Input(id="maui-input-start", type="text"),
             html.H5("Maui allocation end date: (yyyy-mm-dd)"),
-            dcc.Input(id='maui-input-end', type='text'),
-            html.Button(id='maui-submit-button', n_clicks=0, children='Submit'),
-            html.Button(id='maui-reset-button', n_clicks=0, children='Clear'),
-            html.H5("Maui total core hour usage", style={'padding-top': 25}),
+            dcc.Input(id="maui-input-end", type="text"),
+            html.Button(id="maui-submit-button", n_clicks=0, children="Submit"),
+            html.Button(id="maui-reset-button", n_clicks=0, children="Clear"),
+            html.H5("Maui total core hour usage", style={"padding-top": 25}),
             dcc.Graph(id="maui_total_chours"),
             html.Div(id="maui_total_user_chours"),
-            html.H5("Maui daily core hour usage", style={'padding-top': 25}),
+            html.H5("Maui daily core hour usage", style={"padding-top": 25}),
             dcc.Graph(id="maui_daily_chours"),
             html.H5("Maui current status"),
             html.Div(id="maui_node_usage"),
@@ -102,7 +106,7 @@ app.layout = html.Div(
             html.Div(id="maui_quota_usage"),
             html.H5("Maui current queue"),
             html.Div(id="maui_squeue_table"),
-            html.H5("Maui_daily_inodes", style={'padding-top': 25}),
+            html.H5("Maui_daily_inodes", style={"padding-top": 25}),
             dcc.Graph(id="maui_daily_inodes"),
             dcc.Interval(id="interval_comp", interval=10 * 1000, n_intervals=0),
         ]
@@ -110,20 +114,26 @@ app.layout = html.Div(
 )
 
 
-@app.callback([Output('mahuika-input-start', 'value'), Output('mahuika-input-end', 'value')],
-             [Input('mahuika-reset-button', 'n_clicks')])
+@app.callback(
+    [Output("mahuika-input-start", "value"), Output("mahuika-input-end", "value")],
+    [Input("mahuika-reset-button", "n_clicks")],
+)
 def clear_mahuika(n_clicks):
     return clear(n_clicks)
 
 
-@app.callback([Output('maui-input-start', 'value'), Output('maui-input-end', 'value')],
-             [Input('maui-reset-button', 'n_clicks')])
+@app.callback(
+    [Output("maui-input-start", "value"), Output("maui-input-end", "value")],
+    [Input("maui-reset-button", "n_clicks")],
+)
 def clear_maui(n_clicks):
     return clear(n_clicks)
 
 
 @app.callback(
-    Output("err2", "children"), [Input("maui-dropdown", "value"), Input('maui-submit-button', 'n_clicks')], [State("maui-input-start", "value"), State("maui-input-end", "value")]
+    Output("err2", "children"),
+    [Input("maui-dropdown", "value"), Input("maui-submit-button", "n_clicks")],
+    [State("maui-input-start", "value"), State("maui-input-end", "value")],
 )
 def display_err_maui(input1, n_clicks, input2, input3):
     output, _, _ = get_allocation_period(input1, n_clicks, input2, input3)
@@ -131,7 +141,9 @@ def display_err_maui(input1, n_clicks, input2, input3):
 
 
 @app.callback(
-    Output("err3", "children"), [Input("mahuika-dropdown", "value"), Input('mahuika-submit-button', 'n_clicks')], [State("mahuika-input-start", "value"), State("mahuika-input-end", "value")]
+    Output("err3", "children"),
+    [Input("mahuika-dropdown", "value"), Input("mahuika-submit-button", "n_clicks")],
+    [State("mahuika-input-start", "value"), State("mahuika-input-end", "value")],
 )
 def display_err_mahuika(input1, n_clicks, input2, input3):
     output, _, _ = get_allocation_period(input1, n_clicks, input2, input3)
@@ -139,17 +151,25 @@ def display_err_mahuika(input1, n_clicks, input2, input3):
 
 
 @app.callback(
-    Output("maui_chours", "children"), [Input("maui-dropdown", "value"), Input('maui-submit-button', 'n_clicks')], [State("maui-input-start", "value"), State("maui-input-end", "value")]
+    Output("maui_chours", "children"),
+    [Input("maui-dropdown", "value"), Input("maui-submit-button", "n_clicks")],
+    [State("maui-input-start", "value"), State("maui-input-end", "value")],
 )
 def update_maui_total_chours(input1, n_clicks, input2, input3):
-    return update_total_chours(input1, n_clicks, input2, input3, const.HPC.maui, MAUI_MAX_CHOURS)
+    return update_total_chours(
+        input1, n_clicks, input2, input3, const.HPC.maui, MAUI_MAX_CHOURS
+    )
 
 
 @app.callback(
-    Output("mahuika_chours", "children"), [Input("mahuika-dropdown", "value"), Input('mahuika-submit-button', 'n_clicks')], [State("mahuika-input-start", "value"), State("mahuika-input-end", "value")]
+    Output("mahuika_chours", "children"),
+    [Input("mahuika-dropdown", "value"), Input("mahuika-submit-button", "n_clicks")],
+    [State("mahuika-input-start", "value"), State("mahuika-input-end", "value")],
 )
 def update_mahuika_total_chours(input1, n_clicks, input2, input3):
-    return update_total_chours(input1, n_clicks, input2, input3, const.HPC.mahuika, MAHUIKA_MAX_CHOURS)
+    return update_total_chours(
+        input1, n_clicks, input2, input3, const.HPC.mahuika, MAHUIKA_MAX_CHOURS
+    )
 
 
 @app.callback(
@@ -182,7 +202,9 @@ def update_maui_squeue(n):
 
 
 @app.callback(
-    Output("maui_daily_chours", "figure"), [Input("maui-dropdown", "value"), Input('maui-submit-button', 'n_clicks')], [State("maui-input-start", "value"), State("maui-input-end", "value")]
+    Output("maui_daily_chours", "figure"),
+    [Input("maui-dropdown", "value"), Input("maui-submit-button", "n_clicks")],
+    [State("maui-input-start", "value"), State("maui-input-end", "value")],
 )
 def update_maui_daily_chours(input1, n_clicks, input2, input3):
     _, start_date, end_date = get_allocation_period(input1, n_clicks, input2, input3)
@@ -190,7 +212,9 @@ def update_maui_daily_chours(input1, n_clicks, input2, input3):
 
 
 @app.callback(
-    Output("mahuika_daily_chours", "figure"), [Input("mahuika-dropdown", "value"), Input('mahuika-submit-button', 'n_clicks')], [State("mahuika-input-start", "value"), State("mahuika-input-end", "value")]
+    Output("mahuika_daily_chours", "figure"),
+    [Input("mahuika-dropdown", "value"), Input("mahuika-submit-button", "n_clicks")],
+    [State("mahuika-input-start", "value"), State("mahuika-input-end", "value")],
 )
 def update_mahuika_daily_chours(input1, n_clicks, input2, input3):
     _, start_date, end_date = get_allocation_period(input1, n_clicks, input2, input3)
@@ -198,7 +222,9 @@ def update_mahuika_daily_chours(input1, n_clicks, input2, input3):
 
 
 @app.callback(
-    Output("maui_total_chours", "figure"), [Input("maui-dropdown", "value"), Input('maui-submit-button', 'n_clicks')], [State("maui-input-start", "value"), State("maui-input-end", "value")]
+    Output("maui_total_chours", "figure"),
+    [Input("maui-dropdown", "value"), Input("maui-submit-button", "n_clicks")],
+    [State("maui-input-start", "value"), State("maui-input-end", "value")],
 )
 def update_maui_total_chours(input1, n_clicks, input2, input3):
     _, start_date, end_date = get_allocation_period(input1, n_clicks, input2, input3)
@@ -210,7 +236,9 @@ def update_maui_total_chours(input1, n_clicks, input2, input3):
 
 
 @app.callback(
-    Output("mahuika_total_chours", "figure"), [Input("mahuika-dropdown", "value"), Input('mahuika-submit-button', 'n_clicks')], [State("mahuika-input-start", "value"), State("mahuika-input-end", "value")]
+    Output("mahuika_total_chours", "figure"),
+    [Input("mahuika-dropdown", "value"), Input("mahuika-submit-button", "n_clicks")],
+    [State("mahuika-input-start", "value"), State("mahuika-input-end", "value")],
 )
 def update_mahuika_total_chours(input1, n_clicks, input2, input3):
     _, start_date, end_date = get_allocation_period(input1, n_clicks, input2, input3)
@@ -222,7 +250,9 @@ def update_mahuika_total_chours(input1, n_clicks, input2, input3):
 
 
 @app.callback(
-    Output("mahuika_total_user_chours", "children"), [Input("mahuika-dropdown", "value"), Input('mahuika-submit-button', 'n_clicks')], [State("mahuika-input-start", "value"), State("mahuika-input-end", "value")]
+    Output("mahuika_total_user_chours", "children"),
+    [Input("mahuika-dropdown", "value"), Input("mahuika-submit-button", "n_clicks")],
+    [State("mahuika-input-start", "value"), State("mahuika-input-end", "value")],
 )
 def update_mahuika_total_user_chours(input1, n_clicks, input2, input3):
     _, start_date, end_date = get_allocation_period(input1, n_clicks, input2, input3)
@@ -230,7 +260,9 @@ def update_mahuika_total_user_chours(input1, n_clicks, input2, input3):
 
 
 @app.callback(
-    Output("maui_total_user_chours", "children"), [Input("maui-dropdown", "value"), Input('maui-submit-button', 'n_clicks')], [State("maui-input-start", "value"), State("maui-input-end", "value")]
+    Output("maui_total_user_chours", "children"),
+    [Input("maui-dropdown", "value"), Input("maui-submit-button", "n_clicks")],
+    [State("maui-input-start", "value"), State("maui-input-end", "value")],
 )
 def update_maui_total_user_chours(input1, n_clicks, input2, input3):
     _, start_date, end_date = get_allocation_period(input1, n_clicks, input2, input3)
@@ -282,9 +314,7 @@ def update_maui_daily_inodes(n):
 def update_daily_chours(hpc, start_date=DEFAULT_START, end_date=DEFAULT_END):
     # Get data points
     data = []
-    entries = app.db.get_chours_usage(
-        start_date, end_date, hpc
-    )
+    entries = app.db.get_chours_usage(start_date, end_date, hpc)
     entries = np.array(
         entries,
         dtype=[
@@ -303,7 +333,12 @@ def update_daily_chours(hpc, start_date=DEFAULT_START, end_date=DEFAULT_END):
     return {"data": data, "layout": {"uirevision": "{}_daily_chours".format(hpc)}}
 
 
-def get_daily_user_chours(hpc: const.HPC, users_dict: Dict[str, str] = USERS, start_date=DEFAULT_START, end_date=DEFAULT_END):
+def get_daily_user_chours(
+    hpc: const.HPC,
+    users_dict: Dict[str, str] = USERS,
+    start_date=DEFAULT_START,
+    end_date=DEFAULT_END,
+):
     """get daily core hours usage for a list of users
        return as a list of scatter plots
     """
@@ -325,16 +360,37 @@ def get_daily_user_chours(hpc: const.HPC, users_dict: Dict[str, str] = USERS, st
     return data
 
 
-def get_total_user_chours(hpc: const.HPC, users_dict: Dict[str, str] = USERS, start_date=DEFAULT_START, end_date=DEFAULT_END):
+def get_total_user_chours(
+    hpc: const.HPC,
+    users_dict: Dict[str, str] = USERS,
+    start_date=DEFAULT_START,
+    end_date=DEFAULT_END,
+):
     """Get total core hours usage for a list of users in a specified period
        Return as a table
     """
     data = []
     for username, real_name in users_dict.items():
-        name, total_chours = app.db.get_total_user_chours(hpc, username, start_date, end_date)
-        data.append(OrderedDict([('username', name), ('total_core_hours', total_chours)]))
+        name, total_chours = app.db.get_total_user_chours(
+            hpc, username, start_date, end_date
+        )
+        data.append(
+            OrderedDict([("username", name), ("total_core_hours", total_chours)])
+        )
     return html.Div(
-        [dash_table.DataTable(id='table', columns=[{'id': c, 'name': c} for c in ['username', 'total_core_hours']], data=data, style_cell={'textAlign': 'left'})], id='table_container', style={"float": 'centre', "width": '50%', "padding-left": 50})
+        [
+            dash_table.DataTable(
+                id="table",
+                columns=[
+                    {"id": c, "name": c} for c in ["username", "total_core_hours"]
+                ],
+                data=data,
+                style_cell={"textAlign": "left"},
+            )
+        ],
+        id="table_container",
+        style={"float": "centre", "width": "50%", "padding-left": 50},
+    )
 
 
 def get_chours_entries(hpc: const.HPC, start_date=DEFAULT_START, end_date=DEFAULT_END):
@@ -342,9 +398,7 @@ def get_chours_entries(hpc: const.HPC, start_date=DEFAULT_START, end_date=DEFAUL
     Note: Only maui is currently supported
     """
     # Get data points
-    entries = app.db.get_chours_usage(
-        start_date, end_date, hpc
-    )
+    entries = app.db.get_chours_usage(start_date, end_date, hpc)
     # reset start of a new allocation to 0 hours
     start_total = entries[0][-1]
     for i in range(len(entries)):
@@ -428,8 +482,8 @@ def validate_period(start_string, end_string):
     Returns either error message or datetime objects
     """
     try:
-        start = datetime.strptime(start_string, '%Y-%m-%d').date()
-        end = datetime.strptime(end_string, '%Y-%m-%d').date()
+        start = datetime.strptime(start_string, "%Y-%m-%d").date()
+        end = datetime.strptime(end_string, "%Y-%m-%d").date()
     except ValueError:
         return html.Plaintext(
             "Date not in the correct format specified, setting dates to defaults (188 days ago - today)",
@@ -450,22 +504,33 @@ def get_allocation_period(drop_down_value, button_click, input_start, input_end)
     """
     if button_click and input_start and input_end:
         output = validate_period(input_start, input_end)
-        if not isinstance(output, tuple):  # returned err msg, setting allocation period to defaults
+        if not isinstance(
+            output, tuple
+        ):  # returned err msg, setting allocation period to defaults
             return output, DEFAULT_START, DEFAULT_END
         else:
             start_date, end_date = output
     else:
-        start_date, end_date = drop_down_value.split('---')
+        start_date, end_date = drop_down_value.split("---")
     return None, start_date, end_date  # None: no err placeholder
 
 
-def update_total_chours(drop_down_value, button_click, input_start, input_end, hpc, max_hours):
+def update_total_chours(
+    drop_down_value, button_click, input_start, input_end, hpc, max_hours
+):
     """Updates total core hours for a specified hpc during a specified allocation period"""
-    _, start_date, end_date = get_allocation_period(drop_down_value, button_click, input_start, input_end)
+    _, start_date, end_date = get_allocation_period(
+        drop_down_value, button_click, input_start, input_end
+    )
     hpc_total_chours = get_chours_entries(hpc, start_date, end_date)[-1][-1]
     return html.Plaintext(
-        "{}: {} to {} used {} / {} hours ({:.3f}%)".format(hpc.value, start_date, end_date,
-            hpc_total_chours, max_hours,  hpc_total_chours / max_hours * 100.
+        "{}: {} to {} used {} / {} hours ({:.3f}%)".format(
+            hpc.value,
+            start_date,
+            end_date,
+            hpc_total_chours,
+            max_hours,
+            hpc_total_chours / max_hours * 100.0,
         )
     )
 
@@ -473,7 +538,7 @@ def update_total_chours(drop_down_value, button_click, input_start, input_end, h
 def clear(n_clicks):
     """Clears input boxes"""
     if n_clicks:
-        return '', ''
+        return "", ""
 
 
 if __name__ == "__main__":
