@@ -346,6 +346,23 @@ class DashboardDB:
                 for result in results]
         return [UserChEntry(*result) for result in results]
 
+    def get_total_user_chours(self, hpc: const.HPC, username: str, start_date: Union[date, str], end_date: Union[date, str], physical: bool=True):
+        start_date = self.get_date(start_date)
+        end_date = self.get_date(end_date)
+
+        table = self.get_user_ch_t_name(hpc)
+        sql = "SELECT USERNAME, SUM(CORE_HOURS_USED) FROM {} WHERE USERNAME = ? AND DAY BETWEEN ? AND ?".format(
+            table
+        )
+        with self.get_cursor(self.db_file) as cursor:
+            results = cursor.execute(sql, (username, start_date, end_date)).fetchall()
+
+        if physical:
+            results = [
+                (result[0], result[1] / 2.)
+                for result in results]
+        return results[0]
+
     def get_update_time(self, hpc: const.HPC):
         """Get update_time from db"""
         with self.get_cursor(self.db_file) as cursor:
