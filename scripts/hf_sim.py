@@ -14,7 +14,7 @@ import numpy as np
 import logging
 
 from shared_workflow import shared_defaults
-from qcore import binary_version, MPIFileHandler
+from qcore import binary_version, MPIFileHandler, constants
 
 comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
@@ -89,7 +89,7 @@ if is_master:
         "--seed",
         help="random seed (0:randomised reproducible, -1:fully randomised)",
         type=int,
-        default=5481190,
+        default=0,
     )
     # HF IN, line 9
     arg("--duration", help="output length (seconds)", type=float, default=100.0)

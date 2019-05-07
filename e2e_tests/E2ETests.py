@@ -1,11 +1,15 @@
 """Contains class and helper functions for end to end test"""
+import sys
 import os
 import json
 import shutil
 import time
 import glob
+import subprocess
 from collections import namedtuple
 from typing import List
+from threading import Thread
+from queue import Queue, Empty
 
 import pandas as pd
 import sqlite3 as sql
@@ -62,7 +66,9 @@ class E2ETests(object):
     cf_cybershake_config_key = "cybershake_config"
     cf_fault_list_key = "fault_list"
     cf_bench_folder_key = "bench_dir"
-    test_checkpoint = "test_checkpoint"
+    cf_version_key = "version"
+    test_checkpoint_key = "test_checkpoint"
+    timeout_key = "timeout"
 
     # Benchmark folders
     bench_IM_csv_folder = "IM_csv"
@@ -73,6 +79,12 @@ class E2ETests(object):
 
     submit_out_file = "submit_out_log.txt"
     submit_err_file = "submit_err_log.txt"
+
+    queue_out_file = "queue_out_log.txt"
+    queue_err_file = "queue_err_log.txt"
+
+    warnings_file = "warnings_log.txt"
+    errors_file = "errors_log.txt"
 
     # Error Keywords
     error_keywords = ["error", "traceback", "exception"]
@@ -93,29 +105,51 @@ class E2ETests(object):
         with open(config_file, "r") as f:
             self.config_dict = json.load(f)
 
+        self.version = self.config_dict[self.cf_version_key]
+
         # Add tmp directory
         self.stage_dir = os.path.join(
             self.config_dict[self.cf_test_dir_key], "tmp_{}".format(const.timestamp)
         )
 
+        self.im_bench_folder = os.path.join(
+            self.config_dict[self.cf_bench_folder_key], self.bench_IM_csv_folder
+        )
+        self.timeout = self.config_dict[self.timeout_key] * 60
+
         self.warnings, self.errors = [], []
         self.fault_dirs, self.sim_dirs = [], []
         self.runs_dir = None
 
+        self._sim_passed, self._sim_failed = set(), set()
+        self._stop_on_error = None
+
+        # Resources that need to be dealt with on close
+        self._processes = []
+        self._files = []
+
     def run(
         self,
-        timeout: int = 10,
+        user: str,
         sleep_time: int = 10,
         stop_on_error: bool = True,
         stop_on_warning: bool = False,
         no_clean_up: bool = False,
     ):
-        """Runs the full automated workflow and checks that everything works as
+        """
+        Runs the full automated workflow and checks that everything works as
         expected. Prints out a list of errors, if there are any.
 
         The test directory is deleted if there are no errors, unless no_clean_up
         is set.
+
+        Parameters
+        ----------
+        user: str
+            The username under which to run the tasks
         """
+        self._stop_on_error = stop_on_error
+
         # Setup folder structure
         self.setup()
 
@@ -126,17 +160,14 @@ class E2ETests(object):
             self.print_warnings()
             return False
 
-        self.check_install()
-        if self.errors and stop_on_error:
-            print("Quitting due to the following errors:")
-            self.print_errors()
-            return False
-
         # Run automated workflow
-        self.run_auto_submit(timeout=timeout, sleep_time=sleep_time)
+        if not self._run_auto(user, sleep_time=sleep_time):
+            return False
+        # Only check that everything is completed, when auto submit does not
+        # exit early
+        else:
+            self.check_mgmt_db()
 
-        self.check_mgmt_db()
-        self.check_sim_results()
         if self.errors:
             print("The following errors occurred during the automated workflow:")
             self.print_errors()
@@ -148,14 +179,18 @@ class E2ETests(object):
         return True
 
     def print_warnings(self):
-        for warn in self.warnings:
-            print("WARNING: {}, {}".format(warn.location, warn.warning))
-            print()
+        with open(os.path.join(self.stage_dir, self.warnings_file), "a") as f:
+            for warn in self.warnings:
+                text = "WARNING: {}, {}".format(warn.location, warn.warning)
+                print(text)
+                f.write(text)
 
     def print_errors(self):
-        for err in self.errors:
-            print("ERROR: {}, {}".format(err.location, err.error))
-            print()
+        with open(os.path.join(self.stage_dir, self.errors_file), "a") as f:
+            for err in self.errors:
+                text = "ERROR: {}, {}\n".format(err.location, err.error)
+                print(text)
+                f.write(text)
 
     def setup(self):
         """Setup for automatic workflow
@@ -171,9 +206,6 @@ class E2ETests(object):
         # Data
         data_dir = os.path.join(self.stage_dir, "Data")
         shutil.copytree(self.config_dict[self.cf_data_dir_key], data_dir)
-
-        # Cybershake config
-        shutil.copy(self.config_dict[self.cf_cybershake_config_key], self.stage_dir)
 
         # Fault list
         shutil.copy(self.config_dict[self.cf_fault_list_key], self.stage_dir)
@@ -197,21 +229,18 @@ class E2ETests(object):
         # Why is this a script? Make it all python?
         script_path = os.path.join(
             os.path.dirname(os.path.abspath(__file__)),
-            "../scripts/cybershake/install_cybershake.sh",
+            "../scripts/cybershake/install_cybershake.py",
         )
-        cmd = "{} {} {} {}".format(
+        cmd = "python3 {} {} {} {} --seed {}".format(
             script_path,
             self.stage_dir,
-            os.path.join(
-                self.stage_dir,
-                os.path.basename(self.config_dict[self.cf_cybershake_config_key]),
-            ),
+            self.version,
             os.path.join(
                 self.stage_dir,
                 os.path.basename(self.config_dict[self.cf_fault_list_key]),
             ),
+            self.config_dict[const.RootParams.seed.value],
         )
-
         print("Running install...")
         out_file = os.path.join(self.stage_dir, self.install_out_file)
         err_file = os.path.join(self.stage_dir, self.install_err_file)
@@ -246,19 +275,7 @@ class E2ETests(object):
 
     def check_install(self):
         """Checks that all required templates exists, along with the yaml params """
-
         for sim_dir in self.sim_dirs:
-            templates = glob.glob(os.path.join(sim_dir, "*.template"))
-            templates = [os.path.basename(temp) for temp in templates]
-
-            # Check templates are there
-            for cur_temp in self.expected_templates:
-                self._check_true(
-                    cur_temp in templates,
-                    "Install - Templates",
-                    "Template {} is missing in sim dir {}".format(cur_temp, sim_dir),
-                )
-
             # Check sim_params.yaml are there
             self._check_true(
                 "sim_params.yaml" in os.listdir(sim_dir),
@@ -281,29 +298,39 @@ class E2ETests(object):
             "Root params are missing in {}".format(self.runs_dir),
         )
 
-    def run_auto_submit(self, timeout: int = 10, sleep_time: int = 10):
+    def _run_auto(self, user: str, sleep_time: int = 10):
         """
         Runs auto submit
 
         Parameters
         ----------
-        timeout: int
-            Maximum time (in minutes) allowed for auto submit to finish all tasks
+        user: str
+            The username under which to run the tasks
         sleep_time: int
             Time (in seconds) between progress checks
         """
-        script_path = os.path.join(
-            os.path.dirname(os.path.abspath(__file__)),
-            "../scripts/cybershake/run_queue_and_auto_submit.sh",
+        submit_cmd = (
+            "python3 {} {} {} --sleep_time 2 "
+            "--no_merge_ts --no_clean_up".format(
+                os.path.join(
+                    os.path.dirname(os.path.abspath(__file__)),
+                    "../scripts/cybershake/auto_submit.py",
+                ),
+                self.stage_dir,
+                user,
+            )
         )
-        cmd = "{} {} 1 {}".format(
-            script_path,
+        queue_cmd = "python3 {} {}".format(
+            os.path.join(
+                os.path.dirname(os.path.abspath(__file__)),
+                "../scripts/cybershake/queue_monitor.py",
+            ),
             self.stage_dir,
-            sim_struct.get_cybershake_config(self.stage_dir),
         )
 
+        # Different process types for which canceling/resume is tested
         proc_type_cancel = None
-        if self.config_dict[self.test_checkpoint]:
+        if self.config_dict[self.test_checkpoint_key]:
             proc_type_cancel = [
                 const.ProcessType.EMOD3D,
                 const.ProcessType.HF,
@@ -312,22 +339,48 @@ class E2ETests(object):
 
         # Have to put this in a massive try block, to ensure that
         # the run_queue_and_auto_submit process is terminated on any errors.
-        print("Running auto submit...")
-        p, out_f, err_f = None, None, None
         try:
-            out_f = open(os.path.join(self.stage_dir, self.submit_out_file), "w")
-            err_f = open(os.path.join(self.stage_dir, self.submit_err_file), "w")
-            p = exe(cmd, debug=False, non_blocking=True, stdout=out_f, stderr=err_f)
+            print("Starting auto submit...")
+            p_submit = exe(
+                submit_cmd,
+                debug=False,
+                non_blocking=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+            self._processes.append(p_submit)
+            p_submit_out_nbsr = NonBlockingStreamReader(p_submit.stdout)
+            p_submit_err_nbsr = NonBlockingStreamReader(p_submit.stderr)
+
+            print("Starting mgmt queue monitor...")
+            p_queue = exe(
+                queue_cmd,
+                debug=False,
+                non_blocking=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+            self._processes.append(p_queue)
+            p_queue_out_nbsr = NonBlockingStreamReader(p_queue.stdout)
+            p_queue_err_nbsr = NonBlockingStreamReader(p_queue.stderr)
+
+            # Create and open the log files
+            out_submit_f = open(os.path.join(self.stage_dir, self.submit_out_file), "w")
+            err_submit_f = open(os.path.join(self.stage_dir, self.submit_err_file), "w")
+            out_queue_f = open(os.path.join(self.stage_dir, self.queue_out_file), "w")
+            err_queue_f = open(os.path.join(self.stage_dir, self.queue_err_file), "w")
+            self._files.extend((out_submit_f, err_submit_f, out_queue_f, err_queue_f))
 
             # Monitor mgmt db
-            print("Mgmt DB progress: ")
-            timeout = timeout * 60
+            print("Progress: ")
             start_time = time.time()
-            while time.time() - start_time < timeout:
+            while time.time() - start_time < self.timeout:
                 try:
                     total_count, comp_count, failed_count = (
                         self.check_mgmt_db_progress()
                     )
+                    if not self.check_completed():
+                        return False
                 except sql.OperationalError as ex:
                     print(
                         "Operational error while accessing database. "
@@ -341,6 +394,18 @@ class E2ETests(object):
                     )
                 )
 
+                # Get the log data
+                for file, reader in [
+                    (out_submit_f, p_submit_out_nbsr),
+                    (err_submit_f, p_submit_err_nbsr),
+                    (out_queue_f, p_queue_out_nbsr),
+                    (err_queue_f, p_queue_err_nbsr),
+                ]:
+                    lines = reader.readlines()
+                    if lines:
+                        file.writelines(lines)
+                        file.flush()
+
                 if proc_type_cancel:
                     proc_type_cancel = self.cancel_running(proc_type_cancel)
 
@@ -349,21 +414,28 @@ class E2ETests(object):
                 else:
                     time.sleep(sleep_time)
 
-            if time.time() - start_time > timeout:
+            if time.time() - start_time > self.timeout:
                 self.errors.append(
                     Error("Auto-submit timeout", "The auto-submit timeout expired.")
                 )
+                return False
         # Still display the exception
         except Exception as ex:
             raise ex
         # Clean up
         finally:
+            self.close()
+
+        return True
+
+    def close(self):
+        """Terminates any running processes and closes any open files"""
+        for p in self._processes:
             if p is not None:
                 p.terminate()
-            if out_f is not None:
-                out_f.close()
-            if err_f is not None:
-                err_f.close()
+        for f in self._files:
+            if f is not None:
+                f.close()
 
     def cancel_running(self, proc_types: List[const.ProcessType]):
         """Looks for any running task of the specified process types
@@ -373,7 +445,7 @@ class E2ETests(object):
         proc_types_int = [proc_type.value for proc_type in proc_types]
         with connect_db_ctx(sim_struct.get_mgmt_db(self.stage_dir)) as cur:
             entries = cur.execute(
-                "SELECT proc_type, job_id  FROM state "
+                "SELECT proc_type, job_id, run_name  FROM state "
                 "WHERE status == 3 AND proc_type IN ({}?)".format(
                     "?," * (len(proc_types_int) - 1)
                 ),
@@ -385,13 +457,15 @@ class E2ETests(object):
             if entry[0] in proc_types_int:
                 print(
                     "Checkpoint testing: Cancelling job-id {} "
-                    "with process type {}".format(entry[1], entry[0])
+                    "for {} and process type {}".format(entry[1], entry[2], entry[0])
                 )
                 out, err = exe("scancel -v {}".format(entry[1]), debug=False)
 
-                if "error" not in out.lower():
+                print("Scancel out: ", out, err)
+                if "error" not in out.lower() and "error" not in err.lower():
                     proc_types.remove(const.ProcessType(entry[0]))
                     proc_types_int.remove(entry[0])
+                    print("Cancelled job-id {}".format(entry[1]))
 
         return proc_types
 
@@ -421,58 +495,59 @@ class E2ETests(object):
                     )
                 )
 
-    def check_sim_results(self):
+    def check_sim_result(self, sim_dir: str):
         """Checks that all the LF, HF and BB binaries are there and that the
         IM values match up with the benchmark IMs
         """
-        im_bench_folder = os.path.join(
-            self.config_dict[self.cf_bench_folder_key], self.bench_IM_csv_folder
-        )
-        for sim_dir in self.sim_dirs:
-            # Check LF???
+        result = True
 
-            # Check HF binary
-            hf_bin = sim_struct.get_hf_bin_path(sim_dir)
-            if not os.path.isfile(hf_bin):
-                self.errors.append(
-                    Error("HF - Binary", "The HF binary is not at {}".format(hf_bin))
+        # Check HF binary
+        hf_bin = sim_struct.get_hf_bin_path(sim_dir)
+        if not os.path.isfile(hf_bin):
+            self.errors.append(
+                Error("HF - Binary", "The HF binary is not at {}".format(hf_bin))
+            )
+            result = False
+
+        # Check BB binary
+        bb_bin = sim_struct.get_bb_bin_path(sim_dir)
+        if not os.path.isfile(bb_bin):
+            self.errors.append(
+                Error("BB - Binary", "The BB binary is not at {}".format(hf_bin))
+            )
+            result = False
+
+        # Check IM
+        im_csv = sim_struct.get_IM_csv(sim_dir)
+        if not os.path.isfile(im_csv):
+            self.errors.append(
+                Error(
+                    "IM_calc - CSV", "The IM_calc csv file is not at {}".format(im_csv)
                 )
+            )
+            result = False
+        else:
+            bench_csv = os.path.join(
+                self.im_bench_folder,
+                "{}.csv".format(os.path.basename(sim_dir).split(".")[0]),
+            )
+            bench_df = pd.read_csv(bench_csv)
+            cur_df = pd.read_csv(im_csv)
 
-            # Check BB binary
-            bb_bin = sim_struct.get_bb_bin_path(sim_dir)
-            if not os.path.isfile(bb_bin):
-                self.errors.append(
-                    Error("BB - Binary", "The BB binary is not at {}".format(hf_bin))
-                )
-
-            # Check IM
-            im_csv = sim_struct.get_IM_csv(sim_dir)
-            if not os.path.isfile(im_csv):
+            try:
+                assert_frame_equal(cur_df, bench_df)
+            except AssertionError:
                 self.errors.append(
                     Error(
-                        "IM_calc - CSV",
-                        "The IM_calc csv file is not at {}".format(im_csv),
+                        "IM - Values",
+                        "The IMs for {} are not equal to the benchmark {}".format(
+                            im_csv, bench_csv
+                        ),
                     )
                 )
-            else:
-                bench_csv = os.path.join(
-                    im_bench_folder,
-                    "{}.csv".format(os.path.basename(sim_dir).split(".")[0]),
-                )
-                bench_df = pd.read_csv(bench_csv)
-                cur_df = pd.read_csv(im_csv)
+                result = False
 
-                try:
-                    assert_frame_equal(cur_df, bench_df)
-                except AssertionError:
-                    self.errors.append(
-                        Error(
-                            "IM - Values",
-                            "The IMs for {} are not equal to the benchmark {}".format(
-                                im_csv, bench_csv
-                            ),
-                        )
-                    )
+        return result
 
     def check_mgmt_db_progress(self):
         """Checks auto submit progress in the management db"""
@@ -489,7 +564,101 @@ class E2ETests(object):
 
         return total_count, comp_count, failed_count
 
+    def check_completed(self):
+        """Checks all simulations that have completed"""
+        with connect_db_ctx(sim_struct.get_mgmt_db(self.stage_dir)) as cur:
+            completed_sims = cur.execute(
+                "SELECT run_name FROM state WHERE proc_type == 6 AND status = 4"
+            ).fetchall()
+        completed_sims = [sim_t[0] for sim_t in completed_sims]
+
+        # Only check the ones that haven't been checked already
+        completed_new = set(completed_sims) - (self._sim_passed | self._sim_failed)
+
+        for sim in completed_new:
+            result = self.check_sim_result(
+                os.path.join(
+                    self.runs_dir, sim_struct.get_fault_from_realisation(sim), sim
+                )
+            )
+
+            if not result:
+                self._sim_failed.add(sim)
+
+                if self._stop_on_error:
+                    print("Quitting as the following errors occured: ")
+                    self.print_errors()
+                    return False
+                else:
+                    print("The following error occured for simulation {}:".format(sim))
+                    print(
+                        "ERROR: {}, {}\n".format(
+                            self.errors[-1].location, self.errors[-1].error
+                        )
+                    )
+
+            else:
+                self._sim_passed.add(sim)
+
+        print(
+            "Passed/Failed/Total simulations: {}/{}/{}, ".format(
+                len(self._sim_passed), len(self._sim_failed), len(self.sim_dirs)
+            )
+        )
+
+        return True
+
     def teardown(self):
         """Remove all files created during the end-to-end test"""
         print("Deleting everything under {}".format(self.stage_dir))
         shutil.rmtree(self.stage_dir)
+
+
+class NonBlockingStreamReader:
+    """A non-blocking stream reader.
+
+    Based on http://eyalarubas.com/python-subproc-nonblock.html
+    """
+
+    def __init__(self, stream):
+        """
+        stream: the stream to read from.
+                Usually a process' stdout or stderr.
+        """
+
+        self._s = stream
+        self._q = Queue()
+
+        def _populate_queue(stream, queue):
+            """
+            Collect lines from 'stream' and put them in 'queue'.
+            """
+
+            while True:
+                line = stream.readline()
+                if line:
+                    queue.put(line)
+                else:
+                    print("Stream has been closed.")
+                    sys.exit()
+
+        self._t = Thread(target=_populate_queue, args=(self._s, self._q))
+        self._t.daemon = True
+        self._t.start()  # start collecting lines from the stream
+
+    def readlines(self):
+        """Reads the lines from the queue, returns None if the queue is empty"""
+        lines = []
+        cur_line = ""
+        while cur_line is not None:
+            try:
+                cur_line = self._q.get(block=False)
+            except Empty:
+                cur_line = None
+
+            if cur_line is not None:
+                lines.append(cur_line)
+
+        if lines:
+            return lines
+        return None

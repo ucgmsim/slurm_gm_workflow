@@ -70,6 +70,7 @@ def main(args):
             print("No entries in the mgmt db queue.")
 
         # Nap time
+        print("Sleeping for {}".format(args.sleep_time), flush=True)
         time.sleep(args.sleep_time)
 
 
@@ -83,7 +84,6 @@ if __name__ == "__main__":
         help="Sleep time (in seconds) between queue checks.",
         default=5,
     )
-
     args = parser.parse_args()
 
     signal.signal(signal.SIGINT, on_exit)
