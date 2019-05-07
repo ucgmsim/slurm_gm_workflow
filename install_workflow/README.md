@@ -47,6 +47,20 @@ These will be reset to the default shared bashrc when deactivating the environme
 - Activating an environment will also set a CUR_ENV and CUR_HPC environment variable,
 these are required for cross platform submission when using an environment.
 
+#### Updating local packages
+Packages that are cloned into the environment (such as qcore) can be updated using
+```
+pip install -I --no-deps ./qcore
+```
+
+### Config
+The config allows changing of the base path for the environments.
+```json
+{
+  "base_environments_path": "/nesi/project/nesi00213/Environments"
+}
+```
+
 
 -----------------------------------------------------------
 
