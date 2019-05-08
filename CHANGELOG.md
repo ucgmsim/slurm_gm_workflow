@@ -2,6 +2,11 @@ Slurm Ground Motion Workflow
 # Changelog
 (Based on https://wiki.canterbury.ac.nz/download/attachments/58458136/CodeVersioning_v18p2.pdf?version=1&modificationDate=1519269238437&api=v2 )
 
+## [19.5.3] - 2019-05-06 -- Srf validated against VM bounds
+### Added
+    - The first srf of each fault is checked that it is within the bounds of the velocity model. 
+    - As a result, out of bounds srfs will now cause validation to fail.
+
 ## [19.5.2] - 2019-05-03 -- Cybershake file removed
 ### Changed
     - HF seed is now an optional parameter to the install script

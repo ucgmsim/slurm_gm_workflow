@@ -62,20 +62,7 @@ def install_fault(fault_name, n_rel, root_folder, version, seed=0):
     # this variable has to be empty
     # TODO: fix this legacy issue, very low priority
     event_name = ""
-    # Get & validate velocity model directory
-    vel_mod_dir = simulation_structure.get_fault_VM_dir(root_folder, fault_name)
-    valid_vm, message = validate_vm.validate_vm(vel_mod_dir)
-    if not valid_vm:
-        message = "Error: VM {} failed {}\n".format(fault_name, message)
-        with open(error_log, "a") as error_fp:
-            error_fp.write(message)
-        raise RuntimeError(message)
-    # Load the variables from vm_params.yaml
-    vm_params_path = os.path.join(vel_mod_dir, VM_PARAMS_FILE_NAME)
-    vm_params_dict = utils.load_yaml(vm_params_path)
-    yes_model_params = (
-        False
-    )  # statgrid should normally be already generated with Velocity Model
+
     # get all srf from source
 
     srf_dir = simulation_structure.get_srf_dir(root_folder, fault_name)
@@ -88,6 +75,22 @@ def install_fault(fault_name, n_rel, root_folder, version, seed=0):
         with open(error_log, "a") as error_fp:
             error_fp.write(message)
         raise RuntimeError(message)
+
+    # Get & validate velocity model directory
+    vel_mod_dir = simulation_structure.get_fault_VM_dir(root_folder, fault_name)
+    valid_vm, message = validate_vm.validate_vm(vel_mod_dir, list_srf[0])
+    if not valid_vm:
+        message = "Error: VM {} failed {}\n".format(fault_name, message)
+        with open(error_log, "a") as error_fp:
+            error_fp.write(message)
+        raise RuntimeError(message)
+    # Load the variables from vm_params.yaml
+    vm_params_path = os.path.join(vel_mod_dir, VM_PARAMS_FILE_NAME)
+    vm_params_dict = utils.load_yaml(vm_params_path)
+    yes_model_params = (
+        False
+    )  # statgrid should normally be already generated with Velocity Model
+
 
     sim_root_dir = simulation_structure.get_runs_dir(root_folder)
     fault_yaml_path = simulation_structure.get_fault_yaml_path(sim_root_dir, fault_name)
