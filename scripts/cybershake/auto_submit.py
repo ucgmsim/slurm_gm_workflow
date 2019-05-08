@@ -194,7 +194,7 @@ def submit_task(
             rel_dir=sim_dir,
             write_directory=sim_dir,
         )
-        task_logger.debug("Submit EMOD3D arguments: ", args)
+        task_logger.debug("Submit EMOD3D arguments: {}".format(args))
         submit_lf_main(args, est_model=models[0], logger=task_logger)
         store_metadata(
             log_file,
@@ -214,7 +214,7 @@ def submit_task(
             rel_dir=sim_dir,
             write_directory=sim_dir,
         )
-        task_logger.debug("Submit post EMOD3D (merge_ts) arguments: ", args)
+        task_logger.debug("Submit post EMOD3D (merge_ts) arguments: {}".format(args))
         submit_post_lf_main(args, task_logger)
         store_metadata(
             log_file,
@@ -244,7 +244,7 @@ def submit_task(
                 account=const.DEFAULT_ACCOUNT,
                 machine=JOB_RUN_MACHINE[const.ProcessType.winbin_aio].value,
             )
-            task_logger.debug("Submit post EMOD3D (winbin_aio) arguments: ", args)
+            task_logger.debug("Submit post EMOD3D (winbin_aio) arguments: {}".format(args))
             submit_post_lf_main(args, task_logger)
     if proc_type == const.ProcessType.HF.value:
         args = argparse.Namespace(
@@ -261,7 +261,7 @@ def submit_task(
             write_directory=sim_dir,
             debug=False,
         )
-        task_logger.debug("Submit HF arguments: ", args)
+        task_logger.debug("Submit HF arguments: ".format(args))
         submit_hf_main(args, models[1], task_logger)
         store_metadata(
             log_file,
@@ -280,7 +280,7 @@ def submit_task(
             write_directory=sim_dir,
             ascii=False,
         )
-        task_logger.debug("Submit BB arguments: ", args)
+        task_logger.debug("Submit BB arguments: ".format(args))
         submit_bb_main(args, models[2], task_logger)
         store_metadata(
             log_file,
@@ -302,7 +302,7 @@ def submit_task(
             est_model=models[3],
             logger=task_logger,
         )
-        task_logger.debug("Submit IM calc arguments: ", options_dict)
+        task_logger.debug("Submit IM calc arguments: ".format(args))
         store_metadata(
             log_file,
             const.ProcessType.IM_calculation.str_value,
@@ -441,7 +441,7 @@ def main(args, main_logger):
 
         # Gets all runnable tasks based on mgmt db state
         runnable_tasks = mgmt_db.get_runnable_tasks(args.n_max_retries)
-        main_logger.info("Number of runnable tasks: ", len(runnable_tasks))
+        main_logger.info("Number of runnable tasks: {}".format(len(runnable_tasks)))
 
         # Select the first ntask_to_run that are not waiting
         # for mgmt db updates (i.e. items in the queue)
@@ -482,14 +482,13 @@ def main(args, main_logger):
                 break
 
         main_logger.info(
-            "Tasks to run this iteration: ",
+            "Tasks to run this iteration: "+
             ", ".join(
                 [
                     "{}-{}".format(entry[1], const.ProcessType(entry[0]).str_value)
                     for entry in tasks_to_run
                 ]
-            ),
-            "\n",
+            )
         )
 
         # Submit the runnable tasks
