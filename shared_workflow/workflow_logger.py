@@ -1,7 +1,6 @@
 import logging
 import sys
 
-from qcore import constants
 from qcore.constants import ProcessType
 
 logging.NOPRINTCRITICAL = logging.CRITICAL + 1
@@ -55,6 +54,7 @@ def get_logger():
     :return: The logger object
     """
     logger = logging.getLogger(AUTO_SUBMIT_LOGGER_NAME)
+    logger.setLevel(logging.DEBUG)
 
     print_handler = logging.StreamHandler(sys.stdout)
     print_handler.setLevel(logging.INFO)
@@ -83,9 +83,11 @@ def add_general_file_handler(logger: logging.Logger, file_path: str):
 def get_task_logger(old_logger: logging.Logger, realisation: str, process_type: int):
 
     new_logger = logging.getLogger()
+    new_logger.setLevel(logging.DEBUG)
+
     task_formatter = logging.Formatter(
         TASK_LOGGING_MESSAGE_FORMAT.format(
-            realisation, ProcessType[process_type].str_value
+            realisation, ProcessType(process_type).str_value
         )
     )
 

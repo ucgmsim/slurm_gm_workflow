@@ -293,7 +293,7 @@ class NNWcEstModel(WCEstModel):
                 "incorrect estimation!"
             )
 
-        return self._model.predict(X, logger=logger).reshape(-1)
+        return self._model.predict(X).reshape(-1)
 
     def get_out_of_bounds_mask(self, X: np.ndarray):
         """Checks that the input data is within the bounds of the data
@@ -471,7 +471,7 @@ class SVRModel(WCEstModel):
             log(logger, CRITICAL+1, "There was an attempt to use an untrained model")
             raise Exception("This model has not been trained!")
 
-        return self._model.predict(X, logger).reshape(-1)
+        return self._model.predict(X).reshape(-1)
 
     def save_model(self, output_file: str):
         """Saves the model as a pickle object"""

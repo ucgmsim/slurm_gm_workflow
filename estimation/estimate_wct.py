@@ -250,7 +250,7 @@ def estimate_HF_chours(
     # Adjust the number of cores to estimate physical core hours
     data[:, -1] = data[:, -1] / hyperthreading_factor
     core_hours = estimate(
-        data, model, model_type, const.HF_DEFAULT_NCORES / hyperthreading_factor, logger
+        data, model, model_type, const.HF_DEFAULT_NCORES / hyperthreading_factor, logger=logger
     )
 
     wct = core_hours / data[:, -1]
