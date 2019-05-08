@@ -26,6 +26,7 @@ from scripts.submit_hf import main as submit_hf_main
 from scripts.submit_bb import main as submit_bb_main
 from scripts.submit_sim_imcalc import submit_im_calc_slurm, SlBodyOptConsts
 from shared_workflow import shared, workflow_logger
+from shared_workflow.workflow_logger import get_task_logger
 
 DEFAULT_N_MAX_RETRIES = 2
 DEFAULT_N_RUNS = {const.HPC.maui: 12, const.HPC.mahuika: 12}
@@ -43,6 +44,7 @@ JOB_RUN_MACHINE = {
 SLURM_TO_STATUS_DICT = {"R": 3, "PD": 2, "CG": 3}
 
 LOG_FILE_NAME = "cybershake_log.txt"
+
 
 def get_queued_tasks(user=None, machine=const.HPC.maui):
     if user is not None:
@@ -167,6 +169,7 @@ def submit_task(
     do_verification=False,
     models=None,
 ):
+    task_logger = get_task_logger(task_logger, run_name, proc_type)
     # create the tmp folder
     # TODO: fix this issue
     sqlite_tmpdir = "/tmp/cer"
@@ -197,7 +200,7 @@ def submit_task(
             log_file,
             const.ProcessType.EMOD3D.str_value,
             {"submit_time": submitted_time},
-            task_logger,
+            logger=task_logger,
         )
 
     if proc_type == const.ProcessType.merge_ts.value:
@@ -217,7 +220,7 @@ def submit_task(
             log_file,
             const.ProcessType.merge_ts.str_value,
             {"submit_time": submitted_time},
-            task_logger,
+            logger=task_logger,
         )
 
     if proc_type == const.ProcessType.winbin_aio.value:
@@ -261,7 +264,10 @@ def submit_task(
         task_logger.debug("Submit HF arguments: ", args)
         submit_hf_main(args, models[1], task_logger)
         store_metadata(
-            log_file, const.ProcessType.HF.str_value, {"submit_time": submitted_time}, task_logger
+            log_file,
+            const.ProcessType.HF.str_value,
+            {"submit_time": submitted_time},
+            logger=task_logger,
         )
     if proc_type == const.ProcessType.BB.value:
         args = argparse.Namespace(
@@ -277,7 +283,10 @@ def submit_task(
         task_logger.debug("Submit BB arguments: ", args)
         submit_bb_main(args, models[2], task_logger)
         store_metadata(
-            log_file, const.ProcessType.BB.str_value, {"submit_time": submitted_time}, task_logger
+            log_file,
+            const.ProcessType.BB.str_value,
+            {"submit_time": submitted_time},
+            logger=task_logger,
         )
     if proc_type == const.ProcessType.IM_calculation.value:
         options_dict = {
@@ -288,14 +297,17 @@ def submit_task(
             "write_directory": sim_dir,
         }
         submit_im_calc_slurm(
-            sim_dir=sim_dir, options_dict=options_dict, est_model=models[3], logger=task_logger
+            sim_dir=sim_dir,
+            options_dict=options_dict,
+            est_model=models[3],
+            logger=task_logger,
         )
         task_logger.debug("Submit IM calc arguments: ", options_dict)
         store_metadata(
             log_file,
             const.ProcessType.IM_calculation.str_value,
             {"submit_time": submitted_time},
-            task_logger,
+            logger=task_logger,
         )
     if do_verification:
         if proc_type == const.ProcessType.rrup.value:
@@ -337,45 +349,43 @@ def submit_task(
         )
 
 
-def main(args, main_logger: logging.Logger):
+def main(args, main_logger):
     root_folder = os.path.abspath(args.root_folder)
     mgmt_queue_folder = sim_struct.get_mgmt_db_queue(root_folder)
     mgmt_db = MgmtDB(sim_struct.get_mgmt_db(root_folder))
-    root_params_file = os.path.join(sim_struct.get_runs_dir(root_folder), "root_params.yaml")
+    root_params_file = os.path.join(
+        sim_struct.get_runs_dir(root_folder), "root_params.yaml"
+    )
     config = utils.load_yaml(root_params_file)
-    logger.info("Loaded root params file: {}".format(root_params_file))
+    main_logger.info("Loaded root params file: {}".format(root_params_file))
     # Default values
     binary_mode, hf_seed, extended_period = True, None, False
 
     if "binary_mode" in config:
         binary_mode = config["binary_mode"]
-    logger.debug("binary_mode set to {}".format(binary_mode))
+    main_logger.debug("binary_mode set to {}".format(binary_mode))
 
     if const.RootParams.seed.value in config["hf"]:
         hf_seed = config["hf"][const.RootParams.seed.value]
-    logger.debug("hf_seed set to {}".format(hf_seed))
+    main_logger.debug("hf_seed set to {}".format(hf_seed))
 
     if "extended_period" in config:
         extended_period = config["extended_period"]
-    logger.debug("extended_period set to {}".format(extended_period))
+    main_logger.debug("extended_period set to {}".format(extended_period))
 
     main_logger.info("Loading estimation models")
     workflow_config = ldcfg.load()
     lf_est_model = est.load_full_model(
-        os.path.join(workflow_config["estimation_models_dir"], "LF"),
-        logger,
+        os.path.join(workflow_config["estimation_models_dir"], "LF"), main_logger
     )
     hf_est_model = est.load_full_model(
-        os.path.join(workflow_config["estimation_models_dir"], "HF"),
-        logger,
+        os.path.join(workflow_config["estimation_models_dir"], "HF"), main_logger
     )
     bb_est_model = est.load_full_model(
-        os.path.join(workflow_config["estimation_models_dir"], "BB"),
-        logger,
+        os.path.join(workflow_config["estimation_models_dir"], "BB"), main_logger
     )
     im_est_model = est.load_full_model(
-        os.path.join(workflow_config["estimation_models_dir"], "IM"),
-        logger,
+        os.path.join(workflow_config["estimation_models_dir"], "IM"), main_logger
     )
 
     # If any flags to ignore steps are given, add them to the list of skipped processes
@@ -406,8 +416,8 @@ def main(args, main_logger: logging.Logger):
         db_in_progress_tasks = mgmt_db.get_submitted_tasks()
         main_logger.info("Squeue user tasks: " + ", ".join(squeue_tasks))
         main_logger.info(
-            "In progress tasks in mgmt db:" +
-            ", ".join(
+            "In progress tasks in mgmt db:"
+            + ", ".join(
                 [
                     "{}-{}-{}-{}".format(
                         entry.run_name,
@@ -422,7 +432,11 @@ def main(args, main_logger: logging.Logger):
 
         # Update the slurm mgmt based on squeue
         update_tasks(
-            mgmt_queue_folder, mgmt_queue_entries, squeue_tasks, db_in_progress_tasks
+            mgmt_queue_folder,
+            mgmt_queue_entries,
+            squeue_tasks,
+            db_in_progress_tasks,
+            main_logger,
         )
 
         # Gets all runnable tasks based on mgmt db state
@@ -509,7 +523,7 @@ def main(args, main_logger: logging.Logger):
                 run_name,
                 root_folder,
                 mgmt_queue_folder,
-                logger,
+                main_logger,
                 binary_mode=binary_mode,
                 hf_seed=hf_seed,
                 extended_period=extended_period,
@@ -552,26 +566,53 @@ if __name__ == "__main__":
         default=DEFAULT_N_MAX_RETRIES,
         type=int,
     )
+    parser.add_argument(
+        "--log_file",
+        type=str,
+        default=None,
+        help="Location of the log file to use. Defaults to 'cybershake_log.txt' in the location root_folder. "
+             "Must be absolute or relative to the root_folder.",
+    )
     parser.add_argument("--no_im", action="store_true")
     parser.add_argument("--no_merge_ts", action="store_true")
     parser.add_argument("--no_clean_up", action="store_true")
 
     args = parser.parse_args()
 
-    workflow_logger.add_file_handler(logger, os.path.join(args.root_folder, LOG_FILE_NAME))
+    if args.log_file is None:
+        workflow_logger.add_general_file_handler(
+            logger, os.path.join(args.root_folder, LOG_FILE_NAME)
+        )
+    else:
+        workflow_logger.add_general_file_handler(
+            logger, os.path.join(args.root_folder, args.log_file)
+        )
+    logger.critical("Added file handler to the logger")
 
     if args.n_runs is not None:
         if len(args.n_runs) == 1:
             args.n_runs = {hpc: args.n_runs[0] for hpc in const.HPC}
-            logger.debug("Using {} as the maximum number of jobs per machine".format(args.n_runs[0]))
+            logger.debug(
+                "Using {} as the maximum number of jobs per machine".format(
+                    args.n_runs[0]
+                )
+            )
         elif len(args.n_runs) == len(const.HPC):
             n_runs = {}
             for index, hpc in enumerate(const.HPC):
-                logger.debug("Setting {} to have at most {} concurrently runnign jobs".format(hpc, args.n_runs[index]))
+                logger.debug(
+                    "Setting {} to have at most {} concurrently runnign jobs".format(
+                        hpc, args.n_runs[index]
+                    )
+                )
                 n_runs.update({hpc: args.n_runs[index]})
             args.n_runs = n_runs
         else:
-            logger.critical("Expected either 1 or {} values for --n_runs, got {} values. Specifically: {}. Exiting now".format(len(const.HPC), len(args.n_runs), args.n_runs))
+            logger.critical(
+                "Expected either 1 or {} values for --n_runs, got {} values. Specifically: {}. Exiting now".format(
+                    len(const.HPC), len(args.n_runs), args.n_runs
+                )
+            )
             parser.error(
                 "You must specify wither one common value for --n_runs, or one "
                 "for each in the following list: {}".format(list(const.HPC))

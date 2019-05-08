@@ -355,10 +355,15 @@ def get_input_wc():
     return user_input_wc
 
 
-def set_wct(est_run_time, ncores, auto=False):
+def set_wct(est_run_time, ncores, auto=False, logger=None):
     import estimation.estimate_wct as est
-
-    print(
+    if auto:
+        level = DEBUG
+    else:
+        level = INFO
+    log(
+        logger,
+        level,
         "Estimated time: {} with {} number of cores".format(
             est.convert_to_wct(est_run_time), ncores
         )
@@ -374,10 +379,12 @@ def set_wct(est_run_time, ncores, auto=False):
         use_estimation = True
 
     if use_estimation:
+        log(logger, DEBUG, "Using generated estimation.")
         wct = est.get_wct(est_run_time)
     else:
+        log(logger, DEBUG, "Using user determined wct value.")
         wct = str(get_input_wc())
-    print("WCT set to: %s" % wct)
+    log(logger, level, "WCT set to: {}".format(wct))
     return wct
 
 

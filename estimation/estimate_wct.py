@@ -171,6 +171,7 @@ def est_HF_chours_single(
     scale_ncores: bool,
     node_time_th_factor: float = 1.0,
     model_type: const.EstModelType = DEFAULT_MODEL_TYPE,
+    logger=None,
 ):
     """Convenience function to make a single estimation
 
@@ -201,6 +202,7 @@ def est_HF_chours_single(
         scale_ncores,
         node_time_th_factor=node_time_th_factor,
         model_type=model_type,
+        logger=logger,
     )
 
     return core_hours[0], run_time[0], int(n_cpus[0])
@@ -212,6 +214,7 @@ def estimate_HF_chours(
     scale_ncores: bool,
     node_time_th_factor: float = 1.0,
     model_type: const.EstModelType = DEFAULT_MODEL_TYPE,
+    logger=None,
 ):
     """Make bulk HF estimations, requires data to be in the correct
     order (see above).
@@ -247,7 +250,7 @@ def estimate_HF_chours(
     # Adjust the number of cores to estimate physical core hours
     data[:, -1] = data[:, -1] / hyperthreading_factor
     core_hours = estimate(
-        data, model, model_type, const.HF_DEFAULT_NCORES / hyperthreading_factor
+        data, model, model_type, const.HF_DEFAULT_NCORES / hyperthreading_factor, logger
     )
 
     wct = core_hours / data[:, -1]
@@ -475,6 +478,7 @@ def estimate(
     model_type: const.EstModelType,
     default_ncores: int,
     lf_svr_input_data: np.ndarray = None,
+    logger=None,
 ):
     """Function to use for making estimations using a pre-trained model
 
@@ -526,7 +530,7 @@ def estimate(
             X_svr = scaler_svr.transform(input_data[:, :-1])
 
         core_hours = comb_model.predict(
-            X_nn, X_svr, n_cores=input_data[:, -1], default_n_cores=default_ncores
+            X_nn, X_svr, n_cores=input_data[:, -1], default_n_cores=default_ncores, logger=logger
         )
 
     return core_hours

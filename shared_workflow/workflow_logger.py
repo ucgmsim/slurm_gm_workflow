@@ -1,6 +1,8 @@
 import logging
 import sys
 
+from qcore import constants
+
 logging.NOPRINTCRITICAL = logging.CRITICAL+1
 logging.NOPRINTERROR = logging.ERROR+1
 logging.NOPRINTWARNING = logging.WARNING+1
@@ -13,10 +15,13 @@ logging.addLevelName(logging.NOPRINTWARNING, "NO_PRINT_WARNING")
 logging.addLevelName(logging.NOPRINTINFO, "NO_PRINT_INFO")
 logging.addLevelName(logging.NOPRINTDEBUG, "NO_PRINT_DEBUG")
 
-
 AUTO_SUBMIT_LOGGER_NAME = "auto_submit"
-LOGGING_MESSAGE_FORMAT = "%(levelname)8s -- %(asctime)s - %(filename)s.%(funcName)s - %(message)s"
-formatter = logging.Formatter(LOGGING_MESSAGE_FORMAT)
+
+GENERAL_LOGGING_MESSAGE_FORMAT = "%(levelname)8s -- %(asctime)s - %(module)s.%(filename)s.%(funcName)s - %(message)s"
+general_formatter = logging.Formatter(GENERAL_LOGGING_MESSAGE_FORMAT)
+
+TASK_LOGGING_MESSAGE_FORMAT = "%(levelname)8s -- %(asctime)s - %(module)s.%(filename)s.%(funcName)s - " \
+                              "{}.{} - %(message)s"
 
 
 def log(logger, level, message):
@@ -48,7 +53,7 @@ def get_logger():
 
     print_handler = logging.StreamHandler(sys.stdout)
     print_handler.setLevel(logging.INFO)
-    print_handler.setFormatter(formatter)
+    print_handler.setFormatter(general_formatter)
 
     # If the message level ends in 1 do not print it to stdout
     print_handler.addFilter(lambda record: (record.levelno % 10) != 1)
@@ -58,15 +63,37 @@ def get_logger():
     return logger
 
 
-def add_file_handler(logger, file_path):
+def add_general_file_handler(logger: logging.Logger, file_path: str):
     """
     Adds a file handler to the logger using the given file_path
     :param logger: The logger object
     :param file_path: The path to the file to be used. Will be appended to if it already exists
     """
     file_out_handler = logging.FileHandler(file_path)
-    file_out_handler.setFormatter(formatter)
+    file_out_handler.setFormatter(general_formatter)
 
     logger.addHandler(file_out_handler)
 
 
+def get_task_logger(old_logger: logging.Logger, realisation: str, process_type: constants.ProcessType):
+
+    new_logger = logging.getLogger()
+    task_formatter = logging.Formatter(TASK_LOGGING_MESSAGE_FORMAT.format(realisation, process_type.str_value))
+
+    old_handlers = old_logger.handlers
+    for handler in old_handlers:
+        if isinstance(handler, logging.FileHandler):
+            task_file_out_handler = logging.FileHandler(handler.baseFilename)
+            task_file_out_handler.setFormatter(task_formatter)
+            new_logger.addHandler(task_file_out_handler)
+
+    task_print_handler = logging.StreamHandler(sys.stdout)
+    task_print_handler.setLevel(logging.INFO)
+    task_print_handler.setFormatter(task_formatter)
+
+    # If the message level ends in 1 do not print it to stdout
+    task_print_handler.addFilter(lambda record: (record.levelno % 10) != 1)
+
+    new_logger.addHandler(task_print_handler)
+
+    return new_logger

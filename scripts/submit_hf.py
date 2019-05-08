@@ -67,6 +67,7 @@ def main(args: argparse.Namespace, est_model: est.EstModel = None, logger=None):
             args.ncore,
             est_model,
             scale_ncores=SCALE_NCORES,
+            logger=logger
         )
         wct = set_wct(est_run_time, est_cores, args.auto)
         hf_sim_dir = os.path.join(params.sim_dir, "HF")
