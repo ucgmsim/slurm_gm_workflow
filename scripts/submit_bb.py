@@ -2,6 +2,7 @@
 """Script to create and submit a slurm script for BB"""
 import os
 import argparse
+from logging import DEBUG, ERROR
 
 import estimation.estimate_wct as est
 import qcore.constants as const
@@ -15,12 +16,13 @@ from shared_workflow.shared import (
     submit_sl_script,
     get_nt,
 )
+from shared_workflow.workflow_logger import log
 from shared_workflow.shared_template import write_sl_script
 
 default_wct = "00:30:00"
 
 
-def main(args: argparse.Namespace, est_model: est.EstModel = None):
+def main(args: argparse.Namespace, est_model: est.EstModel = None, logger=None):
     params = utils.load_sim_params(os.path.join(args.rel_dir, "sim_params.yaml"))
     ncores = const.BB_DEFAULT_NCORES
 
@@ -29,11 +31,10 @@ def main(args: argparse.Namespace, est_model: est.EstModel = None):
         sl_name_prefix = "run_bb_mpi"
     else:
         if version is not None:
-            print("% cannot be recognize as a valide option" % version)
-            print("version is set to default: %", const.BB_DEFAULT_VERSION)
+            log(logger, ERROR, "{} cannot be recognized as a valid option. version is set to default:".format(version, const.BB_DEFAULT_VERSION))
         version = const.BB_DEFAULT_VERSION
         sl_name_prefix = const.BB_DEFAULT_VERSION
-    print(version)
+    log(logger, DEBUG, version)
 
     srf_name = os.path.splitext(os.path.basename(params.srf_file))[0]
     if args.srf is None or srf_name == args.srf:
@@ -105,6 +106,7 @@ def main(args: argparse.Namespace, est_model: est.EstModel = None):
             srf_name,
             submit_yes=submit_yes,
             target_machine=args.machine,
+            logger=logger,
         )
 
 

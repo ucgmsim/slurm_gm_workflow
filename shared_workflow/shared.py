@@ -15,12 +15,14 @@ import sys
 import re
 import glob
 from datetime import datetime
+from logging import Logger, DEBUG, INFO, ERROR, CRITICAL
 
 from qcore import binary_version
 from qcore.config import host
 import qcore.constants as const
 from scripts.cybershake.queue_monitor import DATE_FORMAT as QUEUE_DATE_FORMAT
 from scripts.management.MgmtDB import MgmtDB
+from shared_workflow.workflow_logger import log
 
 if sys.version_info.major == 3:
     basestring = str
@@ -441,10 +443,11 @@ def submit_sl_script(
     run_name: str,
     submit_yes=False,
     target_machine=None,
+    logger=None,
 ):
     """Submits the slurm script and updates the management db"""
     if submit_yes:
-        print("Submitting {} on machine {}".format(script, target_machine))
+        log(logger, DEBUG, "Submitting {} on machine {}".format(script, target_machine))
         if target_machine and target_machine != host:
             res = exe(
                 "sbatch --export=CUR_ENV,CUR_HPC -M {} {}".format(
@@ -477,9 +480,9 @@ def submit_sl_script(
             )
             return jobid
         else:
-            print("An error occurred during job submission: {}".format(res[1]))
+            log(logger, ERROR, "An error occurred during job submission: {}".format(res[1]))
     else:
-        print("User chose to submit the job manually")
+        log(logger, INFO, "User chose to submit the job manually")
 
 
 def add_to_queue(
@@ -490,6 +493,7 @@ def add_to_queue(
     job_id: int = None,
     retries: int = None,
     error: str = None,
+    logger: Logger = None
 ):
     """Adds an update entry to the queue"""
     filename = os.path.join(
@@ -500,6 +504,9 @@ def add_to_queue(
     )
 
     if os.path.exists(filename):
+        log(logger, CRITICAL, "An update with the name {} already exists. This should never happen. Quitting!".format(
+                os.path.basename(filename)
+            ))
         raise Exception(
             "An update with the name {} already exists. This should never happen. Quitting!".format(
                 os.path.basename(filename)

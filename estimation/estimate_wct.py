@@ -6,16 +6,19 @@ Note: The n_cores argument that most of these functions take, should be
 the number of cores specified in the slurm script of the process type. So
 these will be logical number of cores for some process types and physical for others.
 """
+import logging
 import os
 import glob
 import pickle
 from typing import List, Union
 from collections import namedtuple
+from logging import DEBUG, CRITICAL
 
 import numpy as np
 
 import qcore.constants as const
 from estimation.model import CombinedModel, WCEstModel, NNWcEstModel, SVRModel
+from shared_workflow.workflow_logger import log
 
 SCALER_PREFIX = "scaler_{}"
 
@@ -529,7 +532,7 @@ def estimate(
     return core_hours
 
 
-def load_full_model(dir: str, model_type: const.EstModelType = DEFAULT_MODEL_TYPE):
+def load_full_model(dir: str, model_type: const.EstModelType = DEFAULT_MODEL_TYPE, logger=None):
     """Loads the full model, i.e. the estimation model(s) and their associated scaler.
 
     Returns an EstModel object.
@@ -537,27 +540,28 @@ def load_full_model(dir: str, model_type: const.EstModelType = DEFAULT_MODEL_TYP
     # Load just NN
     if model_type is const.EstModelType.NN:
         return EstModel(
-            load_model(dir, const.EST_MODEL_NN_PREFIX, "h5", NNWcEstModel),
-            load_scaler(dir, SCALER_PREFIX.format("NN")), None, None
+            load_model(dir, const.EST_MODEL_NN_PREFIX, "h5", NNWcEstModel, logger),
+            load_scaler(dir, SCALER_PREFIX.format("NN"), logger), None, None
         )
     # Load just SVR
     elif model_type is const.EstModelType.SVR:
         return EstModel(
             None,
             None,
-            load_model(dir, const.EST_MODEL_SVR_PREFIX, "pickle", SVRModel),
-            load_scaler(dir, SCALER_PREFIX.format("SVR")),
+            load_model(dir, const.EST_MODEL_SVR_PREFIX, "pickle", SVRModel, logger),
+            load_scaler(dir, SCALER_PREFIX.format("SVR"), logger),
         )
     # Load both
     elif model_type is const.EstModelType.NN_SVR:
         return EstModel(
-            load_model(dir, const.EST_MODEL_NN_PREFIX, "h5", NNWcEstModel),
-            load_scaler(dir, SCALER_PREFIX.format("NN")),
-            load_model(dir, const.EST_MODEL_SVR_PREFIX, "pickle", SVRModel),
-            load_scaler(dir, SCALER_PREFIX.format("SVR")),
+            load_model(dir, const.EST_MODEL_NN_PREFIX, "h5", NNWcEstModel, logger),
+            load_scaler(dir, SCALER_PREFIX.format("NN"), logger),
+            load_model(dir, const.EST_MODEL_SVR_PREFIX, "pickle", SVRModel, logger),
+            load_scaler(dir, SCALER_PREFIX.format("SVR"), logger),
         )
 
-def load_scaler(dir: str, scaler_prefix: str):
+
+def load_scaler(dir: str, scaler_prefix: str, logger=None):
     """Loads the latest scaler
     """
     file_pattern = os.path.join(dir, "{}{}".format(scaler_prefix, "*.pickle"))
@@ -565,6 +569,7 @@ def load_scaler(dir: str, scaler_prefix: str):
 
     scaler_file = None
     if len(scaler) == 0:
+        log(logger, logging.CRITICAL + 1, "No valid model was found with file pattern {}".format(file_pattern))
         raise Exception(
             "No valid model was found with file pattern {}".format(file_pattern)
         )
@@ -576,16 +581,17 @@ def load_scaler(dir: str, scaler_prefix: str):
         scaler_file = scaler[-1]
 
     if not os.path.isfile(scaler_file):
+        log(logger, logging.CRITICAL+1, "No matching scaler was found for model {}".format(scaler_file))
         raise Exception("No matching scaler was found for model {}".format(scaler_file))
 
     with open(scaler_file, "rb") as f:
         scaler = pickle.load(f)
 
-    print("Loaded scaler {}".format(scaler_file))
+    log(logger, logging.DEBUG, "Loaded scaler {}".format(scaler_file))
     return scaler
 
 
-def load_model(dir: str, model_prefix: str, model_ext: str, model_cls: WCEstModel):
+def load_model(dir: str, model_prefix: str, model_ext: str, model_cls: WCEstModel, logger=None):
     """Loads a model
 
     If there are several models in the specified directory, then the latest
@@ -594,19 +600,17 @@ def load_model(dir: str, model_prefix: str, model_ext: str, model_cls: WCEstMode
     file_pattern = os.path.join(dir, "{}*.{}".format(model_prefix, model_ext))
     model_files = glob.glob(file_pattern)
 
-    model_file = None
     if len(model_files) == 0:
+        log(logger, CRITICAL+1, "No valid model was found with file pattern {}".format(file_pattern))
         raise Exception(
             "No valid model was found with file pattern {}".format(file_pattern)
         )
-    elif len(model_files) == 0:
-        model_file = model_files[0]
-    else:
-        # Grab the newest model
-        model_files.sort()
-        model_file = model_files[-1]
+
+    # Grab the newest model
+    model_files.sort()
+    model_file = model_files[-1]
 
     model = model_cls.from_saved_model(model_file)
 
-    print("Loaded model {}".format(model_file))
+    log(logger, DEBUG, "Loaded model {}".format(model_file))
     return model

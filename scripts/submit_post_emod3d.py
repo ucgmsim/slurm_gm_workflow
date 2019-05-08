@@ -11,6 +11,7 @@ from qcore.config import get_machine_config, host
 from shared_workflow.shared import (
     confirm,
     submit_sl_script,
+    log,
 )
 from shared_workflow.shared_template import write_sl_script
 
@@ -36,7 +37,7 @@ def get_seis_len(seis_path):
     return len(seis_file_list)
 
 
-def main(args):
+def main(args, logger=None):
     params = utils.load_sim_params(os.path.join(args.rel_dir, "sim_params.yaml"))
     sim_dir = params.sim_dir
     mgmt_db_loc = params.mgmt_db_location
@@ -98,6 +99,7 @@ def main(args):
             srf_name,
             submit_yes=submit_yes,
             target_machine=args.machine,
+            logger=logger,
         )
 
     # run winbin_aio related scripts only
@@ -146,6 +148,7 @@ def main(args):
             sim_struct.get_mgmt_db_queue(params.mgmt_db_location),
             srf_name,
             submit_yes=submit_yes,
+            logger=logger,
         )
 
 
