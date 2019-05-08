@@ -95,7 +95,7 @@ def update_tasks(
                     )
                     queue_status = const.Status.unknown.value
                 if queue_status == db_task.status:
-                    task_logger.info(
+                    task_logger.debug(
                         "No need to update status {} for {}, {} ({}) as it "
                         "has not changed.".format(
                             const.Status(queue_status).str_value,
@@ -584,7 +584,7 @@ if __name__ == "__main__":
             os.path.join(
                 args.root_folder,
                 AUTO_SUBMIT_LOG_FILE_NAME.format(
-                    datetime.now().strftime(const.METADATA_TIMESTAMP_FMT)
+                    datetime.now().strftime(const.TIMESTAMP_FORMAT)
                 ),
             ),
         )

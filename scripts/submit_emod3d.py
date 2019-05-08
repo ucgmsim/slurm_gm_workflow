@@ -78,6 +78,7 @@ def main(args: argparse.Namespace, est_model: est.EstModel = None, logger: Logge
             sim_dir,
             workflow_config=workflow_config,
             steps_per_checkpoint=steps_per_checkpoint,
+            logger=logger
         )
 
         header_dict = {

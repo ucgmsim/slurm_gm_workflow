@@ -1,5 +1,6 @@
 import os
 import sqlite3 as sql
+from logging import Logger
 
 from typing import List, Union
 from collections import namedtuple
@@ -37,13 +38,13 @@ class MgmtDB:
     def db_file(self):
         return self._db_file
 
-    def update_entries_live(self, entries: List[SlurmTask]):
+    def update_entries_live(self, entries: List[SlurmTask], logger: Logger):
         """Updates the specified entries in the db. Leaves the connection open,
         so this should only be used when continuously updating entries.
         """
         try:
             if self._conn is None:
-                print("Aquiring db connection.")
+                logger.info("Aquiring db connection.")
                 self._conn = sql.connect(self._db_file)
             cur = self._conn.cursor()
 

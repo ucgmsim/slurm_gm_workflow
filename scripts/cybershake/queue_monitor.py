@@ -71,7 +71,7 @@ def main(args, queue_logger: Logger = workflow_logger.get_basic_logger()):
 
         if len(entries) > 0:
             queue_logger.info("Updating {} mgmt db tasks.".format(len(entries)))
-            if not mgmt_db.update_entries_live(entries):
+            if not mgmt_db.update_entries_live(entries, queue_logger):
                 # Failed to update
                 queue_logger.error(
                     "Failed to update the current entries in the mgmt db queue. "
