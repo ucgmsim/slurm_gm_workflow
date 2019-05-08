@@ -49,9 +49,6 @@ ALLOCATIONS_MAUI = [
 MAUI_MAX_CHOURS = 950000.0
 MAHUIKA_MAX_CHOURS = 18000.0
 
-DEFAULT_START = date.today() - relativedelta(days=188)
-DEFAULT_END = date.today()
-
 app.layout = html.Div(
     html.Div(
         [
@@ -337,7 +334,7 @@ def update_maui_daily_inodes(n):
     return fig
 
 
-def update_daily_chours(hpc, start_date=DEFAULT_START, end_date=DEFAULT_END):
+def update_daily_chours(hpc, start_date=None, end_date=None):
     # Get data points
     data = []
     entries = app.db.get_chours_usage(start_date, end_date, hpc)
@@ -362,8 +359,8 @@ def update_daily_chours(hpc, start_date=DEFAULT_START, end_date=DEFAULT_END):
 def get_daily_user_chours(
     hpc: const.HPC,
     users_dict: Dict[str, str] = USERS,
-    start_date=DEFAULT_START,
-    end_date=DEFAULT_END,
+    start_date=None,
+    end_date=None,
 ):
     """get daily core hours usage for a list of users
        return as a list of scatter plots
@@ -389,8 +386,8 @@ def get_daily_user_chours(
 def get_total_user_chours(
     hpc: const.HPC,
     users_dict: Dict[str, str] = USERS,
-    start_date=DEFAULT_START,
-    end_date=DEFAULT_END,
+    start_date=None,
+    end_date=None,
 ):
     """Get total core hours usage for a list of users in a specified period
        Return as a table
@@ -401,6 +398,14 @@ def get_total_user_chours(
             hpc, username, start_date, end_date
         )
         data.append({"username": name, "total_core_hours": total_chours})
+
+    # first sort by decs total core hours
+    data = sorted(data, key=lambda k: k["total_core_hours"], reverse=True)
+
+    # then add comma to big values
+    for i in range(len(data)):
+        data[i]['total_core_hours'] = "{:,}".format(data[i]['total_core_hours'])
+
     return html.Div(
         [
             dash_table.DataTable(
@@ -408,7 +413,7 @@ def get_total_user_chours(
                 columns=[
                     {"id": c, "name": c} for c in ["username", "total_core_hours"]
                 ],
-                data=sorted(data, key=lambda k: k["total_core_hours"], reverse=True),
+                data=data,
                 style_cell={"textAlign": "left"},
             )
         ],
@@ -417,7 +422,7 @@ def get_total_user_chours(
     )
 
 
-def get_chours_entries(hpc: const.HPC, start_date=DEFAULT_START, end_date=DEFAULT_END):
+def get_chours_entries(hpc: const.HPC, start_date=None, end_date=None):
     """Gets the core hours entries for the specified HPC
     Note: Only maui is currently supported
     """
@@ -476,7 +481,7 @@ def get_maui_daily_quota_string(file_system):
     entry = app.db.get_daily_quota(
         const.HPC.maui, date.today(), file_system=file_system
     )
-    return "Current space usage in {} is {}\nCurrent Inodes usage in {} is {}/{} ({:.3f}%)".format(
+    return "Current space usage in {} is {}\nCurrent Inodes usage in {} is {:,}/{:,} ({:.1f}%)".format(
         file_system,
         entry.used_space,
         file_system,
@@ -546,7 +551,7 @@ def update_total_chours(
     )
     hpc_total_chours = get_chours_entries(hpc, start_date, end_date)[-1][-1]
     return html.Plaintext(
-        "{}: {} to {} used {} / {} hours ({:.3f}%)".format(
+        "{}: {} to {} used {:,.1f} / {:,.1f} hours ({:.1f}%)".format(
             hpc.value,
             start_date,
             end_date,
