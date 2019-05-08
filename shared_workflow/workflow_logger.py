@@ -82,12 +82,14 @@ def add_general_file_handler(logger: logging.Logger, file_path: str):
 
 def get_task_logger(old_logger: logging.Logger, realisation: str, process_type: int):
 
-    new_logger = logging.getLogger()
+    process_name = ProcessType(process_type).str_value
+
+    new_logger = logging.getLogger("{}.{}".format(realisation, process_name))
     new_logger.setLevel(logging.DEBUG)
 
     task_formatter = logging.Formatter(
         TASK_LOGGING_MESSAGE_FORMAT.format(
-            realisation, ProcessType(process_type).str_value
+            realisation, process_name
         )
     )
 
