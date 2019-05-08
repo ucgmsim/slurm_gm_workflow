@@ -78,7 +78,7 @@ def install_fault(fault_name, n_rel, root_folder, version, seed=0):
 
     # Get & validate velocity model directory
     vel_mod_dir = simulation_structure.get_fault_VM_dir(root_folder, fault_name)
-    valid_vm, message = validate_vm.validate_vm(vel_mod_dir, list_srf[0])
+    valid_vm, message = validate_vm.validate_vm(vel_mod_dir, srf=list_srf[0])
     if not valid_vm:
         message = "Error: VM {} failed {}\n".format(fault_name, message)
         with open(error_log, "a") as error_fp:

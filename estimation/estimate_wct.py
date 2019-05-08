@@ -170,7 +170,7 @@ def est_HF_chours_single(
     scale_ncores: bool,
     node_time_th_factor: float = 1.0,
     model_type: const.EstModelType = DEFAULT_MODEL_TYPE,
-    logger=get_basic_logger(),
+    logger: Logger = get_basic_logger(),
 ):
     """Convenience function to make a single estimation
 
@@ -213,7 +213,7 @@ def estimate_HF_chours(
     scale_ncores: bool,
     node_time_th_factor: float = 1.0,
     model_type: const.EstModelType = DEFAULT_MODEL_TYPE,
-    logger=None,
+    logger: Logger = get_basic_logger(),
 ):
     """Make bulk HF estimations, requires data to be in the correct
     order (see above).
@@ -477,7 +477,7 @@ def estimate(
     model_type: const.EstModelType,
     default_ncores: int,
     lf_svr_input_data: np.ndarray = None,
-    logger=None,
+    logger: Logger = get_basic_logger(),
 ):
     """Function to use for making estimations using a pre-trained model
 
@@ -586,7 +586,7 @@ def load_scaler(dir: str, scaler_prefix: str, logger: Logger = get_basic_logger(
     with open(scaler_file, "rb") as f:
         scaler = pickle.load(f)
 
-    logger.DEBUG("Loaded scaler {}".format(scaler_file))
+    logger.debug("Loaded scaler {}".format(scaler_file))
     return scaler
 
 
