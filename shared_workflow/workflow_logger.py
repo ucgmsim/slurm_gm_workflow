@@ -63,6 +63,13 @@ def add_general_file_handler(logger: logging.Logger, file_path: str):
 
 
 def get_task_logger(old_logger: logging.Logger, realisation: str, process_type: int):
+    """Creates a new logger that logs the realisation and process type.
+    The logger passed in is effectively duplicated and log messages are saved to the same file as the original logger.
+    :param old_logger: Logger the new instance is to be based on
+    :param realisation: The name of the realisation this logger is for
+    :param process_type: The type of process these logs are generated from
+    :return: The new logger object
+    """
 
     process_name = ProcessType(process_type).str_value
 
@@ -70,9 +77,7 @@ def get_task_logger(old_logger: logging.Logger, realisation: str, process_type: 
     new_logger.setLevel(logging.DEBUG)
 
     task_formatter = logging.Formatter(
-        TASK_LOGGING_MESSAGE_FORMAT.format(
-            realisation, process_name
-        )
+        TASK_LOGGING_MESSAGE_FORMAT.format(realisation, process_name)
     )
 
     old_handlers = old_logger.handlers

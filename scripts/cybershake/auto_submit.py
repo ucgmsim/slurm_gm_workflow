@@ -25,7 +25,6 @@ from scripts.submit_hf import main as submit_hf_main
 from scripts.submit_bb import main as submit_bb_main
 from scripts.submit_sim_imcalc import submit_im_calc_slurm, SlBodyOptConsts
 from shared_workflow import shared, workflow_logger
-from shared_workflow.workflow_logger import get_task_logger, get_basic_logger
 
 DEFAULT_N_MAX_RETRIES = 2
 DEFAULT_N_RUNS = {const.HPC.maui: 12, const.HPC.mahuika: 12}
@@ -42,7 +41,7 @@ JOB_RUN_MACHINE = {
 
 SLURM_TO_STATUS_DICT = {"R": 3, "PD": 2, "CG": 3}
 
-LOG_FILE_NAME = "cybershake_log.txt"
+AUTO_SUBMIT_LOG_FILE_NAME = "cybershake_log_{}.txt"
 
 
 def get_queued_tasks(user=None, machine=const.HPC.maui):
@@ -168,7 +167,7 @@ def submit_task(
     do_verification=False,
     models=None,
 ):
-    task_logger = get_task_logger(task_logger, run_name, proc_type)
+    task_logger = workflow_logger.get_task_logger(task_logger, run_name, proc_type)
     # create the tmp folder
     # TODO: fix this issue
     sqlite_tmpdir = "/tmp/cer"
@@ -243,7 +242,9 @@ def submit_task(
                 account=const.DEFAULT_ACCOUNT,
                 machine=JOB_RUN_MACHINE[const.ProcessType.winbin_aio].value,
             )
-            task_logger.debug("Submit post EMOD3D (winbin_aio) arguments: {}".format(args))
+            task_logger.debug(
+                "Submit post EMOD3D (winbin_aio) arguments: {}".format(args)
+            )
             submit_post_lf_main(args, task_logger)
     if proc_type == const.ProcessType.HF.value:
         args = argparse.Namespace(
@@ -348,7 +349,7 @@ def submit_task(
         )
 
 
-def main(args, main_logger: Logger = get_basic_logger()):
+def main(args, main_logger: Logger = workflow_logger.get_basic_logger()):
     root_folder = os.path.abspath(args.root_folder)
     mgmt_queue_folder = sim_struct.get_mgmt_db_queue(root_folder)
     mgmt_db = MgmtDB(sim_struct.get_mgmt_db(root_folder))
@@ -481,8 +482,8 @@ def main(args, main_logger: Logger = get_basic_logger()):
                 break
 
         main_logger.info(
-            "Tasks to run this iteration: " +
-            ", ".join(
+            "Tasks to run this iteration: "
+            + ", ".join(
                 [
                     "{}-{}".format(entry[1], const.ProcessType(entry[0]).str_value)
                     for entry in tasks_to_run
@@ -569,7 +570,7 @@ if __name__ == "__main__":
         type=str,
         default=None,
         help="Location of the log file to use. Defaults to 'cybershake_log.txt' in the location root_folder. "
-             "Must be absolute or relative to the root_folder.",
+        "Must be absolute or relative to the root_folder.",
     )
     parser.add_argument("--no_im", action="store_true")
     parser.add_argument("--no_merge_ts", action="store_true")
@@ -579,13 +580,19 @@ if __name__ == "__main__":
 
     if args.log_file is None:
         workflow_logger.add_general_file_handler(
-            logger, os.path.join(args.root_folder, LOG_FILE_NAME)
+            logger,
+            os.path.join(
+                args.root_folder,
+                AUTO_SUBMIT_LOG_FILE_NAME.format(
+                    datetime.now().strftime(const.METADATA_TIMESTAMP_FMT)
+                ),
+            ),
         )
     else:
         workflow_logger.add_general_file_handler(
             logger, os.path.join(args.root_folder, args.log_file)
         )
-    logger.critical("Added file handler to the logger")
+    logger.debug("Added file handler to the logger")
 
     if args.n_runs is not None:
         if len(args.n_runs) == 1:
