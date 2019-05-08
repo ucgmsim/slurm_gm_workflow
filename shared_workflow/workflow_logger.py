@@ -2,12 +2,13 @@ import logging
 import sys
 
 from qcore import constants
+from qcore.constants import ProcessType
 
-logging.NOPRINTCRITICAL = logging.CRITICAL+1
-logging.NOPRINTERROR = logging.ERROR+1
-logging.NOPRINTWARNING = logging.WARNING+1
-logging.NOPRINTINFO = logging.INFO+1
-logging.NOPRINTDEBUG = logging.DEBUG+1
+logging.NOPRINTCRITICAL = logging.CRITICAL + 1
+logging.NOPRINTERROR = logging.ERROR + 1
+logging.NOPRINTWARNING = logging.WARNING + 1
+logging.NOPRINTINFO = logging.INFO + 1
+logging.NOPRINTDEBUG = logging.DEBUG + 1
 
 logging.addLevelName(logging.NOPRINTCRITICAL, "NO_PRINT_CRITICAL")
 logging.addLevelName(logging.NOPRINTERROR, "NO_PRINT_ERROR")
@@ -17,11 +18,15 @@ logging.addLevelName(logging.NOPRINTDEBUG, "NO_PRINT_DEBUG")
 
 AUTO_SUBMIT_LOGGER_NAME = "auto_submit"
 
-GENERAL_LOGGING_MESSAGE_FORMAT = "%(levelname)8s -- %(asctime)s - %(module)s.%(filename)s.%(funcName)s - %(message)s"
+GENERAL_LOGGING_MESSAGE_FORMAT = (
+    "%(levelname)8s -- %(asctime)s - %(module)s.%(filename)s.%(funcName)s - %(message)s"
+)
 general_formatter = logging.Formatter(GENERAL_LOGGING_MESSAGE_FORMAT)
 
-TASK_LOGGING_MESSAGE_FORMAT = "%(levelname)8s -- %(asctime)s - %(module)s.%(filename)s.%(funcName)s - " \
-                              "{}.{} - %(message)s"
+TASK_LOGGING_MESSAGE_FORMAT = (
+    "%(levelname)8s -- %(asctime)s - %(module)s.%(filename)s.%(funcName)s - "
+    "{}.{} - %(message)s"
+)
 
 
 def log(logger, level, message):
@@ -75,10 +80,14 @@ def add_general_file_handler(logger: logging.Logger, file_path: str):
     logger.addHandler(file_out_handler)
 
 
-def get_task_logger(old_logger: logging.Logger, realisation: str, process_type: constants.ProcessType):
+def get_task_logger(old_logger: logging.Logger, realisation: str, process_type: int):
 
     new_logger = logging.getLogger()
-    task_formatter = logging.Formatter(TASK_LOGGING_MESSAGE_FORMAT.format(realisation, process_type.str_value))
+    task_formatter = logging.Formatter(
+        TASK_LOGGING_MESSAGE_FORMAT.format(
+            realisation, ProcessType[process_type].str_value
+        )
+    )
 
     old_handlers = old_logger.handlers
     for handler in old_handlers:
