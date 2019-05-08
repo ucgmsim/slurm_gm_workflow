@@ -144,7 +144,7 @@ if is_master:
     arg("--rv_sig1", help="rupture velocity uncertainty", type=float, default=0.1)
     # HF IN, line 18
     arg(
-        "--hf_path_dur",
+        "--path_dur",
         help="""path duration model
         0:GP2010 formulation
         1:[DEFAULT] WUS modification trial/error
