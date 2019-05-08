@@ -55,37 +55,23 @@ DEFAULT_END = date.today()
 app.layout = html.Div(
     html.Div(
         [
-            html.H2("Mahuika & Maui"),
+            # Title and alerts
+            html.H2("Maui & Mahuika"),
             html.Div(id="err"),
             html.Div(id="err2"),
             html.Div(id="err3"),
-            html.H4("Mahuika & Maui total core hours usage"),
-            html.Div(id="mahuika_chours"),
+
+            # Summary
+            html.H4("Maui & Mahuika total core hours usage"),
             html.Div(id="maui_chours"),
-            html.H4("Mahuika Allocation", style={"padding-top": 30}),
-            dcc.Dropdown(
-                id="mahuika-dropdown",
-                options=[{"label": i, "value": i} for i in ALLOCATIONS_MAHUIKA],
-                value=ALLOCATIONS_MAHUIKA[0],
-            ),
-            html.H5(
-                "Mahuika allocation start date: (yyyy-mm-dd)", style={"padding-top": 25}
-            ),
-            dcc.Input(id="mahuika-input-start", type="text"),
-            html.H5("Mahuika allocation end date: (yyyy-mm-dd)"),
-            dcc.Input(id="mahuika-input-end", type="text"),
-            html.Button(id="mahuika-submit-button", n_clicks=0, children="Submit"),
-            html.Button(id="mahuika-reset-button", n_clicks=0, children="Clear"),
-            html.H5("Mahuika total core hour usage", style={"padding-top": 25}),
-            dcc.Graph(id="mahuika_total_chours"),
-            html.Div(id="mahuika_total_user_chours"),
-            html.H5("Mahuika daily core hour usage", style={"padding-top": 30}),
-            dcc.Graph(id="mahuika_daily_chours"),
+            html.Div(id="mahuika_chours"),
+
+            # Maui
             html.H4("Maui Allocation"),
             dcc.Dropdown(
                 id="maui-dropdown",
                 options=[{"label": i, "value": i} for i in ALLOCATIONS_MAUI],
-                value=ALLOCATIONS_MAUI[0],
+                value=ALLOCATIONS_MAUI[-1],
             ),
             html.H5(
                 "Maui allocation start date: (yyyy-mm-dd)", style={"padding-top": 25}
@@ -108,6 +94,29 @@ app.layout = html.Div(
             html.Div(id="maui_squeue_table"),
             html.H5("Maui_daily_inodes", style={"padding-top": 25}),
             dcc.Graph(id="maui_daily_inodes"),
+
+            # Mahuika
+            html.H4("Mahuika Allocation", style={"padding-top": 30}),
+            dcc.Dropdown(
+                id="mahuika-dropdown",
+                options=[{"label": i, "value": i} for i in ALLOCATIONS_MAHUIKA],
+                value=ALLOCATIONS_MAHUIKA[-1],
+            ),
+            html.H5(
+                "Mahuika allocation start date: (yyyy-mm-dd)", style={"padding-top": 25}
+            ),
+            dcc.Input(id="mahuika-input-start", type="text"),
+            html.H5("Mahuika allocation end date: (yyyy-mm-dd)"),
+            dcc.Input(id="mahuika-input-end", type="text"),
+            html.Button(id="mahuika-submit-button", n_clicks=0, children="Submit"),
+            html.Button(id="mahuika-reset-button", n_clicks=0, children="Clear"),
+            html.H5("Mahuika total core hour usage", style={"padding-top": 25}),
+            dcc.Graph(id="mahuika_total_chours"),
+            html.Div(id="mahuika_total_user_chours"),
+            html.H5("Mahuika daily core hour usage", style={"padding-top": 30}),
+            dcc.Graph(id="mahuika_daily_chours"),
+
+            # Update interval
             dcc.Interval(id="interval_comp", interval=10 * 1000, n_intervals=0),
         ]
     )
@@ -374,9 +383,7 @@ def get_total_user_chours(
         name, total_chours = app.db.get_total_user_chours(
             hpc, username, start_date, end_date
         )
-        data.append(
-            OrderedDict([("username", name), ("total_core_hours", total_chours)])
-        )
+        data.append({"username": name, "total_core_hours": total_chours})
     return html.Div(
         [
             dash_table.DataTable(
@@ -384,7 +391,7 @@ def get_total_user_chours(
                 columns=[
                     {"id": c, "name": c} for c in ["username", "total_core_hours"]
                 ],
-                data=data,
+                data=sorted(data, key=lambda k: k["total_core_hours"], reverse=True),
                 style_cell={"textAlign": "left"},
             )
         ],
@@ -486,12 +493,12 @@ def validate_period(start_string, end_string):
         end = datetime.strptime(end_string, "%Y-%m-%d").date()
     except ValueError:
         return html.Plaintext(
-            "Date not in the correct format specified, setting dates to defaults (188 days ago - today)",
+            "Date not in the correct format specified, setting dates to the latest period",
             style={"background-color": "red", "font-size": 20},
         )
     if start > end:
         return html.Plaintext(
-            "End date must be after start date, setting dates to defaults (188 days ago - today)",
+            "End date must be after start date, setting dates to the latest period",
             style={"background-color": "red", "font-size": 20},
         )
     return start, end
@@ -507,7 +514,8 @@ def get_allocation_period(drop_down_value, button_click, input_start, input_end)
         if not isinstance(
             output, tuple
         ):  # returned err msg, setting allocation period to defaults
-            return output, DEFAULT_START, DEFAULT_END
+            start_date, end_date = drop_down_value.split("---")
+            return output, start_date, end_date
         else:
             start_date, end_date = output
     else:
