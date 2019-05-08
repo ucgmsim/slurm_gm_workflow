@@ -67,6 +67,9 @@ if is_master:
         help="high frequency binary (modified for binary out)",
         default=binary_version.get_hf_binmod("5.4.5"),
     )
+    arg("--version",
+        help="binary version, similar to --sim_bin but not full path."
+        default=None)
     arg("--t-sec", help="high frequency output start time", type=float, default=0.0)
     # HF IN, line 1
     arg("--sdrop", help="stress drop average (bars)", type=float, default=50.0)
@@ -159,6 +162,9 @@ if is_master:
     except SystemExit:
         # invalid arguments or -h
         comm.Abort()
+
+if args.version is not None:
+    args.sim_bin = binary_version.get_hf_binmod(args.version)
 
 if is_master:
     logger.debug("=" * 50)
