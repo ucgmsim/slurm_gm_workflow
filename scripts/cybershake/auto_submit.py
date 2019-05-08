@@ -413,22 +413,29 @@ def main(args, main_logger: Logger = workflow_logger.get_basic_logger()):
             n_tasks_to_run[hpc] = args.n_runs[hpc] - len(cur_tasks)
             squeue_tasks.extend(cur_tasks)
 
+        if len(squeue_tasks) > 0:
+            main_logger.info("Squeue user tasks: " + ", ".join(squeue_tasks))
+        else:
+            main_logger.debug("No squeue user tasks")
+
         db_in_progress_tasks = mgmt_db.get_submitted_tasks()
-        main_logger.info("Squeue user tasks: " + ", ".join(squeue_tasks))
-        main_logger.info(
-            "In progress tasks in mgmt db:"
-            + ", ".join(
-                [
-                    "{}-{}-{}-{}".format(
-                        entry.run_name,
-                        const.ProcessType(entry.proc_type).str_value,
-                        entry.job_id,
-                        const.Status(entry.status).str_value,
-                    )
-                    for entry in db_in_progress_tasks
-                ]
+        if len(db_in_progress_tasks) > 0:
+            main_logger.info(
+                "In progress tasks in mgmt db:"
+                + ", ".join(
+                    [
+                        "{}-{}-{}-{}".format(
+                            entry.run_name,
+                            const.ProcessType(entry.proc_type).str_value,
+                            entry.job_id,
+                            const.Status(entry.status).str_value,
+                        )
+                        for entry in db_in_progress_tasks
+                    ]
+                )
             )
-        )
+        else:
+            main_logger.debug("No in progress tasks in mgmt db")
 
         # Update the slurm mgmt based on squeue
         update_tasks(
@@ -441,7 +448,10 @@ def main(args, main_logger: Logger = workflow_logger.get_basic_logger()):
 
         # Gets all runnable tasks based on mgmt db state
         runnable_tasks = mgmt_db.get_runnable_tasks(args.n_max_retries)
-        main_logger.info("Number of runnable tasks: {}".format(len(runnable_tasks)))
+        if len(runnable_tasks) > 0:
+            main_logger.info("Number of runnable tasks: {}".format(len(runnable_tasks)))
+        else:
+            main_logger.debug("No runnable_tasks")
 
         # Select the first ntask_to_run that are not waiting
         # for mgmt db updates (i.e. items in the queue)
@@ -480,16 +490,18 @@ def main(args, main_logger: Logger = workflow_logger.get_basic_logger()):
                 ]
             ):
                 break
-
-        main_logger.info(
-            "Tasks to run this iteration: "
-            + ", ".join(
-                [
-                    "{}-{}".format(entry[1], const.ProcessType(entry[0]).str_value)
-                    for entry in tasks_to_run
-                ]
+        if len(tasks_to_run) > 0:
+            main_logger.info(
+                "Tasks to run this iteration: "
+                + ", ".join(
+                    [
+                        "{}-{}".format(entry[1], const.ProcessType(entry[0]).str_value)
+                        for entry in tasks_to_run
+                    ]
+                )
             )
-        )
+        else:
+            main_logger.debug("No tasks to run this iteration")
 
         # Submit the runnable tasks
         for task in tasks_to_run:
