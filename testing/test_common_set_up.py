@@ -21,8 +21,11 @@ def get_fault_from_rel(realisation):
 def get_input_params(root_path, func_name, params):
     input_params = []
     for param in params:
+        file_name = os.path.join(root_path, INPUT, func_name + "_{}.P".format(param))
+        if not os.path.exists(file_name):
+            continue
         with open(
-            os.path.join(root_path, INPUT, func_name + "_{}.P".format(param)), "rb"
+                file_name, "rb"
         ) as load_file:
             input_param = pickle.load(load_file)
             input_params.append(input_param)

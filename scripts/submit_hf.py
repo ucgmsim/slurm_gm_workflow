@@ -2,7 +2,7 @@
 """Script to create and submit a slurm script for HF"""
 import os
 import argparse
-from logging import ERROR, DEBUG
+from logging import Logger
 
 import estimation.estimate_wct as est
 import qcore.constants as const
@@ -16,7 +16,7 @@ from shared_workflow.shared import (
     submit_sl_script,
     get_nt,
 )
-from shared_workflow.workflow_logger import log
+from shared_workflow.workflow_logger import get_basic_logger
 from shared_workflow.shared_template import write_sl_script
 
 # default values
@@ -25,7 +25,7 @@ SCALE_NCORES = True
 default_wct = "00:30:00"
 
 
-def main(args: argparse.Namespace, est_model: est.EstModel = None, logger=None):
+def main(args: argparse.Namespace, est_model: est.EstModel = None, logger: Logger = get_basic_logger()):
     params = utils.load_sim_params(os.path.join(args.rel_dir, "sim_params.yaml"))
 
     # check if the args is none, if not, change the version
@@ -35,10 +35,10 @@ def main(args: argparse.Namespace, est_model: est.EstModel = None, logger=None):
         ll_name_prefix = "run_hf_mpi"
     else:
         if args.version is not None:
-            log(logger, ERROR, "{} cannot be recognize as a valid version option. version is set to default: {}".format(args.version, const.HF_DEFAULT_VERSION))
+            logger.error("{} cannot be recognize as a valid version option. version is set to default: {}".format(args.version, const.HF_DEFAULT_VERSION))
         version = const.HF_DEFAULT_VERSION
         ll_name_prefix = const.HF_DEFAULT_VERSION
-    log(logger, DEBUG, "version: {}".format(version))
+    logger.debug("version: {}".format(version))
 
     # modify the logic to use the same as in install_bb:
     # sniff through params_base to get the names of srf,

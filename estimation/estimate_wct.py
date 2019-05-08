@@ -6,19 +6,18 @@ Note: The n_cores argument that most of these functions take, should be
 the number of cores specified in the slurm script of the process type. So
 these will be logical number of cores for some process types and physical for others.
 """
-import logging
 import os
 import glob
 import pickle
 from typing import List, Union
 from collections import namedtuple
-from logging import DEBUG, CRITICAL
+from logging import Logger
 
 import numpy as np
 
 import qcore.constants as const
 from estimation.model import CombinedModel, WCEstModel, NNWcEstModel, SVRModel
-from shared_workflow.workflow_logger import log
+from shared_workflow.workflow_logger import get_basic_logger, NOPRINTCRITICAL
 
 SCALER_PREFIX = "scaler_{}"
 
@@ -171,7 +170,7 @@ def est_HF_chours_single(
     scale_ncores: bool,
     node_time_th_factor: float = 1.0,
     model_type: const.EstModelType = DEFAULT_MODEL_TYPE,
-    logger=None,
+    logger=get_basic_logger(),
 ):
     """Convenience function to make a single estimation
 
@@ -536,7 +535,7 @@ def estimate(
     return core_hours
 
 
-def load_full_model(dir: str, model_type: const.EstModelType = DEFAULT_MODEL_TYPE, logger=None):
+def load_full_model(dir: str, model_type: const.EstModelType = DEFAULT_MODEL_TYPE, logger: Logger = get_basic_logger()):
     """Loads the full model, i.e. the estimation model(s) and their associated scaler.
 
     Returns an EstModel object.
@@ -565,37 +564,33 @@ def load_full_model(dir: str, model_type: const.EstModelType = DEFAULT_MODEL_TYP
         )
 
 
-def load_scaler(dir: str, scaler_prefix: str, logger=None):
+def load_scaler(dir: str, scaler_prefix: str, logger: Logger = get_basic_logger()):
     """Loads the latest scaler
     """
     file_pattern = os.path.join(dir, "{}{}".format(scaler_prefix, "*.pickle"))
     scaler = glob.glob(file_pattern)
 
-    scaler_file = None
     if len(scaler) == 0:
-        log(logger, logging.CRITICAL + 1, "No valid model was found with file pattern {}".format(file_pattern))
+        logger.log(NOPRINTCRITICAL, "No valid model was found with file pattern {}".format(file_pattern))
         raise Exception(
             "No valid model was found with file pattern {}".format(file_pattern)
         )
-    elif len(scaler) == 0:
-        scaler_file = scaler[0]
-    else:
-        # Grab the newest model
-        scaler.sort()
-        scaler_file = scaler[-1]
+
+    scaler.sort()
+    scaler_file = scaler[-1]
 
     if not os.path.isfile(scaler_file):
-        log(logger, logging.CRITICAL+1, "No matching scaler was found for model {}".format(scaler_file))
+        logger.log(NOPRINTCRITICAL, "No matching scaler was found for model {}".format(scaler_file))
         raise Exception("No matching scaler was found for model {}".format(scaler_file))
 
     with open(scaler_file, "rb") as f:
         scaler = pickle.load(f)
 
-    log(logger, logging.DEBUG, "Loaded scaler {}".format(scaler_file))
+    logger.DEBUG("Loaded scaler {}".format(scaler_file))
     return scaler
 
 
-def load_model(dir: str, model_prefix: str, model_ext: str, model_cls: WCEstModel, logger=None):
+def load_model(dir: str, model_prefix: str, model_ext: str, model_cls: WCEstModel, logger: Logger = get_basic_logger()):
     """Loads a model
 
     If there are several models in the specified directory, then the latest
@@ -605,7 +600,7 @@ def load_model(dir: str, model_prefix: str, model_ext: str, model_cls: WCEstMode
     model_files = glob.glob(file_pattern)
 
     if len(model_files) == 0:
-        log(logger, CRITICAL+1, "No valid model was found with file pattern {}".format(file_pattern))
+        logger.log(NOPRINTCRITICAL, "No valid model was found with file pattern {}".format(file_pattern))
         raise Exception(
             "No valid model was found with file pattern {}".format(file_pattern)
         )
@@ -616,5 +611,5 @@ def load_model(dir: str, model_prefix: str, model_ext: str, model_cls: WCEstMode
 
     model = model_cls.from_saved_model(model_file)
 
-    log(logger, DEBUG, "Loaded model {}".format(model_file))
+    logger.debug("Loaded model {}".format(model_file))
     return model

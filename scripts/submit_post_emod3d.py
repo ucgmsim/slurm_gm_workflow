@@ -3,6 +3,7 @@
 import os
 import glob
 import argparse
+from logging import Logger
 
 import qcore.constants as const
 import qcore.simulation_structure as sim_struct
@@ -11,9 +12,9 @@ from qcore.config import get_machine_config, host
 from shared_workflow.shared import (
     confirm,
     submit_sl_script,
-    log,
 )
 from shared_workflow.shared_template import write_sl_script
+from shared_workflow.workflow_logger import get_basic_logger
 
 merge_ts_name_prefix = "post_emod3d_merge_ts"
 winbin_aio_name_prefix = "post_emod3d_winbin_aio"
@@ -37,7 +38,7 @@ def get_seis_len(seis_path):
     return len(seis_file_list)
 
 
-def main(args, logger=None):
+def main(args, logger: Logger = get_basic_logger()):
     params = utils.load_sim_params(os.path.join(args.rel_dir, "sim_params.yaml"))
     sim_dir = params.sim_dir
     mgmt_db_loc = params.mgmt_db_location

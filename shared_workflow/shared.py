@@ -15,14 +15,14 @@ import sys
 import re
 import glob
 from datetime import datetime
-from logging import Logger, DEBUG, INFO, ERROR, CRITICAL
+from logging import Logger, DEBUG, INFO
 
 from qcore import binary_version
 from qcore.config import host
 import qcore.constants as const
 from scripts.cybershake.queue_monitor import DATE_FORMAT as QUEUE_DATE_FORMAT
 from scripts.management.MgmtDB import MgmtDB
-from shared_workflow.workflow_logger import log
+from shared_workflow.workflow_logger import get_basic_logger
 
 if sys.version_info.major == 3:
     basestring = str
@@ -355,14 +355,13 @@ def get_input_wc():
     return user_input_wc
 
 
-def set_wct(est_run_time, ncores, auto=False, logger=None):
+def set_wct(est_run_time, ncores, auto=False, logger=get_basic_logger()):
     import estimation.estimate_wct as est
     if auto:
         level = DEBUG
     else:
         level = INFO
-    log(
-        logger,
+    logger.log(
         level,
         "Estimated time: {} with {} number of cores".format(
             est.convert_to_wct(est_run_time), ncores
@@ -379,12 +378,12 @@ def set_wct(est_run_time, ncores, auto=False, logger=None):
         use_estimation = True
 
     if use_estimation:
-        log(logger, DEBUG, "Using generated estimation.")
+        logger.debug("Using generated estimation.")
         wct = est.get_wct(est_run_time)
     else:
-        log(logger, DEBUG, "Using user determined wct value.")
+        logger.debug("Using user determined wct value.")
         wct = str(get_input_wc())
-    log(logger, level, "WCT set to: {}".format(wct))
+    logger.log(level, "WCT set to: {}".format(wct))
     return wct
 
 
@@ -448,13 +447,13 @@ def submit_sl_script(
     proc_type: int,
     queue_folder: str,
     run_name: str,
-    submit_yes=False,
-    target_machine=None,
-    logger=None,
+    submit_yes: bool = False,
+    target_machine: str = None,
+    logger: Logger = get_basic_logger(),
 ):
     """Submits the slurm script and updates the management db"""
     if submit_yes:
-        log(logger, DEBUG, "Submitting {} on machine {}".format(script, target_machine))
+        logger.debug("Submitting {} on machine {}".format(script, target_machine))
         if target_machine and target_machine != host:
             res = exe(
                 "sbatch --export=CUR_ENV,CUR_HPC -M {} {}".format(
@@ -487,9 +486,9 @@ def submit_sl_script(
             )
             return jobid
         else:
-            log(logger, ERROR, "An error occurred during job submission: {}".format(res[1]))
+            logger.error("An error occurred during job submission: {}".format(res[1]))
     else:
-        log(logger, INFO, "User chose to submit the job manually")
+        logger.info("User chose to submit the job manually")
 
 
 def add_to_queue(
@@ -511,7 +510,7 @@ def add_to_queue(
     )
 
     if os.path.exists(filename):
-        log(logger, CRITICAL, "An update with the name {} already exists. This should never happen. Quitting!".format(
+        logger.critical("An update with the name {} already exists. This should never happen. Quitting!".format(
                 os.path.basename(filename)
             ))
         raise Exception(

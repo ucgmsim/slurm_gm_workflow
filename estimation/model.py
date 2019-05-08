@@ -2,18 +2,18 @@
 import os
 import json
 import pickle
-from logging import DEBUG, CRITICAL, Logger
+from logging import Logger
 from typing import Tuple
 
 import numpy as np
 import keras
 import h5py
-from shared_workflow.workflow_logger import log
 from sklearn.model_selection import train_test_split, KFold
 from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVR
 
 import qcore.constants as const
+from shared_workflow.workflow_logger import get_basic_logger, NOPRINTCRITICAL
 
 
 def mre(y, y_est, sample_weights=None):
@@ -277,13 +277,13 @@ class NNWcEstModel(WCEstModel):
 
         return model
 
-    def predict(self, X: np.ndarray, warning: bool = True, logger: Logger = None):
+    def predict(self, X: np.ndarray, warning: bool = True, logger: Logger = get_basic_logger()):
         """Performs the actual prediction using the current model
 
         For full doc see WCEstModel.predict
         """
         if not self.is_trained:
-            log(logger, CRITICAL + 1, "There was an attempt to use an untrained model")
+            logger.log(NOPRINTCRITICAL, "There was an attempt to use an untrained model")
             raise Exception("This model has not been trained!")
 
         if np.any(self.get_out_of_bounds_mask(X)) and warning:
@@ -462,13 +462,13 @@ class SVRModel(WCEstModel):
                 )
             )
 
-    def predict(self, X: np.ndarray, logger: Logger = None):
+    def predict(self, X: np.ndarray, logger: Logger = get_basic_logger()):
         """Performs the actual prediction using the current model
 
         For full doc see WCEstModel.predict
         """
         if not self.is_trained:
-            log(logger, CRITICAL+1, "There was an attempt to use an untrained model")
+            logger.log(NOPRINTCRITICAL, "There was an attempt to use an untrained model")
             raise Exception("This model has not been trained!")
 
         return self._model.predict(X).reshape(-1)
@@ -529,7 +529,7 @@ class CombinedModel:
         X_svr: np.ndarray,
         n_cores: np.ndarray,
         default_n_cores: int,
-        logger: Logger = None,
+        logger: Logger = get_basic_logger(),
     ):
         """Attempt to use the NN model for estimation, however if input data
         is out of bounds, use the SVR model
@@ -564,9 +564,7 @@ class CombinedModel:
                 )
 
                 # Estimate out of bounds using SVR
-                log(
-                    logger,
-                    DEBUG,
+                logger.debug(
                     "Some entries are out of bounds, these will be "
                     "estimated using the SVR model."
                 )
@@ -576,9 +574,7 @@ class CombinedModel:
 
                 return results
             else:
-                log(
-                    logger,
-                    DEBUG,
+                logger.debug(
                     "The entry is out of bounds. The SVR models will be "
                     "used for estimation."
                 )

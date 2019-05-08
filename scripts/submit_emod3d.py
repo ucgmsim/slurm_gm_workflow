@@ -4,7 +4,7 @@
 # Section for parser to determine if using automate wct
 import os
 import argparse
-from logging import DEBUG
+from logging import Logger
 
 import scripts.set_runparams as set_runparams
 import qcore.constants as const
@@ -18,15 +18,16 @@ from shared_workflow.shared import (
     set_wct,
     submit_sl_script,
     get_nt,
-    log,
 )
 from shared_workflow.shared_template import write_sl_script
 
 # Estimated number of minutes between each checkpoint
+from shared_workflow.workflow_logger import get_basic_logger
+
 CHECKPOINT_DURATION = 10
 
 
-def main(args: argparse.Namespace, est_model: est.EstModel = None, logger=None):
+def main(args: argparse.Namespace, est_model: est.EstModel = None, logger: Logger = get_basic_logger()):
     params = utils.load_sim_params(os.path.join(args.rel_dir, "sim_params.yaml"))
 
     submit_yes = True if args.auto else confirm("Also submit the job for you?")
@@ -35,11 +36,11 @@ def main(args: argparse.Namespace, est_model: est.EstModel = None, logger=None):
         os.path.dirname(os.path.realpath(__file__)), "workflow_config.json"
     )
 
-    log(logger, DEBUG, "params.srf_file {}".format(params.srf_file))
+    logger.debug("params.srf_file {}".format(params.srf_file))
     # Get the srf(rup) name without extensions
     srf_name = os.path.splitext(os.path.basename(params.srf_file))[0]
     if args.srf is None or srf_name == args.srf:
-        log(logger, DEBUG, "not set_params_only")
+        logger.debug("not set_params_only")
         # get lf_sim_dir
         sim_dir = os.path.abspath(params.sim_dir)
         lf_sim_dir = os.path.join(sim_dir, "LF")

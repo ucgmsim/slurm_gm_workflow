@@ -3,9 +3,8 @@
 import argparse
 import time
 import os
-import sys
-import logging
 from datetime import datetime
+from logging import Logger
 from subprocess import call, Popen, PIPE
 from typing import List
 
@@ -26,7 +25,7 @@ from scripts.submit_hf import main as submit_hf_main
 from scripts.submit_bb import main as submit_bb_main
 from scripts.submit_sim_imcalc import submit_im_calc_slurm, SlBodyOptConsts
 from shared_workflow import shared, workflow_logger
-from shared_workflow.workflow_logger import get_task_logger
+from shared_workflow.workflow_logger import get_task_logger, get_basic_logger
 
 DEFAULT_N_MAX_RETRIES = 2
 DEFAULT_N_RUNS = {const.HPC.maui: 12, const.HPC.mahuika: 12}
@@ -78,7 +77,7 @@ def update_tasks(
     mgmt_queue_entries: List[str],
     squeue_tasks,
     db_tasks: List[SlurmTask],
-    task_logger,
+    task_logger: Logger,
 ):
     """Updates the mgmt db entries based on the HPC queue"""
     for db_task in db_tasks:
@@ -349,7 +348,7 @@ def submit_task(
         )
 
 
-def main(args, main_logger):
+def main(args, main_logger: Logger = get_basic_logger()):
     root_folder = os.path.abspath(args.root_folder)
     mgmt_queue_folder = sim_struct.get_mgmt_db_queue(root_folder)
     mgmt_db = MgmtDB(sim_struct.get_mgmt_db(root_folder))
@@ -376,16 +375,16 @@ def main(args, main_logger):
     main_logger.info("Loading estimation models")
     workflow_config = ldcfg.load()
     lf_est_model = est.load_full_model(
-        os.path.join(workflow_config["estimation_models_dir"], "LF"), main_logger
+        os.path.join(workflow_config["estimation_models_dir"], "LF"), logger=main_logger
     )
     hf_est_model = est.load_full_model(
-        os.path.join(workflow_config["estimation_models_dir"], "HF"), main_logger
+        os.path.join(workflow_config["estimation_models_dir"], "HF"), logger=main_logger
     )
     bb_est_model = est.load_full_model(
-        os.path.join(workflow_config["estimation_models_dir"], "BB"), main_logger
+        os.path.join(workflow_config["estimation_models_dir"], "BB"), logger=main_logger
     )
     im_est_model = est.load_full_model(
-        os.path.join(workflow_config["estimation_models_dir"], "IM"), main_logger
+        os.path.join(workflow_config["estimation_models_dir"], "IM"), logger=main_logger
     )
 
     # If any flags to ignore steps are given, add them to the list of skipped processes
@@ -482,7 +481,7 @@ def main(args, main_logger):
                 break
 
         main_logger.info(
-            "Tasks to run this iteration: "+
+            "Tasks to run this iteration: " +
             ", ".join(
                 [
                     "{}-{}".format(entry[1], const.ProcessType(entry[0]).str_value)
