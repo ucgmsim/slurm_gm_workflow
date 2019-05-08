@@ -261,7 +261,7 @@ def submit_task(
             write_directory=sim_dir,
             debug=False,
         )
-        task_logger.debug("Submit HF arguments: ".format(args))
+        task_logger.debug("Submit HF arguments: {}".format(args))
         submit_hf_main(args, models[1], task_logger)
         store_metadata(
             log_file,
@@ -280,7 +280,7 @@ def submit_task(
             write_directory=sim_dir,
             ascii=False,
         )
-        task_logger.debug("Submit BB arguments: ".format(args))
+        task_logger.debug("Submit BB arguments: {}".format(args))
         submit_bb_main(args, models[2], task_logger)
         store_metadata(
             log_file,
@@ -302,7 +302,7 @@ def submit_task(
             est_model=models[3],
             logger=task_logger,
         )
-        task_logger.debug("Submit IM calc arguments: ".format(args))
+        task_logger.debug("Submit IM calc arguments: {}".format(options_dict))
         store_metadata(
             log_file,
             const.ProcessType.IM_calculation.str_value,
