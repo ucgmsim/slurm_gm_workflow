@@ -6,7 +6,6 @@ conf_file=${2?Error: "A config file path has to be provided"}
 
 # Load all the required value from the json config
 base_path=`jq -r '.base_environments_path' ${conf_file}`
-est_models_src=`jq -r '.estimation_model_src' ${conf_file}`
 
 # Check that this name isn't already taken.
 env_path=${base_path}/${name}
@@ -30,11 +29,6 @@ python ./workflow/install_workflow/create_config_file.py ${env_path}
 
 # Create version
 echo "dev" > ${env_path}/workflow/version
-
-# Copy the estimation models
-echo "Copying estimation models from $est_models_src"
-mkdir ./workflow/estimation/models/
-cp -r ${est_models_src}/* ./workflow/estimation/models/
 
 echo "Cloning qcore"
 git clone git@github.com:ucgmsim/qcore.git
