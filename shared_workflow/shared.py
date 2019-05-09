@@ -656,33 +656,33 @@ def params_to_dict(params_base_path):
     return params_dict
 
 
-def get_site_specific_path(stat_file_path, hf_stat_vs_ref=None, v1d_mod_dir=None):
+def get_site_specific_path(stat_file_path, hf_stat_vs_ref=None, v1d_mod_dir=None, logger: Logger = get_basic_logger()):
     show_horizontal_line()
-    print("Auto-detecting site-specific info")
+    logger.info("Auto-detecting site-specific info")
     show_horizontal_line()
-    print("- Station file path: %s" % stat_file_path)
+    logger.info("- Station file path: %s" % stat_file_path)
 
     if v1d_mod_dir is not None:
         v_mod_1d_path = v1d_mod_dir
     else:
         v_mod_1d_path = os.path.join(os.path.dirname(stat_file_path), "1D")
     if os.path.exists(v_mod_1d_path):
-        print("- 1D profiles found at %s" % v_mod_1d_path)
+        logger.info("- 1D profiles found at {}".format(v_mod_1d_path))
     else:
-        print("Error: No such path exists: %s" % v_mod_1d_path)
+        logger.critical("Error: No such path exists: {}".format(v_mod_1d_path))
         sys.exit()
     if hf_stat_vs_ref is None:
         hf_stat_vs_ref_options = glob.glob(os.path.join(stat_file_path, "*.hfvs30ref"))
         if len(hf_stat_vs_ref_options) == 0:
-            print("Error: No HF Vsref file was found at %s" % stat_file_path)
+            logger.critical("Error: No HF Vsref file was found at {}".format(stat_file_path))
             sys.exit()
         hf_stat_vs_ref_options.sort()
 
         show_horizontal_line()
-        print("Select one of HF Vsref files")
+        logger.info("Select one of HF Vsref files")
         show_horizontal_line()
         hf_stat_vs_ref_selected = show_multiple_choice(hf_stat_vs_ref_options)
-        print(" - HF Vsref tp be used: %s" % hf_stat_vs_ref_selected)
+        logger.info(" - HF Vsref tp be used: {}".format(hf_stat_vs_ref_selected))
     else:
         hf_stat_vs_ref_selected = hf_stat_vs_ref
     return v_mod_1d_path, hf_stat_vs_ref_selected

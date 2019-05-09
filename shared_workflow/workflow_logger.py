@@ -22,6 +22,10 @@ GENERAL_LOGGING_MESSAGE_FORMAT = (
 )
 general_formatter = logging.Formatter(GENERAL_LOGGING_MESSAGE_FORMAT)
 
+REALISATION_LOGGING_MESSAGE_FORMAT = (
+    "%(levelname)8s -- %(asctime)s - %(module)s.%(funcName)s - {} - %(message)s"
+)
+
 TASK_LOGGING_MESSAGE_FORMAT = (
     "%(levelname)8s -- %(asctime)s - %(module)s.%(funcName)s - {}.{} - %(message)s"
 )
@@ -59,6 +63,44 @@ def add_general_file_handler(logger: logging.Logger, file_path: str):
     file_out_handler.setFormatter(general_formatter)
 
     logger.addHandler(file_out_handler)
+
+
+def get_realisation_logger(old_logger: logging.Logger, realisation: str):
+    """Creates a new logger that logs the realisation.
+    The logger passed in is effectively duplicated and log messages are saved to the same file as the original logger.
+    :param old_logger: Logger the new instance is to be based on
+    :param realisation: The name of the realisation this logger is for
+    :return: The new logger object
+    """
+    new_logger = logging.getLogger(realisation)
+    new_logger.setLevel(logging.DEBUG)
+
+    task_formatter = logging.Formatter(
+        TASK_LOGGING_MESSAGE_FORMAT.format(realisation)
+    )
+
+    old_handlers = old_logger.handlers
+    log_files = []
+    for handler in old_handlers:
+        if isinstance(handler, logging.FileHandler):
+            log_name = handler.baseFilename
+            if log_name in log_files:
+                continue
+            log_files.append(log_name)
+            task_file_out_handler = logging.FileHandler(log_name)
+            task_file_out_handler.setFormatter(task_formatter)
+            new_logger.addHandler(task_file_out_handler)
+
+    task_print_handler = logging.StreamHandler(sys.stdout)
+    task_print_handler.setLevel(logging.INFO)
+    task_print_handler.setFormatter(task_formatter)
+
+    # If the message level ends in 1 do not print it to stdout
+    task_print_handler.addFilter(lambda record: (record.levelno % 10) != 1)
+
+    new_logger.addHandler(task_print_handler)
+
+    return new_logger
 
 
 def get_task_logger(old_logger: logging.Logger, realisation: str, process_type: int):
