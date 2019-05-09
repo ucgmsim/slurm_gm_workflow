@@ -44,11 +44,11 @@ SLURM_TO_STATUS_DICT = {"R": 3, "PD": 2, "CG": 3}
 
 def get_queued_tasks(user=None, machine=const.HPC.maui):
     if user is not None:
-        cmd = "squeue -A nesi00213 -o '%A %t' -h -M {} -u {}".format(
-            machine.value, user
+        cmd = "squeue -A {} -o '%A %t' -h -M {} -u {}".format(
+            const.DEFAULT_ACCOUNT,machine.value, user
         )
     else:
-        cmd = "squeue -A nesi00213 -o '%A %t' -h -M {}".format(machine.value)
+        cmd = "squeue -A {} -o '%A %t' -h -M {}".format(const.DEFAULT_ACCOUNT,machine.value)
 
     process = Popen(shlex.split(cmd), stdout=PIPE, encoding="utf-8")
     (output, err) = process.communicate()

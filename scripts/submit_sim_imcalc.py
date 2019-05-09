@@ -43,7 +43,7 @@ DEFAULT_OPTIONS = {
     # Header
     SlHdrOptConsts.job_name_prefix.value: "sim_im_calc",
     SlHdrOptConsts.description.value: "Calculates intensity measures.",
-    SlHdrOptConsts.account.value: "nesi00213",
+    SlHdrOptConsts.account.value: const.DEFAULT_ACCOUNT,
     SlHdrOptConsts.additional.value: "#SBATCH --hint=nomultithread",
     SlHdrOptConsts.memory.value: "2G",
     SlHdrOptConsts.n_tasks.value: 1,
