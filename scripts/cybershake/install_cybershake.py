@@ -26,10 +26,17 @@ def main():
         "fault_selection_list", type=str, help="The fault selection file"
     )
     parser.add_argument(
-        "--seed",
-        type=str,
-        default=0,
-        help="The seed to be used for HF simulations. Default is to request a random seed.",
+        "--seed", type=str, default=0,
+        help="The seed to be used for HF simulations. Default is to request a random seed."
+    )
+    parser.add_argument(
+        "--stat_file_path", type=str,
+        default="/nesi/project/nesi00213/StationInfo/non_uniform_whole_nz_with_real_stations-hh400_v18p6.ll",
+        help="The path to the station info file path."
+    )
+    parser.add_argument(
+        "--extended_period", action="store_true",
+        help="Should IM_calc calculate more psa periods."
     )
     parser.add_argument(
         "--log_file",
@@ -70,7 +77,9 @@ def main():
             count,
             args.path_cybershake,
             args.version,
+            args.stat_file_path,
             args.seed,
+            args.extended_period,
             workflow_logger.get_realisation_logger(logger, fault),
         )
 

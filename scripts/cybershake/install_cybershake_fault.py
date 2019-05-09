@@ -45,7 +45,7 @@ def main():
     install_fault(args.vm, args.n_rel, os.path.abspath(args.path_cybershake), args.version, args.seed)
 
 
-def install_fault(fault_name, n_rel, root_folder, version, seed=0, logger: Logger = get_basic_logger()):
+def install_fault(fault_name, n_rel, root_folder, version, stat_file_path, seed=0, extended_period=False, logger: Logger = get_basic_logger()):
 
     config_dict = utils.load_yaml(os.path.join(recipe_dir, "gmsim", version, ROOT_DEFAULTS_FILE_NAME))
     # Load variables from cybershake config
@@ -54,7 +54,6 @@ def install_fault(fault_name, n_rel, root_folder, version, seed=0, logger: Logge
     site_v1d_dir = config_dict.get("site_v1d_dir")
     hf_stat_vs_ref = config_dict.get("hf_stat_vs_ref")
 
-    stat_file_path = config_dict['stat_file_path']
     vs30_file_path = stat_file_path.replace('.ll', '.vs30')
     vs30ref_file_path = stat_file_path.replace('.ll', '.vs30ref')
 
@@ -132,6 +131,7 @@ def install_fault(fault_name, n_rel, root_folder, version, seed=0, logger: Logge
             sim_params_file=sim_params_file,
             seed=seed,
             logger=logger,
+            extended_period=extended_period,
         )
 
         vm_params_dict.update(vm_add_params_dict)

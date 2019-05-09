@@ -48,6 +48,7 @@ def install_simulation(
     sim_params_file="",
     seed=0,
     logger: Logger = get_basic_logger(),
+    extended_period=False,
 ):
     """Installs a single simulation"""
     lf_sim_root_dir = simulation_structure.get_lf_dir(sim_dir)
@@ -109,6 +110,7 @@ def install_simulation(
     root_params_dict = utils.load_yaml(
         os.path.join(template_path, ROOT_DEFAULTS_FILE_NAME)
     )
+    root_params_dict[RootParams.extended_period.value] = extended_period
     root_params_dict[RootParams.version.value] = version
     root_params_dict[RootParams.stat_file.value] = stat_file_path
     root_params_dict[RootParams.stat_vs_est.value] = vs30_file_path
