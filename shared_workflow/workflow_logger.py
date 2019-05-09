@@ -21,6 +21,11 @@ logging.addLevelName(NOPRINTDEBUG, "NO_PRINT_DEBUG")
 
 DEFAULT_LOGGER_NAME = "auto_submit"
 
+STDOUT_MESSAGE_FORMAT = (
+    "%(asctime)s - %(message)s"
+)
+stdout_formatter = logging.Formatter(STDOUT_MESSAGE_FORMAT)
+
 GENERAL_LOGGING_MESSAGE_FORMAT = (
     "%(levelname)8s -- %(asctime)s - %(module)s.%(funcName)s - %(message)s"
 )
@@ -47,7 +52,7 @@ def get_logger(name: str = DEFAULT_LOGGER_NAME):
 
     print_handler = logging.StreamHandler(sys.stdout)
     print_handler.setLevel(logging.INFO)
-    print_handler.setFormatter(general_formatter)
+    print_handler.setFormatter(stdout_formatter)
 
     # If the message level ends in 1 do not print it to stdout
     print_handler.addFilter(lambda record: (record.levelno % 10) != 1)
@@ -97,7 +102,7 @@ def get_realisation_logger(old_logger: logging.Logger, realisation: str):
 
     task_print_handler = logging.StreamHandler(sys.stdout)
     task_print_handler.setLevel(logging.INFO)
-    task_print_handler.setFormatter(task_formatter)
+    task_print_handler.setFormatter(stdout_formatter)
 
     # If the message level ends in 1 do not print it to stdout
     task_print_handler.addFilter(lambda record: (record.levelno % 10) != 1)
@@ -139,7 +144,7 @@ def get_task_logger(old_logger: logging.Logger, realisation: str, process_type: 
 
     task_print_handler = logging.StreamHandler(sys.stdout)
     task_print_handler.setLevel(logging.INFO)
-    task_print_handler.setFormatter(task_formatter)
+    task_print_handler.setFormatter(stdout_formatter)
 
     # If the message level ends in 1 do not print it to stdout
     task_print_handler.addFilter(lambda record: (record.levelno % 10) != 1)

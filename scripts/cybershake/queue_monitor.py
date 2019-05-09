@@ -82,7 +82,7 @@ def main(args, queue_logger: Logger = workflow_logger.get_basic_logger()):
             queue_logger.info("No entries in the mgmt db queue.")
 
         # Nap time
-        queue_logger.info("Sleeping for {}".format(args.sleep_time))
+        queue_logger.debug("Sleeping for {}".format(args.sleep_time))
         time.sleep(args.sleep_time)
 
 
