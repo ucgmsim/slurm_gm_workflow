@@ -400,7 +400,10 @@ def main(args, main_logger: Logger = workflow_logger.get_basic_logger()):
         main_logger.info("Not cleaning up")
         skipped.append(const.ProcessType.clean_up.value)
 
-    while True:
+    somethingHappened = True
+
+    while somethingHappened:
+        somethingHappened = False
         # Get items in the mgmt queue, have to get a snapshot instead of
         # checking the directory real-time to prevent timing issues,
         # which can result in dual-submission
@@ -414,12 +417,14 @@ def main(args, main_logger: Logger = workflow_logger.get_basic_logger()):
             squeue_tasks.extend(cur_tasks)
 
         if len(squeue_tasks) > 0:
+            somethingHappened = True
             main_logger.info("Squeue user tasks: " + ", ".join(squeue_tasks))
         else:
             main_logger.debug("No squeue user tasks")
 
         db_in_progress_tasks = mgmt_db.get_submitted_tasks()
         if len(db_in_progress_tasks) > 0:
+            somethingHappened = True
             main_logger.info(
                 "In progress tasks in mgmt db:"
                 + ", ".join(
@@ -449,6 +454,7 @@ def main(args, main_logger: Logger = workflow_logger.get_basic_logger()):
         # Gets all runnable tasks based on mgmt db state
         runnable_tasks = mgmt_db.get_runnable_tasks(args.n_max_retries)
         if len(runnable_tasks) > 0:
+            somethingHappened = True
             main_logger.info("Number of runnable tasks: {}".format(len(runnable_tasks)))
         else:
             main_logger.debug("No runnable_tasks")
@@ -457,6 +463,7 @@ def main(args, main_logger: Logger = workflow_logger.get_basic_logger()):
         # for mgmt db updates (i.e. items in the queue)
         tasks_to_run, task_counter = [], {key: 0 for key in const.HPC}
         for task in runnable_tasks[:100]:
+            somethingHappened = True
             cur_run_name, cur_proc_type = task[1], task[0]
 
             # Set task that are set to be skipped to complete in db
@@ -543,6 +550,7 @@ def main(args, main_logger: Logger = workflow_logger.get_basic_logger()):
 
         main_logger.debug("Sleeping for {} second(s)".format(args.sleep_time))
         time.sleep(args.sleep_time)
+    main_logger.info("Nothing was running or ready to run last cycle, exiting now")
 
 
 if __name__ == "__main__":
