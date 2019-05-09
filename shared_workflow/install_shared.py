@@ -16,7 +16,7 @@ from qcore.constants import (
     ROOT_DEFAULTS_FILE_NAME,
 )
 from shared_workflow import shared
-from shared_workflow.workflow_logger import get_basic_logger
+from shared_workflow.workflow_logger import get_basic_logger, VERYVERBOSE
 
 
 def install_simulation(
@@ -342,12 +342,12 @@ def generate_fd_files(
     suname = []
     for i in range(len(xy)):
         if xy[i] is None:
-            logger.log(DEBUG/2,"Station outside domain: {}".format(sname[i]))
+            logger.log(VERYVERBOSE, "Station outside domain: {}".format(sname[i]))
         elif xy[i] not in sxy:
             sxy.append(xy[i])
             suname.append(sname[i])
         else:
-            logger.debug("Duplicate Station Ignored: {}".format(sname[i]))
+            logger.log(VERYVERBOSE, "Duplicate Station Ignored: {}".format(sname[i]))
 
     # create grid point file
     with open(gp_out, "w") as gpf:

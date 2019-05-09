@@ -3,6 +3,10 @@ import sys
 
 from qcore.constants import ProcessType
 
+VERYVERBOSE = logging.DEBUG//2
+
+logging.addLevelName(VERYVERBOSE, "VERY_VERBOSE")
+
 NOPRINTCRITICAL = logging.CRITICAL + 1
 NOPRINTERROR = logging.ERROR + 1
 NOPRINTWARNING = logging.WARNING + 1
