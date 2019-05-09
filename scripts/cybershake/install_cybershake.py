@@ -45,8 +45,8 @@ def main():
             count,
             args.path_cybershake,
             args.version,
-            args.seed,
             args.stat_file_path,
+            args.seed,
             args.extended_period,
         )
 
