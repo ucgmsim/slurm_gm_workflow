@@ -76,7 +76,7 @@ def get_realisation_logger(old_logger: logging.Logger, realisation: str):
     new_logger.setLevel(logging.DEBUG)
 
     task_formatter = logging.Formatter(
-        TASK_LOGGING_MESSAGE_FORMAT.format(realisation)
+        REALISATION_LOGGING_MESSAGE_FORMAT.format(realisation)
     )
 
     old_handlers = old_logger.handlers

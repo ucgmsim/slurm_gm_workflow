@@ -52,7 +52,7 @@ def main():
         workflow_logger.add_general_file_handler(
             logger,
             os.path.join(
-                args.root_folder,
+                args.path_cybershake,
                 AUTO_SUBMIT_LOG_FILE_NAME.format(
                     datetime.now().strftime(TIMESTAMP_FORMAT)
                 ),
@@ -60,7 +60,7 @@ def main():
         )
     else:
         workflow_logger.add_general_file_handler(
-            logger, os.path.join(args.root_folder, args.log_file)
+            logger, os.path.join(args.path_cybershake, args.log_file)
         )
     logger.debug("Added file handler to the logger")
 

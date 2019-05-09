@@ -2,7 +2,7 @@
 import os
 import glob
 import shutil
-from logging import Logger
+from logging import Logger, DEBUG
 
 import yaml
 
@@ -342,7 +342,7 @@ def generate_fd_files(
     suname = []
     for i in range(len(xy)):
         if xy[i] is None:
-            logger.debug("Station outside domain: {}".format(sname[i]))
+            logger.log(DEBUG/2,"Station outside domain: {}".format(sname[i]))
         elif xy[i] not in sxy:
             sxy.append(xy[i])
             suname.append(sname[i])
