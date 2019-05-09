@@ -44,4 +44,4 @@ def get_bench_output(root_path, func_name):
 def set_up(request):
     data_locations = testing.test_set_up(REALISATIONS)
     yield list(zip(data_locations, [rel[0] for rel in REALISATIONS]))
-    #testing.test_tear_down(data_locations)
+    testing.test_tear_down(data_locations)
