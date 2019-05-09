@@ -41,7 +41,7 @@ JOB_RUN_MACHINE = {
 
 SLURM_TO_STATUS_DICT = {"R": 3, "PD": 2, "CG": 3}
 
-AUTO_SUBMIT_LOG_FILE_NAME = "cybershake_log_{}.txt"
+AUTO_SUBMIT_LOG_FILE_NAME = "auto_submit_log_{}.txt"
 
 
 def get_queued_tasks(user=None, machine=const.HPC.maui):
