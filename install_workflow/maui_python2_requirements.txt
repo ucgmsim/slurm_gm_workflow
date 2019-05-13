@@ -25,7 +25,6 @@ python-dateutil==2.7.5
 pytz==2018.7
 pyyaml>=4.2b1
 readline==6.2.4.1
-qcore==1.1
 scipy==1.1.0
 six==1.11.0
 subprocess32==3.5.3
