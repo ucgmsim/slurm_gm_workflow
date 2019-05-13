@@ -11,6 +11,7 @@ import json
 import argparse
 from typing import Dict, List
 from datetime import datetime
+from logging import Logger
 
 import pandas as pd
 from filelock import SoftFileLock, Timeout
@@ -19,6 +20,7 @@ import qcore.constants as const
 from qcore.constants import ProcessType, MetadataField
 from qcore import utils
 from qcore.srf import get_nsub_stoch
+from shared_workflow.workflow_logger import get_basic_logger
 
 METADATA_VALUES = "metadata_values"
 LOCK_FILENAME = "{}.lock".format(const.METADATA_LOG_FILENAME)
@@ -70,6 +72,7 @@ def store_metadata(
     metadata_dict: Dict[str, str],
     sim_name: str = None,
     metaconst_to_add: List[str] = METACONST_TO_ADD,
+    logger: Logger = get_basic_logger(),
 ):
     """Store metadata values in the specified json log file for a specific process type.
 
@@ -98,10 +101,12 @@ def store_metadata(
         to the json log file at the top level
     metaconst_to_add: List of strings
         Metadata keys for which their values are added (e.g. run_time)
+    logger:
+        Logger to pass log messages to. If None all messages will be printed to stdout or stderr depending on level
     """
     # Check that it is a valid process type
     if not ProcessType.has_str_value(proc_type):
-        print("{} is not a valid process type. Logged anyways.".format(proc_type))
+        logger.warning("{} is not a valid process type. Logged anyway.".format(proc_type))
 
     lock_file = os.path.join(os.path.dirname(log_file), LOCK_FILENAME)
     lock = SoftFileLock(lock_file)
@@ -110,13 +115,12 @@ def store_metadata(
     try:
         lock.acquire(timeout=20)
     except Timeout:
-        print(
+        logger.error(
             "Failed to acquire the lock for the metadata log file, "
-            "giving up on logging data. This should be investigated!\n"
-            "The metadata that was unable to be logged is attached:\n{}".format(
+            "giving up on logging data. This should be investigated!"
+            "The metadata that was unable to be logged is attached: {}".format(
                 metadata_dict
             ),
-            file=sys.stderr,
         )
         return
 
@@ -140,8 +144,8 @@ def store_metadata(
         sim_name is not None
         and json_data.get(const.MetadataField.sim_name.value) != sim_name
     ):
-        print(
-            "Sim name {} does not match already existing sim name {} in log file {}".format(
+        logger.warning(
+            "Sim name {} does not match already existing sim name {} in metadata log file {}".format(
                 sim_name, json_data.get(const.MetadataField.sim_name.value), log_file
             )
         )
@@ -179,11 +183,10 @@ def store_metadata(
             # value (e.g. run_time)
             if k in metaconst_to_add:
                 if type(v) is not int and type(v) is not float:
-                    print(
+                    logger.warning(
                         "Unsupported metadata value type for addition. "
                         "Check metadata values. "
                         "Value {} for key {} not added.".format(v, k),
-                        file=sys.stderr,
                     )
                     continue
                 else:
