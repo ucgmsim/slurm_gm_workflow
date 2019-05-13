@@ -94,7 +94,11 @@ class DashboardDB:
         return day
 
     def update_chours_usage(
-            self, daily_ch_usage, total_ch_usage: float, hpc: const.HPC, day: Union[date, str] = None
+        self,
+        daily_ch_usage,
+        total_ch_usage: float,
+        hpc: const.HPC,
+        day: Union[date, str] = None,
     ):
         """Updates daily and total core hours usage"""
         # daily usage will be None if total is None
@@ -129,7 +133,11 @@ class DashboardDB:
                 )
 
     def get_chours_usage(
-        self, start_date: Union[date, str], end_date: Union[date, str], hpc: const.HPC, physical: bool=True
+        self,
+        start_date: Union[date, str],
+        end_date: Union[date, str],
+        hpc: const.HPC,
+        physical: bool = True,
     ):
         """Gets the usage and total usage for the date range,
            If physical is set to True, returns physical core hours instead of virtual
@@ -140,15 +148,16 @@ class DashboardDB:
         with self.get_cursor(self.db_file) as cursor:
             results = cursor.execute(
                 "SELECT DAY, CORE_HOURS_USED, TOTAL_CORE_HOURS FROM {} "
-                "WHERE DAY BETWEEN ? AND ?".format(self.get_daily_t_name(hpc)),
+                "WHERE DAY BETWEEN ? AND ? ORDER BY DAY".format(
+                    self.get_daily_t_name(hpc)
+                ),
                 (start_date, end_date),
             ).fetchall()
-
         # convert virtual core hours to physical
         if physical:
             results = [
-                (result[0], result[1] / 2., result[2] / 2.)
-                for result in results]
+                (result[0], result[1] / 2.0, result[2] / 2.0) for result in results
+            ]
         return results
 
     def update_squeue(self, squeue_entries: Iterable[SQueueEntry], hpc: const.HPC):
@@ -328,28 +337,66 @@ class DashboardDB:
                         (entry.core_hours_used, update_time, day, entry.username),
                     )
 
-    def get_user_chours(self, hpc: const.HPC, username: str, physical: bool=True):
+    def get_user_chours(
+        self,
+        hpc: const.HPC,
+        username: str,
+        start_date: Union[date, str],
+        end_date: Union[date, str],
+        physical: bool = True,
+    ):
         """Gets core hours usage over time for a specified user"""
+        start_date = self.get_date(start_date)
+        end_date = self.get_date(end_date)
+
         table = self.get_user_ch_t_name(hpc)
-        sql = "SELECT DAY, USERNAME, CORE_HOURS_USED FROM {} WHERE USERNAME = ?".format(
+        sql = "SELECT DAY, USERNAME, CORE_HOURS_USED FROM {} WHERE USERNAME = ? AND DAY BETWEEN ? AND ? ORDER BY DAY".format(
             table
         )
         with self.get_cursor(self.db_file) as cursor:
-            results = cursor.execute(sql, (username,)).fetchall()
+            results = cursor.execute(sql, (username, start_date, end_date)).fetchall()
 
         # convert virtual core hours to physical
         if physical:
-            results = [
-                (result[0], result[1], result[2] / 2.)
-                for result in results]
+            results = [(result[0], result[1], result[2] / 2.0) for result in results]
         return [UserChEntry(*result) for result in results]
+
+    def get_total_user_chours(
+        self,
+        hpc: const.HPC,
+        username: str,
+        start_date: Union[date, str],
+        end_date: Union[date, str],
+        physical: bool = True,
+    ):
+        start_date = self.get_date(start_date)
+        end_date = self.get_date(end_date)
+
+        table = self.get_user_ch_t_name(hpc)
+        sql = "SELECT USERNAME, SUM(CORE_HOURS_USED) FROM {} WHERE USERNAME = ? AND DAY BETWEEN ? AND ?".format(
+            table
+        )
+        with self.get_cursor(self.db_file) as cursor:
+            results = cursor.execute(sql, (username, start_date, end_date)).fetchall()
+
+        if physical:
+            results = [(result[0], result[1] / 2.0) for result in results]
+        return results[0]
 
     def get_update_time(self, hpc: const.HPC):
         """Get update_time from db"""
         with self.get_cursor(self.db_file) as cursor:
             result = cursor.execute(
-                "SELECT UPDATE_TIME FROM {} ORDER BY UPDATE_TIME DESC LIMIT 1".format(self.get_daily_t_name(hpc)),
+                "SELECT UPDATE_TIME FROM {} ORDER BY UPDATE_TIME DESC LIMIT 1".format(
+                    self.get_daily_t_name(hpc)
+                )
             ).fetchone()
+        return result
+
+    def get_allocation_periods(self, hpc: const.HPC):
+        sql = "SELECT START, END from ALLOCATION where machine = ?"
+        with self.get_cursor(self.db_file) as cursor:
+            result = cursor.execute(sql, (hpc.value,)).fetchall()
         return result
 
     def _create_queue_table(self, cursor, hpc: const.HPC):
