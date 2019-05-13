@@ -80,7 +80,7 @@ def main(args: argparse.Namespace, est_model: est.EstModel = None):
 
         body_template_params = (
             "{}.sl.template".format(sl_name_prefix),
-            {"test_bb_script": "test_bb_binary.sh"},
+            {"test_bb_script": "test_bb.sh"},
         )
 
         script_prefix = "{}_{}".format(sl_name_prefix, underscored_srf)

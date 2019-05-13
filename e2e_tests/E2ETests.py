@@ -96,7 +96,6 @@ class E2ETests(object):
         "run_hf_mpi.sl.template",
         "sim_im_calc.sl.template",
         "post_emod3d_merge_ts.sl.template",
-        "post_emod3d_winbin_aio.sl.template",
     ]
 
     def __init__(self, config_file: str):
