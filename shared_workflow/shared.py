@@ -15,12 +15,14 @@ import sys
 import re
 import glob
 from datetime import datetime
+from logging import Logger, DEBUG, INFO
 
 from qcore import binary_version
 from qcore.config import host
 import qcore.constants as const
 from scripts.cybershake.queue_monitor import DATE_FORMAT as QUEUE_DATE_FORMAT
 from scripts.management.MgmtDB import MgmtDB
+from shared_workflow.workflow_logger import get_basic_logger
 
 if sys.version_info.major == 3:
     basestring = str
@@ -353,10 +355,14 @@ def get_input_wc():
     return user_input_wc
 
 
-def set_wct(est_run_time, ncores, auto=False):
+def set_wct(est_run_time, ncores, auto=False, logger=get_basic_logger()):
     import estimation.estimate_wct as est
-
-    print(
+    if auto:
+        level = DEBUG
+    else:
+        level = INFO
+    logger.log(
+        level,
         "Estimated time: {} with {} number of cores".format(
             est.convert_to_wct(est_run_time), ncores
         )
@@ -372,10 +378,12 @@ def set_wct(est_run_time, ncores, auto=False):
         use_estimation = True
 
     if use_estimation:
+        logger.debug("Using generated estimation.")
         wct = est.get_wct(est_run_time)
     else:
+        logger.debug("Using user determined wct value.")
         wct = str(get_input_wc())
-    print("WCT set to: %s" % wct)
+    logger.log(level, "WCT set to: {}".format(wct))
     return wct
 
 
@@ -439,12 +447,13 @@ def submit_sl_script(
     proc_type: int,
     queue_folder: str,
     run_name: str,
-    submit_yes=False,
-    target_machine=None,
+    submit_yes: bool = False,
+    target_machine: str = None,
+    logger: Logger = get_basic_logger(),
 ):
     """Submits the slurm script and updates the management db"""
     if submit_yes:
-        print("Submitting {} on machine {}".format(script, target_machine))
+        logger.debug("Submitting {} on machine {}".format(script, target_machine))
         if target_machine and target_machine != host:
             res = exe(
                 "sbatch --export=CUR_ENV,CUR_HPC -M {} {}".format(
@@ -477,9 +486,9 @@ def submit_sl_script(
             )
             return jobid
         else:
-            print("An error occurred during job submission: {}".format(res[1]))
+            logger.error("An error occurred during job submission: {}".format(res[1]))
     else:
-        print("User chose to submit the job manually")
+        logger.info("User chose to submit the job manually")
 
 
 def add_to_queue(
@@ -490,6 +499,7 @@ def add_to_queue(
     job_id: int = None,
     retries: int = None,
     error: str = None,
+    logger: Logger = None
 ):
     """Adds an update entry to the queue"""
     filename = os.path.join(
@@ -500,6 +510,9 @@ def add_to_queue(
     )
 
     if os.path.exists(filename):
+        logger.critical("An update with the name {} already exists. This should never happen. Quitting!".format(
+                os.path.basename(filename)
+            ))
         raise Exception(
             "An update with the name {} already exists. This should never happen. Quitting!".format(
                 os.path.basename(filename)
@@ -643,33 +656,33 @@ def params_to_dict(params_base_path):
     return params_dict
 
 
-def get_site_specific_path(stat_file_path, hf_stat_vs_ref=None, v1d_mod_dir=None):
+def get_site_specific_path(stat_file_path, hf_stat_vs_ref=None, v1d_mod_dir=None, logger: Logger = get_basic_logger()):
     show_horizontal_line()
-    print("Auto-detecting site-specific info")
+    logger.info("Auto-detecting site-specific info")
     show_horizontal_line()
-    print("- Station file path: %s" % stat_file_path)
+    logger.info("- Station file path: %s" % stat_file_path)
 
     if v1d_mod_dir is not None:
         v_mod_1d_path = v1d_mod_dir
     else:
         v_mod_1d_path = os.path.join(os.path.dirname(stat_file_path), "1D")
     if os.path.exists(v_mod_1d_path):
-        print("- 1D profiles found at %s" % v_mod_1d_path)
+        logger.info("- 1D profiles found at {}".format(v_mod_1d_path))
     else:
-        print("Error: No such path exists: %s" % v_mod_1d_path)
+        logger.critical("Error: No such path exists: {}".format(v_mod_1d_path))
         sys.exit()
     if hf_stat_vs_ref is None:
         hf_stat_vs_ref_options = glob.glob(os.path.join(stat_file_path, "*.hfvs30ref"))
         if len(hf_stat_vs_ref_options) == 0:
-            print("Error: No HF Vsref file was found at %s" % stat_file_path)
+            logger.critical("Error: No HF Vsref file was found at {}".format(stat_file_path))
             sys.exit()
         hf_stat_vs_ref_options.sort()
 
         show_horizontal_line()
-        print("Select one of HF Vsref files")
+        logger.info("Select one of HF Vsref files")
         show_horizontal_line()
         hf_stat_vs_ref_selected = show_multiple_choice(hf_stat_vs_ref_options)
-        print(" - HF Vsref tp be used: %s" % hf_stat_vs_ref_selected)
+        logger.info(" - HF Vsref tp be used: {}".format(hf_stat_vs_ref_selected))
     else:
         hf_stat_vs_ref_selected = hf_stat_vs_ref
     return v_mod_1d_path, hf_stat_vs_ref_selected

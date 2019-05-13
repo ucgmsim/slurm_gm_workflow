@@ -2,6 +2,7 @@
 import os
 import json
 import pickle
+from logging import Logger
 from typing import Tuple
 
 import numpy as np
@@ -12,6 +13,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVR
 
 import qcore.constants as const
+from shared_workflow.workflow_logger import get_basic_logger, NOPRINTCRITICAL
 
 
 def mre(y, y_est, sample_weights=None):
@@ -63,7 +65,7 @@ class WCEstModel(object):
         """
         raise NotImplementedError()
 
-    def predict(self, X: np.ndarray):
+    def predict(self, X: np.ndarray, logger: Logger =None):
         """Performs the actual prediction using the current model
         The data has to have been scaled (with the same parameters/scaler
         as used for training)
@@ -275,12 +277,13 @@ class NNWcEstModel(WCEstModel):
 
         return model
 
-    def predict(self, X: np.ndarray, warning: bool = True):
+    def predict(self, X: np.ndarray, warning: bool = True, logger: Logger = get_basic_logger()):
         """Performs the actual prediction using the current model
 
         For full doc see WCEstModel.predict
         """
         if not self.is_trained:
+            logger.log(NOPRINTCRITICAL, "There was an attempt to use an untrained model")
             raise Exception("This model has not been trained!")
 
         if np.any(self.get_out_of_bounds_mask(X)) and warning:
@@ -459,12 +462,13 @@ class SVRModel(WCEstModel):
                 )
             )
 
-    def predict(self, X: np.ndarray):
+    def predict(self, X: np.ndarray, logger: Logger = get_basic_logger()):
         """Performs the actual prediction using the current model
 
         For full doc see WCEstModel.predict
         """
         if not self.is_trained:
+            logger.log(NOPRINTCRITICAL, "There was an attempt to use an untrained model")
             raise Exception("This model has not been trained!")
 
         return self._model.predict(X).reshape(-1)
@@ -525,6 +529,7 @@ class CombinedModel:
         X_svr: np.ndarray,
         n_cores: np.ndarray,
         default_n_cores: int,
+        logger: Logger = get_basic_logger(),
     ):
         """Attempt to use the NN model for estimation, however if input data
         is out of bounds, use the SVR model
@@ -540,12 +545,14 @@ class CombinedModel:
             physical cores to estimate for)
         default_n_cores: int
             The default number of cores for the process type that is being estimated.
+        logger: Logger
+            Logger for messages to be logged against
         """
         assert X_nn.shape[0] == X_svr.shape[0]
 
         out_bound_mask = np.any(self.nn_model.get_out_of_bounds_mask(X_nn), axis=1)
         if np.all(~out_bound_mask):
-            return self.nn_model.predict(X_nn, warning=False)
+            return self.nn_model.predict(X_nn, warning=False, logger=logger)
         else:
             if np.any(~out_bound_mask):
                 # Identify all entries that are out of bounds
@@ -553,22 +560,22 @@ class CombinedModel:
                 # Estimate using NN
                 results = np.ones(X_nn.shape[0], dtype=np.float) * np.nan
                 results[~out_bound_mask] = self.nn_model.predict(
-                    X_nn[~out_bound_mask, :], warning=False
+                    X_nn[~out_bound_mask, :], warning=False, logger=logger
                 )
 
                 # Estimate out of bounds using SVR
-                print(
+                logger.debug(
                     "Some entries are out of bounds, these will be "
                     "estimated using the SVR model."
                 )
                 results[out_bound_mask] = (
-                    self.svr_model.predict(X_svr[out_bound_mask, :]) * default_n_cores
+                    self.svr_model.predict(X_svr[out_bound_mask, :], logger=logger) * default_n_cores
                 ) / n_cores[out_bound_mask]
 
                 return results
             else:
-                print(
+                logger.debug(
                     "The entry is out of bounds. The SVR models will be "
                     "used for estimation."
                 )
-                return self.svr_model.predict(X_svr)
+                return self.svr_model.predict(X_svr, logger=logger)

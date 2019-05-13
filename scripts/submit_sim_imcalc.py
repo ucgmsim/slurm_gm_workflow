@@ -3,6 +3,7 @@
 import os
 import argparse
 from enum import Enum
+from logging import Logger
 
 import qcore.constants as const
 import qcore.simulation_structure as sim_struct
@@ -14,6 +15,7 @@ from qcore.utils import DotDictify
 from shared_workflow.load_config import load
 from shared_workflow.shared import submit_sl_script, set_wct, confirm
 from shared_workflow.shared_template import write_sl_script
+from shared_workflow.workflow_logger import get_basic_logger
 
 
 class SlHdrOptConsts(Enum):
@@ -59,7 +61,7 @@ DEFAULT_OPTIONS = {
 }
 
 
-def submit_im_calc_slurm(sim_dir: str, options_dict: Dict = None, est_model: EstModel = None):
+def submit_im_calc_slurm(sim_dir: str, options_dict: Dict = None, est_model: EstModel = None, logger: Logger = get_basic_logger()):
     """Creates the IM calc slurm scrip, also submits if specified
 
     The options_dict is populated by the DEFAULT_OPTIONS, values can be changed by
@@ -84,7 +86,7 @@ def submit_im_calc_slurm(sim_dir: str, options_dict: Dict = None, est_model: Est
         est_model = os.path.join(workflow_config["estimation_models_dir"], "IM")
 
     # Get wall clock estimation
-    print("Running wall clock estimation for IM sim")
+    logger.info("Running wall clock estimation for IM sim")
     est_core_hours, est_run_time = est_IM_chours_single(
         len(shared.get_stations(params.FD_STATLIST)),
         int(float(params.sim_duration) / float(params.hf.dt)),
