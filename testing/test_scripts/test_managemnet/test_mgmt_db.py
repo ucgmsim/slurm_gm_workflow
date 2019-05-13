@@ -8,6 +8,7 @@ from scripts.management.db_helper import connect_db_ctx
 from scripts.management import create_mgmt_db, update_mgmt_db
 from scripts.management.MgmtDB import SlurmTask
 from qcore import utils
+from shared_workflow.workflow_logger import get_basic_logger
 
 TEST_DB_FILE = "./output/slurm_mgmt.db"
 TEST_SRF_FILE = "/nesi/nobackup/nesi00213/RunFolder/PangopangoF29/Data/Sources/PangopangoF29/Srf/PangopangoF29_HYP01-10_S1244.srf"
@@ -56,7 +57,7 @@ def test_insert_task(mgmt_db):
 
 def test_update_live_db(mgmt_db):
     mgmt_db.update_entries_live(
-        [SlurmTask(TEST_RUN_NAME, TEST_PROC[0], TEST_STATUS[0], None, None)]
+        [SlurmTask(TEST_RUN_NAME, TEST_PROC[0], TEST_STATUS[0], None, None)], get_basic_logger()
     )
     value = get_rows(
         mgmt_db.db_file, "state", "proc_type", TEST_PROC[0], selected_col="status"

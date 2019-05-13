@@ -2,13 +2,21 @@
 import os
 import glob
 import shutil
+from logging import Logger, DEBUG
 
 import yaml
 
 import shared_workflow.shared_defaults as defaults
 from qcore import geo, utils, simulation_structure
-from qcore.constants import SimParams, FaultParams, RootParams, VMParams, ROOT_DEFAULTS_FILE_NAME
+from qcore.constants import (
+    SimParams,
+    FaultParams,
+    RootParams,
+    VMParams,
+    ROOT_DEFAULTS_FILE_NAME,
+)
 from shared_workflow import shared
+from shared_workflow.workflow_logger import get_basic_logger, VERYVERBOSE
 
 
 def install_simulation(
@@ -39,6 +47,7 @@ def install_simulation(
     v1d_full_path=None,
     sim_params_file="",
     seed=0,
+    logger: Logger = get_basic_logger(),
     extended_period=False,
 ):
     """Installs a single simulation"""
@@ -54,14 +63,18 @@ def install_simulation(
     shared.verify_user_dirs(dir_list)
 
     if not yes_model_params:
-        print("Generation of model params has been skipped.")
-        print("Re-directing related params to files under {}".format(vel_mod_dir))
+        logger.info(
+            "Generation of model params has been skipped. Re-directing related params to files under {}".format(
+                vel_mod_dir
+            )
+        )
         vel_mod_params_dir = vel_mod_dir
 
     if stat_file_path == "":
         # stat_path seems to empty, assigning all related value to latest_ll
-        print("stat_file_path is not specified.")
-        print("Using {}".format(defaults.latest_ll))
+        logger.info(
+            "stat_file_path is not specified. Using {}".format(defaults.latest_ll)
+        )
         run_stat_dir = os.path.join(stat_dir, event_name)
         stat_file_path = os.path.join(run_stat_dir, event_name + ".ll")
         vs30_file_path = os.path.join(run_stat_dir, event_name + ".vs30")
@@ -105,61 +118,66 @@ def install_simulation(
     root_params_dict["hf"][RootParams.seed.value] = seed
 
     # Fault params
-    fault_params_dict = {}
-    fault_params_dict[FaultParams.root_yaml_path.value] = root_yaml_path
-    fault_params_dict[FaultParams.vel_mod_dir.value] = vel_mod_dir
+    fault_params_dict = {
+        FaultParams.root_yaml_path.value: root_yaml_path,
+        FaultParams.vel_mod_dir.value: vel_mod_dir,
+    }
 
     # VM params
-    vm_params_dict = {}
-    vm_params_dict[VMParams.gridfile.value] = os.path.join(
-        vel_mod_params_dir, "gridfile{}".format(sufx)
-    )
-    vm_params_dict[VMParams.gridout.value] = os.path.join(
-        vel_mod_params_dir, "gridout{}".format(sufx)
-    )
-    vm_params_dict[VMParams.model_coords.value] = os.path.join(
-        vel_mod_params_dir, "model_coords{}".format(sufx)
-    )
-    vm_params_dict[VMParams.model_params.value] = os.path.join(
-        vel_mod_params_dir, "model_params{}".format(sufx)
-    )
-    vm_params_dict[VMParams.model_bounds.value] = os.path.join(
-        vel_mod_params_dir, "model_bounds{}".format(sufx)
-    )
+    vm_params_dict = {
+        VMParams.gridfile.value: os.path.join(
+            vel_mod_params_dir, "gridfile{}".format(sufx)
+        ),
+        VMParams.gridout.value: os.path.join(
+            vel_mod_params_dir, "gridout{}".format(sufx)
+        ),
+        VMParams.model_coords.value: os.path.join(
+            vel_mod_params_dir, "model_coords{}".format(sufx)
+        ),
+        VMParams.model_params.value: os.path.join(
+            vel_mod_params_dir, "model_params{}".format(sufx)
+        ),
+        VMParams.model_bounds.value: os.path.join(
+            vel_mod_params_dir, "model_bounds{}".format(sufx)
+        ),
+    }
 
     # Sim Params
-    sim_params_dict = {}
-    sim_params_dict[SimParams.fault_yaml_path.value] = fault_yaml_path
-    sim_params_dict[SimParams.run_name.value] = run_name
-    sim_params_dict[SimParams.user_root.value] = user_root
-    sim_params_dict[SimParams.run_dir.value] = run_dir
-    sim_params_dict[SimParams.sim_dir.value] = sim_dir
-    sim_params_dict[SimParams.srf_file.value] = srf_file
-    sim_params_dict[SimParams.vm_params.value] = vm_params_path
-    sim_params_dict[SimParams.sim_duration.value] = sim_duration
+    sim_params_dict = {
+        SimParams.fault_yaml_path.value: fault_yaml_path,
+        SimParams.run_name.value: run_name,
+        SimParams.user_root.value: user_root,
+        SimParams.run_dir.value: run_dir,
+        SimParams.sim_dir.value: sim_dir,
+        SimParams.srf_file.value: srf_file,
+        SimParams.vm_params.value: vm_params_path,
+        SimParams.sim_duration.value: sim_duration,
+    }
     if stat_file_path is not None:
         sim_params_dict[SimParams.stat_file.value] = stat_file_path
 
-    sim_params_dict["hf"] = {}
-    sim_params_dict["hf"][SimParams.slip.value] = stoch_file
+    sim_params_dict["emod3d"] = {}
+
+    sim_params_dict["hf"] = {SimParams.slip.value: stoch_file}
 
     sim_params_dict["bb"] = {}
-
-    sim_params_dict["emod3d"] = {}
 
     shared.show_horizontal_line(c="*")
 
     if yes_statcords:
-        print("Producing statcords and FD_STATLIST. It may take a minute or two")
+        logger.info("Producing statcords and FD_STATLIST. It may take a minute or two")
 
         fd_statcords, fd_statlist = generate_fd_files(
-            sim_params_dict["sim_dir"], vm_params_dict, stat_file=stat_file_path
+            sim_params_dict["sim_dir"],
+            vm_params_dict,
+            stat_file=stat_file_path,
+            logger=logger,
         )
-        print("Done")
+        logger.info("statcords and FD_STATLIST produced")
         fault_params_dict[FaultParams.stat_coords.value] = fd_statcords
         fault_params_dict[FaultParams.FD_STATLIST.value] = fd_statlist
 
-    print("installing bb")
+    logger.info("installing bb")
     install_bb(
         stat_file_path,
         root_params_dict,
@@ -167,15 +185,20 @@ def install_simulation(
         v1d_full_path=v1d_full_path,
         site_v1d_dir=site_v1d_dir,
         hf_stat_vs_ref=hf_stat_vs_ref,
+        logger=logger,
     )
-    print("installing bb finished")
+    logger.info("installing bb finished")
 
     if sim_params_file and os.path.isfile(sim_params_file):
         with open(sim_params_file) as spf:
             extra_sims_params = yaml.load(spf)
         for key, value in extra_sims_params.items():
             # If the key exists in both dictionaries and maps to a dictionary in both, then merge them
-            if isinstance(value, dict) and key in sim_params_dict and isinstance(sim_params_dict[key], dict):
+            if (
+                isinstance(value, dict)
+                and key in sim_params_dict
+                and isinstance(sim_params_dict[key], dict)
+            ):
                 sim_params_dict[key].update(value)
             else:
                 sim_params_dict.update({key: value})
@@ -190,9 +213,10 @@ def install_bb(
     v1d_full_path=None,
     site_v1d_dir=None,
     hf_stat_vs_ref=None,
+    logger: Logger = get_basic_logger(),
 ):
     shared.show_horizontal_line(c="*")
-    print(" " * 37 + "EMOD3D HF/BB Preparation Ver.slurm")
+    logger.info(" " * 37 + "EMOD3D HF/BB Preparation Ver.slurm")
     shared.show_horizontal_line(c="*")
     if v1d_full_path is not None:
         v_mod_1d_selected = v1d_full_path
@@ -205,6 +229,7 @@ def install_bb(
             os.path.dirname(stat_file),
             hf_stat_vs_ref=hf_stat_vs_ref,
             v1d_mod_dir=site_v1d_dir,
+            logger=logger,
         )
         root_dict["bb"]["site_specific"] = True
         root_dict["v_mod_1d_name"] = v_mod_1d_path
@@ -213,7 +238,7 @@ def install_bb(
         is_site_specific_id = q_site_specific()
         if is_site_specific_id:
             v_mod_1d_path, hf_stat_vs_ref = shared.get_site_specific_path(
-                os.path.dirname(stat_file)
+                os.path.dirname(stat_file), logger=logger
             )
             root_dict["bb"]["site_specific"] = True
             root_dict["v_mod_1d_name"] = v_mod_1d_path
@@ -261,7 +286,12 @@ def dump_all_yamls(
     )
 
 
-def generate_fd_files(output_path, vm_params_dict, stat_file="default.ll", debug=False):
+def generate_fd_files(
+    output_path,
+    vm_params_dict,
+    stat_file="default.ll",
+    logger: Logger = get_basic_logger(),
+):
     MODEL_LAT = vm_params_dict["MODEL_LAT"]
     MODEL_LON = vm_params_dict["MODEL_LON"]
     MODEL_ROT = vm_params_dict["MODEL_ROT"]
@@ -271,19 +301,16 @@ def generate_fd_files(output_path, vm_params_dict, stat_file="default.ll", debug
     sufx = vm_params_dict["sufx"]
     shared.verify_strings([MODEL_LAT, MODEL_LON, MODEL_ROT, hh, nx, ny, sufx])
 
-    filename = "fd%s" % sufx
-    print(stat_file)
+    filename = "fd{}".format(sufx)
+    logger.info(stat_file)
 
     # arbitrary longlat station input
     ll_in = stat_file
     # where to save gridpoint and longlat station files
-    gp_out = os.path.join(output_path, "%s.statcords" % filename)
-    ll_out = os.path.join(output_path, "%s.ll" % filename)
+    gp_out = os.path.join(output_path, "{}.statcords".format(filename))
+    ll_out = os.path.join(output_path, "{}.ll".format(filename))
 
-    print("From: %s" % stat_file)
-    print("To:")
-    print("  %s" % gp_out)
-    print("  %s" % ll_out)
+    logger.info("From: {}. To: {}, {}".format(stat_file, gp_out, ll_out))
 
     # velocity model parameters
     nx = int(nx)
@@ -315,14 +342,12 @@ def generate_fd_files(output_path, vm_params_dict, stat_file="default.ll", debug
     suname = []
     for i in range(len(xy)):
         if xy[i] is None:
-            if debug:
-                print("Station outside domain: %s" % (sname[i]))
+            logger.log(VERYVERBOSE, "Station outside domain: {}".format(sname[i]))
         elif xy[i] not in sxy:
             sxy.append(xy[i])
             suname.append(sname[i])
         else:
-            if debug:
-                print("Duplicate Station Ignored: %s" % (sname[i]))
+            logger.log(VERYVERBOSE, "Duplicate Station Ignored: {}".format(sname[i]))
 
     # create grid point file
     with open(gp_out, "w") as gpf:

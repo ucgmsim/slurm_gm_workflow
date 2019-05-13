@@ -11,11 +11,13 @@ import glob
 import pickle
 from typing import List, Union
 from collections import namedtuple
+from logging import Logger
 
 import numpy as np
 
 import qcore.constants as const
 from estimation.model import CombinedModel, WCEstModel, NNWcEstModel, SVRModel
+from shared_workflow.workflow_logger import get_basic_logger, NOPRINTCRITICAL
 
 SCALER_PREFIX = "scaler_{}"
 
@@ -168,6 +170,7 @@ def est_HF_chours_single(
     scale_ncores: bool,
     node_time_th_factor: float = 1.0,
     model_type: const.EstModelType = DEFAULT_MODEL_TYPE,
+    logger: Logger = get_basic_logger(),
 ):
     """Convenience function to make a single estimation
 
@@ -198,6 +201,7 @@ def est_HF_chours_single(
         scale_ncores,
         node_time_th_factor=node_time_th_factor,
         model_type=model_type,
+        logger=logger,
     )
 
     return core_hours[0], run_time[0], int(n_cpus[0])
@@ -209,6 +213,7 @@ def estimate_HF_chours(
     scale_ncores: bool,
     node_time_th_factor: float = 1.0,
     model_type: const.EstModelType = DEFAULT_MODEL_TYPE,
+    logger: Logger = get_basic_logger(),
 ):
     """Make bulk HF estimations, requires data to be in the correct
     order (see above).
@@ -244,7 +249,7 @@ def estimate_HF_chours(
     # Adjust the number of cores to estimate physical core hours
     data[:, -1] = data[:, -1] / hyperthreading_factor
     core_hours = estimate(
-        data, model, model_type, const.HF_DEFAULT_NCORES / hyperthreading_factor
+        data, model, model_type, const.HF_DEFAULT_NCORES / hyperthreading_factor, logger=logger
     )
 
     wct = core_hours / data[:, -1]
@@ -472,6 +477,7 @@ def estimate(
     model_type: const.EstModelType,
     default_ncores: int,
     lf_svr_input_data: np.ndarray = None,
+    logger: Logger = get_basic_logger(),
 ):
     """Function to use for making estimations using a pre-trained model
 
@@ -523,13 +529,13 @@ def estimate(
             X_svr = scaler_svr.transform(input_data[:, :-1])
 
         core_hours = comb_model.predict(
-            X_nn, X_svr, n_cores=input_data[:, -1], default_n_cores=default_ncores
+            X_nn, X_svr, n_cores=input_data[:, -1], default_n_cores=default_ncores, logger=logger
         )
 
     return core_hours
 
 
-def load_full_model(dir: str, model_type: const.EstModelType = DEFAULT_MODEL_TYPE):
+def load_full_model(dir: str, model_type: const.EstModelType = DEFAULT_MODEL_TYPE, logger: Logger = get_basic_logger()):
     """Loads the full model, i.e. the estimation model(s) and their associated scaler.
 
     Returns an EstModel object.
@@ -537,55 +543,54 @@ def load_full_model(dir: str, model_type: const.EstModelType = DEFAULT_MODEL_TYP
     # Load just NN
     if model_type is const.EstModelType.NN:
         return EstModel(
-            load_model(dir, const.EST_MODEL_NN_PREFIX, "h5", NNWcEstModel),
-            load_scaler(dir, SCALER_PREFIX.format("NN")), None, None
+            load_model(dir, const.EST_MODEL_NN_PREFIX, "h5", NNWcEstModel, logger),
+            load_scaler(dir, SCALER_PREFIX.format("NN"), logger), None, None
         )
     # Load just SVR
     elif model_type is const.EstModelType.SVR:
         return EstModel(
             None,
             None,
-            load_model(dir, const.EST_MODEL_SVR_PREFIX, "pickle", SVRModel),
-            load_scaler(dir, SCALER_PREFIX.format("SVR")),
+            load_model(dir, const.EST_MODEL_SVR_PREFIX, "pickle", SVRModel, logger),
+            load_scaler(dir, SCALER_PREFIX.format("SVR"), logger),
         )
     # Load both
     elif model_type is const.EstModelType.NN_SVR:
         return EstModel(
-            load_model(dir, const.EST_MODEL_NN_PREFIX, "h5", NNWcEstModel),
-            load_scaler(dir, SCALER_PREFIX.format("NN")),
-            load_model(dir, const.EST_MODEL_SVR_PREFIX, "pickle", SVRModel),
-            load_scaler(dir, SCALER_PREFIX.format("SVR")),
+            load_model(dir, const.EST_MODEL_NN_PREFIX, "h5", NNWcEstModel, logger),
+            load_scaler(dir, SCALER_PREFIX.format("NN"), logger),
+            load_model(dir, const.EST_MODEL_SVR_PREFIX, "pickle", SVRModel, logger),
+            load_scaler(dir, SCALER_PREFIX.format("SVR"), logger),
         )
 
-def load_scaler(dir: str, scaler_prefix: str):
+
+def load_scaler(dir: str, scaler_prefix: str, logger: Logger = get_basic_logger()):
     """Loads the latest scaler
     """
     file_pattern = os.path.join(dir, "{}{}".format(scaler_prefix, "*.pickle"))
     scaler = glob.glob(file_pattern)
 
-    scaler_file = None
     if len(scaler) == 0:
+        logger.log(NOPRINTCRITICAL, "No valid model was found with file pattern {}".format(file_pattern))
         raise Exception(
             "No valid model was found with file pattern {}".format(file_pattern)
         )
-    elif len(scaler) == 0:
-        scaler_file = scaler[0]
-    else:
-        # Grab the newest model
-        scaler.sort()
-        scaler_file = scaler[-1]
+
+    scaler.sort()
+    scaler_file = scaler[-1]
 
     if not os.path.isfile(scaler_file):
+        logger.log(NOPRINTCRITICAL, "No matching scaler was found for model {}".format(scaler_file))
         raise Exception("No matching scaler was found for model {}".format(scaler_file))
 
     with open(scaler_file, "rb") as f:
         scaler = pickle.load(f)
 
-    print("Loaded scaler {}".format(scaler_file))
+    logger.debug("Loaded scaler {}".format(scaler_file))
     return scaler
 
 
-def load_model(dir: str, model_prefix: str, model_ext: str, model_cls: WCEstModel):
+def load_model(dir: str, model_prefix: str, model_ext: str, model_cls: WCEstModel, logger: Logger = get_basic_logger()):
     """Loads a model
 
     If there are several models in the specified directory, then the latest
@@ -594,19 +599,17 @@ def load_model(dir: str, model_prefix: str, model_ext: str, model_cls: WCEstMode
     file_pattern = os.path.join(dir, "{}*.{}".format(model_prefix, model_ext))
     model_files = glob.glob(file_pattern)
 
-    model_file = None
     if len(model_files) == 0:
+        logger.log(NOPRINTCRITICAL, "No valid model was found with file pattern {}".format(file_pattern))
         raise Exception(
             "No valid model was found with file pattern {}".format(file_pattern)
         )
-    elif len(model_files) == 0:
-        model_file = model_files[0]
-    else:
-        # Grab the newest model
-        model_files.sort()
-        model_file = model_files[-1]
+
+    # Grab the newest model
+    model_files.sort()
+    model_file = model_files[-1]
 
     model = model_cls.from_saved_model(model_file)
 
-    print("Loaded model {}".format(model_file))
+    logger.debug("Loaded model {}".format(model_file))
     return model
