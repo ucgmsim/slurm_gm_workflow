@@ -2,19 +2,24 @@ Slurm Ground Motion Workflow
 # Changelog
 (Based on https://wiki.canterbury.ac.nz/download/attachments/58458136/CodeVersioning_v18p2.pdf?version=1&modificationDate=1519269238437&api=v2 )
 
-## [19.5.3] - 2019-05-06 -- Srf validated against VM bounds
+## [19.4.11] - 2019-05-14 -- ASCII workflow removed
+### Removed
+    - The parts of the workflow relating to text based computation outputs have been removed
+        - This includes winbin_aio, match_seismo and hfsims-stats
+
+## [19.4.10] - 2019-05-06 -- Srf validated against VM bounds
 ### Added
     - The first srf of each fault is checked that it is within the bounds of the velocity model. 
     - As a result, out of bounds srfs will now cause validation to fail.
 
-## [19.5.2] - 2019-05-03 -- Cybershake file removed
+## [19.4.9] - 2019-05-03 -- Cybershake file removed
 ### Changed
     - HF seed is now an optional parameter to the install script
     - Instead of passing the path to a cybershake config file, the required version should be passed to the install script
 ### Removed
     - Cybershake_config.json no longer needed. All relevant values have been moved to the root_defaults.yaml in the gmsim templates subdirectory.
 
-## [19.5.1] - 2019-05-01 -- End to End test improvements
+## [19.4.8] - 2019-05-01 -- End to End test improvements
 ### Changed
     - Improved submit and mgmt queue logging
     - Changed to work with new automated workflow submit (see [19.4.2])

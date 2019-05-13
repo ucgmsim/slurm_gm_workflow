@@ -1,8 +1,7 @@
 """Module that contains shared install functions"""
 import os
 import glob
-import shutil
-from logging import Logger, DEBUG
+from logging import Logger
 
 import yaml
 
