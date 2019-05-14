@@ -6,6 +6,9 @@ Slurm Ground Motion Workflow
 ### Removed
     - The parts of the workflow relating to text based computation outputs have been removed
         - This includes winbin_aio, match_seismo and hfsims-stats
+### Changed
+    - version is now the final parameter and is optional. If it is not provided it is assumed to be version 16.1
+    - Cybershake path is now converted to the absolute path of what is passed in
 
 ## [19.4.10] - 2019-05-06 -- Srf validated against VM bounds
 ### Added
