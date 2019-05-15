@@ -2,7 +2,10 @@ Slurm Ground Motion Workflow
 # Changelog
 (Based on https://wiki.canterbury.ac.nz/download/attachments/58458136/CodeVersioning_v18p2.pdf?version=1&modificationDate=1519269238437&api=v2 )
 
-## [19.4.11] - 2019-05-14 -- Changes to install_cybershake
+## [19.4.11] - 2019-05-14 -- ASCII workflow removed
+### Removed
+    - The parts of the workflow relating to text based computation outputs have been removed
+        - This includes winbin_aio, match_seismo and hfsims-stats
 ### Changed
     - version is now the final parameter and is optional. If it is not provided it is assumed to be version 16.1
     - Cybershake path is now converted to the absolute path of what is passed in

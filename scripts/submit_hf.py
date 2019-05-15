@@ -98,7 +98,7 @@ def main(args: argparse.Namespace, est_model: est.EstModel = None, logger: Logge
 
         body_template_params = (
             "{}.sl.template".format(ll_name_prefix),
-            {"hf_sim_dir": hf_sim_dir, "test_hf_script": "test_hf_binary.sh"},
+            {"hf_sim_dir": hf_sim_dir, "test_hf_script": "test_hf.sh"},
         )
 
         add_args = dict(params.hf)

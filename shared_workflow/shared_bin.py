@@ -31,8 +31,6 @@ N_COMPS = 9
 # changing these requires changing logic
 MY_COMPS = {0: '090', 1: '000', 2: 'ver'}
 N_MY_COMPS = len(MY_COMPS)
-# ASCII properties - values per line
-VPL = 6
 
 NATIVE_ENDIAN = byteorder
 
@@ -85,30 +83,3 @@ def get_seis_common(file_path, INT_S, FLT_S):
     rot = round(unpack(FLT_S, fp.read(SIZE_INT))[0], 6)
 
     return nt, dt, hh, rot
-
-
-# write data to ASCII seis file
-def write_seis_ascii(out_dir, data, stat, comp, nt, dt,
-                     t_hr=0, t_min=0, t_sec=-1.0,
-                     edist=0.0, az=0.0, baz=0.0, title=''):
-    # no trailing 0s in ASCII header (as in wcc_rotate behaviour)
-    try:
-        comp_header = str(int(comp))
-    except ValueError:
-        comp_header = comp
-
-    op = open('%s/%s.%s' % (out_dir, stat, comp), 'w')
-    # same format strings as fdbin2wcc
-    op.write('%-10s %3s %s\n' % (stat, comp_header, title))
-    op.write('%d %12.5e %d %d %12.5e %12.5e %12.5e %12.5e\n' % \
-             (nt, dt, t_hr, t_min, t_sec, edist, az, baz))
-    # values below header lines
-    for full_line_i in xrange(nt // VPL):
-        op.write('%13.5e%13.5e%13.5e%13.5e%13.5e%13.5e\n' % \
-                 tuple(data[full_line_i * VPL:full_line_i * VPL + VPL]))
-    # partial last line
-    if nt % VPL != 0:
-        for t in xrange(nt - nt % VPL, nt):
-            op.write('%13.5e' % (data[t]))
-        op.write('\n')
-    op.close()

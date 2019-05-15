@@ -32,7 +32,6 @@ DEFAULT_N_RUNS = {const.HPC.maui: 12, const.HPC.mahuika: 12}
 JOB_RUN_MACHINE = {
     const.ProcessType.EMOD3D: const.HPC.maui,
     const.ProcessType.merge_ts: const.HPC.mahuika,
-    const.ProcessType.winbin_aio: const.HPC.maui,
     const.ProcessType.HF: const.HPC.maui,
     const.ProcessType.BB: const.HPC.maui,
     const.ProcessType.IM_calculation: const.HPC.maui,
@@ -161,7 +160,6 @@ def submit_task(
     root_folder,
     queue_folder,
     task_logger,
-    binary_mode=True,
     hf_seed=None,
     extended_period=False,
     do_verification=False,
@@ -204,8 +202,6 @@ def submit_task(
     if proc_type == const.ProcessType.merge_ts.value:
         args = argparse.Namespace(
             auto=True,
-            merge_ts=True,
-            winbin_aio=False,
             srf=run_name,
             account=const.DEFAULT_ACCOUNT,
             machine=JOB_RUN_MACHINE[const.ProcessType.merge_ts].value,
@@ -220,37 +216,10 @@ def submit_task(
             {"submit_time": submitted_time},
             logger=task_logger,
         )
-
-    if proc_type == const.ProcessType.winbin_aio.value:
-        # skipping winbin_aio if running binary mode
-        if binary_mode:
-            # Update mgmt db
-            shared.add_to_queue(
-                queue_folder,
-                run_name,
-                proc_type,
-                const.Status.completed.value,
-                None,
-                None,
-            )
-        else:
-            args = argparse.Namespace(
-                auto=True,
-                winbin_aio=True,
-                merge_ts=False,
-                srf=run_name,
-                account=const.DEFAULT_ACCOUNT,
-                machine=JOB_RUN_MACHINE[const.ProcessType.winbin_aio].value,
-            )
-            task_logger.debug(
-                "Submit post EMOD3D (winbin_aio) arguments: {}".format(args)
-            )
-            submit_post_lf_main(args, task_logger)
     if proc_type == const.ProcessType.HF.value:
         args = argparse.Namespace(
             auto=True,
             srf=run_name,
-            ascii=not binary_mode,
             seed=hf_seed,
             ncore=const.HF_DEFAULT_NCORES,
             version=const.HF_DEFAULT_VERSION,
@@ -278,7 +247,6 @@ def submit_task(
             machine=JOB_RUN_MACHINE[const.ProcessType.BB].value,
             rel_dir=sim_dir,
             write_directory=sim_dir,
-            ascii=False,
         )
         task_logger.debug("Submit BB arguments: {}".format(args))
         submit_bb_main(args, models[2], task_logger)
@@ -359,11 +327,7 @@ def main(args, main_logger: Logger = workflow_logger.get_basic_logger()):
     config = utils.load_yaml(root_params_file)
     main_logger.info("Loaded root params file: {}".format(root_params_file))
     # Default values
-    binary_mode, hf_seed, extended_period = True, None, False
-
-    if "binary_mode" in config:
-        binary_mode = config["binary_mode"]
-    main_logger.debug("binary_mode set to {}".format(binary_mode))
+    hf_seed, extended_period = None, False
 
     if const.RootParams.seed.value in config["hf"]:
         hf_seed = config["hf"][const.RootParams.seed.value]
@@ -542,7 +506,6 @@ def main(args, main_logger: Logger = workflow_logger.get_basic_logger()):
                 root_folder,
                 mgmt_queue_folder,
                 main_logger,
-                binary_mode=binary_mode,
                 hf_seed=hf_seed,
                 extended_period=extended_period,
                 models=(lf_est_model, hf_est_model, bb_est_model, im_est_model),
