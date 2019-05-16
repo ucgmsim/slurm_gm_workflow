@@ -560,7 +560,7 @@ if __name__ == "__main__":
     parser.add_argument("--no_im", action="store_true")
     parser.add_argument("--no_merge_ts", action="store_true")
     parser.add_argument("--no_clean_up", action="store_true")
-    parser.add_argument("--tasks_to_run", nargs="*", type=list, help="Which processes should be run. Defaults to IM_Calc and clean_up with dependencies automatically propagated", choices=[proc.str_value for proc in const.ProcessType], default=[const.ProcessType.clean_up.str_value, const.ProcessType.IM_calculation.str_value])
+    parser.add_argument("--tasks_to_run", nargs="*", help="Which processes should be run. Defaults to IM_Calc and clean_up with dependencies automatically propagated", choices=[proc.str_value for proc in const.ProcessType], default=[const.ProcessType.clean_up.str_value, const.ProcessType.IM_calculation.str_value])
 
     args = parser.parse_args()
 
