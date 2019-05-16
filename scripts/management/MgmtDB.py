@@ -73,7 +73,7 @@ class MgmtDB:
             self._conn.close()
 
     def get_submitted_tasks(self):
-        """Gets all in progress tasks i.e. (running or queued)"""
+        """Gets all in progress tasks_to_run i.e. (running or queued)"""
         with connect_db_ctx(self._db_file) as cur:
             result = cur.execute(
                 "SELECT run_name, proc_type, status, job_id, retries "
@@ -82,9 +82,9 @@ class MgmtDB:
 
         return [SlurmTask(*entry) for entry in result]
 
-    def get_runnable_tasks(self, retry_max):
-        """Gets all runnable tasks based on their status and their associated
-        dependencies (i.e. other tasks have to be finished first)
+    def get_runnable_tasks(self, retry_max, allowed_tasks=None):
+        """Gets all runnable tasks_to_run based on their status and their associated
+        dependencies (i.e. other tasks_to_run have to be finished first)
 
         Returns a list of tuples (proc_type, run_name, state_str)
         """
@@ -96,14 +96,19 @@ class MgmtDB:
             Process.Verification.value,
         ]
 
+        if allowed_tasks is None:
+            allowed_tasks = list(const.ProcessType)
+        allowed_tasks = list(map(lambda x: str(x.value), allowed_tasks))
+
         with connect_db_ctx(self._db_file) as cur:
             db_tasks = cur.execute(
                 """SELECT proc_type, run_name, status_enum.state 
                           FROM status_enum, state 
                           WHERE state.status = status_enum.id
+                           AND proc_type IN ({})
                            AND (((status_enum.state = 'created' OR status_enum.state = 'failed')  
                                  AND state.retries <= ?)
-                            OR status_enum.state = 'completed')""",
+                            OR status_enum.state = 'completed')""".format(", ".join(allowed_tasks)),
                 (retry_max,),
             ).fetchall()
 
@@ -116,7 +121,7 @@ class MgmtDB:
                 if task[0] not in verification_tasks or do_verification:
                     tasks_to_run.append(task)
 
-            # Retry failed tasks
+            # Retry failed tasks_to_run
             if status == const.Status.failed.str_value:
                 tasks_to_run.append(task)
 

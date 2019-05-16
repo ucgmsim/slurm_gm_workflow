@@ -145,7 +145,7 @@ class E2ETests(object):
         Parameters
         ----------
         user: str
-            The username under which to run the tasks
+            The username under which to run the tasks_to_run
         """
         self._stop_on_error = stop_on_error
 
@@ -304,7 +304,7 @@ class E2ETests(object):
         Parameters
         ----------
         user: str
-            The username under which to run the tasks
+            The username under which to run the tasks_to_run
         sleep_time: int
             Time (in seconds) between progress checks
         """

@@ -70,7 +70,7 @@ def main(args, queue_logger: Logger = workflow_logger.get_basic_logger()):
                 os.remove(os.path.join(queue_folder, file))
 
         if len(entries) > 0:
-            queue_logger.info("Updating {} mgmt db tasks.".format(len(entries)))
+            queue_logger.info("Updating {} mgmt db tasks_to_run.".format(len(entries)))
             if not mgmt_db.update_entries_live(entries, queue_logger):
                 # Failed to update
                 queue_logger.error(
