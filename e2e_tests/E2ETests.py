@@ -145,7 +145,7 @@ class E2ETests(object):
         Parameters
         ----------
         user: str
-            The username under which to run the tasks
+            The username under which to run the tasks_to_run
         """
         self._stop_on_error = stop_on_error
 
@@ -233,11 +233,11 @@ class E2ETests(object):
         cmd = "python3 {} {} {} {} --seed {}".format(
             script_path,
             self.stage_dir,
-            self.version,
             os.path.join(
                 self.stage_dir,
                 os.path.basename(self.config_dict[self.cf_fault_list_key]),
             ),
+            self.version,
             self.config_dict[const.RootParams.seed.value],
         )
         print("Running install...")
@@ -304,7 +304,7 @@ class E2ETests(object):
         Parameters
         ----------
         user: str
-            The username under which to run the tasks
+            The username under which to run the tasks_to_run
         sleep_time: int
             Time (in seconds) between progress checks
         """
@@ -385,6 +385,7 @@ class E2ETests(object):
                         "Operational error while accessing database. "
                         "Retrying in {} seconds\n{}".format(sleep_time, ex)
                     )
+                    time.sleep(sleep_time)
                     continue
 
                 print(

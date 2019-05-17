@@ -35,6 +35,10 @@ JOB_RUN_MACHINE = {
     const.ProcessType.HF: const.HPC.maui,
     const.ProcessType.BB: const.HPC.maui,
     const.ProcessType.IM_calculation: const.HPC.maui,
+    const.ProcessType.IM_plot: const.HPC.mahuika,
+    const.ProcessType.rrup: const.HPC.mahuika,
+    const.ProcessType.Empirical: const.HPC.mahuika,
+    const.ProcessType.Verification: const.HPC.mahuika,
     const.ProcessType.clean_up: const.HPC.mahuika,
 }
 
@@ -158,7 +162,6 @@ def submit_task(
     proc_type,
     run_name,
     root_folder,
-    queue_folder,
     task_logger,
     hf_seed=None,
     extended_period=False,
@@ -373,7 +376,7 @@ def main(args, main_logger: Logger = workflow_logger.get_basic_logger()):
         # which can result in dual-submission
         mgmt_queue_entries = os.listdir(mgmt_queue_folder)
 
-        # Get in progress tasks in the db and the HPC queue
+        # Get in progress tasks_to_run in the db and the HPC queue
         squeue_tasks, n_tasks_to_run = [], {}
         for hpc in const.HPC:
             cur_tasks = get_queued_tasks(user=args.user, machine=hpc)
@@ -382,15 +385,15 @@ def main(args, main_logger: Logger = workflow_logger.get_basic_logger()):
 
         if len(squeue_tasks) > 0:
             somethingHappened = True
-            main_logger.info("Squeue user tasks: " + ", ".join(squeue_tasks))
+            main_logger.info("Squeue user tasks_to_run: " + ", ".join(squeue_tasks))
         else:
-            main_logger.debug("No squeue user tasks")
+            main_logger.debug("No squeue user tasks_to_run")
 
         db_in_progress_tasks = mgmt_db.get_submitted_tasks()
         if len(db_in_progress_tasks) > 0:
             somethingHappened = True
             main_logger.info(
-                "In progress tasks in mgmt db:"
+                "In progress tasks_to_run in mgmt db:"
                 + ", ".join(
                     [
                         "{}-{}-{}-{}".format(
@@ -404,7 +407,7 @@ def main(args, main_logger: Logger = workflow_logger.get_basic_logger()):
                 )
             )
         else:
-            main_logger.debug("No in progress tasks in mgmt db")
+            main_logger.debug("No in progress tasks_to_run in mgmt db")
 
         # Update the slurm mgmt based on squeue
         update_tasks(
@@ -415,11 +418,11 @@ def main(args, main_logger: Logger = workflow_logger.get_basic_logger()):
             main_logger,
         )
 
-        # Gets all runnable tasks based on mgmt db state
-        runnable_tasks = mgmt_db.get_runnable_tasks(args.n_max_retries)
+        # Gets all runnable tasks_to_run based on mgmt db state
+        runnable_tasks = mgmt_db.get_runnable_tasks(args.n_max_retries, args.tasks_to_run)
         if len(runnable_tasks) > 0:
             somethingHappened = True
-            main_logger.info("Number of runnable tasks: {}".format(len(runnable_tasks)))
+            main_logger.info("Number of runnable tasks_to_run: {}".format(len(runnable_tasks)))
         else:
             main_logger.debug("No runnable_tasks")
 
@@ -453,7 +456,7 @@ def main(args, main_logger: Logger = workflow_logger.get_basic_logger()):
                 task_counter[cur_hpc] += 1
 
             # Open to better suggestions
-            # Break if enough tasks for each HPC have been added
+            # Break if enough tasks_to_run for each HPC have been added
             if np.all(
                 [
                     True if task_counter.get(hpc, 0) >= n_tasks_to_run[hpc] else False
@@ -472,9 +475,9 @@ def main(args, main_logger: Logger = workflow_logger.get_basic_logger()):
                 )
             )
         else:
-            main_logger.debug("No tasks to run this iteration")
+            main_logger.debug("No tasks_to_run to run this iteration")
 
-        # Submit the runnable tasks
+        # Submit the runnable tasks_to_run
         for task in tasks_to_run:
             proc_type, run_name, _ = task
 
@@ -487,7 +490,7 @@ def main(args, main_logger: Logger = workflow_logger.get_basic_logger()):
                         run_name,
                         const.Status.completed.str_value,
                     ],
-                    mgmt_db.get_runnable_tasks(args.n_max_retries),
+                    mgmt_db.get_runnable_tasks(args.n_max_retries, args.tasks_to_run),
                 ):
                     # If clean_up has already run, then we should set it to
                     # be run again after merge_ts has run
@@ -504,7 +507,6 @@ def main(args, main_logger: Logger = workflow_logger.get_basic_logger()):
                 proc_type,
                 run_name,
                 root_folder,
-                mgmt_queue_folder,
                 main_logger,
                 hf_seed=hf_seed,
                 extended_period=extended_period,
@@ -558,6 +560,7 @@ if __name__ == "__main__":
     parser.add_argument("--no_im", action="store_true")
     parser.add_argument("--no_merge_ts", action="store_true")
     parser.add_argument("--no_clean_up", action="store_true")
+    parser.add_argument("--tasks_to_run", nargs="*", help="Which processes should be run. Defaults to IM_Calc and clean_up with dependencies automatically propagated", choices=[proc.str_value for proc in const.ProcessType], default=[const.ProcessType.clean_up.str_value, const.ProcessType.IM_calculation.str_value])
 
     args = parser.parse_args()
 
@@ -607,6 +610,15 @@ if __name__ == "__main__":
             )
     else:
         args.n_runs = DEFAULT_N_RUNS
+
+    logger.debug("Processes to be run were: {}. Getting all required dependencies now.".format(args.tasks_to_run))
+    args.tasks_to_run = [const.ProcessType.get_by_name(proc) for proc in args.tasks_to_run]
+    for task in args.tasks_to_run:
+        logger.debug("Process {} in processes to be run, adding dependencies now.".format(task.str_value))
+        for proc_num in task.dependencies:
+            proc = const.ProcessType(proc_num)
+            if proc not in args.tasks_to_run:
+                args.tasks_to_run.append(proc)
 
     logger.debug("Args passed in as follows: {}".format(str(args)))
 
