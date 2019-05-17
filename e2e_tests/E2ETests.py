@@ -385,7 +385,7 @@ class E2ETests(object):
                         "Operational error while accessing database. "
                         "Retrying in {} seconds\n{}".format(sleep_time, ex)
                     )
-                    time.sleep(5)
+                    time.sleep(sleep_time)
                     continue
 
                 print(

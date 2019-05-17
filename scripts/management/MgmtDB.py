@@ -98,19 +98,19 @@ class MgmtDB:
 
         if allowed_tasks is None:
             allowed_tasks = list(const.ProcessType)
-        allowed_tasks = [str(x.value) for x in allowed_tasks]
+        allowed_tasks = [str(task.value) for task in allowed_tasks]
 
         with connect_db_ctx(self._db_file) as cur:
             db_tasks = cur.execute(
                 """SELECT proc_type, run_name, status_enum.state 
                           FROM status_enum, state 
                           WHERE state.status = status_enum.id
-                           AND proc_type IN ({})
+                           AND proc_type IN (?{})
                            AND run_name IN ({})
                            AND (((status_enum.state = 'created' OR status_enum.state = 'failed')  
                                  AND state.retries <= ?)
-                            OR status_enum.state = 'completed')""".format(", ".join(allowed_tasks), ", ".join(allowed_rels)),
-                (retry_max,),
+                            OR status_enum.state = 'completed')""".format(",?"*(len(allowed_tasks)-1)),
+                (*allowed_tasks, retry_max),
             ).fetchall()
 
         tasks_to_run = []
