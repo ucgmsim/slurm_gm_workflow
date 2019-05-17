@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Script for automatic submission of gm simulation jobs"""
 import argparse
+import glob
 import time
 import os
 from datetime import datetime
@@ -419,7 +420,7 @@ def main(args, main_logger: Logger = workflow_logger.get_basic_logger()):
         )
 
         # Gets all runnable tasks_to_run based on mgmt db state
-        runnable_tasks = mgmt_db.get_runnable_tasks(args.n_max_retries, args.tasks_to_run)
+        runnable_tasks = mgmt_db.get_runnable_tasks(args.n_max_retries, args.tasks_to_run, args.rels_to_run)
         if len(runnable_tasks) > 0:
             somethingHappened = True
             main_logger.info("Number of runnable tasks_to_run: {}".format(len(runnable_tasks)))
@@ -490,7 +491,7 @@ def main(args, main_logger: Logger = workflow_logger.get_basic_logger()):
                         run_name,
                         const.Status.completed.str_value,
                     ],
-                    mgmt_db.get_runnable_tasks(args.n_max_retries, args.tasks_to_run),
+                    mgmt_db.get_runnable_tasks(args.n_max_retries, args.tasks_to_run, args.rels_to_run),
                 ):
                     # If clean_up has already run, then we should set it to
                     # be run again after merge_ts has run
@@ -561,6 +562,7 @@ if __name__ == "__main__":
     parser.add_argument("--no_merge_ts", action="store_true")
     parser.add_argument("--no_clean_up", action="store_true")
     parser.add_argument("--tasks_to_run", nargs="*", help="Which processes should be run. Defaults to IM_Calc and clean_up with dependencies automatically propagated", choices=[proc.str_value for proc in const.ProcessType], default=[const.ProcessType.clean_up.str_value, const.ProcessType.IM_calculation.str_value])
+    parser.add_argument("--rels_to_run", nargs="*", help="Which realisations should be run. Defaults to all of them.", default='*')
 
     args = parser.parse_args()
 
@@ -579,6 +581,8 @@ if __name__ == "__main__":
             logger, os.path.join(args.root_folder, args.log_file)
         )
     logger.debug("Added file handler to the logger")
+
+    logger.debug("Raw args passed in as follows: {}".format(str(args)))
 
     if args.n_runs is not None:
         if len(args.n_runs) == 1:
@@ -620,6 +624,13 @@ if __name__ == "__main__":
             if proc not in args.tasks_to_run:
                 args.tasks_to_run.append(proc)
 
-    logger.debug("Args passed in as follows: {}".format(str(args)))
+    rels = []
+    logger.debug("Got {} as the input realisations. Expanding wildcards now".format)
+    for fault in glob.glob1(sim_struct.get_runs_dir(args.root_folder), '*'):
+        for wild_rel in args.rels_to_run:
+            rels.extend(glob.glob1(fault, wild_rel))
+    args.rels_to_run = rels
+
+    logger.debug("Processed args are as follows: {}".format(str(args)))
 
     main(args, logger)

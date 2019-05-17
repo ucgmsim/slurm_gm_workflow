@@ -82,7 +82,7 @@ class MgmtDB:
 
         return [SlurmTask(*entry) for entry in result]
 
-    def get_runnable_tasks(self, retry_max, allowed_tasks=None):
+    def get_runnable_tasks(self, retry_max, allowed_tasks=None, allowed_rels="SELECT run_name from state"):
         """Gets all runnable tasks_to_run based on their status and their associated
         dependencies (i.e. other tasks_to_run have to be finished first)
 
@@ -98,7 +98,7 @@ class MgmtDB:
 
         if allowed_tasks is None:
             allowed_tasks = list(const.ProcessType)
-        allowed_tasks = list(map(lambda x: str(x.value), allowed_tasks))
+        allowed_tasks = [str(x.value) for x in allowed_tasks]
 
         with connect_db_ctx(self._db_file) as cur:
             db_tasks = cur.execute(
@@ -106,9 +106,10 @@ class MgmtDB:
                           FROM status_enum, state 
                           WHERE state.status = status_enum.id
                            AND proc_type IN ({})
+                           AND run_name IN ({})
                            AND (((status_enum.state = 'created' OR status_enum.state = 'failed')  
                                  AND state.retries <= ?)
-                            OR status_enum.state = 'completed')""".format(", ".join(allowed_tasks)),
+                            OR status_enum.state = 'completed')""".format(", ".join(allowed_tasks), ", ".join(allowed_rels)),
                 (retry_max,),
             ).fetchall()
 
