@@ -355,18 +355,6 @@ def main(args, main_logger: Logger = workflow_logger.get_basic_logger()):
         os.path.join(workflow_config["estimation_models_dir"], "IM"), logger=main_logger
     )
 
-    # If any flags to ignore steps are given, add them to the list of skipped processes
-    skipped = []
-    if args.no_merge_ts:
-        main_logger.info("Not doing merge_ts")
-        skipped.append(const.ProcessType.merge_ts.value)
-    if args.no_im:
-        main_logger.info("Not calculating IMs")
-        skipped.append(const.ProcessType.IM_calculation.value)
-    if args.no_clean_up:
-        main_logger.info("Not cleaning up")
-        skipped.append(const.ProcessType.clean_up.value)
-
     somethingHappened = True
 
     while somethingHappened:
@@ -432,18 +420,6 @@ def main(args, main_logger: Logger = workflow_logger.get_basic_logger()):
         for task in runnable_tasks[:100]:
             somethingHappened = True
             cur_run_name, cur_proc_type = task[1], task[0]
-
-            # Set task that are set to be skipped to complete in db
-            if cur_proc_type in skipped and not check_mgmt_queue(
-                mgmt_queue_entries, cur_run_name, cur_proc_type
-            ):
-                shared.add_to_queue(
-                    mgmt_queue_folder,
-                    cur_run_name,
-                    cur_proc_type,
-                    const.Status.completed.value,
-                )
-                continue
 
             cur_hpc = JOB_RUN_MACHINE[const.ProcessType(cur_proc_type)]
             # Add task if limit has not been reached and there are no
