@@ -309,14 +309,14 @@ class E2ETests(object):
             Time (in seconds) between progress checks
         """
         submit_cmd = (
-            "python3 {} {} {} --sleep_time 2 "
-            "--no_merge_ts --no_clean_up".format(
+            "python3 {} {} {} --sleep_time 2 --tasks_to_run IM_calc".format(
                 os.path.join(
                     os.path.dirname(os.path.abspath(__file__)),
                     "../scripts/cybershake/auto_submit.py",
                 ),
                 self.stage_dir,
                 user,
+
             )
         )
         queue_cmd = "python3 {} {}".format(
