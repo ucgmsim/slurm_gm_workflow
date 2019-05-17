@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Script for automatic submission of gm simulation jobs"""
 import argparse
-from glob import _glob1 as glob
 import time
 import os
 from datetime import datetime
@@ -562,7 +561,7 @@ if __name__ == "__main__":
     parser.add_argument("--no_merge_ts", action="store_true")
     parser.add_argument("--no_clean_up", action="store_true")
     parser.add_argument("--tasks_to_run", nargs="+", help="Which processes should be run. Defaults to IM_Calc and clean_up with dependencies automatically propagated", choices=[proc.str_value for proc in const.ProcessType], default=[const.ProcessType.clean_up.str_value, const.ProcessType.IM_calculation.str_value])
-    parser.add_argument("--rels_to_run", nargs="+", help="Which realisations should be run. Defaults to all of them.", default='*')
+    parser.add_argument("--rels_to_run", help="An SQLite formatted query to match the realisations that should run.", default='%')
 
     args = parser.parse_args()
 
@@ -623,13 +622,6 @@ if __name__ == "__main__":
             proc = const.ProcessType(proc_num)
             if proc not in args.tasks_to_run:
                 args.tasks_to_run.append(proc)
-
-    rels = []
-    logger.debug("Got {} as the input realisations. Expanding wildcards now".format)
-    for fault in glob(sim_struct.get_runs_dir(args.root_folder), '*', True):
-        for wild_rel in args.rels_to_run:
-            rels.extend(glob(fault, wild_rel, True))
-    args.rels_to_run = rels
 
     logger.debug("Processed args are as follows: {}".format(str(args)))
 

@@ -106,13 +106,13 @@ class MgmtDB:
                           FROM status_enum, state 
                           WHERE state.status = status_enum.id
                            AND proc_type IN (?{})
-                           AND run_name IN (?{})
+                           AND run_name LIKE (?)
                            AND (((status_enum.state = 'created' OR status_enum.state = 'failed')  
                                  AND state.retries <= ?)
                             OR status_enum.state = 'completed')""".format(
-                    ",?" * (len(allowed_tasks) - 1), ",?" * (len(allowed_rels) - 1)
+                    ",?" * (len(allowed_tasks) - 1)
                 ),
-                (*allowed_tasks, *allowed_rels, retry_max),
+                (*allowed_tasks, allowed_rels, retry_max),
             ).fetchall()
 
         tasks_to_run = []
