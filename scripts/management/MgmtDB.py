@@ -82,7 +82,7 @@ class MgmtDB:
 
         return [SlurmTask(*entry) for entry in result]
 
-    def get_runnable_tasks(self, retry_max, allowed_tasks=None, allowed_rels="SELECT run_name from state"):
+    def get_runnable_tasks(self, retry_max, allowed_rels, allowed_tasks=None):
         """Gets all runnable tasks_to_run based on their status and their associated
         dependencies (i.e. other tasks_to_run have to be finished first)
 
@@ -106,11 +106,13 @@ class MgmtDB:
                           FROM status_enum, state 
                           WHERE state.status = status_enum.id
                            AND proc_type IN (?{})
-                           AND run_name IN ({})
+                           AND run_name IN (?{})
                            AND (((status_enum.state = 'created' OR status_enum.state = 'failed')  
                                  AND state.retries <= ?)
-                            OR status_enum.state = 'completed')""".format(",?"*(len(allowed_tasks)-1)),
-                (*allowed_tasks, retry_max),
+                            OR status_enum.state = 'completed')""".format(
+                    ",?" * (len(allowed_tasks) - 1), ",?" * (len(allowed_rels) - 1)
+                ),
+                (*allowed_tasks, *allowed_rels, retry_max),
             ).fetchall()
 
         tasks_to_run = []
@@ -139,12 +141,7 @@ class MgmtDB:
                     cur.execute(
                         "UPDATE state SET status = ?, retries = ? "
                         "WHERE run_name = ? AND proc_type = ?",
-                        (
-                            const.Status.created.value,
-                            cur_retries + 1,
-                            task[1],
-                            task[0],
-                        ),
+                        (const.Status.created.value, cur_retries + 1, task[1], task[0]),
                     )
 
         return tasks_to_run

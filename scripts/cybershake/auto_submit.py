@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Script for automatic submission of gm simulation jobs"""
 import argparse
-import glob
+from glob import _glob1 as glob
 import time
 import os
 from datetime import datetime
@@ -420,7 +420,7 @@ def main(args, main_logger: Logger = workflow_logger.get_basic_logger()):
         )
 
         # Gets all runnable tasks_to_run based on mgmt db state
-        runnable_tasks = mgmt_db.get_runnable_tasks(args.n_max_retries, args.tasks_to_run, args.rels_to_run)
+        runnable_tasks = mgmt_db.get_runnable_tasks(args.n_max_retries, args.rels_to_run, args.tasks_to_run)
         if len(runnable_tasks) > 0:
             somethingHappened = True
             main_logger.info("Number of runnable tasks_to_run: {}".format(len(runnable_tasks)))
@@ -491,7 +491,7 @@ def main(args, main_logger: Logger = workflow_logger.get_basic_logger()):
                         run_name,
                         const.Status.completed.str_value,
                     ],
-                    mgmt_db.get_runnable_tasks(args.n_max_retries, args.tasks_to_run, args.rels_to_run),
+                        mgmt_db.get_runnable_tasks(args.n_max_retries, args.rels_to_run, args.tasks_to_run),
                 ):
                     # If clean_up has already run, then we should set it to
                     # be run again after merge_ts has run
@@ -626,9 +626,9 @@ if __name__ == "__main__":
 
     rels = []
     logger.debug("Got {} as the input realisations. Expanding wildcards now".format)
-    for fault in glob.glob1(sim_struct.get_runs_dir(args.root_folder), '*'):
+    for fault in glob(sim_struct.get_runs_dir(args.root_folder), '*', True):
         for wild_rel in args.rels_to_run:
-            rels.extend(glob.glob1(fault, wild_rel))
+            rels.extend(glob(fault, wild_rel, True))
     args.rels_to_run = rels
 
     logger.debug("Processed args are as follows: {}".format(str(args)))
