@@ -99,7 +99,7 @@ if is_master:
     for key in vars(args):
         logger.debug("{} : {}".format(key, getattr(args, key)))
 
-comm.Barrier() # prevent other processes from messing log file until master is done with logging above
+comm.Barrier()  # prevent other processes from messing log file until master is done with logging above
 # load vs30ref
 if args.lfvsref is None:
     # vs30ref from velocity model
@@ -142,6 +142,7 @@ else:
     if is_master:
         logger.debug("vs30 loaded successfully.")
 
+
 # initialise output with general metadata
 def initialise(check_only=False):
     logger.debug("Initialising.")
@@ -167,7 +168,7 @@ def initialise(check_only=False):
                         "e_dist",
                         "lf_vs_ref",
                     ],
-                    "formats": ["f4", "f4", "|S8", "i4", "i4", "i4", "f4", "f4", "f4"],
+                    "formats": ["f4", "f4", "|S8", "i4", "i4", "i4", "f4", "f4"],
                     "itemsize": HEAD_STAT,
                 },
             )
@@ -234,78 +235,9 @@ def unfinished():
     return np.invert(ckpoints)
 
 
-station_mask = None
-if is_master:
-    station_mask = unfinished()
-    if station_mask is None or sum(station_mask) == lf.stations.size:
-        logger.debug("No valid checkpoints found. Starting fresh simulation.")
-        initialise()
-        station_mask = np.ones(lf.stations.size, dtype=np.bool)
-    else:
-        try:
-            initialise(check_only=True)
-            logger.info(
-                "{} of {} stations completed. Resuming simulation.".format(
-                    lf.stations.size - sum(station_mask), lf.stations.size
-                )
-            )
-
-        except AssertionError:
-            logger.warning("Simulation parameters mismatch. Starting fresh simulation.")
-            initialise()
-            station_mask = np.ones(lf.stations.size, dtype=np.bool)
-station_mask = comm.bcast(station_mask, root=master)
-stations_todo = lf.stations[station_mask][rank::size]
-stations_todo_idx = np.arange(lf.stations.size)[station_mask][rank::size]
-
-# load container to write to
-bin_data = open(args.out_file, "r+b")
-bin_seek = head_total + stations_todo_idx * bb_nt * N_COMP * FLOAT_SIZE
-bin_seek_vsite = HEAD_SIZE + stations_todo_idx * HEAD_STAT + 40
-
-# work on station subset
-fmin = args.fmin
-fmidbot = args.fmidbot
 t0 = MPI.Wtime()
-bb_acc = np.empty((bb_nt, N_COMP), dtype="f4")
-for i, stat in enumerate(stations_todo):
-    vs30 = vs30s[stations_todo_idx[i]]
-    lfvs30ref = lfvs30refs[stations_todo_idx[i]]
-    lf_acc = np.copy(lf.acc(stat.name, dt=bb_dt))
-    pga = np.max(np.abs(lf_acc), axis=0) / 981.0
-    # ideally remove loop
-    for c in range(3):
-        lf_acc[:, c] = bwfilter(
-            ampdeamp_lf(
-                lf_acc[:, c],
-                cb_amp_lf(
-                    bb_dt,
-                    n2,
-                    lfvs30ref,
-                    vs30,
-                    stat.vs,
-                    pga[c],
-                    fmin=fmin,
-                    fmidbot=fmidbot,
-                ),
-                amp=True,
-            ),
-            bb_dt,
-            args.flo,
-            "lowpass",
-        )
-        bb_acc[:, c] = (
-            np.hstack((lf_acc[:, c], d_ts))
-        ) / 981.0
-    bin_data.seek(bin_seek[i])
-    bb_acc.tofile(bin_data)
-    # write vsite as used for checkpointing
-    bin_data.seek(bin_seek_vsite[i])
-    vs30.tofile(bin_data)
-bin_data.close()
-logger.debug("Completed {} stations.".format(len(stations_todo)))
 
 print("Process %03d of %03d finished (%.2fs)." % (rank, size, MPI.Wtime() - t0))
-comm.Barrier() #all ranks wait here until rank 0 arrives to announce all completed
+comm.Barrier()  # all ranks wait here until rank 0 arrives to announce all completed
 if is_master:
     logger.debug("Simulation completed.")
