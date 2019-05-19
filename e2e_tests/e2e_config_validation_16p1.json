@@ -6,5 +6,6 @@
   "test_checkpoint": true,
   "timeout": 240,
   "version": "16.1",
-  "seed": 34580
+  "seed": 34580,
+  "stat_file": "/nesi/project/nesi00213/StationInfo/geoNet_stats+2019-04-18.ll"
 }

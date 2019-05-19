@@ -230,7 +230,7 @@ class E2ETests(object):
             os.path.dirname(os.path.abspath(__file__)),
             "../scripts/cybershake/install_cybershake.py",
         )
-        cmd = "python3 {} {} {} {} --seed {}".format(
+        cmd = "python3 {} {} {} {} --seed {} --stat_file_path {}".format(
             script_path,
             self.stage_dir,
             os.path.join(
@@ -239,6 +239,7 @@ class E2ETests(object):
             ),
             self.version,
             self.config_dict[const.RootParams.seed.value],
+            self.config_dict["stat_file"],
         )
         print("Running install...")
         out_file = os.path.join(self.stage_dir, self.install_out_file)
