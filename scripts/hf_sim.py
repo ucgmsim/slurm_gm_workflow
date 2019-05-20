@@ -144,7 +144,7 @@ if is_master:
     arg("--rv_sig1", help="rupture velocity uncertainty", type=float, default=0.1)
     # HF IN, line 18
     arg(
-        "--hf_path_dur",
+        "--path_dur",
         help="""path duration model
         0:GP2010 formulation
         1:[DEFAULT] WUS modification trial/error
@@ -179,6 +179,8 @@ if is_master:
     for key in vars(args):
         logger.debug("{} : {}".format(key, getattr(args, key)))
 
+    args.seed = 5481190
+
 args = comm.bcast(args, root=master)
 
 # if not args.independent:
@@ -210,7 +212,7 @@ def initialise(check_only=False):
                 nt,
                 args.seed,
                 not args.no_siteamp,
-                args.hf_path_dur,
+                args.path_dur,
                 len(args.rayset),
                 fwrs[0],
                 fwrs[1],
@@ -365,6 +367,7 @@ def run_hf(local_statfile, n_stat, idx_0, velocity_model=args.velocity_model):
     else:
         seed = random_seed()
 
+    seed = 5481190
     logger.debug(
         "run_hf({}, {}, {}) seed: {}".format(local_statfile, n_stat, idx_0, seed)
     )
@@ -390,7 +393,7 @@ def run_hf(local_statfile, n_stat, idx_0, velocity_model=args.velocity_model):
             "%d %s %s %s %s %d" % (nl_skip, vp_sig, vsh_sig, rho_sig, qs_sig, ic_flag),
             velocity_name,
             "%s %s %s" % (args.fa_sig1, args.fa_sig2, args.rv_sig1),
-            str(args.hf_path_dur),
+            str(args.path_dur),
             str(head_total + idx_0 * (nt * N_COMP * FLOAT_SIZE)),
             "",
         ]
@@ -455,6 +458,9 @@ work = stations_todo[start : start + d + (rank < r)]
 work_idx = stations_todo_idx[start : start + d + (rank < r)]
 
 # process data to give Fortran code
+logger.debug("Test - seed {}".format(args.seed))
+args.seed = 5481190
+
 t0 = MPI.Wtime()
 in_stats = mkstemp()[1]
 if args.seed >= 0:
