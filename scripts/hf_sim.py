@@ -179,8 +179,6 @@ if is_master:
     for key in vars(args):
         logger.debug("{} : {}".format(key, getattr(args, key)))
 
-    args.seed = 5481190
-
 args = comm.bcast(args, root=master)
 
 # if not args.independent:
@@ -367,7 +365,6 @@ def run_hf(local_statfile, n_stat, idx_0, velocity_model=args.velocity_model):
     else:
         seed = random_seed()
 
-    seed = 5481190
     logger.debug(
         "run_hf({}, {}, {}) seed: {}".format(local_statfile, n_stat, idx_0, seed)
     )
@@ -458,9 +455,6 @@ work = stations_todo[start : start + d + (rank < r)]
 work_idx = stations_todo_idx[start : start + d + (rank < r)]
 
 # process data to give Fortran code
-logger.debug("Test - seed {}".format(args.seed))
-args.seed = 5481190
-
 t0 = MPI.Wtime()
 in_stats = mkstemp()[1]
 if args.seed >= 0:
