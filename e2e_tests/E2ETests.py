@@ -159,6 +159,11 @@ class E2ETests(object):
             self.print_warnings()
             return False
 
+        if self.errors and stop_on_error:
+            print("Quitting due to the following errors:")
+            self.print_errors()
+            return False
+
         # Run automated workflow
         if not self._run_auto(user, sleep_time=sleep_time):
             return False
@@ -224,13 +229,11 @@ class E2ETests(object):
         staging directory. Also checks for error keywords in the output
         and saves warnings accordingly.
         """
-
-        # Why is this a script? Make it all python?
         script_path = os.path.join(
             os.path.dirname(os.path.abspath(__file__)),
             "../scripts/cybershake/install_cybershake.py",
         )
-        cmd = "python3 {} {} {} {} --seed {} --stat_file_path {}".format(
+        cmd = "python3 {} {} {} {} --seed {} --stat_file_path {} {}".format(
             script_path,
             self.stage_dir,
             os.path.join(
@@ -240,8 +243,9 @@ class E2ETests(object):
             self.version,
             self.config_dict[const.RootParams.seed.value],
             self.config_dict["stat_file"],
+            "--extended_period" if self.config_dict["extended_period"] else None,
         )
-        print("Running install...")
+        print("Running install...\nCmd: {}".format(cmd))
         out_file = os.path.join(self.stage_dir, self.install_out_file)
         err_file = os.path.join(self.stage_dir, self.install_err_file)
         with open(out_file, "w") as out_f, open(err_file, "w") as err_f:
@@ -265,7 +269,7 @@ class E2ETests(object):
             print("##### INSTALL OUTPUT #####")
             print(error)
             print("##########################")
-            self.warnings.append(Warning("Install - Stderr", msg))
+            self.errors.append(Error("Install - Stderr", msg))
 
         self.fault_dirs, self.sim_dirs = get_sim_dirs(self.runs_dir)
 
