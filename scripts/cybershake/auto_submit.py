@@ -184,6 +184,16 @@ def submit_task(
     submitted_time = datetime.now().strftime(const.METADATA_TIMESTAMP_FMT)
     log_file = os.path.join(sim_dir, "ch_log", const.METADATA_LOG_FILENAME)
 
+    def submit_sl_script(script_name, **kwargs):
+        shared.submit_sl_script(
+            script_name,
+            proc_type,
+            sim_struct.get_mgmt_db_queue(root_folder),
+            run_name,
+            submit_yes=True,
+            **kwargs,
+        )
+
     if proc_type == const.ProcessType.EMOD3D.value:
         # These have to include the default values (same for all other process types)!
         args = argparse.Namespace(
@@ -204,7 +214,7 @@ def submit_task(
             logger=task_logger,
         )
 
-    if proc_type == const.ProcessType.merge_ts.value:
+    elif proc_type == const.ProcessType.merge_ts.value:
         args = argparse.Namespace(
             auto=True,
             srf=run_name,
@@ -221,7 +231,7 @@ def submit_task(
             {"submit_time": submitted_time},
             logger=task_logger,
         )
-    if proc_type == const.ProcessType.HF.value:
+    elif proc_type == const.ProcessType.HF.value:
         args = argparse.Namespace(
             auto=True,
             srf=run_name,
@@ -243,7 +253,7 @@ def submit_task(
             {"submit_time": submitted_time},
             logger=task_logger,
         )
-    if proc_type == const.ProcessType.BB.value:
+    elif proc_type == const.ProcessType.BB.value:
         args = argparse.Namespace(
             auto=True,
             srf=run_name,
@@ -261,7 +271,7 @@ def submit_task(
             {"submit_time": submitted_time},
             logger=task_logger,
         )
-    if proc_type == const.ProcessType.IM_calculation.value:
+    elif proc_type == const.ProcessType.IM_calculation.value:
         options_dict = {
             SlBodyOptConsts.extended.value: True if extended_period else False,
             SlBodyOptConsts.simple_out.value: True,
@@ -282,24 +292,21 @@ def submit_task(
             {"submit_time": submitted_time},
             logger=task_logger,
         )
-    if do_verification:
-        if proc_type == const.ProcessType.rrup.value:
-            cmd = "sbatch $gmsim/workflow/scripts/calc_rrups_single.sl {} {}".format(
-                sim_dir, root_folder
-            )
-            task_logger.debug(cmd)
-            call(cmd, shell=True)
-
-        if proc_type == const.ProcessType.Empirical.value:
-            cmd = "$gmsim/workflow/scripts/submit_empirical.py -np 40 -i {} {}".format(
-                run_name, root_folder
-            )
-            task_logger.debug(cmd)
-            call(cmd, shell=True)
-
-        if proc_type == const.ProcessType.Verification.value:
-            pass
-    if proc_type == const.ProcessType.clean_up.value:
+    elif proc_type == const.ProcessType.rrup.value and do_verification:
+        cmd = "sbatch $gmsim/workflow/scripts/calc_rrups_single.sl {} {}".format(
+            sim_dir, root_folder
+        )
+        task_logger.debug(cmd)
+        call(cmd, shell=True)
+    elif proc_type == const.ProcessType.Empirical.value and do_verification:
+        cmd = "$gmsim/workflow/scripts/submit_empirical.py -np 40 -i {} {}".format(
+            run_name, root_folder
+        )
+        task_logger.debug(cmd)
+        call(cmd, shell=True)
+    elif proc_type == const.ProcessType.Verification.value and do_verification:
+        pass
+    elif proc_type == const.ProcessType.clean_up.value:
         clean_up_template = (
             "--export=CUR_ENV -o {output_file} -e {error_file} {script_location} "
             "{sim_dir} {srf_name} {mgmt_db_loc} "
@@ -312,27 +319,19 @@ def submit_task(
             output_file=os.path.join(sim_dir, "clean_up.out"),
             error_file=os.path.join(sim_dir, "clean_up.err"),
         )
-        shared.submit_sl_script(
+        submit_sl_script(
             script,
-            const.ProcessType.clean_up.value,
-            sim_struct.get_mgmt_db_queue(root_folder),
-            run_name,
-            submit_yes=True,
             target_machine=const.HPC.mahuika.value,
         )
-    if proc_type == const.ProcessType.LF2BB.value:
-        shared.submit_sl_script(
-            "$gmsim/workflow/scripts/lf2bb.sh",
-            const.ProcessType.LF2BB.value,
-            sim_struct.get_mgmt_db_queue(root_folder),
-            run_name,
+    elif proc_type == const.ProcessType.LF2BB.value:
+        submit_sl_script(
+            "$gmsim/workflow/scripts/lf2bb.sl",
+            target_machine=const.HPC.mahuika.value,
         )
-    if proc_type == const.ProcessType.HF2BB.value:
-        shared.submit_sl_script(
-            "$gmsim/workflow/scripts/hf2bb.sh",
-            const.ProcessType.HF2BB.value,
-            sim_struct.get_mgmt_db_queue(root_folder),
-            run_name,
+    elif proc_type == const.ProcessType.HF2BB.value:
+        submit_sl_script(
+            "$gmsim/workflow/scripts/hf2bb.sl",
+            target_machine=const.HPC.mahuika.value,
         )
 
 
