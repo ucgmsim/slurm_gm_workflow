@@ -318,6 +318,20 @@ def submit_task(
             submit_yes=True,
             target_machine=const.HPC.mahuika.value,
         )
+    if proc_type == const.ProcessType.lf2bb.value:
+        shared.submit_sl_script(
+            "$gmsim/workflow/scripts/lf2bb.sh",
+            const.ProcessType.lf2bb.value,
+            sim_struct.get_mgmt_db_queue(root_folder),
+            run_name,
+        )
+    if proc_type == const.ProcessType.hf2bb.value:
+        shared.submit_sl_script(
+            "$gmsim/workflow/scripts/hf2bb.sh",
+            const.ProcessType.hf2bb.value,
+            sim_struct.get_mgmt_db_queue(root_folder),
+            run_name,
+        )
 
 
 def main(args, main_logger: Logger = workflow_logger.get_basic_logger()):
@@ -407,10 +421,14 @@ def main(args, main_logger: Logger = workflow_logger.get_basic_logger()):
         )
 
         # Gets all runnable tasks_to_run based on mgmt db state
-        runnable_tasks = mgmt_db.get_runnable_tasks(args.n_max_retries, args.rels_to_run, args.tasks_to_run)
+        runnable_tasks = mgmt_db.get_runnable_tasks(
+            args.n_max_retries, args.rels_to_run, args.tasks_to_run
+        )
         if len(runnable_tasks) > 0:
             somethingHappened = True
-            main_logger.info("Number of runnable tasks_to_run: {}".format(len(runnable_tasks)))
+            main_logger.info(
+                "Number of runnable tasks_to_run: {}".format(len(runnable_tasks))
+            )
         else:
             main_logger.debug("No runnable_tasks")
 
@@ -466,7 +484,9 @@ def main(args, main_logger: Logger = workflow_logger.get_basic_logger()):
                         run_name,
                         const.Status.completed.str_value,
                     ],
-                        mgmt_db.get_runnable_tasks(args.n_max_retries, args.rels_to_run, args.tasks_to_run),
+                    mgmt_db.get_runnable_tasks(
+                        args.n_max_retries, args.rels_to_run, args.tasks_to_run
+                    ),
                 ):
                     # If clean_up has already run, then we should set it to
                     # be run again after merge_ts has run
@@ -533,8 +553,21 @@ if __name__ == "__main__":
         help="Location of the log file to use. Defaults to 'cybershake_log.txt' in the location root_folder. "
         "Must be absolute or relative to the root_folder.",
     )
-    parser.add_argument("--tasks_to_run", nargs="+", help="Which processes should be run. Defaults to IM_Calc and clean_up with dependencies automatically propagated", choices=[proc.str_value for proc in const.ProcessType], default=[const.ProcessType.clean_up.str_value, const.ProcessType.IM_calculation.str_value])
-    parser.add_argument("--rels_to_run", help="An SQLite formatted query to match the realisations that should run.", default='%')
+    parser.add_argument(
+        "--tasks_to_run",
+        nargs="+",
+        help="Which processes should be run. Defaults to IM_Calc and clean_up with dependencies automatically propagated",
+        choices=[proc.str_value for proc in const.ProcessType],
+        default=[
+            const.ProcessType.clean_up.str_value,
+            const.ProcessType.IM_calculation.str_value,
+        ],
+    )
+    parser.add_argument(
+        "--rels_to_run",
+        help="An SQLite formatted query to match the realisations that should run.",
+        default="%",
+    )
 
     args = parser.parse_args()
 
@@ -587,11 +620,34 @@ if __name__ == "__main__":
     else:
         args.n_runs = DEFAULT_N_RUNS
 
-    logger.debug("Processes to be run were: {}. Getting all required dependencies now.".format(args.tasks_to_run))
-    args.tasks_to_run = [const.ProcessType.get_by_name(proc) for proc in args.tasks_to_run]
+    logger.debug(
+        "Processes to be run were: {}. Getting all required dependencies now.".format(
+            args.tasks_to_run
+        )
+    )
+    args.tasks_to_run = [
+        const.ProcessType.get_by_name(proc) for proc in args.tasks_to_run
+    ]
     for task in args.tasks_to_run:
-        logger.debug("Process {} in processes to be run, adding dependencies now.".format(task.str_value))
-        for proc_num in task.dependencies:
+        logger.debug(
+            "Process {} in processes to be run, adding dependencies now.".format(
+                task.str_value
+            )
+        )
+        dependencies = task.dependencies
+        if len(task.dependencies) > 0 and not isinstance(task.dependencies[0], int):
+            if any((
+                all((
+                    dependency in args.tasks_to_run
+                    for dependency in multi_dependency
+                ))
+                for multi_dependency in task.dependencies
+            )):
+                # At least one of the dependency conditions for the task is fulfilled, no need to add any more tasks
+                continue
+            # Otherwise the first dependency list is the default
+            dependencies = task.dependencies[0]
+        for proc_num in dependencies:
             proc = const.ProcessType(proc_num)
             if proc not in args.tasks_to_run:
                 args.tasks_to_run.append(proc)
