@@ -325,12 +325,12 @@ def submit_task(
         )
     elif proc_type == const.ProcessType.LF2BB.value:
         submit_sl_script(
-            "$gmsim/workflow/scripts/lf2bb.sl",
+            os.path.expandvars("$gmsim/workflow/scripts/lf2bb.sl"),
             target_machine=const.HPC.mahuika.value,
         )
     elif proc_type == const.ProcessType.HF2BB.value:
         submit_sl_script(
-            "$gmsim/workflow/scripts/hf2bb.sl",
+            os.path.expandvars("$gmsim/workflow/scripts/hf2bb.sl"),
             target_machine=const.HPC.mahuika.value,
         )
 
