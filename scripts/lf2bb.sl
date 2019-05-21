@@ -18,6 +18,10 @@ REL_NAME=`basename $REL`
 OUTBIN_LOC=$1/LF/OutBin
 BB_LOC=$1/BB/Acc/BB.bin
 
+if [[ ! -d $REL_LOC/BB/Acc ]]; then
+    mkdir -p $REL_LOC/BB/Acc
+fi
+
 #updating the stats in managementDB
 if [[ ! -d $MGMT_DB_LOC/mgmt_db_queue ]]; then
     #create the queue folder if not exist
