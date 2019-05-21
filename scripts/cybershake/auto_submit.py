@@ -45,7 +45,9 @@ JOB_RUN_MACHINE = {
 SLURM_TO_STATUS_DICT = {"R": 3, "PD": 2, "CG": 3}
 
 AUTO_SUBMIT_LOG_FILE_NAME = "auto_submit_log_{}.txt"
-
+#TODO: move default value to qcore.const once everythin else is stablized as well, e.g submit_hf.py
+#To avoid conflicts and different behaviors.
+DEFAULT_HF_SEED = 0
 
 def get_queued_tasks(user=None, machine=const.HPC.maui):
     if user is not None:
@@ -163,7 +165,7 @@ def submit_task(
     run_name,
     root_folder,
     task_logger,
-    hf_seed=None,
+    hf_seed=DEFAULT_HF_SEED,
     extended_period=False,
     do_verification=False,
     models=None,
@@ -330,7 +332,7 @@ def main(args, main_logger: Logger = workflow_logger.get_basic_logger()):
     config = utils.load_yaml(root_params_file)
     main_logger.info("Loaded root params file: {}".format(root_params_file))
     # Default values
-    hf_seed, extended_period = None, False
+    hf_seed, extended_period = DEFAULT_HF_SEED, False
 
     if const.RootParams.seed.value in config["hf"]:
         hf_seed = config["hf"][const.RootParams.seed.value]
