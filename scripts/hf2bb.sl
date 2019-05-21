@@ -17,7 +17,7 @@ fi
 REL_LOC=$1
 MGMT_DB_LOC=$2
 
-REL_NAME=`basename $REL`
+REL_NAME=`basename $REL_LOC`
 
 HF_LOC=$1/HF/Acc/HF.bin
 BB_LOC=$1/BB/Acc/BB.bin
