@@ -576,7 +576,6 @@ if __name__ == "__main__":
         choices=[proc.str_value for proc in const.ProcessType],
         default=[
             const.ProcessType.clean_up.str_value,
-            const.ProcessType.IM_calculation.str_value,
         ],
     )
     parser.add_argument(
