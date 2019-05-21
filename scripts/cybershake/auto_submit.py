@@ -327,7 +327,9 @@ def submit_task(
         )
     elif proc_type == const.ProcessType.LF2BB.value:
         submit_sl_script(
-            "{} {} {}".format(
+            "--output {} --error {} {} {} {}".format(
+                os.path.join(sim_dir, 'lf2bb.out'),
+                os.path.join(sim_dir, 'lf2bb.err'),
                 os.path.expandvars("$gmsim/workflow/scripts/lf2bb.sl"),
                 sim_dir,
                 root_folder,
@@ -336,7 +338,9 @@ def submit_task(
         )
     elif proc_type == const.ProcessType.HF2BB.value:
         submit_sl_script(
-            "{} {} {}".format(
+            "--output {} --error {} {} {} {}".format(
+                os.path.join(sim_dir, 'hf2bb.out'),
+                os.path.join(sim_dir, 'hf2bb.err'),
                 os.path.expandvars("$gmsim/workflow/scripts/hf2bb.sl"),
                 sim_dir,
                 root_folder,
