@@ -228,7 +228,7 @@ class E2ETests(object):
             os.path.dirname(os.path.abspath(__file__)),
             "../scripts/cybershake/install_cybershake.py",
         )
-        cmd = "python3 {} {} {} {} --seed {} --stat_file_path {} {}".format(
+        cmd = "python3 {} {} {} {} --seed {} --stat_file_path {}".format(
             script_path,
             self.stage_dir,
             os.path.join(
@@ -238,8 +238,13 @@ class E2ETests(object):
             self.version,
             self.config_dict[const.RootParams.seed.value],
             self.config_dict["stat_file"],
-            "--extended_period" if self.config_dict["extended_period"] else None,
         )
+        cmd = (
+            cmd + " --extended_period"
+            if self.config_dict.get("extended_period") is True
+            else cmd
+        )
+
         print("Running install...\nCmd: {}".format(cmd))
         out_file = os.path.join(self.stage_dir, self.install_out_file)
         err_file = os.path.join(self.stage_dir, self.install_err_file)
@@ -308,16 +313,13 @@ class E2ETests(object):
         sleep_time: int
             Time (in seconds) between progress checks
         """
-        submit_cmd = (
-            "python3 {} {} {} --sleep_time 2 --tasks_to_run IM_calc".format(
-                os.path.join(
-                    os.path.dirname(os.path.abspath(__file__)),
-                    "../scripts/cybershake/auto_submit.py",
-                ),
-                self.stage_dir,
-                user,
-
-            )
+        submit_cmd = "python3 {} {} {} --sleep_time 2 --tasks_to_run IM_calc".format(
+            os.path.join(
+                os.path.dirname(os.path.abspath(__file__)),
+                "../scripts/cybershake/auto_submit.py",
+            ),
+            self.stage_dir,
+            user,
         )
         queue_cmd = "python3 {} {}".format(
             os.path.join(
