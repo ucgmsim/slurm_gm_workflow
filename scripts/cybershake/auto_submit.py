@@ -47,9 +47,10 @@ JOB_RUN_MACHINE = {
 SLURM_TO_STATUS_DICT = {"R": 3, "PD": 2, "CG": 3}
 
 AUTO_SUBMIT_LOG_FILE_NAME = "auto_submit_log_{}.txt"
-#TODO: move default value to qcore.const once everythin else is stablized as well, e.g submit_hf.py
-#To avoid conflicts and different behaviors.
+# TODO: move default value to qcore.const once everythin else is stablized as well, e.g submit_hf.py
+# To avoid conflicts and different behaviors.
 DEFAULT_HF_SEED = 0
+
 
 def get_queued_tasks(user=None, machine=const.HPC.maui):
     if user is not None:
@@ -169,7 +170,6 @@ def submit_task(
     parent_logger,
     hf_seed=DEFAULT_HF_SEED,
     extended_period=False,
-    do_verification=False,
     models=None,
 ):
     task_logger = workflow_logger.get_task_logger(parent_logger, run_name, proc_type)
@@ -294,19 +294,19 @@ def submit_task(
             {"submit_time": submitted_time},
             logger=task_logger,
         )
-    elif proc_type == const.ProcessType.rrup.value and do_verification:
+    elif proc_type == const.ProcessType.rrup.value:
         cmd = "sbatch $gmsim/workflow/scripts/calc_rrups_single.sl {} {}".format(
             sim_dir, root_folder
         )
         task_logger.debug(cmd)
         call(cmd, shell=True)
-    elif proc_type == const.ProcessType.Empirical.value and do_verification:
+    elif proc_type == const.ProcessType.Empirical.value:
         cmd = "$gmsim/workflow/scripts/submit_empirical.py -np 40 -i {} {}".format(
             run_name, root_folder
         )
         task_logger.debug(cmd)
         call(cmd, shell=True)
-    elif proc_type == const.ProcessType.Verification.value and do_verification:
+    elif proc_type == const.ProcessType.Verification.value:
         pass
     elif proc_type == const.ProcessType.clean_up.value:
         clean_up_template = (
@@ -321,15 +321,12 @@ def submit_task(
             output_file=os.path.join(sim_dir, "clean_up.out"),
             error_file=os.path.join(sim_dir, "clean_up.err"),
         )
-        submit_sl_script(
-            script,
-            target_machine=const.HPC.mahuika.value,
-        )
+        submit_sl_script(script, target_machine=const.HPC.mahuika.value)
     elif proc_type == const.ProcessType.LF2BB.value:
         submit_sl_script(
             "--output {} --error {} {} {} {}".format(
-                os.path.join(sim_dir, 'lf2bb.out'),
-                os.path.join(sim_dir, 'lf2bb.err'),
+                os.path.join(sim_dir, "lf2bb.out"),
+                os.path.join(sim_dir, "lf2bb.err"),
                 os.path.expandvars("$gmsim/workflow/scripts/lf2bb.sl"),
                 sim_dir,
                 root_folder,
@@ -339,8 +336,8 @@ def submit_task(
     elif proc_type == const.ProcessType.HF2BB.value:
         submit_sl_script(
             "--output {} --error {} {} {} {}".format(
-                os.path.join(sim_dir, 'hf2bb.out'),
-                os.path.join(sim_dir, 'hf2bb.err'),
+                os.path.join(sim_dir, "hf2bb.out"),
+                os.path.join(sim_dir, "hf2bb.err"),
                 os.path.expandvars("$gmsim/workflow/scripts/hf2bb.sl"),
                 sim_dir,
                 root_folder,
@@ -574,9 +571,7 @@ if __name__ == "__main__":
         nargs="+",
         help="Which processes should be run. Defaults to IM_Calc and clean_up with dependencies automatically propagated",
         choices=[proc.str_value for proc in const.ProcessType],
-        default=[
-            const.ProcessType.clean_up.str_value,
-        ],
+        default=[const.ProcessType.clean_up.str_value],
     )
     parser.add_argument(
         "--rels_to_run",
@@ -651,13 +646,17 @@ if __name__ == "__main__":
         )
         dependencies = task.dependencies
         if len(task.dependencies) > 0 and not isinstance(task.dependencies[0], int):
-            if any((
-                all((
-                    const.ProcessType(dependency) in args.tasks_to_run
-                    for dependency in multi_dependency
-                ))
-                for multi_dependency in task.dependencies
-            )):
+            if any(
+                (
+                    all(
+                        (
+                            const.ProcessType(dependency) in args.tasks_to_run
+                            for dependency in multi_dependency
+                        )
+                    )
+                    for multi_dependency in task.dependencies
+                )
+            ):
                 # At least one of the dependency conditions for the task is fulfilled, no need to add any more tasks
                 continue
             # Otherwise the first dependency list is the default

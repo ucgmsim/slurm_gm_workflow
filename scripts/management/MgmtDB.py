@@ -88,13 +88,6 @@ class MgmtDB:
 
         Returns a list of tuples (proc_type, run_name, state_str)
         """
-        do_verification = False
-        verification_tasks = [
-            Process.IM_plot.value,
-            Process.rrup.value,
-            Process.Empirical.value,
-            Process.Verification.value,
-        ]
 
         if allowed_tasks is None:
             allowed_tasks = list(const.ProcessType)
@@ -121,8 +114,7 @@ class MgmtDB:
             if status == const.Status.created.str_value and self._check_dependancy_met(
                 task, db_tasks
             ):
-                if task[0] not in verification_tasks or do_verification:
-                    tasks_to_run.append(task)
+                tasks_to_run.append(task)
 
             # Retry failed tasks_to_run
             if status == const.Status.failed.str_value:
@@ -163,7 +155,9 @@ class MgmtDB:
         process, run_name, status = task
         process = Process(process)
 
-        if len(process.dependencies) > 0 and not isinstance(process.dependencies[0], int):
+        if len(process.dependencies) > 0 and not isinstance(
+            process.dependencies[0], int
+        ):
             # If the process has multiple valid
             completed_deps = []
             for multi_dep in process.dependencies:
