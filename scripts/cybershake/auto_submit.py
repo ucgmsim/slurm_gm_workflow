@@ -638,7 +638,7 @@ if __name__ == "__main__":
         if len(task.dependencies) > 0 and not isinstance(task.dependencies[0], int):
             if any((
                 all((
-                    dependency in args.tasks_to_run
+                    const.ProcessType(dependency) in args.tasks_to_run
                     for dependency in multi_dependency
                 ))
                 for multi_dependency in task.dependencies
