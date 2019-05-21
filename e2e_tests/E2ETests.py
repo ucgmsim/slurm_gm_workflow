@@ -224,8 +224,6 @@ class E2ETests(object):
         staging directory. Also checks for error keywords in the output
         and saves warnings accordingly.
         """
-
-        # Why is this a script? Make it all python?
         script_path = os.path.join(
             os.path.dirname(os.path.abspath(__file__)),
             "../scripts/cybershake/install_cybershake.py",
@@ -241,7 +239,13 @@ class E2ETests(object):
             self.config_dict[const.RootParams.seed.value],
             self.config_dict["stat_file"],
         )
-        print("Running install...")
+        cmd = (
+            cmd + " --extended_period"
+            if self.config_dict.get("extended_period") is True
+            else cmd
+        )
+
+        print("Running install...\nCmd: {}".format(cmd))
         out_file = os.path.join(self.stage_dir, self.install_out_file)
         err_file = os.path.join(self.stage_dir, self.install_err_file)
         with open(out_file, "w") as out_f, open(err_file, "w") as err_f:
@@ -265,7 +269,7 @@ class E2ETests(object):
             print("##### INSTALL OUTPUT #####")
             print(error)
             print("##########################")
-            self.warnings.append(Warning("Install - Stderr", msg))
+            self.errors.append(Error("Install - Stderr", msg))
 
         self.fault_dirs, self.sim_dirs = get_sim_dirs(self.runs_dir)
 
@@ -309,16 +313,13 @@ class E2ETests(object):
         sleep_time: int
             Time (in seconds) between progress checks
         """
-        submit_cmd = (
-            "python3 {} {} {} --sleep_time 2 --tasks_to_run IM_calc".format(
-                os.path.join(
-                    os.path.dirname(os.path.abspath(__file__)),
-                    "../scripts/cybershake/auto_submit.py",
-                ),
-                self.stage_dir,
-                user,
-
-            )
+        submit_cmd = "python3 {} {} {} --sleep_time 2 --tasks_to_run IM_calc".format(
+            os.path.join(
+                os.path.dirname(os.path.abspath(__file__)),
+                "../scripts/cybershake/auto_submit.py",
+            ),
+            self.stage_dir,
+            user,
         )
         queue_cmd = "python3 {} {}".format(
             os.path.join(
