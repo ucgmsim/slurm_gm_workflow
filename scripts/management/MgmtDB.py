@@ -163,12 +163,30 @@ class MgmtDB:
         process, run_name, status = task
         process = Process(process)
 
-        for dep in process.dependencies:
-            dependant_task = list(task)
-            dependant_task[0] = dep
-            dependant_task[2] = "completed"
-            if not self.is_task_complete(dependant_task, task_list):
-                return False
+        if len(process.dependencies) > 0 and not isinstance(process.dependencies[0], int):
+            # If the process has multiple valid
+            completed_deps = []
+            for multi_dep in process.dependencies:
+                dep_met = True
+                for dep in multi_dep:
+                    if dep in completed_deps:
+                        continue
+                    dependant_task = list(task)
+                    dependant_task[0] = dep
+                    dependant_task[2] = "completed"
+                    if not self.is_task_complete(dependant_task, task_list):
+                        dep_met = False
+                        break
+                    completed_deps.append(dep)
+                if dep_met:
+                    return True
+        else:
+            for dep in process.dependencies:
+                dependant_task = list(task)
+                dependant_task[0] = dep
+                dependant_task[2] = "completed"
+                if not self.is_task_complete(dependant_task, task_list):
+                    return False
         return True
 
     def _update_entry(self, cur: sql.Cursor, entry: SlurmTask):
