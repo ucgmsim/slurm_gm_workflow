@@ -355,18 +355,6 @@ def main(args, main_logger: Logger = workflow_logger.get_basic_logger()):
         os.path.join(workflow_config["estimation_models_dir"], "IM"), logger=main_logger
     )
 
-    # If any flags to ignore steps are given, add them to the list of skipped processes
-    skipped = []
-    if args.no_merge_ts:
-        main_logger.info("Not doing merge_ts")
-        skipped.append(const.ProcessType.merge_ts.value)
-    if args.no_im:
-        main_logger.info("Not calculating IMs")
-        skipped.append(const.ProcessType.IM_calculation.value)
-    if args.no_clean_up:
-        main_logger.info("Not cleaning up")
-        skipped.append(const.ProcessType.clean_up.value)
-
     somethingHappened = True
 
     while somethingHappened:
@@ -419,7 +407,7 @@ def main(args, main_logger: Logger = workflow_logger.get_basic_logger()):
         )
 
         # Gets all runnable tasks_to_run based on mgmt db state
-        runnable_tasks = mgmt_db.get_runnable_tasks(args.n_max_retries, args.tasks_to_run)
+        runnable_tasks = mgmt_db.get_runnable_tasks(args.n_max_retries, args.rels_to_run, args.tasks_to_run)
         if len(runnable_tasks) > 0:
             somethingHappened = True
             main_logger.info("Number of runnable tasks_to_run: {}".format(len(runnable_tasks)))
@@ -432,18 +420,6 @@ def main(args, main_logger: Logger = workflow_logger.get_basic_logger()):
         for task in runnable_tasks[:100]:
             somethingHappened = True
             cur_run_name, cur_proc_type = task[1], task[0]
-
-            # Set task that are set to be skipped to complete in db
-            if cur_proc_type in skipped and not check_mgmt_queue(
-                mgmt_queue_entries, cur_run_name, cur_proc_type
-            ):
-                shared.add_to_queue(
-                    mgmt_queue_folder,
-                    cur_run_name,
-                    cur_proc_type,
-                    const.Status.completed.value,
-                )
-                continue
 
             cur_hpc = JOB_RUN_MACHINE[const.ProcessType(cur_proc_type)]
             # Add task if limit has not been reached and there are no
@@ -490,7 +466,7 @@ def main(args, main_logger: Logger = workflow_logger.get_basic_logger()):
                         run_name,
                         const.Status.completed.str_value,
                     ],
-                    mgmt_db.get_runnable_tasks(args.n_max_retries, args.tasks_to_run),
+                        mgmt_db.get_runnable_tasks(args.n_max_retries, args.rels_to_run, args.tasks_to_run),
                 ):
                     # If clean_up has already run, then we should set it to
                     # be run again after merge_ts has run
@@ -557,10 +533,8 @@ if __name__ == "__main__":
         help="Location of the log file to use. Defaults to 'cybershake_log.txt' in the location root_folder. "
         "Must be absolute or relative to the root_folder.",
     )
-    parser.add_argument("--no_im", action="store_true")
-    parser.add_argument("--no_merge_ts", action="store_true")
-    parser.add_argument("--no_clean_up", action="store_true")
-    parser.add_argument("--tasks_to_run", nargs="*", help="Which processes should be run. Defaults to IM_Calc and clean_up with dependencies automatically propagated", choices=[proc.str_value for proc in const.ProcessType], default=[const.ProcessType.clean_up.str_value, const.ProcessType.IM_calculation.str_value])
+    parser.add_argument("--tasks_to_run", nargs="+", help="Which processes should be run. Defaults to IM_Calc and clean_up with dependencies automatically propagated", choices=[proc.str_value for proc in const.ProcessType], default=[const.ProcessType.clean_up.str_value, const.ProcessType.IM_calculation.str_value])
+    parser.add_argument("--rels_to_run", help="An SQLite formatted query to match the realisations that should run.", default='%')
 
     args = parser.parse_args()
 
@@ -579,6 +553,8 @@ if __name__ == "__main__":
             logger, os.path.join(args.root_folder, args.log_file)
         )
     logger.debug("Added file handler to the logger")
+
+    logger.debug("Raw args passed in as follows: {}".format(str(args)))
 
     if args.n_runs is not None:
         if len(args.n_runs) == 1:
@@ -620,6 +596,6 @@ if __name__ == "__main__":
             if proc not in args.tasks_to_run:
                 args.tasks_to_run.append(proc)
 
-    logger.debug("Args passed in as follows: {}".format(str(args)))
+    logger.debug("Processed args are as follows: {}".format(str(args)))
 
     main(args, logger)
