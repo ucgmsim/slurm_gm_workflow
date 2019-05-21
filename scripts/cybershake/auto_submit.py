@@ -320,17 +320,17 @@ def submit_task(
             submit_yes=True,
             target_machine=const.HPC.mahuika.value,
         )
-    if proc_type == const.ProcessType.lf2bb.value:
+    if proc_type == const.ProcessType.LF2BB.value:
         shared.submit_sl_script(
             "$gmsim/workflow/scripts/lf2bb.sh",
-            const.ProcessType.lf2bb.value,
+            const.ProcessType.LF2BB.value,
             sim_struct.get_mgmt_db_queue(root_folder),
             run_name,
         )
-    if proc_type == const.ProcessType.hf2bb.value:
+    if proc_type == const.ProcessType.HF2BB.value:
         shared.submit_sl_script(
             "$gmsim/workflow/scripts/hf2bb.sh",
-            const.ProcessType.hf2bb.value,
+            const.ProcessType.HF2BB.value,
             sim_struct.get_mgmt_db_queue(root_folder),
             run_name,
         )
