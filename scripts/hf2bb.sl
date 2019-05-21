@@ -8,7 +8,7 @@
 #SBATCH --account=nesi00213
 #SBATCH --partition=large
 #SBATCH --time=00:05:00
-#SBATCH --cpus-per-task=40
+#SBATCH --cpus-per-task=1
 
 REL_LOC=$1
 MGMT_DB_LOC=$2
