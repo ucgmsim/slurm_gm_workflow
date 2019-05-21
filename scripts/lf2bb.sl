@@ -10,13 +10,17 @@
 #SBATCH --time=01:00:00
 #SBATCH --cpus-per-task=1
 
+if [[ ! -z ${CUR_ENV} && ${CUR_HPC} != "mahuika" ]]; then
+    source $CUR_ENV/workflow/install_workflow/helper_functions/activate_env.sh $CUR_ENV "mahuika"
+fi
+
 REL_LOC=$1
 MGMT_DB_LOC=$2
 
-REL_NAME=`basename $REL`
+REL_NAME=`basename $REL_LOC`
 
-OUTBIN_LOC=$1/LF/OutBin
-BB_LOC=$1/BB/Acc/BB.bin
+OUTBIN_LOC=$REL_LOC/LF/OutBin
+BB_LOC=$REL_LOC/BB/Acc/BB.bin
 
 if [[ ! -d $REL_LOC/BB/Acc ]]; then
     mkdir -p $REL_LOC/BB/Acc
