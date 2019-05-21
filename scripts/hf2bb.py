@@ -1,9 +1,15 @@
+"""Converts the contents of an outbin directory to a BB binary at a given location."""
 import argparse
 import numpy as np
 from qcore.timeseries import BBSeis, HFSeis
 
 
 def hf2bb(hf_bin, bb_bin):
+    """Converts a given HF binary file to a BB binary file at the given location.
+    Writes the header using any available information, the parts provided by LF are blank however.
+    :param hf_bin: The location of the HF binary
+    :param bb_bin: The location the BB binary is to be written to
+    """
     FLOAT_SIZE = 0x4
     N_COMP = BBSeis.N_COMP
     HEAD_SIZE = BBSeis.HEAD_SIZE
@@ -43,13 +49,20 @@ def hf2bb(hf_bin, bb_bin):
     bb_stations['vsite'] = hf_data.stations["vs"]
 
     with open(bb_bin, 'wb') as out:
+        # Write the header
         np.array([hf_data.stations.size, hf_data.nt], dtype="i4").tofile(out)
         np.array([hf_data.nt * hf_data.dt, hf_data.dt, hf_data.start_sec], dtype="f4").tofile(out)
         np.array(["", "", hf_bin], dtype="|S256").tofile(out)
+
+        # Write the station data
         out.seek(HEAD_SIZE)
         bb_stations.tofile(out)
+
+        # Write the final byte to ensure the file size. Should be overwritten if everything works.
         out.seek(file_size - FLOAT_SIZE)
         np.float32().tofile(out)
+
+        # Write the acceleration data for each station in units of g (9.81m/s/s)
         out.seek(head_total)
         acc_dat = np.empty((hf_data.nt, N_COMP), dtype="f4")
         for i, stat in enumerate(hf_data.stations):
