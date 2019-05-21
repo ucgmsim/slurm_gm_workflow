@@ -1,4 +1,4 @@
-"""Converts the contents of an outbin directory to a BB binary at a given location."""
+"""Converts the contents of an HF binary file to a BB binary file at a given location."""
 import argparse
 import numpy as np
 from qcore.timeseries import BBSeis, HFSeis
