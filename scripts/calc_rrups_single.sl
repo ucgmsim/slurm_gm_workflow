@@ -7,7 +7,7 @@
 #SBATCH --account=nesi00213
 #SBATCH --partition=nesi_research
 #SBATCH --time=01:00:00
-#SBATCH --cpus-per-task=1
+#SBATCH --cpus-per-task=40
 
 function getFromYaml {
     echo $(python -c "from qcore.utils import load_sim_params; print(load_sim_params('$1').$2)")
