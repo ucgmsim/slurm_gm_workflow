@@ -1,11 +1,12 @@
 {
   "test_dir": "/nesi/nobackup/nesi00213/RunFolder/EndToEndTest/tests/",
-  "data_dir": "/nesi/project/nesi00213/EndToEndTest/test_data_validation/Data",
-  "fault_list": "/nesi/project/nesi00213/EndToEndTest/test_data_validation/list.txt",
-  "bench_dir": "/nesi/project/nesi00213/EndToEndTest/test_data_validation/benchmark",
+  "data_dir": "/nesi/project/nesi00213/EndToEndTest/test_data_validation_16p1/Data",
+  "fault_list": "/nesi/project/nesi00213/EndToEndTest/test_data_validation_16p1/list.txt",
+  "bench_dir": "/nesi/project/nesi00213/EndToEndTest/test_data_validation_16p1/benchmark",
   "test_checkpoint": true,
   "timeout": 240,
   "version": "16.1",
-  "seed": 34580,
-  "stat_file": "/nesi/project/nesi00213/StationInfo/geoNet_stats+2019-04-18.ll"
+  "seed": 5481190,
+  "stat_file": "/nesi/project/nesi00213/StationInfo/geoNet_stats+2018-05-22.ll",
+  "extended_period": true
 }
