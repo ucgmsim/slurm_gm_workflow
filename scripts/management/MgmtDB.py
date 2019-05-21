@@ -180,13 +180,13 @@ class MgmtDB:
                     completed_deps.append(dep)
                 if dep_met:
                     return True
-        else:
-            for dep in process.dependencies:
-                dependant_task = list(task)
-                dependant_task[0] = dep
-                dependant_task[2] = "completed"
-                if not self.is_task_complete(dependant_task, task_list):
-                    return False
+            return False
+        for dep in process.dependencies:
+            dependant_task = list(task)
+            dependant_task[0] = dep
+            dependant_task[2] = "completed"
+            if not self.is_task_complete(dependant_task, task_list):
+                return False
         return True
 
     def _update_entry(self, cur: sql.Cursor, entry: SlurmTask):
