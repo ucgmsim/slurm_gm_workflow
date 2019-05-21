@@ -166,13 +166,13 @@ def submit_task(
     proc_type,
     run_name,
     root_folder,
-    task_logger,
+    parent_logger,
     hf_seed=DEFAULT_HF_SEED,
     extended_period=False,
     do_verification=False,
     models=None,
 ):
-    task_logger = workflow_logger.get_task_logger(task_logger, run_name, proc_type)
+    task_logger = workflow_logger.get_task_logger(parent_logger, run_name, proc_type)
     # create the tmp folder
     # TODO: fix this issue
     sqlite_tmpdir = "/tmp/cer"
@@ -193,6 +193,7 @@ def submit_task(
             sim_struct.get_mgmt_db_queue(root_folder),
             run_name,
             submit_yes=True,
+            logger=task_logger,
             **kwargs,
         )
 
@@ -215,7 +216,6 @@ def submit_task(
             {"submit_time": submitted_time},
             logger=task_logger,
         )
-
     elif proc_type == const.ProcessType.merge_ts.value:
         args = argparse.Namespace(
             auto=True,
@@ -347,6 +347,7 @@ def submit_task(
             ),
             target_machine=const.HPC.mahuika.value,
         )
+    workflow_logger.clean_up_logger(task_logger)
 
 
 def main(args, main_logger: Logger = workflow_logger.get_basic_logger()):

@@ -7,7 +7,7 @@
 #SBATCH --job-name=hf2bb
 #SBATCH --account=nesi00213
 #SBATCH --partition=large
-#SBATCH --time=00:05:00
+#SBATCH --time=00:15:00
 #SBATCH --cpus-per-task=1
 
 if [[ ! -z ${CUR_ENV} && ${CUR_HPC} != "mahuika" ]]; then
