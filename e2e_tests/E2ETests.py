@@ -309,14 +309,14 @@ class E2ETests(object):
             Time (in seconds) between progress checks
         """
         submit_cmd = (
-            "python3 {} {} {} --sleep_time 2 "
-            "--no_merge_ts --no_clean_up".format(
+            "python3 {} {} {} --sleep_time 2 --tasks_to_run IM_calc".format(
                 os.path.join(
                     os.path.dirname(os.path.abspath(__file__)),
                     "../scripts/cybershake/auto_submit.py",
                 ),
                 self.stage_dir,
                 user,
+
             )
         )
         queue_cmd = "python3 {} {}".format(
@@ -474,7 +474,7 @@ class E2ETests(object):
         with connect_db_ctx(sim_struct.get_mgmt_db(self.stage_dir)) as cur:
             entries = cur.execute(
                 "SELECT run_name, proc_type, status, job_id, retries FROM state "
-                "WHERE proc_type <=6 AND status != 4"
+                "WHERE proc_type <=6 AND proc_type <> 2 AND status != 4"
             ).fetchall()
 
         entries = [SlurmTask(*entry) for entry in entries]
@@ -483,7 +483,7 @@ class E2ETests(object):
             if entry.status != const.Status.completed.value:
                 self.errors.append(
                     Error(
-                        "Slrum task",
+                        "Slurm task",
                         "Run {} did not complete task {} "
                         "(Status {}, Retries {}, JobId {}".format(
                             entry.run_name,
@@ -553,7 +553,7 @@ class E2ETests(object):
         """Checks auto submit progress in the management db"""
         with connect_db_ctx(sim_struct.get_mgmt_db(self.stage_dir)) as cur:
             total_count = cur.execute(
-                "SELECT COUNT(*) FROM state WHERE proc_type <= 6"
+                "SELECT COUNT(*) FROM state WHERE proc_type <= 6 AND proc_type <> 2"
             ).fetchone()[0]
             comp_count = cur.execute(
                 "SELECT COUNT(*) FROM state WHERE status == 4 AND proc_type <= 6"
