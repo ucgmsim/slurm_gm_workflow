@@ -40,6 +40,8 @@ JOB_RUN_MACHINE = {
     const.ProcessType.Empirical: const.HPC.mahuika,
     const.ProcessType.Verification: const.HPC.mahuika,
     const.ProcessType.clean_up: const.HPC.mahuika,
+    const.ProcessType.LF2BB: const.HPC.mahuika,
+    const.ProcessType.HF2BB: const.HPC.mahuika,
 }
 
 SLURM_TO_STATUS_DICT = {"R": 3, "PD": 2, "CG": 3}
