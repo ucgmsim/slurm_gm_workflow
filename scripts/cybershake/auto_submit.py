@@ -660,7 +660,33 @@ if __name__ == "__main__":
         for proc_num in dependencies:
             proc = const.ProcessType(proc_num)
             if proc not in args.tasks_to_run:
+                logger.debug(
+                    "Process {} added as a dependency of process {}".format(
+                        proc.str_value, task.str_value
+                    )
+                )
                 args.tasks_to_run.append(proc)
+    if (
+        sum(
+            [
+                const.ProcessType.BB in args.tasks_to_run,
+                const.ProcessType.HF2BB in args.tasks_to_run,
+                const.ProcessType.LF2BB in args.tasks_to_run,
+            ]
+        )
+        > 1
+    ):
+        logger.log(
+            workflow_logger.NOPRINTCRITICAL,
+            "Mutually exclusive tasks have been added. "
+            "Only one of BB, HF2BB, LF2BB may be used. "
+            "Check the logs to see where they were added.",
+        )
+        parser.error(
+            "Mutually exclusive tasks have been added. "
+            "Only one of BB, HF2BB, LF2BB may be used. "
+            "Check the logs to see where they were added."
+        )
 
     logger.debug("Processed args are as follows: {}".format(str(args)))
 
