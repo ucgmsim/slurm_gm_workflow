@@ -173,16 +173,12 @@ def submit_task(
     models=None,
 ):
     task_logger = workflow_logger.get_task_logger(parent_logger, run_name, proc_type)
-    # create the tmp folder
-    # TODO: fix this issue
-    sqlite_tmpdir = "/tmp/cer"
-    if not os.path.exists(sqlite_tmpdir):
-        os.makedirs(sqlite_tmpdir)
 
     # Metadata logging setup
     ch_log_dir = os.path.abspath(os.path.join(sim_dir, "ch_log"))
     if not os.path.isdir(ch_log_dir):
         os.mkdir(ch_log_dir)
+
     submitted_time = datetime.now().strftime(const.METADATA_TIMESTAMP_FMT)
     log_file = os.path.join(sim_dir, "ch_log", const.METADATA_LOG_FILENAME)
 
