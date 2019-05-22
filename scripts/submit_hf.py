@@ -69,6 +69,9 @@ def main(args: argparse.Namespace, est_model: est.EstModel = None, logger: Logge
             scale_ncores=SCALE_NCORES,
             logger=logger
         )
+        
+        if
+        
         wct = set_wct(est_run_time, est_cores, args.auto)
         hf_sim_dir = os.path.join(params.sim_dir, "HF")
         write_directory = (

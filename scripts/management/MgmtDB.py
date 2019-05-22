@@ -102,7 +102,7 @@ class MgmtDB:
 
         with connect_db_ctx(self._db_file) as cur:
             db_tasks = cur.execute(
-                """SELECT proc_type, run_name, status_enum.state 
+                """SELECT proc_type, run_name, status_enum.state, retries 
                           FROM status_enum, state 
                           WHERE state.status = status_enum.id
                            AND proc_type IN (?{})

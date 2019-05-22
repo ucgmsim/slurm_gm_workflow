@@ -68,7 +68,7 @@ if is_master:
         default=binary_version.get_hf_binmod("5.4.5"),
     )
     arg("--version",
-        help="binary version, similar to --sim_bin but not full path."
+        help="binary version, similar to --sim_bin but not full path.",
         default=None)
     arg("--t-sec", help="high frequency output start time", type=float, default=0.0)
     # HF IN, line 1
@@ -297,9 +297,9 @@ def initialise(check_only=False):
             stat_head.tofile(out)
 
 
-def unfinished():
+def unfinished(out_file):
     try:
-        with open(args.out_file, "rb") as hff:
+        with open(out_file, "rb") as hff:
             hff.seek(HEAD_SIZE)
             # checkpoints are vs and e_dist written to file
             # assume continuing machine is the same endian
@@ -339,7 +339,7 @@ def unfinished():
 
 station_mask = None
 if is_master:
-    station_mask = unfinished()
+    station_mask = unfinished(args.out_file)
     if station_mask is None or sum(station_mask) == stations.size:
         logger.debug("No valid checkpoints found. Starting fresh simulation.")
         initialise()

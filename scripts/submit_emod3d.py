@@ -43,7 +43,7 @@ def main(args: argparse.Namespace, est_model: est.EstModel = None, logger: Logge
         logger.debug("not set_params_only")
         # get lf_sim_dir
         sim_dir = os.path.abspath(params.sim_dir)
-        lf_sim_dir = os.path.join(sim_dir, "LF")
+        lf_sim_dir = sim_struct.get_lf_dir(sim_dir)
 
         # default_core will be changed is user passes ncore
         model = (
@@ -60,6 +60,19 @@ def main(args: argparse.Namespace, est_model: est.EstModel = None, logger: Logge
             model,
             True,
         )
+        # scale up the est_run_time if it is a re-run (with check-pointing)
+        # otherwise do nothing
+        if hasattr(args,'retries'):
+            # quick sanity check
+            # TODO: combine this function with 'restart' check in run_emod3d.sl.template
+            lf_restart_dir = sim_struct.get_lf_restart_dir(sim_dir)
+            #chech if the restar folder exist and has checkpointing files in it
+            if os.path.isdir(lf_restart_dir) and (len(os.listdir(lf_restart_dir) > 0)):
+                #scale up the wct with retried count
+                est_run_time = est_run_time * (int(args.retries) + 1)
+            else:
+                logger.debug("retries has been set, but no check-pointing files exist. not scaling wct")
+        
         wct = set_wct(est_run_time, est_cores, args.auto)
 
         target_qconfig = get_machine_config(args.machine)
