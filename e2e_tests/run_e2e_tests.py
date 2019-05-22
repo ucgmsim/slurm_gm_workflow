@@ -16,7 +16,7 @@ if __name__ == "__main__":
         "config_file", type=str, help="Config file for the end-to-end test"
     )
     parser.add_argument(
-        "user", type=str, help="The username under which to run the tasks"
+        "user", type=str, help="The username under which to run the tasks_to_run"
     )
     parser.add_argument(
         "--sleep_time",

@@ -1,5 +1,6 @@
 import os
 import sqlite3 as sql
+from logging import Logger
 
 from typing import List, Union
 from collections import namedtuple
@@ -37,13 +38,13 @@ class MgmtDB:
     def db_file(self):
         return self._db_file
 
-    def update_entries_live(self, entries: List[SlurmTask]):
+    def update_entries_live(self, entries: List[SlurmTask], logger: Logger):
         """Updates the specified entries in the db. Leaves the connection open,
         so this should only be used when continuously updating entries.
         """
         try:
             if self._conn is None:
-                print("Aquiring db connection.")
+                logger.info("Aquiring db connection.")
                 self._conn = sql.connect(self._db_file)
             cur = self._conn.cursor()
 
@@ -72,7 +73,7 @@ class MgmtDB:
             self._conn.close()
 
     def get_submitted_tasks(self):
-        """Gets all in progress tasks i.e. (running or queued)"""
+        """Gets all in progress tasks_to_run i.e. (running or queued)"""
         with connect_db_ctx(self._db_file) as cur:
             result = cur.execute(
                 "SELECT run_name, proc_type, status, job_id, retries "
@@ -81,9 +82,9 @@ class MgmtDB:
 
         return [SlurmTask(*entry) for entry in result]
 
-    def get_runnable_tasks(self, retry_max):
-        """Gets all runnable tasks based on their status and their associated
-        dependencies (i.e. other tasks have to be finished first)
+    def get_runnable_tasks(self, retry_max, allowed_rels, allowed_tasks=None):
+        """Gets all runnable tasks_to_run based on their status and their associated
+        dependencies (i.e. other tasks_to_run have to be finished first)
 
         Returns a list of tuples (proc_type, run_name, state_str)
         """
@@ -95,15 +96,23 @@ class MgmtDB:
             Process.Verification.value,
         ]
 
+        if allowed_tasks is None:
+            allowed_tasks = list(const.ProcessType)
+        allowed_tasks = [str(task.value) for task in allowed_tasks]
+
         with connect_db_ctx(self._db_file) as cur:
             db_tasks = cur.execute(
                 """SELECT proc_type, run_name, status_enum.state 
                           FROM status_enum, state 
                           WHERE state.status = status_enum.id
+                           AND proc_type IN (?{})
+                           AND run_name LIKE (?)
                            AND (((status_enum.state = 'created' OR status_enum.state = 'failed')  
                                  AND state.retries <= ?)
-                            OR status_enum.state = 'completed')""",
-                (retry_max,),
+                            OR status_enum.state = 'completed')""".format(
+                    ",?" * (len(allowed_tasks) - 1)
+                ),
+                (*allowed_tasks, allowed_rels, retry_max),
             ).fetchall()
 
         tasks_to_run = []
@@ -115,7 +124,7 @@ class MgmtDB:
                 if task[0] not in verification_tasks or do_verification:
                     tasks_to_run.append(task)
 
-            # Retry failed tasks
+            # Retry failed tasks_to_run
             if status == const.Status.failed.str_value:
                 tasks_to_run.append(task)
 
@@ -132,12 +141,7 @@ class MgmtDB:
                     cur.execute(
                         "UPDATE state SET status = ?, retries = ? "
                         "WHERE run_name = ? AND proc_type = ?",
-                        (
-                            const.Status.created.value,
-                            cur_retries + 1,
-                            task[1],
-                            task[0],
-                        ),
+                        (const.Status.created.value, cur_retries + 1, task[1], task[0]),
                     )
 
         return tasks_to_run

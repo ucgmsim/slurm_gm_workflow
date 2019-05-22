@@ -6,5 +6,6 @@
   "test_checkpoint": true,
   "timeout": 10,
   "version": "16.1",
-  "seed": 34580
+  "seed": 34580,
+  "stat_file": "/nesi/project/nesi00213/StationInfo/non_uniform_whole_nz_with_real_stations-hh400_v18p6.ll",
 }

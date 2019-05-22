@@ -96,7 +96,6 @@ class E2ETests(object):
         "run_hf_mpi.sl.template",
         "sim_im_calc.sl.template",
         "post_emod3d_merge_ts.sl.template",
-        "post_emod3d_winbin_aio.sl.template",
     ]
 
     def __init__(self, config_file: str):
@@ -146,7 +145,7 @@ class E2ETests(object):
         Parameters
         ----------
         user: str
-            The username under which to run the tasks
+            The username under which to run the tasks_to_run
         """
         self._stop_on_error = stop_on_error
 
@@ -231,15 +230,16 @@ class E2ETests(object):
             os.path.dirname(os.path.abspath(__file__)),
             "../scripts/cybershake/install_cybershake.py",
         )
-        cmd = "python3 {} {} {} {} --seed {}".format(
+        cmd = "python3 {} {} {} {} --seed {} --stat_file_path {}".format(
             script_path,
             self.stage_dir,
-            self.version,
             os.path.join(
                 self.stage_dir,
                 os.path.basename(self.config_dict[self.cf_fault_list_key]),
             ),
+            self.version,
             self.config_dict[const.RootParams.seed.value],
+            self.config_dict["stat_file"],
         )
         print("Running install...")
         out_file = os.path.join(self.stage_dir, self.install_out_file)
@@ -305,19 +305,19 @@ class E2ETests(object):
         Parameters
         ----------
         user: str
-            The username under which to run the tasks
+            The username under which to run the tasks_to_run
         sleep_time: int
             Time (in seconds) between progress checks
         """
         submit_cmd = (
-            "python3 {} {} {} --sleep_time 2 "
-            "--no_merge_ts --no_clean_up".format(
+            "python3 {} {} {} --sleep_time 2 --tasks_to_run IM_calc".format(
                 os.path.join(
                     os.path.dirname(os.path.abspath(__file__)),
                     "../scripts/cybershake/auto_submit.py",
                 ),
                 self.stage_dir,
                 user,
+
             )
         )
         queue_cmd = "python3 {} {}".format(
@@ -386,6 +386,7 @@ class E2ETests(object):
                         "Operational error while accessing database. "
                         "Retrying in {} seconds\n{}".format(sleep_time, ex)
                     )
+                    time.sleep(sleep_time)
                     continue
 
                 print(
@@ -474,7 +475,7 @@ class E2ETests(object):
         with connect_db_ctx(sim_struct.get_mgmt_db(self.stage_dir)) as cur:
             entries = cur.execute(
                 "SELECT run_name, proc_type, status, job_id, retries FROM state "
-                "WHERE proc_type <=6 AND status != 4"
+                "WHERE proc_type <=6 AND proc_type <> 2 AND status != 4"
             ).fetchall()
 
         entries = [SlurmTask(*entry) for entry in entries]
@@ -483,7 +484,7 @@ class E2ETests(object):
             if entry.status != const.Status.completed.value:
                 self.errors.append(
                     Error(
-                        "Slrum task",
+                        "Slurm task",
                         "Run {} did not complete task {} "
                         "(Status {}, Retries {}, JobId {}".format(
                             entry.run_name,
@@ -553,7 +554,7 @@ class E2ETests(object):
         """Checks auto submit progress in the management db"""
         with connect_db_ctx(sim_struct.get_mgmt_db(self.stage_dir)) as cur:
             total_count = cur.execute(
-                "SELECT COUNT(*) FROM state WHERE proc_type <= 6"
+                "SELECT COUNT(*) FROM state WHERE proc_type <= 6 AND proc_type <> 2"
             ).fetchone()[0]
             comp_count = cur.execute(
                 "SELECT COUNT(*) FROM state WHERE status == 4 AND proc_type <= 6"

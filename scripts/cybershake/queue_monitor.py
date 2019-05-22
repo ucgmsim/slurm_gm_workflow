@@ -5,27 +5,39 @@ import os
 import json
 import argparse
 import time
+from logging import Logger
 from typing import List
+from datetime import datetime
 
 import qcore.simulation_structure as sim_struct
 from scripts.management.MgmtDB import MgmtDB, SlurmTask
+from shared_workflow import workflow_logger
 
 
 # Have to include sub-seconds, as clean up can run sub one second.
 DATE_FORMAT = "%Y%m%d%H%M%S_%f"
 
+QUEUE_MONITOR_LOG_FILE_NAME = "queue_monitor_log_{}.txt"
+
+logger = None
+
 
 def on_exit(signum, frame):
-    print("Exiting queue-monitor.")
+    global logger
+    if not logger:
+        logger = workflow_logger.get_basic_logger()
+    logger.critical("SIGINT recieved, exiting queue-monitor.")
     exit()
 
 
-def get_queue_entry(entry_file: str):
+def get_queue_entry(
+    entry_file: str, queue_logger: Logger = workflow_logger.get_basic_logger()
+):
     try:
         with open(entry_file, "r") as f:
             data_dict = json.load(f)
     except json.JSONDecodeError as ex:
-        print(
+        queue_logger.error(
             "Failed to decode the file {} as json. Check that this is "
             "valid json. Ignored!".format(entry_file)
         )
@@ -41,40 +53,42 @@ def get_queue_entry(entry_file: str):
     )
 
 
-def main(args):
+def main(args, queue_logger: Logger = workflow_logger.get_basic_logger()):
     mgmt_db = MgmtDB(sim_struct.get_mgmt_db(args.root_folder))
     queue_folder = sim_struct.get_mgmt_db_queue(args.root_folder)
 
-    print("Running queue-monitor, exit with Ctrl-C.")
+    queue_logger.info("Running queue-monitor, exit with Ctrl-C.")
     while True:
         entry_files = os.listdir(queue_folder)
         entry_files.sort()
 
         entries = []
         for file in entry_files:
-            entry = get_queue_entry(os.path.join(queue_folder, file))
+            entry = get_queue_entry(os.path.join(queue_folder, file), queue_logger)
             if entry is not None:
                 entries.append(entry)
                 os.remove(os.path.join(queue_folder, file))
 
         if len(entries) > 0:
-            print("Updating {} mgmt db tasks.".format(len(entries)))
-            if not mgmt_db.update_entries_live(entries):
+            queue_logger.info("Updating {} mgmt db tasks_to_run.".format(len(entries)))
+            if not mgmt_db.update_entries_live(entries, queue_logger):
                 # Failed to update
-                print(
-                    "ERROR: Failed to update the current entries in the mgmt db queue. "
+                queue_logger.error(
+                    "Failed to update the current entries in the mgmt db queue. "
                     "Please investigate and fix. If this is a repeating error, then this "
                     "will block all other entries from updating."
                 )
         else:
-            print("No entries in the mgmt db queue.")
+            queue_logger.info("No entries in the mgmt db queue.")
 
         # Nap time
-        print("Sleeping for {}".format(args.sleep_time), flush=True)
+        queue_logger.debug("Sleeping for {}".format(args.sleep_time))
         time.sleep(args.sleep_time)
 
 
 if __name__ == "__main__":
+    logger = workflow_logger.get_logger()
+
     parser = argparse.ArgumentParser()
 
     parser.add_argument("root_folder", type=str, help="Cybershake root folder.")
@@ -84,7 +98,25 @@ if __name__ == "__main__":
         help="Sleep time (in seconds) between queue checks.",
         default=5,
     )
+    parser.add_argument(
+        "--log_file",
+        type=str,
+        default=None,
+        help="Location of the log file to use. Defaults to 'cybershake_log.txt' in the location root_folder. "
+        "Must be absolute or relative to the root_folder.",
+    )
     args = parser.parse_args()
 
+    if args.log_file is None:
+        log_file_name = os.path.join(
+            args.root_folder,
+            QUEUE_MONITOR_LOG_FILE_NAME.format(datetime.now().strftime(DATE_FORMAT)),
+        )
+    else:
+        log_file_name = args.log_file
+
+    workflow_logger.add_general_file_handler(logger, log_file_name)
+    logger.debug("Successfully added {} as the log file.".format(log_file_name))
+
     signal.signal(signal.SIGINT, on_exit)
-    main(args)
+    main(args, logger)
