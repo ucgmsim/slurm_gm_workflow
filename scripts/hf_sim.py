@@ -163,7 +163,7 @@ if is_master:
         # invalid arguments or -h
         comm.Abort()
 
-if args.version is not None:
+if hasattr(args, 'version') and args.version is not None:
     args.sim_bin = binary_version.get_hf_binmod(args.version)
 
 if is_master:
