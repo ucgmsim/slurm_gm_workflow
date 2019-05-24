@@ -67,7 +67,7 @@ def main(args: argparse.Namespace, est_model: est.EstModel = None, logger: Logge
             # TODO: combine this function with 'restart' check in run_emod3d.sl.template
             lf_restart_dir = sim_struct.get_lf_restart_dir(sim_dir)
             #chech if the restar folder exist and has checkpointing files in it
-            if os.path.isdir(lf_restart_dir) and (len(os.listdir(lf_restart_dir) > 0)):
+            if os.path.isdir(lf_restart_dir) and (len(os.listdir(lf_restart_dir)) > 0):
                 #scale up the wct with retried count
                 est_run_time = est_run_time * (int(args.retries) + 1)
             else:

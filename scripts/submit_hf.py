@@ -73,8 +73,9 @@ def main(args: argparse.Namespace, est_model: est.EstModel = None, logger: Logge
         if hasattr(args,'retries'):
             # check if HF.bin is read-able = restart-able
             try:
+                from qcore.timeseries import HFSeis
                 bin = HFSeis(sim_struct.get_hf_bin_path(params.sim_dir))
-            except ValueError as ex:
+            except:
                 logger.debug("Retried count > 0 but HF.bin is not readable")
             else:
                 est_run_time = est_run_time * (int(args.retries) +1)
