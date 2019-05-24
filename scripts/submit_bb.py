@@ -55,6 +55,17 @@ def main(args: argparse.Namespace, est_model: est.EstModel = None, logger: Logge
             ncores,
             est_model,
         )
+        
+        if hasattr(args,'retries'):
+           # check if HF.bin is read-able = restart-able
+            try:
+                from qcore.timeseries import HFSeis
+                bin = HFSeis(sim_struct.get_hf_bin_path(params.sim_dir))
+            except:
+                logger.debug("Retried count > 0 but BB.bin is not readable") 
+            else:
+                 est_run_time = est_run_time * (int(args.retries) +1)
+        
         wct = set_wct(est_run_time, ncores, args.auto)
         bb_sim_dir = os.path.join(params.sim_dir, "BB")
         write_directory = (
