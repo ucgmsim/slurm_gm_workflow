@@ -148,7 +148,7 @@ class MgmtDB:
 
     @staticmethod
     def is_task_complete(task, task_list):
-        process, run_name, status = task
+        process, run_name, status, *_ = task
         for check_task in task_list:
             if (
                 check_task[0] == process
@@ -160,7 +160,7 @@ class MgmtDB:
 
     def _check_dependancy_met(self, task, task_list):
         """Checks if all dependencies for the specified are met"""
-        process, run_name, status = task
+        process, run_name, status, *_ = task
         process = Process(process)
 
         for dep in process.dependencies:
