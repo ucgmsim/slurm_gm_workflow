@@ -24,7 +24,6 @@ from shared_workflow.shared_template import write_sl_script
 # Estimated number of minutes between each checkpoint
 from shared_workflow.workflow_logger import get_basic_logger
 
-CHECKPOINT_DURATION = 10
 
 
 def main(args: argparse.Namespace, est_model: est.EstModel = None, logger: Logger = get_basic_logger()):
@@ -62,26 +61,28 @@ def main(args: argparse.Namespace, est_model: est.EstModel = None, logger: Logge
         )
         # scale up the est_run_time if it is a re-run (with check-pointing)
         # otherwise do nothing
+        est_run_time_scaled = est_run_time
         if hasattr(args,'retries'):
             # quick sanity check
             # TODO: combine this function with 'restart' check in run_emod3d.sl.template
             lf_restart_dir = sim_struct.get_lf_restart_dir(sim_dir)
-            #chech if the restar folder exist and has checkpointing files in it
+            # check if the restart folder exist and has checkpointing files in it
             if os.path.isdir(lf_restart_dir) and (len(os.listdir(lf_restart_dir)) > 0):
-                #scale up the wct with retried count
-                est_run_time = est_run_time * (int(args.retries) + 1)
+                # scale up the wct with retried count
+                est_run_time_scaled = est_run_time * (int(args.retries) + 1)
             else:
                 logger.debug("retries has been set, but no check-pointing files exist. not scaling wct")
-        
-        wct = set_wct(est_run_time, est_cores, args.auto)
+
+        wct = set_wct(est_run_time_scaled, est_cores, args.auto)
 
         target_qconfig = get_machine_config(args.machine)
 
         binary_path = binary_version.get_lf_bin(
             params.emod3d.emod3d_version, target_qconfig["tools_dir"]
         )
+        # use the original estimated run time for determining the checkpoint
         steps_per_checkpoint = int(
-            get_nt(params) / (60.0 * est_run_time) * CHECKPOINT_DURATION
+            get_nt(params) / (60.0 * est_run_time) * const.CHECKPOINT_DURATION
         )
         write_directory = (
             args.write_directory if args.write_directory else params.sim_dir
