@@ -20,6 +20,7 @@ DATE_FORMAT = "%Y%m%d%H%M%S_%f"
 QUEUE_MONITOR_LOG_FILE_NAME = "queue_monitor_log_{}.txt"
 
 logger = None
+keepAlive = True
 
 
 def on_exit(signum, frame):
@@ -53,13 +54,13 @@ def get_queue_entry(
     )
 
 
-def main(args, queue_logger: Logger = workflow_logger.get_basic_logger()):
-    mgmt_db = MgmtDB(sim_struct.get_mgmt_db(args.root_folder))
-    queue_folder = sim_struct.get_mgmt_db_queue(args.root_folder)
+def main(root_folder: str, sleep_time: int, queue_logger: Logger = workflow_logger.get_basic_logger()):
+    mgmt_db = MgmtDB(sim_struct.get_mgmt_db(root_folder))
+    queue_folder = sim_struct.get_mgmt_db_queue(root_folder)
 
     queue_logger.info("Running queue-monitor, exit with Ctrl-C.")
 
-    while True:
+    while keepAlive:
         sqlite_tmpdir = "/tmp/cer"
         if not os.path.exists(sqlite_tmpdir):
             os.makedirs(sqlite_tmpdir)
@@ -88,8 +89,8 @@ def main(args, queue_logger: Logger = workflow_logger.get_basic_logger()):
             queue_logger.info("No entries in the mgmt db queue.")
 
         # Nap time
-        queue_logger.debug("Sleeping for {}".format(args.sleep_time))
-        time.sleep(args.sleep_time)
+        queue_logger.debug("Sleeping for {}".format(sleep_time))
+        time.sleep(sleep_time)
 
 
 if __name__ == "__main__":

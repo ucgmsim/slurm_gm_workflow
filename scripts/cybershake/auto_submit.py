@@ -6,7 +6,7 @@ import os
 from datetime import datetime
 from logging import Logger
 from subprocess import call, Popen, PIPE
-from typing import List
+from typing import List, Dict
 
 import shlex
 import numpy as np
@@ -343,8 +343,17 @@ def submit_task(
     workflow_logger.clean_up_logger(task_logger)
 
 
-def main(args, main_logger: Logger = workflow_logger.get_basic_logger()):
-    root_folder = os.path.abspath(args.root_folder)
+def main(
+    root_folder: str,
+    user: str,
+    n_runs: Dict[str:int],
+    n_max_retries: int,
+    rels_to_run: str,
+    given_tasks_to_run: List[str],
+    sleep_time: int,
+    main_logger: Logger = workflow_logger.get_basic_logger(),
+):
+    root_folder = os.path.abspath(root_folder)
     mgmt_queue_folder = sim_struct.get_mgmt_db_queue(root_folder)
     mgmt_db = MgmtDB(sim_struct.get_mgmt_db(root_folder))
     root_params_file = os.path.join(
@@ -390,8 +399,10 @@ def main(args, main_logger: Logger = workflow_logger.get_basic_logger()):
         # Get in progress tasks_to_run in the db and the HPC queue
         squeue_tasks, n_tasks_to_run = [], {}
         for hpc in const.HPC:
-            cur_tasks = get_queued_tasks(user=args.user, machine=hpc)
-            n_tasks_to_run[hpc] = args.n_runs[hpc] - len(cur_tasks)
+
+            cur_tasks = get_queued_tasks(user=user, machine=hpc)
+
+            n_tasks_to_run[hpc] = n_runs[hpc] - len(cur_tasks)
             squeue_tasks.extend(cur_tasks)
 
         if len(squeue_tasks) > 0:
@@ -430,8 +441,9 @@ def main(args, main_logger: Logger = workflow_logger.get_basic_logger()):
         )
 
         # Gets all runnable tasks_to_run based on mgmt db state
+
         runnable_tasks = mgmt_db.get_runnable_tasks(
-            args.n_max_retries, args.rels_to_run, args.tasks_to_run
+            n_max_retries, rels_to_run, given_tasks_to_run
         )
         if len(runnable_tasks) > 0:
             somethingHappened = True
@@ -494,7 +506,7 @@ def main(args, main_logger: Logger = workflow_logger.get_basic_logger()):
                         const.Status.completed.str_value,
                     ],
                     mgmt_db.get_runnable_tasks(
-                        args.n_max_retries, args.rels_to_run, args.tasks_to_run
+                        n_max_retries, rels_to_run, given_tasks_to_run
                     ),
                 ):
                     # If clean_up has already run, then we should set it to
@@ -517,9 +529,8 @@ def main(args, main_logger: Logger = workflow_logger.get_basic_logger()):
                 extended_period=extended_period,
                 models=(lf_est_model, hf_est_model, bb_est_model, im_est_model),
             )
-
-        main_logger.debug("Sleeping for {} second(s)".format(args.sleep_time))
-        time.sleep(args.sleep_time)
+        main_logger.debug("Sleeping for {} second(s)".format(sleep_time))
+        time.sleep(sleep_time)
     main_logger.info("Nothing was running or ready to run last cycle, exiting now")
 
 
@@ -577,11 +588,13 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
+    root_folder = os.path.abspath(args.root_folder)
+
     if args.log_file is None:
         workflow_logger.add_general_file_handler(
             logger,
             os.path.join(
-                args.root_folder,
+                root_folder,
                 AUTO_SUBMIT_LOG_FILE_NAME.format(
                     datetime.now().strftime(const.TIMESTAMP_FORMAT)
                 ),
@@ -589,30 +602,28 @@ if __name__ == "__main__":
         )
     else:
         workflow_logger.add_general_file_handler(
-            logger, os.path.join(args.root_folder, args.log_file)
+            logger, os.path.join(root_folder, args.log_file)
         )
     logger.debug("Added file handler to the logger")
 
     logger.debug("Raw args passed in as follows: {}".format(str(args)))
 
+    n_runs = 0
     if args.n_runs is not None:
         if len(args.n_runs) == 1:
-            args.n_runs = {hpc: args.n_runs[0] for hpc in const.HPC}
+            n_runs = {hpc: args.n_runs[0] for hpc in const.HPC}
             logger.debug(
-                "Using {} as the maximum number of jobs per machine".format(
-                    args.n_runs[0]
-                )
+                "Using {} as the maximum number of jobs per machine".format(n_runs[0])
             )
         elif len(args.n_runs) == len(const.HPC):
             n_runs = {}
             for index, hpc in enumerate(const.HPC):
                 logger.debug(
-                    "Setting {} to have at most {} concurrently runnign jobs".format(
+                    "Setting {} to have at most {} concurrently running jobs".format(
                         hpc, args.n_runs[index]
                     )
                 )
                 n_runs.update({hpc: args.n_runs[index]})
-            args.n_runs = n_runs
         else:
             logger.critical(
                 "Expected either 1 or {} values for --n_runs, got {} values. Specifically: {}. Exiting now".format(
@@ -624,17 +635,15 @@ if __name__ == "__main__":
                 "for each in the following list: {}".format(list(const.HPC))
             )
     else:
-        args.n_runs = DEFAULT_N_RUNS
+        n_runs = DEFAULT_N_RUNS
 
     logger.debug(
         "Processes to be run were: {}. Getting all required dependencies now.".format(
             args.tasks_to_run
         )
     )
-    args.tasks_to_run = [
-        const.ProcessType.get_by_name(proc) for proc in args.tasks_to_run
-    ]
-    for task in args.tasks_to_run:
+    tasks_to_run = [const.ProcessType.get_by_name(proc) for proc in args.tasks_to_run]
+    for task in tasks_to_run:
         logger.debug(
             "Process {} in processes to be run, adding dependencies now.".format(
                 task.str_value
@@ -646,7 +655,7 @@ if __name__ == "__main__":
                 (
                     all(
                         (
-                            const.ProcessType(dependency) in args.tasks_to_run
+                            const.ProcessType(dependency) in tasks_to_run
                             for dependency in multi_dependency
                         )
                     )
@@ -659,19 +668,19 @@ if __name__ == "__main__":
             dependencies = task.dependencies[0]
         for proc_num in dependencies:
             proc = const.ProcessType(proc_num)
-            if proc not in args.tasks_to_run:
+            if proc not in tasks_to_run:
                 logger.debug(
                     "Process {} added as a dependency of process {}".format(
                         proc.str_value, task.str_value
                     )
                 )
-                args.tasks_to_run.append(proc)
+                tasks_to_run.append(proc)
     if (
         sum(
             [
-                const.ProcessType.BB in args.tasks_to_run,
-                const.ProcessType.HF2BB in args.tasks_to_run,
-                const.ProcessType.LF2BB in args.tasks_to_run,
+                const.ProcessType.BB in tasks_to_run,
+                const.ProcessType.HF2BB in tasks_to_run,
+                const.ProcessType.LF2BB in tasks_to_run,
             ]
         )
         > 1
@@ -690,4 +699,13 @@ if __name__ == "__main__":
 
     logger.debug("Processed args are as follows: {}".format(str(args)))
 
-    main(args, logger)
+    main(
+        root_folder,
+        args.user,
+        n_runs,
+        args.n_max_retries,
+        args.rels_to_run,
+        tasks_to_run,
+        args.sleep_time,
+        logger,
+    )
