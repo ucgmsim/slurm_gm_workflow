@@ -17,7 +17,6 @@ from shared_workflow.shared import (
     confirm,
     set_wct,
     submit_sl_script,
-    get_hf_nt,
 )
 from shared_workflow.shared_template import write_sl_script
 
