@@ -17,7 +17,7 @@ from shared_workflow.shared import (
     confirm,
     set_wct,
     submit_sl_script,
-    get_nt,
+    get_hf_nt,
 )
 from shared_workflow.shared_template import write_sl_script
 
@@ -46,6 +46,7 @@ def main(args: argparse.Namespace, est_model: est.EstModel = None, logger: Logge
         lf_sim_dir = os.path.join(sim_dir, "LF")
 
         # default_core will be changed is user passes ncore
+        nt = int(float(params.sim_duration) / float(params.dt))
         model = (
             est_model
             if est_model is not None
@@ -55,7 +56,7 @@ def main(args: argparse.Namespace, est_model: est.EstModel = None, logger: Logge
             int(params.nx),
             int(params.ny),
             int(params.nz),
-            get_nt(params),
+            nt,
             args.ncore,
             model,
             True,
@@ -68,7 +69,7 @@ def main(args: argparse.Namespace, est_model: est.EstModel = None, logger: Logge
             params.emod3d.emod3d_version, target_qconfig["tools_dir"]
         )
         steps_per_checkpoint = int(
-            get_nt(params) / (60.0 * est_run_time) * CHECKPOINT_DURATION
+            nt / (60.0 * est_run_time) * CHECKPOINT_DURATION
         )
         write_directory = (
             args.write_directory if args.write_directory else params.sim_dir
