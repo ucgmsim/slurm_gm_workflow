@@ -158,3 +158,10 @@ def get_basic_logger():
     basic_logger = logging.Logger("Basic")
     basic_logger.setLevel(logging.INFO)
     return basic_logger
+
+
+def clean_up_logger(logger: logging.Logger):
+    for handler in logger.handlers[::-1]:
+        if isinstance(handler, logging.FileHandler):
+            handler.close()
+            logger.handlers.remove(handler)
