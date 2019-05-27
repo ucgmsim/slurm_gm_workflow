@@ -73,7 +73,7 @@ def main(args: argparse.Namespace, est_model: est.EstModel = None, logger: Logge
         # scale up the est_run_time if it is a re-run (with check-pointing)
         # creates and extra variable so we keep the orignial estimated run time for other purpose
         est_run_time_scaled = est_run_time 
-        if hasattr(args,'retries'):
+        if hasattr(args,'retries') and int(args.retries) > 0:
             # check if HF.bin is read-able = restart-able
             try:
                 from qcore.timeseries import HFSeis
