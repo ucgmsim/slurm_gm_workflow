@@ -140,48 +140,19 @@ class MgmtDB:
 
     @staticmethod
     def is_task_complete(task, task_list):
-        process, run_name, status = task
-        for check_task in task_list:
-            if (
-                check_task[0] == process
-                and check_task[1] == run_name
-                and check_task[2] == status
-            ):
-                return True
-        return False
+        return task in task_list
 
     def _check_dependancy_met(self, task, task_list):
         """Checks if all dependencies for the specified are met"""
         process, run_name, status = task
         process = Process(process)
 
-        if len(process.dependencies) > 0 and not isinstance(
-            process.dependencies[0], int
-        ):
-            # If the process has multiple valid
-            completed_deps = []
-            for multi_dep in process.dependencies:
-                dep_met = True
-                for dep in multi_dep:
-                    if dep in completed_deps:
-                        continue
-                    dependant_task = list(task)
-                    dependant_task[0] = dep
-                    dependant_task[2] = "completed"
-                    if not self.is_task_complete(dependant_task, task_list):
-                        dep_met = False
-                        break
-                    completed_deps.append(dep)
-                if dep_met:
-                    return True
-            return False
-        for dep in process.dependencies:
-            dependant_task = list(task)
-            dependant_task[0] = dep
-            dependant_task[2] = "completed"
-            if not self.is_task_complete(dependant_task, task_list):
-                return False
-        return True
+        return len(
+            process.get_remaining_dependencies([
+                proc for proc, name, state in task_list
+                if name == run_name and state == "completed"
+            ])
+        ) == 0
 
     def _update_entry(self, cur: sql.Cursor, entry: SlurmTask):
         """Updates all fields that have a value for the specific entry"""
