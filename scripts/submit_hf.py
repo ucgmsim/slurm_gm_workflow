@@ -14,7 +14,7 @@ from shared_workflow.shared import (
     set_wct,
     confirm,
     submit_sl_script,
-    get_nt,
+    get_hf_nt,
 )
 from shared_workflow.workflow_logger import get_basic_logger
 from shared_workflow.shared_template import write_sl_script
@@ -49,7 +49,7 @@ def main(args: argparse.Namespace, est_model: est.EstModel = None, logger: Logge
     # if srf(variation) is provided as args, only create
     # the slurm with same name provided
     if args.srf is None or srf_name == args.srf:
-        nt = get_nt(params)
+        nt = get_hf_nt(params)
         fd_count = len(shared.get_stations(params.FD_STATLIST))
         # TODO:make it read through the whole list
         #  instead of assuming every stoch has same size
