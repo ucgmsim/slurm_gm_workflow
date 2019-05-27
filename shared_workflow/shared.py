@@ -387,8 +387,8 @@ def set_wct(est_run_time, ncores, auto=False, logger=get_basic_logger()):
     return wct
 
 
-def get_nt(params):
-    return int(float(params.sim_duration) / float(params.dt))
+def get_hf_nt(params):
+    return int(float(params.sim_duration) / float(params.hf.dt))
 
 
 def add_name_suffix(name, yes):
