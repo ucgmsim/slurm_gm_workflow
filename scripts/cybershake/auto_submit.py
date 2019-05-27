@@ -349,11 +349,10 @@ def main(
     n_runs: Dict[str:int],
     n_max_retries: int,
     rels_to_run: str,
-    given_tasks_to_run: List[str],
+    given_tasks_to_run: List[const.ProcessType],
     sleep_time: int,
     main_logger: Logger = workflow_logger.get_basic_logger(),
 ):
-    root_folder = os.path.abspath(root_folder)
     mgmt_queue_folder = sim_struct.get_mgmt_db_queue(root_folder)
     mgmt_db = MgmtDB(sim_struct.get_mgmt_db(root_folder))
     root_params_file = os.path.join(
