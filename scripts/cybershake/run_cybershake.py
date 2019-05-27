@@ -18,6 +18,11 @@ QUEUE_MONITOR_LOG_FILE_NAME = "queue_monitor_log_{}.txt"
 MASTER_AUTO_SUBMIT_LOG_FILE_NAME = "main_auto_submit_log_{}.txt"
 PATTERN_AUTO_SUBMIT_LOG_FILE_NAME = "pattern_{}_auto_submit_log_{}.txt"
 
+ALL = "ALL"
+ONCE = "ONCE"
+ONCE_PATTERN = "%_REL01"
+NONE = "NONE"
+
 
 def run_automated_workflow(
     root_folder: str,
@@ -155,31 +160,24 @@ def parse_config_file(config_file_location: str):
     which tasks can be run with which patterns
     """
     config = load_yaml(config_file_location)
-    tasks_to_run_for_all = [const.ProcessType(x) for x in config.run_all_tasks]
 
-    for proc in tasks_to_run_for_all:
-        tasks_to_run_for_all.extend(
-            [
-                const.ProcessType(new_proc)
-                for new_proc in proc.get_remaining_dependencies(tasks_to_run_for_all)
-            ]
-        )
+    tasks_to_run_for_all = []
+    tasks_with_pattern_match = {}
 
-    tasks_with_pattern_match = [
-        (pattern, [const.ProcessType(x) for x in tasks])
-        for pattern, tasks in config.run_some.items()
-    ]
-    for pattern, tasks in tasks_with_pattern_match:
-        for proc in tasks:
-            tasks.extend(
-                [
-                    const.ProcessType(new_proc)
-                    for new_proc in proc.get_remaining_dependencies(tasks)
-                    if const.ProcessType(new_proc) not in tasks_to_run_for_all
-                ]
-            )
+    for proc_name, pattern in config.values():
+        proc = const.ProcessType.get_by_name(proc_name)
+        if pattern == ALL:
+            tasks_to_run_for_all.append(proc)
+        elif pattern == NONE:
+            pass
+        else:
+            if pattern == ONCE:
+                pattern = ONCE_PATTERN
+            if pattern not in tasks_with_pattern_match.keys():
+                tasks_with_pattern_match.update({pattern: []})
+            tasks_with_pattern_match[pattern].append(proc)
 
-    return tasks_to_run_for_all, tasks_with_pattern_match
+    return tasks_to_run_for_all, tasks_with_pattern_match.values()
 
 
 def main():
