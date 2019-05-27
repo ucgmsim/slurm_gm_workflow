@@ -649,24 +649,7 @@ if __name__ == "__main__":
                 task.str_value
             )
         )
-        dependencies = task.dependencies
-        if len(task.dependencies) > 0 and not isinstance(task.dependencies[0], int):
-            if any(
-                (
-                    all(
-                        (
-                            const.ProcessType(dependency) in tasks_to_run
-                            for dependency in multi_dependency
-                        )
-                    )
-                    for multi_dependency in task.dependencies
-                )
-            ):
-                # At least one of the dependency conditions for the task is fulfilled, no need to add any more tasks
-                continue
-            # Otherwise the first dependency list is the default
-            dependencies = task.dependencies[0]
-        for proc_num in dependencies:
+        for proc_num in task.get_remaining_dependencies(tasks_to_run):
             proc = const.ProcessType(proc_num)
             if proc not in tasks_to_run:
                 logger.debug(
@@ -674,27 +657,16 @@ if __name__ == "__main__":
                         proc.str_value, task.str_value
                     )
                 )
-                tasks_to_run.append(proc)
-    if (
-        sum(
-            [
-                const.ProcessType.BB in tasks_to_run,
-                const.ProcessType.HF2BB in tasks_to_run,
-                const.ProcessType.LF2BB in tasks_to_run,
-            ]
-        )
-        > 1
-    ):
+                args.tasks_to_run.append(proc)
+
+    mutually_exclusive_task_error = const.ProcessType.check_mutually_exclusive_tasks(tasks_to_run)
+    if mutually_exclusive_task_error != "":
         logger.log(
             workflow_logger.NOPRINTCRITICAL,
-            "Mutually exclusive tasks have been added. "
-            "Only one of BB, HF2BB, LF2BB may be used. "
-            "Check the logs to see where they were added.",
+            mutually_exclusive_task_error,
         )
         parser.error(
-            "Mutually exclusive tasks have been added. "
-            "Only one of BB, HF2BB, LF2BB may be used. "
-            "Check the logs to see where they were added."
+            mutually_exclusive_task_error
         )
 
     logger.debug("Processed args are as follows: {}".format(str(args)))
