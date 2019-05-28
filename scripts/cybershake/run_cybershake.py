@@ -3,7 +3,7 @@ from logging import Logger
 from os.path import abspath, join
 import threading
 import argparse
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 from qcore import constants as const
 from qcore.utils import load_yaml
@@ -28,11 +28,11 @@ def run_automated_workflow(
     root_folder: str,
     log_directory: str,
     user: str,
-    n_runs: Dict[str:int],
+    n_runs: Dict[str, int],
     n_max_retries: int,
     tasks_to_run: List[const.ProcessType],
     sleep_time: int,
-    tasks_to_run_with_pattern: List[(str, List[const.ProcessType])],
+    tasks_to_run_with_pattern: List[Tuple[str, List[const.ProcessType]]],
     wrapper_logger: Logger,
 ):
     """Runs the automated workflow. Beings the queue monitor script and the script for tasks that apply to all
@@ -51,6 +51,7 @@ def run_automated_workflow(
     :param sleep_time: The amount of time to sleep between iterations of the auto_submit script
     :param tasks_to_run_with_pattern: A list of (pattern, task_list) pairs to be run. task_list must have dependencies
     already added.
+    :param wrapper_logger: The logger to use for wrapper messages
     """
 
     bulk_logger = workflow_logger.get_logger("auto_submit_main")
@@ -118,9 +119,21 @@ def run_automated_workflow(
     wrapper_logger.info("Created main auto_submit thread")
 
     bulk_auto_submit_thread.run()
-    wrapper_logger.info("Started main auto_submit thread")
+    if bulk_auto_submit_thread.is_alive():
+        wrapper_logger.info("Started main auto_submit thread")
+    else:
+        thread_not_running = "The queue monitor thread has failed to start"
+        wrapper_logger.log(NOPRINTCRITICAL, thread_not_running)
+        raise RuntimeError(thread_not_running)
+
     queue_monitor_thread.run()
-    wrapper_logger.info("Started queue_monitor thread")
+    if queue_monitor_thread.is_alive():
+        wrapper_logger.info("Started queue_monitor thread")
+    else:
+        thread_not_running = "The main auto_submit thread has failed to start"
+        wrapper_logger.log(NOPRINTCRITICAL, thread_not_running)
+        raise RuntimeError(thread_not_running)
+
     while bulk_auto_submit_thread.is_alive():
         wrapper_logger.info("Checking all patterns for tasks to be run")
         for pattern, tasks, pattern_logger in tasks_to_run_with_pattern_and_logger:
@@ -164,7 +177,7 @@ def parse_config_file(config_file_location: str):
     tasks_to_run_for_all = []
     tasks_with_pattern_match = {}
 
-    for proc_name, pattern in config.values():
+    for proc_name, pattern in config.items():
         proc = const.ProcessType.get_by_name(proc_name)
         if pattern == ALL:
             tasks_to_run_for_all.append(proc)
@@ -215,7 +228,7 @@ def main():
     parser.add_argument(
         "--log_folder",
         type=str,
-        default=None,
+        default='.',
         help="Location of the directory to place logs in. Defaults to the value of the root_folder argument. "
         "Must be absolute or relative to the root_folder.",
     )

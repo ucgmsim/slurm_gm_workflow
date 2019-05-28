@@ -346,7 +346,7 @@ def submit_task(
 def main(
     root_folder: str,
     user: str,
-    n_runs: Dict[str:int],
+    n_runs: Dict[str, int],
     n_max_retries: int,
     rels_to_run: str,
     given_tasks_to_run: List[const.ProcessType],
