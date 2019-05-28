@@ -70,7 +70,7 @@ def run_automated_workflow(
         join(workflow_config["estimation_models_dir"], "IM"), logger=wrapper_logger
     )
 
-    bulk_logger = workflow_logger.get_logger("auto_submit_main")
+    bulk_logger = workflow_logger.get_logger("auto_submit_main", True)
     workflow_logger.add_general_file_handler(
         bulk_logger,
         join(
@@ -79,10 +79,11 @@ def run_automated_workflow(
                 datetime.now().strftime(const.TIMESTAMP_FORMAT)
             ),
         ),
+        True,
     )
     wrapper_logger.debug("Created logger for the main auto_submit thread")
 
-    queue_logger = workflow_logger.get_logger("queue_monitor")
+    queue_logger = workflow_logger.get_logger("queue_monitor", True)
     workflow_logger.add_general_file_handler(
         queue_logger,
         join(
@@ -91,11 +92,12 @@ def run_automated_workflow(
                 datetime.now().strftime(const.TIMESTAMP_FORMAT)
             ),
         ),
+        True,
     )
     wrapper_logger.debug("Created logger for the queue_monitor thread")
 
     tasks_to_run_with_pattern_and_logger = [
-        (pattern, tasks, workflow_logger.get_logger("pattern_{}".format(pattern)))
+        (pattern, tasks, workflow_logger.get_logger("pattern_{}".format(pattern), True))
         for pattern, tasks in tasks_to_run_with_pattern
     ]
     for pattern, tasks, logger in tasks_to_run_with_pattern_and_logger:
@@ -107,6 +109,7 @@ def run_automated_workflow(
                     pattern, datetime.now().strftime(const.TIMESTAMP_FORMAT)
                 ),
             ),
+            True,
         )
         wrapper_logger.debug(
             "Created logger for auto_submit with pattern {} and added to list to run".format(
@@ -264,7 +267,7 @@ def main():
     )
     args = parser.parse_args()
 
-    wrapper_logger = workflow_logger.get_logger("cybershake_wrapper")
+    wrapper_logger = workflow_logger.get_logger("cybershake_wrapper", True)
 
     root_directory = abspath(args.root_folder)
     log_directory = join(root_directory, args.log_folder)
@@ -273,7 +276,7 @@ def main():
         WRAPPER_LOG_FILE_NAME.format(datetime.now().strftime(const.TIMESTAMP_FORMAT)),
     )
 
-    workflow_logger.add_general_file_handler(wrapper_logger, wrapper_log_file)
+    workflow_logger.add_general_file_handler(wrapper_logger, wrapper_log_file, True)
     wrapper_logger.info("Logger file added")
 
     n_runs = 0
