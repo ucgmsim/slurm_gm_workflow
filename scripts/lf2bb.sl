@@ -16,6 +16,7 @@ fi
 
 REL_LOC=$1
 MGMT_DB_LOC=$2
+VSITE_FILE=$3
 
 REL_NAME=`basename $REL_LOC`
 
@@ -38,8 +39,8 @@ runtime_fmt="%Y-%m-%d_%H:%M:%S"
 start_time=`date +$runtime_fmt`
 echo $start_time
 
-echo "python $gmsim/workflow/scripts/lf2bb.py $OUTBIN_LOC $BB_LOC"
-python $gmsim/workflow/scripts/lf2bb.py $OUTBIN_LOC $BB_LOC
+echo "python $gmsim/workflow/scripts/lf2bb.py $OUTBIN_LOC $VSITE_FILE $BB_LOC"
+python $gmsim/workflow/scripts/lf2bb.py $OUTBIN_LOC $VSITE_FILE $BB_LOC
 
 end_time=`date +$runtime_fmt`
 echo $end_time
