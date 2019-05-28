@@ -5,7 +5,7 @@ import numpy as np
 from qcore.timeseries import BBSeis, LFSeis
 
 
-def lf2bb(outbin, bb_file):
+def lf2bb(outbin, vs30file, bb_file):
     """Converts the contents of the outbin folder to a BB binary at the given location.
     Writes the header using any available information, the parts provided by HF are blank however.
     :param outbin: The location of the outbin directory
@@ -35,14 +35,25 @@ def lf2bb(outbin, bb_file):
                     "e_dist",
                     "hf_vs_ref",
                     "lf_vs_ref",
+                    "vsite",
                 ],
                 "formats": ["f4", "f4", "|S8", "i4", "i4", "i4", "f4", "f4", "f4"],
                 "itemsize": HEAD_STAT,
             },
         )
     )
-    for col in bb_stations.dtype.names[:-3]:
-        bb_stations[col] = lf_data.stations[col]
+    for col in bb_stations.dtype.names:
+        if col in lf_data.dtype.names:
+            bb_stations[col] = lf_data.stations[col]
+    bb_stations["vsite"] = np.vectorize(
+        dict(
+            np.loadtxt(
+                vs30file,
+                dtype=[("name", "|U8"), ("vs30", "f4")],
+                comments=("#", "%"),
+            )
+        ).get
+    )(lf_data.stations.name)
 
     with open(bb_file, 'wb') as out:
         # Write the header
@@ -69,9 +80,10 @@ def lf2bb(outbin, bb_file):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("outbin_dir_loc", help="Location of the outbin directory")
+    parser.add_argument("vsite_file", help="Vs30 station file")
     parser.add_argument("bb_bin_loc", help="Location to save the bb binary to")
     args = parser.parse_args()
-    lf2bb(args.outbin_dir_loc, args.bb_bin_loc)
+    lf2bb(args.outbin_dir_loc, args.vsite_file, args.bb_bin_loc)
 
 
 if __name__ == '__main__':

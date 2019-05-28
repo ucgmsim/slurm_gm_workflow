@@ -320,11 +320,12 @@ def submit_task(
         submit_sl_script(script, target_machine=const.HPC.mahuika.value)
     elif proc_type == const.ProcessType.LF2BB.value:
         submit_sl_script(
-            "--output {} --error {} {} {} {}".format(
+            "--output {} --error {} {} {} {} {}".format(
                 os.path.join(sim_dir, "lf2bb.out"),
                 os.path.join(sim_dir, "lf2bb.err"),
                 os.path.expandvars("$gmsim/workflow/scripts/lf2bb.sl"),
                 sim_dir,
+                utils.load_sim_params(os.path.join(sim_dir, "sim_params.yaml")).stat_vs_est,
                 root_folder,
             ),
             target_machine=const.HPC.mahuika.value,
