@@ -343,7 +343,7 @@ def submit_task(
     workflow_logger.clean_up_logger(task_logger)
 
 
-def main(
+def run_main_submit_loop(
     root_folder: str,
     user: str,
     n_runs: Dict[str, int],
@@ -351,6 +351,10 @@ def main(
     rels_to_run: str,
     given_tasks_to_run: List[const.ProcessType],
     sleep_time: int,
+    lf_est_model: est.EstModel,
+    hf_est_model: est.EstModel,
+    bb_est_model: est.EstModel,
+    im_est_model: est.EstModel,
     main_logger: Logger = workflow_logger.get_basic_logger(),
 ):
     mgmt_queue_folder = sim_struct.get_mgmt_db_queue(root_folder)
@@ -370,21 +374,6 @@ def main(
     if "extended_period" in config:
         extended_period = config["extended_period"]
     main_logger.debug("extended_period set to {}".format(extended_period))
-
-    main_logger.info("Loading estimation models")
-    workflow_config = ldcfg.load()
-    lf_est_model = est.load_full_model(
-        os.path.join(workflow_config["estimation_models_dir"], "LF"), logger=main_logger
-    )
-    hf_est_model = est.load_full_model(
-        os.path.join(workflow_config["estimation_models_dir"], "HF"), logger=main_logger
-    )
-    bb_est_model = est.load_full_model(
-        os.path.join(workflow_config["estimation_models_dir"], "BB"), logger=main_logger
-    )
-    im_est_model = est.load_full_model(
-        os.path.join(workflow_config["estimation_models_dir"], "IM"), logger=main_logger
-    )
 
     somethingHappened = True
 
@@ -670,7 +659,22 @@ if __name__ == "__main__":
 
     logger.debug("Processed args are as follows: {}".format(str(args)))
 
-    main(
+    logger.info("Loading estimation models")
+    workflow_config = ldcfg.load()
+    lf_est_model = est.load_full_model(
+        os.path.join(workflow_config["estimation_models_dir"], "LF"), logger=logger
+    )
+    hf_est_model = est.load_full_model(
+        os.path.join(workflow_config["estimation_models_dir"], "HF"), logger=logger
+    )
+    bb_est_model = est.load_full_model(
+        os.path.join(workflow_config["estimation_models_dir"], "BB"), logger=logger
+    )
+    im_est_model = est.load_full_model(
+        os.path.join(workflow_config["estimation_models_dir"], "IM"), logger=logger
+    )
+
+    run_main_submit_loop(
         root_folder,
         args.user,
         n_runs,
@@ -678,5 +682,9 @@ if __name__ == "__main__":
         args.rels_to_run,
         tasks_to_run,
         args.sleep_time,
-        logger,
+        lf_est_model,
+        hf_est_model,
+        bb_est_model,
+        im_est_model,
+        main_logger=logger,
     )

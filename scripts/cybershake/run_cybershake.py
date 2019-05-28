@@ -8,10 +8,11 @@ from typing import Dict, List, Tuple
 from qcore import constants as const
 from qcore.utils import load_yaml
 
-from scripts.cybershake.auto_submit import main as run_auto_submit
+from scripts.cybershake.auto_submit import run_main_submit_loop
 from scripts.cybershake import queue_monitor
-from shared_workflow import workflow_logger
+from shared_workflow import workflow_logger, load_config
 from shared_workflow.workflow_logger import NOPRINTCRITICAL
+import estimation.estimate_wct as est
 
 WRAPPER_LOG_FILE_NAME = "wrapper_log_{}.txt"
 QUEUE_MONITOR_LOG_FILE_NAME = "queue_monitor_log_{}.txt"
@@ -53,6 +54,21 @@ def run_automated_workflow(
     already added.
     :param wrapper_logger: The logger to use for wrapper messages
     """
+
+    wrapper_logger.info("Loading estimation models")
+    workflow_config = load_config.load()
+    lf_est_model = est.load_full_model(
+        join(workflow_config["estimation_models_dir"], "LF"), logger=wrapper_logger
+    )
+    hf_est_model = est.load_full_model(
+        join(workflow_config["estimation_models_dir"], "HF"), logger=wrapper_logger
+    )
+    bb_est_model = est.load_full_model(
+        join(workflow_config["estimation_models_dir"], "BB"), logger=wrapper_logger
+    )
+    im_est_model = est.load_full_model(
+        join(workflow_config["estimation_models_dir"], "IM"), logger=wrapper_logger
+    )
 
     bulk_logger = workflow_logger.get_logger("auto_submit_main")
     workflow_logger.add_general_file_handler(
@@ -99,12 +115,17 @@ def run_automated_workflow(
         )
 
     queue_monitor_thread = threading.Thread(
-        target=queue_monitor.main, args=(root_folder, sleep_time, queue_logger)
+        name="queue monitor",
+        daemon=True,
+        target=queue_monitor.main,
+        args=(root_folder, sleep_time, queue_logger),
     )
     wrapper_logger.info("Created queue_monitor thread")
 
     bulk_auto_submit_thread = threading.Thread(
-        target=run_auto_submit,
+        name="main auto submit",
+        daemon=True,
+        target=run_main_submit_loop,
         args=(
             root_folder,
             user,
@@ -113,12 +134,16 @@ def run_automated_workflow(
             "%",
             tasks_to_run,
             sleep_time,
+            lf_est_model,
+            hf_est_model,
+            bb_est_model,
+            im_est_model,
             bulk_logger,
         ),
     )
     wrapper_logger.info("Created main auto_submit thread")
 
-    bulk_auto_submit_thread.run()
+    bulk_auto_submit_thread.start()
     if bulk_auto_submit_thread.is_alive():
         wrapper_logger.info("Started main auto_submit thread")
     else:
@@ -126,7 +151,7 @@ def run_automated_workflow(
         wrapper_logger.log(NOPRINTCRITICAL, thread_not_running)
         raise RuntimeError(thread_not_running)
 
-    queue_monitor_thread.run()
+    queue_monitor_thread.start()
     if queue_monitor_thread.is_alive():
         wrapper_logger.info("Started queue_monitor thread")
     else:
@@ -140,7 +165,7 @@ def run_automated_workflow(
             wrapper_logger.debug(
                 "Loaded pattern {}. Checking for tasks to be run".format(pattern)
             )
-            run_auto_submit(
+            run_main_submit_loop(
                 root_folder,
                 user,
                 n_runs,
@@ -148,6 +173,10 @@ def run_automated_workflow(
                 pattern,
                 tasks,
                 sleep_time,
+                lf_est_model,
+                hf_est_model,
+                bb_est_model,
+                im_est_model,
                 pattern_logger,
             )
     wrapper_logger.info(
@@ -190,7 +219,7 @@ def parse_config_file(config_file_location: str):
                 tasks_with_pattern_match.update({pattern: []})
             tasks_with_pattern_match[pattern].append(proc)
 
-    return tasks_to_run_for_all, tasks_with_pattern_match.values()
+    return tasks_to_run_for_all, tasks_with_pattern_match.items()
 
 
 def main():
@@ -228,7 +257,7 @@ def main():
     parser.add_argument(
         "--log_folder",
         type=str,
-        default='.',
+        default=".",
         help="Location of the directory to place logs in. Defaults to the value of the root_folder argument. "
         "Must be absolute or relative to the root_folder.",
     )
