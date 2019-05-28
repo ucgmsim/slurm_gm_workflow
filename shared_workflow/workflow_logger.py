@@ -24,7 +24,7 @@ DEFAULT_LOGGER_NAME = "auto_submit"
 STDOUT_MESSAGE_FORMAT = "%(asctime)s - %(message)s"
 stdout_formatter = logging.Formatter(STDOUT_MESSAGE_FORMAT)
 
-STDOUT_THREADED_MESSAGE_FORMAT = "%(asctime)s - %(thread)s - %(message)s"
+STDOUT_THREADED_MESSAGE_FORMAT = "%(asctime)s - %(threadName)s - %(message)s"
 stdout_threaded_formatter = logging.Formatter(STDOUT_THREADED_MESSAGE_FORMAT)
 
 GENERAL_LOGGING_MESSAGE_FORMAT = (
@@ -33,19 +33,19 @@ GENERAL_LOGGING_MESSAGE_FORMAT = (
 general_formatter = logging.Formatter(GENERAL_LOGGING_MESSAGE_FORMAT)
 
 GENERAL_THREADED_LOGGING_MESSAGE_FORMAT = (
-    "%(levelname)8s -- %(asctime)s - %(thread)s - %(module)s.%(funcName)s - %(message)s"
+    "%(levelname)8s -- %(asctime)s - %(threadName)s - %(module)s.%(funcName)s - %(message)s"
 )
 general_threaded_formatter = logging.Formatter(GENERAL_LOGGING_MESSAGE_FORMAT)
 
 REALISATION_LOGGING_MESSAGE_FORMAT = (
     "%(levelname)8s -- %(asctime)s - %(module)s.%(funcName)s - {} - %(message)s"
 )
-REALISATION_THREADED_LOGGING_MESSAGE_FORMAT = "%(levelname)8s -- %(asctime)s - %(thread)s - %(module)s.%(funcName)s - {} - %(message)s"
+REALISATION_THREADED_LOGGING_MESSAGE_FORMAT = "%(levelname)8s -- %(asctime)s - %(threadName)s - %(module)s.%(funcName)s - {} - %(message)s"
 
 TASK_LOGGING_MESSAGE_FORMAT = (
     "%(levelname)8s -- %(asctime)s - %(module)s.%(funcName)s - {}.{} - %(message)s"
 )
-TASK_THREADED_LOGGING_MESSAGE_FORMAT = "%(levelname)8s -- %(asctime)s - %(thread)s - %(module)s.%(funcName)s - {}.{} - %(message)s"
+TASK_THREADED_LOGGING_MESSAGE_FORMAT = "%(levelname)8s -- %(asctime)s - %(threadName)s - %(module)s.%(funcName)s - {}.{} - %(message)s"
 
 
 def get_logger(name: str = DEFAULT_LOGGER_NAME, threaded=False) -> logging.Logger:
