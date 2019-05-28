@@ -325,8 +325,8 @@ def submit_task(
                 os.path.join(sim_dir, "lf2bb.err"),
                 os.path.expandvars("$gmsim/workflow/scripts/lf2bb.sl"),
                 sim_dir,
-                utils.load_sim_params(os.path.join(sim_dir, "sim_params.yaml")).stat_vs_est,
                 root_folder,
+                utils.load_sim_params(os.path.join(sim_dir, "sim_params.yaml")).stat_vs_est,
             ),
             target_machine=const.HPC.mahuika.value,
         )
