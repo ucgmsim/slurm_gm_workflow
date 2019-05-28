@@ -111,9 +111,7 @@ class MgmtDB:
         tasks_to_run = []
         for task in db_tasks:
             status = task[2]
-            if status == const.Status.created.str_value and self._check_dependancy_met(
-                task, db_tasks
-            ):
+            if status == const.Status.created.str_value and self._check_dependancy_met(task):
                 tasks_to_run.append(task)
 
             # Retry failed tasks_to_run
@@ -142,16 +140,23 @@ class MgmtDB:
     def is_task_complete(task, task_list):
         return task in task_list
 
-    def _check_dependancy_met(self, task, task_list):
+    def _check_dependancy_met(self, task):
         """Checks if all dependencies for the specified are met"""
         process, run_name, status = task
         process = Process(process)
 
+        with connect_db_ctx(self._db_file) as cur:
+            completed_tasks = cur.execute(
+                """SELECT proc_type 
+                          FROM status_enum, state 
+                          WHERE state.status = status_enum.id
+                           AND run_name = (?)
+                           AND status_enum.state = 'completed'""",
+                (run_name, ),
+            ).fetchall()
+
         return len(
-            process.get_remaining_dependencies([
-                proc for proc, name, state in task_list
-                if name == run_name and state == "completed"
-            ])
+            process.get_remaining_dependencies([x[0] for x in completed_tasks])
         ) == 0
 
     def _update_entry(self, cur: sql.Cursor, entry: SlurmTask):

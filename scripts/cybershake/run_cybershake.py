@@ -134,10 +134,10 @@ def run_automated_workflow(
             "%",
             tasks_to_run,
             sleep_time,
-            lf_est_model,
+            (lf_est_model,
             hf_est_model,
             bb_est_model,
-            im_est_model,
+            im_est_model),
             bulk_logger,
         ),
     )
@@ -173,16 +173,17 @@ def run_automated_workflow(
                 pattern,
                 tasks,
                 sleep_time,
-                lf_est_model,
+                (lf_est_model,
                 hf_est_model,
                 bb_est_model,
-                im_est_model,
-                pattern_logger,
+                im_est_model),
+                main_logger=pattern_logger,
+                watch_for_all=False,
             )
     wrapper_logger.info(
         "The main auto_submit thread has terminated, and all auto_submit patterns have completed a final run through"
     )
-    wrapper_logger.info("Appempting to shut down the queue monitor thread")
+    wrapper_logger.info("Attempting to shut down the queue monitor thread")
     queue_monitor.keepAlive = False
     queue_monitor_thread.join(2.0 * sleep_time)
     if not queue_monitor_thread.is_alive():

@@ -6,7 +6,7 @@ import os
 from datetime import datetime
 from logging import Logger
 from subprocess import call, Popen, PIPE
-from typing import List, Dict
+from typing import List, Dict, Tuple
 
 import shlex
 import numpy as np
@@ -351,11 +351,9 @@ def run_main_submit_loop(
     rels_to_run: str,
     given_tasks_to_run: List[const.ProcessType],
     sleep_time: int,
-    lf_est_model: est.EstModel,
-    hf_est_model: est.EstModel,
-    bb_est_model: est.EstModel,
-    im_est_model: est.EstModel,
+    models_tuple: Tuple[est.EstModel],
     main_logger: Logger = workflow_logger.get_basic_logger(),
+    watch_for_all=True,
 ):
     mgmt_queue_folder = sim_struct.get_mgmt_db_queue(root_folder)
     mgmt_db = MgmtDB(sim_struct.get_mgmt_db(root_folder))
@@ -394,7 +392,7 @@ def run_main_submit_loop(
             squeue_tasks.extend(cur_tasks)
 
         if len(squeue_tasks) > 0:
-            somethingHappened = True
+            somethingHappened = True and watch_for_all
             main_logger.info("Squeue user tasks_to_run: " + ", ".join(squeue_tasks))
         else:
             main_logger.debug("No squeue user tasks_to_run")
@@ -515,7 +513,7 @@ def run_main_submit_loop(
                 main_logger,
                 hf_seed=hf_seed,
                 extended_period=extended_period,
-                models=(lf_est_model, hf_est_model, bb_est_model, im_est_model),
+                models=models_tuple,
             )
         main_logger.debug("Sleeping for {} second(s)".format(sleep_time))
         time.sleep(sleep_time)
@@ -647,15 +645,12 @@ if __name__ == "__main__":
                 )
                 args.tasks_to_run.append(proc)
 
-    mutually_exclusive_task_error = const.ProcessType.check_mutually_exclusive_tasks(tasks_to_run)
+    mutually_exclusive_task_error = const.ProcessType.check_mutually_exclusive_tasks(
+        tasks_to_run
+    )
     if mutually_exclusive_task_error != "":
-        logger.log(
-            workflow_logger.NOPRINTCRITICAL,
-            mutually_exclusive_task_error,
-        )
-        parser.error(
-            mutually_exclusive_task_error
-        )
+        logger.log(workflow_logger.NOPRINTCRITICAL, mutually_exclusive_task_error)
+        parser.error(mutually_exclusive_task_error)
 
     logger.debug("Processed args are as follows: {}".format(str(args)))
 
@@ -682,9 +677,6 @@ if __name__ == "__main__":
         args.rels_to_run,
         tasks_to_run,
         args.sleep_time,
-        lf_est_model,
-        hf_est_model,
-        bb_est_model,
-        im_est_model,
+        (lf_est_model, hf_est_model, bb_est_model, im_est_model),
         main_logger=logger,
     )
