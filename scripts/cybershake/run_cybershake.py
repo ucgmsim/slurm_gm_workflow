@@ -145,7 +145,7 @@ def run_automated_workflow(
         kwargs={
             'main_logger': bulk_logger,
             'watch_for_all': True,
-            'cycle_timeout': 6,
+            'cycle_timeout': len(tasks_to_run_with_pattern_and_logger)+1,
         },
     )
     wrapper_logger.info("Created main auto_submit thread")
