@@ -355,6 +355,7 @@ def run_main_submit_loop(
     models_tuple: Tuple[est.EstModel],
     main_logger: Logger = workflow_logger.get_basic_logger(),
     watch_for_all=True,
+    cycle_timeout=6,
 ):
     mgmt_queue_folder = sim_struct.get_mgmt_db_queue(root_folder)
     mgmt_db = MgmtDB(sim_struct.get_mgmt_db(root_folder))
@@ -374,10 +375,10 @@ def run_main_submit_loop(
         extended_period = config["extended_period"]
     main_logger.debug("extended_period set to {}".format(extended_period))
 
-    somethingHappened = True
+    time_since_something_happened = cycle_timeout
 
-    while somethingHappened:
-        somethingHappened = False
+    while time_since_something_happened > 0:
+        time_since_something_happened -= 1
         # Get items in the mgmt queue, have to get a snapshot instead of
         # checking the directory real-time to prevent timing issues,
         # which can result in dual-submission
@@ -393,14 +394,14 @@ def run_main_submit_loop(
             squeue_tasks.extend(cur_tasks)
 
         if len(squeue_tasks) > 0:
-            somethingHappened = True and watch_for_all
+            time_since_something_happened = cycle_timeout and watch_for_all
             main_logger.info("Squeue user tasks_to_run: " + ", ".join(squeue_tasks))
         else:
             main_logger.debug("No squeue user tasks_to_run")
 
         db_in_progress_tasks = mgmt_db.get_submitted_tasks()
         if len(db_in_progress_tasks) > 0:
-            somethingHappened = True
+            time_since_something_happened = cycle_timeout
             main_logger.info(
                 "In progress tasks_to_run in mgmt db:"
                 + ", ".join(
@@ -433,7 +434,7 @@ def run_main_submit_loop(
             n_max_retries, rels_to_run, given_tasks_to_run, main_logger
         )
         if len(runnable_tasks) > 0:
-            somethingHappened = True
+            time_since_something_happened = cycle_timeout
             main_logger.info(
                 "Number of runnable tasks_to_run: {}".format(len(runnable_tasks))
             )
@@ -444,7 +445,7 @@ def run_main_submit_loop(
         # for mgmt db updates (i.e. items in the queue)
         tasks_to_run, task_counter = [], {key: 0 for key in const.HPC}
         for task in runnable_tasks[:100]:
-            somethingHappened = True
+            time_since_something_happened = cycle_timeout
             cur_run_name, cur_proc_type = task[1], task[0]
 
             cur_hpc = JOB_RUN_MACHINE[const.ProcessType(cur_proc_type)]

@@ -182,6 +182,7 @@ def run_automated_workflow(
                 im_est_model),
                 main_logger=pattern_logger,
                 watch_for_all=False,
+                cycle_timeout=1,
             )
     wrapper_logger.info(
         "The main auto_submit thread has terminated, and all auto_submit patterns have completed a final run through"
@@ -195,7 +196,7 @@ def run_automated_workflow(
         wrapper_logger.critical("The queue monitor has not successfully terminated")
 
 
-def parse_config_file(config_file_location: str):
+def parse_config_file(config_file_location: str, logger: Logger = workflow_logger.get_basic_logger()):
     """Takes in the location of a wrapper config file and creates the tasks to be run.
     Requires that the file contains the keys 'run_all_tasks' and 'run_some', even if they are empty
     If the dependencies for a run_some task overlap with those in the tasks_to_run_for_all, as a race condition is
@@ -222,6 +223,9 @@ def parse_config_file(config_file_location: str):
             if pattern not in tasks_with_pattern_match.keys():
                 tasks_with_pattern_match.update({pattern: []})
             tasks_with_pattern_match[pattern].append(proc)
+    logger.info("Master script will run {}".format(tasks_to_run_for_all))
+    for pattern, tasks in tasks_with_pattern_match.items():
+        logger.info("Pattern {} will run tasks {}".format(pattern, tasks))
 
     return tasks_to_run_for_all, tasks_with_pattern_match.items()
 
@@ -308,7 +312,7 @@ def main():
         "Machines will allow up to {} jobs to run simultaneously".format(n_runs)
     )
 
-    tasks_n, tasks_to_match = parse_config_file(args.config_file)
+    tasks_n, tasks_to_match = parse_config_file(args.config_file, wrapper_logger)
 
     run_automated_workflow(
         root_directory,
