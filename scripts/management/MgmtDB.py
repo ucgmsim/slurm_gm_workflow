@@ -7,6 +7,7 @@ from collections import namedtuple
 
 import qcore.constants as const
 from scripts.management.db_helper import connect_db_ctx
+from shared_workflow import workflow_logger
 
 Process = const.ProcessType
 
@@ -82,7 +83,7 @@ class MgmtDB:
 
         return [SlurmTask(*entry) for entry in result]
 
-    def get_runnable_tasks(self, retry_max, allowed_rels, allowed_tasks=None):
+    def get_runnable_tasks(self, retry_max, allowed_rels, allowed_tasks=None, logger=workflow_logger.get_basic_logger()):
         """Gets all runnable tasks_to_run based on their status and their associated
         dependencies (i.e. other tasks_to_run have to be finished first)
 
@@ -111,7 +112,7 @@ class MgmtDB:
         tasks_to_run = []
         for task in db_tasks:
             status = task[2]
-            if status == const.Status.created.str_value and self._check_dependancy_met(task):
+            if status == const.Status.created.str_value and self._check_dependancy_met(task, logger):
                 tasks_to_run.append(task)
 
             # Retry failed tasks_to_run
@@ -140,7 +141,7 @@ class MgmtDB:
     def is_task_complete(task, task_list):
         return task in task_list
 
-    def _check_dependancy_met(self, task):
+    def _check_dependancy_met(self, task, logger=workflow_logger.get_basic_logger()):
         """Checks if all dependencies for the specified are met"""
         process, run_name, status = task
         process = Process(process)
@@ -154,10 +155,10 @@ class MgmtDB:
                            AND status_enum.state = 'completed'""",
                 (run_name, ),
             ).fetchall()
-
-        return len(
-            process.get_remaining_dependencies([x[0] for x in completed_tasks])
-        ) == 0
+        logger.debug("Considering task {} for realisation {} with status {}. Completed tasks as follows: {}".format(*task, completed_tasks))
+        remaining_deps = process.get_remaining_dependencies([x[0] for x in completed_tasks])
+        logger.debug("{} has remaining deps: {}".format(task, remaining_deps))
+        return len(remaining_deps) == 0
 
     def _update_entry(self, cur: sql.Cursor, entry: SlurmTask):
         """Updates all fields that have a value for the specific entry"""

@@ -430,7 +430,7 @@ def run_main_submit_loop(
         # Gets all runnable tasks_to_run based on mgmt db state
 
         runnable_tasks = mgmt_db.get_runnable_tasks(
-            n_max_retries, rels_to_run, given_tasks_to_run
+            n_max_retries, rels_to_run, given_tasks_to_run, main_logger
         )
         if len(runnable_tasks) > 0:
             somethingHappened = True
@@ -493,7 +493,7 @@ def run_main_submit_loop(
                         const.Status.completed.str_value,
                     ],
                     mgmt_db.get_runnable_tasks(
-                        n_max_retries, rels_to_run, given_tasks_to_run
+                        n_max_retries, rels_to_run, given_tasks_to_run, main_logger
                     ),
                 ):
                     # If clean_up has already run, then we should set it to

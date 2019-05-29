@@ -37,13 +37,13 @@ def lf2bb(outbin, vs30file, bb_file):
                     "lf_vs_ref",
                     "vsite",
                 ],
-                "formats": ["f4", "f4", "|S8", "i4", "i4", "i4", "f4", "f4", "f4"],
+                "formats": ["f4", "f4", "|S8", "i4", "i4", "i4", "f4", "f4", "f4", "f4"],
                 "itemsize": HEAD_STAT,
             },
         )
     )
     for col in bb_stations.dtype.names:
-        if col in lf_data.dtype.names:
+        if col in lf_data.stations.dtype.names:
             bb_stations[col] = lf_data.stations[col]
     bb_stations["vsite"] = np.vectorize(
         dict(
