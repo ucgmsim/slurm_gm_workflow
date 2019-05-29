@@ -355,7 +355,7 @@ def run_main_submit_loop(
     models_tuple: Tuple[est.EstModel],
     main_logger: Logger = workflow_logger.get_basic_logger(),
     watch_for_all=True,
-    cycle_timeout=6,
+    cycle_timeout=1,
 ):
     mgmt_queue_folder = sim_struct.get_mgmt_db_queue(root_folder)
     mgmt_db = MgmtDB(sim_struct.get_mgmt_db(root_folder))

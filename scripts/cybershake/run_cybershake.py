@@ -141,8 +141,12 @@ def run_automated_workflow(
             hf_est_model,
             bb_est_model,
             im_est_model),
-            bulk_logger,
         ),
+        kwargs={
+            'main_logger': bulk_logger,
+            'watch_for_all': True,
+            'cycle_timeout': 6,
+        },
     )
     wrapper_logger.info("Created main auto_submit thread")
 
