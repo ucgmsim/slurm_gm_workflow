@@ -390,20 +390,24 @@ def run_main_submit_loop(
 
         # Get in progress tasks_to_run in the db and the HPC queue
         squeue_tasks, n_tasks_to_run = [], {}
-        for hpc in const.HPC:
+        if watch_for_all:
+            for hpc in const.HPC:
+                cur_tasks = get_queued_tasks(user=user, machine=hpc)
 
-            cur_tasks = get_queued_tasks(user=user, machine=hpc)
+                n_tasks_to_run[hpc] = n_runs[hpc] - len(cur_tasks)
+                squeue_tasks.extend(cur_tasks)
 
-            n_tasks_to_run[hpc] = n_runs[hpc] - len(cur_tasks)
-            squeue_tasks.extend(cur_tasks)
+            db_in_progress_tasks = mgmt_db.get_submitted_tasks()
+
+        else:
+            db_in_progress_tasks = mgmt_db.get_submitted_tasks(given_tasks_to_run)
 
         if len(squeue_tasks) > 0:
-            time_since_something_happened = cycle_timeout and watch_for_all
+            time_since_something_happened = cycle_timeout
             main_logger.info("Squeue user tasks_to_run: " + ", ".join(squeue_tasks))
         else:
             main_logger.debug("No squeue user tasks_to_run")
 
-        db_in_progress_tasks = mgmt_db.get_submitted_tasks()
         if len(db_in_progress_tasks) > 0:
             time_since_something_happened = cycle_timeout
             main_logger.info(

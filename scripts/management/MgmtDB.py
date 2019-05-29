@@ -73,12 +73,14 @@ class MgmtDB:
         if self._conn is not None:
             self._conn.close()
 
-    def get_submitted_tasks(self):
+    def get_submitted_tasks(self, allowed_tasks=tuple(const.ProcessType)):
         """Gets all in progress tasks_to_run i.e. (running or queued)"""
+        allowed_tasks = [str(task.value) for task in allowed_tasks]
         with connect_db_ctx(self._db_file) as cur:
             result = cur.execute(
                 "SELECT run_name, proc_type, status, job_id, retries "
-                "FROM state WHERE status IN (2, 3)"
+                "FROM state WHERE status IN (2, 3) AND proc_type IN (?{})".format(",?"*(len(allowed_tasks)-1)),
+                allowed_tasks
             ).fetchall()
 
         return [SlurmTask(*entry) for entry in result]
