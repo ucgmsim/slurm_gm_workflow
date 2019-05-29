@@ -51,11 +51,11 @@ DEFAULT_HF_SEED = 0
 
 def get_queued_tasks(user=None, machine=const.HPC.maui):
     if user is not None:
-        cmd = "squeue -A nesi00213 -o '%A %t' -h -M {} -u {}".format(
-            machine.value, user
+        cmd = "squeue -A {} -o '%A %t' -h -M {} -u {}".format(
+            const.DEFAULT_ACCOUNT,machine.value, user
         )
     else:
-        cmd = "squeue -A nesi00213 -o '%A %t' -h -M {}".format(machine.value)
+        cmd = "squeue -A {} -o '%A %t' -h -M {}".format(const.DEFAULT_ACCOUNT,machine.value)
 
     process = Popen(shlex.split(cmd), stdout=PIPE, encoding="utf-8")
     (output, err) = process.communicate()
@@ -165,6 +165,7 @@ def submit_task(
     run_name,
     root_folder,
     parent_logger,
+    retries=None,
     hf_seed=DEFAULT_HF_SEED,
     extended_period=False,
     do_verification=False,
@@ -194,6 +195,7 @@ def submit_task(
             machine=JOB_RUN_MACHINE[const.ProcessType.EMOD3D].value,
             rel_dir=sim_dir,
             write_directory=sim_dir,
+            retries=retries,
         )
         task_logger.debug("Submit EMOD3D arguments: {}".format(args))
         submit_lf_main(args, est_model=models[0], logger=task_logger)
@@ -233,6 +235,7 @@ def submit_task(
             rel_dir=sim_dir,
             write_directory=sim_dir,
             debug=False,
+            retries=retries,
         )
         task_logger.debug("Submit HF arguments: {}".format(args))
         submit_hf_main(args, models[1], task_logger)
@@ -251,6 +254,7 @@ def submit_task(
             machine=JOB_RUN_MACHINE[const.ProcessType.BB].value,
             rel_dir=sim_dir,
             write_directory=sim_dir,
+            retries=retries,
         )
         task_logger.debug("Submit BB arguments: {}".format(args))
         submit_bb_main(args, models[2], task_logger)
@@ -458,7 +462,7 @@ def main(args, main_logger: Logger = workflow_logger.get_basic_logger()):
 
         # Submit the runnable tasks_to_run
         for task in tasks_to_run:
-            proc_type, run_name, _ = task
+            proc_type, run_name, _, retries = task
 
             # Special handling for merge-ts
             if proc_type == const.ProcessType.merge_ts.value:
@@ -487,6 +491,7 @@ def main(args, main_logger: Logger = workflow_logger.get_basic_logger()):
                 run_name,
                 root_folder,
                 main_logger,
+                retries=retries,
                 hf_seed=hf_seed,
                 extended_period=extended_period,
                 models=(lf_est_model, hf_est_model, bb_est_model, im_est_model),
