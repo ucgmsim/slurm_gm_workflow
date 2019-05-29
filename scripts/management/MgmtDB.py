@@ -96,7 +96,7 @@ class MgmtDB:
 
         with connect_db_ctx(self._db_file) as cur:
             db_tasks = cur.execute(
-                """SELECT proc_type, run_name, status_enum.state 
+                """SELECT proc_type, run_name, status_enum.state, retries 
                           FROM status_enum, state 
                           WHERE state.status = status_enum.id
                            AND proc_type IN (?{})
@@ -143,7 +143,7 @@ class MgmtDB:
 
     def _check_dependancy_met(self, task, logger=workflow_logger.get_basic_logger()):
         """Checks if all dependencies for the specified are met"""
-        process, run_name, status = task
+        process, run_name, status, *_ = task
         process = Process(process)
 
         with connect_db_ctx(self._db_file) as cur:

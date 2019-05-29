@@ -50,7 +50,9 @@ if is_master:
     )
 
     try:
-        args = parser.parse_known_args()[0]
+        args, e = parser.parse_known_args()
+        if len(e) > 0:
+            logger.warning("extra arguments are not recognized: {}".format(e))
     except SystemExit:
         # invalid arguments or -h
         comm.Abort()

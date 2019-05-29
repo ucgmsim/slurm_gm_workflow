@@ -60,8 +60,8 @@ def main(root_folder: str, sleep_time: int, queue_logger: Logger = workflow_logg
 
     queue_logger.info("Running queue-monitor, exit with Ctrl-C.")
 
+    sqlite_tmpdir = "/tmp/cer"
     while keepAlive:
-        sqlite_tmpdir = "/tmp/cer"
         if not os.path.exists(sqlite_tmpdir):
             os.makedirs(sqlite_tmpdir)
             queue_logger.debug("Set up the sqlite_tmpdir")
