@@ -79,7 +79,6 @@ def run_automated_workflow(
                 datetime.now().strftime(const.TIMESTAMP_FORMAT)
             ),
         ),
-        True,
     )
     wrapper_logger.debug("Created logger for the main auto_submit thread")
 
@@ -92,7 +91,6 @@ def run_automated_workflow(
                 datetime.now().strftime(const.TIMESTAMP_FORMAT)
             ),
         ),
-        True,
     )
     wrapper_logger.debug("Created logger for the queue_monitor thread")
 
@@ -109,7 +107,6 @@ def run_automated_workflow(
                     pattern, datetime.now().strftime(const.TIMESTAMP_FORMAT)
                 ),
             ),
-            True,
         )
         wrapper_logger.debug(
             "Created logger for auto_submit with pattern {} and added to list to run".format(
@@ -284,7 +281,7 @@ def main():
         WRAPPER_LOG_FILE_NAME.format(datetime.now().strftime(const.TIMESTAMP_FORMAT)),
     )
 
-    workflow_logger.add_general_file_handler(wrapper_logger, wrapper_log_file, True)
+    workflow_logger.add_general_file_handler(wrapper_logger, wrapper_log_file)
     wrapper_logger.info("Logger file added")
 
     n_runs = 0
