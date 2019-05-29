@@ -391,6 +391,7 @@ def run_main_submit_loop(
         # Get in progress tasks_to_run in the db and the HPC queue
         squeue_tasks, n_tasks_to_run = [], {}
         if watch_for_all:
+            # Only check squeue and all db tasks if watching for all
             for hpc in const.HPC:
                 cur_tasks = get_queued_tasks(user=user, machine=hpc)
 
@@ -398,10 +399,11 @@ def run_main_submit_loop(
                 squeue_tasks.extend(cur_tasks)
 
             db_in_progress_tasks = mgmt_db.get_submitted_tasks()
-
         else:
+            # sub auto submits should only check for their tasks to see if anything else needs to be run
             db_in_progress_tasks = mgmt_db.get_submitted_tasks(given_tasks_to_run)
 
+        # User output
         if len(squeue_tasks) > 0:
             time_since_something_happened = cycle_timeout
             main_logger.info("Squeue user tasks_to_run: " + ", ".join(squeue_tasks))
@@ -427,17 +429,17 @@ def run_main_submit_loop(
         else:
             main_logger.debug("No in progress tasks_to_run in mgmt db")
 
-        # Update the slurm mgmt based on squeue
-        update_tasks(
-            mgmt_queue_folder,
-            mgmt_queue_entries,
-            squeue_tasks,
-            db_in_progress_tasks,
-            main_logger,
-        )
+        if watch_for_all:
+            # Only update if watching for all. sub auto submits have incomplete information
+            update_tasks(
+                mgmt_queue_folder,
+                mgmt_queue_entries,
+                squeue_tasks,
+                db_in_progress_tasks,
+                main_logger,
+            )
 
         # Gets all runnable tasks_to_run based on mgmt db state
-
         runnable_tasks = mgmt_db.get_runnable_tasks(
             n_max_retries, rels_to_run, given_tasks_to_run, main_logger
         )
