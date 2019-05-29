@@ -88,7 +88,7 @@ def add_general_file_handler(
     :param threaded: If the logger is operating in a thread then record the name of the thread
     """
     file_out_handler = logging.FileHandler(file_path)
-    if logger.name().startswith(THREADED):
+    if logger.name.startswith(THREADED):
         file_out_handler.setFormatter(general_threaded_formatter)
     else:
         file_out_handler.setFormatter(general_formatter)
@@ -109,7 +109,7 @@ def get_realisation_logger(
     new_logger = logging.getLogger(realisation)
     new_logger.setLevel(logging.DEBUG)
 
-    if old_logger.name().startswith(THREADED):
+    if old_logger.name.startswith(THREADED):
         task_formatter = logging.Formatter(
             REALISATION_THREADED_LOGGING_MESSAGE_FORMAT.format(realisation)
         )
@@ -132,7 +132,7 @@ def get_realisation_logger(
 
     task_print_handler = logging.StreamHandler(sys.stdout)
     task_print_handler.setLevel(logging.INFO)
-    if old_logger.name().startswith(THREADED):
+    if old_logger.name.startswith(THREADED):
         task_print_handler.setFormatter(stdout_threaded_formatter)
     else:
         task_print_handler.setFormatter(stdout_formatter)
@@ -164,7 +164,7 @@ def get_task_logger(
     new_logger = logging.getLogger("{}.{}".format(realisation, process_name))
     new_logger.setLevel(logging.DEBUG)
 
-    if old_logger.name().startswith(THREADED):
+    if old_logger.name.startswith(THREADED):
         task_formatter = logging.Formatter(
             TASK_THREADED_LOGGING_MESSAGE_FORMAT.format(realisation, process_name)
         )
@@ -187,7 +187,7 @@ def get_task_logger(
 
     task_print_handler = logging.StreamHandler(sys.stdout)
     task_print_handler.setLevel(logging.INFO)
-    if old_logger.name().startswith(THREADED):
+    if old_logger.name.startswith(THREADED):
         task_print_handler.setFormatter(stdout_threaded_formatter)
     else:
         task_print_handler.setFormatter(stdout_formatter)
