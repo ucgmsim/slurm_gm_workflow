@@ -156,7 +156,7 @@ class MgmtDB:
                 (run_name, ),
             ).fetchall()
         logger.debug("Considering task {} for realisation {} with status {}. Completed tasks as follows: {}".format(*task, completed_tasks))
-        remaining_deps = process.get_remaining_dependencies([x[0] for x in completed_tasks])
+        remaining_deps = process.get_remaining_dependencies([const.ProcessType(x[0]) for x in completed_tasks])
         logger.debug("{} has remaining deps: {}".format(task, remaining_deps))
         return len(remaining_deps) == 0
 
