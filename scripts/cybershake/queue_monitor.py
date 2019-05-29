@@ -58,7 +58,13 @@ def main(args, queue_logger: Logger = workflow_logger.get_basic_logger()):
     queue_folder = sim_struct.get_mgmt_db_queue(args.root_folder)
 
     queue_logger.info("Running queue-monitor, exit with Ctrl-C.")
+
+    sqlite_tmpdir = "/tmp/cer"
     while True:
+        if not os.path.exists(sqlite_tmpdir):
+            os.makedirs(sqlite_tmpdir)
+            queue_logger.debug("Set up the sqlite_tmpdir")
+
         entry_files = os.listdir(queue_folder)
         entry_files.sort()
 

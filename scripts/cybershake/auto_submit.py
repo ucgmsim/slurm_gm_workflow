@@ -40,14 +40,17 @@ JOB_RUN_MACHINE = {
     const.ProcessType.Empirical: const.HPC.mahuika,
     const.ProcessType.Verification: const.HPC.mahuika,
     const.ProcessType.clean_up: const.HPC.mahuika,
+    const.ProcessType.LF2BB: const.HPC.mahuika,
+    const.ProcessType.HF2BB: const.HPC.mahuika,
 }
 
 SLURM_TO_STATUS_DICT = {"R": 3, "PD": 2, "CG": 3}
 
 AUTO_SUBMIT_LOG_FILE_NAME = "auto_submit_log_{}.txt"
-#TODO: move default value to qcore.const once everythin else is stablized as well, e.g submit_hf.py
-#To avoid conflicts and different behaviors.
+# TODO: move default value to qcore.const once everythin else is stablized as well, e.g submit_hf.py
+# To avoid conflicts and different behaviors.
 DEFAULT_HF_SEED = 0
+
 
 def get_queued_tasks(user=None, machine=const.HPC.maui):
     if user is not None:
@@ -168,22 +171,28 @@ def submit_task(
     retries=None,
     hf_seed=DEFAULT_HF_SEED,
     extended_period=False,
-    do_verification=False,
     models=None,
 ):
     task_logger = workflow_logger.get_task_logger(parent_logger, run_name, proc_type)
-    # create the tmp folder
-    # TODO: fix this issue
-    sqlite_tmpdir = "/tmp/cer"
-    if not os.path.exists(sqlite_tmpdir):
-        os.makedirs(sqlite_tmpdir)
 
     # Metadata logging setup
     ch_log_dir = os.path.abspath(os.path.join(sim_dir, "ch_log"))
     if not os.path.isdir(ch_log_dir):
         os.mkdir(ch_log_dir)
+
     submitted_time = datetime.now().strftime(const.METADATA_TIMESTAMP_FMT)
     log_file = os.path.join(sim_dir, "ch_log", const.METADATA_LOG_FILENAME)
+
+    def submit_sl_script(script_name, **kwargs):
+        shared.submit_sl_script(
+            script_name,
+            proc_type,
+            sim_struct.get_mgmt_db_queue(root_folder),
+            run_name,
+            submit_yes=True,
+            logger=task_logger,
+            **kwargs,
+        )
 
     if proc_type == const.ProcessType.EMOD3D.value:
         # These have to include the default values (same for all other process types)!
@@ -205,7 +214,7 @@ def submit_task(
             {"submit_time": submitted_time},
             logger=task_logger,
         )
-    if proc_type == const.ProcessType.merge_ts.value:
+    elif proc_type == const.ProcessType.merge_ts.value:
         args = argparse.Namespace(
             auto=True,
             srf=run_name,
@@ -222,7 +231,7 @@ def submit_task(
             {"submit_time": submitted_time},
             logger=task_logger,
         )
-    if proc_type == const.ProcessType.HF.value:
+    elif proc_type == const.ProcessType.HF.value:
         args = argparse.Namespace(
             auto=True,
             srf=run_name,
@@ -245,7 +254,7 @@ def submit_task(
             {"submit_time": submitted_time},
             logger=task_logger,
         )
-    if proc_type == const.ProcessType.BB.value:
+    elif proc_type == const.ProcessType.BB.value:
         args = argparse.Namespace(
             auto=True,
             srf=run_name,
@@ -264,7 +273,7 @@ def submit_task(
             {"submit_time": submitted_time},
             logger=task_logger,
         )
-    if proc_type == const.ProcessType.IM_calculation.value:
+    elif proc_type == const.ProcessType.IM_calculation.value:
         options_dict = {
             SlBodyOptConsts.extended.value: True if extended_period else False,
             SlBodyOptConsts.simple_out.value: True,
@@ -285,24 +294,21 @@ def submit_task(
             {"submit_time": submitted_time},
             logger=task_logger,
         )
-    if do_verification:
-        if proc_type == const.ProcessType.rrup.value:
-            cmd = "sbatch $gmsim/workflow/scripts/calc_rrups_single.sl {} {}".format(
-                sim_dir, root_folder
-            )
-            task_logger.debug(cmd)
-            call(cmd, shell=True)
-
-        if proc_type == const.ProcessType.Empirical.value:
-            cmd = "$gmsim/workflow/scripts/submit_empirical.py -np 40 -i {} {}".format(
-                run_name, root_folder
-            )
-            task_logger.debug(cmd)
-            call(cmd, shell=True)
-
-        if proc_type == const.ProcessType.Verification.value:
-            pass
-    if proc_type == const.ProcessType.clean_up.value:
+    elif proc_type == const.ProcessType.rrup.value:
+        cmd = "sbatch $gmsim/workflow/scripts/calc_rrups_single.sl {} {}".format(
+            sim_dir, root_folder
+        )
+        task_logger.debug(cmd)
+        call(cmd, shell=True)
+    elif proc_type == const.ProcessType.Empirical.value:
+        cmd = "$gmsim/workflow/scripts/submit_empirical.py -np 40 -i {} {}".format(
+            run_name, root_folder
+        )
+        task_logger.debug(cmd)
+        call(cmd, shell=True)
+    elif proc_type == const.ProcessType.Verification.value:
+        pass
+    elif proc_type == const.ProcessType.clean_up.value:
         clean_up_template = (
             "--export=CUR_ENV -o {output_file} -e {error_file} {script_location} "
             "{sim_dir} {srf_name} {mgmt_db_loc} "
@@ -315,14 +321,28 @@ def submit_task(
             output_file=os.path.join(sim_dir, "clean_up.out"),
             error_file=os.path.join(sim_dir, "clean_up.err"),
         )
-        shared.submit_sl_script(
-            script,
-            const.ProcessType.clean_up.value,
-            sim_struct.get_mgmt_db_queue(root_folder),
-            run_name,
-            submit_yes=True,
+        submit_sl_script(script, target_machine=const.HPC.mahuika.value)
+    elif proc_type == const.ProcessType.LF2BB.value:
+        submit_sl_script(
+            "--output {} --error {} {} {} {}".format(
+                os.path.join(sim_dir, "lf2bb.out"),
+                os.path.join(sim_dir, "lf2bb.err"),
+                os.path.expandvars("$gmsim/workflow/scripts/lf2bb.sl"),
+                sim_dir,
+                root_folder,
+            ),
             target_machine=const.HPC.mahuika.value,
-            logger=logger
+        )
+    elif proc_type == const.ProcessType.HF2BB.value:
+        submit_sl_script(
+            "--output {} --error {} {} {} {}".format(
+                os.path.join(sim_dir, "hf2bb.out"),
+                os.path.join(sim_dir, "hf2bb.err"),
+                os.path.expandvars("$gmsim/workflow/scripts/hf2bb.sl"),
+                sim_dir,
+                root_folder,
+            ),
+            target_machine=const.HPC.mahuika.value,
         )
     workflow_logger.clean_up_logger(task_logger)
 
@@ -414,10 +434,14 @@ def main(args, main_logger: Logger = workflow_logger.get_basic_logger()):
         )
 
         # Gets all runnable tasks_to_run based on mgmt db state
-        runnable_tasks = mgmt_db.get_runnable_tasks(args.n_max_retries, args.rels_to_run, args.tasks_to_run)
+        runnable_tasks = mgmt_db.get_runnable_tasks(
+            args.n_max_retries, args.rels_to_run, args.tasks_to_run
+        )
         if len(runnable_tasks) > 0:
             somethingHappened = True
-            main_logger.info("Number of runnable tasks_to_run: {}".format(len(runnable_tasks)))
+            main_logger.info(
+                "Number of runnable tasks_to_run: {}".format(len(runnable_tasks))
+            )
         else:
             main_logger.debug("No runnable_tasks")
 
@@ -473,7 +497,9 @@ def main(args, main_logger: Logger = workflow_logger.get_basic_logger()):
                         run_name,
                         const.Status.completed.str_value,
                     ],
-                        mgmt_db.get_runnable_tasks(args.n_max_retries, args.rels_to_run, args.tasks_to_run),
+                    mgmt_db.get_runnable_tasks(
+                        args.n_max_retries, args.rels_to_run, args.tasks_to_run
+                    ),
                 ):
                     # If clean_up has already run, then we should set it to
                     # be run again after merge_ts has run
@@ -541,8 +567,18 @@ if __name__ == "__main__":
         help="Location of the log file to use. Defaults to 'cybershake_log.txt' in the location root_folder. "
         "Must be absolute or relative to the root_folder.",
     )
-    parser.add_argument("--tasks_to_run", nargs="+", help="Which processes should be run. Defaults to IM_Calc and clean_up with dependencies automatically propagated", choices=[proc.str_value for proc in const.ProcessType], default=[const.ProcessType.clean_up.str_value, const.ProcessType.IM_calculation.str_value])
-    parser.add_argument("--rels_to_run", help="An SQLite formatted query to match the realisations that should run.", default='%')
+    parser.add_argument(
+        "--tasks_to_run",
+        nargs="+",
+        help="Which processes should be run. Defaults to IM_Calc and clean_up with dependencies automatically propagated",
+        choices=[proc.str_value for proc in const.ProcessType],
+        default=[const.ProcessType.clean_up.str_value],
+    )
+    parser.add_argument(
+        "--rels_to_run",
+        help="An SQLite formatted query to match the realisations that should run.",
+        default="%",
+    )
 
     args = parser.parse_args()
 
@@ -595,14 +631,39 @@ if __name__ == "__main__":
     else:
         args.n_runs = DEFAULT_N_RUNS
 
-    logger.debug("Processes to be run were: {}. Getting all required dependencies now.".format(args.tasks_to_run))
-    args.tasks_to_run = [const.ProcessType.get_by_name(proc) for proc in args.tasks_to_run]
+    logger.debug(
+        "Processes to be run were: {}. Getting all required dependencies now.".format(
+            args.tasks_to_run
+        )
+    )
+    args.tasks_to_run = [
+        const.ProcessType.get_by_name(proc) for proc in args.tasks_to_run
+    ]
     for task in args.tasks_to_run:
-        logger.debug("Process {} in processes to be run, adding dependencies now.".format(task.str_value))
-        for proc_num in task.dependencies:
+        logger.debug(
+            "Process {} in processes to be run, adding dependencies now.".format(
+                task.str_value
+            )
+        )
+        for proc_num in task.get_remaining_dependencies(args.tasks_to_run):
             proc = const.ProcessType(proc_num)
             if proc not in args.tasks_to_run:
+                logger.debug(
+                    "Process {} added as a dependency of process {}".format(
+                        proc.str_value, task.str_value
+                    )
+                )
                 args.tasks_to_run.append(proc)
+
+    mutually_exclusive_task_error = const.ProcessType.check_mutually_exclusive_tasks(args.tasks_to_run)
+    if mutually_exclusive_task_error != "":
+        logger.log(
+            workflow_logger.NOPRINTCRITICAL,
+            mutually_exclusive_task_error,
+        )
+        parser.error(
+            mutually_exclusive_task_error
+        )
 
     logger.debug("Processed args are as follows: {}".format(str(args)))
 

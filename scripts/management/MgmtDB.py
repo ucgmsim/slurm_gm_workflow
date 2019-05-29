@@ -88,13 +88,6 @@ class MgmtDB:
 
         Returns a list of tuples (proc_type, run_name, state_str)
         """
-        do_verification = False
-        verification_tasks = [
-            Process.IM_plot.value,
-            Process.rrup.value,
-            Process.Empirical.value,
-            Process.Verification.value,
-        ]
 
         if allowed_tasks is None:
             allowed_tasks = list(const.ProcessType)
@@ -121,8 +114,7 @@ class MgmtDB:
             if status == const.Status.created.str_value and self._check_dependancy_met(
                 task, db_tasks
             ):
-                if task[0] not in verification_tasks or do_verification:
-                    tasks_to_run.append(task)
+                tasks_to_run.append(task)
 
             # Retry failed tasks_to_run
             if status == const.Status.failed.str_value:
@@ -148,28 +140,19 @@ class MgmtDB:
 
     @staticmethod
     def is_task_complete(task, task_list):
-        process, run_name, status, *_ = task
-        for check_task in task_list:
-            if (
-                check_task[0] == process
-                and check_task[1] == run_name
-                and check_task[2] == status
-            ):
-                return True
-        return False
+        return task in task_list
 
     def _check_dependancy_met(self, task, task_list):
         """Checks if all dependencies for the specified are met"""
         process, run_name, status, *_ = task
         process = Process(process)
 
-        for dep in process.dependencies:
-            dependant_task = list(task)
-            dependant_task[0] = dep
-            dependant_task[2] = "completed"
-            if not self.is_task_complete(dependant_task, task_list):
-                return False
-        return True
+        return len(
+            process.get_remaining_dependencies([
+                proc for proc, name, state, *_ in task_list
+                if name == run_name and state == "completed"
+            ])
+        ) == 0
 
     def _update_entry(self, cur: sql.Cursor, entry: SlurmTask):
         """Updates all fields that have a value for the specific entry"""
