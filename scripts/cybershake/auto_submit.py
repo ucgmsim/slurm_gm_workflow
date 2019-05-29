@@ -358,7 +358,7 @@ def run_main_submit_loop(
     sleep_time: int,
     models_tuple: Tuple[est.EstModel],
     main_logger: Logger = workflow_logger.get_basic_logger(),
-    watch_for_all=True,
+    master_thread=True,
     cycle_timeout=1,
 ):
     mgmt_queue_folder = sim_struct.get_mgmt_db_queue(root_folder)
@@ -390,7 +390,13 @@ def run_main_submit_loop(
 
         # Get in progress tasks_to_run in the db and the HPC queue
         squeue_tasks, n_tasks_to_run = [], {}
-        if watch_for_all:
+        for hpc in const.HPC:
+            cur_tasks = get_queued_tasks(user=user, machine=hpc)
+
+            n_tasks_to_run[hpc] = n_runs[hpc] - len(cur_tasks)
+            squeue_tasks.extend(cur_tasks)
+
+        if master_thread:
             # Only check squeue and all db tasks if watching for all
             for hpc in const.HPC:
                 cur_tasks = get_queued_tasks(user=user, machine=hpc)
@@ -398,39 +404,34 @@ def run_main_submit_loop(
                 n_tasks_to_run[hpc] = n_runs[hpc] - len(cur_tasks)
                 squeue_tasks.extend(cur_tasks)
 
+            # User output
+            if len(squeue_tasks) > 0:
+                time_since_something_happened = cycle_timeout
+                main_logger.info("Squeue user tasks_to_run: " + ", ".join(squeue_tasks))
+            else:
+                main_logger.debug("No squeue user tasks_to_run")
+
             db_in_progress_tasks = mgmt_db.get_submitted_tasks()
-        else:
-            # sub auto submits should only check for their tasks to see if anything else needs to be run
-            db_in_progress_tasks = mgmt_db.get_submitted_tasks(given_tasks_to_run)
 
-        # User output
-        if len(squeue_tasks) > 0:
-            time_since_something_happened = cycle_timeout
-            main_logger.info("Squeue user tasks_to_run: " + ", ".join(squeue_tasks))
-        else:
-            main_logger.debug("No squeue user tasks_to_run")
-
-        if len(db_in_progress_tasks) > 0:
-            time_since_something_happened = cycle_timeout
-            main_logger.info(
-                "In progress tasks_to_run in mgmt db:"
-                + ", ".join(
-                    [
-                        "{}-{}-{}-{}".format(
-                            entry.run_name,
-                            const.ProcessType(entry.proc_type).str_value,
-                            entry.job_id,
-                            const.Status(entry.status).str_value,
-                        )
-                        for entry in db_in_progress_tasks
-                    ]
+            if len(db_in_progress_tasks) > 0:
+                time_since_something_happened = cycle_timeout
+                main_logger.info(
+                    "In progress tasks_to_run in mgmt db:"
+                    + ", ".join(
+                        [
+                            "{}-{}-{}-{}".format(
+                                entry.run_name,
+                                const.ProcessType(entry.proc_type).str_value,
+                                entry.job_id,
+                                const.Status(entry.status).str_value,
+                            )
+                            for entry in db_in_progress_tasks
+                        ]
+                    )
                 )
-            )
-        else:
-            main_logger.debug("No in progress tasks_to_run in mgmt db")
+            else:
+                main_logger.debug("No in progress tasks_to_run in mgmt db")
 
-        if watch_for_all:
-            # Only update if watching for all. sub auto submits have incomplete information
             update_tasks(
                 mgmt_queue_folder,
                 mgmt_queue_entries,
@@ -444,7 +445,7 @@ def run_main_submit_loop(
             n_max_retries, rels_to_run, given_tasks_to_run, main_logger
         )
         if len(runnable_tasks) > 0:
-            time_since_something_happened = cycle_timeout
+            if master_thread: time_since_something_happened = cycle_timeout
             main_logger.info(
                 "Number of runnable tasks_to_run: {}".format(len(runnable_tasks))
             )
@@ -455,7 +456,7 @@ def run_main_submit_loop(
         # for mgmt db updates (i.e. items in the queue)
         tasks_to_run, task_counter = [], {key: 0 for key in const.HPC}
         for task in runnable_tasks[:100]:
-            time_since_something_happened = cycle_timeout
+            if master_thread: time_since_something_happened = cycle_timeout
             cur_run_name, cur_proc_type = task[1], task[0]
 
             cur_hpc = JOB_RUN_MACHINE[const.ProcessType(cur_proc_type)]

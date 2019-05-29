@@ -19,6 +19,7 @@ logging.addLevelName(NOPRINTWARNING, "NO_PRINT_WARNING")
 logging.addLevelName(NOPRINTINFO, "NO_PRINT_INFO")
 logging.addLevelName(NOPRINTDEBUG, "NO_PRINT_DEBUG")
 
+THREADED = "THREADED"
 DEFAULT_LOGGER_NAME = "auto_submit"
 
 STDOUT_MESSAGE_FORMAT = "%(asctime)s - %(message)s"
@@ -57,6 +58,8 @@ def get_logger(name: str = DEFAULT_LOGGER_NAME, threaded=False) -> logging.Logge
     :param threaded: If the logger is operating in a thread then record the name of the thread
     :return: The logger object
     """
+    if threaded:
+        name = "{}_{}".format(THREADED, name)
     logger = logging.getLogger(name)
     logger.setLevel(logging.DEBUG)
 
@@ -76,7 +79,7 @@ def get_logger(name: str = DEFAULT_LOGGER_NAME, threaded=False) -> logging.Logge
 
 
 def add_general_file_handler(
-    logger: logging.Logger, file_path: str, threaded: bool = False
+    logger: logging.Logger, file_path: str
 ):
     """
     Adds a file handler to the logger using the given file_path
@@ -85,7 +88,7 @@ def add_general_file_handler(
     :param threaded: If the logger is operating in a thread then record the name of the thread
     """
     file_out_handler = logging.FileHandler(file_path)
-    if threaded:
+    if logger.name().startswith(THREADED):
         file_out_handler.setFormatter(general_threaded_formatter)
     else:
         file_out_handler.setFormatter(general_formatter)
@@ -94,7 +97,7 @@ def add_general_file_handler(
 
 
 def get_realisation_logger(
-    old_logger: logging.Logger, realisation: str, threaded: bool = False
+    old_logger: logging.Logger, realisation: str
 ) -> logging.Logger:
     """Creates a new logger that logs the realisation.
     The logger passed in is effectively duplicated and log messages are saved to the same file as the original logger.
@@ -106,7 +109,7 @@ def get_realisation_logger(
     new_logger = logging.getLogger(realisation)
     new_logger.setLevel(logging.DEBUG)
 
-    if threaded:
+    if old_logger.name().startswith(THREADED):
         task_formatter = logging.Formatter(
             REALISATION_THREADED_LOGGING_MESSAGE_FORMAT.format(realisation)
         )
@@ -129,7 +132,7 @@ def get_realisation_logger(
 
     task_print_handler = logging.StreamHandler(sys.stdout)
     task_print_handler.setLevel(logging.INFO)
-    if threaded:
+    if old_logger.name().startswith(THREADED):
         task_print_handler.setFormatter(stdout_threaded_formatter)
     else:
         task_print_handler.setFormatter(stdout_formatter)
@@ -146,7 +149,6 @@ def get_task_logger(
     old_logger: logging.Logger,
     realisation: str,
     process_type: int,
-    threaded: bool = False,
 ) -> logging.Logger:
     """Creates a new logger that logs the realisation and process type.
     The logger passed in is effectively duplicated and log messages are saved to the same file as the original logger.
@@ -162,7 +164,7 @@ def get_task_logger(
     new_logger = logging.getLogger("{}.{}".format(realisation, process_name))
     new_logger.setLevel(logging.DEBUG)
 
-    if threaded:
+    if old_logger.name().startswith(THREADED):
         task_formatter = logging.Formatter(
             TASK_THREADED_LOGGING_MESSAGE_FORMAT.format(realisation, process_name)
         )
@@ -185,7 +187,7 @@ def get_task_logger(
 
     task_print_handler = logging.StreamHandler(sys.stdout)
     task_print_handler.setLevel(logging.INFO)
-    if threaded:
+    if old_logger.name().startswith(THREADED):
         task_print_handler.setFormatter(stdout_threaded_formatter)
     else:
         task_print_handler.setFormatter(stdout_formatter)

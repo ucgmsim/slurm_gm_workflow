@@ -185,7 +185,7 @@ def run_automated_workflow(
                 bb_est_model,
                 im_est_model),
                 main_logger=pattern_logger,
-                watch_for_all=False,
+                master_thread=False,
                 cycle_timeout=1,
             )
     wrapper_logger.info(
