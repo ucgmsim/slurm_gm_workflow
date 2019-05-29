@@ -131,6 +131,7 @@ def update_tasks(
                         db_task.proc_type,
                         queue_status,
                     )
+                break
         # Only reset if there is no entry on the mgmt queue for this
         # realisation/proc combination
         if not found and not check_mgmt_queue(
@@ -397,13 +398,6 @@ def run_main_submit_loop(
             squeue_tasks.extend(cur_tasks)
 
         if master_thread:
-            # Only check squeue and all db tasks if watching for all
-            for hpc in const.HPC:
-                cur_tasks = get_queued_tasks(user=user, machine=hpc)
-
-                n_tasks_to_run[hpc] = n_runs[hpc] - len(cur_tasks)
-                squeue_tasks.extend(cur_tasks)
-
             # User output
             if len(squeue_tasks) > 0:
                 time_since_something_happened = cycle_timeout
