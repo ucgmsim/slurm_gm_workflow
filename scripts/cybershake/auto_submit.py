@@ -656,7 +656,7 @@ if __name__ == "__main__":
                         proc.str_value, task.str_value
                     )
                 )
-                args.tasks_to_run.append(proc)
+                tasks_to_run.append(proc)
 
     mutually_exclusive_task_error = const.ProcessType.check_mutually_exclusive_tasks(
         tasks_to_run

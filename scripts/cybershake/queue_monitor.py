@@ -114,6 +114,8 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
+    root_folder = os.path.abspath(args.root_folder)
+
     if args.log_file is None:
         log_file_name = os.path.join(
             args.root_folder,
@@ -126,4 +128,4 @@ if __name__ == "__main__":
     logger.debug("Successfully added {} as the log file.".format(log_file_name))
 
     signal.signal(signal.SIGINT, on_exit)
-    main(args, logger)
+    main(root_folder, args.sleep_time, logger)
