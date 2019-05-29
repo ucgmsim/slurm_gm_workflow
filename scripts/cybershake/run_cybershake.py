@@ -40,7 +40,7 @@ def run_automated_workflow(
     realisations. Then while the all realisation thread is running go through each pattern and run all tasks that are
     available. When each instance of auto_submit doesn't submit anything or have anything running for an iteration it
     will automatically return, and the next pattern will have its tasks automatically submitted.
-    It is advised that each task list within tasks_to_run_with_pattern be disjoint from tasks_to_run as a race condition
+    It is advised that each task list within tasks_to_run_with_pattern be disjoint from task_types_to_run as a race condition
     may occur, and the task run twice at the same time, resulting in file writing issues.
     :param root_folder: The root directory of the cybershake folder structure
     :param log_directory: The directory the log files are to be placed in

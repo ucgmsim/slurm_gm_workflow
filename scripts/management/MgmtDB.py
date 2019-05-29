@@ -39,7 +39,7 @@ class MgmtDB:
     def db_file(self):
         return self._db_file
 
-    def update_entries_live(self, entries: List[SlurmTask], logger: Logger):
+    def update_entries_live(self, entries: List[SlurmTask], retry_max: int, logger: Logger):
         """Updates the specified entries in the db. Leaves the connection open,
         so this should only be used when continuously updating entries.
         """
@@ -50,7 +50,26 @@ class MgmtDB:
             cur = self._conn.cursor()
 
             for entry in entries:
+                process = entry.proc_type
+                realisation_name = entry.run_name
+                if entry.status == const.Status.created.value:
+                    # Something has attempted to set a task to created
+                    # Make a new task with created status and move to the next task
+                    self._insert_task(cur, realisation_name, process)
+                    continue
+
                 self._update_entry(cur, entry)
+
+                if entry.status == const.Status.failed.value:
+                    # The task was failed. If there have been few enough other attempts at the task make another one
+                    with connect_db_ctx(self._db_file) as cur:
+                        cur_retries = cur.execute(
+                            "SELECT retries from state "
+                            "WHERE run_name = ? AND proc_type = ?",
+                            (realisation_name, process),
+                        ).fetchone()[0]
+                        if cur_retries < retry_max:
+                            self._insert_task(cur, realisation_name, process)
         except sql.Error as ex:
             self._conn.rollback()
             print(
@@ -74,7 +93,7 @@ class MgmtDB:
             self._conn.close()
 
     def get_submitted_tasks(self):
-        """Gets all in progress tasks_to_run i.e. (running or queued)"""
+        """Gets all in progress tasks i.e. (running or queued)"""
         with connect_db_ctx(self._db_file) as cur:
             result = cur.execute(
                 "SELECT run_name, proc_type, status, job_id, retries "
@@ -83,9 +102,9 @@ class MgmtDB:
 
         return [SlurmTask(*entry) for entry in result]
 
-    def get_runnable_tasks(self, retry_max, allowed_rels, allowed_tasks=None, logger=workflow_logger.get_basic_logger()):
-        """Gets all runnable tasks_to_run based on their status and their associated
-        dependencies (i.e. other tasks_to_run have to be finished first)
+    def get_runnable_tasks(self, allowed_rels, allowed_tasks=None, logger=workflow_logger.get_basic_logger()):
+        """Gets all runnable tasks based on their status and their associated
+        dependencies (i.e. other tasks have to be finished first)
 
         Returns a list of tuples (proc_type, run_name, state_str)
         """
@@ -96,54 +115,34 @@ class MgmtDB:
 
         with connect_db_ctx(self._db_file) as cur:
             db_tasks = cur.execute(
-                """SELECT proc_type, run_name, status_enum.state 
+                """SELECT proc_type, run_name 
                           FROM status_enum, state 
                           WHERE state.status = status_enum.id
                            AND proc_type IN (?{})
                            AND run_name LIKE (?)
-                           AND (((status_enum.state = 'created' OR status_enum.state = 'failed')  
-                                 AND state.retries <= ?)
-                            OR status_enum.state = 'completed')""".format(
+                           AND status_enum.state = 'created'""".format(
                     ",?" * (len(allowed_tasks) - 1)
                 ),
-                (*allowed_tasks, allowed_rels, retry_max),
+                (*allowed_tasks, allowed_rels),
             ).fetchall()
 
-        tasks_to_run = []
-        for task in db_tasks:
-            status = task[2]
-            if status == const.Status.created.str_value and self._check_dependancy_met(task, logger):
-                tasks_to_run.append(task)
+        return [task for task in db_tasks if self._check_dependancy_met(task, logger)]
 
-            # Retry failed tasks_to_run
-            if status == const.Status.failed.str_value:
-                tasks_to_run.append(task)
-
-                # Update the number of retries
-                with connect_db_ctx(self._db_file) as cur:
-                    cur_retries = cur.execute(
-                        "SELECT retries from state "
-                        "WHERE run_name = ? AND proc_type = ?",
-                        (task[1], task[0]),
-                    ).fetchone()[0]
-
-                    # Also set it to created to ensure the number of retries does not
-                    # increase without actually running.
-                    cur.execute(
-                        "UPDATE state SET status = ?, retries = ? "
-                        "WHERE run_name = ? AND proc_type = ?",
-                        (const.Status.created.value, cur_retries + 1, task[1], task[0]),
-                    )
-
-        return tasks_to_run
-
-    @staticmethod
-    def is_task_complete(task, task_list):
-        return task in task_list
+    def is_task_complete(self, task):
+        process, run_name, status = task
+        with connect_db_ctx(self._db_file) as cur:
+            state = cur.execute(
+                """SELECT state.status 
+                          FROM state 
+                          WHERE run_name = (?)
+                           AND proc_type = (?)""",
+                (run_name, process),
+            ).fetchone()[0]
+        return state == const.Status.completed.value
 
     def _check_dependancy_met(self, task, logger=workflow_logger.get_basic_logger()):
         """Checks if all dependencies for the specified are met"""
-        process, run_name, status = task
+        process, run_name = task
         process = Process(process)
 
         with connect_db_ctx(self._db_file) as cur:

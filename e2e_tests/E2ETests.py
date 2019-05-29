@@ -145,7 +145,7 @@ class E2ETests(object):
         Parameters
         ----------
         user: str
-            The username under which to run the tasks_to_run
+            The username under which to run the tasks
         """
         self._stop_on_error = stop_on_error
 
@@ -309,11 +309,11 @@ class E2ETests(object):
         Parameters
         ----------
         user: str
-            The username under which to run the tasks_to_run
+            The username under which to run the tasks
         sleep_time: int
             Time (in seconds) between progress checks
         """
-        submit_cmd = "python3 {} {} {} --sleep_time 2 --tasks_to_run IM_calc".format(
+        submit_cmd = "python3 {} {} {} --sleep_time 2 --task_types_to_run IM_calc".format(
             os.path.join(
                 os.path.dirname(os.path.abspath(__file__)),
                 "../scripts/cybershake/auto_submit.py",

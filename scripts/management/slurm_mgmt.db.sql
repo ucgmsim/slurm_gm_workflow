@@ -17,8 +17,7 @@ CREATE TABLE IF NOT EXISTS `state` (
 	`status`	INTEGER,
 	`job_id`	INTEGER UNIQUE,
 	`retries`	INTEGER,
-	`last_modified`	INTEGER,
-	UNIQUE(`run_name`, `proc_type`)
+	`last_modified`	INTEGER
 );
 CREATE TABLE IF NOT EXISTS `error` (
     `id`  INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
