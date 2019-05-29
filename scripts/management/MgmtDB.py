@@ -149,7 +149,7 @@ class MgmtDB:
 
         return len(
             process.get_remaining_dependencies([
-                proc for proc, name, state in task_list
+                proc for proc, name, state, *_ in task_list
                 if name == run_name and state == "completed"
             ])
         ) == 0
