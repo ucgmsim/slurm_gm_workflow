@@ -27,3 +27,4 @@ xargs -n 1 -a ${env_path}/workflow/install_workflow/mahuika_python3_requirements
 
 # Install qcore
 pip install ./qcore
+pip install ./Empirical_Engine
