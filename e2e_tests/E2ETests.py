@@ -560,11 +560,21 @@ class E2ETests(object):
             ).fetchone()[0]
             if len(self.canceled_running) > 0:
                 total_count = cur.execute(
-                    "SELECT COUNT(*) FROM state WHERE proc_type <= 6 AND proc_type <> 2 and job_id NOT IN (?{})".format(",?"*(len(self.canceled_running)-1)),
+                    "SELECT COUNT(*) FROM state "
+                    "WHERE proc_type <= 6 "
+                    "AND proc_type <> 2 "
+                    "AND (job_id IS NULL OR job_id NOT IN (?{}))".format(
+                        ",?"*(len(self.canceled_running)-1)
+                    ),
                     (*self.canceled_running, ),
                 ).fetchone()[0]
                 failed_count = cur.execute(
-                    "SELECT COUNT(*) FROM state WHERE status == 5 AND proc_type <= 6 and job_id NOT IN (?{})".format(",?"*(len(self.canceled_running)-1)),
+                    "SELECT COUNT(*) FROM state "
+                    "WHERE status == 5 "
+                    "AND proc_type <= 6 "
+                    "AND (job_id IS NULL OR job_id NOT IN (?{}))".format(
+                        ",?"*(len(self.canceled_running)-1)
+                    ),
                     (*self.canceled_running, ),
                 ).fetchone()[0]
             else:
