@@ -475,7 +475,7 @@ class E2ETests(object):
         """Create errors for all entries in management db that did not complete"""
         with connect_db_ctx(sim_struct.get_mgmt_db(self.stage_dir)) as cur:
             entries = cur.execute(
-                "SELECT run_name, proc_type, status, job_id, retries FROM state "
+                "SELECT run_name, proc_type, status, job_id FROM state "
                 "WHERE proc_type <=6 AND proc_type <> 2 AND status != 4"
             ).fetchall()
 
@@ -487,11 +487,10 @@ class E2ETests(object):
                     Error(
                         "Slurm task",
                         "Run {} did not complete task {} "
-                        "(Status {}, Retries {}, JobId {}".format(
+                        "(Status {}, JobId {}".format(
                             entry.run_name,
                             const.ProcessType(entry.proc_type),
                             const.Status(entry.status),
-                            entry.retries,
                             entry.job_id,
                         ),
                     )
