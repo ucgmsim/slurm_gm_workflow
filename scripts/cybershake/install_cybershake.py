@@ -104,8 +104,8 @@ def main():
     faults = {}
     with open(args.fault_selection_list) as fault_file:
         for line in fault_file.readlines():
-            fault, count, *_ = line.split(" ")
-            count = int(count[:-2])
+            fault, count, *_ = line.split()
+            count = int(count[:-1])
             faults.update({fault: count})
 
     for fault, count in faults.items():

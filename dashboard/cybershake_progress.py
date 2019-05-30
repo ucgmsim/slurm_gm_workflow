@@ -130,6 +130,7 @@ def get_new_progress_df(root_dir, runs_dir, faults, fault_names, r_counts):
         root_yaml=None,
         output=None,
         verbose=False,
+        models_dir=None
     )
     df = est_cybershake(est_args)
     grouped_df = df.groupby("fault_name").sum()
@@ -210,7 +211,7 @@ def print_progress(progress_df: pd.DataFrame, cur_fault_ix: int = None):
     else:
         to_print_mask = np.ones(progress_df.shape[0], dtype=bool)
 
-    template_fmt = "{:<15}{:<12}{:<12}{:<12}{:<12}{:<20}{:<12}"
+    template_fmt = "{:<15}{:<17}{:<17}{:<17}{:<17}{:<10}{:<12}"
     print(
         template_fmt.format(
             "Fault name",
@@ -250,8 +251,8 @@ def print_progress(progress_df: pd.DataFrame, cur_fault_ix: int = None):
 
     print("\nOverall progress")
     print(
-        "EMOD3D: {:.2f}/{:.2f}, BB {:.2f}/{:.2f}, "
-        "HF {:.2f}/{:.2f}, Total {:.2f}/{:.2f} - {:.2f}%".format(
+        "EMOD3D: {:.2f}/{:.2f}, HF {:.2f}/{:.2f}, "
+        "BB {:.2f}/{:.2f}, Total {:.2f}/{:.2f} - {:.2f}%".format(
             overall_df[const.ProcessType.EMOD3D.str_value, ACT_CORE_HOURS_COL],
             overall_df[const.ProcessType.EMOD3D.str_value, EST_CORE_HOURS_COL],
             overall_df[const.ProcessType.HF.str_value, ACT_CORE_HOURS_COL],
@@ -278,7 +279,7 @@ def main(args: argparse.Namespace):
     root_dir = args.cybershake_root
     runs_dir = sim_struct.get_runs_dir(root_dir)
 
-    cybershake_list = sim_struct.get_cybershake_list(root_dir)
+    cybershake_list = args.list
     fault_names, r_counts = get_faults_and_r_count(cybershake_list)
 
     # Sort, as faults are run in alphabetical order
@@ -361,6 +362,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "cybershake_root", type=str, help="The cybershake root directory"
     )
+    parser.add_argument("list", type=str, help="The list of faults to run")
     parser.add_argument(
         "--temp_file",
         type=str,

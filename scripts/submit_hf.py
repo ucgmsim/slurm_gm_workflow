@@ -69,7 +69,21 @@ def main(args: argparse.Namespace, est_model: est.EstModel = None, logger: Logge
             scale_ncores=SCALE_NCORES,
             logger=logger
         )
-        wct = set_wct(est_run_time, est_cores, args.auto)
+         
+        # scale up the est_run_time if it is a re-run (with check-pointing)
+        # creates and extra variable so we keep the orignial estimated run time for other purpose
+        est_run_time_scaled = est_run_time 
+        if hasattr(args,'retries') and int(args.retries) > 0:
+            # check if HF.bin is read-able = restart-able
+            try:
+                from qcore.timeseries import HFSeis
+                bin = HFSeis(sim_struct.get_hf_bin_path(params.sim_dir))
+            except:
+                logger.debug("Retried count > 0 but HF.bin is not readable")
+            else:
+                est_run_time_scaled = est_run_time * (int(args.retries) +1)
+        
+        wct = set_wct(est_run_time_scaled, est_cores, args.auto)
         hf_sim_dir = os.path.join(params.sim_dir, "HF")
         write_directory = (
             args.write_directory if args.write_directory else params.sim_dir

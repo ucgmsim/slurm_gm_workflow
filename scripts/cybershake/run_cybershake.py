@@ -79,7 +79,6 @@ def run_automated_workflow(
                 datetime.now().strftime(const.TIMESTAMP_FORMAT)
             ),
         ),
-        True,
     )
     wrapper_logger.debug("Created logger for the main auto_submit thread")
 
@@ -92,7 +91,6 @@ def run_automated_workflow(
                 datetime.now().strftime(const.TIMESTAMP_FORMAT)
             ),
         ),
-        True,
     )
     wrapper_logger.debug("Created logger for the queue_monitor thread")
 
@@ -109,7 +107,6 @@ def run_automated_workflow(
                     pattern, datetime.now().strftime(const.TIMESTAMP_FORMAT)
                 ),
             ),
-            True,
         )
         wrapper_logger.debug(
             "Created logger for auto_submit with pattern {} and added to list to run".format(
@@ -144,7 +141,7 @@ def run_automated_workflow(
         ),
         kwargs={
             'main_logger': bulk_logger,
-            'watch_for_all': True,
+            'master_thread': True,
             'cycle_timeout': len(tasks_to_run_with_pattern_and_logger)+1,
         },
     )
@@ -169,8 +166,8 @@ def run_automated_workflow(
     while bulk_auto_submit_thread.is_alive():
         wrapper_logger.info("Checking all patterns for tasks to be run")
         for pattern, tasks, pattern_logger in tasks_to_run_with_pattern_and_logger:
-            wrapper_logger.debug(
-                "Loaded pattern {}. Checking for tasks to be run".format(pattern)
+            wrapper_logger.info(
+                "Loaded pattern {}. Checking for tasks to be run of types: {}".format(pattern, tasks)
             )
             run_main_submit_loop(
                 root_folder,
@@ -185,7 +182,7 @@ def run_automated_workflow(
                 bb_est_model,
                 im_est_model),
                 main_logger=pattern_logger,
-                watch_for_all=False,
+                master_thread=False,
                 cycle_timeout=1,
             )
     wrapper_logger.info(
@@ -284,7 +281,7 @@ def main():
         WRAPPER_LOG_FILE_NAME.format(datetime.now().strftime(const.TIMESTAMP_FORMAT)),
     )
 
-    workflow_logger.add_general_file_handler(wrapper_logger, wrapper_log_file, True)
+    workflow_logger.add_general_file_handler(wrapper_logger, wrapper_log_file)
     wrapper_logger.info("Logger file added")
 
     n_runs = 0

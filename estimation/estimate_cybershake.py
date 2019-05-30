@@ -435,7 +435,7 @@ def main(args):
         )
 
         # Calculate nt
-        r_hf_nt = np.repeat(fault_sim_durations / runs_params.dt, r_counts)
+        r_hf_nt = np.repeat(fault_sim_durations / runs_params.hf_dt, r_counts)
 
         hf_input_data = np.concatenate(
             (
@@ -520,7 +520,7 @@ if __name__ == "__main__":
         "--models_dir",
         type=str,
         help="The models directory (i.e. ..../estimation/models/. If not specified"
-             "then the model dir from the workflow config is used.",
+        "then the model dir from the workflow config is used.",
     )
 
     args = parser.parse_args()

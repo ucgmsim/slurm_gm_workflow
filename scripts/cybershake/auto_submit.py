@@ -53,11 +53,11 @@ DEFAULT_HF_SEED = 0
 
 def get_queued_tasks(user=None, machine=const.HPC.maui):
     if user is not None:
-        cmd = "squeue -A nesi00213 -o '%A %t' -h -M {} -u {}".format(
-            machine.value, user
+        cmd = "squeue -A {} -o '%A %t' -h -M {} -u {}".format(
+            const.DEFAULT_ACCOUNT,machine.value, user
         )
     else:
-        cmd = "squeue -A nesi00213 -o '%A %t' -h -M {}".format(machine.value)
+        cmd = "squeue -A {} -o '%A %t' -h -M {}".format(const.DEFAULT_ACCOUNT,machine.value)
 
     process = Popen(shlex.split(cmd), stdout=PIPE, encoding="utf-8")
     (output, err) = process.communicate()
@@ -132,6 +132,7 @@ def update_tasks(
                     db_task.proc_type,
                     queue_status,
                 )
+                break
         # Only reset if there is no entry on the mgmt queue for this
         # realisation/proc combination
         if not found and not check_mgmt_queue(
@@ -159,6 +160,7 @@ def submit_task(
     run_name,
     root_folder,
     parent_logger,
+    retries=None,
     hf_seed=DEFAULT_HF_SEED,
     extended_period=False,
     models=None,
@@ -194,6 +196,7 @@ def submit_task(
             machine=JOB_RUN_MACHINE[const.ProcessType.EMOD3D].value,
             rel_dir=sim_dir,
             write_directory=sim_dir,
+            retries=retries,
         )
         task_logger.debug("Submit EMOD3D arguments: {}".format(args))
         submit_lf_main(args, est_model=models[0], logger=task_logger)
@@ -233,6 +236,7 @@ def submit_task(
             rel_dir=sim_dir,
             write_directory=sim_dir,
             debug=False,
+            retries=retries,
         )
         task_logger.debug("Submit HF arguments: {}".format(args))
         submit_hf_main(args, models[1], task_logger)
@@ -251,6 +255,7 @@ def submit_task(
             machine=JOB_RUN_MACHINE[const.ProcessType.BB].value,
             rel_dir=sim_dir,
             write_directory=sim_dir,
+            retries=retries,
         )
         task_logger.debug("Submit BB arguments: {}".format(args))
         submit_bb_main(args, models[2], task_logger)
@@ -344,7 +349,7 @@ def run_main_submit_loop(
     sleep_time: int,
     models_tuple: Tuple[est.EstModel],
     main_logger: Logger = workflow_logger.get_basic_logger(),
-    watch_for_all=True,
+    master_thread=True,
     cycle_timeout=1,
 ):
     mgmt_queue_folder = sim_struct.get_mgmt_db_queue(root_folder)
@@ -377,54 +382,54 @@ def run_main_submit_loop(
         # Get in progress tasks in the db and the HPC queue
         squeue_tasks, n_tasks_to_run = [], {}
         for hpc in const.HPC:
-
             cur_tasks = get_queued_tasks(user=user, machine=hpc)
 
             n_tasks_to_run[hpc] = n_runs[hpc] - len(cur_tasks)
             squeue_tasks.extend(cur_tasks)
 
-        if len(squeue_tasks) > 0:
-            time_since_something_happened = cycle_timeout and watch_for_all
-            main_logger.info("Squeue user tasks: " + ", ".join(squeue_tasks))
-        else:
-            main_logger.debug("No squeue user tasks")
+        if master_thread:
+            # User output
+            if len(squeue_tasks) > 0:
+                time_since_something_happened = cycle_timeout
+                main_logger.info("Squeue user tasks: " + ", ".join(squeue_tasks))
+            else:
+                main_logger.debug("No squeue user tasks")
 
-        db_in_progress_tasks = mgmt_db.get_submitted_tasks()
-        if len(db_in_progress_tasks) > 0:
-            time_since_something_happened = cycle_timeout
-            main_logger.info(
-                "In progress tasks in mgmt db:"
-                + ", ".join(
-                    [
-                        "{}-{}-{}-{}".format(
-                            entry.run_name,
-                            const.ProcessType(entry.proc_type).str_value,
-                            entry.job_id,
-                            const.Status(entry.status).str_value,
-                        )
-                        for entry in db_in_progress_tasks
-                    ]
+            db_in_progress_tasks = mgmt_db.get_submitted_tasks()
+
+            if len(db_in_progress_tasks) > 0:
+                time_since_something_happened = cycle_timeout
+                main_logger.info(
+                    "In progress tasks in mgmt db:"
+                    + ", ".join(
+                        [
+                            "{}-{}-{}-{}".format(
+                                entry.run_name,
+                                const.ProcessType(entry.proc_type).str_value,
+                                entry.job_id,
+                                const.Status(entry.status).str_value,
+                            )
+                            for entry in db_in_progress_tasks
+                        ]
+                    )
                 )
-            )
-        else:
-            main_logger.debug("No in progress tasks in mgmt db")
+            else:
+                main_logger.debug("No in progress tasks in mgmt db")
 
-        # Update the slurm mgmt based on squeue
-        update_tasks(
-            mgmt_queue_folder,
-            mgmt_queue_entries,
-            squeue_tasks,
-            db_in_progress_tasks,
-            main_logger,
-        )
+            update_tasks(
+                mgmt_queue_folder,
+                mgmt_queue_entries,
+                squeue_tasks,
+                db_in_progress_tasks,
+                main_logger,
+            )
 
         # Gets all runnable tasks based on mgmt db state
-
         runnable_tasks = mgmt_db.get_runnable_tasks(
             rels_to_run, given_tasks_to_run, main_logger
         )
         if len(runnable_tasks) > 0:
-            time_since_something_happened = cycle_timeout
+            if master_thread: time_since_something_happened = cycle_timeout
             main_logger.info(
                 "Number of runnable tasks: {}".format(len(runnable_tasks))
             )
@@ -435,7 +440,7 @@ def run_main_submit_loop(
         # for mgmt db updates (i.e. items in the queue)
         tasks_to_run, task_counter = [], {key: 0 for key in const.HPC}
         for cur_proc_type, cur_run_name in runnable_tasks[:100]:
-            time_since_something_happened = cycle_timeout
+            if master_thread: time_since_something_happened = cycle_timeout
 
             cur_hpc = JOB_RUN_MACHINE[const.ProcessType(cur_proc_type)]
             # Add task if limit has not been reached and there are no
@@ -471,7 +476,7 @@ def run_main_submit_loop(
             main_logger.debug("No tasks to run this iteration")
 
         # Submit the runnable tasks
-        for proc_type, run_name in tasks_to_run:
+        for proc_type, run_name, retries in tasks_to_run:
 
             # Special handling for merge-ts
             if proc_type == const.ProcessType.merge_ts.value:
@@ -499,6 +504,7 @@ def run_main_submit_loop(
                 run_name,
                 root_folder,
                 main_logger,
+                retries=retries,
                 hf_seed=hf_seed,
                 extended_period=extended_period,
                 models=models_tuple,
@@ -625,7 +631,7 @@ if __name__ == "__main__":
                         proc.str_value, task.str_value
                     )
                 )
-                args.tasks_to_run.append(proc)
+                task_types_to_run.append(proc)
 
     mutually_exclusive_task_error = const.ProcessType.check_mutually_exclusive_tasks(
         task_types_to_run

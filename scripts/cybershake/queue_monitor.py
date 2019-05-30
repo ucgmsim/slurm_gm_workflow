@@ -61,8 +61,8 @@ def main(root_folder: str, sleep_time: int, max_retries: int, queue_logger: Logg
 
     queue_logger.info("Running queue-monitor, exit with Ctrl-C.")
 
+    sqlite_tmpdir = "/tmp/cer"
     while keepAlive:
-        sqlite_tmpdir = "/tmp/cer"
         if not os.path.exists(sqlite_tmpdir):
             os.makedirs(sqlite_tmpdir)
             queue_logger.debug("Set up the sqlite_tmpdir")
@@ -121,6 +121,8 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
+    root_folder = os.path.abspath(args.root_folder)
+
     if args.log_file is None:
         log_file_name = os.path.join(
             args.root_folder,
@@ -133,4 +135,4 @@ if __name__ == "__main__":
     logger.debug("Successfully added {} as the log file.".format(log_file_name))
 
     signal.signal(signal.SIGINT, on_exit)
-    main(args.root_folder, args.sleep_time, args.n_max_retries, logger)
+    main(root_folder, args.sleep_time, args.n_max_retries, logger)
