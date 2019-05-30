@@ -46,7 +46,7 @@ class MgmtDB:
                 (realisation_name, process, const.Status.created.value),
             ).fetchone()[0]
 
-    def update_entries_live(self, entries: List[SlurmTask], retry_max: int, logger: Logger):
+    def update_entries_live(self, entries: List[SlurmTask], retry_max: int, logger: Logger = workflow_logger.get_basic_logger()):
         """Updates the specified entries in the db. Leaves the connection open,
         so this should only be used when continuously updating entries.
         """
@@ -168,10 +168,6 @@ class MgmtDB:
 
     def _update_entry(self, cur: sql.Cursor, entry: SlurmTask):
         """Updates all fields that have a value for the specific entry"""
-        if entry.job_id is not None:
-            job_id = entry.job_id
-        else:
-            job_id = self._get_job_id(entry)
         for field, value in zip(
             (self.col_status, self.col_job_id),
             (entry.status, entry.job_id),
@@ -179,8 +175,8 @@ class MgmtDB:
             if value is not None:
                 cur.execute(
                     "UPDATE state SET {} = ?, last_modified = strftime('%s','now') "
-                    "WHERE run_name = ? AND proc_type = ? and job_id = ?".format(field),
-                    (value, entry.run_name, entry.proc_type, job_id),
+                    "WHERE run_name = ? AND proc_type = ? and status != ?".format(field),
+                    (value, entry.run_name, entry.proc_type, const.Status.failed.value),
                 )
         if entry.error is not None:
             cur.execute(
