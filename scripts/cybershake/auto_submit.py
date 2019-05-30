@@ -449,7 +449,7 @@ def run_main_submit_loop(
                 not check_mgmt_queue(mgmt_queue_entries, cur_run_name, cur_proc_type)
                 and task_counter.get(cur_hpc, 0) < n_tasks_to_run[cur_hpc]
             ):
-                tasks_to_run.append((cur_proc_type, cur_run_name))
+                tasks_to_run.append((cur_proc_type, cur_run_name, retries))
                 task_counter[cur_hpc] += 1
 
             # Open to better suggestions
