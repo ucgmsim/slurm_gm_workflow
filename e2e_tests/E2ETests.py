@@ -484,7 +484,7 @@ class E2ETests(object):
         entries = [SlurmTask(*entry) for entry in entries]
 
         for entry in entries:
-            if entry.status != const.Status.completed.value and entry.job_id not in self.canceled_running:
+            if entry.status != const.Status.completed.value and str(entry.job_id) not in self.canceled_running:
                 self.errors.append(
                     Error(
                         "Slurm task",
