@@ -50,7 +50,6 @@ def get_queue_entry(
         proc_type=data_dict[MgmtDB.col_proc_type],
         status=data_dict[MgmtDB.col_status],
         job_id=data_dict[MgmtDB.col_job_id],
-        retries=data_dict[MgmtDB.col_retries],
         error=data_dict.get("error"),
     )
 
