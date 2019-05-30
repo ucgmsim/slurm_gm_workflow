@@ -8,5 +8,6 @@
   "version": "16.1",
   "seed": 5481190,
   "stat_file": "/nesi/project/nesi00213/StationInfo/geoNet_stats+2018-05-22.ll",
-  "extended_period": true
+  "extended_period": true,
+  "wrapper_config": "auto_config.yaml"
 }
