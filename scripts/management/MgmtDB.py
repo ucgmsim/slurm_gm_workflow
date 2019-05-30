@@ -137,14 +137,15 @@ class MgmtDB:
     def is_task_complete(self, task):
         process, run_name, status = task
         with connect_db_ctx(self._db_file) as cur:
-            state = cur.execute(
-                """SELECT state.status 
+            completed_tasks = cur.execute(
+                """SELECT COUNT (*) 
                           FROM state 
                           WHERE run_name = (?)
-                           AND proc_type = (?)""",
-                (run_name, process),
+                           AND proc_type = (?)
+                           AND status = (?)""",
+                (run_name, process, const.Status.completed.value),
             ).fetchone()[0]
-        return state == const.Status.completed.value
+        return completed_tasks > 0
 
     def _check_dependancy_met(self, task, logger=workflow_logger.get_basic_logger()):
         """Checks if all dependencies for the specified are met"""
@@ -167,6 +168,10 @@ class MgmtDB:
 
     def _update_entry(self, cur: sql.Cursor, entry: SlurmTask):
         """Updates all fields that have a value for the specific entry"""
+        if entry.job_id is not None:
+            job_id = entry.job_id
+        else:
+            job_id = self._get_job_id(entry)
         for field, value in zip(
             (self.col_status, self.col_job_id),
             (entry.status, entry.job_id),
@@ -175,7 +180,7 @@ class MgmtDB:
                 cur.execute(
                     "UPDATE state SET {} = ?, last_modified = strftime('%s','now') "
                     "WHERE run_name = ? AND proc_type = ? and job_id = ?".format(field),
-                    (value, entry.run_name, entry.proc_type, entry.job_id),
+                    (value, entry.run_name, entry.proc_type, job_id),
                 )
         if entry.error is not None:
             cur.execute(
@@ -230,3 +235,18 @@ class MgmtDB:
     def __del__(self):
         if self._conn is not None:
             self._conn.close()
+
+    def _get_job_id(self, entry):
+        if entry.status == const.Status.failed.str_value:
+            excluded_status = const.Status.failed.value
+        else:
+            excluded_status = const.Status.created.value
+        with connect_db_ctx(self._db_file) as cur:
+            return cur.execute(
+                """SELECT status 
+                          FROM state 
+                          WHERE run_name = (?)
+                           AND proc_type = (?)
+                           AND status != (?)""",
+                (entry.run_name, entry.proc_type, excluded_status),
+            ).fetchone()[0]
