@@ -556,14 +556,14 @@ class E2ETests(object):
         """Checks auto submit progress in the management db"""
         with connect_db_ctx(sim_struct.get_mgmt_db(self.stage_dir)) as cur:
             total_count = cur.execute(
-                "SELECT COUNT(*) FROM state WHERE proc_type <= 6 AND proc_type <> 2 and job_id NOT IN ?",
+                "SELECT COUNT(*) FROM state WHERE proc_type <= 6 AND proc_type <> 2 and job_id NOT IN (?{})".format(",?"*(len(self.canceled_running)-1),
                 self.canceled_running,
             ).fetchone()[0]
             comp_count = cur.execute(
                 "SELECT COUNT(*) FROM state WHERE status == 4 AND proc_type <= 6"
             ).fetchone()[0]
             failed_count = cur.execute(
-                "SELECT COUNT(*) FROM state WHERE status == 5 AND proc_type <= 6 and job_id NOT IN ?",
+                "SELECT COUNT(*) FROM state WHERE status == 5 AND proc_type <= 6 and job_id NOT IN (?{})".format(",?"*(len(self.canceled_running)-1),
                 self.canceled_running,
             ).fetchone()[0]
 
