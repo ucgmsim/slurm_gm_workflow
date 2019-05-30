@@ -613,7 +613,7 @@ if __name__ == "__main__":
 
     logger.debug(
         "Processes to be run were: {}. Getting all required dependencies now.".format(
-            args.tasks_to_run
+            args.task_types_to_run
         )
     )
     task_types_to_run = [const.ProcessType.get_by_name(proc) for proc in args.task_types_to_run]
