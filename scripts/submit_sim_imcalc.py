@@ -86,7 +86,7 @@ def submit_im_calc_slurm(sim_dir: str, options_dict: Dict = None, est_model: Est
         est_model = os.path.join(workflow_config["estimation_models_dir"], "IM")
 
     # Get wall clock estimation
-    logger.info("Running wall clock estimation for IM sim")
+    logger.info("Running wall clock estimation for IM sim for realisation {}".format(sim_name))
     est_core_hours, est_run_time = est_IM_chours_single(
         len(shared.get_stations(params.FD_STATLIST)),
         int(float(params.sim_duration) / float(params.hf.dt)),
