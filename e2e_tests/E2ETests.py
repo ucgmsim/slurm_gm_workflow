@@ -462,7 +462,7 @@ class E2ETests(object):
                     "Checkpoint testing: Cancelling job-id {} "
                     "for {} and process type {}".format(entry[1], entry[2], entry[0])
                 )
-                self.canceled_running.append(entry[1])
+                self.canceled_running.append(str(entry[1]))
                 out, err = exe("scancel -v {}".format(entry[1]), debug=False)
 
                 print("Scancel out: ", out, err)
