@@ -439,7 +439,7 @@ def run_main_submit_loop(
         # Select the first ntask_to_run that are not waiting
         # for mgmt db updates (i.e. items in the queue)
         tasks_to_run, task_counter = [], {key: 0 for key in const.HPC}
-        for cur_proc_type, cur_run_name in runnable_tasks[:100]:
+        for cur_proc_type, cur_run_name, retries in runnable_tasks[:100]:
             if master_thread: time_since_something_happened = cycle_timeout
 
             cur_hpc = JOB_RUN_MACHINE[const.ProcessType(cur_proc_type)]
