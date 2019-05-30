@@ -123,6 +123,7 @@ class E2ETests(object):
         self._sim_passed, self._sim_failed = set(), set()
         self._stop_on_error = None
 
+        self.canceled_running = []
         # Resources that need to be dealt with on close
         self._processes = []
         self._files = []
@@ -174,8 +175,6 @@ class E2ETests(object):
             print("It appears there were no errors during the automated workflow!")
             if not no_clean_up:
                 self.teardown()
-
-        self.canceled_running = []
 
         return True
 
