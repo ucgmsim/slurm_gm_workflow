@@ -78,7 +78,7 @@ class MgmtDB:
         allowed_tasks = [str(task.value) for task in allowed_tasks]
         with connect_db_ctx(self._db_file) as cur:
             result = cur.execute(
-                "SELECT run_name, proc_type, status_enum.state, job_id, retries "
+                "SELECT run_name, proc_type, state.status, job_id, retries "
                 "FROM state, status_enum "
                 "WHERE state.status = status_enum.id "
                 "AND status_enum.state IN ('queued', 'running') "
