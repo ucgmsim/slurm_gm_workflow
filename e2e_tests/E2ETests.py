@@ -317,7 +317,10 @@ class E2ETests(object):
             ),
             self.stage_dir,
             user,
-            os.path.join('./', self.config_dict['wrapper_config'])
+            os.path.join(
+                os.path.dirname(os.path.abspath(__file__)),
+                self.config_dict['wrapper_config']
+            ),
         )
 
         # Different process types for which canceling/resume is tested
