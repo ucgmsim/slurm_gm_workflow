@@ -12,7 +12,7 @@ from shared_workflow import workflow_logger
 Process = const.ProcessType
 
 SlurmTask = namedtuple(
-    "SlurmTask", ["run_name", "proc_type", "status", "job_id", "retries", "error"]
+    "SlurmTask", ["run_name", "proc_type", "status", "job_id", "error"]
 )
 # Make error an optional value, once we are using Python 3.7 then this can be made nicer..
 SlurmTask.__new__.__defaults__ = (None,)
@@ -25,7 +25,6 @@ class MgmtDB:
     col_proc_type = "proc_type"
     col_status = "status"
     col_job_id = "job_id"
-    col_retries = "retries"
 
     def __init__(self, db_file: str):
         self._db_file = db_file
@@ -38,6 +37,14 @@ class MgmtDB:
     @property
     def db_file(self):
         return self._db_file
+
+    def get_retries(self, process, realisation_name):
+        with connect_db_ctx(self._db_file) as cur:
+            return cur.execute(
+                "SELECT COUNT(*) from state "
+                "WHERE run_name = ? AND proc_type = ? and status != ?",
+                (realisation_name, process, const.Status.created.value),
+            ).fetchone()[0]
 
     def update_entries_live(self, entries: List[SlurmTask], retry_max: int, logger: Logger):
         """Updates the specified entries in the db. Leaves the connection open,
@@ -60,16 +67,9 @@ class MgmtDB:
 
                 self._update_entry(cur, entry)
 
-                if entry.status == const.Status.failed.value:
+                if entry.status == const.Status.failed.value and self.get_retries(process, realisation_name) < retry_max:
                     # The task was failed. If there have been few enough other attempts at the task make another one
-                    with connect_db_ctx(self._db_file) as cur:
-                        cur_retries = cur.execute(
-                            "SELECT retries from state "
-                            "WHERE run_name = ? AND proc_type = ?",
-                            (realisation_name, process),
-                        ).fetchone()[0]
-                        if cur_retries < retry_max:
-                            self._insert_task(cur, realisation_name, process)
+                    self._insert_task(cur, realisation_name, process)
         except sql.Error as ex:
             self._conn.rollback()
             print(
@@ -97,7 +97,7 @@ class MgmtDB:
         allowed_tasks = [str(task.value) for task in allowed_tasks]
         with connect_db_ctx(self._db_file) as cur:
             result = cur.execute(
-                "SELECT run_name, proc_type, status, job_id, retries "
+                "SELECT run_name, proc_type, status, job_id "
                 "FROM state WHERE status IN (2, 3) AND proc_type IN (?{})".format(",?"*(len(allowed_tasks)-1)),
                 allowed_tasks
             ).fetchall()
@@ -128,7 +128,11 @@ class MgmtDB:
                 (*allowed_tasks, allowed_rels),
             ).fetchall()
 
-        return [task for task in db_tasks if self._check_dependancy_met(task, logger)]
+        runnable_tasks = [
+            (*task, self.get_retries(*task))
+            for task in db_tasks
+            if self._check_dependancy_met(task, logger)]
+        return runnable_tasks
 
     def is_task_complete(self, task):
         process, run_name, status = task
@@ -164,8 +168,8 @@ class MgmtDB:
     def _update_entry(self, cur: sql.Cursor, entry: SlurmTask):
         """Updates all fields that have a value for the specific entry"""
         for field, value in zip(
-            (self.col_status, self.col_job_id, self.col_retries),
-            (entry.status, entry.job_id, entry.retries),
+            (self.col_status, self.col_job_id),
+            (entry.status, entry.job_id),
         ):
             if value is not None:
                 cur.execute(
@@ -211,7 +215,7 @@ class MgmtDB:
     def _insert_task(self, cur: sql.Cursor, run_name: str, proc_type: int):
         cur.execute(
             """INSERT OR IGNORE INTO `state`(run_name, proc_type, status, 
-            last_modified, retries) VALUES(?, ?, 1, strftime('%s','now'), 0)""",
+            last_modified) VALUES(?, ?, 1, strftime('%s','now'))""",
             (run_name, proc_type),
         )
 

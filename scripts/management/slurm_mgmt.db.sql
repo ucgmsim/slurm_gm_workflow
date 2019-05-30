@@ -16,7 +16,6 @@ CREATE TABLE IF NOT EXISTS `state` (
 	`proc_type`	INTEGER NOT NULL,
 	`status`	INTEGER,
 	`job_id`	INTEGER UNIQUE,
-	`retries`	INTEGER,
 	`last_modified`	INTEGER
 );
 CREATE TABLE IF NOT EXISTS `error` (
@@ -61,7 +60,7 @@ CREATE TABLE IF NOT EXISTS `job_time_log`(
 	FOREIGN KEY(`job_id`) REFERENCES state(job_id)
 );
 CREATE VIEW IF NOT EXISTS state_view AS
-SELECT state.id, state.run_name, proc_type_enum.proc_type, status_enum.state, state.retries, state.job_id, state.last_modified
+SELECT state.id, state.run_name, proc_type_enum.proc_type, status_enum.state, state.job_id, state.last_modified
 FROM state, status_enum, proc_type_enum
 WHERE state.proc_type = proc_type_enum.id AND state.status = status_enum.id;
 COMMIT;
