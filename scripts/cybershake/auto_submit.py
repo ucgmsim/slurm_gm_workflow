@@ -616,7 +616,7 @@ if __name__ == "__main__":
             args.tasks_to_run
         )
     )
-    task_types_to_run = [const.ProcessType.get_by_name(proc) for proc in args.tasks_to_run]
+    task_types_to_run = [const.ProcessType.get_by_name(proc) for proc in args.task_types_to_run]
     for task in task_types_to_run:
         logger.debug(
             "Process {} in processes to be run, adding dependencies now.".format(
