@@ -166,8 +166,8 @@ def run_automated_workflow(
     while bulk_auto_submit_thread.is_alive():
         wrapper_logger.info("Checking all patterns for tasks to be run")
         for pattern, tasks, pattern_logger in tasks_to_run_with_pattern_and_logger:
-            wrapper_logger.debug(
-                "Loaded pattern {}. Checking for tasks to be run".format(pattern)
+            wrapper_logger.info(
+                "Loaded pattern {}. Checking for tasks to be run of types: {}".format(pattern, tasks)
             )
             run_main_submit_loop(
                 root_folder,
