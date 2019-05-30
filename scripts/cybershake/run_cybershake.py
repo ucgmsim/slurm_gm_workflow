@@ -162,8 +162,8 @@ def run_automated_workflow(
         thread_not_running = "The main auto_submit thread has failed to start"
         wrapper_logger.log(NOPRINTCRITICAL, thread_not_running)
         raise RuntimeError(thread_not_running)
-
-    while bulk_auto_submit_thread.is_alive():
+    run_sub_threads = len(tasks_to_run_with_pattern_and_logger) > 0
+    while bulk_auto_submit_thread.is_alive() and run_sub_threads:
         wrapper_logger.info("Checking all patterns for tasks to be run")
         for pattern, tasks, pattern_logger in tasks_to_run_with_pattern_and_logger:
             wrapper_logger.info(
@@ -185,6 +185,7 @@ def run_automated_workflow(
                 master_thread=False,
                 cycle_timeout=1,
             )
+    bulk_auto_submit_thread.join()
     wrapper_logger.info(
         "The main auto_submit thread has terminated, and all auto_submit patterns have completed a final run through"
     )
