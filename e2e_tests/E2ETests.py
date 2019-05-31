@@ -394,7 +394,8 @@ class E2ETests(object):
                 else:
                     time.sleep(sleep_time)
 
-            if time.time() - start_time > self.timeout:
+            if time.time() - start_time >= self.timeout:
+                print("The auto-submit timeout expired.")
                 self.errors.append(
                     Error("Auto-submit timeout", "The auto-submit timeout expired.")
                 )
