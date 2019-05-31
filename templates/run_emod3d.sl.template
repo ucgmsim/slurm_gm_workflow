@@ -38,6 +38,6 @@ else
     #reformat $res to remove '\n'
     res=`echo $res | tr -d '\n'`
     python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py {{mgmt_db_location}}/mgmt_db_queue {{srf_name}} EMOD3D failed --error "$res"
+    mkdir "$nobackup/tmp/EMOD3D_{{srf_name}}_$start_time"
+    mv {{sim_dir}}/LF/* "$nobackup/tmp/EMOD3D_{{srf_name}}_$start_time"
 fi
-
-
