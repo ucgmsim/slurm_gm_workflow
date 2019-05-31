@@ -97,8 +97,11 @@ class MgmtDB:
         allowed_tasks = [str(task.value) for task in allowed_tasks]
         with connect_db_ctx(self._db_file) as cur:
             result = cur.execute(
-                "SELECT run_name, proc_type, status, job_id "
-                "FROM state WHERE status IN (2, 3) AND proc_type IN (?{})".format(",?"*(len(allowed_tasks)-1)),
+                "SELECT run_name, proc_type, state.status, job_id "
+                "FROM state, status_enum "
+                "WHERE state.status = status_enum.id "
+                "AND status_enum.state IN ('queued', 'running') "
+                "AND proc_type IN (?{})".format(",?"*(len(allowed_tasks)-1)),
                 allowed_tasks
             ).fetchall()
 
@@ -128,11 +131,12 @@ class MgmtDB:
                 (*allowed_tasks, allowed_rels),
             ).fetchall()
 
-        runnable_tasks = [
+        return [
             (*task, self.get_retries(*task))
             for task in db_tasks
-            if self._check_dependancy_met(task, logger)]
-        return runnable_tasks
+            if self._check_dependancy_met(task, logger)
+        ]
+
 
     def is_task_complete(self, task):
         process, run_name, status = task
@@ -149,7 +153,7 @@ class MgmtDB:
 
     def _check_dependancy_met(self, task, logger=workflow_logger.get_basic_logger()):
         """Checks if all dependencies for the specified are met"""
-        process, run_name = task
+        process, run_name, retries = task
         process = Process(process)
 
         with connect_db_ctx(self._db_file) as cur:
@@ -231,18 +235,3 @@ class MgmtDB:
     def __del__(self):
         if self._conn is not None:
             self._conn.close()
-
-    def _get_job_id(self, entry):
-        if entry.status == const.Status.failed.str_value:
-            excluded_status = const.Status.failed.value
-        else:
-            excluded_status = const.Status.created.value
-        with connect_db_ctx(self._db_file) as cur:
-            return cur.execute(
-                """SELECT status 
-                          FROM state 
-                          WHERE run_name = (?)
-                           AND proc_type = (?)
-                           AND status != (?)""",
-                (entry.run_name, entry.proc_type, excluded_status),
-            ).fetchone()[0]
