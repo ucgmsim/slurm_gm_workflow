@@ -37,7 +37,7 @@ then
     echo ___calculating rrups___
 
     start_time=`date +${runtime_fmt}`
-    echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py $MGMT_DB_LOC rrup running --run_name $REL_NAME --j $SLURM_JOBID" >> ${MGMT_DB_LOC}/mgmt_db_queue/${timestamp}\_${SLURM_JOBID}
+    python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $REL_NAME rrup running
 
     time python ${IMPATH}/calculate_rrups.py -fd ${FD} -np ${SLURM_CPUS_PER_TASK} -o ${OUT_DIR}/rrup_${REL_NAME}.csv ${STATION_FILE} ${SRF_FILE}
 else
@@ -49,7 +49,7 @@ if [[ -f ${OUT_DIR}/rrup_${REL_NAME}.csv ]]
 then
     if [[ $(wc -l < ${OUT_DIR}/rrup_${REL_NAME}.csv) == $(( $(wc -l < ${FD}) + 1)) ]]
     then
-        echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py $MGMT_DB_LOC rrup completed --run_name $REL_NAME --force" >> ${MGMT_DB_LOC}/mgmt_db_queue/${timestamp}\_${SLURM_JOBID}
+        python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $REL_NAME rrup completed
     else
         res="Not enough rrups for the station file"
     fi
@@ -59,7 +59,7 @@ fi
 
 if [[ -n ${res} ]]
 then
-    echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py $MGMT_DB_LOC rrup failed --run_name $REL_NAME --error '$res' --force"  >> ${MGMT_DB_LOC}/mgmt_db_queue/${timestamp}\_${SLURM_JOBID}
+    python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $REL_NAME rrup failed
 fi
 
 date
