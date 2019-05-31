@@ -5,9 +5,9 @@
 
 #SBATCH --job-name=calc_rrups_single
 #SBATCH --account=nesi00213
-#SBATCH --partition=nesi_research
+#SBATCH --partition=large
 #SBATCH --time=01:00:00
-#SBATCH --cpus-per-task=40
+#SBATCH --cpus-per-task=12
 
 function getFromYaml {
     echo $(python -c "from qcore.utils import load_sim_params; print(load_sim_params('$1').$2)")
@@ -39,7 +39,7 @@ then
     start_time=`date +${runtime_fmt}`
     echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py $MGMT_DB_LOC rrup running --run_name $REL_NAME --j $SLURM_JOBID" >> ${MGMT_DB_LOC}/mgmt_db_queue/${timestamp}\_${SLURM_JOBID}
 
-    time python ${IMPATH}/calculate_rrups.py -fd ${FD} -np ${SLURM_CPUS_PER_TASK} -o ${OUT_DIR}/rrup_${REL_NAME}.csv ${STATION_FILE} ${SRF_FILE}
+    time python ${IMPATH}/calculate_rrups.py -fd ${FD} -o ${OUT_DIR}/rrup_${REL_NAME}.csv ${STATION_FILE} ${SRF_FILE}
 else
     echo "rrup file already present: ${OUT_DIR}/rrup_${REL_NAME}.csv"
     echo "Checking that there are enough rrups in it"
