@@ -326,7 +326,7 @@ def submit_task(
             output_file=os.path.join(sim_dir, "clean_up.out"),
             error_file=os.path.join(sim_dir, "clean_up.err"),
         )
-        submit_sl_script(script, target_machine=JOB_RUN_MACHINE[proc_type])
+        submit_sl_script(script, target_machine=JOB_RUN_MACHINE[const.ProcessType.clean_up].value)
     elif proc_type == const.ProcessType.LF2BB.value:
         submit_sl_script(
             "--output {} --error {} {} {} {}".format(
@@ -336,7 +336,7 @@ def submit_task(
                 sim_dir,
                 root_folder,
             ),
-            target_machine=JOB_RUN_MACHINE[proc_type],
+            target_machine=JOB_RUN_MACHINE[const.ProcessType.LF2BB].value,
         )
     elif proc_type == const.ProcessType.HF2BB.value:
         submit_sl_script(
@@ -347,7 +347,7 @@ def submit_task(
                 sim_dir,
                 root_folder,
             ),
-            target_machine=JOB_RUN_MACHINE[proc_type],
+            target_machine=JOB_RUN_MACHINE[const.ProcessType.HF2BB].value,
         )
     workflow_logger.clean_up_logger(task_logger)
 
