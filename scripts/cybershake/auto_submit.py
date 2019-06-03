@@ -36,7 +36,7 @@ JOB_RUN_MACHINE = {
     const.ProcessType.BB: const.HPC.maui,
     const.ProcessType.IM_calculation: const.HPC.maui,
     const.ProcessType.IM_plot: const.HPC.mahuika,
-    const.ProcessType.rrup: const.HPC.mahuika,
+    const.ProcessType.rrup: const.HPC.maui,
     const.ProcessType.Empirical: const.HPC.mahuika,
     const.ProcessType.Verification: const.HPC.mahuika,
     const.ProcessType.clean_up: const.HPC.mahuika,
@@ -303,7 +303,7 @@ def submit_task(
                 sim_dir,
                 root_folder,
             ),
-            target_machine=JOB_RUN_MACHINE[proc_type],
+            target_machine=JOB_RUN_MACHINE[const.ProcessType.rrup].value,
         )
     elif proc_type == const.ProcessType.Empirical.value:
         cmd = "$gmsim/workflow/scripts/submit_empirical.py -np 40 -i {} {}".format(
