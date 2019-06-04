@@ -298,8 +298,8 @@ def submit_task(
     elif proc_type == const.ProcessType.rrup.value:
         submit_sl_script(
             "--output {} --error {} {} {} {}".format(
-                os.path.join(sim_dir, "rrups.out"),
-                os.path.join(sim_dir, "rrups.err"),
+                os.path.join(sim_dir, "%x_%j.out"),
+                os.path.join(sim_dir, "%x_%j.err"),
                 os.path.expandvars("$gmsim/workflow/scripts/calc_rrups_single.sl"),
                 sim_dir,
                 root_folder,
@@ -324,15 +324,15 @@ def submit_task(
             srf_name=run_name,
             mgmt_db_loc=root_folder,
             script_location=os.path.expandvars("$gmsim/workflow/scripts/clean_up.sl"),
-            output_file=os.path.join(sim_dir, "clean_up.out"),
-            error_file=os.path.join(sim_dir, "clean_up.err"),
+            output_file=os.path.join(sim_dir, "%x_%j.out"),
+            error_file=os.path.join(sim_dir, "%x_%j.err"),
         )
         submit_sl_script(script, target_machine=JOB_RUN_MACHINE[const.ProcessType.clean_up].value)
     elif proc_type == const.ProcessType.LF2BB.value:
         submit_sl_script(
             "--output {} --error {} {} {} {} {}".format(
-                os.path.join(sim_dir, "lf2bb.out"),
-                os.path.join(sim_dir, "lf2bb.err"),
+                os.path.join(sim_dir, "%x_%j.out"),
+                os.path.join(sim_dir, "%x_%j.err"),
                 os.path.expandvars("$gmsim/workflow/scripts/lf2bb.sl"),
                 sim_dir,
                 root_folder,
@@ -343,8 +343,8 @@ def submit_task(
     elif proc_type == const.ProcessType.HF2BB.value:
         submit_sl_script(
             "--output {} --error {} {} {} {}".format(
-                os.path.join(sim_dir, "hf2bb.out"),
-                os.path.join(sim_dir, "hf2bb.err"),
+                os.path.join(sim_dir, "%x_%j.out"),
+                os.path.join(sim_dir, "%x_%j.err"),
                 os.path.expandvars("$gmsim/workflow/scripts/hf2bb.sl"),
                 sim_dir,
                 root_folder,
