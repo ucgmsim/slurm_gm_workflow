@@ -179,8 +179,8 @@ class MgmtDB:
             if value is not None:
                 cur.execute(
                     "UPDATE state SET {} = ?, last_modified = strftime('%s','now') "
-                    "WHERE run_name = ? AND proc_type = ? and status != ?".format(field),
-                    (value, entry.run_name, entry.proc_type, const.Status.failed.value),
+                    "WHERE run_name = ? AND proc_type = ? and status < ?".format(field),
+                    (value, entry.run_name, entry.proc_type, entry.status),
                 )
         if entry.error is not None:
             cur.execute(

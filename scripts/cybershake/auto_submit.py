@@ -150,7 +150,7 @@ def update_tasks(
                 db_task.run_name,
                 db_task.proc_type,
                 const.Status.failed.value,
-                error="Disappeared from squeue. Reset to created.",
+                error="Disappeared from squeue. Creating a new task.",
             )
 
 
