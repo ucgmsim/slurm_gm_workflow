@@ -36,7 +36,7 @@ JOB_RUN_MACHINE = {
     const.ProcessType.BB: const.HPC.maui,
     const.ProcessType.IM_calculation: const.HPC.maui,
     const.ProcessType.IM_plot: const.HPC.mahuika,
-    const.ProcessType.rrup: const.HPC.mahuika,
+    const.ProcessType.rrup: const.HPC.maui,
     const.ProcessType.Empirical: const.HPC.mahuika,
     const.ProcessType.Verification: const.HPC.mahuika,
     const.ProcessType.clean_up: const.HPC.mahuika,
@@ -296,11 +296,16 @@ def submit_task(
             logger=task_logger,
         )
     elif proc_type == const.ProcessType.rrup.value:
-        cmd = "sbatch $gmsim/workflow/scripts/calc_rrups_single.sl {} {}".format(
-            sim_dir, root_folder
+        submit_sl_script(
+            "--output {} --error {} {} {} {}".format(
+                os.path.join(sim_dir, "rrups.out"),
+                os.path.join(sim_dir, "rrups.err"),
+                os.path.expandvars("$gmsim/workflow/scripts/calc_rrups_single.sl"),
+                sim_dir,
+                root_folder,
+            ),
+            target_machine=JOB_RUN_MACHINE[const.ProcessType.rrup].value,
         )
-        task_logger.debug(cmd)
-        call(cmd, shell=True)
     elif proc_type == const.ProcessType.Empirical.value:
         cmd = "$gmsim/workflow/scripts/submit_empirical.py -np 40 -i {} {}".format(
             run_name, root_folder
@@ -322,7 +327,7 @@ def submit_task(
             output_file=os.path.join(sim_dir, "clean_up.out"),
             error_file=os.path.join(sim_dir, "clean_up.err"),
         )
-        submit_sl_script(script, target_machine=const.HPC.mahuika.value)
+        submit_sl_script(script, target_machine=JOB_RUN_MACHINE[const.ProcessType.clean_up].value)
     elif proc_type == const.ProcessType.LF2BB.value:
         submit_sl_script(
             "--output {} --error {} {} {} {} {}".format(
@@ -333,7 +338,7 @@ def submit_task(
                 root_folder,
                 utils.load_sim_params(os.path.join(sim_dir, "sim_params.yaml")).stat_vs_est,
             ),
-            target_machine=const.HPC.mahuika.value,
+            target_machine=JOB_RUN_MACHINE[const.ProcessType.LF2BB].value,
         )
     elif proc_type == const.ProcessType.HF2BB.value:
         submit_sl_script(
@@ -344,7 +349,7 @@ def submit_task(
                 sim_dir,
                 root_folder,
             ),
-            target_machine=const.HPC.mahuika.value,
+            target_machine=JOB_RUN_MACHINE[const.ProcessType.HF2BB].value,
         )
     workflow_logger.clean_up_logger(task_logger)
 
