@@ -270,7 +270,7 @@ class DataCollector:
         except ValueError:
             print("Failed to convert total core hours to integer.")
         except TypeError:
-            print("No chours usage data available")
+            print("No core hours usage data available")
 
     def _parse_quota(self, lines: Iterable[str]):
         """
