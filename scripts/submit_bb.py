@@ -56,15 +56,15 @@ def main(args: argparse.Namespace, est_model: est.EstModel = None, logger: Logge
             est_model,
         )
         
-        # creates and extra variable so we keep the orignial estimated run time for other purpos
+        # creates and extra variable so we keep the original estimated run time for other purpos
         est_run_time_scaled = est_run_time 
-        if hasattr(args,'retries'):
+        if hasattr(args, 'retries') and int(args.retries) > 0:
             # check if BB.bin is read-able = restart-able
             try:
                 from qcore.timeseries import BBSeis
-                bin = BBSeis(sim_struct.get_hf_bin_path(params.sim_dir))
+                bin = BBSeis(sim_struct.get_bb_bin_path(params.sim_dir))
             except:
-                logger.debug("Retried count > 0 but BB.bin is not readable") 
+                logger.debug("Retried count > 0 but BB.bin is not readable")
             else:
                  est_run_time_scaled = est_run_time * (int(args.retries) +1)
         
