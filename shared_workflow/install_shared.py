@@ -53,8 +53,9 @@ def install_simulation(
     lf_sim_root_dir = simulation_structure.get_lf_dir(sim_dir)
     hf_dir = simulation_structure.get_hf_dir(sim_dir)
     bb_dir = simulation_structure.get_bb_dir(sim_dir)
+    im_calc_dir = simulation_structure.get_im_calc_dir(sim_dir)
 
-    dir_list = [sim_dir, lf_sim_root_dir, hf_dir, bb_dir]
+    dir_list = [sim_dir, lf_sim_root_dir, hf_dir, bb_dir, im_calc_dir]
     version = str(version)
     if not os.path.isdir(user_root):
         dir_list.insert(0, user_root)
