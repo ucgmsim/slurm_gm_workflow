@@ -80,9 +80,6 @@ class E2ETests(object):
     submit_out_file = "submit_out_log.txt"
     submit_err_file = "submit_err_log.txt"
 
-    queue_out_file = "queue_out_log.txt"
-    queue_err_file = "queue_err_log.txt"
-
     warnings_file = "warnings_log.txt"
     errors_file = "errors_log.txt"
 
@@ -313,20 +310,17 @@ class E2ETests(object):
         sleep_time: int
             Time (in seconds) between progress checks
         """
-        submit_cmd = "python3 {} {} {} --sleep_time 2 --tasks_to_run IM_calc".format(
+        submit_cmd = "python3 {} {} {} {} --sleep_time 2".format(
             os.path.join(
                 os.path.dirname(os.path.abspath(__file__)),
-                "../scripts/cybershake/auto_submit.py",
+                "../scripts/cybershake/run_cybershake.py",
             ),
             self.stage_dir,
             user,
-        )
-        queue_cmd = "python3 {} {}".format(
             os.path.join(
                 os.path.dirname(os.path.abspath(__file__)),
-                "../scripts/cybershake/queue_monitor.py",
+                self.config_dict['wrapper_config']
             ),
-            self.stage_dir,
         )
 
         # Different process types for which canceling/resume is tested
@@ -341,7 +335,7 @@ class E2ETests(object):
         # Have to put this in a massive try block, to ensure that
         # the run_queue_and_auto_submit process is terminated on any errors.
         try:
-            print("Starting auto submit...")
+            print("Starting cybershake wrapper...")
             p_submit = exe(
                 submit_cmd,
                 debug=False,
@@ -353,24 +347,10 @@ class E2ETests(object):
             p_submit_out_nbsr = NonBlockingStreamReader(p_submit.stdout)
             p_submit_err_nbsr = NonBlockingStreamReader(p_submit.stderr)
 
-            print("Starting mgmt queue monitor...")
-            p_queue = exe(
-                queue_cmd,
-                debug=False,
-                non_blocking=True,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-            )
-            self._processes.append(p_queue)
-            p_queue_out_nbsr = NonBlockingStreamReader(p_queue.stdout)
-            p_queue_err_nbsr = NonBlockingStreamReader(p_queue.stderr)
-
             # Create and open the log files
             out_submit_f = open(os.path.join(self.stage_dir, self.submit_out_file), "w")
             err_submit_f = open(os.path.join(self.stage_dir, self.submit_err_file), "w")
-            out_queue_f = open(os.path.join(self.stage_dir, self.queue_out_file), "w")
-            err_queue_f = open(os.path.join(self.stage_dir, self.queue_err_file), "w")
-            self._files.extend((out_submit_f, err_submit_f, out_queue_f, err_queue_f))
+            self._files.extend((out_submit_f, err_submit_f))
 
             # Monitor mgmt db
             print("Progress: ")
@@ -400,8 +380,6 @@ class E2ETests(object):
                 for file, reader in [
                     (out_submit_f, p_submit_out_nbsr),
                     (err_submit_f, p_submit_err_nbsr),
-                    (out_queue_f, p_queue_out_nbsr),
-                    (err_queue_f, p_queue_err_nbsr),
                 ]:
                     lines = reader.readlines()
                     if lines:
@@ -416,7 +394,8 @@ class E2ETests(object):
                 else:
                     time.sleep(sleep_time)
 
-            if time.time() - start_time > self.timeout:
+            if time.time() - start_time >= self.timeout:
+                print("The auto-submit timeout expired.")
                 self.errors.append(
                     Error("Auto-submit timeout", "The auto-submit timeout expired.")
                 )

@@ -7,6 +7,7 @@ from collections import namedtuple
 
 import qcore.constants as const
 from scripts.management.db_helper import connect_db_ctx
+from shared_workflow import workflow_logger
 
 Process = const.ProcessType
 
@@ -72,17 +73,22 @@ class MgmtDB:
         if self._conn is not None:
             self._conn.close()
 
-    def get_submitted_tasks(self):
+    def get_submitted_tasks(self, allowed_tasks=tuple(const.ProcessType)):
         """Gets all in progress tasks_to_run i.e. (running or queued)"""
+        allowed_tasks = [str(task.value) for task in allowed_tasks]
         with connect_db_ctx(self._db_file) as cur:
             result = cur.execute(
-                "SELECT run_name, proc_type, status, job_id, retries "
-                "FROM state WHERE status IN (2, 3)"
+                "SELECT run_name, proc_type, state.status, job_id, retries "
+                "FROM state, status_enum "
+                "WHERE state.status = status_enum.id "
+                "AND status_enum.state IN ('queued', 'running') "
+                "AND proc_type IN (?{})".format(",?"*(len(allowed_tasks)-1)),
+                allowed_tasks
             ).fetchall()
 
         return [SlurmTask(*entry) for entry in result]
 
-    def get_runnable_tasks(self, retry_max, allowed_rels, allowed_tasks=None):
+    def get_runnable_tasks(self, retry_max, allowed_rels, allowed_tasks=None, logger=workflow_logger.get_basic_logger()):
         """Gets all runnable tasks_to_run based on their status and their associated
         dependencies (i.e. other tasks_to_run have to be finished first)
 
@@ -111,9 +117,7 @@ class MgmtDB:
         tasks_to_run = []
         for task in db_tasks:
             status = task[2]
-            if status == const.Status.created.str_value and self._check_dependancy_met(
-                task, db_tasks
-            ):
+            if status == const.Status.created.str_value and self._check_dependancy_met(task, logger):
                 tasks_to_run.append(task)
 
             # Retry failed tasks_to_run
@@ -142,17 +146,24 @@ class MgmtDB:
     def is_task_complete(task, task_list):
         return task in task_list
 
-    def _check_dependancy_met(self, task, task_list):
+    def _check_dependancy_met(self, task, logger=workflow_logger.get_basic_logger()):
         """Checks if all dependencies for the specified are met"""
         process, run_name, status, *_ = task
         process = Process(process)
 
-        return len(
-            process.get_remaining_dependencies([
-                proc for proc, name, state, *_ in task_list
-                if name == run_name and state == "completed"
-            ])
-        ) == 0
+        with connect_db_ctx(self._db_file) as cur:
+            completed_tasks = cur.execute(
+                """SELECT proc_type 
+                          FROM status_enum, state 
+                          WHERE state.status = status_enum.id
+                           AND run_name = (?)
+                           AND status_enum.state = 'completed'""",
+                (run_name, ),
+            ).fetchall()
+        logger.debug("Considering task {} for realisation {} with status {}. Completed tasks as follows: {}".format(process, run_name, status, completed_tasks))
+        remaining_deps = process.get_remaining_dependencies([const.ProcessType(x[0]) for x in completed_tasks])
+        logger.debug("{} has remaining deps: {}".format(task, remaining_deps))
+        return len(remaining_deps) == 0
 
     def _update_entry(self, cur: sql.Cursor, entry: SlurmTask):
         """Updates all fields that have a value for the specific entry"""
