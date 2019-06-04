@@ -524,7 +524,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--n_runs",
         default=None,
-        type=list,
+        type=int,
         nargs="+",
         help="The number of processes each machine can run at once. If a single value is given this is used for all "
         "machines, otherwise one value per machine must be given. The current order is: {}".format(
@@ -587,7 +587,7 @@ if __name__ == "__main__":
         if len(args.n_runs) == 1:
             n_runs = {hpc: args.n_runs[0] for hpc in const.HPC}
             logger.debug(
-                "Using {} as the maximum number of jobs per machine".format(n_runs[0])
+                "Using {} as the maximum number of jobs per machine".format(args.n_runs[0])
             )
         elif len(args.n_runs) == len(const.HPC):
             n_runs = {}
