@@ -132,7 +132,8 @@ class DataCollector:
                 PROJECT_ID, start_time, end_time
             ),
         )
-        rt_daily_ch = self.parse_chours_usage(rt_daily_ch_output)
+        if rt_daily_ch_output:
+            rt_daily_ch_output = self.parse_chours_usage(rt_daily_ch_output)
 
         rt_total_ch_output = self.run_cmd(
             hpc.value,
@@ -140,12 +141,11 @@ class DataCollector:
                 PROJECT_ID, self.total_start_time, end_time
             ),
         )
-        rt_total_ch = self.parse_chours_usage(rt_total_ch_output)
-
         if rt_total_ch_output:
-            self.dashboard_db.update_chours_usage(rt_daily_ch, rt_total_ch, hpc)
-        # Squeue, formatted to show full account name
+            rt_total_ch_output = self.parse_chours_usage(rt_total_ch_output)
+            self.dashboard_db.update_chours_usage(rt_daily_ch_output, rt_total_ch_output, hpc)
 
+        # Squeue, formatted to show full account name
         sq_output = self.run_cmd(
             hpc.value, "squeue --format=%18i%25u%12a%60j%20T%25r%20S%18M%18L%10D%10C"
         )
@@ -194,7 +194,7 @@ class DataCollector:
                 hpc, self.parse_user_chours_usage(user_ch_output, users)
             )
 
-    def run_cmd(self, hpc: str, cmd: str, timeout: int = 120):
+    def run_cmd(self, hpc: str, cmd: str, timeout: int = 180):
         """Runs the specified command remotely on the specified hpc using the
         specified user id.
         Returns False if the command fails for some reason.
@@ -269,9 +269,7 @@ class DataCollector:
             return 0
         except ValueError:
             print("Failed to convert total core hours to integer.")
-        except TypeError:
-            print("No core hours usage data available")
-
+       
     def _parse_quota(self, lines: Iterable[str]):
         """
         Gets quota usage from cmd and return as a list of QuotaEntry objects
