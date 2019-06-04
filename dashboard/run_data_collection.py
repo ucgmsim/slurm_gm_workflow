@@ -131,7 +131,6 @@ class DataCollector:
             "sreport -n -t Hours cluster AccountUtilizationByUser Accounts={} start={} end={}".format(
                 PROJECT_ID, start_time, end_time
             ),
-            timeout=60,
         )
         rt_daily_ch = self.parse_chours_usage(rt_daily_ch_output)
 
@@ -140,7 +139,6 @@ class DataCollector:
             "sreport -n -t Hours cluster AccountUtilizationByUser Accounts={} start={} end={}".format(
                 PROJECT_ID, self.total_start_time, end_time
             ),
-            timeout=60,
         )
         rt_total_ch = self.parse_chours_usage(rt_total_ch_output)
 
@@ -196,7 +194,7 @@ class DataCollector:
                 hpc, self.parse_user_chours_usage(user_ch_output, users)
             )
 
-    def run_cmd(self, hpc: str, cmd: str, timeout: int = 60):
+    def run_cmd(self, hpc: str, cmd: str, timeout: int = 120):
         """Runs the specified command remotely on the specified hpc using the
         specified user id.
         Returns False if the command fails for some reason.
@@ -271,6 +269,8 @@ class DataCollector:
             return 0
         except ValueError:
             print("Failed to convert total core hours to integer.")
+        except TypeError:
+            print("No chours usage data available")
 
     def _parse_quota(self, lines: Iterable[str]):
         """
