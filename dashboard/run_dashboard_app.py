@@ -492,14 +492,14 @@ def get_maui_daily_quota_string(file_system):
 
 
 def check_update_time(last_update_time_string: str, current_update_time: datetime):
-    """Checks whether the time gap between update times exceeds the idling time limit(300s)
+    """Checks whether the time gap between update times exceeds the idling time limit(1500s)
     if exceeds, regards as a collection error.
     """
     # 2019-03-28 18:31:11.906576
     return (
         current_update_time
         - datetime.strptime(last_update_time_string, "%Y-%m-%d %H:%M:%S.%f")
-    ) < timedelta(seconds=300)
+    ) < timedelta(seconds=1500)
 
 
 def validate_period(start_string, end_string):
