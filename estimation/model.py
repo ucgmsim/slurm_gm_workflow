@@ -329,6 +329,7 @@ class NNWcEstModel(WCEstModel):
             raise Exception("This model has already been trained!")
 
         self._model = keras.models.load_model(model_file)
+        self._model._make_predict_function()
         self.is_trained = True
 
         with h5py.File(model_file, "r") as f:

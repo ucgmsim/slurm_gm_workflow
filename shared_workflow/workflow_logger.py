@@ -3,7 +3,7 @@ import sys
 
 from qcore.constants import ProcessType
 
-VERYVERBOSE = logging.DEBUG//2
+VERYVERBOSE = logging.DEBUG // 2
 
 logging.addLevelName(VERYVERBOSE, "VERY_VERBOSE")
 
@@ -19,40 +19,56 @@ logging.addLevelName(NOPRINTWARNING, "NO_PRINT_WARNING")
 logging.addLevelName(NOPRINTINFO, "NO_PRINT_INFO")
 logging.addLevelName(NOPRINTDEBUG, "NO_PRINT_DEBUG")
 
+THREADED = "THREADED"
 DEFAULT_LOGGER_NAME = "auto_submit"
 
-STDOUT_MESSAGE_FORMAT = (
-    "%(asctime)s - %(message)s"
-)
+STDOUT_MESSAGE_FORMAT = "%(asctime)s - %(message)s"
 stdout_formatter = logging.Formatter(STDOUT_MESSAGE_FORMAT)
+
+STDOUT_THREADED_MESSAGE_FORMAT = "%(asctime)s - %(threadName)s - %(message)s"
+stdout_threaded_formatter = logging.Formatter(STDOUT_THREADED_MESSAGE_FORMAT)
 
 GENERAL_LOGGING_MESSAGE_FORMAT = (
     "%(levelname)8s -- %(asctime)s - %(module)s.%(funcName)s - %(message)s"
 )
 general_formatter = logging.Formatter(GENERAL_LOGGING_MESSAGE_FORMAT)
 
+GENERAL_THREADED_LOGGING_MESSAGE_FORMAT = (
+    "%(levelname)8s -- %(asctime)s - %(threadName)s - %(module)s.%(funcName)s - %(message)s"
+)
+general_threaded_formatter = logging.Formatter(GENERAL_LOGGING_MESSAGE_FORMAT)
+
 REALISATION_LOGGING_MESSAGE_FORMAT = (
     "%(levelname)8s -- %(asctime)s - %(module)s.%(funcName)s - {} - %(message)s"
 )
+REALISATION_THREADED_LOGGING_MESSAGE_FORMAT = "%(levelname)8s -- %(asctime)s - %(threadName)s - %(module)s.%(funcName)s - {} - %(message)s"
 
 TASK_LOGGING_MESSAGE_FORMAT = (
     "%(levelname)8s -- %(asctime)s - %(module)s.%(funcName)s - {}.{} - %(message)s"
 )
+TASK_THREADED_LOGGING_MESSAGE_FORMAT = "%(levelname)8s -- %(asctime)s - %(threadName)s - %(module)s.%(funcName)s - {}.{} - %(message)s"
 
 
-def get_logger(name: str = DEFAULT_LOGGER_NAME):
+def get_logger(name: str = DEFAULT_LOGGER_NAME, threaded=False) -> logging.Logger:
     """
     Creates a logger and an associated handler to print messages over level INFO to stdout.
     The handler is configured such that messages will not be printed if their underlying level value ends in 1, this is
     mostly used for logging fatal exceptions that will be printed to stdout/stderr anyway
+    :param name: Name of the logger. If a logger with that name already exists it will be returned
+    :param threaded: If the logger is operating in a thread then record the name of the thread
     :return: The logger object
     """
+    if threaded:
+        name = "{}_{}".format(THREADED, name)
     logger = logging.getLogger(name)
     logger.setLevel(logging.DEBUG)
 
     print_handler = logging.StreamHandler(sys.stdout)
     print_handler.setLevel(logging.INFO)
-    print_handler.setFormatter(stdout_formatter)
+    if threaded:
+        print_handler.setFormatter(stdout_threaded_formatter)
+    else:
+        print_handler.setFormatter(stdout_formatter)
 
     # If the message level ends in 1 do not print it to stdout
     print_handler.addFilter(lambda record: (record.levelno % 10) != 1)
@@ -62,31 +78,45 @@ def get_logger(name: str = DEFAULT_LOGGER_NAME):
     return logger
 
 
-def add_general_file_handler(logger: logging.Logger, file_path: str):
+def add_general_file_handler(
+    logger: logging.Logger, file_path: str
+):
     """
     Adds a file handler to the logger using the given file_path
     :param logger: The logger object
     :param file_path: The path to the file to be used. Will be appended to if it already exists
+    :param threaded: If the logger is operating in a thread then record the name of the thread
     """
     file_out_handler = logging.FileHandler(file_path)
-    file_out_handler.setFormatter(general_formatter)
+    if logger.name.startswith(THREADED):
+        file_out_handler.setFormatter(general_threaded_formatter)
+    else:
+        file_out_handler.setFormatter(general_formatter)
 
     logger.addHandler(file_out_handler)
 
 
-def get_realisation_logger(old_logger: logging.Logger, realisation: str):
+def get_realisation_logger(
+    old_logger: logging.Logger, realisation: str
+) -> logging.Logger:
     """Creates a new logger that logs the realisation.
     The logger passed in is effectively duplicated and log messages are saved to the same file as the original logger.
     :param old_logger: Logger the new instance is to be based on
     :param realisation: The name of the realisation this logger is for
+    :param threaded: If the logger is operating in a thread then record the name of the thread
     :return: The new logger object
     """
     new_logger = logging.getLogger(realisation)
     new_logger.setLevel(logging.DEBUG)
 
-    task_formatter = logging.Formatter(
-        REALISATION_LOGGING_MESSAGE_FORMAT.format(realisation)
-    )
+    if old_logger.name.startswith(THREADED):
+        task_formatter = logging.Formatter(
+            REALISATION_THREADED_LOGGING_MESSAGE_FORMAT.format(realisation)
+        )
+    else:
+        task_formatter = logging.Formatter(
+            REALISATION_LOGGING_MESSAGE_FORMAT.format(realisation)
+        )
 
     old_handlers = old_logger.handlers
     log_files = []
@@ -102,7 +132,10 @@ def get_realisation_logger(old_logger: logging.Logger, realisation: str):
 
     task_print_handler = logging.StreamHandler(sys.stdout)
     task_print_handler.setLevel(logging.INFO)
-    task_print_handler.setFormatter(stdout_formatter)
+    if old_logger.name.startswith(THREADED):
+        task_print_handler.setFormatter(stdout_threaded_formatter)
+    else:
+        task_print_handler.setFormatter(stdout_formatter)
 
     # If the message level ends in 1 do not print it to stdout
     task_print_handler.addFilter(lambda record: (record.levelno % 10) != 1)
@@ -112,12 +145,17 @@ def get_realisation_logger(old_logger: logging.Logger, realisation: str):
     return new_logger
 
 
-def get_task_logger(old_logger: logging.Logger, realisation: str, process_type: int):
+def get_task_logger(
+    old_logger: logging.Logger,
+    realisation: str,
+    process_type: int,
+) -> logging.Logger:
     """Creates a new logger that logs the realisation and process type.
     The logger passed in is effectively duplicated and log messages are saved to the same file as the original logger.
     :param old_logger: Logger the new instance is to be based on
     :param realisation: The name of the realisation this logger is for
     :param process_type: The type of process these logs are generated from
+    :param threaded: If the logger is operating in a thread then record the name of the thread
     :return: The new logger object
     """
 
@@ -126,9 +164,14 @@ def get_task_logger(old_logger: logging.Logger, realisation: str, process_type: 
     new_logger = logging.getLogger("{}.{}".format(realisation, process_name))
     new_logger.setLevel(logging.DEBUG)
 
-    task_formatter = logging.Formatter(
-        TASK_LOGGING_MESSAGE_FORMAT.format(realisation, process_name)
-    )
+    if old_logger.name.startswith(THREADED):
+        task_formatter = logging.Formatter(
+            TASK_THREADED_LOGGING_MESSAGE_FORMAT.format(realisation, process_name)
+        )
+    else:
+        task_formatter = logging.Formatter(
+            TASK_LOGGING_MESSAGE_FORMAT.format(realisation, process_name)
+        )
 
     old_handlers = old_logger.handlers
     log_files = []
@@ -144,7 +187,10 @@ def get_task_logger(old_logger: logging.Logger, realisation: str, process_type: 
 
     task_print_handler = logging.StreamHandler(sys.stdout)
     task_print_handler.setLevel(logging.INFO)
-    task_print_handler.setFormatter(stdout_formatter)
+    if old_logger.name.startswith(THREADED):
+        task_print_handler.setFormatter(stdout_threaded_formatter)
+    else:
+        task_print_handler.setFormatter(stdout_formatter)
 
     # If the message level ends in 1 do not print it to stdout
     task_print_handler.addFilter(lambda record: (record.levelno % 10) != 1)
