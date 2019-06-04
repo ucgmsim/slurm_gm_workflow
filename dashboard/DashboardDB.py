@@ -102,7 +102,7 @@ class DashboardDB:
     ):
         """Updates daily and total core hours usage"""
         # daily usage will be None if total is None
-        if total_ch_usage is None:
+        if daily_ch_usage is None or total_ch_usage is None:
             return
 
         table = self.get_daily_t_name(hpc)

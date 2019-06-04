@@ -269,7 +269,7 @@ class DataCollector:
             return 0
         except ValueError:
             print("Failed to convert total core hours to integer.")
-       
+
     def _parse_quota(self, lines: Iterable[str]):
         """
         Gets quota usage from cmd and return as a list of QuotaEntry objects
@@ -366,7 +366,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--update_interval",
         help="Interval between data collection (seconds)",
-        default=30,
+        default=300,
     )
     parser.add_argument(
         "--hpc",
