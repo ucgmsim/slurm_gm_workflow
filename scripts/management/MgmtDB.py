@@ -60,7 +60,8 @@ class MgmtDB:
                 process = entry.proc_type
                 realisation_name = entry.run_name
 
-                logger.debug("The status of process {} for realisation {} is being set to {}. It has slurm id {}".format(entry.proc_type, entry.run_name, entry.status, entry.job_id))
+                logger.debug("The status of process {} for realisation {} is being set to {}. It has slurm id {}".
+                             format(entry.proc_type, entry.run_name, entry.status, entry.job_id))
 
                 if entry.status == const.Status.created.value:
                     # Something has attempted to set a task to created
@@ -176,8 +177,8 @@ class MgmtDB:
     def _update_entry(self, cur: sql.Cursor, entry: SlurmTask):
         """Updates all fields that have a value for the specific entry"""
         for field, value in zip(
-            (self.col_status, self.col_job_id),
-            (entry.status, entry.job_id),
+            (self.col_job_id, self.col_status),
+            (entry.job_id, entry.status),
         ):
             if value is not None:
                 cur.execute(
