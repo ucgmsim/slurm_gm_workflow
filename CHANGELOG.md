@@ -5,7 +5,7 @@ Slurm Ground Motion Workflow
 ## [19.6.1] - 2019-06-05 -- Error task changes
 ### Added
     - A wrapper for auto_submit and queue_monitor is now available 
-    - LF and HF may now be converted to BB without the over, and IM calculations subsequently performed on them
+    - LF and HF may now be converted to BB without the other, and IM calculations subsequently performed on them
 ### Changed
     - When tasks fail they will have a new task made for them instead of having their retry counter incremented
 
