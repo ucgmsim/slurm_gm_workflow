@@ -35,4 +35,8 @@ else
     #reformat $res to remove '\n'
     res=`echo $res | tr -d '\n'`
     python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py {{mgmt_db_location}}/mgmt_db_queue {{srf_name}} HF failed --error "$res"
+    backup_directory="$nobackup/tmp/$USER/""$SLURM_JOB_ID""_{{srf_name}}_HF"
+    echo "Completion test failed, moving all files to $backup_directory"
+    mkdir -p $backup_directory
+    mv {{sim_dir}}/HF/* $backup_directory
 fi
