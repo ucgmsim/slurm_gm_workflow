@@ -40,7 +40,7 @@ def run_automated_workflow(
     realisations. Then while the all realisation thread is running go through each pattern and run all tasks that are
     available. When each instance of auto_submit doesn't submit anything or have anything running for an iteration it
     will automatically return, and the next pattern will have its tasks automatically submitted.
-    It is advised that each task list within tasks_to_run_with_pattern be disjoint from tasks_to_run as a race condition
+    It is advised that each task list within tasks_to_run_with_pattern be disjoint from task_types_to_run as a race condition
     may occur, and the task run twice at the same time, resulting in file writing issues.
     :param root_folder: The root directory of the cybershake folder structure
     :param log_directory: The directory the log files are to be placed in
@@ -118,7 +118,7 @@ def run_automated_workflow(
         name="queue monitor",
         daemon=True,
         target=queue_monitor.main,
-        args=(root_folder, sleep_time, queue_logger),
+        args=(root_folder, sleep_time, n_max_retries, queue_logger),
     )
     wrapper_logger.info("Created queue_monitor thread")
 
@@ -130,7 +130,6 @@ def run_automated_workflow(
             root_folder,
             user,
             n_runs,
-            n_max_retries,
             "%",
             tasks_to_run,
             sleep_time,
@@ -162,8 +161,8 @@ def run_automated_workflow(
         thread_not_running = "The main auto_submit thread has failed to start"
         wrapper_logger.log(NOPRINTCRITICAL, thread_not_running)
         raise RuntimeError(thread_not_running)
-
-    while bulk_auto_submit_thread.is_alive() and len(tasks_to_run_with_pattern_and_logger) > 0:
+    run_sub_threads = len(tasks_to_run_with_pattern_and_logger) > 0
+    while bulk_auto_submit_thread.is_alive() and run_sub_threads:
         wrapper_logger.info("Checking all patterns for tasks to be run")
         for pattern, tasks, pattern_logger in tasks_to_run_with_pattern_and_logger:
             wrapper_logger.info(
@@ -173,7 +172,6 @@ def run_automated_workflow(
                 root_folder,
                 user,
                 n_runs,
-                n_max_retries,
                 pattern,
                 tasks,
                 sleep_time,
