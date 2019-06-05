@@ -12,7 +12,7 @@ from logging import Logger
 
 import qcore.simulation_structure as sim_struct
 from qcore import utils, validate_vm, simulation_structure
-from qcore.constants import FaultParams, ROOT_DEFAULTS_FILE_NAME, VM_PARAMS_FILE_NAME
+from qcore.constants import FaultParams, ROOT_DEFAULTS_FILE_NAME, VM_PARAMS_FILE_NAME, HF_DEFAULT_SEED
 from scripts.management import create_mgmt_db
 from shared_workflow.install_shared import install_simulation, generate_fd_files, dump_all_yamls
 from shared_workflow.shared_defaults import recipe_dir
@@ -37,7 +37,7 @@ def main():
         "--n_rel", type=int, default=None, help="the number of realisations expected"
     )
     parser.add_argument(
-        "--seed", type=int, default=0, help="The seed to be used for HF simulations"
+        "--seed", type=int, default=HF_DEFAULT_SEED, help="The seed to be used for HF simulations"
     )
 
     args = parser.parse_args()
@@ -45,7 +45,7 @@ def main():
     install_fault(args.vm, args.n_rel, os.path.abspath(args.path_cybershake), args.version, args.seed)
 
 
-def install_fault(fault_name, n_rel, root_folder, version, stat_file_path, seed=0, extended_period=False, logger: Logger = get_basic_logger()):
+def install_fault(fault_name, n_rel, root_folder, version, stat_file_path, seed=HF_DEFAULT_SEED, extended_period=False, logger: Logger = get_basic_logger()):
 
     config_dict = utils.load_yaml(os.path.join(recipe_dir, "gmsim", version, ROOT_DEFAULTS_FILE_NAME))
     # Load variables from cybershake config

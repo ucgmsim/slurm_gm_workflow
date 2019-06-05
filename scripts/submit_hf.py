@@ -164,7 +164,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--seed",
         type=int,
-        default=0,
+        default=const.HF_DEFAULT_SEED,
         help="random seed number(0 for randomized seed)",
     )
     parser.add_argument(

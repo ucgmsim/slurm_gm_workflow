@@ -13,6 +13,7 @@ from qcore.constants import (
     RootParams,
     VMParams,
     ROOT_DEFAULTS_FILE_NAME,
+    HF_DEFAULT_SEED,
 )
 from shared_workflow import shared
 from shared_workflow.workflow_logger import get_basic_logger, VERYVERBOSE
@@ -45,7 +46,7 @@ def install_simulation(
     hf_stat_vs_ref=None,
     v1d_full_path=None,
     sim_params_file="",
-    seed=0,
+    seed=HF_DEFAULT_SEED,
     logger: Logger = get_basic_logger(),
     extended_period=False,
 ):
