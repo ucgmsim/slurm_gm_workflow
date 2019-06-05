@@ -5,7 +5,7 @@ import pytest
 import sqlite3 as sql
 
 from scripts.management.db_helper import connect_db_ctx
-from scripts.management import create_mgmt_db, update_mgmt_db
+from scripts.management import create_mgmt_db
 from scripts.management.MgmtDB import SlurmTask
 from qcore import utils
 from shared_workflow.workflow_logger import get_basic_logger
@@ -52,7 +52,7 @@ def test_create_mgmt_db(mgmt_db):
 
 def test_insert_task(mgmt_db):
     mgmt_db.insert(TEST_RUN_NAME, TEST_PROC[0])
-    assert len(get_rows(mgmt_db.db_file, "state", "proc_type", TEST_PROC[0])) == 1
+    assert len(get_rows(mgmt_db.db_file, "state", "proc_type", TEST_PROC[0])) == 2
 
 
 def test_update_live_db(mgmt_db):
@@ -65,71 +65,6 @@ def test_update_live_db(mgmt_db):
     assert value == TEST_STATUS[0]
 
     mgmt_db.close_conn()
-
-
-def test_update_db_error(mgmt_db):
-    with connect_db_ctx(mgmt_db.db_file) as cur:
-        update_mgmt_db.update_error(
-            cur, TEST_PROC[1], run_name=TEST_RUN_NAME, error="test_err"
-        )
-
-    value = get_rows(
-        mgmt_db.db_file, "error", "task_id", TEST_PROC[0], selected_col="error"
-    )[0][0]
-    assert value == "test_err"
-
-
-def test_update_task_time(mgmt_db):
-    with connect_db_ctx(mgmt_db.db_file) as cur:
-        update_mgmt_db.update_task_time(
-            cur, TEST_RUN_NAME, TEST_PROC[1], TEST_STATUS[1]
-        )
-
-    test_time = get_rows(
-        mgmt_db.db_file, "task_time_log", "state_id", TEST_PROC[0], selected_col="time"
-    )[0][0]
-    bench_time = get_rows(
-        mgmt_db.db_file,
-        "state",
-        "proc_type",
-        TEST_PROC[0],
-        selected_col="last_modified",
-    )[0][0]
-    assert test_time == bench_time
-
-
-def test_force_update_db(mgmt_db):
-    with connect_db_ctx(mgmt_db.db_file) as cur:
-        update_mgmt_db.force_update_db(
-            cur, TEST_PROC[1], FORCE_STATUS[1], run_name=TEST_RUN_NAME
-        )
-
-    value = get_rows(
-        mgmt_db.db_file, "state", "proc_type", TEST_PROC[0], selected_col="status"
-    )[0][0]
-    assert value == FORCE_STATUS[0]
-
-
-def test_force_update_db_error(mgmt_db):
-    with connect_db_ctx(mgmt_db.db_file) as cur:
-        update_mgmt_db.force_update_db(
-            cur,
-            TEST_PROC[1],
-            FORCE_STATUS[1],
-            run_name=TEST_RUN_NAME,
-            retry=True,
-            reset_retries=True,
-            error="another error",
-        )
-
-    rows = get_rows(
-        mgmt_db.db_file, "error", "task_id", TEST_PROC[0], selected_col="error"
-    )
-    errors = []
-    for row in rows:
-        for err in row:
-            errors.append(err)
-    assert errors == EXPECTED_ERROS
 
 
 def teardown_module(module):

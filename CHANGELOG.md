@@ -2,6 +2,13 @@ Slurm Ground Motion Workflow
 # Changelog
 (Based on https://wiki.canterbury.ac.nz/download/attachments/58458136/CodeVersioning_v18p2.pdf?version=1&modificationDate=1519269238437&api=v2 )
 
+## [19.6.1] - 2019-06-05 -- Error task changes
+### Added
+    - A wrapper for auto_submit and queue_monitor is now available 
+    - LF and HF may now be converted to BB without the other, and IM calculations subsequently performed on them
+### Changed
+    - When tasks fail they will have a new task made for them instead of having their retry counter incremented
+
 ## [19.4.11] - 2019-05-14 -- ASCII workflow removed
 ### Removed
     - The parts of the workflow relating to text based computation outputs have been removed
