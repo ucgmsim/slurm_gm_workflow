@@ -120,6 +120,7 @@ class E2ETests(object):
         self._sim_passed, self._sim_failed = set(), set()
         self._stop_on_error = None
 
+        self.canceled_running = []
         # Resources that need to be dealt with on close
         self._processes = []
         self._files = []
@@ -142,7 +143,7 @@ class E2ETests(object):
         Parameters
         ----------
         user: str
-            The username under which to run the tasks_to_run
+            The username under which to run the tasks
         """
         self._stop_on_error = stop_on_error
 
@@ -306,7 +307,7 @@ class E2ETests(object):
         Parameters
         ----------
         user: str
-            The username under which to run the tasks_to_run
+            The username under which to run the tasks
         sleep_time: int
             Time (in seconds) between progress checks
         """
@@ -440,6 +441,7 @@ class E2ETests(object):
                     "Checkpoint testing: Cancelling job-id {} "
                     "for {} and process type {}".format(entry[1], entry[2], entry[0])
                 )
+                self.canceled_running.append(str(entry[1]))
                 out, err = exe("scancel -v {}".format(entry[1]), debug=False)
 
                 print("Scancel out: ", out, err)
@@ -454,23 +456,22 @@ class E2ETests(object):
         """Create errors for all entries in management db that did not complete"""
         with connect_db_ctx(sim_struct.get_mgmt_db(self.stage_dir)) as cur:
             entries = cur.execute(
-                "SELECT run_name, proc_type, status, job_id, retries FROM state "
+                "SELECT run_name, proc_type, status, job_id FROM state "
                 "WHERE proc_type <=6 AND proc_type <> 2 AND status != 4"
             ).fetchall()
 
         entries = [SlurmTask(*entry) for entry in entries]
 
         for entry in entries:
-            if entry.status != const.Status.completed.value:
+            if entry.status != const.Status.completed.value and str(entry.job_id) not in self.canceled_running:
                 self.errors.append(
                     Error(
                         "Slurm task",
                         "Run {} did not complete task {} "
-                        "(Status {}, Retries {}, JobId {}".format(
+                        "(Status {}, JobId {}".format(
                             entry.run_name,
                             const.ProcessType(entry.proc_type),
                             const.Status(entry.status),
-                            entry.retries,
                             entry.job_id,
                         ),
                     )
@@ -533,15 +534,35 @@ class E2ETests(object):
     def check_mgmt_db_progress(self):
         """Checks auto submit progress in the management db"""
         with connect_db_ctx(sim_struct.get_mgmt_db(self.stage_dir)) as cur:
-            total_count = cur.execute(
-                "SELECT COUNT(*) FROM state WHERE proc_type <= 6 AND proc_type <> 2"
-            ).fetchone()[0]
             comp_count = cur.execute(
                 "SELECT COUNT(*) FROM state WHERE status == 4 AND proc_type <= 6"
             ).fetchone()[0]
-            failed_count = cur.execute(
-                "SELECT COUNT(*) FROM state WHERE status == 5 AND proc_type <= 6"
-            ).fetchone()[0]
+            if len(self.canceled_running) > 0:
+                total_count = cur.execute(
+                    "SELECT COUNT(*) FROM state "
+                    "WHERE proc_type <= 6 "
+                    "AND proc_type <> 2 "
+                    "AND (job_id IS NULL OR job_id NOT IN (?{}))".format(
+                        ",?"*(len(self.canceled_running)-1)
+                    ),
+                    (*self.canceled_running, ),
+                ).fetchone()[0]
+                failed_count = cur.execute(
+                    "SELECT COUNT(*) FROM state "
+                    "WHERE status == 5 "
+                    "AND proc_type <= 6 "
+                    "AND (job_id IS NULL OR job_id NOT IN (?{}))".format(
+                        ",?"*(len(self.canceled_running)-1)
+                    ),
+                    (*self.canceled_running, ),
+                ).fetchone()[0]
+            else:
+                total_count = cur.execute(
+                    "SELECT COUNT(*) FROM state WHERE proc_type <= 6 AND proc_type <> 2"
+                ).fetchone()[0]
+                failed_count = cur.execute(
+                    "SELECT COUNT(*) FROM state WHERE status == 5 AND proc_type <= 6"
+                ).fetchone()[0]
 
         return total_count, comp_count, failed_count
 

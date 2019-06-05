@@ -26,7 +26,6 @@ from scripts.submit_bb import main as submit_bb_main
 from scripts.submit_sim_imcalc import submit_im_calc_slurm, SlBodyOptConsts
 from shared_workflow import shared, workflow_logger
 
-DEFAULT_N_MAX_RETRIES = 2
 DEFAULT_N_RUNS = {const.HPC.maui: 12, const.HPC.mahuika: 12}
 
 JOB_RUN_MACHINE = {
@@ -91,46 +90,48 @@ def update_tasks(
         found = False
         for queue_task in squeue_tasks:
             queue_job_id, queue_status = queue_task.split()
-            if db_task.job_id == int(queue_job_id):
-                found = True
-                try:
-                    queue_status = SLURM_TO_STATUS_DICT[queue_status]
-                except KeyError:
-                    task_logger.error(
-                        "Failed to recogize state code {}, updating to {}".format(
-                            queue_status, const.Status.unknown.value
-                        )
+            if db_task.job_id != int(queue_job_id):
+                continue
+
+            found = True
+            try:
+                queue_status = SLURM_TO_STATUS_DICT[queue_status]
+            except KeyError:
+                task_logger.error(
+                    "Failed to recogize state code {}, updating to {}".format(
+                        queue_status, const.Status.unknown.value
                     )
-                    queue_status = const.Status.unknown.value
-                if queue_status == db_task.status:
-                    task_logger.debug(
-                        "No need to update status {} for {}, {} ({}) as it "
-                        "has not changed.".format(
-                            const.Status(queue_status).str_value,
-                            db_task.run_name,
-                            const.ProcessType(db_task.proc_type).str_value,
-                            db_task.job_id,
-                        )
-                    )
-                # Do nothing if there is a pending update for
-                # this run & process type combination
-                elif not check_mgmt_queue(
-                    mgmt_queue_entries, db_task.run_name, db_task.proc_type
-                ):
-                    task_logger.info(
-                        "Updating status of {}, {} from {} to {}".format(
-                            db_task.run_name,
-                            const.ProcessType(db_task.proc_type).str_value,
-                            const.Status(db_task.status).str_value,
-                            const.Status(queue_status).str_value,
-                        )
-                    )
-                    shared.add_to_queue(
-                        mgmt_queue_folder,
+                )
+                queue_status = const.Status.unknown.value
+            if queue_status == db_task.status:
+                task_logger.debug(
+                    "No need to update status {} for {}, {} ({}) as it "
+                    "has not changed.".format(
+                        const.Status(queue_status).str_value,
                         db_task.run_name,
-                        db_task.proc_type,
-                        queue_status,
+                        const.ProcessType(db_task.proc_type).str_value,
+                        db_task.job_id,
                     )
+                )
+            # Do nothing if there is a pending update for
+            # this run & process type combination
+            elif not check_mgmt_queue(
+                mgmt_queue_entries, db_task.run_name, db_task.proc_type
+            ):
+                task_logger.info(
+                    "Updating status of {}, {} from {} to {}".format(
+                        db_task.run_name,
+                        const.ProcessType(db_task.proc_type).str_value,
+                        const.Status(db_task.status).str_value,
+                        const.Status(queue_status).str_value,
+                    )
+                )
+                shared.add_to_queue(
+                    mgmt_queue_folder,
+                    db_task.run_name,
+                    db_task.proc_type,
+                    queue_status,
+                )
                 break
         # Only reset if there is no entry on the mgmt queue for this
         # realisation/proc combination
@@ -143,23 +144,13 @@ def update_tasks(
                     const.ProcessType(db_task.proc_type).str_value, db_task.run_name
                 )
             )
-            # Add an error first
+            # Add an error
             shared.add_to_queue(
                 mgmt_queue_folder,
                 db_task.run_name,
                 db_task.proc_type,
                 const.Status.failed.value,
-                error="Disappeared from squeue. Reset to created.",
-            )
-
-            # TODO: Add retry check!!
-            # Then reset
-            shared.add_to_queue(
-                mgmt_queue_folder,
-                db_task.run_name,
-                db_task.proc_type,
-                const.Status.created.value,
-                retries=db_task.retries + 1,
+                error="Disappeared from squeue. Creating a new task.",
             )
 
 
@@ -358,7 +349,6 @@ def run_main_submit_loop(
     root_folder: str,
     user: str,
     n_runs: Dict[str, int],
-    n_max_retries: int,
     rels_to_run: str,
     given_tasks_to_run: List[const.ProcessType],
     sleep_time: int,
@@ -394,7 +384,7 @@ def run_main_submit_loop(
         # which can result in dual-submission
         mgmt_queue_entries = os.listdir(mgmt_queue_folder)
 
-        # Get in progress tasks_to_run in the db and the HPC queue
+        # Get in progress tasks in the db and the HPC queue
         squeue_tasks, n_tasks_to_run = [], {}
         for hpc in const.HPC:
             cur_tasks = get_queued_tasks(user=user, machine=hpc)
@@ -406,16 +396,16 @@ def run_main_submit_loop(
             # User output
             if len(squeue_tasks) > 0:
                 time_since_something_happened = cycle_timeout
-                main_logger.info("Squeue user tasks_to_run: " + ", ".join(squeue_tasks))
+                main_logger.info("Squeue user tasks: " + ", ".join(squeue_tasks))
             else:
-                main_logger.debug("No squeue user tasks_to_run")
+                main_logger.debug("No squeue user tasks")
 
             db_in_progress_tasks = mgmt_db.get_submitted_tasks()
 
             if len(db_in_progress_tasks) > 0:
                 time_since_something_happened = cycle_timeout
                 main_logger.info(
-                    "In progress tasks_to_run in mgmt db:"
+                    "In progress tasks in mgmt db:"
                     + ", ".join(
                         [
                             "{}-{}-{}-{}".format(
@@ -429,7 +419,7 @@ def run_main_submit_loop(
                     )
                 )
             else:
-                main_logger.debug("No in progress tasks_to_run in mgmt db")
+                main_logger.debug("No in progress tasks in mgmt db")
 
             update_tasks(
                 mgmt_queue_folder,
@@ -439,14 +429,14 @@ def run_main_submit_loop(
                 main_logger,
             )
 
-        # Gets all runnable tasks_to_run based on mgmt db state
+        # Gets all runnable tasks based on mgmt db state
         runnable_tasks = mgmt_db.get_runnable_tasks(
-            n_max_retries, rels_to_run, given_tasks_to_run, main_logger
+            rels_to_run, given_tasks_to_run, main_logger
         )
         if len(runnable_tasks) > 0:
             if master_thread: time_since_something_happened = cycle_timeout
             main_logger.info(
-                "Number of runnable tasks_to_run: {}".format(len(runnable_tasks))
+                "Number of runnable tasks: {}".format(len(runnable_tasks))
             )
         else:
             main_logger.debug("No runnable_tasks")
@@ -454,9 +444,8 @@ def run_main_submit_loop(
         # Select the first ntask_to_run that are not waiting
         # for mgmt db updates (i.e. items in the queue)
         tasks_to_run, task_counter = [], {key: 0 for key in const.HPC}
-        for task in runnable_tasks[:100]:
+        for cur_proc_type, cur_run_name, retries in runnable_tasks[:100]:
             if master_thread: time_since_something_happened = cycle_timeout
-            cur_run_name, cur_proc_type = task[1], task[0]
 
             cur_hpc = JOB_RUN_MACHINE[const.ProcessType(cur_proc_type)]
             # Add task if limit has not been reached and there are no
@@ -465,11 +454,11 @@ def run_main_submit_loop(
                 not check_mgmt_queue(mgmt_queue_entries, cur_run_name, cur_proc_type)
                 and task_counter.get(cur_hpc, 0) < n_tasks_to_run[cur_hpc]
             ):
-                tasks_to_run.append(task)
+                tasks_to_run.append((cur_proc_type, cur_run_name, retries))
                 task_counter[cur_hpc] += 1
 
             # Open to better suggestions
-            # Break if enough tasks_to_run for each HPC have been added
+            # Break if enough tasks for each HPC have been added
             if np.all(
                 [
                     True if task_counter.get(hpc, 0) >= n_tasks_to_run[hpc] else False
@@ -477,6 +466,7 @@ def run_main_submit_loop(
                 ]
             ):
                 break
+
         if len(tasks_to_run) > 0:
             main_logger.info(
                 "Tasks to run this iteration: "
@@ -488,24 +478,20 @@ def run_main_submit_loop(
                 )
             )
         else:
-            main_logger.debug("No tasks_to_run to run this iteration")
+            main_logger.debug("No tasks to run this iteration")
 
-        # Submit the runnable tasks_to_run
-        for task in tasks_to_run:
-            proc_type, run_name, _, retries = task
+        # Submit the runnable tasks
+        for proc_type, run_name, retries in tasks_to_run:
 
             # Special handling for merge-ts
             if proc_type == const.ProcessType.merge_ts.value:
                 # Check if clean up has already run
-                if MgmtDB.is_task_complete(
+                if mgmt_db.is_task_complete(
                     [
                         const.ProcessType.clean_up.value,
                         run_name,
                         const.Status.completed.str_value,
                     ],
-                    mgmt_db.get_runnable_tasks(
-                        n_max_retries, rels_to_run, given_tasks_to_run, main_logger
-                    ),
                 ):
                     # If clean_up has already run, then we should set it to
                     # be run again after merge_ts has run
@@ -560,12 +546,6 @@ if __name__ == "__main__":
         default=5,
     )
     parser.add_argument(
-        "--n_max_retries",
-        help="The maximum number of retries for any given task",
-        default=DEFAULT_N_MAX_RETRIES,
-        type=int,
-    )
-    parser.add_argument(
         "--log_file",
         type=str,
         default=None,
@@ -573,7 +553,7 @@ if __name__ == "__main__":
         "Must be absolute or relative to the root_folder.",
     )
     parser.add_argument(
-        "--tasks_to_run",
+        "--task_types_to_run",
         nargs="+",
         help="Which processes should be run. Defaults to IM_Calc and clean_up with dependencies automatically propagated",
         choices=[proc.str_value for proc in const.ProcessType],
@@ -638,28 +618,28 @@ if __name__ == "__main__":
 
     logger.debug(
         "Processes to be run were: {}. Getting all required dependencies now.".format(
-            args.tasks_to_run
+            args.task_types_to_run
         )
     )
-    tasks_to_run = [const.ProcessType.get_by_name(proc) for proc in args.tasks_to_run]
-    for task in tasks_to_run:
+    task_types_to_run = [const.ProcessType.get_by_name(proc) for proc in args.task_types_to_run]
+    for task in task_types_to_run:
         logger.debug(
             "Process {} in processes to be run, adding dependencies now.".format(
                 task.str_value
             )
         )
-        for proc_num in task.get_remaining_dependencies(tasks_to_run):
+        for proc_num in task.get_remaining_dependencies(task_types_to_run):
             proc = const.ProcessType(proc_num)
-            if proc not in tasks_to_run:
+            if proc not in task_types_to_run:
                 logger.debug(
                     "Process {} added as a dependency of process {}".format(
                         proc.str_value, task.str_value
                     )
                 )
-                tasks_to_run.append(proc)
+                task_types_to_run.append(proc)
 
     mutually_exclusive_task_error = const.ProcessType.check_mutually_exclusive_tasks(
-        tasks_to_run
+        task_types_to_run
     )
     if mutually_exclusive_task_error != "":
         logger.log(workflow_logger.NOPRINTCRITICAL, mutually_exclusive_task_error)
@@ -686,9 +666,8 @@ if __name__ == "__main__":
         root_folder,
         args.user,
         n_runs,
-        args.n_max_retries,
         args.rels_to_run,
-        tasks_to_run,
+        task_types_to_run,
         args.sleep_time,
         (lf_est_model, hf_est_model, bb_est_model, im_est_model),
         main_logger=logger,

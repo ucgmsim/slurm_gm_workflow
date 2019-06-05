@@ -497,7 +497,6 @@ def add_to_queue(
     proc_type: int,
     status: int,
     job_id: int = None,
-    retries: int = None,
     error: str = None,
     logger: Logger = None
 ):
@@ -526,7 +525,6 @@ def add_to_queue(
                 MgmtDB.col_proc_type: proc_type,
                 MgmtDB.col_status: status,
                 MgmtDB.col_job_id: job_id,
-                MgmtDB.col_retries: retries,
                 "error": error,
             },
             f,

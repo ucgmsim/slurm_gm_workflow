@@ -5,9 +5,11 @@ import signal
 
 from e2e_tests.E2ETests import E2ETests
 
+
 def on_exit(signum, frame):
     e2e_test.close()
     exit()
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -16,7 +18,7 @@ if __name__ == "__main__":
         "config_file", type=str, help="Config file for the end-to-end test"
     )
     parser.add_argument(
-        "user", type=str, help="The username under which to run the tasks_to_run"
+        "user", type=str, help="The username under which to run the tasks"
     )
     parser.add_argument(
         "--sleep_time",
