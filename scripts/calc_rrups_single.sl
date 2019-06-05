@@ -34,11 +34,8 @@ OUT_DIR=${REL}/verification
 
 if [[ ! -f ${OUT_DIR}/rrup_${REL_NAME}.csv ]]
 then
-    if [[ ! -d $OUT_DIR ]]; then
-        # create the verification folder if it doesn't exist
-        mkdir $OUT_DIR
-    fi
-
+    # Create the output folder if needed
+    mkdir -p $OUT_DIR
     echo ___calculating rrups___
 
     start_time=`date +${runtime_fmt}`
