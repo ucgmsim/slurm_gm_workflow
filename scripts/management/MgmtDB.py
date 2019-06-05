@@ -59,6 +59,9 @@ class MgmtDB:
             for entry in entries:
                 process = entry.proc_type
                 realisation_name = entry.run_name
+
+                logger.debug("The status of process {} for realisation {} is being set to {}. It has slurm id {}".format(entry.proc_type, entry.run_name, entry.status, entry.job_id))
+
                 if entry.status == const.Status.created.value:
                     # Something has attempted to set a task to created
                     # Make a new task with created status and move to the next task
