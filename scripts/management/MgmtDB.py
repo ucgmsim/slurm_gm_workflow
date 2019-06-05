@@ -94,10 +94,12 @@ class MgmtDB:
 
         Returns a list of tuples (proc_type, run_name, state_str)
         """
-
         if allowed_tasks is None:
             allowed_tasks = list(const.ProcessType)
         allowed_tasks = [str(task.value) for task in allowed_tasks]
+
+        if len(allowed_tasks) == 0:
+            return []
 
         with connect_db_ctx(self._db_file) as cur:
             db_tasks = cur.execute(

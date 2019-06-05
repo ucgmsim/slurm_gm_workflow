@@ -5,8 +5,8 @@
 
 #SBATCH --job-name=calc_rrups_single
 #SBATCH --account=nesi00213
-#SBATCH --partition=large
-#SBATCH --time=01:00:00
+#SBATCH --partition=prepost
+#SBATCH --time=00:10:00
 #SBATCH --cpus-per-task=12
 
 function getFromYaml {
@@ -30,7 +30,7 @@ SRF_FILE=$(getFromYaml ${REL_YAML} srf_file)
 STATION_FILE=$(getFromYaml ${REL_YAML} stat_file)
 FD=$(getFromYaml ${REL_YAML} FD_STATLIST)
 
-OUT_DIR=${REL}/IM_Calc
+OUT_DIR=${REL}/IM_calc
 
 if [[ ! -f ${OUT_DIR}/rrup_${REL_NAME}.csv ]]
 then
