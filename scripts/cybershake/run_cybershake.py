@@ -118,7 +118,7 @@ def run_automated_workflow(
         name="queue monitor",
         daemon=True,
         target=queue_monitor.main,
-        args=(root_folder, sleep_time, queue_logger),
+        args=(root_folder, sleep_time, n_max_retries, queue_logger),
     )
     wrapper_logger.info("Created queue_monitor thread")
 
@@ -130,7 +130,6 @@ def run_automated_workflow(
             root_folder,
             user,
             n_runs,
-            n_max_retries,
             "%",
             tasks_to_run,
             sleep_time,
@@ -173,7 +172,6 @@ def run_automated_workflow(
                 root_folder,
                 user,
                 n_runs,
-                n_max_retries,
                 pattern,
                 tasks,
                 sleep_time,
