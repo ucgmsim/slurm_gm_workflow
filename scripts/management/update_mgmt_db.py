@@ -1,119 +1,37 @@
 """
 @author: jam335 - jason.motha@canterbury.ac.nz
-
 A script that updates a slurm mgmt db and updates the status of a task
 """
 
 import argparse
-import qcore.constants
+import os
+
 from scripts.management import db_helper
+from scripts.management.MgmtDB import MgmtDB, SlurmTask
 import qcore.constants as const
 
 
-def update_db(db, process, status, job=None, run_name=None, error=None):
-    # update the status of a task where a task has progressed a state
-    db.execute('''UPDATE state
-                  SET status = (SELECT id FROM status_enum WHERE state = ?), 
-                      last_modified = strftime('%s','now'),
-                      job_id = ?
-                  WHERE (job_id = ? or run_name = ?)
-                   AND proc_type = (SELECT id FROM proc_type_enum WHERE proc_type = ?)
-                   AND status <= (SELECT id FROM status_enum WHERE state = ?)''',
-               (status, job, job, run_name, process, status))
+def update_db(root_folder, process, status, run_name, job_id, error):
+    """Update the database with the given values"""
 
-    if run_name is not None and (status == const.Status.running.name or status == const.Status.completed.name):
-        update_task_time(db, run_name, process, status)
+    entry = SlurmTask(run_name, process, status, job_id, error)
+    database = MgmtDB(root_folder)
 
-    if type(error) is str:
-        update_error(db, process, run_name, error)
+    # If we are running this manually then we should set the retry limit to be above a reasonable value for manual
+    # submissions
+    database.update_entries_live([entry], 256)
 
-    db.connection.commit()
-
-
-def update_error(db, process, run_name, error):
-    db.execute('''INSERT INTO error (task_id, error)
-                  VALUES (
-                  (SELECT id from state 
-                   WHERE proc_type = (SELECT id FROM proc_type_enum WHERE proc_type = ?)
-                    AND run_name = ?) ,
-                  ?
-                  )
-                  ''', (process, run_name, error))
-
-
-def update_task_time(db, run_name, process, status):
-    db.execute('''INSERT OR IGNORE INTO
-                  `task_time_log`(state_id, status, time)
-                  VALUES((SELECT id FROM state_view WHERE run_name = ? AND proc_type = ? ),
-                          (SELECT id FROM status_enum WHERE UPPER(state) = UPPER(?)),
-                           strftime('%s','now'))''', (run_name, process, status))
-    db.connection.commit()
-
-
-def force_update_db(db, process, status, job=None, run_name=None, error='', retry=False, reset_retries=False):
-
-    db.execute('''UPDATE state
-                  SET status = (SELECT id FROM status_enum WHERE state = ?), 
-                      last_modified = strftime('%s','now'),
-                      job_id = ?
-                  WHERE (job_id = ? or run_name = ?)
-                   AND proc_type = (SELECT id FROM proc_type_enum WHERE proc_type = ?)
-                   ''', (status, job, job, run_name, process))    
-    if retry:
-        db.execute('''UPDATE state
-                      SET retries = retries + 1
-                      WHERE (job_id = ? or run_name = ?)
-                       AND proc_type = (SELECT id FROM proc_type_enum WHERE proc_type = ?)''', (job, run_name, process))
-        update_error(db, process, run_name, 'Process failed retrying')
-    if reset_retries:
-        db.execute('''UPDATE state
-                      SET retries = 0
-                      WHERE (job_id = ? or run_name = ?)
-                       AND proc_type = (SELECT id FROM proc_type_enum WHERE proc_type = ?)''', (job, run_name, process))
-        update_error(db, process, run_name, 'Reseting retries')
-
-    if type(error) is str:
-        update_error(db, process, run_name, error)
-
-    if run_name is not None and (status == const.Status.running or status == const.Status.completed):
-        update_task_time(db, run_name, process, status)
-
-    db.connection.commit()
-
-
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('run_folder', type=str, 
-                        help="folder to the collection of runs on Kupe")
-    parser.add_argument('process', choices=db_helper.enum_to_list(
-        qcore.constants.ProcessType))
-    parser.add_argument('status', type=str, choices=db_helper.enum_to_list(const.Status))
-    parser.add_argument('-r', '--run_name', type=str,
-                        help='name of run to be updated')
-    parser.add_argument('-j', '--job', type=int)
-    parser.add_argument('-e', '--error', type=str)
-   
-    parser.add_argument('-f', '--force', action="store_true")
-    parser.add_argument('-rt', '--is_retry', action="store_true", default=False)
-    parser.add_argument('-rr', '--reset_retries', action="store_true", default=False)
-     
-    args = parser.parse_args()
-    f = args.run_folder
-    process = args.process
-    status = args.status
-    run_name = args.run_name
-    job_id = args.job
-    error = args.error
-    db = db_helper.connect_db(f)
-    
-    if args.force:
-        force_update_db(db, process, status, job=job_id, run_name=run_name, error=error, retry=args.is_retry,
-                        reset_retries=args.reset_retries)
-    else:
-        update_db(db, process, status, job=job_id, run_name=run_name, error=error)
-
-    db.connection.commit()
-    db.connection.close()
 
 if __name__ == '__main__':
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('run_folder', type=str,
+                        help="folder to the collection of runs on the HPC")
+    parser.add_argument('run_name', type=str, help='name of run to be updated')
+    parser.add_argument('process', choices=db_helper.enum_to_list(const.ProcessType))
+    parser.add_argument('status', type=str, choices=db_helper.enum_to_list(const.Status))
+    parser.add_argument('-j', '--job', type=int, default=None)
+    parser.add_argument('-e', '--error', type=str, default=None)
+
+    args = parser.parse_args()
+
+    update_db(os.path.abspath(args.run_folder), args.process, args.status, args.run_name, args.job, args.error)

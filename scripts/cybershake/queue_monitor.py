@@ -18,6 +18,7 @@ from shared_workflow import workflow_logger
 DATE_FORMAT = "%Y%m%d%H%M%S_%f"
 
 QUEUE_MONITOR_LOG_FILE_NAME = "queue_monitor_log_{}.txt"
+DEFAULT_N_MAX_RETRIES = 2
 
 logger = None
 keepAlive = True
@@ -49,12 +50,11 @@ def get_queue_entry(
         proc_type=data_dict[MgmtDB.col_proc_type],
         status=data_dict[MgmtDB.col_status],
         job_id=data_dict[MgmtDB.col_job_id],
-        retries=data_dict[MgmtDB.col_retries],
         error=data_dict.get("error"),
     )
 
 
-def main(root_folder: str, sleep_time: int, queue_logger: Logger = workflow_logger.get_basic_logger()):
+def main(root_folder: str, sleep_time: int, max_retries: int, queue_logger: Logger = workflow_logger.get_basic_logger()):
     mgmt_db = MgmtDB(sim_struct.get_mgmt_db(root_folder))
     queue_folder = sim_struct.get_mgmt_db_queue(root_folder)
 
@@ -77,8 +77,8 @@ def main(root_folder: str, sleep_time: int, queue_logger: Logger = workflow_logg
                 os.remove(os.path.join(queue_folder, file))
 
         if len(entries) > 0:
-            queue_logger.info("Updating {} mgmt db tasks_to_run.".format(len(entries)))
-            if not mgmt_db.update_entries_live(entries, queue_logger):
+            queue_logger.info("Updating {} mgmt db tasks.".format(len(entries)))
+            if not mgmt_db.update_entries_live(entries, max_retries, queue_logger):
                 # Failed to update
                 queue_logger.error(
                     "Failed to update the current entries in the mgmt db queue. "
@@ -112,6 +112,12 @@ if __name__ == "__main__":
         help="Location of the log file to use. Defaults to 'cybershake_log.txt' in the location root_folder. "
         "Must be absolute or relative to the root_folder.",
     )
+    parser.add_argument(
+        "--n_max_retries",
+        help="The maximum number of retries for any given task",
+        default=DEFAULT_N_MAX_RETRIES,
+        type=int,
+    )
     args = parser.parse_args()
 
     root_folder = os.path.abspath(args.root_folder)
@@ -128,4 +134,4 @@ if __name__ == "__main__":
     logger.debug("Successfully added {} as the log file.".format(log_file_name))
 
     signal.signal(signal.SIGINT, on_exit)
-    main(root_folder, args.sleep_time, logger)
+    main(root_folder, args.sleep_time, args.n_max_retries, logger)
