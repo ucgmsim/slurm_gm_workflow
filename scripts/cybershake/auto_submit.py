@@ -35,7 +35,7 @@ JOB_RUN_MACHINE = {
     const.ProcessType.BB: const.HPC.maui,
     const.ProcessType.IM_calculation: const.HPC.maui,
     const.ProcessType.IM_plot: const.HPC.mahuika,
-    const.ProcessType.rrup: const.HPC.maui,
+    const.ProcessType.rrup: const.HPC.mahuika,
     const.ProcessType.Empirical: const.HPC.mahuika,
     const.ProcessType.Verification: const.HPC.mahuika,
     const.ProcessType.clean_up: const.HPC.mahuika,

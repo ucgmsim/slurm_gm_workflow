@@ -5,9 +5,9 @@
 
 #SBATCH --job-name=calc_rrups_single
 #SBATCH --account=nesi00213
-#SBATCH --partition=nesi_research
-#SBATCH --time=01:00:00
-#SBATCH --cpus-per-task=40
+#SBATCH --partition=prepost
+#SBATCH --time=00:10:00
+#SBATCH --cpus-per-task=12
 
 function getFromYaml {
     echo $(python -c "from qcore.utils import load_sim_params; print(load_sim_params('$1').$2)")
@@ -30,16 +30,18 @@ SRF_FILE=$(getFromYaml ${REL_YAML} srf_file)
 STATION_FILE=$(getFromYaml ${REL_YAML} stat_file)
 FD=$(getFromYaml ${REL_YAML} FD_STATLIST)
 
-OUT_DIR=${REL}/IM_Calc
+OUT_DIR=${REL}/verification
 
 if [[ ! -f ${OUT_DIR}/rrup_${REL_NAME}.csv ]]
 then
+    # Create the output folder if needed
+    mkdir -p $OUT_DIR
     echo ___calculating rrups___
 
     start_time=`date +${runtime_fmt}`
     python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $REL_NAME rrup running
 
-    time python ${IMPATH}/calculate_rrups.py -fd ${FD} -np ${SLURM_CPUS_PER_TASK} -o ${OUT_DIR}/rrup_${REL_NAME}.csv ${STATION_FILE} ${SRF_FILE}
+    time python ${IMPATH}/calculate_rrups.py -fd ${FD} -o ${OUT_DIR}/rrup_${REL_NAME}.csv ${STATION_FILE} ${SRF_FILE}
 else
     echo "rrup file already present: ${OUT_DIR}/rrup_${REL_NAME}.csv"
     echo "Checking that there are enough rrups in it"
