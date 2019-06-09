@@ -131,7 +131,7 @@ app.layout = html.Div(
             html.Div(id="maui_squeue_table"),
 
             # Update interval
-            dcc.Interval(id="interval_comp", interval=10 * 1000, n_intervals=0),
+            dcc.Interval(id="interval_comp", interval=600 * 1000, n_intervals=0),
         ]
     )
 )
@@ -570,3 +570,4 @@ def clear(n_clicks):
 
 if __name__ == "__main__":
     app.run_server(host="0.0.0.0")
+
