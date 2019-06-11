@@ -43,13 +43,8 @@ MAHUIKA_ALLOCATIONS = app.db.get_allocation_periods(const.HPC.mahuika)
 MAUI_ALLOCATIONS = app.db.get_allocation_periods(const.HPC.maui)
 
 
-ALLOCATIONS_MAHUIKA = [
-    "{}---{}".format(i[0], i[1])
-    for i in MAHUIKA_ALLOCATIONS
-]
-ALLOCATIONS_MAUI = [
-    "{}---{}".format(i[0], i[1]) for i in MAUI_ALLOCATIONS
-]
+ALLOCATIONS_MAHUIKA = ["{}---{}".format(i[0], i[1]) for i in MAHUIKA_ALLOCATIONS]
+ALLOCATIONS_MAUI = ["{}---{}".format(i[0], i[1]) for i in MAUI_ALLOCATIONS]
 
 MAUI_MAX_CHOURS = 950000.0
 MAHUIKA_MAX_CHOURS = 18000.0
@@ -62,12 +57,10 @@ app.layout = html.Div(
             html.Div(id="err"),
             html.Div(id="err2"),
             html.Div(id="err3"),
-
             # 2
             html.H4("Maui & Mahuika total core hours usage"),
             html.Div(id="maui_chours"),
             html.Div(id="mahuika_chours"),
-
             # 3
             html.H4("Maui Allocation"),
             dcc.Dropdown(
@@ -76,35 +69,31 @@ app.layout = html.Div(
                 value=ALLOCATIONS_MAUI[-1],
                 clearable=False,
             ),
-            html.H5(
-                "Maui allocation start date:", style={"padding-top": 25}
-            ),
+            html.H5("Maui allocation start date:", style={"padding-top": 25}),
             dcc.DatePickerSingle(
-                id='maui-input-start',
+                id="maui-input-start",
                 min_date_allowed=MAUI_ALLOCATIONS[0][0],
                 max_date_allowed=datetime.now().date(),
                 initial_visible_month=MAUI_ALLOCATIONS[0][0],
-                display_format='YYYY-MM-DD',
+                display_format="YYYY-MM-DD",
                 clearable=True,
             ),
             html.H5("Maui allocation end date:"),
             dcc.DatePickerSingle(
-                    id='maui-input-end',
-                    min_date_allowed=MAHUIKA_ALLOCATIONS[0][0],
-                    max_date_allowed=datetime.now().date(),
-                    initial_visible_month=MAHUIKA_ALLOCATIONS[0][0],
-                    display_format='YYYY-MM-DD',
-                    clearable=True,
-                ),
+                id="maui-input-end",
+                min_date_allowed=MAHUIKA_ALLOCATIONS[0][0],
+                max_date_allowed=datetime.now().date(),
+                initial_visible_month=MAHUIKA_ALLOCATIONS[0][0],
+                display_format="YYYY-MM-DD",
+                clearable=True,
+            ),
             html.H5("Maui total core hour usage", style={"padding-top": 25}),
             dcc.Graph(id="maui_total_chours"),
             html.H5("Maui daily core hour usage", style={"padding-top": 25}),
             dcc.Graph(id="maui_daily_chours"),
-
             # 4
             html.H5("Maui total user core hours"),
             html.Div(id="maui_total_user_chours"),
-
             # 5
             html.H4("Mahuika Allocation", style={"padding-top": 30}),
             dcc.Dropdown(
@@ -113,61 +102,49 @@ app.layout = html.Div(
                 value=ALLOCATIONS_MAHUIKA[-1],
                 clearable=False,
             ),
-            html.H5(
-                "Mahuika allocation start date:", style={"padding-top": 25}
-            ),
+            html.H5("Mahuika allocation start date:", style={"padding-top": 25}),
             dcc.DatePickerSingle(
-                id='mahuika-input-start',
+                id="mahuika-input-start",
                 min_date_allowed=MAHUIKA_ALLOCATIONS[0][0],
                 max_date_allowed=datetime.now().date(),
                 initial_visible_month=MAHUIKA_ALLOCATIONS[0][0],
-                display_format='YYYY-MM-DD',
+                display_format="YYYY-MM-DD",
                 clearable=True,
             ),
-
             html.H5("Mahuika allocation end date:"),
             dcc.DatePickerSingle(
-                    id='mahuika-input-end',
-                    min_date_allowed=MAHUIKA_ALLOCATIONS[0][0],
-                    max_date_allowed=datetime.now().date(),
-                    initial_visible_month=MAHUIKA_ALLOCATIONS[0][0],
-                    display_format='YYYY-MM-DD',
-                    clearable=True,
-                ),
-
+                id="mahuika-input-end",
+                min_date_allowed=MAHUIKA_ALLOCATIONS[0][0],
+                max_date_allowed=datetime.now().date(),
+                initial_visible_month=MAHUIKA_ALLOCATIONS[0][0],
+                display_format="YYYY-MM-DD",
+                clearable=True,
+            ),
             html.H5("Mahuika total core hour usage", style={"padding-top": 25}),
             dcc.Graph(id="mahuika_total_chours"),
-
             # 6
             html.H5("Mahuika daily core hour usage", style={"padding-top": 30}),
             dcc.Graph(id="mahuika_daily_chours"),
-
             # 7
             html.H5("Mahuika total user core hours"),
             html.Div(id="mahuika_total_user_chours"),
-
             # 8
             html.H5("Maui current quota", style={"padding-top": 25}),
             html.Div(id="maui_quota_usage"),
-
             # 9
             html.H5("Maui_daily_inodes", style={"padding-top": 25}),
             dcc.Graph(id="maui_daily_inodes"),
-
             # 10
             html.H5("Maui current status"),
             html.Div(id="maui_node_usage"),
-
             # 11
             html.H5("Maui current queue"),
             html.Div(id="maui_squeue_table"),
-
             # Update interval
             dcc.Interval(id="interval_comp", interval=600 * 1000, n_intervals=0),
         ]
     )
 )
-
 
 
 @app.callback(
@@ -204,7 +181,11 @@ def update_maui_total_chours(input_start, input_end):
 )
 def update_mahuika_total_chours(input_start, input_end):
     return update_total_chours(
-       MAHUIKA_ALLOCATIONS, input_start, input_end, const.HPC.mahuika, MAHUIKA_MAX_CHOURS
+        MAHUIKA_ALLOCATIONS,
+        input_start,
+        input_end,
+        const.HPC.mahuika,
+        MAHUIKA_MAX_CHOURS,
     )
 
 
@@ -242,7 +223,9 @@ def update_maui_squeue(n):
     [Input("maui-input-start", "date"), Input("maui-input-end", "date")],
 )
 def update_maui_daily_chours(input_start, input_end):
-    _, start_date, end_date = get_allocation_period(MAUI_ALLOCATIONS, input_start, input_end)
+    _, start_date, end_date = get_allocation_period(
+        MAUI_ALLOCATIONS, input_start, input_end
+    )
     return update_daily_chours(const.HPC.maui, start_date, end_date)
 
 
@@ -267,7 +250,9 @@ def update_maui_datepicker(drop_down_value):
     [Input("mahuika-input-start", "date"), Input("mahuika-input-end", "date")],
 )
 def update_mahuika_daily_chours(input_start, input_end):
-    _, start_date, end_date = get_allocation_period(MAHUIKA_ALLOCATIONS, input_start, input_end)
+    _, start_date, end_date = get_allocation_period(
+        MAHUIKA_ALLOCATIONS, input_start, input_end
+    )
     return update_daily_chours(const.HPC.mahuika, start_date, end_date)
 
 
@@ -276,7 +261,9 @@ def update_mahuika_daily_chours(input_start, input_end):
     [Input("maui-input-start", "date"), Input("maui-input-end", "date")],
 )
 def update_maui_total_chours(input_start, input_end):
-    _, start_date, end_date = get_allocation_period(MAUI_ALLOCATIONS, input_start, input_end)
+    _, start_date, end_date = get_allocation_period(
+        MAUI_ALLOCATIONS, input_start, input_end
+    )
     entries = get_chours_entries(const.HPC.maui, start_date, end_date)
     fig = go.Figure()
     fig.add_scatter(x=entries["day"], y=entries["total_chours"])
@@ -289,7 +276,9 @@ def update_maui_total_chours(input_start, input_end):
     [Input("mahuika-input-start", "date"), Input("mahuika-input-end", "date")],
 )
 def update_mahuika_total_chours(input_start, input_end):
-    _, start_date, end_date = get_allocation_period(MAHUIKA_ALLOCATIONS, input_start, input_end)
+    _, start_date, end_date = get_allocation_period(
+        MAHUIKA_ALLOCATIONS, input_start, input_end
+    )
     entries = get_chours_entries(const.HPC.mahuika, start_date, end_date)
     fig = go.Figure()
     fig.add_scatter(x=entries["day"], y=entries["total_chours"])
@@ -302,7 +291,9 @@ def update_mahuika_total_chours(input_start, input_end):
     [Input("mahuika-input-start", "date"), Input("mahuika-input-end", "date")],
 )
 def update_mahuika_total_user_chours(input_start, input_end):
-    _, start_date, end_date = get_allocation_period(MAHUIKA_ALLOCATIONS, input_start, input_end)
+    _, start_date, end_date = get_allocation_period(
+        MAHUIKA_ALLOCATIONS, input_start, input_end
+    )
     return get_total_user_chours(const.HPC.mahuika, USERS, start_date, end_date)
 
 
@@ -311,7 +302,9 @@ def update_mahuika_total_user_chours(input_start, input_end):
     [Input("maui-input-start", "date"), Input("maui-input-end", "date")],
 )
 def update_maui_total_user_chours(input_start, input_end):
-    _, start_date, end_date = get_allocation_period(MAUI_ALLOCATIONS, input_start, input_end)
+    _, start_date, end_date = get_allocation_period(
+        MAUI_ALLOCATIONS, input_start, input_end
+    )
     return get_total_user_chours(const.HPC.maui, USERS, start_date, end_date)
 
 
@@ -380,10 +373,7 @@ def update_daily_chours(hpc, start_date=None, end_date=None):
 
 
 def get_daily_user_chours(
-    hpc: const.HPC,
-    users_dict: Dict[str, str] = USERS,
-    start_date=None,
-    end_date=None,
+    hpc: const.HPC, users_dict: Dict[str, str] = USERS, start_date=None, end_date=None
 ):
     """get daily core hours usage for a list of users
        return as a list of scatter plots
@@ -407,10 +397,7 @@ def get_daily_user_chours(
 
 
 def get_total_user_chours(
-    hpc: const.HPC,
-    users_dict: Dict[str, str] = USERS,
-    start_date=None,
-    end_date=None,
+    hpc: const.HPC, users_dict: Dict[str, str] = USERS, start_date=None, end_date=None
 ):
     """Get total core hours usage for a list of users in a specified period
        Return as a table
@@ -427,7 +414,7 @@ def get_total_user_chours(
 
     # then add comma to big values
     for i in range(len(data)):
-        data[i]['total_core_hours'] = "{:,}".format(data[i]['total_core_hours'])
+        data[i]["total_core_hours"] = "{:,}".format(data[i]["total_core_hours"])
 
     return html.Div(
         [
@@ -586,4 +573,3 @@ def update_total_chours(default_allocations, input_start, input_end, hpc, max_ho
 
 if __name__ == "__main__":
     app.run_server(host="0.0.0.0")
-
