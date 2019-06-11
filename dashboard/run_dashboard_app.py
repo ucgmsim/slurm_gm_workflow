@@ -74,6 +74,7 @@ app.layout = html.Div(
                 id="maui-dropdown",
                 options=[{"label": i, "value": i} for i in ALLOCATIONS_MAUI],
                 value=ALLOCATIONS_MAUI[-1],
+                clearable=False,
             ),
             html.H5(
                 "Maui allocation start date:", style={"padding-top": 25}
@@ -110,6 +111,7 @@ app.layout = html.Div(
                 id="mahuika-dropdown",
                 options=[{"label": i, "value": i} for i in ALLOCATIONS_MAHUIKA],
                 value=ALLOCATIONS_MAHUIKA[-1],
+                clearable=False,
             ),
             html.H5(
                 "Mahuika allocation start date:", style={"padding-top": 25}
