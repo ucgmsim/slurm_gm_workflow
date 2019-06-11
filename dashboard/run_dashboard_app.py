@@ -584,3 +584,4 @@ def update_total_chours(default_allocations, input_start, input_end, hpc, max_ho
 
 if __name__ == "__main__":
     app.run_server(host="0.0.0.0")
+
