@@ -13,7 +13,7 @@ from typing import List
 
 import qcore.constants as const
 from qcore.config import host
-from scripts.cybershake.queue_monitor import DATE_FORMAT as QUEUE_DATE_FORMAT
+from qcore.constants import QUEUE_DATE_FORMAT as QUEUE_DATE_FORMAT
 from scripts.management.MgmtDB import MgmtDB
 from shared_workflow.workflow_logger import get_basic_logger
 
@@ -96,7 +96,7 @@ def add_to_queue(
     filename = os.path.join(
         queue_folder,
         "{}.{}.{}".format(
-            datetime.now().strftime(QUEUE_DATE_FORMAT), run_name, proc_type
+            datetime.now().strftime(const.QUEUE_DATE_FORMAT), run_name, proc_type
         ),
     )
 

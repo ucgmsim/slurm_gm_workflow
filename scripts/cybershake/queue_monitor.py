@@ -15,13 +15,11 @@ from scripts.management.MgmtDB import MgmtDB, SlurmTask
 from shared_workflow import workflow_logger
 from shared_workflow.shared_automated_workflow import (
     get_queued_tasks,
-    add_to_queue,
     check_mgmt_queue,
 )
 
 
 # Have to include sub-seconds, as clean up can run sub one second.
-DATE_FORMAT = "%Y%m%d%H%M%S_%f"
 
 QUEUE_MONITOR_LOG_FILE_NAME = "queue_monitor_log_{}.txt"
 DEFAULT_N_MAX_RETRIES = 2
@@ -252,7 +250,7 @@ if __name__ == "__main__":
     if args.log_file is None:
         log_file_name = os.path.join(
             args.root_folder,
-            QUEUE_MONITOR_LOG_FILE_NAME.format(datetime.now().strftime(DATE_FORMAT)),
+            QUEUE_MONITOR_LOG_FILE_NAME.format(datetime.now().strftime(const.QUEUE_DATE_FORMAT)),
         )
     else:
         log_file_name = args.log_file
