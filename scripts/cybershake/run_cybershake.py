@@ -140,7 +140,6 @@ def run_automated_workflow(
         ),
         kwargs={
             'main_logger': bulk_logger,
-            'master_thread': True,
             'cycle_timeout': len(tasks_to_run_with_pattern_and_logger)+1,
         },
     )
@@ -180,7 +179,6 @@ def run_automated_workflow(
                 bb_est_model,
                 im_est_model),
                 main_logger=pattern_logger,
-                master_thread=False,
                 cycle_timeout=1,
             )
     bulk_auto_submit_thread.join()
