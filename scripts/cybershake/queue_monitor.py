@@ -62,7 +62,7 @@ def get_queue_entry(
 
 def update_tasks(
     mgmt_queue_entries: List[str],
-    squeue_tasks: Dict[str:str],
+    squeue_tasks: Dict[str, str],
     db_running_tasks: List[SlurmTask],
     task_logger: Logger,
 ):
