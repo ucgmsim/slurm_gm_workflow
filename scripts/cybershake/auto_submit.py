@@ -31,6 +31,7 @@ DEFAULT_N_RUNS = {const.HPC.maui: 12, const.HPC.mahuika: 12}
 JOB_RUN_MACHINE = {
     const.ProcessType.EMOD3D: const.HPC.maui,
     const.ProcessType.merge_ts: const.HPC.mahuika,
+    const.ProcessType.plot_ts: const.HPC.maui,
     const.ProcessType.HF: const.HPC.maui,
     const.ProcessType.BB: const.HPC.maui,
     const.ProcessType.IM_calculation: const.HPC.maui,
@@ -222,6 +223,22 @@ def submit_task(
             {"submit_time": submitted_time},
             logger=task_logger,
         )
+
+    # persudo
+    elif proc_type == const.ProcessType.plot_ts.value:
+        plot_ts_template = (
+            "--export=CUR_ENV -o {output_file} -e {error_file} {script_location} "
+            "{xyts_path} {srf_path} {mgmt_db_loc} "
+        )
+        script = plot_ts_template.format(
+            xyts_path=os.path.join(sim_struct.get_lf_outbin_bin(sim_dir), '{}_xyts.e3d'.format(run_name)),
+            srf_path=sim_struct.get_srf_path(root_folder, run_name),
+            mgmt_db_loc=root_folder,
+            script_location=os.path.expandvars("$gmsim/workflow/scripts/plot_ts.sl"),
+            output_file=os.path.join(sim_dir, "%x_%j.out"),
+            error_file=os.path.join(sim_dir, "%x_%j.err"),
+        )
+        submit_sl_script(script, target_machine=JOB_RUN_MACHINE[const.ProcessType.plot_ts].value)
     elif proc_type == const.ProcessType.HF.value:
         args = argparse.Namespace(
             auto=True,
