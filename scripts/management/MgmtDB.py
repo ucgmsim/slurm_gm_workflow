@@ -54,6 +54,7 @@ class MgmtDB:
             if self._conn is None:
                 logger.info("Aquiring db connection.")
                 self._conn = sql.connect(self._db_file)
+            logger.debug("Getting db cursor")
             cur = self._conn.cursor()
 
             for entry in entries:
@@ -66,25 +67,32 @@ class MgmtDB:
                 if entry.status == const.Status.created.value:
                     # Something has attempted to set a task to created
                     # Make a new task with created status and move to the next task
+                    logger.debug("Adding new task to the db")
                     self._insert_task(cur, realisation_name, process)
+                    logger.debug("New task added to the db, continuing to next process")
                     continue
-
+                logger.debug("Updating task in the db")
                 self._update_entry(cur, entry)
+                logger.debug("Task successfully updated")
 
                 if entry.status == const.Status.failed.value and self.get_retries(process, realisation_name) < retry_max:
                     # The task was failed. If there have been few enough other attempts at the task make another one
+                    logger.debug("Task failed but is able to be retried. Adding new task to the db")
                     self._insert_task(cur, realisation_name, process)
+                    logger.debug("New task added to the db")
         except sql.Error as ex:
             self._conn.rollback()
-            print(
+            logger.critical(
                 "Failed to update entry {}, due to the exception: \n{}".format(
                     entry, ex
                 )
             )
             return False
         else:
+            logger.debug("Committing changes to db")
             self._conn.commit()
         finally:
+            logger.debug("Closing db cursor")
             cur.close()
 
         return True

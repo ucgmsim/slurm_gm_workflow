@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Script for continuously updating the slurm mgmt db from the queue."""
+import logging
 import signal
 import os
 import json
@@ -118,6 +119,11 @@ if __name__ == "__main__":
         default=DEFAULT_N_MAX_RETRIES,
         type=int,
     )
+    parser.add_argument(
+        "--debug",
+        action="store_true",
+        help="Print debug messages to stdout",
+    )
     args = parser.parse_args()
 
     root_folder = os.path.abspath(args.root_folder)
@@ -129,6 +135,9 @@ if __name__ == "__main__":
         )
     else:
         log_file_name = args.log_file
+
+    if args.debug:
+        workflow_logger.set_stdout_level(logger, logging.DEBUG)
 
     workflow_logger.add_general_file_handler(logger, log_file_name)
     logger.debug("Successfully added {} as the log file.".format(log_file_name))

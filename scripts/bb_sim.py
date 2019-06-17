@@ -337,6 +337,13 @@ for i, stat in enumerate(stations_todo):
             args.flo,
             "lowpass",
         )
+        if is_master and i == 0:
+            if len(hf_acc[:, c]) != len(lf_acc[:, c]):
+                logger.critical(
+                    "hf and lf have different number of timesteps, aborting. "
+                    "Check that your sim_duration is a multiple of both the hf and lf dt."
+                )
+                comm.Abort()
         bb_acc[:, c] = (
             np.hstack((d_ts, hf_acc[:, c])) + np.hstack((lf_acc[:, c], d_ts))
         ) / 981.0

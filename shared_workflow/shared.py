@@ -22,7 +22,7 @@ from qcore.config import host
 import qcore.constants as const
 from scripts.cybershake.queue_monitor import DATE_FORMAT as QUEUE_DATE_FORMAT
 from scripts.management.MgmtDB import MgmtDB
-from shared_workflow.workflow_logger import get_basic_logger
+from shared_workflow.workflow_logger import get_basic_logger, NOPRINTCRITICAL
 
 if sys.version_info.major == 3:
     basestring = str
@@ -471,7 +471,8 @@ def submit_sl_script(
             try:
                 int(jobid)
             except ValueError:
-                print(
+                logger.log(
+                    NOPRINTCRITICAL,
                     "{} is not a valid jobid. Submitting the "
                     "job most likely failed".format(jobid)
                 )
@@ -498,7 +499,7 @@ def add_to_queue(
     status: int,
     job_id: int = None,
     error: str = None,
-    logger: Logger = None
+    logger: Logger = get_basic_logger()
 ):
     """Adds an update entry to the queue"""
     filename = os.path.join(
