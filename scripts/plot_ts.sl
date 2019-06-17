@@ -16,6 +16,7 @@ fi
 XYTS_PATH=$1
 SRF_PATH=$2
 MGMT_DB_LOC=$3
+SRF_NAME=$4
 
 script_start=`date`
 echo "script started running at: $script_start"
@@ -25,7 +26,7 @@ timestamp=`date +%Y%m%d_%H%M%S`
 start_time=`date +${runtime_fmt}`
 echo ___plotting ts___
 
-python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $XYTS_PATH $SRF_PATH plot_ts running
+python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $SRF_NAME plot_ts running
 res=`python $gmsim/visualization/gmt/plot_ts.py $XYTS_PATH --srf $SRF_PATH`
 exit_val=$?
 
@@ -35,8 +36,8 @@ echo $end_time
 if [[ $exit_val == 0 ]]; then
     #passed
 
-    python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $XYTS_PATH $SRF_PATH plot_ts completed
+    python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $SRF_NAME plot_ts completed
 
 else
-    python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $XYTS_PATH $SRF_PATH plot_ts --error "$res"
+    python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $SRF_NAME plot_ts failed --error "$res"
 fi
