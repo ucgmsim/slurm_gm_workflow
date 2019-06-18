@@ -26,7 +26,7 @@ def check_zero_bytes(file_path: str):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("xyts_file", type=str, help="The OutBin directory to test")
+    parser.add_argument("xyts_file", type=str, help="The merged xyts file to test")
     args = parser.parse_args()
     file_path = abspath(args.xyts_file)
     try:
