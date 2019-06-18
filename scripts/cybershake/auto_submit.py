@@ -228,11 +228,12 @@ def submit_task(
     elif proc_type == const.ProcessType.plot_ts.value:
         plot_ts_template = (
             "--export=CUR_ENV -o {output_file} -e {error_file} {script_location} "
-            "{xyts_path} {srf_path} {mgmt_db_loc} {run_name}"
+            "{xyts_path} {srf_path} {output_ts_path} {mgmt_db_loc} {run_name}"
         )
         script = plot_ts_template.format(
             xyts_path=os.path.join(sim_struct.get_lf_outbin_dir(sim_dir), '{}_xyts.e3d'.format(run_name.split('_')[0])),
             srf_path=sim_struct.get_srf_path(root_folder, run_name),
+            output_ts_path=os.path.join(sim_dir,'{}_xyts'.format(run_name.split('_')[0])),
             mgmt_db_loc=root_folder,
             run_name=run_name,
             script_location=os.path.expandvars("$gmsim/workflow/scripts/plot_ts.sl"),

@@ -15,8 +15,9 @@ fi
 
 XYTS_PATH=$1
 SRF_PATH=$2
-MGMT_DB_LOC=$3
-SRF_NAME=$4
+OUTPUT_TS_PATH=$3
+MGMT_DB_LOC=$4
+SRF_NAME=$5
 
 script_start=`date`
 echo "script started running at: $script_start"
@@ -27,7 +28,7 @@ start_time=`date +${runtime_fmt}`
 echo ___plotting ts___
 
 python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $SRF_NAME plot_ts running
-res=`python $gmsim/visualization/gmt/plot_ts.py $XYTS_PATH --srf $SRF_PATH`
+res=`python $gmsim/visualization/gmt/plot_ts.py $XYTS_PATH --srf $SRF_PATH --output $OUTPUT_TS_PATH`
 exit_val=$?
 
 end_time=`date +$runtime_fmt`

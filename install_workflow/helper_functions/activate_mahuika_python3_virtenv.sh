@@ -10,7 +10,7 @@ module load Python/3.6.3-gimkl-2017a
 
 # Reset the PYTHONPATH
 export PYTHONPATH=''
-
+export PYTH=$PYTH:/nesi/project/nesi00213/opt/mahuika/ffmpeg_build/bin
 # Load the virtual environment
 source ${virtenv_path}/bin/activate
 
