@@ -70,8 +70,8 @@ def update_tasks(
     tasks_to_do = []
 
     for db_running_task in db_running_tasks:
-        if db_running_task.job_id in squeue_tasks.keys():
-            queue_status = squeue_tasks[db_running_tasks.job_id]
+        if str(db_running_task.job_id) in squeue_tasks.keys():
+            queue_status = squeue_tasks[str(db_running_task.job_id)]
 
             try:
                 queue_status = SLURM_TO_STATUS_DICT[queue_status]
@@ -159,10 +159,9 @@ def main(
 
         # For each hpc get a list of job id and status', and for each pair save them in a dictionary
         squeue_tasks = {
-            queue_job_id: queue_status
+            task.split()[0]: task.split()[1]
             for hpc in const.HPC
             for task in get_queued_tasks(machine=hpc)
-            for queue_job_id, queue_status in task.split()
         }
 
         if len(squeue_tasks) > 0:
