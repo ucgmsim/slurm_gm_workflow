@@ -15,18 +15,13 @@ def test_xyts_file(file_path: str):
     return True
 
 
-def check_zero_bytes(file_path: str, max_percent: float = 0.01):
+def check_zero_bytes(file_path: str):
     """Checks that there are a minimal number of zero bytes in the xyts file.
     Default value is 1 percent"""
-    count = 0
-    total = getsize(file_path)
-    with open(file_path, "rb") as f:
-        byte = f.read(1)
-        while byte:
-            if ord(byte) == 0:
-                count += 1
-            byte = f.read(1)
-    return count/total < max_percent
+    xyts_file = XYTSFile(file_path)
+    time_slice = xyts_file.tslice_get(xyts_file.data.shape[0]//4)
+    min_pvg = min(abs(time_slice[2, :]))
+    return min_pvg > 0
 
 
 def main():
