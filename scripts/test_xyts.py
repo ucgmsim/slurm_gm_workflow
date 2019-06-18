@@ -5,7 +5,7 @@ from sys import stderr
 from qcore.xyts import XYTSFile
 
 
-def test_xyts_file(file_path: str):
+def check_xyts_file(file_path: str):
     """Opens the given file and attempts to extract information from it"""
     xyts_file = XYTSFile(file_path)
     corners, gmt_corners = xyts_file.corners(True)
