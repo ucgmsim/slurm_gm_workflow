@@ -53,10 +53,12 @@ AUTO_SUBMIT_LOG_FILE_NAME = "auto_submit_log_{}.txt"
 def get_queued_tasks(user=None, machine=const.HPC.maui):
     if user is not None:
         cmd = "squeue -A {} -o '%A %t' -h -M {} -u {}".format(
-            const.DEFAULT_ACCOUNT,machine.value, user
+            const.DEFAULT_ACCOUNT, machine.value, user
         )
     else:
-        cmd = "squeue -A {} -o '%A %t' -h -M {}".format(const.DEFAULT_ACCOUNT,machine.value)
+        cmd = "squeue -A {} -o '%A %t' -h -M {}".format(
+            const.DEFAULT_ACCOUNT, machine.value
+        )
 
     process = Popen(shlex.split(cmd), stdout=PIPE, encoding="utf-8")
     (output, err) = process.communicate()
@@ -126,10 +128,7 @@ def update_tasks(
                     )
                 )
                 shared.add_to_queue(
-                    mgmt_queue_folder,
-                    db_task.run_name,
-                    db_task.proc_type,
-                    queue_status,
+                    mgmt_queue_folder, db_task.run_name, db_task.proc_type, queue_status
                 )
                 break
         # Only reset if there is no entry on the mgmt queue for this
@@ -317,7 +316,9 @@ def submit_task(
             output_file=os.path.join(sim_dir, "%x_%j.out"),
             error_file=os.path.join(sim_dir, "%x_%j.err"),
         )
-        submit_sl_script(script, target_machine=JOB_RUN_MACHINE[const.ProcessType.clean_up].value)
+        submit_sl_script(
+            script, target_machine=JOB_RUN_MACHINE[const.ProcessType.clean_up].value
+        )
     elif proc_type == const.ProcessType.LF2BB.value:
         submit_sl_script(
             "--output {} --error {} {} {} {} {}".format(
@@ -326,7 +327,9 @@ def submit_task(
                 os.path.expandvars("$gmsim/workflow/scripts/lf2bb.sl"),
                 sim_dir,
                 root_folder,
-                utils.load_sim_params(os.path.join(sim_dir, "sim_params.yaml")).stat_vs_est,
+                utils.load_sim_params(
+                    os.path.join(sim_dir, "sim_params.yaml")
+                ).stat_vs_est,
             ),
             target_machine=JOB_RUN_MACHINE[const.ProcessType.LF2BB].value,
         )
@@ -433,10 +436,9 @@ def run_main_submit_loop(
             rels_to_run, sum(n_runs.values()), given_tasks_to_run, main_logger
         )
         if len(runnable_tasks) > 0:
-            if master_thread: time_since_something_happened = cycle_timeout
-            main_logger.info(
-                "Number of runnable tasks: {}".format(len(runnable_tasks))
-            )
+            if master_thread:
+                time_since_something_happened = cycle_timeout
+            main_logger.info("Number of runnable tasks: {}".format(len(runnable_tasks)))
         else:
             main_logger.debug("No runnable_tasks")
 
@@ -444,7 +446,8 @@ def run_main_submit_loop(
         # for mgmt db updates (i.e. items in the queue)
         tasks_to_run, task_counter = [], {key: 0 for key in const.HPC}
         for cur_proc_type, cur_run_name, retries in runnable_tasks[:100]:
-            if master_thread: time_since_something_happened = cycle_timeout
+            if master_thread:
+                time_since_something_happened = cycle_timeout
 
             cur_hpc = JOB_RUN_MACHINE[const.ProcessType(cur_proc_type)]
             # Add task if limit has not been reached and there are no
@@ -490,7 +493,7 @@ def run_main_submit_loop(
                         const.ProcessType.clean_up.value,
                         run_name,
                         const.Status.completed.str_value,
-                    ],
+                    ]
                 ):
                     # If clean_up has already run, then we should set it to
                     # be run again after merge_ts has run
@@ -591,7 +594,9 @@ if __name__ == "__main__":
         if len(args.n_runs) == 1:
             n_runs = {hpc: args.n_runs[0] for hpc in const.HPC}
             logger.debug(
-                "Using {} as the maximum number of jobs per machine".format(args.n_runs[0])
+                "Using {} as the maximum number of jobs per machine".format(
+                    args.n_runs[0]
+                )
             )
         elif len(args.n_runs) == len(const.HPC):
             n_runs = {}
@@ -620,7 +625,9 @@ if __name__ == "__main__":
             args.task_types_to_run
         )
     )
-    task_types_to_run = [const.ProcessType.get_by_name(proc) for proc in args.task_types_to_run]
+    task_types_to_run = [
+        const.ProcessType.get_by_name(proc) for proc in args.task_types_to_run
+    ]
     for task in task_types_to_run:
         logger.debug(
             "Process {} in processes to be run, adding dependencies now.".format(
