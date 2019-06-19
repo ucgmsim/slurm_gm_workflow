@@ -15,9 +15,6 @@ lf_sim_dir=$sim_dir/LF
 cd $sim_dir
 
 #check if $run_name_xyts.e3d is there
-#TODO: add in test that xyts.e3d does not contains too much 0 (which means binrary failed)
-
-
 ls $lf_sim_dir/OutBin/$run_name\_xyts.e3d >/dev/null
 if [[ $? != 0 ]];
 then
@@ -28,7 +25,17 @@ else
     xyts_check=0
 fi
 
-if [[ $xyts_check == 0  ]];
+python $gmsim/workflow/scripts/test_xyts.py $lf_sim_dir/OutBin/$run_name\_xyts.e3d
+if [[ $? != 0 ]];
+then
+    xyts_test=1
+    echo "$run_name\_xyts.e3d was not able to be loaded"
+    exit 1
+else
+    xyts_test=0
+fi
+
+if [[ $xyts_check == 0  ]] && [[ $xyts_test == 0 ]];
 then
     echo "$lf_sim_dir merge_ts completed"
     exit 0
