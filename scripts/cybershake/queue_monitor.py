@@ -54,12 +54,13 @@ def get_queue_entry(
         error=data_dict.get("error"),
     )
 
-
 def main(root_folder: str, sleep_time: int, max_retries: int, queue_logger: Logger = workflow_logger.get_basic_logger()):
     mgmt_db = MgmtDB(sim_struct.get_mgmt_db(root_folder))
     queue_folder = sim_struct.get_mgmt_db_queue(root_folder)
 
     queue_logger.info("Running queue-monitor, exit with Ctrl-C.")
+
+    mgmt_db.add_retries(max_retries)
 
     sqlite_tmpdir = "/tmp/cer"
     while keepAlive:

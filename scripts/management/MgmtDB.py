@@ -97,6 +97,39 @@ class MgmtDB:
 
         return True
 
+    def add_retries(self, n_max_retries: int):
+        with connect_db_ctx(self._db_file) as cur:
+            errored = cur.execute("SELECT run_name, proc_type "
+                                  "FROM state, status_enum "
+                                  "WHERE state.status = status_enum.id "
+                                  "AND status_enum.state  = 'failed' ").fetchall()
+
+        failure_count = {}
+        for run_name, proc_type in errored:
+            key = "{}__{}".format(run_name, proc_type)
+            if key not in failure_count.keys():
+                failure_count.update({key: 0})
+            failure_count[key] += 1
+
+        keys_to_update = []
+        for key, value in failure_count.items():
+            if value >= n_max_retries:
+                keys_to_update.append(key)
+
+        with connect_db_ctx(self._db_file) as cur:
+            for key in failure_count.keys():
+                run_name, proc_type = key.split("__")
+                completed_count = cur.execute("SELECT COUNT(*) "
+                                              "FROM state, status_enum "
+                                              "WHERE state.status = status_enum.id "
+                                              "AND status_enum.state  = 'completed' ").fetchone()[0]
+                if completed_count == 0:
+                    cur.execute(
+                        """INSERT OR IGNORE INTO `state`(run_name, proc_type, status,
+                        last_modified) VALUES(?, ?, 1, strftime('%s','now'))""",
+                        (run_name, proc_type),
+                    )
+
     def close_conn(self):
         """Close the db connection. Note, this ONLY has to be done if
         update_entries_live was used. In all other scenarios the connection is
