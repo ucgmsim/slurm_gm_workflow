@@ -3,6 +3,8 @@
 import argparse
 import time
 import os
+import glob
+
 from datetime import datetime
 from logging import Logger
 from subprocess import call, Popen, PIPE
@@ -304,6 +306,27 @@ def submit_task(
             {"submit_time": submitted_time},
             logger=task_logger,
         )
+
+    elif proc_type == const.ProcessType.IM_plot.value:
+        im_plot_template = (
+            "--export=CUR_ENV -o {output_file} -e {error_file} {script_location} "
+            "{csv_path} {rrup_or_station_path} {output_xyz_dir} {srf_path} {model_params_path} {output_plot_dir} {mgmt_db_loc} {run_name}"
+        )
+        script = im_plot_template.format(
+            csv_path=os.path.join(sim_struct.get_IM_csv(sim_dir)),
+            rrup_or_station_path=glob.glob(os.path.join(sim_struct.get_fault_dir(root_folder, os.path.basename(sim_dir)), '*.ll'))[0],
+            output_xyz_dir=os.path.join(sim_dir, 'IM_plot'),
+            srf_path=sim_struct.get_srf_path(root_folder, run_name),
+            model_params_path=glob.glob(os.path.join(sim_struct.get_fault_VM_dir(root_folder, run_name), 'model_params*')),
+            output_plot_dir=os.path.join(sim_dir, 'IM_plot', 'PNG_stations'),
+            mgmt_db_loc=root_folder,
+            run_name=run_name,
+            script_location=os.path.expandvars("$gmsim/workflow/scripts/plot_ts.sl"),
+            output_file=os.path.join(sim_dir, "%x_%j.out"),
+            error_file=os.path.join(sim_dir, "%x_%j.err"),
+        )
+        submit_sl_script(script, target_machine=JOB_RUN_MACHINE[const.ProcessType.plot_ts].value)
+
     elif proc_type == const.ProcessType.rrup.value:
         submit_sl_script(
             "--output {} --error {} {} {} {}".format(
