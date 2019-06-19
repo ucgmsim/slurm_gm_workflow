@@ -26,6 +26,6 @@ fi
 xargs -n 1 -a ${env_path}/workflow/install_workflow/mahuika_python3_requirements.txt pip install
 
 # Install qcore
-pip install ./qcore
-pip install ./Empirical_Engine
-pip install -I --no-deps ./IM_calculation
+pip install -e ./qcore
+pip install -e ./Empirical_Engine
+pip install -I --no-deps -e ./IM_calculation
