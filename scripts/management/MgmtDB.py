@@ -152,7 +152,7 @@ class MgmtDB:
 
         return [SlurmTask(*entry) for entry in result]
 
-    def get_runnable_tasks(self, allowed_rels, allowed_tasks=None, logger=workflow_logger.get_basic_logger()):
+    def get_runnable_tasks(self, allowed_rels, task_limit, allowed_tasks=None, logger=workflow_logger.get_basic_logger()):
         """Gets all runnable tasks based on their status and their associated
         dependencies (i.e. other tasks have to be finished first)
 
@@ -165,9 +165,11 @@ class MgmtDB:
         if len(allowed_tasks) == 0:
             return []
 
+        runnable_tasks = []
+        offset = 0
         with connect_db_ctx(self._db_file) as cur:
-            db_tasks = cur.execute(
-                """SELECT proc_type, run_name 
+            entries = cur.execute(
+                """SELECT COUNT(*) 
                           FROM status_enum, state 
                           WHERE state.status = status_enum.id
                            AND proc_type IN (?{})
@@ -176,13 +178,29 @@ class MgmtDB:
                     ",?" * (len(allowed_tasks) - 1)
                 ),
                 (*allowed_tasks, allowed_rels),
-            ).fetchall()
+            ).fetchone()[0]
 
-        return [
-            (*task, self.get_retries(*task))
-            for task in db_tasks
-            if self._check_dependancy_met(task, logger)
-        ]
+            while len(runnable_tasks) < task_limit and offset < entries:
+                db_tasks = cur.execute(
+                    """SELECT proc_type, run_name 
+                              FROM status_enum, state 
+                              WHERE state.status = status_enum.id
+                               AND proc_type IN (?{})
+                               AND run_name LIKE (?)
+                                   AND status_enum.state = 'created'
+                                   LIMIT 100 OFFSET ?""".format(
+                        ",?" * (len(allowed_tasks) - 1)
+                    ),
+                        (*allowed_tasks, allowed_rels, offset),
+                ).fetchall()
+                runnable_tasks.extend([
+                    (*task, self.get_retries(*task))
+                    for task in db_tasks
+                    if self._check_dependancy_met(task, logger)
+                ])
+                offset += 100
+
+        return runnable_tasks
 
 
     def is_task_complete(self, task):

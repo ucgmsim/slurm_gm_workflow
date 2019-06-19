@@ -430,7 +430,7 @@ def run_main_submit_loop(
 
         # Gets all runnable tasks based on mgmt db state
         runnable_tasks = mgmt_db.get_runnable_tasks(
-            rels_to_run, given_tasks_to_run, main_logger
+            rels_to_run, sum(n_runs.values()), given_tasks_to_run, main_logger
         )
         if len(runnable_tasks) > 0:
             if master_thread: time_since_something_happened = cycle_timeout
