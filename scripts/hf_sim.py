@@ -485,6 +485,7 @@ elif args.seed == -1:
             validate_end(work_idx[c0 - 1] + 1)
 os.remove(in_stats)
 print("Process %03d of %03d finished (%.2fs)." % (rank, size, MPI.Wtime() - t0))
-comm.Barrier() #all ranks wait here until rank 0 arrives to announce all completed
+logger.debug("Process {} of {} completed {} stations ({:.2f}).".format(rank, size, len(stations_todo), MPI.Wtime() - t0))
+comm.Barrier()  # all ranks wait here until rank 0 arrives to announce all completed
 if is_master:
     logger.debug("Simulation completed.")
