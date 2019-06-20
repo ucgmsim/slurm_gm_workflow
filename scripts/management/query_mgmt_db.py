@@ -8,7 +8,7 @@ import argparse
 import scripts.management.db_helper as db_helper
 
 
-def print_run_status(db, run_name, error=False):
+def print_run_status(db, run_name, error=False, count=False):
     if error:
         db.execute(
             """SELECT state.run_name, proc_type_enum.proc_type, status_enum.state, state.job_id, datetime(last_modified,'unixepoch'), error.error
@@ -26,6 +26,17 @@ def print_run_status(db, run_name, error=False):
                     *statum
                 )
             )
+    elif count:
+        vals = []
+        for i in range(1, 7):
+            vals.append(db.execute(
+                """SELECT COUNT(*)
+                        FROM state
+                        WHERE status = ?
+                        """,
+                (i,),
+            ).fetchone()[0])
+        print("created: {}, queued: {}, running: {}, completed: {}, failed: {}, other: {}, total: {}".format(*vals, sum(vals)))
     else:
         db.execute(
             """SELECT state.run_name, proc_type_enum.proc_type, status_enum.state, state.job_id, datetime(last_modified,'unixepoch')
@@ -58,10 +69,16 @@ def main():
     parser.add_argument(
         "--error",
         "-e",
-        default=None,
         action="store_true",
         help="Optionally add an error string to the database",
     )
+    parser.add_argument(
+        "--count",
+        "-c",
+        action="store_true",
+        help="Get counts for each possible state. Does nothing if --error is given",
+    )
+
 
     args = parser.parse_args()
     f = args.run_folder
@@ -69,7 +86,7 @@ def main():
     error = args.error
     db = db_helper.connect_db(f)
 
-    print_run_status(db, run_name, error)
+    print_run_status(db, run_name, error, args.count)
 
 
 if __name__ == "__main__":

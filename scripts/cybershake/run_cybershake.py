@@ -1,5 +1,5 @@
 from datetime import datetime
-from logging import Logger
+from logging import Logger, DEBUG
 from os.path import abspath, join
 import threading
 import argparse
@@ -35,6 +35,7 @@ def run_automated_workflow(
     sleep_time: int,
     tasks_to_run_with_pattern: List[Tuple[str, List[const.ProcessType]]],
     wrapper_logger: Logger,
+    debug: bool,
 ):
     """Runs the automated workflow. Beings the queue monitor script and the script for tasks that apply to all
     realisations. Then while the all realisation thread is running go through each pattern and run all tasks that are
@@ -71,6 +72,8 @@ def run_automated_workflow(
     )
 
     bulk_logger = workflow_logger.get_logger("auto_submit_main", True)
+    if debug:
+        workflow_logger.set_stdout_level(bulk_logger, DEBUG)
     workflow_logger.add_general_file_handler(
         bulk_logger,
         join(
@@ -83,6 +86,8 @@ def run_automated_workflow(
     wrapper_logger.debug("Created logger for the main auto_submit thread")
 
     queue_logger = workflow_logger.get_logger("queue_monitor", True)
+    if debug:
+        workflow_logger.set_stdout_level(queue_logger, DEBUG)
     workflow_logger.add_general_file_handler(
         queue_logger,
         join(
@@ -140,7 +145,6 @@ def run_automated_workflow(
         ),
         kwargs={
             'main_logger': bulk_logger,
-            'master_thread': True,
             'cycle_timeout': len(tasks_to_run_with_pattern_and_logger)+1,
         },
     )
@@ -180,7 +184,6 @@ def run_automated_workflow(
                 bb_est_model,
                 im_est_model),
                 main_logger=pattern_logger,
-                master_thread=False,
                 cycle_timeout=1,
             )
     bulk_auto_submit_thread.join()
@@ -269,9 +272,17 @@ def main():
         help="Location of the directory to place logs in. Defaults to the value of the root_folder argument. "
         "Must be absolute or relative to the root_folder.",
     )
+    parser.add_argument(
+        "--debug",
+        action="store_true",
+        help="Print debug messages to stdout",
+    )
     args = parser.parse_args()
 
     wrapper_logger = workflow_logger.get_logger("cybershake_wrapper", True)
+
+    if args.debug:
+        workflow_logger.set_stdout_level(wrapper_logger, DEBUG)
 
     root_directory = abspath(args.root_folder)
     log_directory = join(root_directory, args.log_folder)
@@ -324,6 +335,7 @@ def main():
         args.sleep_time,
         tasks_to_match,
         wrapper_logger,
+        args.debug,
     )
 
 
