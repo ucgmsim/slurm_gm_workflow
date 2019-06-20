@@ -4,7 +4,7 @@ import argparse
 import signal
 
 from e2e_tests.E2ETests import E2ETests
-from e2e_tests.queue_monitor_test import QueueMonitorStressTest
+from e2e_tests.queue_monitor_tests import QueueMonitorStressTest
 
 
 def on_exit(signum, frame):

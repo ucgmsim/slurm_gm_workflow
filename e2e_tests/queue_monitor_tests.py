@@ -5,26 +5,18 @@ import os
 import json
 import shutil
 import time
-import glob
 import subprocess
-from collections import namedtuple
-from typing import List
-from threading import Thread
-from queue import Queue, Empty
 
 import numpy.random as nprdm
-import pandas as pd
 import sqlite3 as sql
-from pandas.util.testing import assert_frame_equal
 
 import qcore.constants as const
 import qcore.simulation_structure as sim_struct
 from scripts.cybershake.add_to_mgmt_queue import add_to_queue
 from scripts.management import create_mgmt_db
 from scripts.management.db_helper import connect_db_ctx
-from scripts.management.MgmtDB import SlurmTask
-from shared_workflow.shared import exe
-from e2e_tests.E2ETests import NonBlockingStreamReader, Error, Warning
+from shared_workflow.shared_automated_workflow import exe
+from e2e_tests.E2ETests import NonBlockingStreamReader, Error
 
 
 class QueueMonitorStressTest(object):
