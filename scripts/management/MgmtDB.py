@@ -46,7 +46,12 @@ class MgmtDB:
                 (realisation_name, process, const.Status.created.value),
             ).fetchone()[0]
 
-    def update_entries_live(self, entries: List[SlurmTask], retry_max: int, logger: Logger = workflow_logger.get_basic_logger()):
+    def update_entries_live(
+        self,
+        entries: List[SlurmTask],
+        retry_max: int,
+        logger: Logger = workflow_logger.get_basic_logger(),
+    ):
         """Updates the specified entries in the db. Leaves the connection open,
         so this should only be used when continuously updating entries.
         """
@@ -54,40 +59,93 @@ class MgmtDB:
             if self._conn is None:
                 logger.info("Aquiring db connection.")
                 self._conn = sql.connect(self._db_file)
+            logger.debug("Getting db cursor")
             cur = self._conn.cursor()
 
             for entry in entries:
                 process = entry.proc_type
                 realisation_name = entry.run_name
 
-                logger.debug("The status of process {} for realisation {} is being set to {}. It has slurm id {}".
-                             format(entry.proc_type, entry.run_name, entry.status, entry.job_id))
+                logger.debug(
+                    "The status of process {} for realisation {} is being set to {}. It has slurm id {}".format(
+                        entry.proc_type, entry.run_name, entry.status, entry.job_id
+                    )
+                )
 
                 if entry.status == const.Status.created.value:
                     # Something has attempted to set a task to created
                     # Make a new task with created status and move to the next task
+                    logger.debug("Adding new task to the db")
                     self._insert_task(cur, realisation_name, process)
+                    logger.debug("New task added to the db, continuing to next process")
                     continue
-
+                logger.debug("Updating task in the db")
                 self._update_entry(cur, entry)
+                logger.debug("Task successfully updated")
 
-                if entry.status == const.Status.failed.value and self.get_retries(process, realisation_name) < retry_max:
+                if (
+                    entry.status == const.Status.failed.value
+                    and self.get_retries(process, realisation_name) < retry_max
+                ):
                     # The task was failed. If there have been few enough other attempts at the task make another one
+                    logger.debug(
+                        "Task failed but is able to be retried. Adding new task to the db"
+                    )
                     self._insert_task(cur, realisation_name, process)
+                    logger.debug("New task added to the db")
         except sql.Error as ex:
             self._conn.rollback()
-            print(
+            logger.critical(
                 "Failed to update entry {}, due to the exception: \n{}".format(
                     entry, ex
                 )
             )
             return False
         else:
+            logger.debug("Committing changes to db")
             self._conn.commit()
         finally:
+            logger.debug("Closing db cursor")
             cur.close()
 
         return True
+
+    def add_retries(self, n_max_retries: int):
+        with connect_db_ctx(self._db_file) as cur:
+            errored = cur.execute(
+                "SELECT run_name, proc_type "
+                "FROM state, status_enum "
+                "WHERE state.status = status_enum.id "
+                "AND status_enum.state  = 'failed' "
+            ).fetchall()
+
+        failure_count = {}
+        for run_name, proc_type in errored:
+            key = "{}__{}".format(run_name, proc_type)
+            if key not in failure_count.keys():
+                failure_count.update({key: 0})
+            failure_count[key] += 1
+
+        keys_to_update = []
+        for key, value in failure_count.items():
+            if value >= n_max_retries:
+                keys_to_update.append(key)
+
+        with connect_db_ctx(self._db_file) as cur:
+            for key in failure_count.keys():
+                run_name, proc_type = key.split("__")
+                completed_count = cur.execute(
+                    "SELECT COUNT(*) "
+                    "FROM state, status_enum "
+                    "WHERE state.status = status_enum.id "
+                    "AND status_enum.state  = 'completed' "
+                ).fetchone()[0]
+                if completed_count == 0:
+                    cur.execute(
+                        """INSERT OR IGNORE INTO `state`(run_name, proc_type, status,
+                        last_modified) VALUES(?, ?, 1, strftime('%s','now'))""",
+                        (run_name, proc_type),
+                    )
 
     def close_conn(self):
         """Close the db connection. Note, this ONLY has to be done if
@@ -105,13 +163,19 @@ class MgmtDB:
                 "FROM state, status_enum "
                 "WHERE state.status = status_enum.id "
                 "AND status_enum.state IN ('queued', 'running') "
-                "AND proc_type IN (?{})".format(",?"*(len(allowed_tasks)-1)),
-                allowed_tasks
+                "AND proc_type IN (?{})".format(",?" * (len(allowed_tasks) - 1)),
+                allowed_tasks,
             ).fetchall()
 
         return [SlurmTask(*entry) for entry in result]
 
-    def get_runnable_tasks(self, allowed_rels, allowed_tasks=None, logger=workflow_logger.get_basic_logger()):
+    def get_runnable_tasks(
+        self,
+        allowed_rels,
+        task_limit,
+        allowed_tasks=None,
+        logger=workflow_logger.get_basic_logger(),
+    ):
         """Gets all runnable tasks based on their status and their associated
         dependencies (i.e. other tasks have to be finished first)
 
@@ -124,9 +188,11 @@ class MgmtDB:
         if len(allowed_tasks) == 0:
             return []
 
+        runnable_tasks = []
+        offset = 0
         with connect_db_ctx(self._db_file) as cur:
-            db_tasks = cur.execute(
-                """SELECT proc_type, run_name 
+            entries = cur.execute(
+                """SELECT COUNT(*) 
                           FROM status_enum, state 
                           WHERE state.status = status_enum.id
                            AND proc_type IN (?{})
@@ -135,14 +201,31 @@ class MgmtDB:
                     ",?" * (len(allowed_tasks) - 1)
                 ),
                 (*allowed_tasks, allowed_rels),
-            ).fetchall()
+            ).fetchone()[0]
 
-        return [
-            (*task, self.get_retries(*task))
-            for task in db_tasks
-            if self._check_dependancy_met(task, logger)
-        ]
+            while len(runnable_tasks) < task_limit and offset < entries:
+                db_tasks = cur.execute(
+                    """SELECT proc_type, run_name 
+                              FROM status_enum, state 
+                              WHERE state.status = status_enum.id
+                               AND proc_type IN (?{})
+                               AND run_name LIKE (?)
+                                   AND status_enum.state = 'created'
+                                   LIMIT 100 OFFSET ?""".format(
+                        ",?" * (len(allowed_tasks) - 1)
+                    ),
+                    (*allowed_tasks, allowed_rels, offset),
+                ).fetchall()
+                runnable_tasks.extend(
+                    [
+                        (*task, self.get_retries(*task))
+                        for task in db_tasks
+                        if self._check_dependancy_met(task, logger)
+                    ]
+                )
+                offset += 100
 
+        return runnable_tasks
 
     def is_task_complete(self, task):
         process, run_name, status = task
@@ -169,18 +252,23 @@ class MgmtDB:
                           WHERE state.status = status_enum.id
                            AND run_name = (?)
                            AND status_enum.state = 'completed'""",
-                (run_name, ),
+                (run_name,),
             ).fetchall()
-        logger.debug("Considering task {} for realisation {}. Completed tasks as follows: {}".format(process, run_name, completed_tasks))
-        remaining_deps = process.get_remaining_dependencies([const.ProcessType(x[0]) for x in completed_tasks])
+        logger.debug(
+            "Considering task {} for realisation {}. Completed tasks as follows: {}".format(
+                process, run_name, completed_tasks
+            )
+        )
+        remaining_deps = process.get_remaining_dependencies(
+            [const.ProcessType(x[0]) for x in completed_tasks]
+        )
         logger.debug("{} has remaining deps: {}".format(task, remaining_deps))
         return len(remaining_deps) == 0
 
     def _update_entry(self, cur: sql.Cursor, entry: SlurmTask):
         """Updates all fields that have a value for the specific entry"""
         for field, value in zip(
-            (self.col_job_id, self.col_status),
-            (entry.job_id, entry.status),
+            (self.col_job_id, self.col_status), (entry.job_id, entry.status)
         ):
             if value is not None:
                 cur.execute(

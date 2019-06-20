@@ -7,10 +7,8 @@ Module which contains shared functions/values.
 """
 from __future__ import print_function
 
-import json
 import os
 import shutil
-import subprocess
 import sys
 import re
 import glob
@@ -18,10 +16,6 @@ from datetime import datetime
 from logging import Logger, DEBUG, INFO
 
 from qcore import binary_version
-from qcore.config import host
-import qcore.constants as const
-from scripts.cybershake.queue_monitor import DATE_FORMAT as QUEUE_DATE_FORMAT
-from scripts.management.MgmtDB import MgmtDB
 from shared_workflow.workflow_logger import get_basic_logger
 
 if sys.version_info.major == 3:
@@ -401,134 +395,6 @@ def add_name_suffix(name, yes):
         new_name = name + "_" + user_str
         yes = confirm_name(new_name)
     return new_name
-
-
-def exe(
-    cmd,
-    debug=True,
-    shell=False,
-    stdout=subprocess.PIPE,
-    stderr=subprocess.PIPE,
-    non_blocking=False,
-):
-    """cmd is either a str or a list. but it will be processed as a list.
-    this is to accommodate the default shell=False. (for security reason)
-    If we wish to support a simple shell command like "echo hello"
-    without switching on shell=True, cmd should be given as a list.
-
-    If non_blocking is set, then the Popen instance is returned instead of the
-    output and error.
-    """
-    if type(cmd) == str:
-        cmd = cmd.split(" ")
-
-    if debug:
-        print(" ".join(cmd))
-
-    p = subprocess.Popen(
-        cmd, shell=shell, stdout=stdout, stderr=stderr, encoding="utf-8"
-    )
-    if non_blocking:
-        return p
-
-    out, err = p.communicate()
-    if debug:
-        if out:
-            print(out)
-        if err:
-            print(err, file=sys.stderr)
-            print(err)  # also printing to stdout (syncing err msg to cmd executed)
-
-    return out, err
-
-
-def submit_sl_script(
-    script: str,
-    proc_type: int,
-    queue_folder: str,
-    run_name: str,
-    submit_yes: bool = False,
-    target_machine: str = None,
-    logger: Logger = get_basic_logger(),
-):
-    """Submits the slurm script and updates the management db"""
-    if submit_yes:
-        logger.debug("Submitting {} on machine {}".format(script, target_machine))
-        if target_machine and target_machine != host:
-            res = exe(
-                "sbatch --export=CUR_ENV,CUR_HPC -M {} {}".format(
-                    target_machine, script
-                ),
-                debug=False,
-            )
-        else:
-            res = exe("sbatch {}".format(script), debug=False)
-        if len(res[1]) == 0:
-            # no errors, return the job id
-            return_words = res[0].split()
-            job_index = return_words.index("job")
-            jobid = return_words[job_index + 1]
-            try:
-                int(jobid)
-            except ValueError:
-                print(
-                    "{} is not a valid jobid. Submitting the "
-                    "job most likely failed".format(jobid)
-                )
-                sys.exit()
-
-            add_to_queue(
-                queue_folder,
-                run_name,
-                proc_type,
-                const.Status.queued.value,
-                job_id=jobid,
-            )
-            return jobid
-        else:
-            logger.error("An error occurred during job submission: {}".format(res[1]))
-    else:
-        logger.info("User chose to submit the job manually")
-
-
-def add_to_queue(
-    queue_folder: str,
-    run_name: str,
-    proc_type: int,
-    status: int,
-    job_id: int = None,
-    error: str = None,
-    logger: Logger = None
-):
-    """Adds an update entry to the queue"""
-    filename = os.path.join(
-        queue_folder,
-        "{}.{}.{}".format(
-            datetime.now().strftime(QUEUE_DATE_FORMAT), run_name, proc_type
-        ),
-    )
-
-    if os.path.exists(filename):
-        logger.critical("An update with the name {} already exists. This should never happen. Quitting!".format(
-                os.path.basename(filename)
-            ))
-        raise Exception(
-            "An update with the name {} already exists. This should never happen. Quitting!".format(
-                os.path.basename(filename)
-            )
-        )
-
-    with open(filename, "w") as f:
-        json.dump(
-            {
-                MgmtDB.col_run_name: run_name,
-                MgmtDB.col_proc_type: proc_type,
-                MgmtDB.col_status: status,
-                MgmtDB.col_job_id: job_id,
-                "error": error,
-            },
-            f,
-        )
 
 
 ### functions mostly used in regression_test

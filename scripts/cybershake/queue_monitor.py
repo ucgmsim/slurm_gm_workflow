@@ -1,24 +1,31 @@
 #!/usr/bin/env python3
 """Script for continuously updating the slurm mgmt db from the queue."""
+import logging
 import signal
 import os
 import json
 import argparse
 import time
 from logging import Logger
-from typing import List
+from typing import List, Dict
 from datetime import datetime
 
+import qcore.constants as const
 import qcore.simulation_structure as sim_struct
 from scripts.management.MgmtDB import MgmtDB, SlurmTask
 from shared_workflow import workflow_logger
+from shared_workflow.shared_automated_workflow import (
+    get_queued_tasks,
+    check_mgmt_queue,
+)
 
 
 # Have to include sub-seconds, as clean up can run sub one second.
-DATE_FORMAT = "%Y%m%d%H%M%S_%f"
 
 QUEUE_MONITOR_LOG_FILE_NAME = "queue_monitor_log_{}.txt"
 DEFAULT_N_MAX_RETRIES = 2
+
+SLURM_TO_STATUS_DICT = {"R": 3, "PD": 2, "CG": 3}
 
 logger = None
 keepAlive = True
@@ -53,12 +60,14 @@ def get_queue_entry(
         error=data_dict.get("error"),
     )
 
-
+  
 def main(root_folder: str, sleep_time: int, max_retries: int, queue_logger: Logger = workflow_logger.get_basic_logger()):
     mgmt_db = MgmtDB(sim_struct.get_mgmt_db(root_folder))
     queue_folder = sim_struct.get_mgmt_db_queue(root_folder)
 
     queue_logger.info("Running queue-monitor, exit with Ctrl-C.")
+
+    mgmt_db.add_retries(max_retries)
 
     sqlite_tmpdir = "/tmp/cer"
     while keepAlive:
@@ -66,10 +75,43 @@ def main(root_folder: str, sleep_time: int, max_retries: int, queue_logger: Logg
             os.makedirs(sqlite_tmpdir)
             queue_logger.debug("Set up the sqlite_tmpdir")
 
+        # For each hpc get a list of job id and status', and for each pair save them in a dictionary
+        squeue_tasks = {
+            task.split()[0]: task.split()[1]
+            for hpc in const.HPC
+            for task in get_queued_tasks(machine=hpc)
+        }
+
+        if len(squeue_tasks) > 0:
+            queue_logger.info("Squeue user tasks: " + ", ".join([" ".join(task) for task in squeue_tasks.items()]))
+        else:
+            queue_logger.debug("No squeue user tasks")
+
+        db_in_progress_tasks = mgmt_db.get_submitted_tasks()
+        if len(db_in_progress_tasks) > 0:
+
+            queue_logger.info(
+                "In progress tasks in mgmt db:"
+                + ", ".join(
+                    [
+                        "{}-{}-{}-{}".format(
+                            entry.run_name,
+                            const.ProcessType(entry.proc_type).str_value,
+                            entry.job_id,
+                            const.Status(entry.status).str_value,
+                        )
+                        for entry in db_in_progress_tasks
+                    ]
+                )
+            )
+
         entry_files = os.listdir(queue_folder)
         entry_files.sort()
 
-        entries = []
+        entries = update_tasks(
+            entry_files, squeue_tasks, db_in_progress_tasks, queue_logger
+        )
+
         for file in entry_files:
             entry = get_queue_entry(os.path.join(queue_folder, file), queue_logger)
             if entry is not None:
@@ -118,6 +160,11 @@ if __name__ == "__main__":
         default=DEFAULT_N_MAX_RETRIES,
         type=int,
     )
+    parser.add_argument(
+        "--debug",
+        action="store_true",
+        help="Print debug messages to stdout",
+    )
     args = parser.parse_args()
 
     root_folder = os.path.abspath(args.root_folder)
@@ -125,10 +172,13 @@ if __name__ == "__main__":
     if args.log_file is None:
         log_file_name = os.path.join(
             args.root_folder,
-            QUEUE_MONITOR_LOG_FILE_NAME.format(datetime.now().strftime(DATE_FORMAT)),
+            QUEUE_MONITOR_LOG_FILE_NAME.format(datetime.now().strftime(const.QUEUE_DATE_FORMAT)),
         )
     else:
         log_file_name = args.log_file
+
+    if args.debug:
+        workflow_logger.set_stdout_level(logger, logging.DEBUG)
 
     workflow_logger.add_general_file_handler(logger, log_file_name)
     logger.debug("Successfully added {} as the log file.".format(log_file_name))

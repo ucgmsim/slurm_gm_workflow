@@ -211,3 +211,9 @@ def clean_up_logger(logger: logging.Logger):
         if isinstance(handler, logging.FileHandler):
             handler.close()
             logger.handlers.remove(handler)
+
+
+def set_stdout_level(logger: logging.Logger, level: int):
+    for handler in logger.handlers:
+        if isinstance(handler, logging.StreamHandler):
+            handler.setLevel(level)
