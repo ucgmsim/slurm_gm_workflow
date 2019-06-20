@@ -64,6 +64,7 @@ def install_fault(fault_name, n_rel, root_folder, version, stat_file_path, seed=
     # get all srf from source
     srf_dir = simulation_structure.get_srf_dir(root_folder, fault_name)
     list_srf = glob.glob(os.path.join(srf_dir, "*.srf"))
+    list_srf.sort()
     if n_rel is not None and len(list_srf) != n_rel:
         message = (
             "Error: fault {} failed. Number of realisations do "
@@ -90,6 +91,7 @@ def install_fault(fault_name, n_rel, root_folder, version, stat_file_path, seed=
     fault_yaml_path = simulation_structure.get_fault_yaml_path(sim_root_dir, fault_name)
     root_yaml_path = simulation_structure.get_root_yaml_path(sim_root_dir)
     for srf in list_srf:
+        logger.info("Installing {}".format(srf))
         # try to match find the stoch with same basename
         srf_name = os.path.splitext(os.path.basename(srf))[0]
         stoch_file_path = simulation_structure.get_stoch_path(root_folder, srf_name)

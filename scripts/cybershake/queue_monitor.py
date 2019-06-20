@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Script for continuously updating the slurm mgmt db from the queue."""
+import logging
 import signal
 import os
 import json
@@ -59,97 +60,14 @@ def get_queue_entry(
         error=data_dict.get("error"),
     )
 
-
-def update_tasks(
-    mgmt_queue_entries: List[str],
-    squeue_tasks: Dict[str, str],
-    db_running_tasks: List[SlurmTask],
-    task_logger: Logger,
-):
-    """Updates the mgmt db entries based on the HPC queue"""
-    tasks_to_do = []
-
-    for db_running_task in db_running_tasks:
-        if str(db_running_task.job_id) in squeue_tasks.keys():
-            queue_status = squeue_tasks[str(db_running_task.job_id)]
-
-            try:
-                queue_status = SLURM_TO_STATUS_DICT[queue_status]
-            except KeyError:
-                task_logger.error(
-                    "Failed to recogize state code {}, updating to {}".format(
-                        queue_status, const.Status.unknown.value
-                    )
-                )
-                queue_status = const.Status.unknown.value
-
-            if queue_status == db_running_task.status:
-                task_logger.debug(
-                    "No need to update status {} for {}, {} ({}) as it "
-                    "has not changed.".format(
-                        const.Status(queue_status).str_value,
-                        db_running_task.run_name,
-                        const.ProcessType(db_running_task.proc_type).str_value,
-                        db_running_task.job_id,
-                    )
-                )
-            # Do nothing if there is a pending update for
-            # this run & process type combination
-            elif not check_mgmt_queue(
-                mgmt_queue_entries, db_running_task.run_name, db_running_task.proc_type
-            ):
-                task_logger.info(
-                    "Updating status of {}, {} from {} to {}".format(
-                        db_running_task.run_name,
-                        const.ProcessType(db_running_task.proc_type).str_value,
-                        const.Status(db_running_task.status).str_value,
-                        const.Status(queue_status).str_value,
-                    )
-                )
-                tasks_to_do.append(
-                    SlurmTask(
-                        db_running_task.run_name,
-                        db_running_task.proc_type,
-                        queue_status,
-                        None,
-                        None,
-                    )
-                )
-        # Only reset if there is no entry on the mgmt queue for this
-        # realisation/proc combination and nothing in the mgmt folder
-        elif not check_mgmt_queue(
-            mgmt_queue_entries, db_running_task.run_name, db_running_task.proc_type
-        ):
-            task_logger.warning(
-                "Task '{}' on '{}' not found on squeue; resetting the status "
-                "to 'created' for resubmission".format(
-                    const.ProcessType(db_running_task.proc_type).str_value,
-                    db_running_task.run_name,
-                )
-            )
-            # Add an error
-            tasks_to_do.append(
-                SlurmTask(
-                    db_running_task.run_name,
-                    db_running_task.proc_type,
-                    const.Status.failed.value,
-                    None,
-                    "Disappeared from squeue. Creating a new task.",
-                )
-            )
-    return tasks_to_do
-
-
-def main(
-    root_folder: str,
-    sleep_time: int,
-    max_retries: int,
-    queue_logger: Logger = workflow_logger.get_basic_logger(),
-):
+  
+def main(root_folder: str, sleep_time: int, max_retries: int, queue_logger: Logger = workflow_logger.get_basic_logger()):
     mgmt_db = MgmtDB(sim_struct.get_mgmt_db(root_folder))
     queue_folder = sim_struct.get_mgmt_db_queue(root_folder)
 
     queue_logger.info("Running queue-monitor, exit with Ctrl-C.")
+
+    mgmt_db.add_retries(max_retries)
 
     sqlite_tmpdir = "/tmp/cer"
     while keepAlive:
@@ -242,6 +160,11 @@ if __name__ == "__main__":
         default=DEFAULT_N_MAX_RETRIES,
         type=int,
     )
+    parser.add_argument(
+        "--debug",
+        action="store_true",
+        help="Print debug messages to stdout",
+    )
     args = parser.parse_args()
 
     root_folder = os.path.abspath(args.root_folder)
@@ -253,6 +176,9 @@ if __name__ == "__main__":
         )
     else:
         log_file_name = args.log_file
+
+    if args.debug:
+        workflow_logger.set_stdout_level(logger, logging.DEBUG)
 
     workflow_logger.add_general_file_handler(logger, log_file_name)
     logger.debug("Successfully added {} as the log file.".format(log_file_name))

@@ -1,4 +1,5 @@
 """Contains class and helper functions for end to end test"""
+import signal
 import sys
 import os
 import json
@@ -11,6 +12,7 @@ from typing import List
 from threading import Thread
 from queue import Queue, Empty
 
+import numpy.random as nprdm
 import pandas as pd
 import sqlite3 as sql
 from pandas.util.testing import assert_frame_equal
@@ -118,7 +120,7 @@ class E2ETests(object):
         self.runs_dir = None
 
         self._sim_passed, self._sim_failed = set(), set()
-        self._stop_on_error = None
+        self._stop_on_error, self._test_restart = None, None
 
         self.canceled_running = []
         # Resources that need to be dealt with on close
@@ -132,6 +134,7 @@ class E2ETests(object):
         stop_on_error: bool = True,
         stop_on_warning: bool = False,
         no_clean_up: bool = False,
+        test_restart: bool = False
     ):
         """
         Runs the full automated workflow and checks that everything works as
@@ -146,6 +149,7 @@ class E2ETests(object):
             The username under which to run the tasks
         """
         self._stop_on_error = stop_on_error
+        self._test_restart = test_restart
 
         # Setup folder structure
         self.setup()
@@ -333,12 +337,9 @@ class E2ETests(object):
                 const.ProcessType.BB,
             ]
 
-        # Have to put this in a massive try block, to ensure that
-        # the run_queue_and_auto_submit process is terminated on any errors.
-        try:
-            print("Starting cybershake wrapper...")
+        def run_wrapper(command: str):
             p_submit = exe(
-                submit_cmd,
+                command,
                 debug=False,
                 non_blocking=True,
                 stdout=subprocess.PIPE,
@@ -352,11 +353,40 @@ class E2ETests(object):
             out_submit_f = open(os.path.join(self.stage_dir, self.submit_out_file), "w")
             err_submit_f = open(os.path.join(self.stage_dir, self.submit_err_file), "w")
             self._files.extend((out_submit_f, err_submit_f))
+            return p_submit, [
+                    (out_submit_f, p_submit_out_nbsr),
+                    (err_submit_f, p_submit_err_nbsr),
+                ]
+
+        def restart_command(process: subprocess.Popen, command: str):
+            print("Restarting command: {}".format(command))
+            process.send_signal(signal.SIGINT)
+            process.wait(5)
+            if process.poll() is None:
+                raise RuntimeError("Process {} would not die".format(process.args))
+            return run_wrapper(command)
+
+        def get_laps_till_restart():
+            return nprdm.poisson(3)
+
+        laps_till_restart = 5
+
+        # Have to put this in a massive try block, to ensure that
+        # the run_queue_and_auto_submit process is terminated on any errors.
+        try:
+            print("Starting cybershake wrapper...")
+            p_submit, outputs_to_check = run_wrapper(submit_cmd)
 
             # Monitor mgmt db
             print("Progress: ")
             start_time = time.time()
             while time.time() - start_time < self.timeout:
+                if self._test_restart:
+                    laps_till_restart -= 1
+                    if laps_till_restart < 1:
+                        p_submit, outputs_to_check = restart_command(p_submit, submit_cmd)
+                        laps_till_restart = get_laps_till_restart()
+
                 try:
                     total_count, comp_count, failed_count = (
                         self.check_mgmt_db_progress()
@@ -378,10 +408,7 @@ class E2ETests(object):
                 )
 
                 # Get the log data
-                for file, reader in [
-                    (out_submit_f, p_submit_out_nbsr),
-                    (err_submit_f, p_submit_err_nbsr),
-                ]:
+                for file, reader in outputs_to_check:
                     lines = reader.readlines()
                     if lines:
                         file.writelines(lines)
