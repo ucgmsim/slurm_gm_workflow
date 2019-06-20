@@ -6,19 +6,25 @@ import json
 import argparse
 import time
 from logging import Logger
-from typing import List
+from typing import List, Dict
 from datetime import datetime
 
+import qcore.constants as const
 import qcore.simulation_structure as sim_struct
 from scripts.management.MgmtDB import MgmtDB, SlurmTask
 from shared_workflow import workflow_logger
+from shared_workflow.shared_automated_workflow import (
+    get_queued_tasks,
+    check_mgmt_queue,
+)
 
 
 # Have to include sub-seconds, as clean up can run sub one second.
-DATE_FORMAT = "%Y%m%d%H%M%S_%f"
 
 QUEUE_MONITOR_LOG_FILE_NAME = "queue_monitor_log_{}.txt"
 DEFAULT_N_MAX_RETRIES = 2
+
+SLURM_TO_STATUS_DICT = {"R": 3, "PD": 2, "CG": 3}
 
 logger = None
 keepAlive = True
@@ -54,7 +60,92 @@ def get_queue_entry(
     )
 
 
-def main(root_folder: str, sleep_time: int, max_retries: int, queue_logger: Logger = workflow_logger.get_basic_logger()):
+def update_tasks(
+    mgmt_queue_entries: List[str],
+    squeue_tasks: Dict[str, str],
+    db_running_tasks: List[SlurmTask],
+    task_logger: Logger,
+):
+    """Updates the mgmt db entries based on the HPC queue"""
+    tasks_to_do = []
+
+    for db_running_task in db_running_tasks:
+        if str(db_running_task.job_id) in squeue_tasks.keys():
+            queue_status = squeue_tasks[str(db_running_task.job_id)]
+
+            try:
+                queue_status = SLURM_TO_STATUS_DICT[queue_status]
+            except KeyError:
+                task_logger.error(
+                    "Failed to recogize state code {}, updating to {}".format(
+                        queue_status, const.Status.unknown.value
+                    )
+                )
+                queue_status = const.Status.unknown.value
+
+            if queue_status == db_running_task.status:
+                task_logger.debug(
+                    "No need to update status {} for {}, {} ({}) as it "
+                    "has not changed.".format(
+                        const.Status(queue_status).str_value,
+                        db_running_task.run_name,
+                        const.ProcessType(db_running_task.proc_type).str_value,
+                        db_running_task.job_id,
+                    )
+                )
+            # Do nothing if there is a pending update for
+            # this run & process type combination
+            elif not check_mgmt_queue(
+                mgmt_queue_entries, db_running_task.run_name, db_running_task.proc_type
+            ):
+                task_logger.info(
+                    "Updating status of {}, {} from {} to {}".format(
+                        db_running_task.run_name,
+                        const.ProcessType(db_running_task.proc_type).str_value,
+                        const.Status(db_running_task.status).str_value,
+                        const.Status(queue_status).str_value,
+                    )
+                )
+                tasks_to_do.append(
+                    SlurmTask(
+                        db_running_task.run_name,
+                        db_running_task.proc_type,
+                        queue_status,
+                        None,
+                        None,
+                    )
+                )
+        # Only reset if there is no entry on the mgmt queue for this
+        # realisation/proc combination and nothing in the mgmt folder
+        elif not check_mgmt_queue(
+            mgmt_queue_entries, db_running_task.run_name, db_running_task.proc_type
+        ):
+            task_logger.warning(
+                "Task '{}' on '{}' not found on squeue; resetting the status "
+                "to 'created' for resubmission".format(
+                    const.ProcessType(db_running_task.proc_type).str_value,
+                    db_running_task.run_name,
+                )
+            )
+            # Add an error
+            tasks_to_do.append(
+                SlurmTask(
+                    db_running_task.run_name,
+                    db_running_task.proc_type,
+                    const.Status.failed.value,
+                    None,
+                    "Disappeared from squeue. Creating a new task.",
+                )
+            )
+    return tasks_to_do
+
+
+def main(
+    root_folder: str,
+    sleep_time: int,
+    max_retries: int,
+    queue_logger: Logger = workflow_logger.get_basic_logger(),
+):
     mgmt_db = MgmtDB(sim_struct.get_mgmt_db(root_folder))
     queue_folder = sim_struct.get_mgmt_db_queue(root_folder)
 
@@ -66,10 +157,43 @@ def main(root_folder: str, sleep_time: int, max_retries: int, queue_logger: Logg
             os.makedirs(sqlite_tmpdir)
             queue_logger.debug("Set up the sqlite_tmpdir")
 
+        # For each hpc get a list of job id and status', and for each pair save them in a dictionary
+        squeue_tasks = {
+            task.split()[0]: task.split()[1]
+            for hpc in const.HPC
+            for task in get_queued_tasks(machine=hpc)
+        }
+
+        if len(squeue_tasks) > 0:
+            queue_logger.info("Squeue user tasks: " + ", ".join([" ".join(task) for task in squeue_tasks.items()]))
+        else:
+            queue_logger.debug("No squeue user tasks")
+
+        db_in_progress_tasks = mgmt_db.get_submitted_tasks()
+        if len(db_in_progress_tasks) > 0:
+
+            queue_logger.info(
+                "In progress tasks in mgmt db:"
+                + ", ".join(
+                    [
+                        "{}-{}-{}-{}".format(
+                            entry.run_name,
+                            const.ProcessType(entry.proc_type).str_value,
+                            entry.job_id,
+                            const.Status(entry.status).str_value,
+                        )
+                        for entry in db_in_progress_tasks
+                    ]
+                )
+            )
+
         entry_files = os.listdir(queue_folder)
         entry_files.sort()
 
-        entries = []
+        entries = update_tasks(
+            entry_files, squeue_tasks, db_in_progress_tasks, queue_logger
+        )
+
         for file in entry_files:
             entry = get_queue_entry(os.path.join(queue_folder, file), queue_logger)
             if entry is not None:
@@ -125,7 +249,7 @@ if __name__ == "__main__":
     if args.log_file is None:
         log_file_name = os.path.join(
             args.root_folder,
-            QUEUE_MONITOR_LOG_FILE_NAME.format(datetime.now().strftime(DATE_FORMAT)),
+            QUEUE_MONITOR_LOG_FILE_NAME.format(datetime.now().strftime(const.QUEUE_DATE_FORMAT)),
         )
     else:
         log_file_name = args.log_file

@@ -11,8 +11,8 @@ from qcore import utils, binary_version
 from qcore.config import get_machine_config, host
 from shared_workflow.shared import (
     confirm,
-    submit_sl_script,
 )
+from shared_workflow.shared_automated_workflow import submit_sl_script
 from shared_workflow.shared_template import write_sl_script
 from shared_workflow.workflow_logger import get_basic_logger
 

@@ -17,7 +17,7 @@ from pandas.util.testing import assert_frame_equal
 
 from scripts.management.db_helper import connect_db_ctx
 from scripts.management.MgmtDB import SlurmTask
-from shared_workflow.shared import exe
+from shared_workflow.shared_automated_workflow import exe
 import qcore.constants as const
 import qcore.simulation_structure as sim_struct
 
