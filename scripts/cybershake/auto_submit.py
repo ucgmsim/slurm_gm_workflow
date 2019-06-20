@@ -314,17 +314,19 @@ def submit_task(
         )
         script = im_plot_template.format(
             csv_path=os.path.join(sim_struct.get_IM_csv(sim_dir)),
-            rrup_or_station_path=glob.glob(os.path.join(sim_struct.get_fault_dir(root_folder, os.path.basename(sim_dir)), '*.ll'))[0],
+            rrup_or_station_path=glob.glob(os.path.join(sim_struct.get_fault_dir(root_folder, run_name.split('_')[0]), '*.ll'))[0],
             output_xyz_dir=os.path.join(sim_dir, 'IM_plot'),
             srf_path=sim_struct.get_srf_path(root_folder, run_name),
             model_params_path=glob.glob(os.path.join(sim_struct.get_fault_VM_dir(root_folder, run_name), 'model_params*')),
             output_plot_dir=os.path.join(sim_dir, 'IM_plot', 'PNG_stations'),
             mgmt_db_loc=root_folder,
             run_name=run_name,
-            script_location=os.path.expandvars("$gmsim/workflow/scripts/plot_ts.sl"),
+            script_location=os.path.expandvars("$gmsim/workflow/scripts/im_plot.sl"),
             output_file=os.path.join(sim_dir, "%x_%j.out"),
             error_file=os.path.join(sim_dir, "%x_%j.err"),
         )
+        with open('/home/melody.zhu/im_plo.sl', 'w') as f:
+            f.write(script)
         submit_sl_script(script, target_machine=JOB_RUN_MACHINE[const.ProcessType.plot_ts].value)
 
     elif proc_type == const.ProcessType.rrup.value:

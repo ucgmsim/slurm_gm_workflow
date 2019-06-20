@@ -32,18 +32,19 @@ timestamp=`date +%Y%m%d_%H%M%S`
 start_time=`date +${runtime_fmt}`
 echo ___im plot___
 
-python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $SRF_NAME im_plot running
-res=`python $gmsim/visualization/im_plotting/im_plot.py $CSV_PATH $RRUP_OR_STATION_PATH --output $OUTPUT_XYZ_DIR; for f in $OUTPUT_XYZ_DIR/*;do python $gmsim/visualization/gmt/plot_ts.py $f --srf --out_dir $OUTPUT_PLOT_DIR;done`
+python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $SRF_NAME IM_plot running
+res=`python $gmsim/visualization/im_plotting/im_plot.py $CSV_PATH $RRUP_OR_STATION_PATH --output $OUTPUT_XYZ_DIR; for f in $OUTPUT_XYZ_DIR/*;do python $gmsim/visualization/gmt/plot_stations.py $f --srf $SRF_PATH --model_params $MODEL_PARAMS --out_dir $OUTPUT_PLOT_DIR;done`
 exit_val=$?
 
+echo $res
 
 end_time=`date +$runtime_fmt`
 echo $end_time
 
 if [[ $exit_val == 0 ]]; then
     #passed
-    python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $SRF_NAME im_plot completed
+    python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $SRF_NAME IM_plot completed
 else
-    python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $SRF_NAME im_plot failed --error "$res"
+    python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $SRF_NAME IM_plot failed --error "$res"
 fi
 
