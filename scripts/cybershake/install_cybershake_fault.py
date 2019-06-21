@@ -136,6 +136,12 @@ def install_fault(fault_name, n_rel, root_folder, version, stat_file_path, seed=
             extended_period=extended_period,
         )
 
+        if root_params_dict is None \
+                and fault_params_dict is None \
+                and sim_params_dict is None \
+                and vm_add_params_dict is None:
+            return
+
         vm_params_dict.update(vm_add_params_dict)
 
         create_mgmt_db.create_mgmt_db([], sim_struct.get_mgmt_db(root_folder), srf_files=srf)

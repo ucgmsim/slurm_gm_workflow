@@ -158,6 +158,14 @@ def install_simulation(
     if stat_file_path is not None:
         sim_params_dict[SimParams.stat_file.value] = stat_file_path
 
+    if sim_duration/root_params_dict['dt'] - int(sim_duration/root_params_dict['dt']) > 0.001:
+        logger.critical(
+            "Simulation dt does not match sim duration. This will result in errors during BB. Simulation duration must "
+            "be a multiple of dt. Ignoring fault. Simulation_duration: {}. dt: {}.".format(
+                sim_duration, root_params_dict['dt'])
+        )
+        return None, None, None, None
+
     sim_params_dict["emod3d"] = {}
 
     sim_params_dict["hf"] = {SimParams.slip.value: stoch_file}
