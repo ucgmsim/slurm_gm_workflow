@@ -212,7 +212,7 @@ def submit_task(
             rrup_or_station_path=glob.glob(os.path.join(sim_struct.get_fault_dir(root_folder, run_name.split('_')[0]), '*.ll'))[0],
             output_xyz_dir=os.path.join(sim_dir, 'IM_plot'),
             srf_path=sim_struct.get_srf_path(root_folder, run_name),
-            model_params_path=glob.glob(os.path.join(sim_struct.get_fault_VM_dir(root_folder, run_name), 'model_params*')),
+            model_params_path=glob.glob(os.path.join(sim_struct.get_fault_VM_dir(root_folder, run_name), 'model_params*'))[0],
             output_plot_dir=os.path.join(sim_dir, 'IM_plot', 'PNG_stations'),
             mgmt_db_loc=root_folder,
             run_name=run_name,
