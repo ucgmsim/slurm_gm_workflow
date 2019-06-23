@@ -3,6 +3,7 @@ import os
 import glob
 from logging import Logger
 
+from numpy import isclose
 import yaml
 
 import shared_workflow.shared_automated_workflow
@@ -158,7 +159,7 @@ def install_simulation(
     if stat_file_path is not None:
         sim_params_dict[SimParams.stat_file.value] = stat_file_path
 
-    if float(sim_duration)/root_params_dict['dt'] - int(float(sim_duration)/root_params_dict['dt']) > 0.001:
+    if isclose(float(sim_duration)/root_params_dict['dt'], int(float(sim_duration)/root_params_dict['dt'])):
         logger.critical(
             "Simulation dt does not match sim duration. This will result in errors during BB. Simulation duration must "
             "be a multiple of dt. Ignoring fault. Simulation_duration: {}. dt: {}.".format(
