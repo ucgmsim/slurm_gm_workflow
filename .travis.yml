@@ -46,3 +46,5 @@ script:
     pytest -vs --ignore testing/test_manual_install;"
 #after_success:
 #  - coveralls   # uploads reports to coveralls.io
+notifications:
+  slack: uceqeng:f1YW3wYdV5iUNkNaar2BzFMx
