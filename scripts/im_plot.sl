@@ -20,11 +20,9 @@ OUTPUT_XYZ_DIR=$3
 
 SRF_PATH=$4
 MODEL_PARAMS=$5
-OUTPUT_PLOT_DIR=$6
 
-MGMT_DB_LOC=$7
-SRF_NAME=$8
-echo $1 $2 $3 $4 $5 $6 $7 $8
+MGMT_DB_LOC=$6
+SRF_NAME=$7
 
 script_start=`date`
 echo "script started running at: $script_start"
@@ -38,19 +36,23 @@ python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt
 res=`python $gmsim/visualization/im_plotting/im_plot.py $CSV_PATH $RRUP_OR_STATION_PATH --output $OUTPUT_XYZ_DIR`
 module load Python/2.7.14-gimkl-2017a
 
-    # Reset the PYTHONPATH
-    export PYTHONPATH=''
+## Reset the PYTHONPATH
+export PYTHONPATH=''
 
-    # PYTHONPATH (this can be removed once qcore is installed as a pip package)
-    export PYTHONPATH=/nesi/project/nesi00213/opt/mahuika/qcore:$PYTHONPATH
+## PYTHONPATH (this can be removed once qcore is installed as a pip package)
+export PYTHONPATH=/nesi/project/nesi00213/opt/mahuika/qcore:$PYTHONPATH
 
-    # PYTHONPATH for workflow
-    export PYTHONPATH=/nesi/project/nesi00213/workflow:$PYTHONPATH
+## PYTHONPATH for workflow
+export PYTHONPATH=/nesi/project/nesi00213/workflow:$PYTHONPATH
 
-    # Load the virtual environment
-    source /nesi/project/nesi00213/share/virt_envs/python2_mahuika/bin/activate
+## Load the python2 virtual environment
+source /nesi/project/nesi00213/share/virt_envs/python2_mahuika/bin/activate
 
-res2=`for f in $OUTPUT_XYZ_DIR/*; do if [ -f "$f" ]; then echo "ploting $f"; $gmsim/visualization/gmt/plot_stations.py $f --srf $SRF_PATH --model_params $MODEL_PARAMS --out_dir $OUTPUT_PLOT_DIR; fi; done`
+res2=`for f in $OUTPUT_XYZ_DIR/*; do if [ -f "$f" ]; then echo "ploting $f"; $gmsim/visualization/gmt/plot_stations.py $f --srf $SRF_PATH --model_params $MODEL_PARAMS --out_dir "${f//./_}_png_stations"; echo "output pngs save to ${f//./_}_png_stations"; fi; done`
+
+echo "srf_file $SRF_PATH"
+echo "model_params $MODEL_PARAMS"
+echo "$res2"
 
 exit_val=$?
 
@@ -58,6 +60,7 @@ exit_val=$?
 end_time=`date +$runtime_fmt`
 echo $end_time
 
+## Reset to python3 virtual environment
 source $CUR_ENV/workflow/install_workflow/helper_functions/activate_env.sh $CUR_ENV "mahuika"
 
 if [[ $exit_val == 0 ]]; then
