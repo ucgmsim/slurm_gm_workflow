@@ -1,0 +1,10 @@
+{
+  "test_dir": "/nesi/nobackup/nesi00213/RunFolder/EndToEndTest/tests/",
+  "data_dir": "/nesi/project/nesi00213/EndToEndTest/queue_stress_test/Data",
+  "fault_list": "/nesi/project/nesi00213/EndToEndTest/queue_stress_test/list.txt",
+  "bench_dir": "/nesi/project/nesi00213/EndToEndTest/queue_stress_test/benchmark",
+  "timeout": 25,
+  "realisations": 30000,
+  "tasks_to_complete": [1, 4, 5, 6, 11],
+  "simultaneous_task_count": 3000
+}

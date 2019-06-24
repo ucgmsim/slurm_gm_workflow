@@ -29,7 +29,7 @@ def main():
     args = parser.parse_args()
     file_path = abspath(args.xyts_file)
     try:
-        if test_xyts_file(file_path) and check_zero_bytes(file_path):
+        if check_xyts_file(file_path) and check_zero_bytes(file_path):
             return True
     except Exception as e:
         print(e, file=stderr)

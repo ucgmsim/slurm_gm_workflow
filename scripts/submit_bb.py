@@ -13,9 +13,9 @@ from shared_workflow.load_config import load
 from shared_workflow.shared import (
     set_wct,
     confirm,
-    submit_sl_script,
     get_hf_nt,
 )
+from shared_workflow.shared_automated_workflow import submit_sl_script
 from shared_workflow.workflow_logger import get_basic_logger
 from shared_workflow.shared_template import write_sl_script
 

@@ -3,8 +3,10 @@ import os
 import glob
 from logging import Logger
 
+from numpy import isclose
 import yaml
 
+import shared_workflow.shared_automated_workflow
 import shared_workflow.shared_defaults as defaults
 from qcore import geo, utils, simulation_structure
 from qcore.constants import (
@@ -92,20 +94,20 @@ def install_simulation(
                 os.path.join(defaults.latest_ll_dir, defaults.latest_ll + ".ll"),
                 stat_file_path,
             )
-            shared.exe(cmd)
+            shared_workflow.shared_automated_workflow.exe(cmd)
 
             # making symbolic link to lastest_ll.vs30 and .vs30ref
             cmd = "ln -s {} {}".format(
                 os.path.join(defaults.latest_ll_dir, defaults.latest_ll + ".vs30"),
                 vs30_file_path,
             )
-            shared.exe(cmd)
+            shared_workflow.shared_automated_workflow.exe(cmd)
 
             cmd = "ln -s {} {}".format(
                 os.path.join(defaults.latest_ll_dir, defaults.latest_ll + ".vs30ref"),
                 vs30ref_file_path,
             )
-            shared.exe(cmd)
+            shared_workflow.shared_automated_workflow.exe(cmd)
 
     template_path = os.path.join(defaults.recipe_dir, "gmsim", version)
     root_params_dict = utils.load_yaml(
@@ -156,6 +158,15 @@ def install_simulation(
     }
     if stat_file_path is not None:
         sim_params_dict[SimParams.stat_file.value] = stat_file_path
+
+    nt = float(sim_duration) / root_params_dict['dt']
+    if not isclose(nt, int(nt)):
+        logger.critical(
+            "Simulation dt does not match sim duration. This will result in errors during BB. Simulation duration must "
+            "be a multiple of dt. Ignoring fault. Simulation_duration: {}. dt: {}.".format(
+                sim_duration, root_params_dict['dt'])
+        )
+        return None, None, None, None
 
     sim_params_dict["emod3d"] = {}
 

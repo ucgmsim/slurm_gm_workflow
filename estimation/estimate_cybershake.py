@@ -65,7 +65,7 @@ def get_faults(vms_dir, sources_dir, runs_dir, args):
     if runs_dir is None and faults_df is None:
         faults = vms_faults
     # No runs directory but the faults selection file is provided
-    elif runs_dir is None and faults_df:
+    elif runs_dir is None and faults_df is not None:
         mask = np.isin(faults_df["fault_name"].values, faults)
 
         faults = faults_df.loc[mask, "fault_name"].values
@@ -487,18 +487,21 @@ if __name__ == "__main__":
     parser.add_argument(
         "--runs_dir",
         type=str,
+        default=None,
         help="The absolute path to the Runs directory."
         "Specifying this allows estimation of HF and BB.",
     )
     parser.add_argument(
         "--fault_selection",
         type=str,
+        default=None,
         help="The cybershake fault selection text file."
         "Ignored if --runs_dir is specified.",
     )
     parser.add_argument(
         "--root_yaml",
         type=str,
+        default=None,
         help="root_default.yaml file to retrieve dt."
         "Ignored if --runs_dir is specified.",
     )
@@ -512,13 +515,13 @@ if __name__ == "__main__":
     parser.add_argument(
         "--verbose",
         action="store_true",
-        default=False,
         help="Print estimation on a per fault basis instead of just "
         "the final estimation.",
     )
     parser.add_argument(
         "--models_dir",
         type=str,
+        default=None,
         help="The models directory (i.e. ..../estimation/models/. If not specified"
         "then the model dir from the workflow config is used.",
     )

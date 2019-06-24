@@ -16,8 +16,8 @@ from shared_workflow import load_config
 from shared_workflow.shared import (
     confirm,
     set_wct,
-    submit_sl_script,
 )
+from shared_workflow.shared_automated_workflow import submit_sl_script
 from shared_workflow.shared_template import write_sl_script
 
 # Estimated number of minutes between each checkpoint
