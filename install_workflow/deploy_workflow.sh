@@ -30,7 +30,7 @@ touch ${ROOT}/share/bashrc.uceq
 
 echo "export gmsim='$ROOT'" >> ${ROOT}/share/bashrc.uceq
 echo "export nobackup='/nesi/nobackup/nesi00213'" >> ${ROOT}/share/bashrc.uceq
-echo 'export PATH=$PATH:'${ROOT}/workflow/scripts:/nesi/project/nesi00213/opt/mahuika/ffmpeg_build/bin:/nesi/project/nesi00213/opt/maui/gmt/5.4.4/bin >> ${ROOT}/share/bashrc.uceq
+echo 'export PATH=$PATH:'${ROOT}/workflow/scripts:/nesi/project/nesi00213/opt/mahuika/ffmpeg_build/bin:/nesi/project/nesi00213/opt/mahuika/gmt/5.4.4/bin >> ${ROOT}/share/bashrc.uceq
 echo "export PYTHONPATH=$ROOT/workflow:"'$PYTHONPATH' >> ${ROOT}/share/bashrc.uceq
 
 #TODO:tempory disabled chgrp because its breaking the remote daemon. fix this if possible
