@@ -16,7 +16,7 @@ TEST_RUN_NAME = "PangopangoF29_HYP01-10_S1244"
 TEST_PROC = (2, "merge_ts")
 TEST_STATUS = (4, "completed")
 FORCE_STATUS = (5, "failed")
-INIT_DB_ROWS = 13
+INIT_DB_ROWS = 14
 EXPECTED_ERROS = [
     "test_err",
     "",

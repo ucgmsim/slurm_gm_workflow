@@ -43,6 +43,7 @@ JOB_RUN_MACHINE = {
     const.ProcessType.clean_up: const.HPC.mahuika,
     const.ProcessType.LF2BB: const.HPC.mahuika,
     const.ProcessType.HF2BB: const.HPC.mahuika,
+    const.ProcessType.plot_srf: const.HPC.mahuika
 }
 
 
@@ -257,6 +258,22 @@ def submit_task(
             ),
             target_machine=JOB_RUN_MACHINE[const.ProcessType.HF2BB].value,
         )
+    elif proc_type == const.ProcessType.plot_srf.value:
+        plot_srf_template = (
+            "--export=CUR_ENV -o {output_file} -e {error_file} {script_location} "
+            "{srf_path} {output_dir} {mgmt_db_loc} {run_name}"
+        )
+        script = plot_srf_template.format(
+            srf_path=sim_struct.get_srf_path(root_folder, run_name),
+            output_dir=os.path.join(sim_dir,'{}_srf_plot'.format(run_name.split('_')[0])),
+            mgmt_db_loc=root_folder,
+            run_name=run_name,
+            script_location=os.path.expandvars("$gmsim/workflow/scripts/plot_srf.sl"),
+            output_file=os.path.join(sim_dir, "%x_%j.out"),
+            error_file=os.path.join(sim_dir, "%x_%j.err"),
+        )
+        submit_sl_script(script, target_machine=JOB_RUN_MACHINE[const.ProcessType.plot_srf].value)
+
     workflow_logger.clean_up_logger(task_logger)
 
 
