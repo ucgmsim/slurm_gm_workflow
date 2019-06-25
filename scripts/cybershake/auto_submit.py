@@ -118,8 +118,6 @@ def submit_task(
             {"submit_time": submitted_time},
             logger=task_logger,
         )
-
-    # persudo
     elif proc_type == const.ProcessType.plot_ts.value:
         plot_ts_template = (
             "--export=CUR_ENV -o {output_file} -e {error_file} {script_location} "
