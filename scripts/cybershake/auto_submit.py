@@ -275,7 +275,7 @@ def run_main_submit_loop(
     time_since_something_happened = cycle_timeout
 
     while time_since_something_happened > 0:
-        logger.debug("time_since_something_happened is now {}".format(time_since_something_happened))
+        main_logger.debug("time_since_something_happened is now {}".format(time_since_something_happened))
         time_since_something_happened -= 1
         # Get items in the mgmt queue, have to get a snapshot instead of
         # checking the directory real-time to prevent timing issues,
@@ -287,7 +287,7 @@ def run_main_submit_loop(
         for hpc in const.HPC:
             n_tasks_to_run[hpc] = n_runs[hpc] - len(get_queued_tasks(user=user, machine=hpc))
             if n_tasks_to_run[hpc] < n_runs[hpc]:
-                logger.debug("There was at least one job in squeue, resetting timeout")
+                main_logger.debug("There was at least one job in squeue, resetting timeout")
                 time_since_something_happened = cycle_timeout
 
         # Gets all runnable tasks based on mgmt db state
@@ -299,7 +299,7 @@ def run_main_submit_loop(
             main_logger.info(
                 "Number of runnable tasks: {}".format(len(runnable_tasks))
             )
-            logger.debug("There was at least one runnable task, resetting timeout")
+            main_logger.debug("There was at least one runnable task, resetting timeout")
         else:
             main_logger.debug("No runnable_tasks")
 
