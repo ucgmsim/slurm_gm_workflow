@@ -2,4 +2,5 @@ EMOD3D: ALL
 HF: ALL
 BB: ALL
 IM_calc: ALL
+IM_plot: ALL
 plot_ts: "%HYP01%"
