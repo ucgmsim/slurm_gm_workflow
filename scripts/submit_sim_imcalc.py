@@ -160,6 +160,7 @@ def submit_im_calc_slurm(sim_dir: str, options_dict: Dict = None, est_model: Est
         os.path.splitext(os.path.basename(params.srf_file))[0],
         submit_yes=submit_yes,
         target_machine=options_dict["machine"],
+        logger=logger
     )
 
     return script_file_path

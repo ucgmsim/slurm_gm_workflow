@@ -382,6 +382,7 @@ def run_main_submit_loop(
                         run_name,
                         const.ProcessType.clean_up.value,
                         const.Status.created.value,
+                        logger=main_logger
                     )
 
             # submit the job

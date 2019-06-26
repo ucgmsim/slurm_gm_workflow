@@ -75,6 +75,7 @@ def submit_sl_script(
                 proc_type,
                 const.Status.queued.value,
                 job_id=jobid,
+                logger=logger
             )
             return jobid
         else:
@@ -90,7 +91,7 @@ def add_to_queue(
     status: int,
     job_id: int = None,
     error: str = None,
-    logger: Logger = None
+    logger: Logger = get_basic_logger()
 ):
     """Adds an update entry to the queue"""
     logger.debug("Adding task to the queue. Realisation: {}, process type: {}, job_id: {}, error: {}".format(run_name, proc_type, job_id, error))
