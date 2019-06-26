@@ -110,3 +110,7 @@ scripts/workflow_config.json
 # test
 testing/**/sample*
 testing/PangopangoF29
+
+# gmt
+**/gmt.conf
+**/gmt.history

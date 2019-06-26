@@ -9,6 +9,8 @@ if [[ `hostname` == mahuika* ]] || [[ $HOSTNAME == wb* ]] || [[ $HOSTNAME == vgp
     export PATH=/nesi/project/nesi00213/opt/mahuika/python-packages/bin:$PATH
     #gmt
     export PATH=/nesi/project/nesi00213/opt/mahuika/gmt/5.4.4/bin:$PATH
+    #ffmpeg
+    export PATH=/nesi/project/nesi00213/opt/mahuika/ffmpeg_build/bin:$PATH
     #NZVM
     export PATH=/nesi/project/nesi00213/opt/mahuika/Velocity-Model:$PATH
     

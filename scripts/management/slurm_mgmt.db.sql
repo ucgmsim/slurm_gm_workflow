@@ -33,6 +33,7 @@ CREATE TABLE IF NOT EXISTS "proc_type_enum" (
 );
 INSERT OR IGNORE INTO `proc_type_enum` (id,proc_type) VALUES (1,'EMOD3D');
 INSERT OR IGNORE INTO `proc_type_enum` (id,proc_type) VALUES (2,'merge_ts');
+INSERT OR IGNORE INTO `proc_type_enum` (id,proc_type) VALUES (3,'plot_ts');
 INSERT OR IGNORE INTO `proc_type_enum` (id,proc_type) VALUES (4,'HF');
 INSERT OR IGNORE INTO `proc_type_enum` (id,proc_type) VALUES (5,'BB');
 INSERT OR IGNORE INTO `proc_type_enum` (id,proc_type) VALUES (6,'IM_calculation');

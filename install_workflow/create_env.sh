@@ -42,6 +42,9 @@ git clone git@github.com:ucgmsim/Pre-processing.git
 echo "Cloning Empirical Engine"
 git clone git@github.com:ucgmsim/Empirical_Engine.git
 
+echo "Cloning visualization"
+git@github.com:ucgmsim/visualization.git
+
 # Run setup for IM_calculation
 echo "Running setup for IM_calculation"
 cd IM_calculation
@@ -73,4 +76,4 @@ xargs -n 1 -a ${env_path}/workflow/install_workflow/maui_python3_requirements.tx
 pip install -I --no-deps -e ./qcore
 pip install -I --no-deps -e ./Empirical_Engine
 pip install -I --no-deps -e ./IM_calculation
-
+pip install -I --no-deps -e ./visualization
