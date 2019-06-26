@@ -7,18 +7,18 @@ import glob
 
 from datetime import datetime
 from logging import Logger
-from subprocess import call
+from subprocess import call, Popen, PIPE
 from typing import List, Dict, Tuple
 
+import shlex
 import numpy as np
 
 import shared_workflow.load_config as ldcfg
 import qcore.constants as const
 import qcore.simulation_structure as sim_struct
-import shared_workflow.shared_automated_workflow
 from qcore import utils
 import estimation.estimate_wct as est
-from scripts.management.MgmtDB import MgmtDB
+from scripts.management.MgmtDB import MgmtDB, SlurmTask
 from metadata.log_metadata import store_metadata
 
 from scripts.submit_emod3d import main as submit_lf_main
@@ -26,8 +26,7 @@ from scripts.submit_post_emod3d import main as submit_post_lf_main
 from scripts.submit_hf import main as submit_hf_main
 from scripts.submit_bb import main as submit_bb_main
 from scripts.submit_sim_imcalc import submit_im_calc_slurm, SlBodyOptConsts
-from shared_workflow import workflow_logger
-from shared_workflow.shared_automated_workflow import get_queued_tasks, check_mgmt_queue
+from shared_workflow import shared, workflow_logger
 
 DEFAULT_N_RUNS = {const.HPC.maui: 12, const.HPC.mahuika: 12}
 
@@ -47,8 +46,114 @@ JOB_RUN_MACHINE = {
     const.ProcessType.HF2BB: const.HPC.mahuika,
 }
 
+SLURM_TO_STATUS_DICT = {"R": 3, "PD": 2, "CG": 3}
 
 AUTO_SUBMIT_LOG_FILE_NAME = "auto_submit_log_{}.txt"
+# TODO: move default value to qcore.const once everythin else is stablized as well, e.g submit_hf.py
+# To avoid conflicts and different behaviors.
+
+
+def get_queued_tasks(user=None, machine=const.HPC.maui):
+    if user is not None:
+        cmd = "squeue -A {} -o '%A %t' -h -M {} -u {}".format(
+            const.DEFAULT_ACCOUNT,machine.value, user
+        )
+    else:
+        cmd = "squeue -A {} -o '%A %t' -h -M {}".format(const.DEFAULT_ACCOUNT,machine.value)
+
+    process = Popen(shlex.split(cmd), stdout=PIPE, encoding="utf-8")
+    (output, err) = process.communicate()
+    process.wait()
+
+    output_list = list(filter(None, output.split("\n")[1:]))
+    return output_list
+
+
+def check_mgmt_queue(queue_entries: List[str], run_name: str, proc_type: int):
+    """Returns True if there are any queued entries for this run_name and process type,
+    otherwise returns False.
+    """
+    for entry in queue_entries:
+        _, entry_run_name, entry_proc_type = entry.split(".")
+        if entry_run_name == run_name and entry_proc_type == str(proc_type):
+            return True
+    return False
+
+
+def update_tasks(
+    mgmt_queue_folder: str,
+    mgmt_queue_entries: List[str],
+    squeue_tasks,
+    db_tasks: List[SlurmTask],
+    task_logger: Logger,
+):
+    """Updates the mgmt db entries based on the HPC queue"""
+    for db_task in db_tasks:
+        found = False
+        for queue_task in squeue_tasks:
+            queue_job_id, queue_status = queue_task.split()
+            if db_task.job_id != int(queue_job_id):
+                continue
+
+            found = True
+            try:
+                queue_status = SLURM_TO_STATUS_DICT[queue_status]
+            except KeyError:
+                task_logger.error(
+                    "Failed to recogize state code {}, updating to {}".format(
+                        queue_status, const.Status.unknown.value
+                    )
+                )
+                queue_status = const.Status.unknown.value
+            if queue_status == db_task.status:
+                task_logger.debug(
+                    "No need to update status {} for {}, {} ({}) as it "
+                    "has not changed.".format(
+                        const.Status(queue_status).str_value,
+                        db_task.run_name,
+                        const.ProcessType(db_task.proc_type).str_value,
+                        db_task.job_id,
+                    )
+                )
+            # Do nothing if there is a pending update for
+            # this run & process type combination
+            elif not check_mgmt_queue(
+                mgmt_queue_entries, db_task.run_name, db_task.proc_type
+            ):
+                task_logger.info(
+                    "Updating status of {}, {} from {} to {}".format(
+                        db_task.run_name,
+                        const.ProcessType(db_task.proc_type).str_value,
+                        const.Status(db_task.status).str_value,
+                        const.Status(queue_status).str_value,
+                    )
+                )
+                shared.add_to_queue(
+                    mgmt_queue_folder,
+                    db_task.run_name,
+                    db_task.proc_type,
+                    queue_status,
+                )
+                break
+        # Only reset if there is no entry on the mgmt queue for this
+        # realisation/proc combination
+        if not found and not check_mgmt_queue(
+            mgmt_queue_entries, db_task.run_name, db_task.proc_type
+        ):
+            task_logger.warning(
+                "Task '{}' on '{}' not found on squeue; resetting the status "
+                "to 'created' for resubmission".format(
+                    const.ProcessType(db_task.proc_type).str_value, db_task.run_name
+                )
+            )
+            # Add an error
+            shared.add_to_queue(
+                mgmt_queue_folder,
+                db_task.run_name,
+                db_task.proc_type,
+                const.Status.failed.value,
+                error="Disappeared from squeue. Creating a new task.",
+            )
 
 
 def submit_task(
@@ -73,7 +178,7 @@ def submit_task(
     log_file = os.path.join(sim_dir, "ch_log", const.METADATA_LOG_FILENAME)
 
     def submit_sl_script(script_name, **kwargs):
-        shared_workflow.shared_automated_workflow.submit_sl_script(
+        shared.submit_sl_script(
             script_name,
             proc_type,
             sim_struct.get_mgmt_db_queue(root_folder),
@@ -120,6 +225,7 @@ def submit_task(
             {"submit_time": submitted_time},
             logger=task_logger,
         )
+
     elif proc_type == const.ProcessType.plot_ts.value:
         plot_ts_template = (
             "--export=CUR_ENV -o {output_file} -e {error_file} {script_location} "
@@ -128,7 +234,7 @@ def submit_task(
         script = plot_ts_template.format(
             xyts_path=os.path.join(sim_struct.get_lf_outbin_dir(sim_dir), '{}_xyts.e3d'.format(run_name.split('_')[0])),
             srf_path=sim_struct.get_srf_path(root_folder, run_name),
-            output_ts_path=os.path.join(sim_dir,'{}_xyts'.format(run_name.split('_')[0])),
+            output_ts_dir=os.path.join(sim_dir, 'Verification', '{}_xyts'.format(run_name.split('_')[0])),
             mgmt_db_loc=root_folder,
             run_name=run_name,
             script_location=os.path.expandvars("$gmsim/workflow/scripts/plot_ts.sl"),
@@ -203,22 +309,21 @@ def submit_task(
     elif proc_type == const.ProcessType.IM_plot.value:
         im_plot_template = (
             "--export=CUR_ENV -o {output_file} -e {error_file} {script_location} "
-            "{csv_path} {rrup_or_station_path} {output_xyz_dir} {srf_path} {model_params_path} {mgmt_db_loc} {run_name}"
+            "{csv_path} {rrup_or_station_path} {output_xyz_dir} {srf_path} {model_params_path} {output_plot_dir} {mgmt_db_loc} {run_name}"
         )
         script = im_plot_template.format(
             csv_path=os.path.join(sim_struct.get_IM_csv(sim_dir)),
-            rrup_or_station_path=glob.glob(os.path.join(sim_struct.get_fault_dir(root_folder, run_name.split('_')[0]), '*.ll'))[0],
-            output_xyz_dir=os.path.join(sim_dir, 'IM_plot'),
+            rrup_or_station_path=glob.glob(os.path.join(sim_struct.get_fault_dir(root_folder, os.path.basename(sim_dir)), '*.ll'))[0],
+            output_xyz_dir=os.path.join(sim_dir, 'Verification'),
             srf_path=sim_struct.get_srf_path(root_folder, run_name),
-            model_params_path=glob.glob(os.path.join(sim_struct.get_fault_VM_dir(root_folder, run_name), 'model_params*'))[0],
+            model_params_path=glob.glob(os.path.join(sim_struct.get_fault_VM_dir(root_folder, run_name), 'model_params*')),
+            output_plot_dir=os.path.join(sim_dir, 'Verification', 'PNG_stations'),
             mgmt_db_loc=root_folder,
             run_name=run_name,
-            script_location=os.path.expandvars("$gmsim/workflow/scripts/im_plot.sl"),
+            script_location=os.path.expandvars("$gmsim/workflow/scripts/plot_ts.sl"),
             output_file=os.path.join(sim_dir, "%x_%j.out"),
             error_file=os.path.join(sim_dir, "%x_%j.err"),
         )
-        with open('/home/melody.zhu/im_plo.sl', 'w') as f:
-            f.write(script)
         submit_sl_script(script, target_machine=JOB_RUN_MACHINE[const.ProcessType.plot_ts].value)
 
     elif proc_type == const.ProcessType.rrup.value:
@@ -253,9 +358,7 @@ def submit_task(
             output_file=os.path.join(sim_dir, "%x_%j.out"),
             error_file=os.path.join(sim_dir, "%x_%j.err"),
         )
-        submit_sl_script(
-            script, target_machine=JOB_RUN_MACHINE[const.ProcessType.clean_up].value
-        )
+        submit_sl_script(script, target_machine=JOB_RUN_MACHINE[const.ProcessType.clean_up].value)
     elif proc_type == const.ProcessType.LF2BB.value:
         submit_sl_script(
             "--output {} --error {} {} {} {} {}".format(
@@ -264,9 +367,7 @@ def submit_task(
                 os.path.expandvars("$gmsim/workflow/scripts/lf2bb.sl"),
                 sim_dir,
                 root_folder,
-                utils.load_sim_params(
-                    os.path.join(sim_dir, "sim_params.yaml")
-                ).stat_vs_est,
+                utils.load_sim_params(os.path.join(sim_dir, "sim_params.yaml")).stat_vs_est,
             ),
             target_machine=JOB_RUN_MACHINE[const.ProcessType.LF2BB].value,
         )
@@ -293,6 +394,7 @@ def run_main_submit_loop(
     sleep_time: int,
     models_tuple: Tuple[est.EstModel],
     main_logger: Logger = workflow_logger.get_basic_logger(),
+    master_thread=True,
     cycle_timeout=1,
 ):
     mgmt_queue_folder = sim_struct.get_mgmt_db_queue(root_folder)
@@ -323,18 +425,56 @@ def run_main_submit_loop(
         mgmt_queue_entries = os.listdir(mgmt_queue_folder)
 
         # Get in progress tasks in the db and the HPC queue
-        n_tasks_to_run = {}
+        squeue_tasks, n_tasks_to_run = [], {}
         for hpc in const.HPC:
-            n_tasks_to_run[hpc] = n_runs[hpc] - len(get_queued_tasks(user=user, machine=hpc))
-            if n_tasks_to_run[hpc] < n_runs[hpc]:
+            cur_tasks = get_queued_tasks(user=user, machine=hpc)
+
+            n_tasks_to_run[hpc] = n_runs[hpc] - len(cur_tasks)
+            squeue_tasks.extend(cur_tasks)
+
+        if master_thread:
+            # User output
+            if len(squeue_tasks) > 0:
                 time_since_something_happened = cycle_timeout
+                main_logger.info("Squeue user tasks: " + ", ".join(squeue_tasks))
+            else:
+                main_logger.debug("No squeue user tasks")
+
+            db_in_progress_tasks = mgmt_db.get_submitted_tasks()
+
+            if len(db_in_progress_tasks) > 0:
+                time_since_something_happened = cycle_timeout
+                main_logger.info(
+                    "In progress tasks in mgmt db:"
+                    + ", ".join(
+                        [
+                            "{}-{}-{}-{}".format(
+                                entry.run_name,
+                                const.ProcessType(entry.proc_type).str_value,
+                                entry.job_id,
+                                const.Status(entry.status).str_value,
+                            )
+                            for entry in db_in_progress_tasks
+                        ]
+                    )
+                )
+            else:
+                main_logger.debug("No in progress tasks in mgmt db")
+
+            update_tasks(
+                mgmt_queue_folder,
+                mgmt_queue_entries,
+                squeue_tasks,
+                db_in_progress_tasks,
+                main_logger,
+            )
 
         # Gets all runnable tasks based on mgmt db state
         runnable_tasks = mgmt_db.get_runnable_tasks(
-            rels_to_run, sum(n_runs.values()), given_tasks_to_run, main_logger
+            rels_to_run, given_tasks_to_run, main_logger
         )
         if len(runnable_tasks) > 0:
-            time_since_something_happened = cycle_timeout
+            if master_thread: time_since_something_happened = cycle_timeout
             main_logger.info(
                 "Number of runnable tasks: {}".format(len(runnable_tasks))
             )
@@ -344,7 +484,8 @@ def run_main_submit_loop(
         # Select the first ntask_to_run that are not waiting
         # for mgmt db updates (i.e. items in the queue)
         tasks_to_run, task_counter = [], {key: 0 for key in const.HPC}
-        for cur_proc_type, cur_run_name, retries in runnable_tasks:
+        for cur_proc_type, cur_run_name, retries in runnable_tasks[:100]:
+            if master_thread: time_since_something_happened = cycle_timeout
 
             cur_hpc = JOB_RUN_MACHINE[const.ProcessType(cur_proc_type)]
             # Add task if limit has not been reached and there are no
@@ -390,11 +531,11 @@ def run_main_submit_loop(
                         const.ProcessType.clean_up.value,
                         run_name,
                         const.Status.completed.str_value,
-                    ]
+                    ],
                 ):
                     # If clean_up has already run, then we should set it to
                     # be run again after merge_ts has run
-                    shared_workflow.shared_automated_workflow.add_to_queue(
+                    shared.add_to_queue(
                         mgmt_queue_folder,
                         run_name,
                         const.ProcessType.clean_up.value,
@@ -491,9 +632,7 @@ if __name__ == "__main__":
         if len(args.n_runs) == 1:
             n_runs = {hpc: args.n_runs[0] for hpc in const.HPC}
             logger.debug(
-                "Using {} as the maximum number of jobs per machine".format(
-                    args.n_runs[0]
-                )
+                "Using {} as the maximum number of jobs per machine".format(args.n_runs[0])
             )
         elif len(args.n_runs) == len(const.HPC):
             n_runs = {}
@@ -522,9 +661,7 @@ if __name__ == "__main__":
             args.task_types_to_run
         )
     )
-    task_types_to_run = [
-        const.ProcessType.get_by_name(proc) for proc in args.task_types_to_run
-    ]
+    task_types_to_run = [const.ProcessType.get_by_name(proc) for proc in args.task_types_to_run]
     for task in task_types_to_run:
         logger.debug(
             "Process {} in processes to be run, adding dependencies now.".format(
@@ -575,3 +712,4 @@ if __name__ == "__main__":
         (lf_est_model, hf_est_model, bb_est_model, im_est_model),
         main_logger=logger,
     )
+
