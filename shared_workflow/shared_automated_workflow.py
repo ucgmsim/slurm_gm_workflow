@@ -94,7 +94,7 @@ def add_to_queue(
     logger: Logger = get_basic_logger()
 ):
     """Adds an update entry to the queue"""
-    logger.debug("Adding task to the queue. Realisation: {}, process type: {}, job_id: {}, error: {}".format(run_name, proc_type, job_id, error))
+    logger.debug("Adding task to the queue. Realisation: {}, process type: {}, status: {}, job_id: {}, error: {}".format(run_name, proc_type, status, job_id, error))
     filename = os.path.join(
         queue_folder,
         "{}.{}.{}".format(
