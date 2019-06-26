@@ -70,9 +70,13 @@ def update_tasks(
     """Updates the mgmt db entries based on the HPC queue"""
     tasks_to_do = []
 
+    task_logger.debug("Checking running tasks in the db for updates")
     for db_running_task in db_running_tasks:
+        task_logger.debug("Checking task {}".format(db_running_task))
         if str(db_running_task.job_id) in squeue_tasks.keys():
+
             queue_status = squeue_tasks[str(db_running_task.job_id)]
+            task_logger.debug("Found task. It has state {}".format(queue_status))
 
             try:
                 queue_status = SLURM_TO_STATUS_DICT[queue_status]
@@ -83,6 +87,7 @@ def update_tasks(
                     )
                 )
                 queue_status = const.Status.unknown.value
+            task_logger.debug("This state represents status {}".format(queue_status))
 
             if queue_status == db_running_task.status:
                 task_logger.debug(
@@ -190,11 +195,14 @@ def main(root_folder: str, sleep_time: int, max_retries: int, queue_logger: Logg
 
         entries = []
 
-        for file in entry_files:
-            entry = get_queue_entry(os.path.join(queue_folder, file), queue_logger)
+        for file_name in entry_files:
+            queue_logger.debug("Checking {} to see if it is a valid update file".format(file_name))
+            entry = get_queue_entry(os.path.join(queue_folder, file_name), queue_logger)
             if entry is None:
-                entry_files.remove(file)
+                queue_logger.debug("Removing {} from the list of update files".format(file_name))
+                entry_files.remove(file_name)
             else:
+                queue_logger.debug("Adding {} to the list of updates".format(entry))
                 entries.append(entry)
 
         entries.extend(update_tasks(
