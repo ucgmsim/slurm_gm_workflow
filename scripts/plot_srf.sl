@@ -30,6 +30,8 @@ python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt
 res=`python $gmsim/visualization/gmt/plot_srf_square.py $SRF_PATH --out-dir $OUTPUT_DIR`
 exit_val=$?
 
+echo $res
+
 end_time=`date +$runtime_fmt`
 echo $end_time
 

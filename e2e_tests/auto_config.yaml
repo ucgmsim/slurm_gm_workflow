@@ -1,5 +1,5 @@
-EMOD3D: ALL
+0EMOD3D: ALL
 HF: ALL
 BB: ALL
 IM_calc: ALL
-merge_ts: "%HYP01%"
+plot_srf: ALL
