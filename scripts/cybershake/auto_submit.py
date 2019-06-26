@@ -272,6 +272,7 @@ def submit_task(
             output_file=os.path.join(sim_dir, "%x_%j.out"),
             error_file=os.path.join(sim_dir, "%x_%j.err"),
         )
+        print("submitting plot_srf", script)
         submit_sl_script(script, target_machine=JOB_RUN_MACHINE[const.ProcessType.plot_srf].value)
 
     workflow_logger.clean_up_logger(task_logger)
