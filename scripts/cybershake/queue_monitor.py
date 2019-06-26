@@ -188,9 +188,7 @@ def main(root_folder: str, sleep_time: int, max_retries: int, queue_logger: Logg
         entry_files = os.listdir(queue_folder)
         entry_files.sort()
 
-        entries = update_tasks(
-            entry_files, squeue_tasks, db_in_progress_tasks, queue_logger
-        )
+        entries = []
 
         for file in entry_files:
             entry = get_queue_entry(os.path.join(queue_folder, file), queue_logger)
@@ -198,6 +196,10 @@ def main(root_folder: str, sleep_time: int, max_retries: int, queue_logger: Logg
                 entry_files.remove(file)
             else:
                 entries.append(entry)
+
+        entries.extend(update_tasks(
+            entry_files, squeue_tasks, db_in_progress_tasks, queue_logger
+        ))
 
         if len(entries) > 0:
             queue_logger.info("Updating {} mgmt db tasks.".format(len(entries)))

@@ -193,9 +193,8 @@ class MgmtDB:
         offset = 0
 
         tasks_waiting_for_updates = [
-            "{}__{}".format(entry_proc_type, entry_run_name)
+            "{}__{}".format(*(entry.split(".")[1:3]))
             for entry in update_files
-            for _, entry_run_name, entry_proc_type in entry.split(".")
         ]
 
         with connect_db_ctx(self._db_file) as cur:
