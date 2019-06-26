@@ -2,6 +2,3 @@ EMOD3D: ALL
 HF: ALL
 BB: ALL
 IM_calc: ALL
-IM_plot: ALL
-merge_ts: "%HYP01%"
-plot_ts: "%HYP01%"

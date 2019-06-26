@@ -10,7 +10,7 @@ module load Python/3.6.3-gimkl-2017a
 
 # Reset the PYTHONPATH
 export PYTHONPATH=''
-export PATH=$PATH:/nesi/project/nesi00213/opt/maui/ffmpeg_build/bin:/nesi/project/nesi00213/opt/maui/gmt/5.4.4/bin
- #Load the virtual environment
+
+# Load the virtual environment
 source ${virtenv_path}/bin/activate
 
