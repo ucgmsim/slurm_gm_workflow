@@ -125,7 +125,11 @@ def add_to_queue(
             },
             f,
         )
-    logger.debug("Successfully wrote task update file")
+
+    if not os.path.isfile(filename):
+        logger.critical("File {} did not successfully write".format(filename))
+    else:
+        logger.debug("Successfully wrote task update file")
 
 
 def exe(
