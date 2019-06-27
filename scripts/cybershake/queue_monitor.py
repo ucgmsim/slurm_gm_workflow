@@ -103,7 +103,7 @@ def update_tasks(
             # Do nothing if there is a pending update for
             # this run & process type combination
             elif not check_mgmt_queue(
-                mgmt_queue_entries, db_running_task.run_name, db_running_task.proc_type
+                mgmt_queue_entries, db_running_task.run_name, db_running_task.proc_type, logger=task_logger
             ):
                 task_logger.info(
                     "Updating status of {}, {} from {} to {}".format(
@@ -125,7 +125,7 @@ def update_tasks(
         # Only reset if there is no entry on the mgmt queue for this
         # realisation/proc combination and nothing in the mgmt folder
         elif not check_mgmt_queue(
-            mgmt_queue_entries, db_running_task.run_name, db_running_task.proc_type
+            mgmt_queue_entries, db_running_task.run_name, db_running_task.proc_type, logger=task_logger
         ):
             task_logger.warning(
                 "Task '{}' on '{}' not found on squeue or in the management db folder; resetting the status "
