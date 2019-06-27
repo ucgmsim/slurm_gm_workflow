@@ -204,7 +204,7 @@ def main(root_folder: str, sleep_time: int, max_retries: int, queue_logger: Logg
                 entry_files.remove(file_name)
             else:
                 queue_logger.debug("Adding {} to the list of updates".format(entry))
-                entries.append(entry)
+                entries.insert(0, entry)
 
         entries.extend(update_tasks(
             entry_files, squeue_tasks, db_in_progress_tasks, queue_logger
