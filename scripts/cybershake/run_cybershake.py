@@ -14,6 +14,7 @@ from shared_workflow import workflow_logger, load_config
 from shared_workflow.workflow_logger import NOPRINTCRITICAL
 import estimation.estimate_wct as est
 
+MASTER_LOG_NAME = "master_log_{}.txt"
 WRAPPER_LOG_FILE_NAME = "wrapper_log_{}.txt"
 QUEUE_MONITOR_LOG_FILE_NAME = "queue_monitor_log_{}.txt"
 MASTER_AUTO_SUBMIT_LOG_FILE_NAME = "main_auto_submit_log_{}.txt"
@@ -280,6 +281,7 @@ def main():
     args = parser.parse_args()
 
     wrapper_logger = workflow_logger.get_logger("cybershake_wrapper", True)
+    master_logger = workflow_logger.get_logger(None, True, False)
 
     if args.debug:
         workflow_logger.set_stdout_level(wrapper_logger, DEBUG)
@@ -291,6 +293,12 @@ def main():
         WRAPPER_LOG_FILE_NAME.format(datetime.now().strftime(const.TIMESTAMP_FORMAT)),
     )
 
+    master_log_file = join(
+        log_directory,
+        MASTER_LOG_NAME.format(datetime.now().strftime(const.TIMESTAMP_FORMAT)),
+    )
+
+    workflow_logger.add_general_file_handler(master_logger, master_log_file)
     workflow_logger.add_general_file_handler(wrapper_logger, wrapper_log_file)
     wrapper_logger.info("Logger file added")
 
