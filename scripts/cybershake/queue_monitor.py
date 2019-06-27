@@ -196,7 +196,7 @@ def main(root_folder: str, sleep_time: int, max_retries: int, queue_logger: Logg
 
         entries = []
 
-        for file_name in entry_files:
+        for file_name in entry_files[::-1]:
             queue_logger.debug("Checking {} to see if it is a valid update file".format(file_name))
             entry = get_queue_entry(os.path.join(queue_folder, file_name), queue_logger)
             if entry is None:

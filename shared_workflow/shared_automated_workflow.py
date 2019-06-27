@@ -175,7 +175,7 @@ def check_mgmt_queue(queue_entries: List[str], run_name: str, proc_type: int, lo
     """Returns True if there are any queued entries for this run_name and process type,
     otherwise returns False.
     """
-    logger.debug("Checking to see if the realisation {} has a process of type {} in the management db".format(run_name, proc_type))
+    logger.debug("Checking to see if the realisation {} has a process of type {} in updates folder".format(run_name, proc_type))
     for entry in queue_entries:
         logger.debug("Checking against {}".format(entry))
         _, entry_run_name, entry_proc_type = entry.split(".")
