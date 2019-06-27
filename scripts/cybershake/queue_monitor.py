@@ -71,6 +71,7 @@ def update_tasks(
     tasks_to_do = []
 
     task_logger.debug("Checking running tasks in the db for updates")
+    task_logger.debug("The key value pairs found in squeue are as follows: {}".format(squeue_tasks.items()))
     for db_running_task in db_running_tasks:
         task_logger.debug("Checking task {}".format(db_running_task))
         if str(db_running_task.job_id) in squeue_tasks.keys():
@@ -127,7 +128,7 @@ def update_tasks(
             mgmt_queue_entries, db_running_task.run_name, db_running_task.proc_type
         ):
             task_logger.warning(
-                "Task '{}' on '{}' not found on squeue; resetting the status "
+                "Task '{}' on '{}' not found on squeue or in the management db folder; resetting the status "
                 "to 'created' for resubmission".format(
                     const.ProcessType(db_running_task.proc_type).str_value,
                     db_running_task.run_name,

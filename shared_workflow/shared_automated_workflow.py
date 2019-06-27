@@ -167,12 +167,16 @@ def exe(
     return out, err
 
 
-def check_mgmt_queue(queue_entries: List[str], run_name: str, proc_type: int):
+def check_mgmt_queue(queue_entries: List[str], run_name: str, proc_type: int, logger=get_basic_logger()):
     """Returns True if there are any queued entries for this run_name and process type,
     otherwise returns False.
     """
+    logger.debug("Checking to see if the realisation {} has a process of type {} in the management db".format(run_name, proc_type))
     for entry in queue_entries:
+        logger.debug("Checking against {}".format(entry))
         _, entry_run_name, entry_proc_type = entry.split(".")
         if entry_run_name == run_name and entry_proc_type == str(proc_type):
+            logger.debug("It's a match, returning True")
             return True
+    logger.debug("No match found")
     return False
