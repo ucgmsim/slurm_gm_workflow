@@ -14,6 +14,7 @@ from shared_workflow import workflow_logger, load_config
 from shared_workflow.workflow_logger import NOPRINTCRITICAL
 import estimation.estimate_wct as est
 
+MASTER_LOG_NAME = "master_log_{}.txt"
 WRAPPER_LOG_FILE_NAME = "wrapper_log_{}.txt"
 QUEUE_MONITOR_LOG_FILE_NAME = "queue_monitor_log_{}.txt"
 MASTER_AUTO_SUBMIT_LOG_FILE_NAME = "main_auto_submit_log_{}.txt"
@@ -71,7 +72,7 @@ def run_automated_workflow(
         join(workflow_config["estimation_models_dir"], "IM"), logger=wrapper_logger
     )
 
-    bulk_logger = workflow_logger.get_logger("auto_submit_main", True)
+    bulk_logger = workflow_logger.get_logger(name="auto_submit_main", threaded=True)
     if debug:
         workflow_logger.set_stdout_level(bulk_logger, DEBUG)
     workflow_logger.add_general_file_handler(
@@ -85,7 +86,7 @@ def run_automated_workflow(
     )
     wrapper_logger.debug("Created logger for the main auto_submit thread")
 
-    queue_logger = workflow_logger.get_logger("queue_monitor", True)
+    queue_logger = workflow_logger.get_logger(name="queue_monitor", threaded=True)
     if debug:
         workflow_logger.set_stdout_level(queue_logger, DEBUG)
     workflow_logger.add_general_file_handler(
@@ -100,7 +101,7 @@ def run_automated_workflow(
     wrapper_logger.debug("Created logger for the queue_monitor thread")
 
     tasks_to_run_with_pattern_and_logger = [
-        (pattern, tasks, workflow_logger.get_logger("pattern_{}".format(pattern), True))
+        (pattern, tasks, workflow_logger.get_logger(name="pattern_{}".format(pattern), threaded=True))
         for pattern, tasks in tasks_to_run_with_pattern
     ]
     for pattern, tasks, logger in tasks_to_run_with_pattern_and_logger:
@@ -279,7 +280,8 @@ def main():
     )
     args = parser.parse_args()
 
-    wrapper_logger = workflow_logger.get_logger("cybershake_wrapper", True)
+    wrapper_logger = workflow_logger.get_logger(name="cybershake_wrapper", threaded=True)
+    master_logger = workflow_logger.get_logger(name=None, threaded=True, stdout_printer=False)
 
     if args.debug:
         workflow_logger.set_stdout_level(wrapper_logger, DEBUG)
@@ -291,6 +293,12 @@ def main():
         WRAPPER_LOG_FILE_NAME.format(datetime.now().strftime(const.TIMESTAMP_FORMAT)),
     )
 
+    master_log_file = join(
+        log_directory,
+        MASTER_LOG_NAME.format(datetime.now().strftime(const.TIMESTAMP_FORMAT)),
+    )
+
+    workflow_logger.add_general_file_handler(master_logger, master_log_file)
     workflow_logger.add_general_file_handler(wrapper_logger, wrapper_log_file)
     wrapper_logger.info("Logger file added")
 

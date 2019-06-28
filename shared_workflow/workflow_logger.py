@@ -49,7 +49,7 @@ TASK_LOGGING_MESSAGE_FORMAT = (
 TASK_THREADED_LOGGING_MESSAGE_FORMAT = "%(levelname)8s -- %(asctime)s - %(threadName)s - %(module)s.%(funcName)s - {}.{} - %(message)s"
 
 
-def get_logger(name: str = DEFAULT_LOGGER_NAME, threaded=False) -> logging.Logger:
+def get_logger(name: str = DEFAULT_LOGGER_NAME, threaded=False, stdout_printer=True) -> logging.Logger:
     """
     Creates a logger and an associated handler to print messages over level INFO to stdout.
     The handler is configured such that messages will not be printed if their underlying level value ends in 1, this is
@@ -58,22 +58,23 @@ def get_logger(name: str = DEFAULT_LOGGER_NAME, threaded=False) -> logging.Logge
     :param threaded: If the logger is operating in a thread then record the name of the thread
     :return: The logger object
     """
-    if threaded:
+    if name is not None and threaded:
         name = "{}_{}".format(THREADED, name)
     logger = logging.getLogger(name)
     logger.setLevel(logging.DEBUG)
 
-    print_handler = logging.StreamHandler(sys.stdout)
-    print_handler.setLevel(logging.INFO)
-    if threaded:
-        print_handler.setFormatter(stdout_threaded_formatter)
-    else:
-        print_handler.setFormatter(stdout_formatter)
+    if stdout_printer:
+        print_handler = logging.StreamHandler(sys.stdout)
+        print_handler.setLevel(logging.INFO)
+        if threaded:
+            print_handler.setFormatter(stdout_threaded_formatter)
+        else:
+            print_handler.setFormatter(stdout_formatter)
 
-    # If the message level ends in 1 do not print it to stdout
-    print_handler.addFilter(lambda record: (record.levelno % 10) != 1)
+        # If the message level ends in 1 do not print it to stdout
+        print_handler.addFilter(lambda record: (record.levelno % 10) != 1)
 
-    logger.addHandler(print_handler)
+        logger.addHandler(print_handler)
 
     return logger
 
@@ -201,7 +202,7 @@ def get_task_logger(
 
 
 def get_basic_logger():
-    basic_logger = logging.Logger("Basic")
+    basic_logger = logging.getLogger("Basic")
     basic_logger.setLevel(logging.INFO)
     return basic_logger
 

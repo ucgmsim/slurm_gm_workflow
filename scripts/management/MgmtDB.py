@@ -173,6 +173,7 @@ class MgmtDB:
         self,
         allowed_rels,
         task_limit,
+        update_files,
         allowed_tasks=None,
         logger=workflow_logger.get_basic_logger(),
     ):
@@ -190,6 +191,15 @@ class MgmtDB:
 
         runnable_tasks = []
         offset = 0
+
+        # "{}__{}" is intended to be the template for a unique string for every realisation and process type pair
+        # Used to compare with database entries to prevent running a task that has already been submitted, but not
+        # recorded
+        tasks_waiting_for_updates = [
+            "{}__{}".format(*(entry.split(".")[1:3]))
+            for entry in update_files
+        ]
+
         with connect_db_ctx(self._db_file) as cur:
             entries = cur.execute(
                 """SELECT COUNT(*) 
@@ -221,6 +231,7 @@ class MgmtDB:
                         (*task, self.get_retries(*task))
                         for task in db_tasks
                         if self._check_dependancy_met(task, logger)
+                        and "{}__{}".format(*task) not in tasks_waiting_for_updates
                     ]
                 )
                 offset += 100

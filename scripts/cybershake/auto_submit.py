@@ -14,7 +14,7 @@ import shared_workflow.load_config as ldcfg
 import qcore.constants as const
 import qcore.simulation_structure as sim_struct
 import shared_workflow.shared_automated_workflow
-from qcore import utils
+from qcore import utils, simulation_structure
 import estimation.estimate_wct as est
 from scripts.management.MgmtDB import MgmtDB
 from metadata.log_metadata import store_metadata
@@ -309,7 +309,11 @@ def run_main_submit_loop(
 
         # Gets all runnable tasks based on mgmt db state
         runnable_tasks = mgmt_db.get_runnable_tasks(
-            rels_to_run, sum(n_runs.values()), given_tasks_to_run, main_logger
+            rels_to_run,
+            sum(n_runs.values()),
+            os.listdir(simulation_structure.get_mgmt_db_queue(root_folder)),
+            given_tasks_to_run,
+            main_logger
         )
         if len(runnable_tasks) > 0:
             time_since_something_happened = cycle_timeout
@@ -378,6 +382,7 @@ def run_main_submit_loop(
                         run_name,
                         const.ProcessType.clean_up.value,
                         const.Status.created.value,
+                        logger=main_logger
                     )
 
             # submit the job
