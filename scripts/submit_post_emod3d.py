@@ -84,7 +84,7 @@ def main(args, logger: Logger = get_basic_logger()):
         srf_name,
         submit_yes=submit_yes,
         target_machine=args.machine,
-    logger=logger,
+        logger=logger,
         )
 
 

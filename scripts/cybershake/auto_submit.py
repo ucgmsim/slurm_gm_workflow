@@ -14,7 +14,7 @@ import shared_workflow.load_config as ldcfg
 import qcore.constants as const
 import qcore.simulation_structure as sim_struct
 import shared_workflow.shared_automated_workflow
-from qcore import utils
+from qcore import utils, simulation_structure
 import estimation.estimate_wct as est
 from scripts.management.MgmtDB import MgmtDB
 from metadata.log_metadata import store_metadata
@@ -310,6 +310,7 @@ def run_main_submit_loop(
     time_since_something_happened = cycle_timeout
 
     while time_since_something_happened > 0:
+        main_logger.debug("time_since_something_happened is now {}".format(time_since_something_happened))
         time_since_something_happened -= 1
         # Get items in the mgmt queue, have to get a snapshot instead of
         # checking the directory real-time to prevent timing issues,
@@ -321,17 +322,23 @@ def run_main_submit_loop(
         for hpc in const.HPC:
             n_tasks_to_run[hpc] = n_runs[hpc] - len(get_queued_tasks(user=user, machine=hpc))
             if n_tasks_to_run[hpc] < n_runs[hpc]:
+                main_logger.debug("There was at least one job in squeue, resetting timeout")
                 time_since_something_happened = cycle_timeout
 
         # Gets all runnable tasks based on mgmt db state
         runnable_tasks = mgmt_db.get_runnable_tasks(
-            rels_to_run, sum(n_runs.values()), given_tasks_to_run, main_logger
+            rels_to_run,
+            sum(n_runs.values()),
+            os.listdir(simulation_structure.get_mgmt_db_queue(root_folder)),
+            given_tasks_to_run,
+            main_logger
         )
         if len(runnable_tasks) > 0:
             time_since_something_happened = cycle_timeout
             main_logger.info(
                 "Number of runnable tasks: {}".format(len(runnable_tasks))
             )
+            main_logger.debug("There was at least one runnable task, resetting timeout")
         else:
             main_logger.debug("No runnable_tasks")
 
@@ -393,6 +400,7 @@ def run_main_submit_loop(
                         run_name,
                         const.ProcessType.clean_up.value,
                         const.Status.created.value,
+                        logger=main_logger
                     )
 
             # submit the job

@@ -129,6 +129,7 @@ def main(args: argparse.Namespace, est_model: est.EstModel = None, logger: Logge
             srf_name,
             submit_yes=submit_yes,
             target_machine=args.machine,
+            logger=logger,
         )
 
 
