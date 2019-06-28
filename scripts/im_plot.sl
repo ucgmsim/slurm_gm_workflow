@@ -55,14 +55,15 @@ if [[ $exit_val == 0 ]]; then
 
     res2=`for f in $OUTPUT_XYZ_DIR/*; do if [ -f "$f" ]; then echo "ploting $f"; $gmsim/visualization/gmt/plot_stations.py $f --srf $SRF_PATH --model_params $MODEL_PARAMS --out_dir "${f//./_}_png_stations"; echo "output pngs save to ${f//./_}_png_stations"; fi; done`
     
-    # log infomation about params used to .out file
+    ## log information about params used to .out file
     echo "srf_file $SRF_PATH"
     echo "model_params $MODEL_PARAMS"
     echo "$res2"
+
     exit_val2=$?
 
     if [[ $exit_val2 == 0 ]]; then
-         ## Reset to python3 virtual environment
+         ## Reset to python3 virtual environment, otherwise add_to_mgmt_queue would not work
          source $CUR_ENV/workflow/install_workflow/helper_functions/activate_env.sh $CUR_ENV "mahuika"
          python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $SRF_NAME IM_plot completed
     else
