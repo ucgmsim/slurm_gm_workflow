@@ -214,8 +214,7 @@ def main(root_folder: str, sleep_time: int, max_retries: int, queue_logger: Logg
             queue_logger.info("Updating {} mgmt db tasks.".format(len(entries)))
             if mgmt_db.update_entries_live(entries, max_retries, queue_logger):
                 for file_name in entry_files:
-                    if file_name is not None:
-                        os.remove(os.path.join(queue_folder, file_name))
+                    os.remove(os.path.join(queue_folder, file_name))
             else:
                 queue_logger.error(
                     "Failed to update the current entries in the mgmt db queue. "
