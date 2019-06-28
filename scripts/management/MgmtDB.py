@@ -126,26 +126,21 @@ class MgmtDB:
                 failure_count.update({key: 0})
             failure_count[key] += 1
 
-        keys_to_update = []
-        for key, value in failure_count.items():
-            if value >= n_max_retries:
-                keys_to_update.append(key)
-
         with connect_db_ctx(self._db_file) as cur:
-            for key in failure_count.keys():
+            for key, fail_count in failure_count.items():
+                if fail_count >= n_max_retries:
+                    continue
                 run_name, proc_type = key.split("__")
-                completed_count = cur.execute(
+                not_failed_count = cur.execute(
                     "SELECT COUNT(*) "
-                    "FROM state, status_enum "
-                    "WHERE state.status = status_enum.id "
-                    "AND status_enum.state  = 'completed' "
+                    "FROM state "
+                    "WHERE run_name = (?)"
+                    "AND proc_type = (?)"
+                    "AND status <= (SELECT id FROM status_enum WHERE state = 'completed') ",
+                    (run_name, proc_type),
                 ).fetchone()[0]
-                if completed_count == 0:
-                    cur.execute(
-                        """INSERT OR IGNORE INTO `state`(run_name, proc_type, status,
-                        last_modified) VALUES(?, ?, 1, strftime('%s','now'))""",
-                        (run_name, proc_type),
-                    )
+                if not_failed_count == 0:
+                    self._insert_task(cur, run_name, proc_type)
 
     def close_conn(self):
         """Close the db connection. Note, this ONLY has to be done if
