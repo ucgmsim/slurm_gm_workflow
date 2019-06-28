@@ -122,7 +122,7 @@ def submit_task(
     elif proc_type == const.ProcessType.plot_ts.value:
         # plot_ts.py does not mkdir dir if output dir does not exist,
         # whereas im_plot does.
-        if not os.path.exists(verification_dir):
+        if not os.path.isdir(verification_dir):
             os.mkdir(verification_dir) 
         plot_ts_template = (
             "--export=CUR_ENV -o {output_file} -e {error_file} {script_location} "
