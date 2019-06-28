@@ -192,6 +192,9 @@ class MgmtDB:
         runnable_tasks = []
         offset = 0
 
+        # "{}__{}" is intended to be the template for a unique string for every realisation and process type pair
+        # Used to compare with database entries to prevent running a task that has already been submitted, but not
+        # recorded
         tasks_waiting_for_updates = [
             "{}__{}".format(*(entry.split(".")[1:3]))
             for entry in update_files
