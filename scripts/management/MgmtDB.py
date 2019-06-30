@@ -111,6 +111,10 @@ class MgmtDB:
         return True
 
     def add_retries(self, n_max_retries: int):
+        """Checks the database for failed tasks with less failures than the given n_max_retries.
+        If any are found then the tasks are checked for any entries that are created, queued, running or completed.
+        If any are found then nothing happens, if none are found then another created entry is added to the db.
+        n_max_retries: The maximum number of retries a task can have"""
         with connect_db_ctx(self._db_file) as cur:
             errored = cur.execute(
                 "SELECT run_name, proc_type "
@@ -131,6 +135,9 @@ class MgmtDB:
                 if fail_count >= n_max_retries:
                     continue
                 run_name, proc_type = key.split("__")
+                # Gets the number of entries for the task with state in [created, queued, running or completed]
+                # Where completed has enum index 4, and the other 3 less than this
+                # If any are found then don't add another entry
                 not_failed_count = cur.execute(
                     "SELECT COUNT(*) "
                     "FROM state "
