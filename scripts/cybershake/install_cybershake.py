@@ -103,7 +103,7 @@ def main():
                 )
             )
 
-    faults = parse_fsf(os.path.abspath(args.fault_selection_file))
+    faults = parse_fsf(os.path.abspath(args.fault_selection_list))
 
     create_mgmt_db_from_faults(faults, path_cybershake, logger)
 
