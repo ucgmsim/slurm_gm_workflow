@@ -123,16 +123,16 @@ def submit_task(
     elif proc_type == const.ProcessType.plot_ts.value:
         # plot_ts.py does not mkdir dir if output dir does not exist,
         # whereas im_plot does.
-        if not os.path.exists(verification_dir):
+        if not os.path.isdir(verification_dir):
             os.mkdir(verification_dir) 
         plot_ts_template = (
             "--export=CUR_ENV -o {output_file} -e {error_file} {script_location} "
-            "{xyts_path} {srf_path} {output_ts_path} {mgmt_db_loc} {run_name}"
+            "{xyts_path} {srf_path} {output_movie_path} {mgmt_db_loc} {run_name}"
         )
         script = plot_ts_template.format(
             xyts_path=os.path.join(sim_struct.get_lf_outbin_dir(sim_dir), '{}_xyts.e3d'.format(run_name.split('_')[0])),
             srf_path=sim_struct.get_srf_path(root_folder, run_name),
-            output_ts_path=os.path.join(verification_dir, '{}_xyts'.format(run_name.split('_')[0])),
+            output_movie_path=os.path.join(verification_dir, run_name),
             mgmt_db_loc=root_folder,
             run_name=run_name,
             script_location=os.path.expandvars("$gmsim/workflow/scripts/plot_ts.sl"),
@@ -208,14 +208,15 @@ def submit_task(
     elif proc_type == const.ProcessType.IM_plot.value:
         im_plot_template = (
             "--export=CUR_ENV -o {output_file} -e {error_file} {script_location} "
-            "{csv_path} {rrup_or_station_path} {output_xyz_dir} {srf_path} {model_params_path} {mgmt_db_loc} {run_name}"
+            "{csv_path} {station_file_path} {output_xyz_dir} {srf_path} {model_params_path} {mgmt_db_loc} {run_name}"
         )
+        params = utils.load_sim_params(os.path.join(sim_dir, 'sim_params.yaml'))
         script = im_plot_template.format(
             csv_path=os.path.join(sim_struct.get_IM_csv(sim_dir)),
-            rrup_or_station_path=utils.load_sim_params(os.path.join(sim_dir, 'sim_params.yaml'), load_fault=True).FD_STATLIST,
+            station_file_path=params.stat_file,
             output_xyz_dir=os.path.join(verification_dir, 'IM_plot'),
             srf_path=sim_struct.get_srf_path(root_folder, run_name),
-            model_params_path=utils.load_sim_params(os.path.join(sim_dir, 'sim_params.yaml'), load_vm=True).MODEL_PARAMS,
+            model_params_path=params.MODEL_PARAMS,
             mgmt_db_loc=root_folder,
             run_name=run_name,
             script_location=os.path.expandvars("$gmsim/workflow/scripts/im_plot.sl"),
