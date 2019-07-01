@@ -484,7 +484,7 @@ class E2ETests(object):
         with connect_db_ctx(sim_struct.get_mgmt_db(self.stage_dir)) as cur:
             entries = cur.execute(
                 "SELECT run_name, proc_type, status, job_id FROM state "
-                "WHERE proc_type <=6 AND proc_type <> 2 AND status != 4"
+                "WHERE proc_type <=6 AND proc_type <> 2 AND proc_type <> 3 AND status != 4"
             ).fetchall()
 
         entries = [SlurmTask(*entry) for entry in entries]
