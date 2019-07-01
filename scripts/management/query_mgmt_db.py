@@ -6,7 +6,7 @@ A script that queries a slurm mgmt db and returns the status of a task
 
 import argparse
 import scripts.management.db_helper as db_helper
-from scripts.cybershake.run_cybershake import parse_config_file
+from shared_workflow.shared_automated_workflow import parse_config_file
 
 
 def print_run_status(db, run_name, error=False, count=False, config_file=None):
@@ -14,8 +14,10 @@ def print_run_status(db, run_name, error=False, count=False, config_file=None):
         db.execute(
             """SELECT state.run_name, proc_type_enum.proc_type, status_enum.state, state.job_id, datetime(last_modified,'unixepoch'), error.error
                     FROM state, status_enum, proc_type_enum, error
-                    WHERE state.proc_type = proc_type_enum.id AND state.status = status_enum.id
-                            AND UPPER(state.run_name) LIKE UPPER(?) AND error.task_id = state.id
+                    WHERE state.proc_type = proc_type_enum.id 
+                    AND state.status = status_enum.id
+                    AND UPPER(state.run_name) LIKE UPPER(?) 
+                    AND error.task_id = state.id
                     ORDER BY state.run_name, status_enum.id
                     """,
             (run_name,),
@@ -55,7 +57,7 @@ def print_run_status(db, run_name, error=False, count=False, config_file=None):
                             FROM state, status_enum, proc_type_enum
                             WHERE state.proc_type = proc_type_enum.id 
                             AND state.status = status_enum.id
-                            AND proc_type IN (?{})
+                            AND state.proc_type IN (?{})
                             ORDER BY state.run_name, status_enum.id
                             """.format(
                             ",?" * (len(tasks_n) - 1)
@@ -71,7 +73,7 @@ def print_run_status(db, run_name, error=False, count=False, config_file=None):
                     WHERE state.proc_type = proc_type_enum.id 
                     AND state.status = status_enum.id
                     AND state.run_name LIKE ?
-                    AND proc_type IN (?{})
+                    AND state.proc_type IN (?{})
                     AND 
                     ORDER BY state.run_name, status_enum.id
                     """.format(
@@ -84,8 +86,9 @@ def print_run_status(db, run_name, error=False, count=False, config_file=None):
             db.execute(
                 """SELECT state.run_name, proc_type_enum.proc_type, status_enum.state, state.job_id, datetime(last_modified,'unixepoch')
                         FROM state, status_enum, proc_type_enum
-                        WHERE state.proc_type = proc_type_enum.id AND state.status = status_enum.id
-                                AND UPPER(state.run_name) LIKE UPPER(?)
+                        WHERE state.proc_type = proc_type_enum.id 
+                        AND state.status = status_enum.id
+                        AND UPPER(state.run_name) LIKE UPPER(?)
                         ORDER BY state.run_name, status_enum.id
                         """,
                 (run_name,),

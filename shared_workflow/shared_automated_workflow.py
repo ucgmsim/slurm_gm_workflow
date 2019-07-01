@@ -12,8 +12,12 @@ from subprocess import Popen, PIPE
 from typing import List
 
 import qcore.constants as const
+from qcore import constants as const
 from qcore.config import host
+from qcore.utils import load_yaml
+from scripts.cybershake.run_cybershake import ALL, NONE, ONCE, ONCE_PATTERN
 from scripts.management.MgmtDB import MgmtDB
+from shared_workflow import workflow_logger
 from shared_workflow.workflow_logger import get_basic_logger, NOPRINTCRITICAL
 
 
@@ -198,3 +202,37 @@ def parse_fsf(fault_selection_file: str):
                 count = int(count)
             faults.append((fault, count))
     return faults
+
+
+def parse_config_file(config_file_location: str, logger: Logger = workflow_logger.get_basic_logger()):
+    """Takes in the location of a wrapper config file and creates the tasks to be run.
+    Requires that the file contains the keys 'run_all_tasks' and 'run_some', even if they are empty
+    If the dependencies for a run_some task overlap with those in the tasks_to_run_for_all, as a race condition is
+    possible if multiple auto_submit scripts have the same tasks. If multiple run_some instances have the same
+    dependencies then this is not an issue as they run sequentially, rather than simultaneously
+    :param config_file_location: The location of the config file
+    :return: A tuple containing the tasks to be run on all processes and a list of pattern, tasks tuples which state
+    which tasks can be run with which patterns
+    """
+    config = load_yaml(config_file_location)
+
+    tasks_to_run_for_all = []
+    tasks_with_pattern_match = {}
+
+    for proc_name, pattern in config.items():
+        proc = const.ProcessType.get_by_name(proc_name)
+        if pattern == ALL:
+            tasks_to_run_for_all.append(proc)
+        elif pattern == NONE:
+            pass
+        else:
+            if pattern == ONCE:
+                pattern = ONCE_PATTERN
+            if pattern not in tasks_with_pattern_match.keys():
+                tasks_with_pattern_match.update({pattern: []})
+            tasks_with_pattern_match[pattern].append(proc)
+    logger.info("Master script will run {}".format(tasks_to_run_for_all))
+    for pattern, tasks in tasks_with_pattern_match.items():
+        logger.info("Pattern {} will run tasks {}".format(pattern, tasks))
+
+    return tasks_to_run_for_all, tasks_with_pattern_match.items()
