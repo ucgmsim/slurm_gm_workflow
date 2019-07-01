@@ -9,6 +9,10 @@
 #SBATCH --time=00:10:00
 #SBATCH --cpus-per-task=12
 
+if [[ ! -z ${CUR_ENV} && ${CUR_HPC} != "mahuika" ]]; then
+    source $CUR_ENV/workflow/install_workflow/helper_functions/activate_env.sh $CUR_ENV "mahuika"
+fi
+
 function getFromYaml {
     echo $(python -c "from qcore.utils import load_sim_params; print(load_sim_params('$1').$2)")
 }
