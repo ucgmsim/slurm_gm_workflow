@@ -11,11 +11,10 @@ from logging import Logger
 from subprocess import Popen, PIPE
 from typing import List
 
-import qcore.constants as const
 from qcore import constants as const
 from qcore.config import host
 from qcore.utils import load_yaml
-from scripts.cybershake.run_cybershake import ALL, NONE, ONCE, ONCE_PATTERN
+
 from scripts.management.MgmtDB import MgmtDB
 from shared_workflow import workflow_logger
 from shared_workflow.workflow_logger import get_basic_logger, NOPRINTCRITICAL
@@ -236,3 +235,9 @@ def parse_config_file(config_file_location: str, logger: Logger = workflow_logge
         logger.info("Pattern {} will run tasks {}".format(pattern, tasks))
 
     return tasks_to_run_for_all, tasks_with_pattern_match.items()
+
+
+ALL = "ALL"
+ONCE = "ONCE"
+ONCE_PATTERN = "%_REL01"
+NONE = "NONE"

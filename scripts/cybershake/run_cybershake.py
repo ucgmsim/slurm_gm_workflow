@@ -20,11 +20,6 @@ QUEUE_MONITOR_LOG_FILE_NAME = "queue_monitor_log_{}.txt"
 MASTER_AUTO_SUBMIT_LOG_FILE_NAME = "main_auto_submit_log_{}.txt"
 PATTERN_AUTO_SUBMIT_LOG_FILE_NAME = "pattern_{}_auto_submit_log_{}.txt"
 
-ALL = "ALL"
-ONCE = "ONCE"
-ONCE_PATTERN = "%_REL01"
-NONE = "NONE"
-
 
 def run_automated_workflow(
     root_folder: str,
