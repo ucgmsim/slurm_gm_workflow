@@ -59,8 +59,12 @@ class MgmtDB:
             if self._conn is None:
                 logger.info("Aquiring db connection.")
                 self._conn = sql.connect(self._db_file)
+            isolation_level = self._conn.isolation_level
+            self._conn.isolation_level = None
             logger.debug("Getting db cursor")
             cur = self._conn.cursor()
+
+            cur.execute("BEGIN")
 
             for entry in entries:
                 process = entry.proc_type
@@ -95,6 +99,7 @@ class MgmtDB:
                     logger.debug("New task added to the db")
         except sql.Error as ex:
             self._conn.rollback()
+            self._conn.isolation_level = isolation_level
             logger.critical(
                 "Failed to update entry {}, due to the exception: \n{}".format(
                     entry, ex
@@ -104,6 +109,7 @@ class MgmtDB:
         else:
             logger.debug("Committing changes to db")
             self._conn.commit()
+            self._conn.isolation_level = isolation_level
         finally:
             logger.debug("Closing db cursor")
             cur.close()
