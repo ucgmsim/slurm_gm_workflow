@@ -27,7 +27,7 @@ start_time=`date +${runtime_fmt}`
 echo ___plotting SRF___
 
 python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $SRF_NAME plot_srf running
-res=`python $gmsim/visualization/gmt/plot_srf_square.py $SRF_PATH --out-dir $OUTPUT_DIR`
+res=`python $gmsim/visualization/gmt/plot_srf_square.py $SRF_PATH --out-dir "$OUTPUT_DIR/square_plot"`
 exit_val=$?
 
 echo $res >> "/home/melody.zhu/plot_srf_res.txt"
