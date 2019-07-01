@@ -12,8 +12,8 @@ import sqlite3 as sql
 
 import qcore.constants as const
 import qcore.simulation_structure as sim_struct
+import scripts.management.install_mgmt_db
 from scripts.cybershake.add_to_mgmt_queue import add_to_queue
-from scripts.management import create_mgmt_db
 from scripts.management.db_helper import connect_db_ctx
 from shared_workflow.shared_automated_workflow import exe
 from e2e_tests.E2ETests import NonBlockingStreamReader, Error
@@ -75,9 +75,9 @@ class QueueMonitorStressTest(object):
 
     def install(self):
         print("Installing database")
-        create_mgmt_db.create_mgmt_db(
-            ["{}_REL{:0>2}".format(self.realisation_name, i) for i in range(1, 1 + self.realisations)],
-            sim_struct.get_mgmt_db(self.stage_dir),
+        scripts.management.install_mgmt_db.create_mgmt_db_from_faults(
+            [(self.realisation_name, self.realisations)],
+            self.stage_dir,
         )
 
     def run(

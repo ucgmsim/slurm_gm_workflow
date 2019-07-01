@@ -184,3 +184,17 @@ def check_mgmt_queue(queue_entries: List[str], run_name: str, proc_type: int, lo
             return True
     logger.debug("No match found")
     return False
+
+
+def parse_fsf(fault_selection_file: str):
+    """Parses a fault selection file into a list of (fault, realisation count) pairs"""
+    faults = []
+    with open(fault_selection_file) as fault_file:
+        for line in fault_file.readlines():
+            fault, count, *_ = line.split()
+            if count[-1] == 'r':
+                count = int(count[:-1])
+            else:
+                count = int(count)
+            faults.append((fault, count))
+    return faults

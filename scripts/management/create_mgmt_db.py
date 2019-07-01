@@ -7,28 +7,21 @@ each stage of the run
 import argparse
 import os
 
-from scripts.management.MgmtDB import MgmtDB
+from scripts.management.install_mgmt_db import create_mgmt_db
 
-def create_mgmt_db(realisations, db_file, srf_files=[]):
-    mgmt_db = MgmtDB.init_db(
-        db_file,
-        os.path.join(os.path.dirname(os.path.realpath(__file__)), "slurm_mgmt.db.sql"),
-    )
-    mgmt_db.populate(realisations, srf_files)
-
-    return mgmt_db
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "mgmt_db_file", type=str, help="Path to the management db file to create."
+        "cybershake_directory", type=str, help="Path to the cybershake root directory."
     )
     parser.add_argument(
         "realisations", type=str, nargs="+", help="space delimited list of realisations"
     )
     args = parser.parse_args()
 
-    create_mgmt_db(args.realisation, args.mgmt_db_file)
+    root_folder = os.path.abspath(args.cybershake_directory)
+    create_mgmt_db(args.realisations, root_folder)
 
 
 if __name__ == "__main__":

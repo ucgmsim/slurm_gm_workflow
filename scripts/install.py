@@ -15,10 +15,10 @@ import configparser
 import argparse
 from datetime import datetime
 
+import scripts.management.install_mgmt_db
 import shared_workflow.shared_defaults as defaults
 import qcore.constants as const
 from qcore import utils, simulation_structure
-from scripts.management import create_mgmt_db
 from shared_workflow.install_shared import install_simulation, dump_all_yamls
 from shared_workflow import shared
 
@@ -354,8 +354,7 @@ def main_local(args):
 
     vm_params_dict.update(vm_add_params_dict)
 
-    create_mgmt_db.create_mgmt_db([], os.path.join(sim_dir, const.SLURM_MGMT_DB_NAME), srf_files=srf_file)
-    utils.setup_dir(os.path.join(sim_dir, "mgmt_db_queue"))
+    scripts.management.install_mgmt_db.create_mgmt_db([], sim_dir, srf_files=srf_file)
 
     root_params_dict["mgmt_db_location"] = sim_dir
     dump_all_yamls(

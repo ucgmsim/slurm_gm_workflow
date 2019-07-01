@@ -5,12 +5,14 @@ import os
 from qcore.constants import TIMESTAMP_FORMAT
 
 from scripts.cybershake.install_cybershake_fault import install_fault
+from scripts.management.install_mgmt_db import create_mgmt_db_from_faults
 from shared_workflow import workflow_logger
+from shared_workflow.shared_automated_workflow import parse_fsf
 from shared_workflow.shared_defaults import recipe_dir
 
 from qcore.constants import ROOT_DEFAULTS_FILE_NAME, HF_DEFAULT_SEED
 
-AUTO_SUBMIT_LOG_FILE_NAME = "install_cybershake_log_{}.txt"
+INSTALLATION_LOG_FILE_NAME = "install_cybershake_log_{}.txt"
 
 
 def main():
@@ -66,7 +68,7 @@ def main():
             logger,
             os.path.join(
                 path_cybershake,
-                AUTO_SUBMIT_LOG_FILE_NAME.format(
+                INSTALLATION_LOG_FILE_NAME.format(
                     datetime.now().strftime(TIMESTAMP_FORMAT)
                 ),
             ),
@@ -101,14 +103,11 @@ def main():
                 )
             )
 
-    faults = {}
-    with open(args.fault_selection_list) as fault_file:
-        for line in fault_file.readlines():
-            fault, count, *_ = line.split()
-            count = int(count[:-1])
-            faults.update({fault: count})
+    faults = parse_fsf(os.path.abspath(args.fault_selection_file))
 
-    for fault, count in faults.items():
+    create_mgmt_db_from_faults(faults, path_cybershake, logger)
+
+    for fault, count in faults:
         install_fault(
             fault,
             count,

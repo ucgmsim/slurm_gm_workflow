@@ -2,15 +2,13 @@ import os
 import shutil
 import pytest
 
-import sqlite3 as sql
-
+import scripts.management.install_mgmt_db
 from scripts.management.db_helper import connect_db_ctx
-from scripts.management import create_mgmt_db
 from scripts.management.MgmtDB import SlurmTask
 from qcore import utils
 from shared_workflow.workflow_logger import get_basic_logger
 
-TEST_DB_FILE = "./output/slurm_mgmt.db"
+TEST_DB_FOLDER = "./output/"
 TEST_SRF_FILE = "/nesi/nobackup/nesi00213/RunFolder/PangopangoF29/Data/Sources/PangopangoF29/Srf/PangopangoF29_HYP01-10_S1244.srf"
 TEST_RUN_NAME = "PangopangoF29_HYP01-10_S1244"
 TEST_PROC = (2, "merge_ts")
@@ -27,12 +25,12 @@ EXPECTED_ERROS = [
 
 
 def setup_module(module):
-    utils.setup_dir(os.path.dirname(TEST_DB_FILE))
+    utils.setup_dir(os.path.dirname(TEST_DB_FOLDER))
 
 
 @pytest.fixture(scope="module")
 def mgmt_db():
-    yield create_mgmt_db.create_mgmt_db([], TEST_DB_FILE, TEST_SRF_FILE)
+    yield scripts.management.install_mgmt_db.create_mgmt_db([], TEST_DB_FOLDER, TEST_SRF_FILE)
 
 
 def get_rows(db_file, table, col_name, col_value, selected_col="*"):
@@ -68,4 +66,4 @@ def test_update_live_db(mgmt_db):
 
 
 def teardown_module(module):
-    shutil.rmtree(os.path.dirname(TEST_DB_FILE))
+    shutil.rmtree(os.path.dirname(TEST_DB_FOLDER))
