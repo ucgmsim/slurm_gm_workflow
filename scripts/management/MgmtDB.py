@@ -111,6 +111,10 @@ class MgmtDB:
         return True
 
     def add_retries(self, n_max_retries: int):
+        """Checks the database for failed tasks with less failures than the given n_max_retries.
+        If any are found then the tasks are checked for any entries that are created, queued, running or completed.
+        If any are found then nothing happens, if none are found then another created entry is added to the db.
+        n_max_retries: The maximum number of retries a task can have"""
         with connect_db_ctx(self._db_file) as cur:
             errored = cur.execute(
                 "SELECT run_name, proc_type "
@@ -126,26 +130,24 @@ class MgmtDB:
                 failure_count.update({key: 0})
             failure_count[key] += 1
 
-        keys_to_update = []
-        for key, value in failure_count.items():
-            if value >= n_max_retries:
-                keys_to_update.append(key)
-
         with connect_db_ctx(self._db_file) as cur:
-            for key in failure_count.keys():
+            for key, fail_count in failure_count.items():
+                if fail_count >= n_max_retries:
+                    continue
                 run_name, proc_type = key.split("__")
-                completed_count = cur.execute(
+                # Gets the number of entries for the task with state in [created, queued, running or completed]
+                # Where completed has enum index 4, and the other 3 less than this
+                # If any are found then don't add another entry
+                not_failed_count = cur.execute(
                     "SELECT COUNT(*) "
-                    "FROM state, status_enum "
-                    "WHERE state.status = status_enum.id "
-                    "AND status_enum.state  = 'completed' "
+                    "FROM state "
+                    "WHERE run_name = (?)"
+                    "AND proc_type = (?)"
+                    "AND status <= (SELECT id FROM status_enum WHERE state = 'completed') ",
+                    (run_name, proc_type),
                 ).fetchone()[0]
-                if completed_count == 0:
-                    cur.execute(
-                        """INSERT OR IGNORE INTO `state`(run_name, proc_type, status,
-                        last_modified) VALUES(?, ?, 1, strftime('%s','now'))""",
-                        (run_name, proc_type),
-                    )
+                if not_failed_count == 0:
+                    self._insert_task(cur, run_name, proc_type)
 
     def close_conn(self):
         """Close the db connection. Note, this ONLY has to be done if
