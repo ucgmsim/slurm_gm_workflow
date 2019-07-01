@@ -22,10 +22,10 @@ INSTALL_DB_LOG_FILE_NAME = "install_database_log_{}.txt"
 
 
 def create_mgmt_db(
-        realisations: List[str],
-        root_folder: str,
-        srf_files: List[str] = (),
-        logger: Logger = workflow_logger.get_basic_logger(),
+    realisations: List[str],
+    root_folder: str,
+    srf_files: List[str] = (),
+    logger: Logger = workflow_logger.get_basic_logger(),
 ):
     """
     Creates the management database, adds all tasks for all given realisations and creates the mgmgt db queue
@@ -54,9 +54,9 @@ def create_mgmt_db(
 
 
 def create_mgmt_db_from_faults(
-        fault_count_pairs: List[Tuple[str, int]],
-        root_folder: str,
-        logger: Logger = workflow_logger.get_basic_logger(),
+    fault_count_pairs: List[Tuple[str, int]],
+    root_folder: str,
+    logger: Logger = workflow_logger.get_basic_logger(),
 ):
     """
 
@@ -68,7 +68,12 @@ def create_mgmt_db_from_faults(
     realisations = []
     for fault, rel_count in fault_count_pairs:
         logger.info("Adding {} realisations for the fault {}.".format(rel_count, fault))
-        realisations.extend([simulation_structure.get_realisation_name(fault, i) for i in range(1, rel_count+1)])
+        realisations.extend(
+            [
+                simulation_structure.get_realisation_name(fault, i)
+                for i in range(1, rel_count + 1)
+            ]
+        )
     return create_mgmt_db(realisations, root_folder, logger=logger)
 
 
@@ -93,9 +98,7 @@ def main():
         logger,
         path.join(
             root_folder,
-            INSTALL_DB_LOG_FILE_NAME.format(
-                datetime.now().strftime(TIMESTAMP_FORMAT)
-            ),
+            INSTALL_DB_LOG_FILE_NAME.format(datetime.now().strftime(TIMESTAMP_FORMAT)),
         ),
     )
 
@@ -104,5 +107,5 @@ def main():
     create_mgmt_db_from_faults(faults, root_folder, logger=logger)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
