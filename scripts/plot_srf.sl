@@ -29,17 +29,26 @@ echo ___plotting SRF___
 python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $SRF_NAME plot_srf running
 res=`python $gmsim/visualization/gmt/plot_srf_square.py $SRF_PATH --out-dir "$OUTPUT_DIR/square_plot"`
 exit_val=$?
-
-echo $res >> "/home/melody.zhu/plot_srf_res.txt"
+res2=`python $gmsim/visualization/gmt/plot_srf_map.py $SRF_PATH 300 "active_faults"`
+exit_val2=$?
+echo "res$res res2$res2" >> "/home/melody.zhu/plot_srf_res.txt"
 
 end_time=`date +$runtime_fmt`
 echo $end_time
 
-if [[ $exit_val == 0 ]]; then
+
+if [[ $exit_val == 0 && $exit_val2 == 0]]; then
     #passed
-
     python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $SRF_NAME plot_srf completed
-
 else
-    python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $SRF_NAME plot_srf failed --error "$res"
+    errors=()
+    if [[ $exit_val != 0 ]]; then
+        errors+=( $res )
+    fi
+    if [[ $exit_val2 != 0 ]]; then
+        errors+=( $res2 )
+    fi
+    echo "${erros[@]}"
+    python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $SRF_NAME plot_srf failed --error "${erros[@]}"
 fi
+
