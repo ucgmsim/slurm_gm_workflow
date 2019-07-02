@@ -9,7 +9,7 @@ from qcore.constants import ROOT_DEFAULTS_FILE_NAME, HF_DEFAULT_SEED, TIMESTAMP_
 from qcore.utils import dump_yaml
 from shared_workflow import workflow_logger
 from shared_workflow.install_shared import generate_root_params, generate_fault_params, generate_vm_params, \
-    generate_sim_params
+    generate_sim_params, generate_fd_files
 from shared_workflow.shared import verify_user_dirs
 from shared_workflow.shared_defaults import recipe_dir
 from shared_workflow.workflow_logger import get_basic_logger
@@ -48,18 +48,19 @@ def install_realisation(root_folder, rel_name, version, stat_file_path, extended
 
     root_yaml_path = sim_struct.get_root_yaml_path(sim_struct.get_runs_dir(root_folder))
     if not os.path.isfile(root_yaml_path):
-        v1d_full_path = root_params["v_1d_mod"]
-        vs30_file_path = stat_file_path.replace('.ll', '.vs30')
-        vs30ref_file_path = stat_file_path.replace('.ll', '.vs30ref')
-        root_params = generate_root_params(root_params, extended_period, seed, stat_file_path, version, vs30_file_path,
-                                           vs30ref_file_path, v1d_full_path)
+
+        root_params = generate_root_params(root_params, root_folder, extended_period, seed, stat_file_path, version)
         dump_yaml(root_params, root_yaml_path)
 
     fault_yaml_path = sim_struct.get_fault_yaml_path(sim_struct.get_runs_dir(root_folder), fault_name)
     if not os.path.isfile(fault_yaml_path):
+        fd_statcords, fd_statlist = generate_fd_files(
+            sim_struct.get_fault_dir(root_folder, fault_name),
+            vm_params_dict, stat_file=stat_file_path, logger=install_logger)
+
         vel_mod_dir = sim_struct.get_fault_VM_dir(root_folder, fault_name)
 
-        fault_params = generate_fault_params(root_folder, vel_mod_dir)
+        fault_params = generate_fault_params(root_folder, vel_mod_dir, fd_statcords, fd_statlist)
         dump_yaml(fault_params, fault_yaml_path)
 
         vm_params = generate_vm_params(vm_params_dict, vel_mod_dir)
