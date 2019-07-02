@@ -19,6 +19,11 @@ from scripts.management.MgmtDB import MgmtDB
 from shared_workflow import workflow_logger
 from shared_workflow.workflow_logger import get_basic_logger, NOPRINTCRITICAL
 
+ALL = "ALL"
+ONCE = "ONCE"
+ONCE_PATTERN = "%_REL01"
+NONE = "NONE"
+
 
 def get_queued_tasks(user=None, machine=const.HPC.maui):
     if user is not None:
@@ -190,28 +195,32 @@ def check_mgmt_queue(queue_entries: List[str], run_name: str, proc_type: int, lo
 
 
 def parse_fsf(fault_selection_file: str):
-    """Parses a fault selection file into a list of (fault, realisation count) pairs"""
+    """Parses a fault selection file into a list of (fault, realisation count) pairs
+    Each line in the file should have the format "<fault> XX[r]" where XX is the number of realisations and the
+    following character, displayed as r here, is optional and ignored by this function
+    :param fault_selection_file: The location of the fault selection file to be parsed
+    :return: A list of fault, realisation count tuples"""
     faults = []
     with open(fault_selection_file) as fault_file:
         for line in fault_file.readlines():
             fault, count, *_ = line.split()
-            if count[-1] == 'r':
-                count = int(count[:-1])
-            else:
+            if count.isnumeric():
                 count = int(count)
+            else:
+                count = int(count[:-1])
             faults.append((fault, count))
     return faults
 
 
 def parse_config_file(config_file_location: str, logger: Logger = workflow_logger.get_basic_logger()):
     """Takes in the location of a wrapper config file and creates the tasks to be run.
-    Requires that the file contains the keys 'run_all_tasks' and 'run_some', even if they are empty
-    If the dependencies for a run_some task overlap with those in the tasks_to_run_for_all, as a race condition is
-    possible if multiple auto_submit scripts have the same tasks. If multiple run_some instances have the same
-    dependencies then this is not an issue as they run sequentially, rather than simultaneously
+    Each task that is desired to be run should have its name as given in qcore.constants followed by the relevant
+    keyword or sqlite formatted query string, which uses % as the wildcard character.
+    The keywords NONE, ONCE and ALL correspond to the patterns nothing, "%_REL01", "%" respectively.
     :param config_file_location: The location of the config file
-    :return: A tuple containing the tasks to be run on all processes and a list of pattern, tasks tuples which state
-    which tasks can be run with which patterns
+    :param logger: The logger object used to record messages
+    :return: A list containing the tasks to be run on all processes and a dictionary of pattern, task list pairs which
+    state which query patterns should run which tasks
     """
     config = load_yaml(config_file_location)
 
@@ -235,9 +244,3 @@ def parse_config_file(config_file_location: str, logger: Logger = workflow_logge
         logger.info("Pattern {} will run tasks {}".format(pattern, tasks))
 
     return tasks_to_run_for_all, tasks_with_pattern_match.items()
-
-
-ALL = "ALL"
-ONCE = "ONCE"
-ONCE_PATTERN = "%_REL01"
-NONE = "NONE"

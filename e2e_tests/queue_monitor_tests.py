@@ -30,7 +30,7 @@ class QueueMonitorStressTest(object):
     task_count_key = "simultaneous_task_count"
 
     # Doesn't really matter
-    realisation_name = "Hossack"
+    fault_name = "Hossack"
 
     submit_out_file = "submit_out_log.txt"
     submit_err_file = "submit_err_log.txt"
@@ -76,7 +76,7 @@ class QueueMonitorStressTest(object):
     def install(self):
         print("Installing database")
         scripts.management.install_mgmt_db.create_mgmt_db_from_faults(
-            [(self.realisation_name, self.realisations)],
+            [(self.fault_name, self.realisations)],
             self.stage_dir,
         )
 
@@ -280,7 +280,7 @@ class QueueMonitorStressTest(object):
 
         add_to_queue(
             self.mgmt_dir,
-            "{}_REL{:0>2}".format(self.realisation_name, rel_num+1),
+            "{}_REL{:0>2}".format(self.fault_name, rel_num + 1),
             proc_type,
             status,
             job_id,
