@@ -62,7 +62,7 @@ def print_run_status(db, run_name, error=False, count=False, config_file=None):
                             """.format(
                             ",?" * (len(tasks_n) - 1)
                         ),
-                        (run_name, *tasks_n),
+                        tasks_n,
                     ).fetchall()
                 )
             for pattern, tasks in tasks_to_match:
