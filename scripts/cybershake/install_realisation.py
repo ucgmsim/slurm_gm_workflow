@@ -3,7 +3,8 @@ import os
 from datetime import datetime
 
 from numpy import isclose
-from qcore import simulation_structure, utils
+from qcore import utils
+from qcore import simulation_structure as sim_struct
 from qcore.constants import ROOT_DEFAULTS_FILE_NAME, HF_DEFAULT_SEED, TIMESTAMP_FORMAT
 from qcore.utils import dump_yaml
 from shared_workflow import workflow_logger
@@ -17,19 +18,19 @@ INSTALL_LOG_FILE_NAME = "install_log_{}.txt"
 
 
 def install_realisation(root_folder, rel_name, version, stat_file_path, extended_period, seed, install_logger=get_basic_logger()):
-    sim_dir = simulation_structure.get_sim_dir(root_folder, rel_name)
+    sim_dir = sim_struct.get_sim_dir(root_folder, rel_name)
 
-    lf_sim_root_dir = simulation_structure.get_lf_dir(sim_dir)
-    hf_dir = simulation_structure.get_hf_dir(sim_dir)
-    bb_dir = simulation_structure.get_bb_dir(sim_dir)
-    im_calc_dir = simulation_structure.get_im_calc_dir(sim_dir)
+    lf_sim_root_dir = sim_struct.get_lf_dir(sim_dir)
+    hf_dir = sim_struct.get_hf_dir(sim_dir)
+    bb_dir = sim_struct.get_bb_dir(sim_dir)
+    im_calc_dir = sim_struct.get_im_calc_dir(sim_dir)
 
     dir_list = [sim_dir, lf_sim_root_dir, hf_dir, bb_dir, im_calc_dir]
     verify_user_dirs(dir_list)
 
-    fault_name = simulation_structure.get_fault_from_realisation(rel_name)
+    fault_name = sim_struct.get_fault_from_realisation(rel_name)
 
-    vm_params_path = simulation_structure.get_VM_params_path(root_folder, rel_name)
+    vm_params_path = sim_struct.get_VM_params_path(root_folder, rel_name)
     vm_params_dict = utils.load_yaml(vm_params_path)
 
     root_params = utils.load_yaml(os.path.join(recipe_dir, "gmsim", version, ROOT_DEFAULTS_FILE_NAME))
@@ -45,7 +46,7 @@ def install_realisation(root_folder, rel_name, version, stat_file_path, extended
         )
         return False
 
-    root_yaml_path = simulation_structure.get_root_yaml_path(root_folder)
+    root_yaml_path = sim_struct.get_root_yaml_path(sim_struct.get_runs_dir(root_folder))
     if not os.path.isfile(root_yaml_path):
         v1d_full_path = root_params["v_1d_mod"]
         vs30_file_path = stat_file_path.replace('.ll', '.vs30')
@@ -54,9 +55,9 @@ def install_realisation(root_folder, rel_name, version, stat_file_path, extended
                                            vs30ref_file_path, v1d_full_path)
         dump_yaml(root_params, root_yaml_path)
 
-    fault_yaml_path = simulation_structure.get_fault_yaml_path(root_folder, fault_name)
+    fault_yaml_path = sim_struct.get_fault_yaml_path(sim_struct.get_runs_dir(root_folder), fault_name)
     if not os.path.isfile(fault_yaml_path):
-        vel_mod_dir = simulation_structure.get_fault_VM_dir(root_folder, fault_name)
+        vel_mod_dir = sim_struct.get_fault_VM_dir(root_folder, fault_name)
 
         fault_params = generate_fault_params(sim_dir, vel_mod_dir)
         dump_yaml(fault_params, fault_yaml_path)
@@ -64,7 +65,7 @@ def install_realisation(root_folder, rel_name, version, stat_file_path, extended
         vm_params = generate_vm_params(vm_params_dict, vel_mod_dir)
         dump_yaml(vm_params, vm_params_path)
 
-    sim_params_path = simulation_structure.get_sim_yaml_path(root_folder, rel_name)
+    sim_params_path = sim_struct.get_sim_yaml_path(sim_struct.get_runs_dir(root_folder), rel_name)
     sim_params = generate_sim_params(root_folder, rel_name, sim_dir, sim_duration, stat_file_path)
     dump_yaml(sim_params, sim_params_path)
     return True
@@ -114,7 +115,7 @@ def main():
     workflow_logger.add_general_file_handler(
         install_logger,
         os.path.join(
-            simulation_structure.get_sim_dir(path_cybershake, realisation),
+            sim_struct.get_sim_dir(path_cybershake, realisation),
             INSTALL_LOG_FILE_NAME.format(datetime.now().strftime(TIMESTAMP_FORMAT)),
         ),
     )
