@@ -267,7 +267,7 @@ def generate_fault_params(root_folder, vel_mod_dir, fd_statcords, fd_statlist):
 
 
 def generate_root_params(root_params_base_dict, root_folder, extended_period, seed, stat_file_path, version):
-    root_params_base_dict["mgmt_db_location"] = sim_struct.get_mgmt_db_queue(root_folder)
+    root_params_base_dict["mgmt_db_location"] = root_folder
     root_params_base_dict[RootParams.extended_period.value] = extended_period
     root_params_base_dict[RootParams.version.value] = version
     root_params_base_dict[RootParams.stat_file.value] = stat_file_path
