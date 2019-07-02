@@ -8,13 +8,13 @@ import yaml
 
 import shared_workflow.shared_automated_workflow
 import shared_workflow.shared_defaults as defaults
-from qcore import geo, utils, simulation_structure
+from qcore import simulation_structure as sim_struct
+from qcore import geo, utils
 from qcore.constants import (
     SimParams,
     FaultParams,
     RootParams,
     VMParams,
-    ROOT_DEFAULTS_FILE_NAME,
     HF_DEFAULT_SEED,
 )
 from shared_workflow import shared
@@ -46,10 +46,10 @@ def install_simulation(
     """Installs a single simulation"""
     sufx = vm_params_dict["sufx"]
     sim_duration = vm_params_dict["sim_duration"]
-    lf_sim_root_dir = simulation_structure.get_lf_dir(sim_dir)
-    hf_dir = simulation_structure.get_hf_dir(sim_dir)
-    bb_dir = simulation_structure.get_bb_dir(sim_dir)
-    im_calc_dir = simulation_structure.get_im_calc_dir(sim_dir)
+    lf_sim_root_dir = sim_struct.get_lf_dir(sim_dir)
+    hf_dir = sim_struct.get_hf_dir(sim_dir)
+    bb_dir = sim_struct.get_bb_dir(sim_dir)
+    im_calc_dir = sim_struct.get_im_calc_dir(sim_dir)
 
     dir_list = [sim_dir, lf_sim_root_dir, hf_dir, bb_dir, im_calc_dir]
     version = str(version)
@@ -114,25 +114,28 @@ def install_simulation(
     return root_params_dict, fault_params_dict, sim_params_dict, vm_params_dict
 
 
-def generate_sim_params(root_folder, rel_name, sim_dir, sim_duration, stat_file_path, fault_yaml_path):
+def generate_sim_params(root_folder, rel_name, sim_dir, sim_duration, stat_file_path):
 
     sim_params_dict = {
-        SimParams.fault_yaml_path.value: fault_yaml_path,
+        SimParams.fault_yaml_path.value: sim_struct.get_fault_yaml_path(
+            sim_struct.get_runs_dir(root_folder),
+            sim_struct.get_fault_from_realisation(rel_name),
+        ),
         SimParams.run_name.value: rel_name,
         SimParams.user_root.value: root_folder,
         SimParams.run_dir.value: root_folder,
         SimParams.sim_dir.value: sim_dir,
-        SimParams.srf_file.value: simulation_structure.get_srf_path(root_folder, rel_name),
-        SimParams.vm_params.value: simulation_structure.get_VM_params_path(root_folder, rel_name),
+        SimParams.srf_file.value: sim_struct.get_srf_path(root_folder, rel_name),
+        SimParams.vm_params.value: sim_struct.get_VM_params_path(root_folder, rel_name),
         SimParams.sim_duration.value: sim_duration,
-        SimParams.hf.value: {SimParams.slip.value: simulation_structure.get_stoch_path(root_folder, rel_name)},
+        SimParams.hf.value: {SimParams.slip.value: sim_struct.get_stoch_path(root_folder, rel_name)},
         SimParams.emod3d.value: {},
         SimParams.bb.value: {},
     }
     if stat_file_path is not None:
         sim_params_dict[SimParams.stat_file.value] = stat_file_path
 
-    sim_params_file = simulation_structure.get_source_params_path(root_folder, rel_name)
+    sim_params_file = sim_struct.get_source_params_path(root_folder, rel_name)
 
     if os.path.isfile(sim_params_file):
         with open(sim_params_file) as spf:
@@ -151,9 +154,9 @@ def generate_sim_params(root_folder, rel_name, sim_dir, sim_duration, stat_file_
     return sim_params_dict
 
 
-def generate_fault_params(sim_dir, vel_mod_dir):
+def generate_fault_params(root_folder, vel_mod_dir):
     return {
-        FaultParams.root_yaml_path.value: simulation_structure.get_root_yaml_path(sim_dir),
+        FaultParams.root_yaml_path.value: sim_struct.get_root_yaml_path(sim_struct.get_runs_dir(root_folder)),
         FaultParams.vel_mod_dir.value: vel_mod_dir,
     }
 

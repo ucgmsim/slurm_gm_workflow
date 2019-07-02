@@ -59,14 +59,14 @@ def install_realisation(root_folder, rel_name, version, stat_file_path, extended
     if not os.path.isfile(fault_yaml_path):
         vel_mod_dir = sim_struct.get_fault_VM_dir(root_folder, fault_name)
 
-        fault_params = generate_fault_params(sim_dir, vel_mod_dir)
+        fault_params = generate_fault_params(root_folder, vel_mod_dir)
         dump_yaml(fault_params, fault_yaml_path)
 
         vm_params = generate_vm_params(vm_params_dict, vel_mod_dir)
         dump_yaml(vm_params, vm_params_path)
 
     sim_params_path = sim_struct.get_sim_yaml_path(sim_struct.get_runs_dir(root_folder), rel_name)
-    sim_params = generate_sim_params(root_folder, rel_name, sim_dir, sim_duration, stat_file_path, fault_yaml_path)
+    sim_params = generate_sim_params(root_folder, rel_name, sim_dir, sim_duration, stat_file_path)
     dump_yaml(sim_params, sim_params_path)
     return True
 
