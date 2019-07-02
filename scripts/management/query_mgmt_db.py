@@ -62,10 +62,11 @@ def print_run_status(db, run_name, error=False, count=False, config_file=None):
                             """.format(
                             ",?" * (len(tasks_n) - 1)
                         ),
-                        tasks_n,
+                        [i.value for i in tasks_n],
                     ).fetchall()
                 )
             for pattern, tasks in tasks_to_match:
+                tasks = [i.value for i in tasks]
                 status.extend(
                     db.execute(
                         """SELECT state.run_name, proc_type_enum.proc_type, status_enum.state, state.job_id, datetime(last_modified,'unixepoch')
