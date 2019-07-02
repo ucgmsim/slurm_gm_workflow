@@ -34,18 +34,9 @@ def install_simulation(
     stat_file_path,
     vs30_file_path,
     vs30ref_file_path,
-    sufx,
-    sim_duration,
-    vel_mod_params_dir,
-    yes_statcords,
-    yes_model_params,
-    fault_yaml_path,
-    root_yaml_path,
-    v1d_dir=defaults.vel_mod_dir,
+    vm_params_dict,
     user_root=defaults.user_root,
     stat_dir=defaults.stat_dir,
-    site_v1d_dir=None,
-    hf_stat_vs_ref=None,
     v1d_full_path=None,
     sim_params_file="",
     seed=HF_DEFAULT_SEED,
@@ -53,6 +44,8 @@ def install_simulation(
     extended_period=False,
 ):
     """Installs a single simulation"""
+    sufx = vm_params_dict["sufx"]
+    sim_duration = vm_params_dict["sim_duration"]
     lf_sim_root_dir = simulation_structure.get_lf_dir(sim_dir)
     hf_dir = simulation_structure.get_hf_dir(sim_dir)
     bb_dir = simulation_structure.get_bb_dir(sim_dir)
@@ -65,16 +58,7 @@ def install_simulation(
 
     shared.verify_user_dirs(dir_list)
 
-    if not yes_model_params:
-        logger.info(
-            "Generation of model params has been skipped. Re-directing related params to files under {}".format(
-                vel_mod_dir
-            )
-        )
-        vel_mod_params_dir = vel_mod_dir
-
     if stat_file_path == "":
-        # stat_path seems to empty, assigning all related value to latest_ll
         logger.info(
             "stat_file_path is not specified. Using {}".format(defaults.latest_ll)
         )
@@ -83,20 +67,15 @@ def install_simulation(
         vs30_file_path = os.path.join(run_stat_dir, event_name + ".vs30")
         vs30ref_file_path = os.path.join(run_stat_dir, event_name + ".vs30ref")
 
-        # creating sub-folder for run_name
-        # check if folder already exist
         if not os.path.isdir(run_stat_dir):
-            # folder not exist, creating
             os.mkdir(run_stat_dir)
 
-            # making symbolic link to latest_ll
             cmd = "ln -s {} {}".format(
                 os.path.join(defaults.latest_ll_dir, defaults.latest_ll + ".ll"),
                 stat_file_path,
             )
             shared_workflow.shared_automated_workflow.exe(cmd)
 
-            # making symbolic link to lastest_ll.vs30 and .vs30ref
             cmd = "ln -s {} {}".format(
                 os.path.join(defaults.latest_ll_dir, defaults.latest_ll + ".vs30"),
                 vs30_file_path,
@@ -110,54 +89,18 @@ def install_simulation(
             shared_workflow.shared_automated_workflow.exe(cmd)
 
     template_path = os.path.join(defaults.recipe_dir, "gmsim", version)
-    root_params_dict = utils.load_yaml(
-        os.path.join(template_path, ROOT_DEFAULTS_FILE_NAME)
-    )
-    root_params_dict[RootParams.extended_period.value] = extended_period
-    root_params_dict[RootParams.version.value] = version
-    root_params_dict[RootParams.stat_file.value] = stat_file_path
-    root_params_dict[RootParams.stat_vs_est.value] = vs30_file_path
-    root_params_dict[RootParams.stat_vs_ref.value] = vs30ref_file_path
-    root_params_dict["hf"][RootParams.seed.value] = seed
+
+    root_params_dict = generate_root_params(template_path, extended_period, seed, stat_file_path, version,
+                                            vs30_file_path, vs30ref_file_path, v1d_full_path)
 
     # Fault params
-    fault_params_dict = {
-        FaultParams.root_yaml_path.value: root_yaml_path,
-        FaultParams.vel_mod_dir.value: vel_mod_dir,
-    }
+    fault_params_dict = generate_fault_params(sim_dir, vel_mod_dir)
 
     # VM params
-    vm_params_dict = {
-        VMParams.gridfile.value: os.path.join(
-            vel_mod_params_dir, "gridfile{}".format(sufx)
-        ),
-        VMParams.gridout.value: os.path.join(
-            vel_mod_params_dir, "gridout{}".format(sufx)
-        ),
-        VMParams.model_coords.value: os.path.join(
-            vel_mod_params_dir, "model_coords{}".format(sufx)
-        ),
-        VMParams.model_params.value: os.path.join(
-            vel_mod_params_dir, "model_params{}".format(sufx)
-        ),
-        VMParams.model_bounds.value: os.path.join(
-            vel_mod_params_dir, "model_bounds{}".format(sufx)
-        ),
-    }
+    vm_params_dict = generate_vm_params(sufx, vel_mod_dir)
 
     # Sim Params
-    sim_params_dict = {
-        SimParams.fault_yaml_path.value: fault_yaml_path,
-        SimParams.run_name.value: run_name,
-        SimParams.user_root.value: user_root,
-        SimParams.run_dir.value: run_dir,
-        SimParams.sim_dir.value: sim_dir,
-        SimParams.srf_file.value: srf_file,
-        SimParams.vm_params.value: vm_params_path,
-        SimParams.sim_duration.value: sim_duration,
-    }
-    if stat_file_path is not None:
-        sim_params_dict[SimParams.stat_file.value] = stat_file_path
+    sim_params_dict = generate_sim_params(run_dir, run_name, sim_dir, sim_duration, srf_file)
 
     nt = float(sim_duration) / root_params_dict['dt']
     if not isclose(nt, int(nt)):
@@ -168,40 +111,30 @@ def install_simulation(
         )
         return None, None, None, None
 
-    sim_params_dict["emod3d"] = {}
+    return root_params_dict, fault_params_dict, sim_params_dict, vm_params_dict
 
-    sim_params_dict["hf"] = {SimParams.slip.value: stoch_file}
 
-    sim_params_dict["bb"] = {}
+def generate_sim_params(root_folder, rel_name, sim_dir, sim_duration, stat_file_path):
 
-    shared.show_horizontal_line(c="*")
+    sim_params_dict = {
+        SimParams.fault_yaml_path.value: simulation_structure.get_fault_yaml_path(sim_dir, simulation_structure.get_fault_from_realisation(rel_name)),
+        SimParams.run_name.value: rel_name,
+        SimParams.user_root.value: root_folder,
+        SimParams.run_dir.value: root_folder,
+        SimParams.sim_dir.value: sim_dir,
+        SimParams.srf_file.value: simulation_structure.get_srf_path(root_folder, rel_name),
+        SimParams.vm_params.value: simulation_structure.get_VM_params_path(root_folder, rel_name),
+        SimParams.sim_duration.value: sim_duration,
+        SimParams.hf.value: {SimParams.slip.value: simulation_structure.get_stoch_path(root_folder, rel_name)},
+        SimParams.emod3d.value: {},
+        SimParams.bb.value: {},
+    }
+    if stat_file_path is not None:
+        sim_params_dict[SimParams.stat_file.value] = stat_file_path
 
-    if yes_statcords:
-        logger.info("Producing statcords and FD_STATLIST. It may take a minute or two")
+    sim_params_file = simulation_structure.get_source_params_path(root_folder, rel_name)
 
-        fd_statcords, fd_statlist = generate_fd_files(
-            sim_params_dict["sim_dir"],
-            vm_params_dict,
-            stat_file=stat_file_path,
-            logger=logger,
-        )
-        logger.info("statcords and FD_STATLIST produced")
-        fault_params_dict[FaultParams.stat_coords.value] = fd_statcords
-        fault_params_dict[FaultParams.FD_STATLIST.value] = fd_statlist
-
-    logger.info("installing bb")
-    install_bb(
-        stat_file_path,
-        root_params_dict,
-        v1d_dir=v1d_dir,
-        v1d_full_path=v1d_full_path,
-        site_v1d_dir=site_v1d_dir,
-        hf_stat_vs_ref=hf_stat_vs_ref,
-        logger=logger,
-    )
-    logger.info("installing bb finished")
-
-    if sim_params_file and os.path.isfile(sim_params_file):
+    if os.path.isfile(sim_params_file):
         with open(sim_params_file) as spf:
             extra_sims_params = yaml.load(spf)
         for key, value in extra_sims_params.items():
@@ -215,7 +148,47 @@ def install_simulation(
             else:
                 sim_params_dict.update({key: value})
 
-    return root_params_dict, fault_params_dict, sim_params_dict, vm_params_dict
+    return sim_params_dict
+
+
+def generate_fault_params(sim_dir, vel_mod_dir):
+    return {
+        FaultParams.root_yaml_path.value: simulation_structure.get_root_yaml_path(sim_dir),
+        FaultParams.vel_mod_dir.value: vel_mod_dir,
+    }
+
+
+def generate_root_params(root_params_base_dict, extended_period, seed, stat_file_path, version, vs30_file_path,
+                         vs30ref_file_path, v1d_full_path):
+    root_params_base_dict[RootParams.extended_period.value] = extended_period
+    root_params_base_dict[RootParams.version.value] = version
+    root_params_base_dict[RootParams.stat_file.value] = stat_file_path
+    root_params_base_dict[RootParams.stat_vs_est.value] = vs30_file_path
+    root_params_base_dict[RootParams.stat_vs_ref.value] = vs30ref_file_path
+    root_params_base_dict["hf"][RootParams.seed.value] = seed
+    root_params_base_dict["bb"]["site_specific"] = False
+    root_params_base_dict["v_mod_1d_name"] = v1d_full_path
+    return root_params_base_dict
+
+
+def generate_vm_params(base_vm_params_dict, vel_mod_params_dir):
+    sufx = base_vm_params_dict["sufx"]
+    base_vm_params_dict[VMParams.gridfile.value] = os.path.join(
+        vel_mod_params_dir, "gridfile{}".format(sufx)
+    )
+    base_vm_params_dict[VMParams.gridout.value] = os.path.join(
+        vel_mod_params_dir, "gridout{}".format(sufx)
+    )
+    base_vm_params_dict[VMParams.model_coords.value] = os.path.join(
+        vel_mod_params_dir, "model_coords{}".format(sufx)
+    )
+    base_vm_params_dict[VMParams.model_params.value] = os.path.join(
+        vel_mod_params_dir, "model_params{}".format(sufx)
+    )
+    base_vm_params_dict[VMParams.model_bounds.value] = os.path.join(
+        vel_mod_params_dir, "model_bounds{}".format(sufx)
+    )
+    return base_vm_params_dict
 
 
 def install_bb(

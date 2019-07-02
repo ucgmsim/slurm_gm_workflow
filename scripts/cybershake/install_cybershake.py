@@ -2,9 +2,11 @@ import argparse
 from datetime import datetime
 import os
 
+from qcore import simulation_structure
 from qcore.constants import TIMESTAMP_FORMAT
 
 from scripts.cybershake.install_cybershake_fault import install_fault
+from scripts.cybershake.install_realisation import install_realisation
 from scripts.management.install_mgmt_db import create_mgmt_db_from_faults
 from shared_workflow import workflow_logger
 from shared_workflow.shared_automated_workflow import parse_fsf
@@ -108,16 +110,17 @@ def main():
     create_mgmt_db_from_faults(faults, path_cybershake, logger)
 
     for fault, count in faults:
-        install_fault(
-            fault,
-            count,
-            path_cybershake,
-            args.version,
-            args.stat_file_path,
-            args.seed,
-            args.extended_period,
-            workflow_logger.get_realisation_logger(logger, fault),
-        )
+        for i in range(1, count+1):
+            realisation = simulation_structure.get_realisation_name(fault, i)
+            install_realisation(
+                path_cybershake,
+                realisation,
+                args.version,
+                args.stat_file_path,
+                args.extended_period,
+                args.seed,
+                workflow_logger.get_realisation_logger(logger, fault)
+            )
 
 
 if __name__ == "__main__":

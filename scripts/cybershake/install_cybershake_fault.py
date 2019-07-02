@@ -48,8 +48,6 @@ def install_fault(fault_name, n_rel, root_folder, version, stat_file_path, seed=
     # Load variables from cybershake config
 
     v1d_full_path = config_dict["v_1d_mod"]
-    site_v1d_dir = config_dict.get("site_v1d_dir")
-    hf_stat_vs_ref = config_dict.get("hf_stat_vs_ref")
 
     vs30_file_path = stat_file_path.replace('.ll', '.vs30')
     vs30ref_file_path = stat_file_path.replace('.ll', '.vs30ref')
@@ -80,13 +78,8 @@ def install_fault(fault_name, n_rel, root_folder, version, stat_file_path, seed=
     # Load the variables from vm_params.yaml
     vm_params_path = os.path.join(vel_mod_dir, VM_PARAMS_FILE_NAME)
     vm_params_dict = utils.load_yaml(vm_params_path)
-    yes_model_params = (
-        False
-    )  # statgrid should normally be already generated with Velocity Model
 
     sim_root_dir = simulation_structure.get_runs_dir(root_folder)
-    fault_yaml_path = simulation_structure.get_fault_yaml_path(sim_root_dir, fault_name)
-    root_yaml_path = simulation_structure.get_root_yaml_path(sim_root_dir)
     for srf in list_srf:
         logger.info("Installing {}".format(srf))
         # try to match find the stoch with same basename
@@ -116,16 +109,8 @@ def install_fault(fault_name, n_rel, root_folder, version, stat_file_path, seed=
             stat_file_path=stat_file_path,
             vs30_file_path=vs30_file_path,
             vs30ref_file_path=vs30ref_file_path,
-            sufx=vm_params_dict['sufx'],
-            sim_duration=vm_params_dict['sim_duration'],
-            vel_mod_params_dir=vel_mod_dir,
-            yes_statcords=False,
-            yes_model_params=yes_model_params,
-            fault_yaml_path=fault_yaml_path,
-            root_yaml_path=root_yaml_path,
+            vm_params_dict=vm_params_dict,
             user_root=root_folder,
-            site_v1d_dir=site_v1d_dir,
-            hf_stat_vs_ref=hf_stat_vs_ref,
             v1d_full_path=v1d_full_path,
             sim_params_file=sim_params_file,
             seed=seed,
