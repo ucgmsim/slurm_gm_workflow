@@ -114,10 +114,10 @@ def install_simulation(
     return root_params_dict, fault_params_dict, sim_params_dict, vm_params_dict
 
 
-def generate_sim_params(root_folder, rel_name, sim_dir, sim_duration, stat_file_path):
+def generate_sim_params(root_folder, rel_name, sim_dir, sim_duration, stat_file_path, fault_yaml_path):
 
     sim_params_dict = {
-        SimParams.fault_yaml_path.value: simulation_structure.get_fault_yaml_path(sim_dir, simulation_structure.get_fault_from_realisation(rel_name)),
+        SimParams.fault_yaml_path.value: fault_yaml_path,
         SimParams.run_name.value: rel_name,
         SimParams.user_root.value: root_folder,
         SimParams.run_dir.value: root_folder,

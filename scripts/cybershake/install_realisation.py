@@ -66,7 +66,7 @@ def install_realisation(root_folder, rel_name, version, stat_file_path, extended
         dump_yaml(vm_params, vm_params_path)
 
     sim_params_path = sim_struct.get_sim_yaml_path(sim_struct.get_runs_dir(root_folder), rel_name)
-    sim_params = generate_sim_params(root_folder, rel_name, sim_dir, sim_duration, stat_file_path)
+    sim_params = generate_sim_params(root_folder, rel_name, sim_dir, sim_duration, stat_file_path, fault_yaml_path)
     dump_yaml(sim_params, sim_params_path)
     return True
 
