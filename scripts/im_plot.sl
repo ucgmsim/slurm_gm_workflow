@@ -55,13 +55,11 @@ load_python2_mahuika () {
 }
 
 plot_stations () {
-    for f in $OUTPUT_XYZ_DIR/*; do 
-        if [ -f "$f" ]; then
-            echo "ploting $f"
-            $gmsim/visualization/gmt/plot_stations.py $f -n 22 --srf $SRF_PATH --model_params $MODEL_PARAMS --out_dir "${f//./_}_png_stations"
-            echo "output pngs save to ${f//./_}_png_stations"
-        fi
-    done
+    if [[ -f "$f" ]]; then
+        out_dir="${f//./_}_png_stations"
+        echo "outputtig pngs to $out_dir"
+        python $gmsim/visualization/gmt/plot_stations.py $f -n 22 --srf "adfsa$SRF_PATH" --model_params $MODEL_PARAMS --out_dir $out_dir
+    fi
 }
 
 if [[ $exit_val == 0 ]]; then
@@ -71,21 +69,35 @@ if [[ $exit_val == 0 ]]; then
     load_python2_mahuika
     
     echo "start plotting stations"
-    res2=`plot_stations`
     
-    exit_val2=$?
+    failed=0
+    fail_msgs=()
+    success_msgs=()    
+    for f in $OUTPUT_XYZ_DIR/*; do
+        res2=`plot_stations`
+        exit_val2=$?
+        if [[ $exit_val2 != 0 ]]; then
+            failed=1
+            failed_msgs+=( "failed $res2" )
+        else
+            success_msgs+=( "successfully $res2" )
+        fi 
+    done
     
-    ## Reset to python3 virtual environment, otherwise add_to_mgmt_queue would not work    
+    ## Reset to python3 virtual environment, otherwise add_to_mgmt_queue would not work
     source $CUR_ENV/workflow/install_workflow/helper_functions/activate_env.sh $CUR_ENV "mahuika"
+    
+    echo "Resetted to python3, cur_env is $CUR_ENV"
 
-    if [[ $exit_val2 == 0 ]]; then
-         ## log information about params used to .out file    
-         echo "srf_file $SRF_PATH"
-         echo "model_params $MODEL_PARAMS"
-         echo "$res2"
-         python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $SRF_NAME IM_plot completed
+    if [[ $failed == 0 ]]; then
+        ## log information about params used to .out file    
+        echo "srf_file $SRF_PATH"
+        echo "model_params $MODEL_PARAMS"
+        printf '%s\n' "${success_msgs[@]}" 
+        python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $SRF_NAME IM_plot completed
     else
-       python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $SRF_NAME IM_plot failed --error "$res2" 
+       printf '%s\n' "${failed_msgs[@]}" 
+       python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $SRF_NAME IM_plot failed --error "$failed_msgs" 
     fi
 else
     python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $SRF_NAME IM_plot failed --error "$res"

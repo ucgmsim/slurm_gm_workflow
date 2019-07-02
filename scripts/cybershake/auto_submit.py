@@ -63,7 +63,7 @@ def submit_task(
     models=None,
 ):
     task_logger = workflow_logger.get_task_logger(parent_logger, run_name, proc_type)
-    verification_dir = os.path.join(sim_dir, 'Verification')
+    verification_dir = sim_struct.get_verification_dir(sim_dir)
     # Metadata logging setup
     ch_log_dir = os.path.abspath(os.path.join(sim_dir, "ch_log"))
     if not os.path.isdir(ch_log_dir):
