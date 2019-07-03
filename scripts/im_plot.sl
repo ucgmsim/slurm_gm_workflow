@@ -7,7 +7,7 @@
 #SBATCH --account=nesi00213
 #SBATCH --partition=prepost
 #SBATCH --time=00:30:00
-#SBATCH --cpus-per-task=23
+#SBATCH --cpus-per-task=4
 
 if [[ ! -z ${CUR_ENV} && ${CUR_HPC} != "mahuika" ]]; then
     source $CUR_ENV/workflow/install_workflow/helper_functions/activate_env.sh $CUR_ENV "mahuika"
@@ -58,7 +58,7 @@ plot_stations () {
     if [[ -f "$f" ]]; then
         out_dir="${f//./_}_png_stations"
         echo "outputtig pngs to $out_dir"
-        python $gmsim/visualization/gmt/plot_stations.py $f -n 22 --srf "adfsa$SRF_PATH" --model_params $MODEL_PARAMS --out_dir $out_dir
+        python $gmsim/visualization/gmt/plot_stations.py $f -n 4 --srf "$SRF_PATH" --model_params $MODEL_PARAMS --out_dir $out_dir
     fi
 }
 
