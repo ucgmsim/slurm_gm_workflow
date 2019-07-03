@@ -219,7 +219,7 @@ def install_simulation(
     return root_params_dict, fault_params_dict, sim_params_dict, vm_params_dict
 
 
-def generate_sim_params(root_folder, rel_name, sim_dir, sim_duration, stat_file_path):
+def generate_sim_params(root_folder, rel_name, sim_dir, sim_duration, stat_file_path, logger=get_basic_logger()):
     fault = sim_struct.get_fault_from_realisation(rel_name)
     runs_dir = sim_struct.get_runs_dir(root_folder)
     sim_params_dict = {
@@ -241,6 +241,7 @@ def generate_sim_params(root_folder, rel_name, sim_dir, sim_duration, stat_file_
     sim_params_file = sim_struct.get_source_params_path(root_folder, rel_name)
 
     if os.path.isfile(sim_params_file):
+        logger.debug("Found perturbated parameters file for realisation {}. Adding to sim params file.".format(rel_name))
         with open(sim_params_file) as spf:
             extra_sims_params = yaml.load(spf)
         for key, value in extra_sims_params.items():
