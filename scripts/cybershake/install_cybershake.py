@@ -83,7 +83,11 @@ def main():
     if not os.path.exists(
         os.path.join(recipe_dir, "gmsim", args.version)
     ) or os.path.isfile(os.path.join(recipe_dir, "gmsim", args.version)):
-        logger.critical("Version {} does not exist in templates/gmsim directory.".format(args.version))
+        logger.critical(
+            "Version {} does not exist in templates/gmsim directory.".format(
+                args.version
+            )
+        )
         parser.error(
             "Version {} does not exist, place a directory with that name into {}\n"
             "Also ensure it has contents of {} and {}".format(
@@ -95,7 +99,9 @@ def main():
         )
     for f_name in [ROOT_DEFAULTS_FILE_NAME, "emod3d_defaults.yaml"]:
         if not os.path.exists(os.path.join(recipe_dir, "gmsim", args.version, f_name)):
-            logger.critical("Version {} does not have the file {}".format(args.version, f_name))
+            logger.critical(
+                "Version {} does not have the file {}".format(args.version, f_name)
+            )
             parser.error(
                 "Version {} does not have a required {} file in the directory {}".format(
                     args.version,
@@ -109,7 +115,7 @@ def main():
     create_mgmt_db_from_faults(faults, path_cybershake, logger)
 
     for fault, count in faults:
-        for i in range(1, count+1):
+        for i in range(1, count + 1):
             realisation = simulation_structure.get_realisation_name(fault, i)
             install_realisation(
                 path_cybershake,
@@ -118,7 +124,7 @@ def main():
                 args.stat_file_path,
                 args.extended_period,
                 args.seed,
-                workflow_logger.get_realisation_logger(logger, fault)
+                workflow_logger.get_realisation_logger(logger, fault),
             )
 
 

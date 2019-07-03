@@ -219,11 +219,20 @@ def install_simulation(
     return root_params_dict, fault_params_dict, sim_params_dict, vm_params_dict
 
 
-def generate_sim_params(root_folder, rel_name, sim_dir, sim_duration, stat_file_path, logger=get_basic_logger()):
+def generate_sim_params(
+    root_folder,
+    rel_name,
+    sim_dir,
+    sim_duration,
+    stat_file_path,
+    logger=get_basic_logger(),
+):
     fault = sim_struct.get_fault_from_realisation(rel_name)
     runs_dir = sim_struct.get_runs_dir(root_folder)
     sim_params_dict = {
-        SimParams.fault_yaml_path.value: sim_struct.get_fault_yaml_path(runs_dir, fault),
+        SimParams.fault_yaml_path.value: sim_struct.get_fault_yaml_path(
+            runs_dir, fault
+        ),
         SimParams.run_name.value: fault,
         SimParams.user_root.value: root_folder,
         SimParams.run_dir.value: runs_dir,
@@ -231,7 +240,9 @@ def generate_sim_params(root_folder, rel_name, sim_dir, sim_duration, stat_file_
         SimParams.srf_file.value: sim_struct.get_srf_path(root_folder, rel_name),
         SimParams.vm_params.value: sim_struct.get_VM_params_path(root_folder, rel_name),
         SimParams.sim_duration.value: sim_duration,
-        SimParams.hf.value: {SimParams.slip.value: sim_struct.get_stoch_path(root_folder, rel_name)},
+        SimParams.hf.value: {
+            SimParams.slip.value: sim_struct.get_stoch_path(root_folder, rel_name)
+        },
         SimParams.emod3d.value: {},
         SimParams.bb.value: {},
     }
@@ -241,7 +252,11 @@ def generate_sim_params(root_folder, rel_name, sim_dir, sim_duration, stat_file_
     sim_params_file = sim_struct.get_source_params_path(root_folder, rel_name)
 
     if os.path.isfile(sim_params_file):
-        logger.debug("Found perturbated parameters file for realisation {}. Adding to sim params file.".format(rel_name))
+        logger.debug(
+            "Found perturbated parameters file for realisation {}. Adding to sim params file.".format(
+                rel_name
+            )
+        )
         with open(sim_params_file) as spf:
             extra_sims_params = yaml.load(spf)
         for key, value in extra_sims_params.items():
@@ -260,20 +275,28 @@ def generate_sim_params(root_folder, rel_name, sim_dir, sim_duration, stat_file_
 
 def generate_fault_params(root_folder, vel_mod_dir, fd_statcords, fd_statlist):
     return {
-        FaultParams.root_yaml_path.value: sim_struct.get_root_yaml_path(sim_struct.get_runs_dir(root_folder)),
+        FaultParams.root_yaml_path.value: sim_struct.get_root_yaml_path(
+            sim_struct.get_runs_dir(root_folder)
+        ),
         FaultParams.vel_mod_dir.value: vel_mod_dir,
         FaultParams.stat_coords.value: fd_statcords,
         FaultParams.FD_STATLIST.value: fd_statlist,
     }
 
 
-def generate_root_params(root_params_base_dict, root_folder, extended_period, seed, stat_file_path, version):
+def generate_root_params(
+    root_params_base_dict, root_folder, extended_period, seed, stat_file_path, version
+):
     root_params_base_dict["mgmt_db_location"] = root_folder
     root_params_base_dict[RootParams.extended_period.value] = extended_period
     root_params_base_dict[RootParams.version.value] = version
     root_params_base_dict[RootParams.stat_file.value] = stat_file_path
-    root_params_base_dict[RootParams.stat_vs_est.value] = stat_file_path.replace('.ll', '.vs30')
-    root_params_base_dict[RootParams.stat_vs_ref.value] = stat_file_path.replace('.ll', '.vs30ref')
+    root_params_base_dict[RootParams.stat_vs_est.value] = stat_file_path.replace(
+        ".ll", ".vs30"
+    )
+    root_params_base_dict[RootParams.stat_vs_ref.value] = stat_file_path.replace(
+        ".ll", ".vs30ref"
+    )
     root_params_base_dict["hf"][RootParams.seed.value] = seed
     root_params_base_dict["bb"]["site_specific"] = False
     root_params_base_dict["v_mod_1d_name"] = root_params_base_dict["v_1d_mod"]
