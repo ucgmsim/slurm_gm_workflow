@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # script version: slurm
 #
-# must be run with sbatch plot_srf.sl [srf file path] [output folder] [management database location] [realization name]
+# must be run with sbatch plot_srf.sl [srf file path] [output folder] [default output srf map plot path] [management database location] [realization name]
 
 #SBATCH --job-name=plot_srf
 #SBATCH --account=nesi00213
