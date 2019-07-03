@@ -5,15 +5,12 @@ Called from inside a loop in install_cybershake.sh
 """
 
 import os
-import sys
 import glob
 import argparse
 from logging import Logger
 
-import qcore.simulation_structure as sim_struct
 from qcore import utils, validate_vm, simulation_structure
 from qcore.constants import FaultParams, ROOT_DEFAULTS_FILE_NAME, VM_PARAMS_FILE_NAME, HF_DEFAULT_SEED
-from scripts.management import create_mgmt_db
 from shared_workflow.install_shared import install_simulation, generate_fd_files, dump_all_yamls
 from shared_workflow.shared_defaults import recipe_dir
 from shared_workflow.workflow_logger import get_basic_logger, NOPRINTCRITICAL
@@ -144,8 +141,6 @@ def install_fault(fault_name, n_rel, root_folder, version, stat_file_path, seed=
 
         vm_params_dict.update(vm_add_params_dict)
 
-        create_mgmt_db.create_mgmt_db([], sim_struct.get_mgmt_db(root_folder), srf_files=srf)
-        utils.setup_dir(os.path.join(root_folder, "mgmt_db_queue"))
         root_params_dict["mgmt_db_location"] = root_folder
 
         # Generate the fd files, create these at the fault level

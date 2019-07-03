@@ -6,11 +6,11 @@ import argparse
 from typing import Dict, List, Tuple
 
 from qcore import constants as const
-from qcore.utils import load_yaml
 
 from scripts.cybershake.auto_submit import run_main_submit_loop
 from scripts.cybershake import queue_monitor
 from shared_workflow import workflow_logger, load_config
+from shared_workflow.shared_automated_workflow import parse_config_file
 from shared_workflow.workflow_logger import NOPRINTCRITICAL
 import estimation.estimate_wct as est
 
@@ -19,11 +19,6 @@ WRAPPER_LOG_FILE_NAME = "wrapper_log_{}.txt"
 QUEUE_MONITOR_LOG_FILE_NAME = "queue_monitor_log_{}.txt"
 MASTER_AUTO_SUBMIT_LOG_FILE_NAME = "main_auto_submit_log_{}.txt"
 PATTERN_AUTO_SUBMIT_LOG_FILE_NAME = "pattern_{}_auto_submit_log_{}.txt"
-
-ALL = "ALL"
-ONCE = "ONCE"
-ONCE_PATTERN = "%_REL01"
-NONE = "NONE"
 
 
 def run_automated_workflow(
@@ -198,40 +193,6 @@ def run_automated_workflow(
         wrapper_logger.info("The queue monitor has been shut down successfully")
     else:
         wrapper_logger.critical("The queue monitor has not successfully terminated")
-
-
-def parse_config_file(config_file_location: str, logger: Logger = workflow_logger.get_basic_logger()):
-    """Takes in the location of a wrapper config file and creates the tasks to be run.
-    Requires that the file contains the keys 'run_all_tasks' and 'run_some', even if they are empty
-    If the dependencies for a run_some task overlap with those in the tasks_to_run_for_all, as a race condition is
-    possible if multiple auto_submit scripts have the same tasks. If multiple run_some instances have the same
-    dependencies then this is not an issue as they run sequentially, rather than simultaneously
-    :param config_file_location: The location of the config file
-    :return: A tuple containing the tasks to be run on all processes and a list of pattern, tasks tuples which state
-    which tasks can be run with which patterns
-    """
-    config = load_yaml(config_file_location)
-
-    tasks_to_run_for_all = []
-    tasks_with_pattern_match = {}
-
-    for proc_name, pattern in config.items():
-        proc = const.ProcessType.get_by_name(proc_name)
-        if pattern == ALL:
-            tasks_to_run_for_all.append(proc)
-        elif pattern == NONE:
-            pass
-        else:
-            if pattern == ONCE:
-                pattern = ONCE_PATTERN
-            if pattern not in tasks_with_pattern_match.keys():
-                tasks_with_pattern_match.update({pattern: []})
-            tasks_with_pattern_match[pattern].append(proc)
-    logger.info("Master script will run {}".format(tasks_to_run_for_all))
-    for pattern, tasks in tasks_with_pattern_match.items():
-        logger.info("Pattern {} will run tasks {}".format(pattern, tasks))
-
-    return tasks_to_run_for_all, tasks_with_pattern_match.items()
 
 
 def main():
