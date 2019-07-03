@@ -5,7 +5,6 @@ import os
 from qcore import simulation_structure
 from qcore.constants import TIMESTAMP_FORMAT
 
-from scripts.cybershake.install_cybershake_fault import install_fault
 from scripts.cybershake.install_realisation import install_realisation
 from scripts.management.install_mgmt_db import create_mgmt_db_from_faults
 from shared_workflow import workflow_logger
