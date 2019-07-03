@@ -76,7 +76,6 @@ else
     if [[ $exit_val2 != 0 ]]; then
         errors="failed executing plot_srf_map.py $errors"
     fi
-    echo "$errors"
     python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $SRF_NAME plot_srf failed --error "$errors"
 fi
 
