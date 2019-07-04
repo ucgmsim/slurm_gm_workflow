@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # script version: slurm
 #
-# must be run with sbatch plot_srf.sl [srf file path] [output folder] [default output srf map plot path] [management database location] [realization name]
+# must be run with sbatch plot_srf.sl [srf file path] [output folder] [static output srf map plot path] [management database location] [realization name]
 
 #SBATCH --job-name=plot_srf
 #SBATCH --account=nesi00213
@@ -15,7 +15,7 @@ fi
 
 SRF_PATH=$1
 OUTPUT_DIR=$2
-OUTPUT_MAP_PLOT_PATH=$3
+STATIC_OUTPUT_MAP_PLOT_PATH=$3
 MGMT_DB_LOC=$4
 SRF_NAME=$5
 
@@ -71,7 +71,7 @@ if [[ $exit_val == 0 ]] && [[ $exit_val2 == 0 ]]; then
 else
     errors=""
     if [[ $exit_val != 0 ]]; then
-        errors="failed_executing_plot_srf_square.py$errors"
+        errors="failed_executing_plot_srf_square.py $errors"
     fi
     if [[ $exit_val2 != 0 ]]; then
         errors="failed executing plot_srf_map.py $errors"
