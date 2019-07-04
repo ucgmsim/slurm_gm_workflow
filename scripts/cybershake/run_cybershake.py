@@ -1,6 +1,6 @@
 from datetime import datetime
 from logging import Logger, DEBUG
-from os.path import abspath, dirname, join, realpath
+from os.path import abspath, join
 import threading
 import argparse
 from typing import Dict, List, Tuple
@@ -11,6 +11,7 @@ from qcore.utils import load_yaml
 from scripts.cybershake.auto_submit import run_main_submit_loop
 from scripts.cybershake import queue_monitor
 from shared_workflow import workflow_logger, load_config
+from shared_workflow.shared_defaults import recipe_dir
 from shared_workflow.workflow_logger import NOPRINTCRITICAL
 import estimation.estimate_wct as est
 
@@ -244,7 +245,7 @@ def main():
         "config_file",
         help="The location of the config file containing everything to be run",
         nargs="?",
-        default=join(dirname(realpath(__file__)), "task_config.yaml"),
+        default=join(recipe_dir, "task_config.yaml"),
     )
     parser.add_argument(
         "--sleep_time",
