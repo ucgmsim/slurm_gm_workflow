@@ -115,6 +115,7 @@ def main():
     create_mgmt_db_from_faults(faults, path_cybershake, logger)
 
     for fault, count in faults:
+        # Add one for realisations to be 1 indexed instead of 0 indexed
         for i in range(1, count + 1):
             realisation = simulation_structure.get_realisation_name(fault, i)
             install_realisation(
