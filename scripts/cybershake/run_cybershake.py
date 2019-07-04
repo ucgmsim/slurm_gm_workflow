@@ -243,6 +243,8 @@ def main():
     parser.add_argument(
         "config_file",
         help="The location of the config file containing everything to be run",
+        nargs="?",
+        default="task_config.yaml",
     )
     parser.add_argument(
         "--sleep_time",
