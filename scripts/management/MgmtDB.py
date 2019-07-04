@@ -60,8 +60,9 @@ class MgmtDB:
                 logger.info("Aquiring db connection.")
                 self._conn = sql.connect(self._db_file)
             logger.debug("Getting db cursor")
-            cur = self._conn.cursor()
 
+            cur = self._conn.cursor()
+            cur.execute("BEGIN")
             for entry in entries:
                 process = entry.proc_type
                 realisation_name = entry.run_name
