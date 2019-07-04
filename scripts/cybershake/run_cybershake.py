@@ -1,6 +1,6 @@
 from datetime import datetime
 from logging import Logger, DEBUG
-from os.path import abspath, join
+from os.path import abspath, dirname, join, realpath
 import threading
 import argparse
 from typing import Dict, List, Tuple
@@ -244,7 +244,7 @@ def main():
         "config_file",
         help="The location of the config file containing everything to be run",
         nargs="?",
-        default="task_config.yaml",
+        default=join(dirname(realpath(__file__)), "task_config.yaml"),
     )
     parser.add_argument(
         "--sleep_time",
