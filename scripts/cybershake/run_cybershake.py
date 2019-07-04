@@ -11,6 +11,7 @@ from qcore.utils import load_yaml
 from scripts.cybershake.auto_submit import run_main_submit_loop
 from scripts.cybershake import queue_monitor
 from shared_workflow import workflow_logger, load_config
+from shared_workflow.shared_defaults import recipe_dir
 from shared_workflow.workflow_logger import NOPRINTCRITICAL
 import estimation.estimate_wct as est
 
@@ -243,6 +244,8 @@ def main():
     parser.add_argument(
         "config_file",
         help="The location of the config file containing everything to be run",
+        nargs="?",
+        default=join(recipe_dir, "task_config.yaml"),
     )
     parser.add_argument(
         "--sleep_time",
