@@ -271,7 +271,7 @@ def submit_task(
         )
         script = plot_srf_template.format(
             srf_dir=sim_struct.get_srf_dir(root_folder, run_name),
-            output_dir=sim_struct.get_plot_dir(root_folder, run_name),
+            output_dir=sim_struct.get_sources_plot_dir(root_folder, run_name),
             mgmt_db_loc=root_folder,
             run_name=run_name,
             script_location=os.path.expandvars("$gmsim/workflow/scripts/plot_srf.sl"),
