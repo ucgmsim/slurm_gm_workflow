@@ -267,12 +267,11 @@ def submit_task(
     elif proc_type == const.ProcessType.plot_srf.value:
         plot_srf_template = (
             "--export=CUR_ENV -o {output_file} -e {error_file} {script_location} "
-            "{srf_path} {output_dir} {output_map_plot_path} {mgmt_db_loc} {run_name}"
+            "{srf_dir} {output_dir} {mgmt_db_loc} {run_name}"
         )
         script = plot_srf_template.format(
-            srf_path=sim_struct.get_srf_path(root_folder, run_name),
-            output_dir=os.path.join(verification_dir,'srf_plot'),
-            output_map_plot_path=os.path.join(sim_struct.get_srf_dir(root_folder, run_name), "{}_map.png".format(run_name)),
+            srf_dir=sim_struct.get_srf_dir(root_folder, run_name),
+            output_dir=sim_struct.get_plot_dir(root_folder, run_name)
             mgmt_db_loc=root_folder,
             run_name=run_name,
             script_location=os.path.expandvars("$gmsim/workflow/scripts/plot_srf.sl"),

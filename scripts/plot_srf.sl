@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # script version: slurm
 #
-# must be run with sbatch plot_srf.sl [srf file path] [output folder] [static output srf map plot path] [management database location] [realization name]
+# must be run with sbatch plot_srf.sl [srf dir] [output folder] [management database location] [realization name]
 
 #SBATCH --job-name=plot_srf
 #SBATCH --account=nesi00213
@@ -13,11 +13,16 @@ if [[ ! -z ${CUR_ENV} && ${CUR_HPC} != "mahuika" ]]; then
     source $CUR_ENV/workflow/install_workflow/helper_functions/activate_env.sh $CUR_ENV "mahuika"
 fi
 
-SRF_PATH=$1
+SRF_DIR=$1
 OUTPUT_DIR=$2
-STATIC_OUTPUT_MAP_PLOT_PATH=$3
 MGMT_DB_LOC=$4
 SRF_NAME=$5
+
+SRF_PATH="${SRF_DIR}/${SRF_NAME}.srf"
+STATIC_OUTPUT_MAP_PLOT_PATH="${SRF_DIR}/${SRF_NAME}_map.png"
+
+echo "srf $SRF_PATH"
+echo "nap plot $STATIC_OUTPUT_MAP_PLOT_PATH"
 
 script_start=`date`
 echo "script started running at: $script_start"
@@ -64,17 +69,17 @@ if [[ $exit_val == 0 ]] && [[ $exit_val2 == 0 ]]; then
     # output map plot is defaultly saved to srf folder, move it to Verification folder
     if [[ -f "$OUTPUT_MAP_PLOT_PATH" ]]; then
         echo "outputted plots to $OUTPUT_DIR"
-        mv "$OUTPUT_MAP_PLOT_PATH" "$OUTPUT_DIR"
+        mv "$STATIC_OUTPUT_MAP_PLOT_PATH" "$OUTPUT_DIR"
     fi
 
     python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $SRF_NAME plot_srf completed
 else
     errors=""
     if [[ $exit_val != 0 ]]; then
-        errors="failed_executing_plot_srf_square.py $errors"
+        errors+=" failed executing plot_srf_square.py "
     fi
     if [[ $exit_val2 != 0 ]]; then
-        errors="failed executing plot_srf_map.py $errors"
+        errors+=" failed executing plot_srf_map.py "
     fi
     python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $SRF_NAME plot_srf failed --error "$errors"
 fi
