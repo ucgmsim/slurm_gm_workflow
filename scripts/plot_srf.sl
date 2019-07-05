@@ -15,14 +15,11 @@ fi
 
 SRF_DIR=$1
 OUTPUT_DIR=$2
-MGMT_DB_LOC=$4
-SRF_NAME=$5
+MGMT_DB_LOC=$3
+SRF_NAME=$4
 
 SRF_PATH="${SRF_DIR}/${SRF_NAME}.srf"
 STATIC_OUTPUT_MAP_PLOT_PATH="${SRF_DIR}/${SRF_NAME}_map.png"
-
-echo "srf $SRF_PATH"
-echo "nap plot $STATIC_OUTPUT_MAP_PLOT_PATH"
 
 script_start=`date`
 echo "script started running at: $script_start"
@@ -67,7 +64,7 @@ source $CUR_ENV/workflow/install_workflow/helper_functions/activate_env.sh $CUR_
 if [[ $exit_val == 0 ]] && [[ $exit_val2 == 0 ]]; then
     # passed
     # output map plot is defaultly saved to srf folder, move it to Verification folder
-    if [[ -f "$OUTPUT_MAP_PLOT_PATH" ]]; then
+    if [[ -f "$STATIC_OUTPUT_MAP_PLOT_PATH" ]]; then
         echo "outputted plots to $OUTPUT_DIR"
         mv "$STATIC_OUTPUT_MAP_PLOT_PATH" "$OUTPUT_DIR"
     fi
