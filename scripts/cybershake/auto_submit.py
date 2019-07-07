@@ -3,6 +3,7 @@
 import argparse
 import time
 import os
+
 from datetime import datetime
 from logging import Logger
 from subprocess import call
@@ -43,6 +44,7 @@ JOB_RUN_MACHINE = {
     const.ProcessType.clean_up: const.HPC.mahuika,
     const.ProcessType.LF2BB: const.HPC.mahuika,
     const.ProcessType.HF2BB: const.HPC.mahuika,
+    const.ProcessType.plot_srf: const.HPC.mahuika
 }
 
 
@@ -61,7 +63,7 @@ def submit_task(
     models=None,
 ):
     task_logger = workflow_logger.get_task_logger(parent_logger, run_name, proc_type)
-
+    verification_dir = sim_struct.get_verification_dir(sim_dir)
     # Metadata logging setup
     ch_log_dir = os.path.abspath(os.path.join(sim_dir, "ch_log"))
     if not os.path.isdir(ch_log_dir):
@@ -119,14 +121,18 @@ def submit_task(
             logger=task_logger,
         )
     elif proc_type == const.ProcessType.plot_ts.value:
+        # plot_ts.py does not mkdir dir if output dir does not exist,
+        # whereas im_plot does.
+        if not os.path.isdir(verification_dir):
+            os.mkdir(verification_dir) 
         plot_ts_template = (
             "--export=CUR_ENV -o {output_file} -e {error_file} {script_location} "
-            "{xyts_path} {srf_path} {output_ts_path} {mgmt_db_loc} {run_name}"
+            "{xyts_path} {srf_path} {output_movie_path} {mgmt_db_loc} {run_name}"
         )
         script = plot_ts_template.format(
             xyts_path=os.path.join(sim_struct.get_lf_outbin_dir(sim_dir), '{}_xyts.e3d'.format(run_name.split('_')[0])),
             srf_path=sim_struct.get_srf_path(root_folder, run_name),
-            output_ts_path=os.path.join(sim_dir,'{}_xyts'.format(run_name.split('_')[0])),
+            output_movie_path=os.path.join(verification_dir, run_name),
             mgmt_db_loc=root_folder,
             run_name=run_name,
             script_location=os.path.expandvars("$gmsim/workflow/scripts/plot_ts.sl"),
@@ -134,6 +140,7 @@ def submit_task(
             error_file=os.path.join(sim_dir, "%x_%j.err"),
         )
         submit_sl_script(script, target_machine=JOB_RUN_MACHINE[const.ProcessType.plot_ts].value)
+
     elif proc_type == const.ProcessType.HF.value:
         args = argparse.Namespace(
             auto=True,
@@ -257,6 +264,22 @@ def submit_task(
             ),
             target_machine=JOB_RUN_MACHINE[const.ProcessType.HF2BB].value,
         )
+    elif proc_type == const.ProcessType.plot_srf.value:
+        plot_srf_template = (
+            "--export=CUR_ENV -o {output_file} -e {error_file} {script_location} "
+            "{srf_dir} {output_dir} {mgmt_db_loc} {run_name}"
+        )
+        script = plot_srf_template.format(
+            srf_dir=sim_struct.get_srf_dir(root_folder, run_name),
+            output_dir=sim_struct.get_sources_plot_dir(root_folder, run_name),
+            mgmt_db_loc=root_folder,
+            run_name=run_name,
+            script_location=os.path.expandvars("$gmsim/workflow/scripts/plot_srf.sl"),
+            output_file=os.path.join(sim_dir, "%x_%j.out"),
+            error_file=os.path.join(sim_dir, "%x_%j.err"),
+        )
+        submit_sl_script(script, target_machine=JOB_RUN_MACHINE[const.ProcessType.plot_srf].value)
+
     workflow_logger.clean_up_logger(task_logger)
 
 
