@@ -2,16 +2,12 @@ import argparse
 from datetime import datetime
 import os
 
-from qcore import simulation_structure
-from qcore.constants import TIMESTAMP_FORMAT
+from qcore.constants import ROOT_DEFAULTS_FILE_NAME, HF_DEFAULT_SEED, TIMESTAMP_FORMAT
 
 from scripts.cybershake.install_realisation import install_realisation
-from scripts.management.install_mgmt_db import create_mgmt_db_from_faults
 from shared_workflow import workflow_logger
-from shared_workflow.shared_automated_workflow import parse_fsf
 from shared_workflow.shared_defaults import recipe_dir
 
-from qcore.constants import ROOT_DEFAULTS_FILE_NAME, HF_DEFAULT_SEED
 
 INSTALLATION_LOG_FILE_NAME = "install_cybershake_log_{}.txt"
 
@@ -26,7 +22,7 @@ def main():
         help="the path to the root of a specific version cybershake.",
     )
     parser.add_argument(
-        "fault_selection_list", type=str, help="The fault selection file"
+        "realisation", type=str, help="The realisation to install"
     )
     parser.add_argument(
         "version",
@@ -97,6 +93,7 @@ def main():
                 "emod3d_defaults.yaml",
             )
         )
+
     for f_name in [ROOT_DEFAULTS_FILE_NAME, "emod3d_defaults.yaml"]:
         if not os.path.exists(os.path.join(recipe_dir, "gmsim", args.version, f_name)):
             logger.critical(
@@ -110,23 +107,16 @@ def main():
                 )
             )
 
-    faults = parse_fsf(os.path.abspath(args.fault_selection_list))
-
-    create_mgmt_db_from_faults(faults, path_cybershake, logger)
-
-    for fault, count in faults:
-        # Add one for realisations to be 1 indexed instead of 0 indexed
-        for i in range(1, count + 1):
-            realisation = simulation_structure.get_realisation_name(fault, i)
-            install_realisation(
-                path_cybershake,
-                realisation,
-                args.version,
-                args.stat_file_path,
-                args.extended_period,
-                args.seed,
-                workflow_logger.get_realisation_logger(logger, fault),
-            )
+    rel = args.realisation
+    install_realisation(
+        path_cybershake,
+        rel,
+        args.version,
+        args.stat_file_path,
+        args.extended_period,
+        args.seed,
+        workflow_logger.get_realisation_logger(logger, rel),
+    )
 
 
 if __name__ == "__main__":
