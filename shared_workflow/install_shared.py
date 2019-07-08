@@ -294,9 +294,6 @@ def generate_root_params(
     root_params_base_dict[RootParams.stat_vs_est.value] = stat_file_path.replace(
         ".ll", ".vs30"
     )
-    root_params_base_dict[RootParams.stat_vs_ref.value] = stat_file_path.replace(
-        ".ll", ".vs30ref"
-    )
     root_params_base_dict["hf"][RootParams.seed.value] = seed
     root_params_base_dict["bb"]["site_specific"] = False
     root_params_base_dict["v_mod_1d_name"] = root_params_base_dict["v_1d_mod"]
