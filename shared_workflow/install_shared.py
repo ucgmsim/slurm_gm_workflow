@@ -8,7 +8,8 @@ import yaml
 
 import shared_workflow.shared_automated_workflow
 import shared_workflow.shared_defaults as defaults
-from qcore import geo, utils, simulation_structure
+from qcore import simulation_structure as sim_struct
+from qcore import geo, utils
 from qcore.constants import (
     SimParams,
     FaultParams,
@@ -53,10 +54,10 @@ def install_simulation(
     extended_period=False,
 ):
     """Installs a single simulation"""
-    lf_sim_root_dir = simulation_structure.get_lf_dir(sim_dir)
-    hf_dir = simulation_structure.get_hf_dir(sim_dir)
-    bb_dir = simulation_structure.get_bb_dir(sim_dir)
-    im_calc_dir = simulation_structure.get_im_calc_dir(sim_dir)
+    lf_sim_root_dir = sim_struct.get_lf_dir(sim_dir)
+    hf_dir = sim_struct.get_hf_dir(sim_dir)
+    bb_dir = sim_struct.get_bb_dir(sim_dir)
+    im_calc_dir = sim_struct.get_im_calc_dir(sim_dir)
 
     dir_list = [sim_dir, lf_sim_root_dir, hf_dir, bb_dir, im_calc_dir]
     version = str(version)
@@ -207,6 +208,60 @@ def install_simulation(
         for key, value in extra_sims_params.items():
             # If the key exists in both dictionaries and maps to a dictionary in both, then merge them
             if (
+                    isinstance(value, dict)
+                    and key in sim_params_dict
+                    and isinstance(sim_params_dict[key], dict)
+            ):
+                sim_params_dict[key].update(value)
+            else:
+                sim_params_dict.update({key: value})
+
+    return root_params_dict, fault_params_dict, sim_params_dict, vm_params_dict
+
+
+def generate_sim_params(
+    root_folder,
+    rel_name,
+    sim_dir,
+    sim_duration,
+    stat_file_path,
+    logger=get_basic_logger(),
+):
+    fault = sim_struct.get_fault_from_realisation(rel_name)
+    runs_dir = sim_struct.get_runs_dir(root_folder)
+    sim_params_dict = {
+        SimParams.fault_yaml_path.value: sim_struct.get_fault_yaml_path(
+            runs_dir, fault
+        ),
+        SimParams.run_name.value: fault,
+        SimParams.user_root.value: root_folder,
+        SimParams.run_dir.value: runs_dir,
+        SimParams.sim_dir.value: sim_dir,
+        SimParams.srf_file.value: sim_struct.get_srf_path(root_folder, rel_name),
+        SimParams.vm_params.value: sim_struct.get_VM_params_path(root_folder, rel_name),
+        SimParams.sim_duration.value: sim_duration,
+        SimParams.hf.value: {
+            SimParams.slip.value: sim_struct.get_stoch_path(root_folder, rel_name)
+        },
+        SimParams.emod3d.value: {},
+        SimParams.bb.value: {},
+    }
+    if stat_file_path is not None:
+        sim_params_dict[SimParams.stat_file.value] = stat_file_path
+
+    sim_params_file = sim_struct.get_source_params_path(root_folder, rel_name)
+
+    if os.path.isfile(sim_params_file):
+        logger.debug(
+            "Found perturbated parameters file for realisation {}. Adding to sim params file.".format(
+                rel_name
+            )
+        )
+        with open(sim_params_file) as spf:
+            extra_sims_params = yaml.load(spf)
+        for key, value in extra_sims_params.items():
+            # If the key exists in both dictionaries and maps to a dictionary in both, then merge them
+            if (
                 isinstance(value, dict)
                 and key in sim_params_dict
                 and isinstance(sim_params_dict[key], dict)
@@ -215,7 +270,54 @@ def install_simulation(
             else:
                 sim_params_dict.update({key: value})
 
-    return root_params_dict, fault_params_dict, sim_params_dict, vm_params_dict
+    return sim_params_dict
+
+
+def generate_fault_params(root_folder, vel_mod_dir, fd_statcords, fd_statlist):
+    return {
+        FaultParams.root_yaml_path.value: sim_struct.get_root_yaml_path(
+            sim_struct.get_runs_dir(root_folder)
+        ),
+        FaultParams.vel_mod_dir.value: vel_mod_dir,
+        FaultParams.stat_coords.value: fd_statcords,
+        FaultParams.FD_STATLIST.value: fd_statlist,
+    }
+
+
+def generate_root_params(
+    root_params_base_dict, root_folder, extended_period, seed, stat_file_path, version
+):
+    root_params_base_dict["mgmt_db_location"] = root_folder
+    root_params_base_dict[RootParams.extended_period.value] = extended_period
+    root_params_base_dict[RootParams.version.value] = version
+    root_params_base_dict[RootParams.stat_file.value] = stat_file_path
+    root_params_base_dict[RootParams.stat_vs_est.value] = stat_file_path.replace(
+        ".ll", ".vs30"
+    )
+    root_params_base_dict["hf"][RootParams.seed.value] = seed
+    root_params_base_dict["bb"]["site_specific"] = False
+    root_params_base_dict["v_mod_1d_name"] = root_params_base_dict["v_1d_mod"]
+    return root_params_base_dict
+
+
+def generate_vm_params(base_vm_params_dict, vel_mod_params_dir):
+    sufx = base_vm_params_dict["sufx"]
+    base_vm_params_dict[VMParams.gridfile.value] = os.path.join(
+        vel_mod_params_dir, "gridfile{}".format(sufx)
+    )
+    base_vm_params_dict[VMParams.gridout.value] = os.path.join(
+        vel_mod_params_dir, "gridout{}".format(sufx)
+    )
+    base_vm_params_dict[VMParams.model_coords.value] = os.path.join(
+        vel_mod_params_dir, "model_coords{}".format(sufx)
+    )
+    base_vm_params_dict[VMParams.model_params.value] = os.path.join(
+        vel_mod_params_dir, "model_params{}".format(sufx)
+    )
+    base_vm_params_dict[VMParams.model_bounds.value] = os.path.join(
+        vel_mod_params_dir, "model_bounds{}".format(sufx)
+    )
+    return base_vm_params_dict
 
 
 def install_bb(
