@@ -1,3 +1,8 @@
+## [19.7.10] - 2019-07-10 -- Dashboard
+### Changed
+    - Changes to dashboard:
+    - Changed long username to properly display core hours usage
+
 Slurm Ground Motion Workflow
 # Changelog
 (Based on https://wiki.canterbury.ac.nz/download/attachments/58458136/CodeVersioning_v18p2.pdf?version=1&modificationDate=1519269238437&api=v2 )
