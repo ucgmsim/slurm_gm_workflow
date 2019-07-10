@@ -39,6 +39,7 @@ USERS = {
     "sjn87": "Sarah Neill",
     "jmotha": "Jason Motha",
     "ddempsey": "David Dempsey",
+    "jagdish.+": "Jagdish Vyas"
 }
 
 
