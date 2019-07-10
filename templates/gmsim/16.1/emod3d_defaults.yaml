@@ -13,7 +13,7 @@ dyts: 5
 dzout: 1
 dzts: 1
 elas_only: 0
-enable_output_dump: 1
+enable_output_dump: 0
 enable_restart: 1
 ffault: 2
 fhi: 0.0
