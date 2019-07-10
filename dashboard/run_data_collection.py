@@ -195,7 +195,7 @@ class DataCollector:
 
     def run_cmd(self, hpc: str, cmd: str, timeout: int = 180):
         """Runs the specified command remotely on the specified hpc using the
-        sbaespecified user id.
+        specified user id.
         Returns False if the command fails for some reason.
         """
         try:
