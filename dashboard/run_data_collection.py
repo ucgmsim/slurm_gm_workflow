@@ -31,14 +31,13 @@ HPCS = [hpc.value for hpc in const.HPC]
 USERS = {
     "ykh22": "Jonney Huang",
     "cbs51": "Claudio Schill",
-    "melody.zhu": "Melody Zhu",
+    "melody.z+": "Melody Zhu",
     "tdn27": "Andrei Nguyen",
     "jpa198": "James Paterson",
     "leer": "Robin Lee",
     "baes": "Sung Bae",
     "sjn87": "Sarah Neill",
     "jmotha": "Jason Motha",
-    "Jagdish.vyas": "jagdish Vyas",
     "ddempsey": "David Dempsey",
 }
 
@@ -196,7 +195,7 @@ class DataCollector:
 
     def run_cmd(self, hpc: str, cmd: str, timeout: int = 180):
         """Runs the specified command remotely on the specified hpc using the
-        specified user id.
+        sbaespecified user id.
         Returns False if the command fails for some reason.
         """
         try:
