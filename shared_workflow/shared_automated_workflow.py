@@ -13,9 +13,8 @@ from typing import List
 
 import qcore.constants as const
 from qcore.config import host
-from qcore.constants import QUEUE_DATE_FORMAT as QUEUE_DATE_FORMAT
 from scripts.management.MgmtDB import MgmtDB
-from shared_workflow.workflow_logger import get_basic_logger
+from shared_workflow.workflow_logger import get_basic_logger, NOPRINTCRITICAL
 
 
 def get_queued_tasks(user=None, machine=const.HPC.maui):
@@ -56,6 +55,7 @@ def submit_sl_script(
         else:
             res = exe("sbatch {}".format(script), debug=False)
         if len(res[1]) == 0:
+            logger.debug("Successfully submitted task to slurm")
             # no errors, return the job id
             return_words = res[0].split()
             job_index = return_words.index("job")
@@ -63,9 +63,9 @@ def submit_sl_script(
             try:
                 int(jobid)
             except ValueError:
-                print(
+                logger.critical(
                     "{} is not a valid jobid. Submitting the "
-                    "job most likely failed".format(jobid)
+                    "job most likely failed. The return message was {}".format(jobid, res[0])
                 )
                 sys.exit()
 
@@ -75,6 +75,7 @@ def submit_sl_script(
                 proc_type,
                 const.Status.queued.value,
                 job_id=jobid,
+                logger=logger
             )
             return jobid
         else:
@@ -90,9 +91,10 @@ def add_to_queue(
     status: int,
     job_id: int = None,
     error: str = None,
-    logger: Logger = None
+    logger: Logger = get_basic_logger()
 ):
     """Adds an update entry to the queue"""
+    logger.debug("Adding task to the queue. Realisation: {}, process type: {}, status: {}, job_id: {}, error: {}".format(run_name, proc_type, status, job_id, error))
     filename = os.path.join(
         queue_folder,
         "{}.{}.{}".format(
@@ -101,7 +103,7 @@ def add_to_queue(
     )
 
     if os.path.exists(filename):
-        logger.critical("An update with the name {} already exists. This should never happen. Quitting!".format(
+        logger.log(NOPRINTCRITICAL, "An update with the name {} already exists. This should never happen. Quitting!".format(
                 os.path.basename(filename)
             ))
         raise Exception(
@@ -109,6 +111,8 @@ def add_to_queue(
                 os.path.basename(filename)
             )
         )
+
+    logger.debug("Writing update file to {}".format(filename))
 
     with open(filename, "w") as f:
         json.dump(
@@ -121,6 +125,11 @@ def add_to_queue(
             },
             f,
         )
+
+    if not os.path.isfile(filename):
+        logger.critical("File {} did not successfully write".format(filename))
+    else:
+        logger.debug("Successfully wrote task update file")
 
 
 def exe(
@@ -162,12 +171,16 @@ def exe(
     return out, err
 
 
-def check_mgmt_queue(queue_entries: List[str], run_name: str, proc_type: int):
+def check_mgmt_queue(queue_entries: List[str], run_name: str, proc_type: int, logger=get_basic_logger()):
     """Returns True if there are any queued entries for this run_name and process type,
     otherwise returns False.
     """
+    logger.debug("Checking to see if the realisation {} has a process of type {} in updates folder".format(run_name, proc_type))
     for entry in queue_entries:
+        logger.debug("Checking against {}".format(entry))
         _, entry_run_name, entry_proc_type = entry.split(".")
         if entry_run_name == run_name and entry_proc_type == str(proc_type):
+            logger.debug("It's a match, returning True")
             return True
+    logger.debug("No match found")
     return False

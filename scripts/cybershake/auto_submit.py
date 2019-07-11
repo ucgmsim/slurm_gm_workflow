@@ -15,7 +15,7 @@ import shared_workflow.load_config as ldcfg
 import qcore.constants as const
 import qcore.simulation_structure as sim_struct
 import shared_workflow.shared_automated_workflow
-from qcore import utils
+from qcore import utils, simulation_structure
 import estimation.estimate_wct as est
 from scripts.management.MgmtDB import MgmtDB
 from metadata.log_metadata import store_metadata
@@ -44,6 +44,7 @@ JOB_RUN_MACHINE = {
     const.ProcessType.clean_up: const.HPC.mahuika,
     const.ProcessType.LF2BB: const.HPC.mahuika,
     const.ProcessType.HF2BB: const.HPC.mahuika,
+    const.ProcessType.plot_srf: const.HPC.mahuika
 }
 
 
@@ -203,7 +204,6 @@ def submit_task(
             {"submit_time": submitted_time},
             logger=task_logger,
         )
-
     elif proc_type == const.ProcessType.IM_plot.value:
         im_plot_template = (
             "--export=CUR_ENV -o {output_file} -e {error_file} {script_location} "
@@ -223,7 +223,6 @@ def submit_task(
             error_file=os.path.join(sim_dir, "%x_%j.err"),
         )
         submit_sl_script(script, target_machine=JOB_RUN_MACHINE[const.ProcessType.IM_plot].value)
-        
     elif proc_type == const.ProcessType.rrup.value:
         submit_sl_script(
             "--output {} --error {} {} {} {}".format(
@@ -284,6 +283,22 @@ def submit_task(
             ),
             target_machine=JOB_RUN_MACHINE[const.ProcessType.HF2BB].value,
         )
+    elif proc_type == const.ProcessType.plot_srf.value:
+        plot_srf_template = (
+            "--export=CUR_ENV -o {output_file} -e {error_file} {script_location} "
+            "{srf_dir} {output_dir} {mgmt_db_loc} {run_name}"
+        )
+        script = plot_srf_template.format(
+            srf_dir=sim_struct.get_srf_dir(root_folder, run_name),
+            output_dir=sim_struct.get_sources_plot_dir(root_folder, run_name),
+            mgmt_db_loc=root_folder,
+            run_name=run_name,
+            script_location=os.path.expandvars("$gmsim/workflow/scripts/plot_srf.sl"),
+            output_file=os.path.join(sim_dir, "%x_%j.out"),
+            error_file=os.path.join(sim_dir, "%x_%j.err"),
+        )
+        submit_sl_script(script, target_machine=JOB_RUN_MACHINE[const.ProcessType.plot_srf].value)
+
     workflow_logger.clean_up_logger(task_logger)
 
 
@@ -319,6 +334,7 @@ def run_main_submit_loop(
     time_since_something_happened = cycle_timeout
 
     while time_since_something_happened > 0:
+        main_logger.debug("time_since_something_happened is now {}".format(time_since_something_happened))
         time_since_something_happened -= 1
         # Get items in the mgmt queue, have to get a snapshot instead of
         # checking the directory real-time to prevent timing issues,
@@ -330,17 +346,23 @@ def run_main_submit_loop(
         for hpc in const.HPC:
             n_tasks_to_run[hpc] = n_runs[hpc] - len(get_queued_tasks(user=user, machine=hpc))
             if n_tasks_to_run[hpc] < n_runs[hpc]:
+                main_logger.debug("There was at least one job in squeue, resetting timeout")
                 time_since_something_happened = cycle_timeout
 
         # Gets all runnable tasks based on mgmt db state
         runnable_tasks = mgmt_db.get_runnable_tasks(
-            rels_to_run, sum(n_runs.values()), given_tasks_to_run, main_logger
+            rels_to_run,
+            sum(n_runs.values()),
+            os.listdir(simulation_structure.get_mgmt_db_queue(root_folder)),
+            given_tasks_to_run,
+            main_logger
         )
         if len(runnable_tasks) > 0:
             time_since_something_happened = cycle_timeout
             main_logger.info(
                 "Number of runnable tasks: {}".format(len(runnable_tasks))
             )
+            main_logger.debug("There was at least one runnable task, resetting timeout")
         else:
             main_logger.debug("No runnable_tasks")
 
@@ -402,6 +424,7 @@ def run_main_submit_loop(
                         run_name,
                         const.ProcessType.clean_up.value,
                         const.Status.created.value,
+                        logger=main_logger
                     )
 
             # submit the job

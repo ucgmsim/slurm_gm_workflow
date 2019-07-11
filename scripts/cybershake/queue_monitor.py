@@ -70,9 +70,14 @@ def update_tasks(
     """Updates the mgmt db entries based on the HPC queue"""
     tasks_to_do = []
 
+    task_logger.debug("Checking running tasks in the db for updates")
+    task_logger.debug("The key value pairs found in squeue are as follows: {}".format(squeue_tasks.items()))
     for db_running_task in db_running_tasks:
+        task_logger.debug("Checking task {}".format(db_running_task))
         if str(db_running_task.job_id) in squeue_tasks.keys():
+
             queue_status = squeue_tasks[str(db_running_task.job_id)]
+            task_logger.debug("Found task. It has state {}".format(queue_status))
 
             try:
                 queue_status = SLURM_TO_STATUS_DICT[queue_status]
@@ -83,6 +88,7 @@ def update_tasks(
                     )
                 )
                 queue_status = const.Status.unknown.value
+            task_logger.debug("This state represents status {}".format(queue_status))
 
             if queue_status == db_running_task.status:
                 task_logger.debug(
@@ -97,7 +103,7 @@ def update_tasks(
             # Do nothing if there is a pending update for
             # this run & process type combination
             elif not check_mgmt_queue(
-                mgmt_queue_entries, db_running_task.run_name, db_running_task.proc_type
+                mgmt_queue_entries, db_running_task.run_name, db_running_task.proc_type, logger=task_logger
             ):
                 task_logger.info(
                     "Updating status of {}, {} from {} to {}".format(
@@ -119,10 +125,10 @@ def update_tasks(
         # Only reset if there is no entry on the mgmt queue for this
         # realisation/proc combination and nothing in the mgmt folder
         elif not check_mgmt_queue(
-            mgmt_queue_entries, db_running_task.run_name, db_running_task.proc_type
+            mgmt_queue_entries, db_running_task.run_name, db_running_task.proc_type, logger=task_logger
         ):
             task_logger.warning(
-                "Task '{}' on '{}' not found on squeue; resetting the status "
+                "Task '{}' on '{}' not found on squeue or in the management db folder; resetting the status "
                 "to 'created' for resubmission".format(
                     const.ProcessType(db_running_task.proc_type).str_value,
                     db_running_task.run_name,
@@ -188,20 +194,28 @@ def main(root_folder: str, sleep_time: int, max_retries: int, queue_logger: Logg
         entry_files = os.listdir(queue_folder)
         entry_files.sort()
 
-        entries = update_tasks(
-            entry_files, squeue_tasks, db_in_progress_tasks, queue_logger
-        )
+        entries = []
 
-        for file in entry_files:
-            entry = get_queue_entry(os.path.join(queue_folder, file), queue_logger)
-            if entry is not None:
-                entries.append(entry)
-                os.remove(os.path.join(queue_folder, file))
+        for file_name in entry_files[::-1]:
+            queue_logger.debug("Checking {} to see if it is a valid update file".format(file_name))
+            entry = get_queue_entry(os.path.join(queue_folder, file_name), queue_logger)
+            if entry is None:
+                queue_logger.debug("Removing {} from the list of update files".format(file_name))
+                entry_files.remove(file_name)
+            else:
+                queue_logger.debug("Adding {} to the list of updates".format(entry))
+                entries.insert(0, entry)
+
+        entries.extend(update_tasks(
+            entry_files, squeue_tasks, db_in_progress_tasks, queue_logger
+        ))
 
         if len(entries) > 0:
             queue_logger.info("Updating {} mgmt db tasks.".format(len(entries)))
-            if not mgmt_db.update_entries_live(entries, max_retries, queue_logger):
-                # Failed to update
+            if mgmt_db.update_entries_live(entries, max_retries, queue_logger):
+                for file_name in entry_files:
+                    os.remove(os.path.join(queue_folder, file_name))
+            else:
                 queue_logger.error(
                     "Failed to update the current entries in the mgmt db queue. "
                     "Please investigate and fix. If this is a repeating error, then this "
