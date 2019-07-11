@@ -6,6 +6,33 @@ Slurm Ground Motion Workflow
 ### Added
     - Added IM_plot, plot_ts and plot_srf scripts to cybershake workflow
 
+## [19.6.3] - 2019-07-11 -- EMOD3D dump and nt check
+### Changed
+    - The nt check on install now rounds to the nearest integer, instead of rounding down to the next one.
+    
+### Removed
+    - EMOD3D no longer dumps partial results to the output directory. 
+    
+## [19.6.2] - 19-07-11 -- Changelog catchup
+### Added
+    - Two more testing configurations to end to end tests
+    - Queue monitor stress test
+    - IM_calculation and visualisation added to environment creation
+    - Checks to install and BB_sim to ensure lf and hf have the same number of (extrapolated) steps
+    - On start any tasks that can have retires with the current max_n_retries have them added
+    - The flag -c is now available for the query_mgmt_db script to give a count of how many tasks are in each state
+    - plot_ts and plot_srf added
+    - Added loading test to test_merge_ts
+    - Template task_config for the automated wrapper
+    
+### Changed
+    - Improved cross platform support for slurm scripts from Maui to Mahuika
+    - Queue monitor is now responsible for checking squeue and keeping the database up to date
+    - Improved logging for threaded scripts
+    - Shared library refactored out of shared: shared_automated_workflow
+    - slurm log file names are now determined by job number and name
+    - rrup renabled
+
 ## [19.6.1] - 2019-06-05 -- Error task changes
 ### Added
     - A wrapper for auto_submit and queue_monitor is now available 
