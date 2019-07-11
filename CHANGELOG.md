@@ -2,7 +2,7 @@ Slurm Ground Motion Workflow
 # Changelog
 (Based on https://wiki.canterbury.ac.nz/download/attachments/58458136/CodeVersioning_v18p2.pdf?version=1&modificationDate=1519269238437&api=v2 )
 
-## [19.7.11] - 2019-07-11 -- Verification plots added
+## [19.4.12] - 2019-07-11 -- Verification plots added
 ### Added
     - Added IM_plot, plot_ts and plot_srf scripts to cybershake workflow
 
