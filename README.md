@@ -48,7 +48,7 @@ $gmsim/workflow/scripts/cybershake/install_cybershake path/to/rootDir
 cybershake_version /path/to/list.txt --seed [seed]
 ```
 where the cybershake version is a string with a relevant subdirectory in the templates folder.
-Current valid options are 16.1
+Current valid options are 16.1 and 18.5.3.4
 
 and list.txt is a list of the faults to run, along with the number of realisations, e.g.
 ```
@@ -58,15 +58,10 @@ RepongaereF4 10r
 seed is an optional integer argument to specify the seed to be used for HF calculations. If it is not given a random one will be chosen
 
 ### Running
-To run the installed simulations, navigate to the rootDir and run
+To run the installed simulations, copy the task_config.yaml configuration file to the run directory and modify it to 
+your needs. Run the cybershake with the following script:
 ```bash
-python $gmsim/workflow/scripts/cybershake/auto_submit.py /path/to/rootDir username  
+python $gmsim/workflow/scripts/cybershake/run_cybershake.py /path/to/rootDir /path/to/rootDir/task_config.yaml <user name>
 ```
-this will start submitting the different task on the HPC.
-In order to keep the management DB up to date the following has to be run in a seperate 
-process:
-```bash
-$gmsim/workflow/scripts/cybershake/queue_monitor /path/to/rootDir
-```
-
+this will start submitting the different tasks on the HPC and will keep the database up to date.
 

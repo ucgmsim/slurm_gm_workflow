@@ -24,7 +24,6 @@ from shared_workflow.shared_template import write_sl_script
 from shared_workflow.workflow_logger import get_basic_logger
 
 
-
 def main(args: argparse.Namespace, est_model: est.EstModel = None, logger: Logger = get_basic_logger()):
     params = utils.load_sim_params(os.path.join(args.rel_dir, "sim_params.yaml"))
 
