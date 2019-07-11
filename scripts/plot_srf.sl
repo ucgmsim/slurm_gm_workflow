@@ -51,15 +51,11 @@ load_python2_mahuika () {
     source /nesi/project/nesi00213/share/virt_envs/python2_mahuika/bin/activate
 }
 
-#load_python2_mahuika
-
 res2=`python $gmsim/visualization/gmt/plot_srf_map.py "$SRF_PATH" 300 "active_faults"`
 exit_val2=$?
 
 end_time=`date +$runtime_fmt`
 echo $end_time
-
-#source $CUR_ENV/workflow/install_workflow/helper_functions/activate_env.sh $CUR_ENV "mahuika"
 
 if [[ $exit_val == 0 ]] && [[ $exit_val2 == 0 ]]; then
     # passed
