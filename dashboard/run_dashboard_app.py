@@ -407,7 +407,7 @@ def get_total_user_chours(
         name, total_chours = app.db.get_total_user_chours(
             hpc, username, start_date, end_date
         )
-        data.append({"username": name, "total_core_hours": total_chours})
+        data.append({"username": USERS[name], "total_core_hours": total_chours})
 
     # first sort by decs total core hours
     data = sorted(data, key=lambda k: k["total_core_hours"], reverse=True)

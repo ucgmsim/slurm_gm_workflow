@@ -16,7 +16,7 @@ import qcore.constants as const
 from dashboard.run_data_collection import HPCS, USERS, DataCollector
 from dashboard.DashboardDB import DashboardDB
 
-DEFAULT_DAYS_SHIFT = 188
+DEFAULT_DAYS_SHIFT = 406
 
 
 def get_old_utc_times(day_shift: int):
@@ -47,7 +47,7 @@ def collect_old_data(
     """Collect old core hours usage for a specified users in a previous day"""
     local_date, start_time, end_time = get_old_utc_times(day_shift)
 
-    cmd = "sreport -M {} -t Hours cluster AccountUtilizationByUser Users={} start={} end={} -n".format(
+    cmd = "sreport -M {} -t Hours cluster AccountUtilizationByUser Users={} start={} end={} -n format=Cluster,Accounts,Login%30,Proper,Used".format(
         hpc.value, " ".join(users), start_time, end_time
     )
     user_ch_output = (
@@ -64,7 +64,7 @@ def collect_old_data(
             DataCollector.parse_user_chours_usage(user_ch_output, users, local_date),
             local_date,
         )
-    cmd2 = "sreport -n -t Hours cluster AccountUtilizationByUser Accounts=nesi00213 start={} end={}".format(start_time, end_time)
+    cmd2 = "sreport -n -t Hours cluster AccountUtilizationByUser Accounts=nesi00213 start={} end={} format=Cluster,Accounts,Login%30,Proper,Used".format(start_time, end_time)
 
     rt_daily_ch_output = (subprocess.check_output("ssh {}@{} {}".format(login_user, hpc.value, cmd2), shell=True, timeout=60)
         .decode("utf-8")
@@ -74,7 +74,7 @@ def collect_old_data(
     rt_daily_ch = DataCollector.parse_chours_usage(rt_daily_ch_output)
 
     # Get total core hours usage, start from 188 days ago
-    cmd3 = "sreport -n -t Hours cluster AccountUtilizationByUser Accounts=nesi00213 start={} end={}".format(DataCollector.total_start_time, end_time)
+    cmd3 = "sreport -n -t Hours cluster AccountUtilizationByUser Accounts=nesi00213 start={} end={} format=Cluster,Accounts,Login%30,Proper,Used".format(DataCollector.total_start_time, end_time)
 
     rt_total_ch_output = (subprocess.check_output(
             "ssh {}@{} {}".format(login_user, hpc.value, cmd3), shell=True, timeout=60

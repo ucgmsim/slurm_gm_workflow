@@ -31,7 +31,7 @@ HPCS = [hpc.value for hpc in const.HPC]
 USERS = {
     "ykh22": "Jonney Huang",
     "cbs51": "Claudio Schill",
-    "melody.z+": "Melody Zhu",
+    "melody.zhu": "Melody Zhu",
     "tdn27": "Andrei Nguyen",
     "jpa198": "James Paterson",
     "leer": "Robin Lee",
@@ -39,6 +39,7 @@ USERS = {
     "sjn87": "Sarah Neill",
     "jmotha": "Jason Motha",
     "ddempsey": "David Dempsey",
+    "jagdish.vyas": "Jagdish Vyas"
 }
 
 
@@ -127,7 +128,7 @@ class DataCollector:
         # Get daily core hours usage
         rt_daily_ch_output = self.run_cmd(
             hpc.value,
-            "sreport -n -t Hours cluster AccountUtilizationByUser Accounts={} start={} end={}".format(
+            "sreport -n -t Hours cluster AccountUtilizationByUser Accounts={} start={} end={} format=Cluster,Accounts,Login%30,Proper,Used".format(
                 PROJECT_ID, start_time, end_time
             ),
         )
@@ -136,7 +137,7 @@ class DataCollector:
 
         rt_total_ch_output = self.run_cmd(
             hpc.value,
-            "sreport -n -t Hours cluster AccountUtilizationByUser Accounts={} start={} end={}".format(
+            "sreport -n -t Hours cluster AccountUtilizationByUser Accounts={} start={} end={} format=Cluster,Accounts,Login%30,Proper,Used".format(
                 PROJECT_ID, self.total_start_time, end_time
             ),
         )
@@ -184,7 +185,7 @@ class DataCollector:
         # user daily core hour usage
         user_ch_output = self.run_cmd(
             hpc.value,
-            "sreport -M {} -t Hours cluster AccountUtilizationByUser Users={} start={} end={} -n".format(
+            "sreport -M {} -t Hours cluster AccountUtilizationByUser Users={} start={} end={} -n format=Cluster,Account,Login%30,Proper,Used".format(
                 hpc.value, " ".join(users), start_time, end_time
             ),
         )
@@ -262,7 +263,7 @@ class DataCollector:
         """Get daily/total core hours usage from cmd output"""
         # ['maui', 'nesi00213', '2023', '0']
         try:
-            return ch_lines[0].strip().split()[-2]
+            return ch_lines[0].strip().split()[-1]
         # no core hours used, lines=['']
         except IndexError:
             return 0
@@ -323,16 +324,16 @@ class DataCollector:
             for user in users:
                 entries.append(UserChEntry(day, user, 0))
         # if some of the users had usages today
-        #                                                        used
-        # ['maui       nesi00213    jpa198 James Paterson+        1        0 ',
-        #   maui       nesi00213     tdn27 Andrei Nguyen +      175        0']
+        #                                                       used
+        # ['maui       nesi00213    jpa198 James Paterson+        1',
+        #   maui       nesi00213     tdn27 Andrei Nguyen +      175']
         else:
             used_users = set()
             for ix, line in enumerate(lines):
                 line = line.split()
                 used_users.add(line[2])
                 try:
-                    entries.append(UserChEntry(day, line[2], line[-2]))
+                    entries.append(UserChEntry(day, line[2], line[-1]))
                 except ValueError:
                     print(
                         "Failed to convert user core hours usage line \n{}\n to "
