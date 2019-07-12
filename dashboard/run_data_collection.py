@@ -39,7 +39,7 @@ USERS = {
     "sjn87": "Sarah Neill",
     "jmotha": "Jason Motha",
     "ddempsey": "David Dempsey",
-    "jagdish.vyas": "Jagdish Vyas"
+    "jagdish.vyas": "Jagdish Vyas",
 }
 
 
@@ -143,7 +143,9 @@ class DataCollector:
         )
         if rt_total_ch_output:
             rt_total_ch_output = self.parse_chours_usage(rt_total_ch_output)
-            self.dashboard_db.update_chours_usage(rt_daily_ch_output, rt_total_ch_output, hpc)
+            self.dashboard_db.update_chours_usage(
+                rt_daily_ch_output, rt_total_ch_output, hpc
+            )
 
         # Squeue, formatted to show full account name
         sq_output = self.run_cmd(
