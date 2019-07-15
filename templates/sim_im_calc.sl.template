@@ -1,6 +1,6 @@
 
 
-export IMPATH=$gmsim/IM_calculation
+export IMPATH=$gmsim/IM_calculation/IM_calculation/scripts
 export PYTHONPATH=$gmsim/qcore:/$PYTHONPATH:$IMPATH
 
 function getFromYaml {
@@ -23,7 +23,10 @@ fi
 
 FD=$(getFromYaml "{{sim_dir}}/sim_params.yaml" FD_STATLIST)
 python $gmsim/workflow/scripts/im_calc_checkpoint.py {{sim_dir}}/IM_calc/ `wc -l < ${FD}` --simulated
-if [[ $? != 0 ]]; then
+
+checkpoint_check=$?
+
+if [[ $checkpoint_check != 0 ]]; then
     # Run the script
     start_time=`date +$runtime_fmt`
     {{submit_command}}
@@ -39,7 +42,7 @@ fi
 
 # Update mgmt_db
 # Passed
-if [[ $? == 0 ]]; then
+if [[ $res == 0 ]]; then
     timestamp=`date +%Y%m%d_%H%M%S`
     python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py {{mgmt_db_location}}/mgmt_db_queue {{srf_name}} IM_calc completed
 
@@ -52,7 +55,9 @@ if [[ $? == 0 ]]; then
     pSA_count=`cat {{sim_dir}}/IM_calc/{{sim_name}}.csv | head -n 1 | grep -o pSA | wc -l`
 
     # log metadata
-    python $gmsim/workflow/metadata/log_metadata.py {{sim_dir}} IM_calc cores={{np}} pSA_count=$pSA_count fd_count=$fd_count start_time=$start_time end_time=$end_time
+    if [[ $checkpoint_check != 0 ]]; then
+        python $gmsim/workflow/metadata/log_metadata.py {{sim_dir}} IM_calc cores={{np}} pSA_count=$pSA_count fd_count=$fd_count start_time=$start_time end_time=$end_time
+    fi
 else
     #failed
     python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py {{mgmt_db_location}}/mgmt_db_queue {{srf_name}} IM_calc failed --error "$res"
