@@ -43,7 +43,7 @@ echo "Cloning Empirical Engine"
 git clone git@github.com:ucgmsim/Empirical_Engine.git
 
 echo "Cloning visualization"
-git@github.com:ucgmsim/visualization.git
+git clone git@github.com:ucgmsim/visualization.git
 
 # Run setup for IM_calculation
 echo "Running setup for IM_calculation"
