@@ -79,10 +79,6 @@ class DashboardDB:
     def get_user_ch_t_name(hpc: const.HPC):
         return "{}_USER_CORE_HOURS".format(hpc.value.upper())
 
-    @staticmethod
-    def get_err_t_name(hpc: const.HPC):
-        return "{}_ERRORS".format(hpc.value.upper())
-
     def get_date(self, day: Union[date, str] = None):
         """Gets the current datetime
            Note: will fail if day is str and not in the format 2019-03-21
@@ -477,16 +473,16 @@ class DashboardDB:
                         cls.get_user_ch_t_name(cur_hpc)
                     )
                 )
+
                 # Add error table
                 cursor.execute(
-                    """CREATE TABLE IF NOT EXISTS {}(
-                        NAME TEXT NOT NULL, 
-                        REASON TEXT NOT NULL,
-                        LAST_UPDATE_TIME DATE,
-                        PRIMARY KEY(NAME, REASON));                               
-                    """.format(
-                        cls.get_err_t_name(cur_hpc)
-                    )
+                    """CREATE TABLE IF NOT EXISTS ALLOCATION(
+                        ID INT PRIMARY KEY NOT NULL, 
+                        machine TEXT,
+                        hours INT,
+                        start DATE,
+                        end DATE);                               
+                    """
                 )
 
             # Maui current status
