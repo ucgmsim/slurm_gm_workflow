@@ -204,6 +204,25 @@ def submit_task(
             {"submit_time": submitted_time},
             logger=task_logger,
         )
+    elif proc_type == const.ProcessType.IM_plot.value:
+        im_plot_template = (
+            "--export=CUR_ENV -o {output_file} -e {error_file} {script_location} "
+            "{csv_path} {station_file_path} {output_xyz_dir} {srf_path} {model_params_path} {mgmt_db_loc} {run_name}"
+        )
+        params = utils.load_sim_params(os.path.join(sim_dir, 'sim_params.yaml'))
+        script = im_plot_template.format(
+            csv_path=os.path.join(sim_struct.get_IM_csv(sim_dir)),
+            station_file_path=params.stat_file,
+            output_xyz_dir=os.path.join(verification_dir, 'IM_plot'),
+            srf_path=sim_struct.get_srf_path(root_folder, run_name),
+            model_params_path=params.MODEL_PARAMS,
+            mgmt_db_loc=root_folder,
+            run_name=run_name,
+            script_location=os.path.expandvars("$gmsim/workflow/scripts/im_plot.sl"),
+            output_file=os.path.join(sim_dir, "%x_%j.out"),
+            error_file=os.path.join(sim_dir, "%x_%j.err"),
+        )
+        submit_sl_script(script, target_machine=JOB_RUN_MACHINE[const.ProcessType.IM_plot].value)
     elif proc_type == const.ProcessType.rrup.value:
         submit_sl_script(
             "--output {} --error {} {} {} {}".format(
