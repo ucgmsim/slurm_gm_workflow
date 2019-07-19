@@ -200,7 +200,7 @@ if __name__ == "__main__":
         "--n_procs",
         type=int,
         help="Number of processes to use",
-        default=const.IM_CALC_DEFAULT_N_PROCESSES,
+        default=const.IM_CALC_DEFAULT_N_CORES,
     )
     parser.add_argument(
         "-e",
