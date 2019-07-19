@@ -33,33 +33,11 @@ python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt
 res=`python $gmsim/visualization/gmt/plot_srf_square.py "$SRF_PATH" --out-dir "$OUTPUT_DIR"`
 exit_val=$?
 
-load_python2_mahuika () {
-    # Load python2, have to do this as virtualenv points to this python
-    # verions, which is not accessible without loading
-    module load Python/2.7.14-gimkl-2017a
-
-    # Reset the PYTHONPATH
-    export PYTHONPATH=''
-
-    # PYTHONPATH (this can be removed once qcore is installed as a pip package)
-    export PYTHONPATH=/nesi/project/nesi00213/opt/mahuika/qcore:$PYTHONPATH
-
-    # PYTHONPATH for workflow
-    export PYTHONPATH=/nesi/project/nesi00213/workflow:$PYTHONPATH
-
-    # Load the virtual environment
-    source /nesi/project/nesi00213/share/virt_envs/python2_mahuika/bin/activate
-}
-
-load_python2_mahuika
-
 res2=`python $gmsim/visualization/gmt/plot_srf_map.py "$SRF_PATH" 300 "active_faults"`
 exit_val2=$?
 
 end_time=`date +$runtime_fmt`
 echo $end_time
-
-source $CUR_ENV/workflow/install_workflow/helper_functions/activate_env.sh $CUR_ENV "mahuika"
 
 if [[ $exit_val == 0 ]] && [[ $exit_val2 == 0 ]]; then
     # passed
