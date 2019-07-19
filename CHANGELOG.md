@@ -6,6 +6,13 @@ Slurm Ground Motion Workflow
 ### Added
     - Added IM_plot, plot_ts and plot_srf slurm scripts to cybershake workflow
     
+## [19.6.3] - 2019-07-11 -- EMOD3D dump and nt check
+### Changed
+    - The nt check on install now rounds to the nearest integer, instead of rounding down to the next one.
+
+### Removed
+    - EMOD3D no longer dumps partial results to the output directory.
+
 ## [19.6.2] - 19-07-11 -- Changelog catchup
 ### Added
     - Two more testing configurations to end to end tests
