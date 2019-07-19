@@ -5,7 +5,7 @@ Slurm Ground Motion Workflow
 ## [19.6.4] - 2019-07-19 -- Added verification plots
 ### Added
     - Added IM_plot, plot_ts and plot_srf slurm scripts to cybershake workflow
-
+    
 ## [19.6.3] - 2019-07-11 -- EMOD3D dump and nt check
 ### Changed
     - The nt check on install now rounds to the nearest integer, instead of rounding down to the next one.
