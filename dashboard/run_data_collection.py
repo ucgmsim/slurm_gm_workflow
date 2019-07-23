@@ -48,7 +48,7 @@ class DataCollector:
     utc_time_format = "%m/%d/%y-%H:%M:%S"
     utc_time_gap = datetime.now() - datetime.utcnow()
     # core hour allocation renew date
-    total_start_time = "01/06/{}-12:00:00".format(
+    total_start_time = "06/01/{}-12:00:00".format(
         datetime.strftime(datetime.now() - timedelta(days=365), "%y")
     )
 
