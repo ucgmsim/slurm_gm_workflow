@@ -32,7 +32,7 @@ start_time=`date +${runtime_fmt}`
 echo ___im plot___
 
 python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $SRF_NAME IM_plot running
-res=`python $gmsim/visualization/im_plotting/im_plot.py $CSV_PATH $STATION_FILE_PATH --output $OUTPUT_XYZ_DIR`
+res=`python $gmsim/visualization/visualization/im_plotting/im_plot.py $CSV_PATH $STATION_FILE_PATH --output $OUTPUT_XYZ_DIR`
 
 exit_val=$?
 
@@ -58,7 +58,7 @@ plot_stations () {
     if [[ -f "$f" ]]; then
         out_dir="${f//./_}_png_stations"
         echo "outputtig pngs to $out_dir"
-        python $gmsim/visualization/gmt/plot_stations.py $f -n 4 --srf "$SRF_PATH" --model_params $MODEL_PARAMS --out_dir $out_dir
+        python $gmsim/visualization/visualization/gmt/plot_stations.py $f -n 4 --srf "$SRF_PATH" --model_params $MODEL_PARAMS --out_dir $out_dir
     fi
 }
 
