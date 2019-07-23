@@ -50,7 +50,7 @@ def get_row(json_file):
     sim_name = data_dict.get(MetadataField.sim_name.value)
     if sim_name is None:
         print("No simulation name found in json file {}, skipping.".format(json_file))
-        return None, None
+        return None, None, None
 
     columns = []
     data = []
@@ -144,6 +144,9 @@ def create_dataframe(json_files: List[str], n_procs: int, calc_core_hours: bool)
     print("Creating dataframe...")
     df = None
     for sim_name, columns, data in rows:
+        if sim_name is None and columns is None and data is None:
+            continue
+
         # Create the dataframe
         if df is None:
             df = pd.DataFrame(
@@ -193,12 +196,13 @@ def create_dataframe(json_files: List[str], n_procs: int, calc_core_hours: bool)
                     )
 
     # Add n_steps to EMOD3D
-    cur_df = df.loc[:, ProcessType.EMOD3D.str_value]
-    df.loc[:, (ProcessType.EMOD3D.str_value, MetadataField.n_steps.value)] = (
-        cur_df[MetadataField.nx.value]
-        * cur_df[MetadataField.ny.value]
-        * cur_df[MetadataField.nz.value]
-    )
+    if ProcessType.EMOD3D.str_value in df.columns:
+        cur_df = df.loc[:, ProcessType.EMOD3D.str_value]
+        df.loc[:, (ProcessType.EMOD3D.str_value, MetadataField.n_steps.value)] = (
+            cur_df[MetadataField.nx.value]
+            * cur_df[MetadataField.ny.value]
+            * cur_df[MetadataField.nz.value]
+        )
 
     return df
 
@@ -231,7 +235,7 @@ def main(args):
     else:
         print("Found {} matching .json files".format(len(json_files)))
 
-    df = create_dataframe(json_files, 1, True)
+    df = create_dataframe(json_files, args.n_procs, True)
 
     print("Saving the final dataframe in {}".format(args.output_file))
     df.to_csv(args.output_file)
