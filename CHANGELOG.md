@@ -5,6 +5,8 @@ Slurm Ground Motion Workflow
 ## [19.6.4] - 2019-07-19 -- Added verification plots
 ### Added
     - Added IM_plot, plot_ts and plot_srf slurm scripts to cybershake workflow
+### Fixes
+    - Updated rrup to run as expected
     
 ## [19.6.3] - 2019-07-11 -- EMOD3D dump and nt check
 ### Changed
