@@ -41,8 +41,8 @@ script:
     python setup.py install;
     cd /home/root/git/slurm_gm_workflow;
     export PYTHONPATH=$PYTHONPATH:/home/root/git/slurm_gm_workflow;
-    pytest --black --ignore=testing &&
-    pytest -vs --ignore testing/test_manual_install;"
+    pytest -vs --ignore testing/test_manual_install &&
+    pytest --black --ignore=testing;"
 #after_success:
 #  - coveralls   # uploads reports to coveralls.io
 notifications:
