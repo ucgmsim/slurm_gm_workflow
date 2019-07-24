@@ -16,7 +16,7 @@ fi
 function getFromYaml {
     echo $(python -c "from qcore.utils import load_sim_params; print(load_sim_params('$1').$2)")
 }
-export IMPATH=${gmsim}/IM_calculation
+export IMPATH=${gmsim}/IM_calculation/IM_calculation/scripts
 export PYTHONPATH=$gmsim/qcore:/${PYTHONPATH}:${IMPATH}
 
 script_start=`date`
@@ -45,7 +45,7 @@ then
     start_time=`date +${runtime_fmt}`
     python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $REL_NAME rrup running
 
-    time python ${IMPATH}/calculate_rrups.py -fd ${FD} -o ${OUT_DIR}/rrup_${REL_NAME}.csv ${STATION_FILE} ${SRF_FILE}
+    time python ${IMPATH}/calculate_rrups_single.py -fd ${FD} -o ${OUT_DIR}/rrup_${REL_NAME}.csv ${STATION_FILE} ${SRF_FILE}
 else
     echo "rrup file already present: ${OUT_DIR}/rrup_${REL_NAME}.csv"
     echo "Checking that there are enough rrups in it"
