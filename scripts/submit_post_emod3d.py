@@ -9,9 +9,7 @@ import qcore.constants as const
 import qcore.simulation_structure as sim_struct
 from qcore import utils, binary_version
 from qcore.config import get_machine_config, host
-from shared_workflow.shared import (
-    confirm,
-)
+from shared_workflow.shared import confirm
 from shared_workflow.shared_automated_workflow import submit_sl_script
 from shared_workflow.shared_template import write_sl_script
 from shared_workflow.workflow_logger import get_basic_logger
@@ -85,7 +83,7 @@ def main(args, logger: Logger = get_basic_logger()):
         submit_yes=submit_yes,
         target_machine=args.machine,
         logger=logger,
-        )
+    )
 
 
 if __name__ == "__main__":

@@ -89,9 +89,7 @@ if __name__ == "__main__":
         "run_dir", type=str, help="The path to the realisation directory"
     )
     parser.add_argument(
-        "station_count",
-        type=int,
-        help="The number of stations in the realisation",
+        "station_count", type=int, help="The number of stations in the realisation"
     )
     parser.add_argument(
         "-v", "--verbose", action="store_true", help="flag to echo messages"

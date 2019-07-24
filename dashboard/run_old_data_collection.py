@@ -64,9 +64,14 @@ def collect_old_data(
             DataCollector.parse_user_chours_usage(user_ch_output, users, local_date),
             local_date,
         )
-    cmd2 = "sreport -n -t Hours cluster AccountUtilizationByUser Accounts=nesi00213 start={} end={} format=Cluster,Accounts,Login%30,Proper,Used".format(start_time, end_time)
+    cmd2 = "sreport -n -t Hours cluster AccountUtilizationByUser Accounts=nesi00213 start={} end={} format=Cluster,Accounts,Login%30,Proper,Used".format(
+        start_time, end_time
+    )
 
-    rt_daily_ch_output = (subprocess.check_output("ssh {}@{} {}".format(login_user, hpc.value, cmd2), shell=True, timeout=60)
+    rt_daily_ch_output = (
+        subprocess.check_output(
+            "ssh {}@{} {}".format(login_user, hpc.value, cmd2), shell=True, timeout=60
+        )
         .decode("utf-8")
         .strip()
         .split("\n")
@@ -74,15 +79,18 @@ def collect_old_data(
     rt_daily_ch = DataCollector.parse_chours_usage(rt_daily_ch_output)
 
     # Get total core hours usage, start from 188 days ago
-    cmd3 = "sreport -n -t Hours cluster AccountUtilizationByUser Accounts=nesi00213 start={} end={} format=Cluster,Accounts,Login%30,Proper,Used".format(DataCollector.total_start_time, end_time)
+    cmd3 = "sreport -n -t Hours cluster AccountUtilizationByUser Accounts=nesi00213 start={} end={} format=Cluster,Accounts,Login%30,Proper,Used".format(
+        DataCollector.total_start_time, end_time
+    )
 
-    rt_total_ch_output = (subprocess.check_output(
+    rt_total_ch_output = (
+        subprocess.check_output(
             "ssh {}@{} {}".format(login_user, hpc.value, cmd3), shell=True, timeout=60
         )
         .decode("utf-8")
         .strip()
         .split("\n")
-                          )
+    )
     rt_total_ch = DataCollector.parse_chours_usage(rt_total_ch_output)
     print("total", rt_total_ch)
 
@@ -90,7 +98,13 @@ def collect_old_data(
         dashboard_db.update_chours_usage(rt_daily_ch, rt_total_ch, hpc, local_date)
 
 
-def run_old_collection(dashboard_db, hpcs: Union[List[const.HPC], const.HPC], login_user: str, users: Iterable[str], days_shift: int):
+def run_old_collection(
+    dashboard_db,
+    hpcs: Union[List[const.HPC], const.HPC],
+    login_user: str,
+    users: Iterable[str],
+    days_shift: int,
+):
     """Runs the data collection for a specified period"""
     # Iterate through the specifid days period
     for day_shift in reversed(range(days_shift + 1)):

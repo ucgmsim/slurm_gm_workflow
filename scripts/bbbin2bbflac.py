@@ -16,7 +16,7 @@ import numpy as np
 
 from qcore.timeseries import BBSeis
 
-MAX_INT = np.float64(0x7ffffc00)
+MAX_INT = np.float64(0x7FFFFC00)
 
 parser = ArgumentParser()
 parser.add_argument("bb_bin", help="path to binary broadband file")
@@ -34,7 +34,7 @@ stat64 = args.bb_flac + ".b64stat"
 # extract station data
 stat_dtype = bb.stations.dtype.descr
 stat_dtype[2] = ("name", "|S7")
-stat_dtype.append(('scale', np.float64))
+stat_dtype.append(("scale", np.float64))
 stations = np.empty(bb.stations.size, dtype=stat_dtype)
 for col in bb.stations.dtype.names:
     stations[col] = bb.stations[col]
@@ -71,27 +71,29 @@ call([
 os.remove(raw32)
 
 # encode metadata as tags
-call([
-    "flac",
-    "-f",
-    "--tag=nstat={}".format(stations.size),
-    "--tag=nt={}".format(bb.nt),
-    "--tag=duration={}".format(str(bb.duration)),
-    "--tag=dt={}".format(str(bb.dt)),
-    "--tag=start_sec={}".format(str(bb.start_sec)),
-    "--tag=lf_dir={}".format(bb.lf_dir),
-    "--tag=lf_vm={}".format(bb.lf_vm),
-    "--tag=hf_file={}".format(bb.hf_file),
-    "--tag-from-file=stations={}".format(stat64),
-    "-8",
-    "--endian=little",
-    "--channels=3",
-    "--bps=24",
-    "--sample-rate={}".format(sample_rate),
-    "--sign=signed",
-    raw24,
-    "-o",
-    args.bb_flac
-])
+call(
+    [
+        "flac",
+        "-f",
+        "--tag=nstat={}".format(stations.size),
+        "--tag=nt={}".format(bb.nt),
+        "--tag=duration={}".format(str(bb.duration)),
+        "--tag=dt={}".format(str(bb.dt)),
+        "--tag=start_sec={}".format(str(bb.start_sec)),
+        "--tag=lf_dir={}".format(bb.lf_dir),
+        "--tag=lf_vm={}".format(bb.lf_vm),
+        "--tag=hf_file={}".format(bb.hf_file),
+        "--tag-from-file=stations={}".format(stat64),
+        "-8",
+        "--endian=little",
+        "--channels=3",
+        "--bps=24",
+        "--sample-rate={}".format(sample_rate),
+        "--sign=signed",
+        raw24,
+        "-o",
+        args.bb_flac,
+    ]
+)
 os.remove(raw24)
 os.remove(stat64)

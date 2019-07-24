@@ -33,9 +33,7 @@ GENERAL_LOGGING_MESSAGE_FORMAT = (
 )
 general_formatter = logging.Formatter(GENERAL_LOGGING_MESSAGE_FORMAT)
 
-GENERAL_THREADED_LOGGING_MESSAGE_FORMAT = (
-    "%(levelname)8s -- %(asctime)s - %(threadName)s - %(module)s.%(funcName)s - %(message)s"
-)
+GENERAL_THREADED_LOGGING_MESSAGE_FORMAT = "%(levelname)8s -- %(asctime)s - %(threadName)s - %(module)s.%(funcName)s - %(message)s"
 general_threaded_formatter = logging.Formatter(GENERAL_LOGGING_MESSAGE_FORMAT)
 
 REALISATION_LOGGING_MESSAGE_FORMAT = (
@@ -49,7 +47,9 @@ TASK_LOGGING_MESSAGE_FORMAT = (
 TASK_THREADED_LOGGING_MESSAGE_FORMAT = "%(levelname)8s -- %(asctime)s - %(threadName)s - %(module)s.%(funcName)s - {}.{} - %(message)s"
 
 
-def get_logger(name: str = DEFAULT_LOGGER_NAME, threaded=False, stdout_printer=True) -> logging.Logger:
+def get_logger(
+    name: str = DEFAULT_LOGGER_NAME, threaded=False, stdout_printer=True
+) -> logging.Logger:
     """
     Creates a logger and an associated handler to print messages over level INFO to stdout.
     The handler is configured such that messages will not be printed if their underlying level value ends in 1, this is
@@ -79,9 +79,7 @@ def get_logger(name: str = DEFAULT_LOGGER_NAME, threaded=False, stdout_printer=T
     return logger
 
 
-def add_general_file_handler(
-    logger: logging.Logger, file_path: str
-):
+def add_general_file_handler(logger: logging.Logger, file_path: str):
     """
     Adds a file handler to the logger using the given file_path
     :param logger: The logger object
@@ -147,9 +145,7 @@ def get_realisation_logger(
 
 
 def get_task_logger(
-    old_logger: logging.Logger,
-    realisation: str,
-    process_type: int,
+    old_logger: logging.Logger, realisation: str, process_type: int
 ) -> logging.Logger:
     """Creates a new logger that logs the realisation and process type.
     The logger passed in is effectively duplicated and log messages are saved to the same file as the original logger.

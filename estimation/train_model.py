@@ -23,7 +23,6 @@ CONFIG_INPUT_COLS_KEY = "input_cols"
 CONFIG_TARGET_COL_KEY = "target_col"
 
 
-
 SCALER_FILENAME = "scaler_{}_{}.pickle"
 NN_MODEL_FILENAME = "{}{}.h5".format(EST_MODEL_NN_PREFIX, "{}")
 SVR_MODEL_FILENAME = "{}{}.pickle".format(EST_MODEL_SVR_PREFIX, "{}")

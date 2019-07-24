@@ -65,7 +65,7 @@ class WCEstModel(object):
         """
         raise NotImplementedError()
 
-    def predict(self, X: np.ndarray, logger: Logger =None):
+    def predict(self, X: np.ndarray, logger: Logger = None):
         """Performs the actual prediction using the current model
         The data has to have been scaled (with the same parameters/scaler
         as used for training)
@@ -277,13 +277,17 @@ class NNWcEstModel(WCEstModel):
 
         return model
 
-    def predict(self, X: np.ndarray, warning: bool = True, logger: Logger = get_basic_logger()):
+    def predict(
+        self, X: np.ndarray, warning: bool = True, logger: Logger = get_basic_logger()
+    ):
         """Performs the actual prediction using the current model
 
         For full doc see WCEstModel.predict
         """
         if not self.is_trained:
-            logger.log(NOPRINTCRITICAL, "There was an attempt to use an untrained model")
+            logger.log(
+                NOPRINTCRITICAL, "There was an attempt to use an untrained model"
+            )
             raise Exception("This model has not been trained!")
 
         if np.any(self.get_out_of_bounds_mask(X)) and warning:
@@ -303,10 +307,20 @@ class NNWcEstModel(WCEstModel):
         """
         return (
             (X > self._train_max)
-            & ~np.isclose(X, np.repeat(self._train_max, X.shape[0], axis=0).reshape(-1, self._train_min.shape[0]))
+            & ~np.isclose(
+                X,
+                np.repeat(self._train_max, X.shape[0], axis=0).reshape(
+                    -1, self._train_min.shape[0]
+                ),
+            )
         ) | (
             (X < self._train_min)
-            & ~np.isclose(X, np.repeat(self._train_min, X.shape[0], axis=0).reshape(-1, self._train_min.shape[0]))
+            & ~np.isclose(
+                X,
+                np.repeat(self._train_min, X.shape[0], axis=0).reshape(
+                    -1, self._train_min.shape[0]
+                ),
+            )
         )
 
     def save_model(self, output_file: str):
@@ -469,7 +483,9 @@ class SVRModel(WCEstModel):
         For full doc see WCEstModel.predict
         """
         if not self.is_trained:
-            logger.log(NOPRINTCRITICAL, "There was an attempt to use an untrained model")
+            logger.log(
+                NOPRINTCRITICAL, "There was an attempt to use an untrained model"
+            )
             raise Exception("This model has not been trained!")
 
         return self._model.predict(X).reshape(-1)
@@ -570,7 +586,8 @@ class CombinedModel:
                     "estimated using the SVR model."
                 )
                 results[out_bound_mask] = (
-                    self.svr_model.predict(X_svr[out_bound_mask, :], logger=logger) * default_n_cores
+                    self.svr_model.predict(X_svr[out_bound_mask, :], logger=logger)
+                    * default_n_cores
                 ) / n_cores[out_bound_mask]
 
                 return results

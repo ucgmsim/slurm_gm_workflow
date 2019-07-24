@@ -130,7 +130,7 @@ def get_new_progress_df(root_dir, runs_dir, faults, fault_names, r_counts):
         root_yaml=None,
         output=None,
         verbose=False,
-        models_dir=None
+        models_dir=None,
     )
     df = est_cybershake(est_args)
     grouped_df = df.groupby("fault_name").sum()

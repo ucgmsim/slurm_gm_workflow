@@ -7,7 +7,7 @@ import numpy as np
 from qcore.timeseries import BBSeis
 from qcore.timeseries import HFSeis
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("bin", type=str)
     parser.add_argument("fd_ll", type=str)
@@ -20,7 +20,7 @@ if __name__ == '__main__':
         print("Invalid process_type, has to be either bb or hf. Quitting!")
         sys.exit(1)
 
-    bin_class = HFSeis if args.process_type == 'hf' else BBSeis
+    bin_class = HFSeis if args.process_type == "hf" else BBSeis
 
     try:
         bin = bin_class(args.bin)
@@ -46,11 +46,12 @@ if __name__ == '__main__':
 
     # check for empty station names
     for station in bin.stations.name:
-        if station == '':
+        if station == "":
             # failed
             if args.verbose:
-                print("Empty station name detected, {} failed".format(
-                    args.process_type))
+                print(
+                    "Empty station name detected, {} failed".format(args.process_type)
+                )
             sys.exit(1)
 
     # check for and vs ==0 (failed)

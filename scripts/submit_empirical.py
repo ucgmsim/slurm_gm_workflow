@@ -51,7 +51,7 @@ def generate_sl(np, extended, cybershake_folder, account, realisations):
         memory="2G",
         exe_time="%j",
         job_description="Empirical Engine",
-        mail='',
+        mail="",
     )
     context = generate_context(
         template_dir,
@@ -61,7 +61,7 @@ def generate_sl(np, extended, cybershake_folder, account, realisations):
             "np": np,
             "extended": extended,
             "mgmt_db_location": cybershake_folder,
-        }
+        },
     )
     sl_name = "run_empirical_{}.sl".format(timestamp)
     content = "{}\n{}".format(header, context)
@@ -98,4 +98,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

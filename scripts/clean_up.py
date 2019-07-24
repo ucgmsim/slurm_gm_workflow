@@ -70,7 +70,7 @@ def move_files(sim_dir, dest_dir, file_patterns):
                 )
 
 
-def create_temp_dirs(sim_dir, outer_dir_name, inner_dir_name=''):
+def create_temp_dirs(sim_dir, outer_dir_name, inner_dir_name=""):
     """
     creates two nested temp dirs containing files to be tared
     :param sim_dir: path to realization folder
@@ -80,8 +80,8 @@ def create_temp_dirs(sim_dir, outer_dir_name, inner_dir_name=''):
     """
     outer_dir = os.path.join(sim_dir, outer_dir_name)
     utils.setup_dir(outer_dir)
-    inner_dir = ''
-    if inner_dir_name is not '':
+    inner_dir = ""
+    if inner_dir_name is not "":
         inner_dir = os.path.join(sim_dir, outer_dir_name, inner_dir_name)
         utils.setup_dir(inner_dir)
     return outer_dir, inner_dir
@@ -96,13 +96,11 @@ def clean_up_submission_lf_files(
     :param lf_files_to_tar: a list of additional lf related files to tar
     :return: creates submisson and lf tar.gz
     """
-    submission_files_to_tar += SUBMISSION_FILES+SUBMISSION_SL_LOGS
+    submission_files_to_tar += SUBMISSION_FILES + SUBMISSION_SL_LOGS
     lf_files_to_tar += LF_FILES
 
     # create temporary submission dir
-    submission_dir, _ = create_temp_dirs(
-        sim_dir, SUBMISSION_DIR_NAME
-    )
+    submission_dir, _ = create_temp_dirs(sim_dir, SUBMISSION_DIR_NAME)
 
     # create temporary lf dir
     lf_dir, lf_sub_dir = create_temp_dirs(sim_dir, LF_DIR_NAME, LF_SUB_DIR_NAME)

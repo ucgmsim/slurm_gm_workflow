@@ -199,8 +199,7 @@ class MgmtDB:
         # Used to compare with database entries to prevent running a task that has already been submitted, but not
         # recorded
         tasks_waiting_for_updates = [
-            "{}__{}".format(*(entry.split(".")[1:3]))
-            for entry in update_files
+            "{}__{}".format(*(entry.split(".")[1:3])) for entry in update_files
         ]
 
         with connect_db_ctx(self._db_file) as cur:

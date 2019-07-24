@@ -29,7 +29,7 @@ SIZE_SEISHEAD = SIZE_INT * 5 + SIZE_FLT * 5 + STAT_CHAR
 N_COMPS = 9
 # values of interest in components, index in N_COMPS, description
 # changing these requires changing logic
-MY_COMPS = {0: '090', 1: '000', 2: 'ver'}
+MY_COMPS = {0: "090", 1: "000", 2: "ver"}
 N_MY_COMPS = len(MY_COMPS)
 
 NATIVE_ENDIAN = byteorder
@@ -38,23 +38,23 @@ NATIVE_ENDIAN = byteorder
 # return order to read bytes in, either '>' or '<'
 # assumes you want to read in the non-native order
 def get_byteswap_char():
-    if byteorder == 'little':
+    if byteorder == "little":
         # process as big endian
-        return '>'
+        return ">"
     else:
         # process as little endian
-        return '<'
+        return "<"
 
 
 # automatic endianness detection for seis files
 # first assume that endianness is native, check if filesize matches
 def get_seis_swap(file_path):
-    fp = open(file_path, 'rb')
+    fp = open(file_path, "rb")
     # number of stations in seis file
-    ns = unpack('i', fp.read(SIZE_INT))[0]
+    ns = unpack("i", fp.read(SIZE_INT))[0]
     # first station NT value (should all be same)
     fp.seek(SIZE_INT + 4 * SIZE_INT)
-    nt = unpack('i', fp.read(SIZE_INT))[0]
+    nt = unpack("i", fp.read(SIZE_INT))[0]
 
     # assuming correct values read, this is the filesize
     fs = SIZE_INT + ns * (SIZE_SEISHEAD + SIZE_FLT * N_COMPS * nt)
@@ -72,7 +72,7 @@ def get_seis_common(file_path, INT_S, FLT_S):
     INT_S: format string of an integer
     FLT_S: format string of a float
     """
-    fp = open(file_path, 'rb')
+    fp = open(file_path, "rb")
     # skip to first station contents
     fp.seek(SIZE_INT * 5)
     nt = unpack(INT_S, fp.read(SIZE_INT))[0]

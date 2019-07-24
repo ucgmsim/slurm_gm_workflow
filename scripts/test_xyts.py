@@ -18,7 +18,7 @@ def check_xyts_file(file_path: str):
 def check_zero_bytes(file_path: str):
     """Checks that a timeslice 25% of the way through has a non zero reading at every point"""
     xyts_file = XYTSFile(file_path)
-    time_slice = xyts_file.tslice_get(xyts_file.data.shape[0]//4)
+    time_slice = xyts_file.tslice_get(xyts_file.data.shape[0] // 4)
     min_pgv = min(abs(time_slice[2, :]))
     return min_pgv > 0
 
@@ -33,11 +33,15 @@ def main():
             return True
     except Exception as e:
         print(e, file=stderr)
-        print("Attempt to open and extract information from xyts file {} failed".format(file_path))
+        print(
+            "Attempt to open and extract information from xyts file {} failed".format(
+                file_path
+            )
+        )
         return False
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     if main():
         exit(0)
     else:

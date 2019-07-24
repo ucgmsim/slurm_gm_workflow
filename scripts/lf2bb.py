@@ -37,7 +37,18 @@ def lf2bb(outbin, vs30file, bb_file):
                     "lf_vs_ref",
                     "vsite",
                 ],
-                "formats": ["f4", "f4", "|S8", "i4", "i4", "i4", "f4", "f4", "f4", "f4"],
+                "formats": [
+                    "f4",
+                    "f4",
+                    "|S8",
+                    "i4",
+                    "i4",
+                    "i4",
+                    "f4",
+                    "f4",
+                    "f4",
+                    "f4",
+                ],
                 "itemsize": HEAD_STAT,
             },
         )
@@ -48,14 +59,12 @@ def lf2bb(outbin, vs30file, bb_file):
     bb_stations["vsite"] = np.vectorize(
         dict(
             np.loadtxt(
-                vs30file,
-                dtype=[("name", "|U8"), ("vs30", "f4")],
-                comments=("#", "%"),
+                vs30file, dtype=[("name", "|U8"), ("vs30", "f4")], comments=("#", "%")
             )
         ).get
     )(lf_data.stations.name)
 
-    with open(bb_file, 'wb') as out:
+    with open(bb_file, "wb") as out:
         # Write the header
         np.array([lf_data.stations.size, lf_data.nt], dtype="i4").tofile(out)
         np.array([lf_data.nt * lf_data.dt, lf_data.dt, -1], dtype="f4").tofile(out)
@@ -86,5 +95,5 @@ def main():
     lf2bb(args.outbin_dir_loc, args.vsite_file, args.bb_bin_loc)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

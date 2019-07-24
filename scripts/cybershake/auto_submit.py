@@ -44,7 +44,7 @@ JOB_RUN_MACHINE = {
     const.ProcessType.clean_up: const.HPC.mahuika,
     const.ProcessType.LF2BB: const.HPC.mahuika,
     const.ProcessType.HF2BB: const.HPC.mahuika,
-    const.ProcessType.plot_srf: const.HPC.mahuika
+    const.ProcessType.plot_srf: const.HPC.mahuika,
 }
 
 
@@ -124,13 +124,16 @@ def submit_task(
         # plot_ts.py does not mkdir dir if output dir does not exist,
         # whereas im_plot does.
         if not os.path.isdir(verification_dir):
-            os.mkdir(verification_dir) 
+            os.mkdir(verification_dir)
         plot_ts_template = (
             "--export=CUR_ENV -o {output_file} -e {error_file} {script_location} "
             "{xyts_path} {srf_path} {output_movie_path} {mgmt_db_loc} {run_name}"
         )
         script = plot_ts_template.format(
-            xyts_path=os.path.join(sim_struct.get_lf_outbin_dir(sim_dir), '{}_xyts.e3d'.format(run_name.split('_')[0])),
+            xyts_path=os.path.join(
+                sim_struct.get_lf_outbin_dir(sim_dir),
+                "{}_xyts.e3d".format(run_name.split("_")[0]),
+            ),
             srf_path=sim_struct.get_srf_path(root_folder, run_name),
             output_movie_path=os.path.join(verification_dir, run_name),
             mgmt_db_loc=root_folder,
@@ -139,7 +142,9 @@ def submit_task(
             output_file=os.path.join(sim_dir, "%x_%j.out"),
             error_file=os.path.join(sim_dir, "%x_%j.err"),
         )
-        submit_sl_script(script, target_machine=JOB_RUN_MACHINE[const.ProcessType.plot_ts].value)
+        submit_sl_script(
+            script, target_machine=JOB_RUN_MACHINE[const.ProcessType.plot_ts].value
+        )
 
     elif proc_type == const.ProcessType.HF.value:
         args = argparse.Namespace(
@@ -209,11 +214,11 @@ def submit_task(
             "--export=CUR_ENV -o {output_file} -e {error_file} {script_location} "
             "{csv_path} {station_file_path} {output_xyz_dir} {srf_path} {model_params_path} {mgmt_db_loc} {run_name}"
         )
-        params = utils.load_sim_params(os.path.join(sim_dir, 'sim_params.yaml'))
+        params = utils.load_sim_params(os.path.join(sim_dir, "sim_params.yaml"))
         script = im_plot_template.format(
             csv_path=os.path.join(sim_struct.get_IM_csv(sim_dir)),
             station_file_path=params.stat_file,
-            output_xyz_dir=os.path.join(verification_dir, 'IM_plot'),
+            output_xyz_dir=os.path.join(verification_dir, "IM_plot"),
             srf_path=sim_struct.get_srf_path(root_folder, run_name),
             model_params_path=params.MODEL_PARAMS,
             mgmt_db_loc=root_folder,
@@ -222,7 +227,9 @@ def submit_task(
             output_file=os.path.join(sim_dir, "%x_%j.out"),
             error_file=os.path.join(sim_dir, "%x_%j.err"),
         )
-        submit_sl_script(script, target_machine=JOB_RUN_MACHINE[const.ProcessType.IM_plot].value)
+        submit_sl_script(
+            script, target_machine=JOB_RUN_MACHINE[const.ProcessType.IM_plot].value
+        )
     elif proc_type == const.ProcessType.rrup.value:
         submit_sl_script(
             "--output {} --error {} {} {} {}".format(
@@ -297,7 +304,9 @@ def submit_task(
             output_file=os.path.join(sim_dir, "%x_%j.out"),
             error_file=os.path.join(sim_dir, "%x_%j.err"),
         )
-        submit_sl_script(script, target_machine=JOB_RUN_MACHINE[const.ProcessType.plot_srf].value)
+        submit_sl_script(
+            script, target_machine=JOB_RUN_MACHINE[const.ProcessType.plot_srf].value
+        )
 
     workflow_logger.clean_up_logger(task_logger)
 
@@ -334,7 +343,11 @@ def run_main_submit_loop(
     time_since_something_happened = cycle_timeout
 
     while time_since_something_happened > 0:
-        main_logger.debug("time_since_something_happened is now {}".format(time_since_something_happened))
+        main_logger.debug(
+            "time_since_something_happened is now {}".format(
+                time_since_something_happened
+            )
+        )
         time_since_something_happened -= 1
         # Get items in the mgmt queue, have to get a snapshot instead of
         # checking the directory real-time to prevent timing issues,
@@ -344,9 +357,13 @@ def run_main_submit_loop(
         # Get in progress tasks in the db and the HPC queue
         n_tasks_to_run = {}
         for hpc in const.HPC:
-            n_tasks_to_run[hpc] = n_runs[hpc] - len(get_queued_tasks(user=user, machine=hpc))
+            n_tasks_to_run[hpc] = n_runs[hpc] - len(
+                get_queued_tasks(user=user, machine=hpc)
+            )
             if n_tasks_to_run[hpc] < n_runs[hpc]:
-                main_logger.debug("There was at least one job in squeue, resetting timeout")
+                main_logger.debug(
+                    "There was at least one job in squeue, resetting timeout"
+                )
                 time_since_something_happened = cycle_timeout
 
         # Gets all runnable tasks based on mgmt db state
@@ -355,13 +372,11 @@ def run_main_submit_loop(
             sum(n_runs.values()),
             os.listdir(simulation_structure.get_mgmt_db_queue(root_folder)),
             given_tasks_to_run,
-            main_logger
+            main_logger,
         )
         if len(runnable_tasks) > 0:
             time_since_something_happened = cycle_timeout
-            main_logger.info(
-                "Number of runnable tasks: {}".format(len(runnable_tasks))
-            )
+            main_logger.info("Number of runnable tasks: {}".format(len(runnable_tasks)))
             main_logger.debug("There was at least one runnable task, resetting timeout")
         else:
             main_logger.debug("No runnable_tasks")
@@ -424,7 +439,7 @@ def run_main_submit_loop(
                         run_name,
                         const.ProcessType.clean_up.value,
                         const.Status.created.value,
-                        logger=main_logger
+                        logger=main_logger,
                     )
 
             # submit the job

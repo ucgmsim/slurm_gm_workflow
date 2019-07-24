@@ -102,7 +102,13 @@ def run_automated_workflow(
     wrapper_logger.debug("Created logger for the queue_monitor thread")
 
     tasks_to_run_with_pattern_and_logger = [
-        (pattern, tasks, workflow_logger.get_logger(name="pattern_{}".format(pattern), threaded=True))
+        (
+            pattern,
+            tasks,
+            workflow_logger.get_logger(
+                name="pattern_{}".format(pattern), threaded=True
+            ),
+        )
         for pattern, tasks in tasks_to_run_with_pattern
     ]
     for pattern, tasks, logger in tasks_to_run_with_pattern_and_logger:
@@ -140,14 +146,11 @@ def run_automated_workflow(
             "%",
             tasks_to_run,
             sleep_time,
-            (lf_est_model,
-            hf_est_model,
-            bb_est_model,
-            im_est_model),
+            (lf_est_model, hf_est_model, bb_est_model, im_est_model),
         ),
         kwargs={
-            'main_logger': bulk_logger,
-            'cycle_timeout': len(tasks_to_run_with_pattern_and_logger)+1,
+            "main_logger": bulk_logger,
+            "cycle_timeout": len(tasks_to_run_with_pattern_and_logger) + 1,
         },
     )
     wrapper_logger.info("Created main auto_submit thread")
@@ -172,7 +175,9 @@ def run_automated_workflow(
         wrapper_logger.info("Checking all patterns for tasks to be run")
         for pattern, tasks, pattern_logger in tasks_to_run_with_pattern_and_logger:
             wrapper_logger.info(
-                "Loaded pattern {}. Checking for tasks to be run of types: {}".format(pattern, tasks)
+                "Loaded pattern {}. Checking for tasks to be run of types: {}".format(
+                    pattern, tasks
+                )
             )
             run_main_submit_loop(
                 root_folder,
@@ -181,10 +186,7 @@ def run_automated_workflow(
                 pattern,
                 tasks,
                 sleep_time,
-                (lf_est_model,
-                hf_est_model,
-                bb_est_model,
-                im_est_model),
+                (lf_est_model, hf_est_model, bb_est_model, im_est_model),
                 main_logger=pattern_logger,
                 cycle_timeout=1,
             )
@@ -201,7 +203,9 @@ def run_automated_workflow(
         wrapper_logger.critical("The queue monitor has not successfully terminated")
 
 
-def parse_config_file(config_file_location: str, logger: Logger = workflow_logger.get_basic_logger()):
+def parse_config_file(
+    config_file_location: str, logger: Logger = workflow_logger.get_basic_logger()
+):
     """Takes in the location of a wrapper config file and creates the tasks to be run.
     Requires that the file contains the keys 'run_all_tasks' and 'run_some', even if they are empty
     If the dependencies for a run_some task overlap with those in the tasks_to_run_for_all, as a race condition is
@@ -277,14 +281,16 @@ def main():
         "Must be absolute or relative to the root_folder.",
     )
     parser.add_argument(
-        "--debug",
-        action="store_true",
-        help="Print debug messages to stdout",
+        "--debug", action="store_true", help="Print debug messages to stdout"
     )
     args = parser.parse_args()
 
-    wrapper_logger = workflow_logger.get_logger(name="cybershake_wrapper", threaded=True)
-    master_logger = workflow_logger.get_logger(name=None, threaded=True, stdout_printer=False)
+    wrapper_logger = workflow_logger.get_logger(
+        name="cybershake_wrapper", threaded=True
+    )
+    master_logger = workflow_logger.get_logger(
+        name=None, threaded=True, stdout_printer=False
+    )
 
     if args.debug:
         workflow_logger.set_stdout_level(wrapper_logger, DEBUG)
