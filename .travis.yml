@@ -30,6 +30,7 @@ install:
 
 # command to run tests
 script:
+  - pytest --black --ignore=testing
   - >
     docker run -it
     -v $BUILDDIR/ucgmsim:/home/root/git
@@ -40,9 +41,8 @@ script:
     cd /home/root/git/qcore/;
     python setup.py install;
     cd /home/root/git/slurm_gm_workflow;
-    export PYTHONPATH=$PYTHONPATH:/home/root/git/slurm_gm_workflow;"
-   - pytest --black --ignore=testing
-   - pytest -vs --ignore testing/test_manual_install
+    export PYTHONPATH=$PYTHONPATH:/home/root/git/slurm_gm_workflow;
+    pytest -vs --ignore testing/test_manual_install;"
 #after_success:
 #  - coveralls   # uploads reports to coveralls.io
 notifications:
