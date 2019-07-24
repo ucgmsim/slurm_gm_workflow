@@ -31,7 +31,7 @@ install:
 # command to run tests
 script:
 #  some scripts in slurm_gm_workflow still in python2, while black only work in python3
-    pytest --black --ignore=testing
+    #pytest --black --ignore=testing
   - >
     docker run -it
     -v $BUILDDIR/ucgmsim:/home/root/git
