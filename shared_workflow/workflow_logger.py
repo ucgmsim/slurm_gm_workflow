@@ -114,5 +114,3 @@ def get_task_logger(
     new_logger.addHandler(task_print_handler)
 
     return new_logger
-
-

@@ -105,9 +105,7 @@ def run_automated_workflow(
         (
             pattern,
             tasks,
-            qclogging.get_logger(
-                name="pattern_{}".format(pattern), threaded=True
-            ),
+            qclogging.get_logger(name="pattern_{}".format(pattern), threaded=True),
         )
         for pattern, tasks in tasks_to_run_with_pattern
     ]
@@ -285,12 +283,8 @@ def main():
     )
     args = parser.parse_args()
 
-    wrapper_logger = qclogging.get_logger(
-        name="cybershake_wrapper", threaded=True
-    )
-    master_logger = qclogging.get_logger(
-        name=None, threaded=True, stdout_printer=False
-    )
+    wrapper_logger = qclogging.get_logger(name="cybershake_wrapper", threaded=True)
+    master_logger = qclogging.get_logger(name=None, threaded=True, stdout_printer=False)
 
     if args.debug:
         qclogging.set_stdout_level(wrapper_logger, DEBUG)

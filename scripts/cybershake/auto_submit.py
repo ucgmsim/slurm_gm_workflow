@@ -388,7 +388,9 @@ def run_main_submit_loop(
             # Add task if limit has not been reached and there are no
             # outstanding mgmt db updates
             if (
-                not shared_automated_workflow.check_mgmt_queue(mgmt_queue_entries, cur_run_name, cur_proc_type)
+                not shared_automated_workflow.check_mgmt_queue(
+                    mgmt_queue_entries, cur_run_name, cur_proc_type
+                )
                 and task_counter.get(cur_hpc, 0) < n_tasks_to_run[cur_hpc]
             ):
                 tasks_to_run.append((cur_proc_type, cur_run_name, retries))

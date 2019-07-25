@@ -212,11 +212,15 @@ def main(args):
         and const.MetadataField.end_time.value in metadata_dict.keys()
     ):
         tdelta = datetime.strptime(
-            metadata_dict[const.MetadataField.end_time.value], const.METADATA_TIMESTAMP_FMT
+            metadata_dict[const.MetadataField.end_time.value],
+            const.METADATA_TIMESTAMP_FMT,
         ) - datetime.strptime(
-            metadata_dict[const.MetadataField.start_time.value], const.METADATA_TIMESTAMP_FMT
+            metadata_dict[const.MetadataField.start_time.value],
+            const.METADATA_TIMESTAMP_FMT,
         )
-        metadata_dict[const.MetadataField.run_time.value] = tdelta.total_seconds() / 3600
+        metadata_dict[const.MetadataField.run_time.value] = (
+            tdelta.total_seconds() / 3600
+        )
 
     # Load the params
     params = utils.load_sim_params(

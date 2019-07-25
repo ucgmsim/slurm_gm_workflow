@@ -9,7 +9,7 @@ OUTPUT = "output"
 REALISATIONS = [
     (
         "PangopangoF29_HYP01-10_S1244",
-        "http://seistech.nz/static/public/testing/slurm_gm_workflow/PangopangoF29_HYP01-10_S1244.zip",
+        "https://qc-s3-autotest.s3-ap-southeast-2.amazonaws.com/testing/slurm_gm_workflow/PangopangoF29_HYP01-10_S1244.zip",
     )
 ]
 

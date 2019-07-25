@@ -73,9 +73,7 @@ def main():
             ),
         )
     else:
-        add_general_file_handler(
-            logger, os.path.join(path_cybershake, args.log_file)
-        )
+        add_general_file_handler(logger, os.path.join(path_cybershake, args.log_file))
     logger.debug("Added file handler to the logger")
 
     if not os.path.exists(
