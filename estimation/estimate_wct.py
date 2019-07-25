@@ -16,8 +16,8 @@ from logging import Logger
 import numpy as np
 
 import qcore.constants as const
+from qcore.qclogging import get_basic_logger, NOPRINTCRITICAL
 from estimation.model import CombinedModel, WCEstModel, NNWcEstModel, SVRModel
-from shared_workflow.workflow_logger import get_basic_logger, NOPRINTCRITICAL
 
 SCALER_PREFIX = "scaler_{}"
 

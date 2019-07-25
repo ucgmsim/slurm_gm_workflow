@@ -18,7 +18,7 @@ from shared_workflow import shared
 from qcore import utils
 from qcore import binary_version
 from shared_workflow import load_config
-from shared_workflow.workflow_logger import get_basic_logger
+from qcore.qclogging import get_basic_logger
 
 sys.path.append(os.path.abspath(os.path.curdir))
 

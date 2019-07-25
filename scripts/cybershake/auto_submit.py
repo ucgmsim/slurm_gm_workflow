@@ -11,22 +11,20 @@ from typing import List, Dict, Tuple
 
 import numpy as np
 
-import shared_workflow.load_config as ldcfg
+from qcore import utils, qclogging
 import qcore.constants as const
 import qcore.simulation_structure as sim_struct
-import shared_workflow.shared_automated_workflow
-from qcore import utils, simulation_structure
-import estimation.estimate_wct as est
-from scripts.management.MgmtDB import MgmtDB
-from metadata.log_metadata import store_metadata
 
+import estimation.estimate_wct as est
+from metadata.log_metadata import store_metadata
+from scripts.management.MgmtDB import MgmtDB
 from scripts.submit_emod3d import main as submit_lf_main
 from scripts.submit_post_emod3d import main as submit_post_lf_main
 from scripts.submit_hf import main as submit_hf_main
 from scripts.submit_bb import main as submit_bb_main
 from scripts.submit_sim_imcalc import submit_im_calc_slurm, SlBodyOptConsts
-from shared_workflow import workflow_logger
-from shared_workflow.shared_automated_workflow import get_queued_tasks, check_mgmt_queue
+from shared_workflow import workflow_logger, shared_automated_workflow
+import shared_workflow.load_config as ldcfg
 
 DEFAULT_N_RUNS = {const.HPC.maui: 12, const.HPC.mahuika: 12}
 
@@ -73,7 +71,7 @@ def submit_task(
     log_file = os.path.join(sim_dir, "ch_log", const.METADATA_LOG_FILENAME)
 
     def submit_sl_script(script_name, **kwargs):
-        shared_workflow.shared_automated_workflow.submit_sl_script(
+        shared_automated_workflow.submit_sl_script(
             script_name,
             proc_type,
             sim_struct.get_mgmt_db_queue(root_folder),
@@ -308,7 +306,7 @@ def submit_task(
             script, target_machine=JOB_RUN_MACHINE[const.ProcessType.plot_srf].value
         )
 
-    workflow_logger.clean_up_logger(task_logger)
+    qclogging.clean_up_logger(task_logger)
 
 
 def run_main_submit_loop(
@@ -319,7 +317,7 @@ def run_main_submit_loop(
     given_tasks_to_run: List[const.ProcessType],
     sleep_time: int,
     models_tuple: Tuple[est.EstModel],
-    main_logger: Logger = workflow_logger.get_basic_logger(),
+    main_logger: Logger = qclogging.get_basic_logger(),
     cycle_timeout=1,
 ):
     mgmt_queue_folder = sim_struct.get_mgmt_db_queue(root_folder)
@@ -358,7 +356,7 @@ def run_main_submit_loop(
         n_tasks_to_run = {}
         for hpc in const.HPC:
             n_tasks_to_run[hpc] = n_runs[hpc] - len(
-                get_queued_tasks(user=user, machine=hpc)
+                shared_automated_workflow.get_queued_tasks(user=user, machine=hpc)
             )
             if n_tasks_to_run[hpc] < n_runs[hpc]:
                 main_logger.debug(
@@ -370,7 +368,7 @@ def run_main_submit_loop(
         runnable_tasks = mgmt_db.get_runnable_tasks(
             rels_to_run,
             sum(n_runs.values()),
-            os.listdir(simulation_structure.get_mgmt_db_queue(root_folder)),
+            os.listdir(sim_struct.get_mgmt_db_queue(root_folder)),
             given_tasks_to_run,
             main_logger,
         )
@@ -390,7 +388,9 @@ def run_main_submit_loop(
             # Add task if limit has not been reached and there are no
             # outstanding mgmt db updates
             if (
-                not check_mgmt_queue(mgmt_queue_entries, cur_run_name, cur_proc_type)
+                not shared_automated_workflow.check_mgmt_queue(
+                    mgmt_queue_entries, cur_run_name, cur_proc_type
+                )
                 and task_counter.get(cur_hpc, 0) < n_tasks_to_run[cur_hpc]
             ):
                 tasks_to_run.append((cur_proc_type, cur_run_name, retries))
@@ -434,7 +434,7 @@ def run_main_submit_loop(
                 ):
                     # If clean_up has already run, then we should set it to
                     # be run again after merge_ts has run
-                    shared_workflow.shared_automated_workflow.add_to_queue(
+                    shared_automated_workflow.add_to_queue(
                         mgmt_queue_folder,
                         run_name,
                         const.ProcessType.clean_up.value,
@@ -461,7 +461,7 @@ def run_main_submit_loop(
 
 if __name__ == "__main__":
 
-    logger = workflow_logger.get_logger()
+    logger = qclogging.get_logger()
 
     parser = argparse.ArgumentParser()
 
@@ -510,7 +510,7 @@ if __name__ == "__main__":
     root_folder = os.path.abspath(args.root_folder)
 
     if args.log_file is None:
-        workflow_logger.add_general_file_handler(
+        qclogging.add_general_file_handler(
             logger,
             os.path.join(
                 root_folder,
@@ -520,7 +520,7 @@ if __name__ == "__main__":
             ),
         )
     else:
-        workflow_logger.add_general_file_handler(
+        qclogging.add_general_file_handler(
             logger, os.path.join(root_folder, args.log_file)
         )
     logger.debug("Added file handler to the logger")
@@ -586,7 +586,7 @@ if __name__ == "__main__":
         task_types_to_run
     )
     if mutually_exclusive_task_error != "":
-        logger.log(workflow_logger.NOPRINTCRITICAL, mutually_exclusive_task_error)
+        logger.log(qclogging.NOPRINTCRITICAL, mutually_exclusive_task_error)
         parser.error(mutually_exclusive_task_error)
 
     logger.debug("Processed args are as follows: {}".format(str(args)))

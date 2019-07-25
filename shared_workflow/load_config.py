@@ -1,6 +1,6 @@
 import os
 import json
-from shared_workflow.shared import get_basic_logger
+from qcore.qclogging import get_basic_logger
 from logging import Logger
 
 

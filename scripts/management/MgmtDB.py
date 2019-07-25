@@ -6,8 +6,8 @@ from typing import List, Union
 from collections import namedtuple
 
 import qcore.constants as const
+from qcore.qclogging import get_basic_logger
 from scripts.management.db_helper import connect_db_ctx
-from shared_workflow import workflow_logger
 
 Process = const.ProcessType
 
@@ -50,7 +50,7 @@ class MgmtDB:
         self,
         entries: List[SlurmTask],
         retry_max: int,
-        logger: Logger = workflow_logger.get_basic_logger(),
+        logger: Logger = get_basic_logger(),
     ):
         """Updates the specified entries in the db. Leaves the connection open,
         so this should only be used when continuously updating entries.
@@ -178,7 +178,7 @@ class MgmtDB:
         task_limit,
         update_files,
         allowed_tasks=None,
-        logger=workflow_logger.get_basic_logger(),
+        logger=get_basic_logger(),
     ):
         """Gets all runnable tasks based on their status and their associated
         dependencies (i.e. other tasks have to be finished first)
@@ -253,7 +253,7 @@ class MgmtDB:
             ).fetchone()[0]
         return completed_tasks > 0
 
-    def _check_dependancy_met(self, task, logger=workflow_logger.get_basic_logger()):
+    def _check_dependancy_met(self, task, logger=get_basic_logger()):
         """Checks if all dependencies for the specified are met"""
         process, run_name = task
         process = Process(process)

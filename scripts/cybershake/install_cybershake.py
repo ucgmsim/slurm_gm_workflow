@@ -3,6 +3,7 @@ from datetime import datetime
 import os
 
 from qcore.constants import TIMESTAMP_FORMAT
+from qcore.qclogging import add_general_file_handler, get_logger
 
 from scripts.cybershake.install_cybershake_fault import install_fault
 from shared_workflow import workflow_logger
@@ -14,7 +15,7 @@ AUTO_SUBMIT_LOG_FILE_NAME = "install_cybershake_log_{}.txt"
 
 
 def main():
-    logger = workflow_logger.get_logger()
+    logger = get_logger()
 
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -62,7 +63,7 @@ def main():
     path_cybershake = os.path.abspath(args.path_cybershake)
 
     if args.log_file is None:
-        workflow_logger.add_general_file_handler(
+        add_general_file_handler(
             logger,
             os.path.join(
                 path_cybershake,
@@ -72,9 +73,7 @@ def main():
             ),
         )
     else:
-        workflow_logger.add_general_file_handler(
-            logger, os.path.join(path_cybershake, args.log_file)
-        )
+        add_general_file_handler(logger, os.path.join(path_cybershake, args.log_file))
     logger.debug("Added file handler to the logger")
 
     if not os.path.exists(

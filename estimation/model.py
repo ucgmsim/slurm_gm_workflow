@@ -13,7 +13,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVR
 
 import qcore.constants as const
-from shared_workflow.workflow_logger import get_basic_logger, NOPRINTCRITICAL
+from qcore.qclogging import get_basic_logger, NOPRINTCRITICAL
 
 
 def mre(y, y_est, sample_weights=None):

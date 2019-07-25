@@ -2,6 +2,10 @@ Slurm Ground Motion Workflow
 # Changelog
 (Based on https://wiki.canterbury.ac.nz/download/attachments/58458136/CodeVersioning_v18p2.pdf?version=1&modificationDate=1519269238437&api=v2 )
 
+## [19.6.5] - 2019-07-26 -- Moved logging to qcore
+### Removed
+    - Logging has been moved to the qcore repository to allow its use in other repositories  
+
 ## [19.6.4] - 2019-07-19 -- Added verification plots
 ### Added
     - Added IM_plot, plot_ts and plot_srf slurm scripts to cybershake workflow

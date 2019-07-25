@@ -16,7 +16,7 @@ from datetime import datetime
 from logging import Logger, DEBUG, INFO
 
 from qcore import binary_version
-from shared_workflow.workflow_logger import get_basic_logger
+from qcore.qclogging import get_basic_logger
 
 if sys.version_info.major == 3:
     basestring = str

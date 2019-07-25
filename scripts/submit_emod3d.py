@@ -6,19 +6,18 @@ import os
 import argparse
 from logging import Logger
 
-import scripts.set_runparams as set_runparams
-import qcore.constants as const
-import qcore.simulation_structure as sim_struct
-import estimation.estimate_wct as est
 from qcore import utils, binary_version
 from qcore.config import get_machine_config, host
+from qcore.qclogging import get_basic_logger
+import qcore.constants as const
+import qcore.simulation_structure as sim_struct
+
+import estimation.estimate_wct as est
+import scripts.set_runparams as set_runparams
 from shared_workflow import load_config
 from shared_workflow.shared import confirm, set_wct
 from shared_workflow.shared_automated_workflow import submit_sl_script
 from shared_workflow.shared_template import write_sl_script
-
-# Estimated number of minutes between each checkpoint
-from shared_workflow.workflow_logger import get_basic_logger
 
 
 def main(
