@@ -6,13 +6,13 @@ import argparse
 from typing import Dict, List, Tuple
 
 from qcore import constants as const
+from qcore import qclogging
 from qcore.utils import load_yaml
-from qcore.qclogging import NOPRINTCRITICAL
 
 import estimation.estimate_wct as est
 from scripts.cybershake import queue_monitor
 from scripts.cybershake.auto_submit import run_main_submit_loop
-from shared_workflow import workflow_logger, load_config
+from shared_workflow import load_config
 from shared_workflow.shared_defaults import recipe_dir
 
 MASTER_LOG_NAME = "master_log_{}.txt"
@@ -73,10 +73,10 @@ def run_automated_workflow(
         join(workflow_config["estimation_models_dir"], "IM"), logger=wrapper_logger
     )
 
-    bulk_logger = workflow_logger.get_logger(name="auto_submit_main", threaded=True)
+    bulk_logger = qclogging.get_logger(name="auto_submit_main", threaded=True)
     if debug:
-        workflow_logger.set_stdout_level(bulk_logger, DEBUG)
-    workflow_logger.add_general_file_handler(
+        qclogging.set_stdout_level(bulk_logger, DEBUG)
+    qclogging.add_general_file_handler(
         bulk_logger,
         join(
             log_directory,
@@ -87,10 +87,10 @@ def run_automated_workflow(
     )
     wrapper_logger.debug("Created logger for the main auto_submit thread")
 
-    queue_logger = workflow_logger.get_logger(name="queue_monitor", threaded=True)
+    queue_logger = qclogging.get_logger(name="queue_monitor", threaded=True)
     if debug:
-        workflow_logger.set_stdout_level(queue_logger, DEBUG)
-    workflow_logger.add_general_file_handler(
+        qclogging.set_stdout_level(queue_logger, DEBUG)
+    qclogging.add_general_file_handler(
         queue_logger,
         join(
             log_directory,
@@ -102,11 +102,11 @@ def run_automated_workflow(
     wrapper_logger.debug("Created logger for the queue_monitor thread")
 
     tasks_to_run_with_pattern_and_logger = [
-        (pattern, tasks, workflow_logger.get_logger(name="pattern_{}".format(pattern), threaded=True))
+        (pattern, tasks, qclogging.get_logger(name="pattern_{}".format(pattern), threaded=True))
         for pattern, tasks in tasks_to_run_with_pattern
     ]
     for pattern, tasks, logger in tasks_to_run_with_pattern_and_logger:
-        workflow_logger.add_general_file_handler(
+        qclogging.add_general_file_handler(
             logger,
             join(
                 log_directory,
@@ -157,7 +157,7 @@ def run_automated_workflow(
         wrapper_logger.info("Started main auto_submit thread")
     else:
         thread_not_running = "The queue monitor thread has failed to start"
-        wrapper_logger.log(NOPRINTCRITICAL, thread_not_running)
+        wrapper_logger.log(qclogging.NOPRINTCRITICAL, thread_not_running)
         raise RuntimeError(thread_not_running)
 
     queue_monitor_thread.start()
@@ -165,7 +165,7 @@ def run_automated_workflow(
         wrapper_logger.info("Started queue_monitor thread")
     else:
         thread_not_running = "The main auto_submit thread has failed to start"
-        wrapper_logger.log(NOPRINTCRITICAL, thread_not_running)
+        wrapper_logger.log(qclogging.NOPRINTCRITICAL, thread_not_running)
         raise RuntimeError(thread_not_running)
     run_sub_threads = len(tasks_to_run_with_pattern_and_logger) > 0
     while bulk_auto_submit_thread.is_alive() and run_sub_threads:
@@ -201,7 +201,7 @@ def run_automated_workflow(
         wrapper_logger.critical("The queue monitor has not successfully terminated")
 
 
-def parse_config_file(config_file_location: str, logger: Logger = workflow_logger.get_basic_logger()):
+def parse_config_file(config_file_location: str, logger: Logger = qclogging.get_basic_logger()):
     """Takes in the location of a wrapper config file and creates the tasks to be run.
     Requires that the file contains the keys 'run_all_tasks' and 'run_some', even if they are empty
     If the dependencies for a run_some task overlap with those in the tasks_to_run_for_all, as a race condition is
@@ -283,11 +283,11 @@ def main():
     )
     args = parser.parse_args()
 
-    wrapper_logger = workflow_logger.get_logger(name="cybershake_wrapper", threaded=True)
-    master_logger = workflow_logger.get_logger(name=None, threaded=True, stdout_printer=False)
+    wrapper_logger = qclogging.get_logger(name="cybershake_wrapper", threaded=True)
+    master_logger = qclogging.get_logger(name=None, threaded=True, stdout_printer=False)
 
     if args.debug:
-        workflow_logger.set_stdout_level(wrapper_logger, DEBUG)
+        qclogging.set_stdout_level(wrapper_logger, DEBUG)
 
     root_directory = abspath(args.root_folder)
     log_directory = join(root_directory, args.log_folder)
@@ -301,8 +301,8 @@ def main():
         MASTER_LOG_NAME.format(datetime.now().strftime(const.TIMESTAMP_FORMAT)),
     )
 
-    workflow_logger.add_general_file_handler(master_logger, master_log_file)
-    workflow_logger.add_general_file_handler(wrapper_logger, wrapper_log_file)
+    qclogging.add_general_file_handler(master_logger, master_log_file)
+    qclogging.add_general_file_handler(wrapper_logger, wrapper_log_file)
     wrapper_logger.info("Logger file added")
 
     n_runs = 0
@@ -326,7 +326,7 @@ def main():
                 "You must specify wither one common value for --n_runs, or one "
                 "for each in the following list: {}".format(list(const.HPC))
             )
-            wrapper_logger.log(NOPRINTCRITICAL, incorrect_n_runs)
+            wrapper_logger.log(qclogging.NOPRINTCRITICAL, incorrect_n_runs)
             parser.error(incorrect_n_runs)
     else:
         n_runs = {const.HPC.maui: 12, const.HPC.mahuika: 12}
