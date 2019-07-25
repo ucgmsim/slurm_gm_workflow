@@ -23,9 +23,8 @@ from scripts.submit_post_emod3d import main as submit_post_lf_main
 from scripts.submit_hf import main as submit_hf_main
 from scripts.submit_bb import main as submit_bb_main
 from scripts.submit_sim_imcalc import submit_im_calc_slurm, SlBodyOptConsts
-from shared_workflow import workflow_logger
+from shared_workflow import workflow_logger, shared_automated_workflow
 import shared_workflow.load_config as ldcfg
-import shared_workflow.shared_automated_workflow
 
 DEFAULT_N_RUNS = {const.HPC.maui: 12, const.HPC.mahuika: 12}
 
@@ -72,7 +71,7 @@ def submit_task(
     log_file = os.path.join(sim_dir, "ch_log", const.METADATA_LOG_FILENAME)
 
     def submit_sl_script(script_name, **kwargs):
-        shared_workflow.shared_automated_workflow.submit_sl_script(
+        shared_automated_workflow.submit_sl_script(
             script_name,
             proc_type,
             sim_struct.get_mgmt_db_queue(root_folder),
@@ -343,7 +342,7 @@ def run_main_submit_loop(
         # Get in progress tasks in the db and the HPC queue
         n_tasks_to_run = {}
         for hpc in const.HPC:
-            n_tasks_to_run[hpc] = n_runs[hpc] - len(shared_workflow.get_queued_tasks(user=user, machine=hpc))
+            n_tasks_to_run[hpc] = n_runs[hpc] - len(shared_automated_workflow.get_queued_tasks(user=user, machine=hpc))
             if n_tasks_to_run[hpc] < n_runs[hpc]:
                 main_logger.debug("There was at least one job in squeue, resetting timeout")
                 time_since_something_happened = cycle_timeout
@@ -374,7 +373,7 @@ def run_main_submit_loop(
             # Add task if limit has not been reached and there are no
             # outstanding mgmt db updates
             if (
-                not shared_workflow.check_mgmt_queue(mgmt_queue_entries, cur_run_name, cur_proc_type)
+                not shared_automated_workflow.check_mgmt_queue(mgmt_queue_entries, cur_run_name, cur_proc_type)
                 and task_counter.get(cur_hpc, 0) < n_tasks_to_run[cur_hpc]
             ):
                 tasks_to_run.append((cur_proc_type, cur_run_name, retries))
@@ -418,7 +417,7 @@ def run_main_submit_loop(
                 ):
                     # If clean_up has already run, then we should set it to
                     # be run again after merge_ts has run
-                    shared_workflow.shared_automated_workflow.add_to_queue(
+                    shared_automated_workflow.add_to_queue(
                         mgmt_queue_folder,
                         run_name,
                         const.ProcessType.clean_up.value,
