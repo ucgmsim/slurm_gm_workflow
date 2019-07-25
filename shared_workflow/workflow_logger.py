@@ -2,7 +2,7 @@ import logging
 import sys
 
 from qcore.constants import ProcessType
-import qcore.qclogging
+from qcore import qclogging
 
 TASK_LOGGING_MESSAGE_FORMAT = (
     "%(levelname)8s -- %(asctime)s - %(module)s.%(funcName)s - {}.{} - %(message)s"
@@ -28,13 +28,13 @@ def get_realisation_logger(
     new_logger = logging.getLogger(realisation)
     new_logger.setLevel(logging.DEBUG)
 
-    if old_logger.name.startswith(qcore.THREADED):
+    if old_logger.name.startswith(qclogging.THREADED):
         task_formatter = logging.Formatter(
-            qcore.REALISATION_THREADED_LOGGING_MESSAGE_FORMAT.format(realisation)
+            REALISATION_THREADED_LOGGING_MESSAGE_FORMAT.format(realisation)
         )
     else:
         task_formatter = logging.Formatter(
-            qcore.REALISATION_LOGGING_MESSAGE_FORMAT.format(realisation)
+            REALISATION_LOGGING_MESSAGE_FORMAT.format(realisation)
         )
 
     old_handlers = old_logger.handlers
@@ -51,10 +51,10 @@ def get_realisation_logger(
 
     task_print_handler = logging.StreamHandler(sys.stdout)
     task_print_handler.setLevel(logging.INFO)
-    if old_logger.name.startswith(qcore.THREADED):
-        task_print_handler.setFormatter(qcore.stdout_threaded_formatter)
+    if old_logger.name.startswith(qclogging.THREADED):
+        task_print_handler.setFormatter(qclogging.stdout_threaded_formatter)
     else:
-        task_print_handler.setFormatter(qcore.stdout_formatter)
+        task_print_handler.setFormatter(qclogging.stdout_formatter)
 
     # If the message level ends in 1 do not print it to stdout
     task_print_handler.addFilter(lambda record: (record.levelno % 10) != 1)
@@ -74,7 +74,6 @@ def get_task_logger(
     :param old_logger: Logger the new instance is to be based on
     :param realisation: The name of the realisation this logger is for
     :param process_type: The type of process these logs are generated from
-    :param threaded: If the logger is operating in a thread then record the name of the thread
     :return: The new logger object
     """
 
@@ -83,7 +82,7 @@ def get_task_logger(
     new_logger = logging.getLogger("{}.{}".format(realisation, process_name))
     new_logger.setLevel(logging.DEBUG)
 
-    if old_logger.name.startswith(qcore.THREADED):
+    if old_logger.name.startswith(qclogging.THREADED):
         task_formatter = logging.Formatter(
             TASK_THREADED_LOGGING_MESSAGE_FORMAT.format(realisation, process_name)
         )
@@ -106,10 +105,10 @@ def get_task_logger(
 
     task_print_handler = logging.StreamHandler(sys.stdout)
     task_print_handler.setLevel(logging.INFO)
-    if old_logger.name.startswith(qcore.THREADED):
-        task_print_handler.setFormatter(qcore.stdout_threaded_formatter)
+    if old_logger.name.startswith(qclogging.THREADED):
+        task_print_handler.setFormatter(qclogging.stdout_threaded_formatter)
     else:
-        task_print_handler.setFormatter(qcore.stdout_formatter)
+        task_print_handler.setFormatter(qclogging.stdout_formatter)
 
     # If the message level ends in 1 do not print it to stdout
     task_print_handler.addFilter(lambda record: (record.levelno % 10) != 1)
