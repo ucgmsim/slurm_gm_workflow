@@ -15,15 +15,16 @@ import qcore.simulation_structure as sim_struct
 import estimation.estimate_wct as est
 import scripts.set_runparams as set_runparams
 from shared_workflow import load_config
-from shared_workflow.shared import (
-    confirm,
-    set_wct,
-)
+from shared_workflow.shared import confirm, set_wct
 from shared_workflow.shared_automated_workflow import submit_sl_script
 from shared_workflow.shared_template import write_sl_script
 
 
-def main(args: argparse.Namespace, est_model: est.EstModel = None, logger: Logger = get_basic_logger()):
+def main(
+    args: argparse.Namespace,
+    est_model: est.EstModel = None,
+    logger: Logger = get_basic_logger(),
+):
     params = utils.load_sim_params(os.path.join(args.rel_dir, "sim_params.yaml"))
 
     submit_yes = True if args.auto else confirm("Also submit the job for you?")
@@ -49,18 +50,12 @@ def main(args: argparse.Namespace, est_model: est.EstModel = None, logger: Logge
             else os.path.join(workflow_config["estimation_models_dir"], "LF")
         )
         est_core_hours, est_run_time, est_cores = est.est_LF_chours_single(
-            int(params.nx),
-            int(params.ny),
-            int(params.nz),
-            nt,
-            args.ncore,
-            model,
-            True,
+            int(params.nx), int(params.ny), int(params.nz), nt, args.ncore, model, True
         )
         # scale up the est_run_time if it is a re-run (with check-pointing)
         # otherwise do nothing
         est_run_time_scaled = est_run_time
-        if hasattr(args,'retries'):
+        if hasattr(args, "retries"):
             # quick sanity check
             # TODO: combine this function with 'restart' check in run_emod3d.sl.template
             lf_restart_dir = sim_struct.get_lf_restart_dir(sim_dir)
@@ -69,7 +64,9 @@ def main(args: argparse.Namespace, est_model: est.EstModel = None, logger: Logge
                 # scale up the wct with retried count
                 est_run_time_scaled = est_run_time * (int(args.retries) + 1)
             else:
-                logger.debug("retries has been set, but no check-pointing files exist. not scaling wct")
+                logger.debug(
+                    "retries has been set, but no check-pointing files exist. not scaling wct"
+                )
 
         wct = set_wct(est_run_time_scaled, est_cores, args.auto)
 
@@ -90,7 +87,7 @@ def main(args: argparse.Namespace, est_model: est.EstModel = None, logger: Logge
             sim_dir,
             workflow_config=workflow_config,
             steps_per_checkpoint=steps_per_checkpoint,
-            logger=logger
+            logger=logger,
         )
 
         header_dict = {

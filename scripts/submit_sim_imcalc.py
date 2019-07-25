@@ -63,7 +63,12 @@ DEFAULT_OPTIONS = {
 }
 
 
-def submit_im_calc_slurm(sim_dir: str, options_dict: Dict = None, est_model: EstModel = None, logger: Logger = get_basic_logger()):
+def submit_im_calc_slurm(
+    sim_dir: str,
+    options_dict: Dict = None,
+    est_model: EstModel = None,
+    logger: Logger = get_basic_logger(),
+):
     """Creates the IM calc slurm scrip, also submits if specified
 
     The options_dict is populated by the DEFAULT_OPTIONS, values can be changed by
@@ -88,7 +93,9 @@ def submit_im_calc_slurm(sim_dir: str, options_dict: Dict = None, est_model: Est
         est_model = os.path.join(workflow_config["estimation_models_dir"], "IM")
 
     # Get wall clock estimation
-    logger.info("Running wall clock estimation for IM sim for realisation {}".format(sim_name))
+    logger.info(
+        "Running wall clock estimation for IM sim for realisation {}".format(sim_name)
+    )
     est_core_hours, est_run_time = est_IM_chours_single(
         len(shared.get_stations(params.FD_STATLIST)),
         int(float(params.sim_duration) / float(params.hf.dt)),
@@ -161,7 +168,7 @@ def submit_im_calc_slurm(sim_dir: str, options_dict: Dict = None, est_model: Est
         os.path.splitext(os.path.basename(params.srf_file))[0],
         submit_yes=submit_yes,
         target_machine=options_dict["machine"],
-        logger=logger
+        logger=logger,
     )
 
     return script_file_path

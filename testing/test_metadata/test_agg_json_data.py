@@ -135,7 +135,7 @@ class TestAggJsonData:
         """Tests general aggregation of simulation json log files"""
         # Check the shape (this has to updated if the content is changed)
         # Have to add the core hours columns and n_steps for EMOD3D
-        assert df.columns.shape[0] == 27 + 3  + 1
+        assert df.columns.shape[0] == 27 + 3 + 1
         assert df.shape[0] == 3
 
         # Check that the 3 simulation entries are there

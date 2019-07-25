@@ -105,7 +105,9 @@ def store_metadata(
     """
     # Check that it is a valid process type
     if not const.ProcessType.has_str_value(proc_type):
-        logger.warning("{} is not a valid process type. Logged anyway.".format(proc_type))
+        logger.warning(
+            "{} is not a valid process type. Logged anyway.".format(proc_type)
+        )
 
     lock_file = os.path.join(os.path.dirname(log_file), LOCK_FILENAME)
     lock = SoftFileLock(lock_file)
@@ -119,7 +121,7 @@ def store_metadata(
             "giving up on logging data. This should be investigated!"
             "The metadata that was unable to be logged is attached: {}".format(
                 metadata_dict
-            ),
+            )
         )
         return
 
@@ -185,7 +187,7 @@ def store_metadata(
                     logger.warning(
                         "Unsupported metadata value type for addition. "
                         "Check metadata values. "
-                        "Value {} for key {} not added.".format(v, k),
+                        "Value {} for key {} not added.".format(v, k)
                     )
                     continue
                 else:

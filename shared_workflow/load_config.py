@@ -21,5 +21,9 @@ def load(
         return config_dict
 
     except IOError:
-        logger.critical("No {} available on {}. This is a fatal error. Please contact someone from the software team.".format(cfg_name, directory))
+        logger.critical(
+            "No {} available on {}. This is a fatal error. Please contact someone from the software team.".format(
+                cfg_name, directory
+            )
+        )
         exit(1)

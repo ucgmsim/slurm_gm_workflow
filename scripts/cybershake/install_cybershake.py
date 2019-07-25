@@ -81,7 +81,11 @@ def main():
     if not os.path.exists(
         os.path.join(recipe_dir, "gmsim", args.version)
     ) or os.path.isfile(os.path.join(recipe_dir, "gmsim", args.version)):
-        logger.critical("Version {} does not exist in templates/gmsim directory.".format(args.version))
+        logger.critical(
+            "Version {} does not exist in templates/gmsim directory.".format(
+                args.version
+            )
+        )
         parser.error(
             "Version {} does not exist, place a directory with that name into {}\n"
             "Also ensure it has contents of {} and {}".format(
@@ -93,7 +97,9 @@ def main():
         )
     for f_name in [ROOT_DEFAULTS_FILE_NAME, "emod3d_defaults.yaml"]:
         if not os.path.exists(os.path.join(recipe_dir, "gmsim", args.version, f_name)):
-            logger.critical("Version {} does not have the file {}".format(args.version, f_name))
+            logger.critical(
+                "Version {} does not have the file {}".format(args.version, f_name)
+            )
             parser.error(
                 "Version {} does not have a required {} file in the directory {}".format(
                     args.version,

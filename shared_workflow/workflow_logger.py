@@ -65,9 +65,7 @@ def get_realisation_logger(
 
 
 def get_task_logger(
-    old_logger: logging.Logger,
-    realisation: str,
-    process_type: int,
+    old_logger: logging.Logger, realisation: str, process_type: int
 ) -> logging.Logger:
     """Creates a new logger that logs the realisation and process type.
     The logger passed in is effectively duplicated and log messages are saved to the same file as the original logger.

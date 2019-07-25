@@ -15,7 +15,11 @@ from qcore.qclogging import get_basic_logger, NOPRINTCRITICAL
 import qcore.simulation_structure as sim_struct
 
 from scripts.management import create_mgmt_db
-from shared_workflow.install_shared import install_simulation, generate_fd_files, dump_all_yamls
+from shared_workflow.install_shared import (
+    install_simulation,
+    generate_fd_files,
+    dump_all_yamls,
+)
 from shared_workflow.shared_defaults import recipe_dir
 
 
@@ -37,25 +41,45 @@ def main():
         "--n_rel", type=int, default=None, help="the number of realisations expected"
     )
     parser.add_argument(
-        "--seed", type=int, default=HF_DEFAULT_SEED, help="The seed to be used for HF simulations"
+        "--seed",
+        type=int,
+        default=HF_DEFAULT_SEED,
+        help="The seed to be used for HF simulations",
     )
 
     args = parser.parse_args()
 
-    install_fault(args.vm, args.n_rel, os.path.abspath(args.path_cybershake), args.version, args.seed)
+    install_fault(
+        args.vm,
+        args.n_rel,
+        os.path.abspath(args.path_cybershake),
+        args.version,
+        args.seed,
+    )
 
 
-def install_fault(fault_name, n_rel, root_folder, version, stat_file_path, seed=HF_DEFAULT_SEED, extended_period=False, logger: Logger = get_basic_logger()):
+def install_fault(
+    fault_name,
+    n_rel,
+    root_folder,
+    version,
+    stat_file_path,
+    seed=HF_DEFAULT_SEED,
+    extended_period=False,
+    logger: Logger = get_basic_logger(),
+):
 
-    config_dict = utils.load_yaml(os.path.join(recipe_dir, "gmsim", version, ROOT_DEFAULTS_FILE_NAME))
+    config_dict = utils.load_yaml(
+        os.path.join(recipe_dir, "gmsim", version, ROOT_DEFAULTS_FILE_NAME)
+    )
     # Load variables from cybershake config
 
     v1d_full_path = config_dict["v_1d_mod"]
     site_v1d_dir = config_dict.get("site_v1d_dir")
     hf_stat_vs_ref = config_dict.get("hf_stat_vs_ref")
 
-    vs30_file_path = stat_file_path.replace('.ll', '.vs30')
-    vs30ref_file_path = stat_file_path.replace('.ll', '.vs30ref')
+    vs30_file_path = stat_file_path.replace(".ll", ".vs30")
+    vs30ref_file_path = stat_file_path.replace(".ll", ".vs30ref")
 
     # this variable has to be empty
     # TODO: fix this legacy issue, very low priority
@@ -95,7 +119,9 @@ def install_fault(fault_name, n_rel, root_folder, version, stat_file_path, seed=
         # try to match find the stoch with same basename
         srf_name = os.path.splitext(os.path.basename(srf))[0]
         stoch_file_path = simulation_structure.get_stoch_path(root_folder, srf_name)
-        sim_params_file = simulation_structure.get_source_params_path(root_folder, srf_name)
+        sim_params_file = simulation_structure.get_source_params_path(
+            root_folder, srf_name
+        )
 
         if not os.path.isfile(stoch_file_path):
             message = "Error: Corresponding Stoch file is not found: {}".format(
@@ -119,8 +145,8 @@ def install_fault(fault_name, n_rel, root_folder, version, stat_file_path, seed=
             stat_file_path=stat_file_path,
             vs30_file_path=vs30_file_path,
             vs30ref_file_path=vs30ref_file_path,
-            sufx=vm_params_dict['sufx'],
-            sim_duration=vm_params_dict['sim_duration'],
+            sufx=vm_params_dict["sufx"],
+            sim_duration=vm_params_dict["sim_duration"],
             vel_mod_params_dir=vel_mod_dir,
             yes_statcords=False,
             yes_model_params=yes_model_params,
@@ -136,22 +162,29 @@ def install_fault(fault_name, n_rel, root_folder, version, stat_file_path, seed=
             extended_period=extended_period,
         )
 
-        if root_params_dict is None \
-                and fault_params_dict is None \
-                and sim_params_dict is None \
-                and vm_add_params_dict is None:
+        if (
+            root_params_dict is None
+            and fault_params_dict is None
+            and sim_params_dict is None
+            and vm_add_params_dict is None
+        ):
             return
 
         vm_params_dict.update(vm_add_params_dict)
 
-        create_mgmt_db.create_mgmt_db([], sim_struct.get_mgmt_db(root_folder), srf_files=srf)
+        create_mgmt_db.create_mgmt_db(
+            [], sim_struct.get_mgmt_db(root_folder), srf_files=srf
+        )
         utils.setup_dir(os.path.join(root_folder, "mgmt_db_queue"))
         root_params_dict["mgmt_db_location"] = root_folder
 
         # Generate the fd files, create these at the fault level
         fd_statcords, fd_statlist = generate_fd_files(
             simulation_structure.get_fault_dir(root_folder, fault_name),
-            vm_params_dict, stat_file=stat_file_path, logger=logger)
+            vm_params_dict,
+            stat_file=stat_file_path,
+            logger=logger,
+        )
 
         fault_params_dict[FaultParams.stat_coords.value] = fd_statcords
         fault_params_dict[FaultParams.FD_STATLIST.value] = fd_statlist

@@ -22,16 +22,26 @@ def update_db(root_folder, process, status, run_name, job_id, error):
     database.update_entries_live([entry], 256)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('run_folder', type=str,
-                        help="folder to the collection of runs on the HPC")
-    parser.add_argument('run_name', type=str, help='name of run to be updated')
-    parser.add_argument('process', choices=db_helper.enum_to_list(const.ProcessType))
-    parser.add_argument('status', type=str, choices=db_helper.enum_to_list(const.Status))
-    parser.add_argument('-j', '--job', type=int, default=None)
-    parser.add_argument('-e', '--error', type=str, default=None)
+    parser.add_argument(
+        "run_folder", type=str, help="folder to the collection of runs on the HPC"
+    )
+    parser.add_argument("run_name", type=str, help="name of run to be updated")
+    parser.add_argument("process", choices=db_helper.enum_to_list(const.ProcessType))
+    parser.add_argument(
+        "status", type=str, choices=db_helper.enum_to_list(const.Status)
+    )
+    parser.add_argument("-j", "--job", type=int, default=None)
+    parser.add_argument("-e", "--error", type=str, default=None)
 
     args = parser.parse_args()
 
-    update_db(os.path.abspath(args.run_folder), args.process, args.status, args.run_name, args.job, args.error)
+    update_db(
+        os.path.abspath(args.run_folder),
+        args.process,
+        args.status,
+        args.run_name,
+        args.job,
+        args.error,
+    )

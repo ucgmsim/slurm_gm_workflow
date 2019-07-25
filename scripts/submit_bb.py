@@ -11,18 +11,18 @@ from qcore import utils, shared
 from qcore.config import host
 from qcore.qclogging import get_basic_logger
 from shared_workflow.load_config import load
-from shared_workflow.shared import (
-    set_wct,
-    confirm,
-    get_hf_nt,
-)
+from shared_workflow.shared import set_wct, confirm, get_hf_nt
 from shared_workflow.shared_automated_workflow import submit_sl_script
 from shared_workflow.shared_template import write_sl_script
 
 default_wct = "00:30:00"
 
 
-def main(args: argparse.Namespace, est_model: est.EstModel = None, logger: Logger =get_basic_logger()):
+def main(
+    args: argparse.Namespace,
+    est_model: est.EstModel = None,
+    logger: Logger = get_basic_logger(),
+):
     params = utils.load_sim_params(os.path.join(args.rel_dir, "sim_params.yaml"))
     ncores = const.BB_DEFAULT_NCORES
 
@@ -31,7 +31,11 @@ def main(args: argparse.Namespace, est_model: est.EstModel = None, logger: Logge
         sl_name_prefix = "run_bb_mpi"
     else:
         if version is not None:
-            logger.error("{} cannot be recognized as a valid option. version is set to default:".format(version, const.BB_DEFAULT_VERSION))
+            logger.error(
+                "{} cannot be recognized as a valid option. version is set to default:".format(
+                    version, const.BB_DEFAULT_VERSION
+                )
+            )
         version = const.BB_DEFAULT_VERSION
         sl_name_prefix = const.BB_DEFAULT_VERSION
     logger.debug(version)
@@ -50,24 +54,22 @@ def main(args: argparse.Namespace, est_model: est.EstModel = None, logger: Logge
             est_model = os.path.join(workflow_config["estimation_models_dir"], "BB")
 
         est_core_hours, est_run_time = est.est_BB_chours_single(
-            fd_count,
-            nt,
-            ncores,
-            est_model,
+            fd_count, nt, ncores, est_model
         )
-        
+
         # creates and extra variable so we keep the original estimated run time for other purpos
-        est_run_time_scaled = est_run_time 
-        if hasattr(args, 'retries') and int(args.retries) > 0:
+        est_run_time_scaled = est_run_time
+        if hasattr(args, "retries") and int(args.retries) > 0:
             # check if BB.bin is read-able = restart-able
             try:
                 from qcore.timeseries import BBSeis
+
                 bin = BBSeis(sim_struct.get_bb_bin_path(params.sim_dir))
             except:
                 logger.debug("Retried count > 0 but BB.bin is not readable")
             else:
-                 est_run_time_scaled = est_run_time * (int(args.retries) +1)
-        
+                est_run_time_scaled = est_run_time * (int(args.retries) + 1)
+
         wct = set_wct(est_run_time_scaled, ncores, args.auto)
         bb_sim_dir = os.path.join(params.sim_dir, "BB")
         write_directory = (

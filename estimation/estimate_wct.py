@@ -37,7 +37,9 @@ def get_wct(run_time, overestimate_factor=OVERESTIMATE_FRACTION):
 
     Use this when estimation as max run time in a slurm script.
     """
-    if (run_time * (1.0 + overestimate_factor)) < ((const.CHECKPOINT_DURATION * 3) / 60.0):
+    if (run_time * (1.0 + overestimate_factor)) < (
+        (const.CHECKPOINT_DURATION * 3) / 60.0
+    ):
         return convert_to_wct((const.CHECKPOINT_DURATION * 3) / 60.0)
     else:
         return convert_to_wct(run_time * (1.0 + overestimate_factor))
@@ -249,7 +251,11 @@ def estimate_HF_chours(
     # Adjust the number of cores to estimate physical core hours
     data[:, -1] = data[:, -1] / hyperthreading_factor
     core_hours = estimate(
-        data, model, model_type, const.HF_DEFAULT_NCORES / hyperthreading_factor, logger=logger
+        data,
+        model,
+        model_type,
+        const.HF_DEFAULT_NCORES / hyperthreading_factor,
+        logger=logger,
     )
 
     wct = core_hours / data[:, -1]
@@ -429,13 +435,7 @@ def est_IM_chours_single(
     # Make a numpy array of the input data in the right shape
     # The order of the features has to the same as for training!!
     data = np.array(
-        [
-            float(fd_count),
-            float(nt),
-            comp,
-            float(pSA_count),
-            float(n_cores),
-        ]
+        [float(fd_count), float(nt), comp, float(pSA_count), float(n_cores)]
     ).reshape(1, 5)
 
     core_hours = estimate(data, model, model_type, const.IM_CALC_DEFAULT_N_CORES)[0]
@@ -529,13 +529,21 @@ def estimate(
             X_svr = scaler_svr.transform(input_data[:, :-1])
 
         core_hours = comb_model.predict(
-            X_nn, X_svr, n_cores=input_data[:, -1], default_n_cores=default_ncores, logger=logger
+            X_nn,
+            X_svr,
+            n_cores=input_data[:, -1],
+            default_n_cores=default_ncores,
+            logger=logger,
         )
 
     return core_hours
 
 
-def load_full_model(dir: str, model_type: const.EstModelType = DEFAULT_MODEL_TYPE, logger: Logger = get_basic_logger()):
+def load_full_model(
+    dir: str,
+    model_type: const.EstModelType = DEFAULT_MODEL_TYPE,
+    logger: Logger = get_basic_logger(),
+):
     """Loads the full model, i.e. the estimation model(s) and their associated scaler.
 
     Returns an EstModel object.
@@ -544,7 +552,9 @@ def load_full_model(dir: str, model_type: const.EstModelType = DEFAULT_MODEL_TYP
     if model_type is const.EstModelType.NN:
         return EstModel(
             load_model(dir, const.EST_MODEL_NN_PREFIX, "h5", NNWcEstModel, logger),
-            load_scaler(dir, SCALER_PREFIX.format("NN"), logger), None, None
+            load_scaler(dir, SCALER_PREFIX.format("NN"), logger),
+            None,
+            None,
         )
     # Load just SVR
     elif model_type is const.EstModelType.SVR:
@@ -571,7 +581,10 @@ def load_scaler(dir: str, scaler_prefix: str, logger: Logger = get_basic_logger(
     scaler = glob.glob(file_pattern)
 
     if len(scaler) == 0:
-        logger.log(NOPRINTCRITICAL, "No valid model was found with file pattern {}".format(file_pattern))
+        logger.log(
+            NOPRINTCRITICAL,
+            "No valid model was found with file pattern {}".format(file_pattern),
+        )
         raise Exception(
             "No valid model was found with file pattern {}".format(file_pattern)
         )
@@ -580,7 +593,10 @@ def load_scaler(dir: str, scaler_prefix: str, logger: Logger = get_basic_logger(
     scaler_file = scaler[-1]
 
     if not os.path.isfile(scaler_file):
-        logger.log(NOPRINTCRITICAL, "No matching scaler was found for model {}".format(scaler_file))
+        logger.log(
+            NOPRINTCRITICAL,
+            "No matching scaler was found for model {}".format(scaler_file),
+        )
         raise Exception("No matching scaler was found for model {}".format(scaler_file))
 
     with open(scaler_file, "rb") as f:
@@ -590,7 +606,13 @@ def load_scaler(dir: str, scaler_prefix: str, logger: Logger = get_basic_logger(
     return scaler
 
 
-def load_model(dir: str, model_prefix: str, model_ext: str, model_cls: WCEstModel, logger: Logger = get_basic_logger()):
+def load_model(
+    dir: str,
+    model_prefix: str,
+    model_ext: str,
+    model_cls: WCEstModel,
+    logger: Logger = get_basic_logger(),
+):
     """Loads a model
 
     If there are several models in the specified directory, then the latest
@@ -600,7 +622,10 @@ def load_model(dir: str, model_prefix: str, model_ext: str, model_cls: WCEstMode
     model_files = glob.glob(file_pattern)
 
     if len(model_files) == 0:
-        logger.log(NOPRINTCRITICAL, "No valid model was found with file pattern {}".format(file_pattern))
+        logger.log(
+            NOPRINTCRITICAL,
+            "No valid model was found with file pattern {}".format(file_pattern),
+        )
         raise Exception(
             "No valid model was found with file pattern {}".format(file_pattern)
         )

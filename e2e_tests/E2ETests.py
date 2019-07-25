@@ -134,7 +134,7 @@ class E2ETests(object):
         stop_on_error: bool = True,
         stop_on_warning: bool = False,
         no_clean_up: bool = False,
-        test_restart: bool = False
+        test_restart: bool = False,
     ):
         """
         Runs the full automated workflow and checks that everything works as
@@ -324,7 +324,7 @@ class E2ETests(object):
             user,
             os.path.join(
                 os.path.dirname(os.path.abspath(__file__)),
-                self.config_dict['wrapper_config']
+                self.config_dict["wrapper_config"],
             ),
         )
 
@@ -353,10 +353,10 @@ class E2ETests(object):
             out_submit_f = open(os.path.join(self.stage_dir, self.submit_out_file), "w")
             err_submit_f = open(os.path.join(self.stage_dir, self.submit_err_file), "w")
             self._files.extend((out_submit_f, err_submit_f))
-            return p_submit, [
-                    (out_submit_f, p_submit_out_nbsr),
-                    (err_submit_f, p_submit_err_nbsr),
-                ]
+            return (
+                p_submit,
+                [(out_submit_f, p_submit_out_nbsr), (err_submit_f, p_submit_err_nbsr)],
+            )
 
         def restart_command(process: subprocess.Popen, command: str):
             print("Restarting command: {}".format(command))
@@ -384,7 +384,9 @@ class E2ETests(object):
                 if self._test_restart:
                     laps_till_restart -= 1
                     if laps_till_restart < 1:
-                        p_submit, outputs_to_check = restart_command(p_submit, submit_cmd)
+                        p_submit, outputs_to_check = restart_command(
+                            p_submit, submit_cmd
+                        )
                         laps_till_restart = get_laps_till_restart()
 
                 try:
@@ -490,7 +492,10 @@ class E2ETests(object):
         entries = [SlurmTask(*entry) for entry in entries]
 
         for entry in entries:
-            if entry.status != const.Status.completed.value and str(entry.job_id) not in self.canceled_running:
+            if (
+                entry.status != const.Status.completed.value
+                and str(entry.job_id) not in self.canceled_running
+            ):
                 self.errors.append(
                     Error(
                         "Slurm task",
@@ -571,18 +576,18 @@ class E2ETests(object):
                     "AND proc_type <> 2 "
                     "AND proc_type <> 3 "
                     "AND (job_id IS NULL OR job_id NOT IN (?{}))".format(
-                        ",?"*(len(self.canceled_running)-1)
+                        ",?" * (len(self.canceled_running) - 1)
                     ),
-                    (*self.canceled_running, ),
+                    (*self.canceled_running,),
                 ).fetchone()[0]
                 failed_count = cur.execute(
                     "SELECT COUNT(*) FROM state "
                     "WHERE status == 5 "
                     "AND proc_type <= 6 "
                     "AND (job_id IS NULL OR job_id NOT IN (?{}))".format(
-                        ",?"*(len(self.canceled_running)-1)
+                        ",?" * (len(self.canceled_running) - 1)
                     ),
-                    (*self.canceled_running, ),
+                    (*self.canceled_running,),
                 ).fetchone()[0]
             else:
                 total_count = cur.execute(

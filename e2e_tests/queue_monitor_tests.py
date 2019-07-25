@@ -56,7 +56,7 @@ class QueueMonitorStressTest(object):
         self.timeout = self.config_dict[self.timeout_key] * 60
         self.realisations = self.config_dict[self.realisation_count_key]
         self.tasks = self.config_dict[self.tasks_key]
-        self.task_state = [0]*self.realisations
+        self.task_state = [0] * self.realisations
         self.realisation_task_states = len(self.tasks) * self.possible_task_states
 
         self.tasks_to_submit_at_once = self.config_dict[self.task_count_key]
@@ -76,7 +76,10 @@ class QueueMonitorStressTest(object):
     def install(self):
         print("Installing database")
         create_mgmt_db.create_mgmt_db(
-            ["{}_REL{:0>2}".format(self.realisation_name, i) for i in range(1, 1 + self.realisations)],
+            [
+                "{}_REL{:0>2}".format(self.realisation_name, i)
+                for i in range(1, 1 + self.realisations)
+            ],
             sim_struct.get_mgmt_db(self.stage_dir),
         )
 
@@ -128,9 +131,15 @@ class QueueMonitorStressTest(object):
         return True
 
     def _generate_rel_list(self):
-        remaining_tasks = self.realisations - self.task_state.count(self.realisation_task_states)
+        remaining_tasks = self.realisations - self.task_state.count(
+            self.realisation_task_states
+        )
         if remaining_tasks <= self.tasks_to_submit_at_once:
-            return [i for i, x in enumerate(self.task_state) if x != self.realisation_task_states]
+            return [
+                i
+                for i, x in enumerate(self.task_state)
+                if x != self.realisation_task_states
+            ]
         rels = []
         while len(rels) < self.tasks_to_submit_at_once:
             num = nprdm.randint(self.realisations)
@@ -139,7 +148,11 @@ class QueueMonitorStressTest(object):
         counts = [0, 0, 0]
         for i in rels:
             counts[self.task_state[i] % self.possible_task_states] += 1
-        print("Tasks from created to queued: {}. Tasks from queued to running: {}. Tasks from running to completed: {}.".format(*counts))
+        print(
+            "Tasks from created to queued: {}. Tasks from queued to running: {}. Tasks from running to completed: {}.".format(
+                *counts
+            )
+        )
         return rels
 
     def _run_auto(self, sleep_time: int = 10):
@@ -181,18 +194,16 @@ class QueueMonitorStressTest(object):
             err_submit_f = open(os.path.join(self.stage_dir, self.submit_err_file), "w")
             self._files.extend((out_submit_f, err_submit_f))
             outputs_to_check = [
-                    (out_submit_f, p_submit_out_nbsr),
-                    (err_submit_f, p_submit_err_nbsr),
-                ]
+                (out_submit_f, p_submit_out_nbsr),
+                (err_submit_f, p_submit_err_nbsr),
+            ]
 
             # Monitor mgmt db
             print("Progress: ")
             start_time = time.time()
             while time.time() - start_time < self.timeout:
                 try:
-                    comp_count, total_count = (
-                        self.check_mgmt_db_progress()
-                    )
+                    comp_count, total_count = self.check_mgmt_db_progress()
                 except sql.OperationalError as ex:
                     print(
                         "Operational error while accessing database. "
@@ -214,10 +225,7 @@ class QueueMonitorStressTest(object):
                         file.flush()
 
                 for rel in self._generate_rel_list():
-                    self._add_task_to_queue(
-                        rel,
-                        self.task_state[rel],
-                    )
+                    self._add_task_to_queue(rel, self.task_state[rel])
                     self.task_state[rel] += 1
 
                 if total_count == comp_count[-1]:
@@ -252,13 +260,16 @@ class QueueMonitorStressTest(object):
     def check_mgmt_db_progress(self):
         """Checks auto submit progress in the management db"""
         with connect_db_ctx(sim_struct.get_mgmt_db(self.stage_dir)) as cur:
-            comp_count = [cur.execute(
-                "SELECT COUNT(*) "
-                "FROM state "
-                "WHERE status = ? "
-                "AND proc_type in (?{})".format(",?"*(len(self.tasks)-1)),
-                (i, *self.tasks, ),
-            ).fetchone()[0] for i in range(1, 5)]
+            comp_count = [
+                cur.execute(
+                    "SELECT COUNT(*) "
+                    "FROM state "
+                    "WHERE status = ? "
+                    "AND proc_type in (?{})".format(",?" * (len(self.tasks) - 1)),
+                    (i, *self.tasks),
+                ).fetchone()[0]
+                for i in range(1, 5)
+            ]
             total_count = cur.execute(
                 "SELECT COUNT(*) FROM state "
                 "WHERE proc_type in (?{})".format(",?" * (len(self.tasks) - 1)),
@@ -267,11 +278,7 @@ class QueueMonitorStressTest(object):
 
         return comp_count, total_count
 
-    def _add_task_to_queue(
-        self,
-        rel_num: int,
-        proc_task_state: int,
-    ):
+    def _add_task_to_queue(self, rel_num: int, proc_task_state: int):
         proc_type = self.tasks[proc_task_state // self.possible_task_states]
         status = 2 + proc_task_state % self.possible_task_states
 
@@ -280,7 +287,7 @@ class QueueMonitorStressTest(object):
 
         add_to_queue(
             self.mgmt_dir,
-            "{}_REL{:0>2}".format(self.realisation_name, rel_num+1),
+            "{}_REL{:0>2}".format(self.realisation_name, rel_num + 1),
             proc_type,
             status,
             job_id,
@@ -304,4 +311,3 @@ class QueueMonitorStressTest(object):
                 text = "ERROR: {}, {}\n".format(err.location, err.error)
                 print(text)
                 f.write(text)
-

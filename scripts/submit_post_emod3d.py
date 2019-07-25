@@ -85,7 +85,7 @@ def main(args, logger: Logger = get_basic_logger()):
         submit_yes=submit_yes,
         target_machine=args.machine,
         logger=logger,
-        )
+    )
 
 
 if __name__ == "__main__":
