@@ -2,13 +2,11 @@ import os
 import shutil
 import pytest
 
-import sqlite3 as sql
-
 from scripts.management.db_helper import connect_db_ctx
 from scripts.management import create_mgmt_db
 from scripts.management.MgmtDB import SlurmTask
 from qcore import utils
-from shared_workflow.workflow_logger import get_basic_logger
+from qcore.qclogging import get_basic_logger
 
 TEST_DB_FILE = "./output/slurm_mgmt.db"
 TEST_SRF_FILE = "/nesi/nobackup/nesi00213/RunFolder/PangopangoF29/Data/Sources/PangopangoF29/Srf/PangopangoF29_HYP01-10_S1244.srf"

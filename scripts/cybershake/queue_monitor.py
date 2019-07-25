@@ -12,6 +12,7 @@ from datetime import datetime
 
 import qcore.constants as const
 import qcore.simulation_structure as sim_struct
+from qcore import qclogging
 from scripts.management.MgmtDB import MgmtDB, SlurmTask
 from shared_workflow import workflow_logger
 from shared_workflow.shared_automated_workflow import (
@@ -34,13 +35,13 @@ keepAlive = True
 def on_exit(signum, frame):
     global logger
     if not logger:
-        logger = workflow_logger.get_basic_logger()
+        logger = qclogging.get_basic_logger()
     logger.critical("SIGINT recieved, exiting queue-monitor.")
     exit()
 
 
 def get_queue_entry(
-    entry_file: str, queue_logger: Logger = workflow_logger.get_basic_logger()
+    entry_file: str, queue_logger: Logger = qclogging.get_basic_logger()
 ):
     try:
         with open(entry_file, "r") as f:
@@ -147,7 +148,7 @@ def update_tasks(
     return tasks_to_do
 
   
-def main(root_folder: str, sleep_time: int, max_retries: int, queue_logger: Logger = workflow_logger.get_basic_logger()):
+def main(root_folder: str, sleep_time: int, max_retries: int, queue_logger: Logger = qclogging.get_basic_logger()):
     mgmt_db = MgmtDB(sim_struct.get_mgmt_db(root_folder))
     queue_folder = sim_struct.get_mgmt_db_queue(root_folder)
 
@@ -230,7 +231,7 @@ def main(root_folder: str, sleep_time: int, max_retries: int, queue_logger: Logg
 
 
 if __name__ == "__main__":
-    logger = workflow_logger.get_logger()
+    logger = qclogging.get_logger()
 
     parser = argparse.ArgumentParser()
 
@@ -272,9 +273,9 @@ if __name__ == "__main__":
         log_file_name = args.log_file
 
     if args.debug:
-        workflow_logger.set_stdout_level(logger, logging.DEBUG)
+        qclogging.set_stdout_level(logger, logging.DEBUG)
 
-    workflow_logger.add_general_file_handler(logger, log_file_name)
+    qclogging.add_general_file_handler(logger, log_file_name)
     logger.debug("Successfully added {} as the log file.".format(log_file_name))
 
     signal.signal(signal.SIGINT, on_exit)

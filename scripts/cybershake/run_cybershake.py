@@ -7,13 +7,13 @@ from typing import Dict, List, Tuple
 
 from qcore import constants as const
 from qcore.utils import load_yaml
+from qcore.qclogging import NOPRINTCRITICAL
 
-from scripts.cybershake.auto_submit import run_main_submit_loop
+import estimation.estimate_wct as est
 from scripts.cybershake import queue_monitor
+from scripts.cybershake.auto_submit import run_main_submit_loop
 from shared_workflow import workflow_logger, load_config
 from shared_workflow.shared_defaults import recipe_dir
-from shared_workflow.workflow_logger import NOPRINTCRITICAL
-import estimation.estimate_wct as est
 
 MASTER_LOG_NAME = "master_log_{}.txt"
 WRAPPER_LOG_FILE_NAME = "wrapper_log_{}.txt"

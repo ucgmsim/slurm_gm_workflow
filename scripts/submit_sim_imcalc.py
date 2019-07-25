@@ -4,19 +4,20 @@ import os
 import argparse
 from enum import Enum
 from logging import Logger
+from typing import Dict
 
-import qcore.constants as const
-import qcore.simulation_structure as sim_struct
 from qcore import utils, shared
 from qcore.config import host
-from typing import Dict
-from estimation.estimate_wct import est_IM_chours_single, EstModel
+import qcore.constants as const
+from qcore.qclogging import get_basic_logger
+import qcore.simulation_structure as sim_struct
 from qcore.utils import DotDictify
+
+from estimation.estimate_wct import est_IM_chours_single, EstModel
 from shared_workflow.load_config import load
 from shared_workflow.shared import set_wct, confirm
 from shared_workflow.shared_automated_workflow import submit_sl_script
 from shared_workflow.shared_template import write_sl_script
-from shared_workflow.workflow_logger import get_basic_logger
 
 
 class SlHdrOptConsts(Enum):

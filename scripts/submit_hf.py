@@ -5,10 +5,12 @@ import argparse
 from logging import Logger
 
 import estimation.estimate_wct as est
-import qcore.constants as const
-import qcore.simulation_structure as sim_struct
 from qcore import utils, shared, srf, binary_version
 from qcore.config import host, get_machine_config
+import qcore.constants as const
+from qcore.qclogging import get_basic_logger
+import qcore.simulation_structure as sim_struct
+
 from shared_workflow.load_config import load
 from shared_workflow.shared import (
     set_wct,
@@ -16,7 +18,6 @@ from shared_workflow.shared import (
     get_hf_nt,
 )
 from shared_workflow.shared_automated_workflow import submit_sl_script
-from shared_workflow.workflow_logger import get_basic_logger
 from shared_workflow.shared_template import write_sl_script
 
 # default values

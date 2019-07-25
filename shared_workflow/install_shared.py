@@ -6,9 +6,8 @@ from logging import Logger
 from numpy import isclose
 import yaml
 
-import shared_workflow.shared_automated_workflow
-import shared_workflow.shared_defaults as defaults
 from qcore import geo, utils, simulation_structure
+from qcore.qclogging import get_basic_logger, VERYVERBOSE
 from qcore.constants import (
     SimParams,
     FaultParams,
@@ -17,8 +16,8 @@ from qcore.constants import (
     ROOT_DEFAULTS_FILE_NAME,
     HF_DEFAULT_SEED,
 )
-from shared_workflow import shared
-from shared_workflow.workflow_logger import get_basic_logger, VERYVERBOSE
+from shared_workflow import shared, shared_automated_workflow
+import shared_workflow.shared_defaults as defaults
 
 
 def install_simulation(
@@ -94,20 +93,20 @@ def install_simulation(
                 os.path.join(defaults.latest_ll_dir, defaults.latest_ll + ".ll"),
                 stat_file_path,
             )
-            shared_workflow.shared_automated_workflow.exe(cmd)
+            shared_automated_workflow.exe(cmd)
 
             # making symbolic link to lastest_ll.vs30 and .vs30ref
             cmd = "ln -s {} {}".format(
                 os.path.join(defaults.latest_ll_dir, defaults.latest_ll + ".vs30"),
                 vs30_file_path,
             )
-            shared_workflow.shared_automated_workflow.exe(cmd)
+            shared_automated_workflow.exe(cmd)
 
             cmd = "ln -s {} {}".format(
                 os.path.join(defaults.latest_ll_dir, defaults.latest_ll + ".vs30ref"),
                 vs30ref_file_path,
             )
-            shared_workflow.shared_automated_workflow.exe(cmd)
+            shared_automated_workflow.exe(cmd)
 
     template_path = os.path.join(defaults.recipe_dir, "gmsim", version)
     root_params_dict = utils.load_yaml(

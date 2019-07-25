@@ -14,7 +14,7 @@ from typing import List
 import qcore.constants as const
 from qcore.config import host
 from scripts.management.MgmtDB import MgmtDB
-from shared_workflow.workflow_logger import get_basic_logger, NOPRINTCRITICAL
+from qcore.qclogging import get_basic_logger, NOPRINTCRITICAL
 
 
 def get_queued_tasks(user=None, machine=const.HPC.maui):

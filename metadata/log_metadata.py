@@ -16,16 +16,15 @@ from logging import Logger
 import pandas as pd
 from filelock import SoftFileLock, Timeout
 
-import qcore.constants as const
-from qcore.constants import ProcessType, MetadataField
 from qcore import utils
+import qcore.constants as const
 from qcore.srf import get_nsub_stoch
-from shared_workflow.workflow_logger import get_basic_logger
+from qcore.qclogging import get_basic_logger
 
 METADATA_VALUES = "metadata_values"
 LOCK_FILENAME = "{}.lock".format(const.METADATA_LOG_FILENAME)
 
-METACONST_TO_ADD = [MetadataField.run_time.value]
+METACONST_TO_ADD = [const.MetadataField.run_time.value]
 
 
 class KeyValuePairsAction(argparse.Action):
@@ -105,7 +104,7 @@ def store_metadata(
         Logger to pass log messages to. If None all messages will be printed to stdout or stderr depending on level
     """
     # Check that it is a valid process type
-    if not ProcessType.has_str_value(proc_type):
+    if not const.ProcessType.has_str_value(proc_type):
         logger.warning("{} is not a valid process type. Logged anyway.".format(proc_type))
 
     lock_file = os.path.join(os.path.dirname(log_file), LOCK_FILENAME)
@@ -207,15 +206,15 @@ def main(args):
 
     # Determine run_time from start and end time
     if (
-        MetadataField.start_time.value in metadata_dict.keys()
-        and MetadataField.end_time.value in metadata_dict.keys()
+        const.MetadataField.start_time.value in metadata_dict.keys()
+        and const.MetadataField.end_time.value in metadata_dict.keys()
     ):
         tdelta = datetime.strptime(
-            metadata_dict[MetadataField.end_time.value], const.METADATA_TIMESTAMP_FMT
+            metadata_dict[const.MetadataField.end_time.value], const.METADATA_TIMESTAMP_FMT
         ) - datetime.strptime(
-            metadata_dict[MetadataField.start_time.value], const.METADATA_TIMESTAMP_FMT
+            metadata_dict[const.MetadataField.start_time.value], const.METADATA_TIMESTAMP_FMT
         )
-        metadata_dict[MetadataField.run_time.value] = tdelta.total_seconds() / 3600
+        metadata_dict[const.MetadataField.run_time.value] = tdelta.total_seconds() / 3600
 
     # Load the params
     params = utils.load_sim_params(
@@ -223,27 +222,27 @@ def main(args):
     )
 
     # params metadata for LF
-    if args.proc_type == ProcessType.EMOD3D.str_value:
-        metadata_dict[MetadataField.nt.value] = int(
+    if args.proc_type == const.ProcessType.EMOD3D.str_value:
+        metadata_dict[const.MetadataField.nt.value] = int(
             float(params.sim_duration) / float(params.dt)
         )
-        metadata_dict[MetadataField.nx.value] = params.nx
-        metadata_dict[MetadataField.ny.value] = params.ny
-        metadata_dict[MetadataField.nz.value] = params.nz
+        metadata_dict[const.MetadataField.nx.value] = params.nx
+        metadata_dict[const.MetadataField.ny.value] = params.ny
+        metadata_dict[const.MetadataField.nz.value] = params.nz
     # HF
-    elif args.proc_type == ProcessType.HF.str_value:
-        metadata_dict[MetadataField.nt.value] = int(
+    elif args.proc_type == const.ProcessType.HF.str_value:
+        metadata_dict[const.MetadataField.nt.value] = int(
             float(params.sim_duration) / float(params.hf.dt)
         )
-        metadata_dict[MetadataField.nsub_stoch.value] = get_nsub_stoch(
+        metadata_dict[const.MetadataField.nsub_stoch.value] = get_nsub_stoch(
             params["hf"]["slip"], get_area=False
         )
     # BB
-    elif args.proc_type == ProcessType.BB.str_value:
-        metadata_dict[MetadataField.dt.value] = params.hf.dt
+    elif args.proc_type == const.ProcessType.BB.str_value:
+        metadata_dict[const.MetadataField.dt.value] = params.hf.dt
     # IM_calc
-    elif args.proc_type == ProcessType.IM_calculation.str_value:
-        metadata_dict[MetadataField.nt.value] = int(
+    elif args.proc_type == const.ProcessType.IM_calculation.str_value:
+        metadata_dict[const.MetadataField.nt.value] = int(
             float(params.sim_duration) / float(params.hf.dt)
         )
         # This should come from a constants file
@@ -252,8 +251,8 @@ def main(args):
         )
         im_comp = list(pd.read_csv(im_calc_csv_file).component.unique().astype("U"))
 
-        metadata_dict[MetadataField.im_comp.value] = im_comp
-        metadata_dict[MetadataField.im_comp_count.value] = len(im_comp)
+        metadata_dict[const.MetadataField.im_comp.value] = im_comp
+        metadata_dict[const.MetadataField.im_comp_count.value] = len(im_comp)
 
     store_metadata(
         log_dir, args.proc_type, metadata_dict, sim_name=os.path.basename(args.sim_dir)

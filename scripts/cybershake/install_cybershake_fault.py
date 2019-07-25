@@ -5,18 +5,18 @@ Called from inside a loop in install_cybershake.sh
 """
 
 import os
-import sys
 import glob
 import argparse
 from logging import Logger
 
-import qcore.simulation_structure as sim_struct
 from qcore import utils, validate_vm, simulation_structure
 from qcore.constants import FaultParams, ROOT_DEFAULTS_FILE_NAME, VM_PARAMS_FILE_NAME, HF_DEFAULT_SEED
+from qcore.qclogging import get_basic_logger, NOPRINTCRITICAL
+import qcore.simulation_structure as sim_struct
+
 from scripts.management import create_mgmt_db
 from shared_workflow.install_shared import install_simulation, generate_fd_files, dump_all_yamls
 from shared_workflow.shared_defaults import recipe_dir
-from shared_workflow.workflow_logger import get_basic_logger, NOPRINTCRITICAL
 
 
 def main():
