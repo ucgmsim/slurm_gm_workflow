@@ -16,15 +16,17 @@ parser.add_argument("file")
 
 args = parser.parse_args()
 
-with open(args.file, 'rb') as f:
-	for b in iter((lambda:f.read(64)),''):
-                n_vals = len(b) / 8
-		values = struct.unpack('q' * n_vals, b)
-                for value in values:
-	    	    if value is 0:
-			n_zeros += 1
-		    n_nums += 1
-		
-print os.path.realpath(args.file)
-print "Zeros: %d\nTotal numbers: %d\nPercentage: %f%%\n" % (n_zeros, n_nums, 100.0 * n_zeros / n_nums)
+with open(args.file, "rb") as f:
+    for b in iter((lambda: f.read(64)), ""):
+        n_vals = len(b) / 8
+        values = struct.unpack("q" * n_vals, b)
+        for value in values:
+            if value is 0:
+                n_zeros += 1
+                n_nums += 1
 
+print(os.path.realpath(args.file))
+print(
+    "Zeros: %d\nTotal numbers: %d\nPercentage: %f%%\n"
+    % (n_zeros, n_nums, 100.0 * n_zeros / n_nums)
+)

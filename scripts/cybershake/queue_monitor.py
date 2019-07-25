@@ -14,10 +14,7 @@ import qcore.constants as const
 import qcore.simulation_structure as sim_struct
 from scripts.management.MgmtDB import MgmtDB, SlurmTask
 from shared_workflow import workflow_logger
-from shared_workflow.shared_automated_workflow import (
-    get_queued_tasks,
-    check_mgmt_queue,
-)
+from shared_workflow.shared_automated_workflow import get_queued_tasks, check_mgmt_queue
 
 
 # Have to include sub-seconds, as clean up can run sub one second.
@@ -71,7 +68,11 @@ def update_tasks(
     tasks_to_do = []
 
     task_logger.debug("Checking running tasks in the db for updates")
-    task_logger.debug("The key value pairs found in squeue are as follows: {}".format(squeue_tasks.items()))
+    task_logger.debug(
+        "The key value pairs found in squeue are as follows: {}".format(
+            squeue_tasks.items()
+        )
+    )
     for db_running_task in db_running_tasks:
         task_logger.debug("Checking task {}".format(db_running_task))
         if str(db_running_task.job_id) in squeue_tasks.keys():
@@ -103,7 +104,10 @@ def update_tasks(
             # Do nothing if there is a pending update for
             # this run & process type combination
             elif not check_mgmt_queue(
-                mgmt_queue_entries, db_running_task.run_name, db_running_task.proc_type, logger=task_logger
+                mgmt_queue_entries,
+                db_running_task.run_name,
+                db_running_task.proc_type,
+                logger=task_logger,
             ):
                 task_logger.info(
                     "Updating status of {}, {} from {} to {}".format(
@@ -125,7 +129,10 @@ def update_tasks(
         # Only reset if there is no entry on the mgmt queue for this
         # realisation/proc combination and nothing in the mgmt folder
         elif not check_mgmt_queue(
-            mgmt_queue_entries, db_running_task.run_name, db_running_task.proc_type, logger=task_logger
+            mgmt_queue_entries,
+            db_running_task.run_name,
+            db_running_task.proc_type,
+            logger=task_logger,
         ):
             task_logger.warning(
                 "Task '{}' on '{}' not found on squeue or in the management db folder; resetting the status "
@@ -146,8 +153,13 @@ def update_tasks(
             )
     return tasks_to_do
 
-  
-def main(root_folder: str, sleep_time: int, max_retries: int, queue_logger: Logger = workflow_logger.get_basic_logger()):
+
+def main(
+    root_folder: str,
+    sleep_time: int,
+    max_retries: int,
+    queue_logger: Logger = workflow_logger.get_basic_logger(),
+):
     mgmt_db = MgmtDB(sim_struct.get_mgmt_db(root_folder))
     queue_folder = sim_struct.get_mgmt_db_queue(root_folder)
 
@@ -169,7 +181,10 @@ def main(root_folder: str, sleep_time: int, max_retries: int, queue_logger: Logg
         }
 
         if len(squeue_tasks) > 0:
-            queue_logger.info("Squeue user tasks: " + ", ".join([" ".join(task) for task in squeue_tasks.items()]))
+            queue_logger.info(
+                "Squeue user tasks: "
+                + ", ".join([" ".join(task) for task in squeue_tasks.items()])
+            )
         else:
             queue_logger.debug("No squeue user tasks")
 
@@ -197,18 +212,22 @@ def main(root_folder: str, sleep_time: int, max_retries: int, queue_logger: Logg
         entries = []
 
         for file_name in entry_files[::-1]:
-            queue_logger.debug("Checking {} to see if it is a valid update file".format(file_name))
+            queue_logger.debug(
+                "Checking {} to see if it is a valid update file".format(file_name)
+            )
             entry = get_queue_entry(os.path.join(queue_folder, file_name), queue_logger)
             if entry is None:
-                queue_logger.debug("Removing {} from the list of update files".format(file_name))
+                queue_logger.debug(
+                    "Removing {} from the list of update files".format(file_name)
+                )
                 entry_files.remove(file_name)
             else:
                 queue_logger.debug("Adding {} to the list of updates".format(entry))
                 entries.insert(0, entry)
 
-        entries.extend(update_tasks(
-            entry_files, squeue_tasks, db_in_progress_tasks, queue_logger
-        ))
+        entries.extend(
+            update_tasks(entry_files, squeue_tasks, db_in_progress_tasks, queue_logger)
+        )
 
         if len(entries) > 0:
             queue_logger.info("Updating {} mgmt db tasks.".format(len(entries)))
@@ -255,9 +274,7 @@ if __name__ == "__main__":
         type=int,
     )
     parser.add_argument(
-        "--debug",
-        action="store_true",
-        help="Print debug messages to stdout",
+        "--debug", action="store_true", help="Print debug messages to stdout"
     )
     args = parser.parse_args()
 
@@ -266,7 +283,9 @@ if __name__ == "__main__":
     if args.log_file is None:
         log_file_name = os.path.join(
             args.root_folder,
-            QUEUE_MONITOR_LOG_FILE_NAME.format(datetime.now().strftime(const.QUEUE_DATE_FORMAT)),
+            QUEUE_MONITOR_LOG_FILE_NAME.format(
+                datetime.now().strftime(const.QUEUE_DATE_FORMAT)
+            ),
         )
     else:
         log_file_name = args.log_file

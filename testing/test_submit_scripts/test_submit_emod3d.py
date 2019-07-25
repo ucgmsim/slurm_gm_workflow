@@ -42,11 +42,8 @@ def test_main(set_up, mocker):
     mocker.patch(
         "shared_workflow.shared_template.recipe_dir",
         os.path.join(
-            os.path.dirname(os.path.realpath(__file__)),
-            "..",
-            "..",
-            "templates",
-        )
+            os.path.dirname(os.path.realpath(__file__)), "..", "..", "templates"
+        ),
     )
 
     for root_path, realisation in set_up:

@@ -119,7 +119,7 @@ if is_master:
     for key in vars(args):
         logger.debug("{} : {}".format(key, getattr(args, key)))
 
-comm.Barrier() # prevent other processes from messing log file until master is done with logging above
+comm.Barrier()  # prevent other processes from messing log file until master is done with logging above
 # load vs30ref
 if args.lfvsref is None:
     # vs30ref from velocity model
@@ -355,7 +355,11 @@ for i, stat in enumerate(stations_todo):
 bin_data.close()
 
 print("Process %03d of %03d finished (%.2fs)." % (rank, size, MPI.Wtime() - t0))
-logger.debug("Process {} of {} completed {} stations ({:.2f}).".format(rank, size, len(stations_todo), MPI.Wtime() - t0))
+logger.debug(
+    "Process {} of {} completed {} stations ({:.2f}).".format(
+        rank, size, len(stations_todo), MPI.Wtime() - t0
+    )
+)
 comm.Barrier()  # all ranks wait here until rank 0 arrives to announce all completed
 if is_master:
     logger.debug("Simulation completed.")

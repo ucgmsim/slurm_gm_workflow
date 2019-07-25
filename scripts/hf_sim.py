@@ -67,9 +67,11 @@ if is_master:
         help="high frequency binary (modified for binary out)",
         default=binary_version.get_hf_binmod("5.4.5"),
     )
-    arg("--version",
+    arg(
+        "--version",
         help="binary version, similar to --sim_bin but not full path.",
-        default=None)
+        default=None,
+    )
     arg("--t-sec", help="high frequency output start time", type=float, default=0.0)
     # HF IN, line 1
     arg("--sdrop", help="stress drop average (bars)", type=float, default=50.0)
@@ -163,7 +165,7 @@ if is_master:
         # invalid arguments or -h
         comm.Abort()
 
-if hasattr(args, 'version') and args.version is not None:
+if hasattr(args, "version") and args.version is not None:
     args.sim_bin = binary_version.get_hf_binmod(args.version)
 
 if is_master:
@@ -485,7 +487,11 @@ elif args.seed == -1:
             validate_end(work_idx[c0 - 1] + 1)
 os.remove(in_stats)
 print("Process %03d of %03d finished (%.2fs)." % (rank, size, MPI.Wtime() - t0))
-logger.debug("Process {} of {} completed {} stations ({:.2f}).".format(rank, size, len(stations_todo), MPI.Wtime() - t0))
+logger.debug(
+    "Process {} of {} completed {} stations ({:.2f}).".format(
+        rank, size, len(stations_todo), MPI.Wtime() - t0
+    )
+)
 comm.Barrier()  # all ranks wait here until rank 0 arrives to announce all completed
 if is_master:
     logger.debug("Simulation completed.")

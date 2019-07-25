@@ -351,6 +351,7 @@ def get_input_wc():
 
 def set_wct(est_run_time, ncores, auto=False, logger=get_basic_logger()):
     import estimation.estimate_wct as est
+
     if auto:
         level = DEBUG
     else:
@@ -359,7 +360,7 @@ def set_wct(est_run_time, ncores, auto=False, logger=get_basic_logger()):
         level,
         "Estimated time: {} with {} number of cores".format(
             est.convert_to_wct(est_run_time), ncores
-        )
+        ),
     )
     if not auto:
         print(
@@ -520,7 +521,12 @@ def params_to_dict(params_base_path):
     return params_dict
 
 
-def get_site_specific_path(stat_file_path, hf_stat_vs_ref=None, v1d_mod_dir=None, logger: Logger = get_basic_logger()):
+def get_site_specific_path(
+    stat_file_path,
+    hf_stat_vs_ref=None,
+    v1d_mod_dir=None,
+    logger: Logger = get_basic_logger(),
+):
     show_horizontal_line()
     logger.info("Auto-detecting site-specific info")
     show_horizontal_line()
@@ -538,7 +544,9 @@ def get_site_specific_path(stat_file_path, hf_stat_vs_ref=None, v1d_mod_dir=None
     if hf_stat_vs_ref is None:
         hf_stat_vs_ref_options = glob.glob(os.path.join(stat_file_path, "*.hfvs30ref"))
         if len(hf_stat_vs_ref_options) == 0:
-            logger.critical("Error: No HF Vsref file was found at {}".format(stat_file_path))
+            logger.critical(
+                "Error: No HF Vsref file was found at {}".format(stat_file_path)
+            )
             sys.exit()
         hf_stat_vs_ref_options.sort()
 

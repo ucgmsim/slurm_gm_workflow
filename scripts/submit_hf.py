@@ -10,11 +10,7 @@ import qcore.simulation_structure as sim_struct
 from qcore import utils, shared, srf, binary_version
 from qcore.config import host, get_machine_config
 from shared_workflow.load_config import load
-from shared_workflow.shared import (
-    set_wct,
-    confirm,
-    get_hf_nt,
-)
+from shared_workflow.shared import set_wct, confirm, get_hf_nt
 from shared_workflow.shared_automated_workflow import submit_sl_script
 from shared_workflow.workflow_logger import get_basic_logger
 from shared_workflow.shared_template import write_sl_script
@@ -25,7 +21,11 @@ SCALE_NCORES = True
 default_wct = "00:30:00"
 
 
-def main(args: argparse.Namespace, est_model: est.EstModel = None, logger: Logger = get_basic_logger()):
+def main(
+    args: argparse.Namespace,
+    est_model: est.EstModel = None,
+    logger: Logger = get_basic_logger(),
+):
     params = utils.load_sim_params(os.path.join(args.rel_dir, "sim_params.yaml"))
 
     # check if the args is none, if not, change the version
@@ -35,7 +35,11 @@ def main(args: argparse.Namespace, est_model: est.EstModel = None, logger: Logge
         ll_name_prefix = "run_hf_mpi"
     else:
         if args.version is not None:
-            logger.error("{} cannot be recognize as a valid version option. version is set to default: {}".format(args.version, const.HF_DEFAULT_VERSION))
+            logger.error(
+                "{} cannot be recognize as a valid version option. version is set to default: {}".format(
+                    args.version, const.HF_DEFAULT_VERSION
+                )
+            )
         version = const.HF_DEFAULT_VERSION
         ll_name_prefix = const.HF_DEFAULT_VERSION
     logger.debug("version: {}".format(version))
@@ -67,22 +71,23 @@ def main(args: argparse.Namespace, est_model: est.EstModel = None, logger: Logge
             args.ncore,
             est_model,
             scale_ncores=SCALE_NCORES,
-            logger=logger
+            logger=logger,
         )
-         
+
         # scale up the est_run_time if it is a re-run (with check-pointing)
         # creates and extra variable so we keep the orignial estimated run time for other purpose
-        est_run_time_scaled = est_run_time 
-        if hasattr(args,'retries') and int(args.retries) > 0:
+        est_run_time_scaled = est_run_time
+        if hasattr(args, "retries") and int(args.retries) > 0:
             # check if HF.bin is read-able = restart-able
             try:
                 from qcore.timeseries import HFSeis
+
                 bin = HFSeis(sim_struct.get_hf_bin_path(params.sim_dir))
             except:
                 logger.debug("Retried count > 0 but HF.bin is not readable")
             else:
-                est_run_time_scaled = est_run_time * (int(args.retries) +1)
-        
+                est_run_time_scaled = est_run_time * (int(args.retries) + 1)
+
         wct = set_wct(est_run_time_scaled, est_cores, args.auto)
         hf_sim_dir = os.path.join(params.sim_dir, "HF")
         write_directory = (

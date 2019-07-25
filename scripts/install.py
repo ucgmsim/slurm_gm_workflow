@@ -22,6 +22,7 @@ from scripts.management import create_mgmt_db
 from shared_workflow.install_shared import install_simulation, dump_all_yamls
 from shared_workflow import shared
 
+
 def q_accept_custom_rupmodel():
     shared.show_horizontal_line()
     print("Do you wish to use custom rupture files?")
@@ -320,7 +321,7 @@ def main_local(args):
     vel_mod_params_dir = sim_dir
 
     event_name = ""
-    
+
     fault_yaml_path = simulation_structure.get_fault_yaml_path(sim_dir)
     root_yaml_path = simulation_structure.get_root_yaml_path(sim_dir)
 
@@ -337,8 +338,8 @@ def main_local(args):
         stat_file_path,
         vs30_file_path,
         vs30ref_file_path,
-        vm_params_dict['sufx'],
-        vm_params_dict['sim_duration'],
+        vm_params_dict["sufx"],
+        vm_params_dict["sim_duration"],
         vel_mod_params_dir,
         yes_statcords,
         yes_model_params,
@@ -354,7 +355,9 @@ def main_local(args):
 
     vm_params_dict.update(vm_add_params_dict)
 
-    create_mgmt_db.create_mgmt_db([], os.path.join(sim_dir, const.SLURM_MGMT_DB_NAME), srf_files=srf_file)
+    create_mgmt_db.create_mgmt_db(
+        [], os.path.join(sim_dir, const.SLURM_MGMT_DB_NAME), srf_files=srf_file
+    )
     utils.setup_dir(os.path.join(sim_dir, "mgmt_db_queue"))
 
     root_params_dict["mgmt_db_location"] = sim_dir
@@ -414,8 +417,8 @@ def main_remote(cfg, args):
         stat_file_path,
         vs30_file_path,
         vs30ref_file_path,
-        vm_params_dict['sufx'],
-        vm_params_dict['sim_duration'],
+        vm_params_dict["sufx"],
+        vm_params_dict["sim_duration"],
         vel_mod_params_dir,
         yes_statcords,
         yes_model_params,
