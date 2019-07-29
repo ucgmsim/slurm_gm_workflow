@@ -1,13 +1,8 @@
-To run dashboard, please create a ~/.ssh/config file similar to the following and keep the socket open
+To run dashboard, please create a ~/.ssh/config file similar to the following and keep the sockets to the 4 hosts open.
+By default, dashboard will try log into maui01/mahuika01.
+After 3 consecutive unsuccessful ssh command, dashboard will try log into maui02/mahuika02.
+After 6 consecutive unsuccessful ssh command, dashboard will exit with error message.
 ```
-Host kupe
-   User melody.zhu
-   HostName login.kupe.niwa.co.nz
-   ProxyCommand ssh -W %h:%p %r@lander.nesi.org.nz
-   ForwardX11 yes
-   ForwardX11Trusted yes
-   ServerAliveInterval 120
-
 Host mahuika
    User melody.zhu
    #HostName login.mahuika.nesi.org.nz
