@@ -2,6 +2,10 @@ Slurm Ground Motion Workflow
 # Changelog
 (Based on https://wiki.canterbury.ac.nz/download/attachments/58458136/CodeVersioning_v18p2.pdf?version=1&modificationDate=1519269238437&api=v2 )
 
+## [19.6.6] - 2019-07-26 -- Four hpc logins for dashboard 
+### Changed
+    - Dashboard now try 4 hpc login nodes [maui|mahuika][01|02] instead of 2
+
 ## [19.6.5] - 2019-07-26 -- Moved logging to qcore
 ### Removed
     - Logging has been moved to the qcore repository to allow its use in other repositories  
