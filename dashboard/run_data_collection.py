@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# TODO: Add login from maui to mahuika and vice versa after consecutive unsuccessful ssh
 """
 Script for dashboard data collection. Runs an never-ending with a sleep between
 data collection. If any of the ssh commands fail, then the script stops, to prevent
