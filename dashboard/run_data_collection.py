@@ -223,10 +223,13 @@ class DataCollector:
             return result
 
         # Check that everything went well
-        if self.error_th <= self.error_ctr:
+        if self.error_th < self.error_ctr <= (2 * self.error_th):
+            self.ssh_cmd_template = "ssh {}@{}02 {}"
+            self.run_cmd(hpc, cmd, timeout)
+        elif self.error_ctr > (2 * self.error_th):
             raise Exception(
                 "There have been {} consecutive collection cmd failures".format(
-                    self.error_th
+                    self.error_ctr
                 )
             )
 
