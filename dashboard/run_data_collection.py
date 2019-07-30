@@ -133,17 +133,17 @@ class DataCollector:
         start_time, end_time = self.get_utc_times()
         # Get daily core hours usage
         rt_daily_ch_output = self.run_cmd(
-            "sreport -M {} -n -t Hours cluster AccountUtilizationByUser Accounts={} start={} end={} format=Cluster,Accounts,Login%30,Proper,Used".format(hpc.value,
-                PROJECT_ID, start_time, end_time
-            ),
+            "sreport -M {} -n -t Hours cluster AccountUtilizationByUser Accounts={} start={} end={} format=Cluster,Accounts,Login%30,Proper,Used".format(
+                hpc.value, PROJECT_ID, start_time, end_time
+            )
         )
         if rt_daily_ch_output:
             rt_daily_ch_output = self.parse_chours_usage(rt_daily_ch_output)
 
         rt_total_ch_output = self.run_cmd(
-            "sreport -M {} -n -t Hours cluster AccountUtilizationByUser Accounts={} start={} end={} format=Cluster,Accounts,Login%30,Proper,Used".format(hpc.value,
-                PROJECT_ID, self.total_start_time, end_time
-            ),
+            "sreport -M {} -n -t Hours cluster AccountUtilizationByUser Accounts={} start={} end={} format=Cluster,Accounts,Login%30,Proper,Used".format(
+                hpc.value, PROJECT_ID, self.total_start_time, end_time
+            )
         )
         if rt_total_ch_output:
             rt_total_ch_output = self.parse_chours_usage(rt_total_ch_output)
@@ -153,7 +153,9 @@ class DataCollector:
 
         # Squeue, formatted to show full account name
         sq_output = self.run_cmd(
-            "squeue -M {} --format=%18i%25u%12a%60j%20T%25r%20S%18M%18L%10D%10C".format(hpc.value)
+            "squeue -M {} --format=%18i%25u%12a%60j%20T%25r%20S%18M%18L%10D%10C".format(
+                hpc.value
+            )
         )
         if sq_output:
             self.dashboard_db.update_squeue(self._parse_squeue(sq_output), hpc)
@@ -162,7 +164,8 @@ class DataCollector:
         # 'NODES\n23\n32\n'---> ['NODES', '23', '32']
         if hpc == const.HPC.maui:
             capa_output = self.run_cmd(
-                "squeue -M {} -p nesi_research ".format(hpc.value) + "| awk '{print $10}'"
+                "squeue -M {} -p nesi_research ".format(hpc.value)
+                + "| awk '{print $10}'"
             )
 
             if capa_output:
@@ -184,22 +187,24 @@ class DataCollector:
                     ),
                 )
         # get quota
-        quota_output = self.run_cmd("nn_storage_quota {} | grep 'nesi00213'".format(hpc.value))
+        quota_output = self.run_cmd(
+            "nn_storage_quota {} | grep 'nesi00213'".format(hpc.value)
+        )
         if quota_output:
             self.dashboard_db.update_daily_quota(self._parse_quota(quota_output), hpc)
 
         # user daily core hour usage
         user_ch_output = self.run_cmd(
-            "sreport -M {} -t Hours cluster AccountUtilizationByUser Users={} start={} end={} -n format=Cluster,Account,Login%30,Proper,Used".format(hpc.value,
-                " ".join(users), start_time, end_time
-            ),
+            "sreport -M {} -t Hours cluster AccountUtilizationByUser Users={} start={} end={} -n format=Cluster,Account,Login%30,Proper,Used".format(
+                hpc.value, " ".join(users), start_time, end_time
+            )
         )
         if user_ch_output:
             self.dashboard_db.update_user_chours(
                 hpc, self.parse_user_chours_usage(user_ch_output, users)
             )
 
-    def run_cmd(self, cmd: str, timeout: int = 180, ):
+    def run_cmd(self, cmd: str, timeout: int = 180):
         """Runs the specified command remotely on the specified hpc using the
         specified user id.
         Returns False if the command fails for some reason.
@@ -208,7 +213,7 @@ class DataCollector:
             print(self.ssh_cmd_template.format(self.user, self.login_hpc, cmd))
             result = (
                 subprocess.check_output(
-                   self.ssh_cmd_template.format(self.user, self.login_hpc, cmd),
+                    self.ssh_cmd_template.format(self.user, self.login_hpc, cmd),
                     shell=True,
                     timeout=timeout,
                 )
@@ -229,12 +234,16 @@ class DataCollector:
 
         # Check that everything went well
         if self.error_th < self.error_ctr <= (2 * self.error_th):
-            self.ssh_cmd_template = "ssh {}@{}02 {}"  # try login to maui02 and pull mahuika data
+            self.ssh_cmd_template = (
+                "ssh {}@{}02 {}"
+            )  # try login to maui02 and pull mahuika data
         elif self.error_th < self.error_ctr <= (3 * self.error_th):
             self.ssh_cmd_template = "ssh {}@{} {}"
             self.login_hpc = "mahuika"  # try login to mahuika01 and pull maui data
         elif self.error_th < self.error_ctr <= (4 * self.error_th):
-            self.ssh_cmd_template = "ssh {}@{}02 {}"  # try login to mahuika01 and pull maui data
+            self.ssh_cmd_template = (
+                "ssh {}@{}02 {}"
+            )  # try login to mahuika01 and pull maui data
         elif self.error_ctr > (4 * self.error_th):
             raise Exception(
                 "There have been {} consecutive collection cmd failures".format(
