@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# TODO: Add login from maui to mahuika and vice versa after consecutive unsuccessful ssh
 """
 Script for dashboard data collection. Runs an never-ending with a sleep between
 data collection. If any of the ssh commands fail, then the script stops, to prevent
@@ -76,7 +75,13 @@ class DataCollector:
             After how many executive errors to stop execution
         """
         self.user = user
-        self.hpc = [hpc] if type(hpc) is const.HPC else hpc
+        if type(hpc) is const.HPC:
+            self.hpc = [hpc]
+            self.login_hpc = hpc.value
+        else:  # if both hpc required, ssh to maui defautly and pull mahuika data from maui
+            self.hpc = hpc
+            self.login_hpc = "maui"
+        # self.hpc = [hpc] if type(hpc) is const.HPC else hpc
         self.interval = interval
 
         try:
@@ -94,8 +99,8 @@ class DataCollector:
         while True:
             # Collect the data
             print("{} - Collecting data from HPC {}".format(datetime.now(), self.hpc))
-            for hpc in self.hpc:
-                self.collect_data(hpc, users)
+            for data_hpc in self.hpc:
+                self.collect_data(data_hpc, users)
             print("{} - Done".format(datetime.now()))
 
             time.sleep(self.interval)
@@ -128,8 +133,7 @@ class DataCollector:
         start_time, end_time = self.get_utc_times()
         # Get daily core hours usage
         rt_daily_ch_output = self.run_cmd(
-            hpc.value,
-            "sreport -n -t Hours cluster AccountUtilizationByUser Accounts={} start={} end={} format=Cluster,Accounts,Login%30,Proper,Used".format(
+            "sreport -M {} -n -t Hours cluster AccountUtilizationByUser Accounts={} start={} end={} format=Cluster,Accounts,Login%30,Proper,Used".format(hpc.value,
                 PROJECT_ID, start_time, end_time
             ),
         )
@@ -137,8 +141,7 @@ class DataCollector:
             rt_daily_ch_output = self.parse_chours_usage(rt_daily_ch_output)
 
         rt_total_ch_output = self.run_cmd(
-            hpc.value,
-            "sreport -n -t Hours cluster AccountUtilizationByUser Accounts={} start={} end={} format=Cluster,Accounts,Login%30,Proper,Used".format(
+            "sreport -M {} -n -t Hours cluster AccountUtilizationByUser Accounts={} start={} end={} format=Cluster,Accounts,Login%30,Proper,Used".format(hpc.value,
                 PROJECT_ID, self.total_start_time, end_time
             ),
         )
@@ -150,7 +153,7 @@ class DataCollector:
 
         # Squeue, formatted to show full account name
         sq_output = self.run_cmd(
-            hpc.value, "squeue --format=%18i%25u%12a%60j%20T%25r%20S%18M%18L%10D%10C"
+            "squeue -M {} --format=%18i%25u%12a%60j%20T%25r%20S%18M%18L%10D%10C".format(hpc.value)
         )
         if sq_output:
             self.dashboard_db.update_squeue(self._parse_squeue(sq_output), hpc)
@@ -159,7 +162,7 @@ class DataCollector:
         # 'NODES\n23\n32\n'---> ['NODES', '23', '32']
         if hpc == const.HPC.maui:
             capa_output = self.run_cmd(
-                hpc.value, "squeue -p nesi_research | awk '{print $10}'"
+                "squeue -M {} -p nesi_research ".format(hpc.value) + "| awk '{print $10}'"
             )
 
             if capa_output:
@@ -181,15 +184,14 @@ class DataCollector:
                     ),
                 )
         # get quota
-        quota_output = self.run_cmd(hpc.value, "nn_check_quota | grep 'nesi00213'")
+        quota_output = self.run_cmd("nn_storage_quota {} | grep 'nesi00213'".format(hpc.value))
         if quota_output:
             self.dashboard_db.update_daily_quota(self._parse_quota(quota_output), hpc)
 
         # user daily core hour usage
         user_ch_output = self.run_cmd(
-            hpc.value,
-            "sreport -M {} -t Hours cluster AccountUtilizationByUser Users={} start={} end={} -n format=Cluster,Account,Login%30,Proper,Used".format(
-                hpc.value, " ".join(users), start_time, end_time
+            "sreport -M {} -t Hours cluster AccountUtilizationByUser Users={} start={} end={} -n format=Cluster,Account,Login%30,Proper,Used".format(hpc.value,
+                " ".join(users), start_time, end_time
             ),
         )
         if user_ch_output:
@@ -197,15 +199,16 @@ class DataCollector:
                 hpc, self.parse_user_chours_usage(user_ch_output, users)
             )
 
-    def run_cmd(self, hpc: str, cmd: str, timeout: int = 180):
+    def run_cmd(self, cmd: str, timeout: int = 180, ):
         """Runs the specified command remotely on the specified hpc using the
         specified user id.
         Returns False if the command fails for some reason.
         """
         try:
+            print(self.ssh_cmd_template.format(self.user, self.login_hpc, cmd))
             result = (
                 subprocess.check_output(
-                    self.ssh_cmd_template.format(self.user, hpc, cmd),
+                   self.ssh_cmd_template.format(self.user, self.login_hpc, cmd),
                     shell=True,
                     timeout=timeout,
                 )
@@ -213,6 +216,7 @@ class DataCollector:
                 .strip()
                 .split("\n")
             )
+
         except subprocess.CalledProcessError:
             print("Cmd {} returned a non-zero exit status.".format(cmd))
             self.error_ctr += 1
@@ -225,9 +229,13 @@ class DataCollector:
 
         # Check that everything went well
         if self.error_th < self.error_ctr <= (2 * self.error_th):
-            self.ssh_cmd_template = "ssh {}@{}02 {}"
-            self.run_cmd(hpc, cmd, timeout)
-        elif self.error_ctr > (2 * self.error_th):
+            self.ssh_cmd_template = "ssh {}@{}02 {}"  # try login to maui02 and pull mahuika data
+        elif self.error_th < self.error_ctr <= (3 * self.error_th):
+            self.ssh_cmd_template = "ssh {}@{} {}"
+            self.login_hpc = "mahuika"  # try login to mahuika01 and pull maui data
+        elif self.error_th < self.error_ctr <= (4 * self.error_th):
+            self.ssh_cmd_template = "ssh {}@{}02 {}"  # try login to mahuika01 and pull maui data
+        elif self.error_ctr > (4 * self.error_th):
             raise Exception(
                 "There have been {} consecutive collection cmd failures".format(
                     self.error_ctr
@@ -236,10 +244,12 @@ class DataCollector:
 
     def _parse_squeue(self, lines: Iterable[str]):
         """Parse the results from the squeue command"""
+        # lines
+        # ['CLUSTER: maui',
+        # 'JOBID  USER  ACCOUNT   NAME                 STATE   REASON START_TIME          TIME    TIME_LEFT NODES CPUS',
+        # '505572 ykh22 nesi00213 sim_hf.MohakaS_REL27 RUNNING None   2019-07-30T10:45:22 1:59:48 14:12     2     160 ']
         entries = []
-        for ix, line in enumerate(lines):
-            if ix == 0:
-                continue
+        for line in lines[2:]:  # skip headers
             line = line.strip().split()
             try:
                 entries.append(
@@ -256,7 +266,7 @@ class DataCollector:
                         int(line[-1].strip()),
                     )
                 )
-            except ValueError:
+            except IndexError:
                 print(
                     "Failed to convert squeue line \n{}\n to "
                     "a valid SQueueEntry. Ignored!".format(line)
