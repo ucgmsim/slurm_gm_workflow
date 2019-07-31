@@ -167,9 +167,7 @@ def display_err_mahuika(input_start, input_end):
     [Input("maui-input-start", "date"), Input("maui-input-end", "date")],
 )
 def update_maui_total_chours(input_start, input_end):
-    return update_total_chours(
-        MAUI_ALLOCATIONS, input_start, input_end, const.HPC.maui
-    )
+    return update_total_chours(MAUI_ALLOCATIONS, input_start, input_end, const.HPC.maui)
 
 
 @app.callback(
@@ -178,10 +176,7 @@ def update_maui_total_chours(input_start, input_end):
 )
 def update_mahuika_total_chours(input_start, input_end):
     return update_total_chours(
-        MAHUIKA_ALLOCATIONS,
-        input_start,
-        input_end,
-        const.HPC.mahuika,
+        MAHUIKA_ALLOCATIONS, input_start, input_end, const.HPC.mahuika
     )
 
 
@@ -566,13 +561,8 @@ def update_total_chours(default_allocations, input_start, input_end, hpc):
         usage = " "
         template = "{}: {} to {} used {:,.1f} hours{}{}"
     return html.Plaintext(
-       template.format(
-            hpc.value,
-            start_date,
-            end_date,
-            hpc_total_chours,
-            max_hours,
-            usage,
+        template.format(
+            hpc.value, start_date, end_date, hpc_total_chours, max_hours, usage
         )
     )
 
