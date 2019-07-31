@@ -391,7 +391,7 @@ class DashboardDB:
 
     def get_allocation_periods(self, hpc: const.HPC):
         """Get allocation periods for a specified hpc"""
-        sql = "SELECT START,END from ALLOCATION where machine = ?"
+        sql = "SELECT START, END from ALLOCATION where machine = ?"
         with self.get_cursor(self.db_file) as cursor:
             result = cursor.execute(sql, (hpc.value,)).fetchall()
         return result
