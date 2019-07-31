@@ -390,9 +390,17 @@ class DashboardDB:
         return result
 
     def get_allocation_periods(self, hpc: const.HPC):
-        sql = "SELECT START, END from ALLOCATION where machine = ?"
+        """Get allocation periods for a specified hpc"""
+        sql = "SELECT START,END from ALLOCATION where machine = ?"
         with self.get_cursor(self.db_file) as cursor:
             result = cursor.execute(sql, (hpc.value,)).fetchall()
+        return result
+
+    def get_allocation_hours(self, hpc: const.HPC, start_date, end_date):
+        """Get max core hours allocated for a specified period"""
+        sql = "SELECT hours from ALLOCATION where machine = ? and start = ? and end = ?"
+        with self.get_cursor(self.db_file) as cursor:
+            result = cursor.execute(sql, (hpc.value, start_date, end_date)).fetchone()
         return result
 
     def _create_queue_table(self, cursor, hpc: const.HPC):
