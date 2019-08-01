@@ -14,7 +14,6 @@ import qcore.constants as const
 import qcore.simulation_structure as sim_struct
 from qcore import qclogging
 from scripts.management.MgmtDB import MgmtDB, SlurmTask
-from shared_workflow import workflow_logger
 from shared_workflow.shared_automated_workflow import get_queued_tasks, check_mgmt_queue
 
 

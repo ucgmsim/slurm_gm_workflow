@@ -23,7 +23,7 @@ from scripts.submit_post_emod3d import main as submit_post_lf_main
 from scripts.submit_hf import main as submit_hf_main
 from scripts.submit_bb import main as submit_bb_main
 from scripts.submit_sim_imcalc import submit_im_calc_slurm, SlBodyOptConsts
-from shared_workflow import workflow_logger, shared_automated_workflow
+from shared_workflow import shared_automated_workflow
 import shared_workflow.load_config as ldcfg
 
 DEFAULT_N_RUNS = {const.HPC.maui: 12, const.HPC.mahuika: 12}
@@ -60,7 +60,7 @@ def submit_task(
     extended_period=False,
     models=None,
 ):
-    task_logger = workflow_logger.get_task_logger(parent_logger, run_name, proc_type)
+    task_logger = qclogging.get_task_logger(parent_logger, run_name, proc_type)
     verification_dir = sim_struct.get_verification_dir(sim_dir)
     # Metadata logging setup
     ch_log_dir = os.path.abspath(os.path.join(sim_dir, "ch_log"))
