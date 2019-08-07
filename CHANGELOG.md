@@ -2,6 +2,10 @@ Slurm Ground Motion Workflow
 # Changelog
 (Based on https://wiki.canterbury.ac.nz/download/attachments/58458136/CodeVersioning_v18p2.pdf?version=1&modificationDate=1519269238437&api=v2 )
 
+## [19.6.7] - 2019-08-07 -- Add HF log aggregation
+### Added
+    - Added a script to aggregate HF logs into a csv with the amount of core hours lost to thread idling
+
 ## [19.6.6] - 2019-07-26 -- Four hpc logins for dashboard 
 ### Changed
     - Dashboard now try 4 hpc login nodes [maui|mahuika][01|02] instead of 2
