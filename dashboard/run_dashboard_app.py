@@ -46,9 +46,6 @@ MAUI_ALLOCATIONS = app.db.get_allocation_periods(const.HPC.maui)
 ALLOCATIONS_MAHUIKA = ["{}---{}".format(i[0], i[1]) for i in MAHUIKA_ALLOCATIONS]
 ALLOCATIONS_MAUI = ["{}---{}".format(i[0], i[1]) for i in MAUI_ALLOCATIONS]
 
-MAUI_MAX_CHOURS = 950000.0
-MAHUIKA_MAX_CHOURS = 18000.0
-
 app.layout = html.Div(
     html.Div(
         [
@@ -170,9 +167,7 @@ def display_err_mahuika(input_start, input_end):
     [Input("maui-input-start", "date"), Input("maui-input-end", "date")],
 )
 def update_maui_total_chours(input_start, input_end):
-    return update_total_chours(
-        MAUI_ALLOCATIONS, input_start, input_end, const.HPC.maui, MAUI_MAX_CHOURS
-    )
+    return update_total_chours(MAUI_ALLOCATIONS, input_start, input_end, const.HPC.maui)
 
 
 @app.callback(
@@ -181,11 +176,7 @@ def update_maui_total_chours(input_start, input_end):
 )
 def update_mahuika_total_chours(input_start, input_end):
     return update_total_chours(
-        MAHUIKA_ALLOCATIONS,
-        input_start,
-        input_end,
-        const.HPC.mahuika,
-        MAHUIKA_MAX_CHOURS,
+        MAHUIKA_ALLOCATIONS, input_start, input_end, const.HPC.mahuika
     )
 
 
@@ -553,20 +544,25 @@ def get_allocation_period(default_allocations, input_start, input_end):
     return None, start_date, end_date  # None: no err placeholder
 
 
-def update_total_chours(default_allocations, input_start, input_end, hpc, max_hours):
+def update_total_chours(default_allocations, input_start, input_end, hpc):
     """Updates total core hours for a specified hpc during a specified allocation period"""
     _, start_date, end_date = get_allocation_period(
         default_allocations, input_start, input_end
     )
     hpc_total_chours = get_chours_entries(hpc, start_date, end_date)[-1][-1]
+    max_hours_result = app.db.get_allocation_hours(hpc, input_start, input_end)
+    if max_hours_result:
+        max_hours = max_hours_result[0]
+        usage = hpc_total_chours / max_hours * 100.0
+        template = "{}: {} to {} used {:,.1f} / {:,.1f} hours ({:.1f}%)"
+    # custom allocation period entered, cannot decide the max core hours due to overlapped allocation periods
+    else:
+        max_hours = " "
+        usage = " "
+        template = "{}: {} to {} used {:,.1f} hours{}{}"
     return html.Plaintext(
-        "{}: {} to {} used {:,.1f} / {:,.1f} hours ({:.1f}%)".format(
-            hpc.value,
-            start_date,
-            end_date,
-            hpc_total_chours,
-            max_hours,
-            hpc_total_chours / max_hours * 100.0,
+        template.format(
+            hpc.value, start_date, end_date, hpc_total_chours, max_hours, usage
         )
     )
 
