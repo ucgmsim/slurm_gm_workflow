@@ -35,7 +35,7 @@ fi
 
 # Check that the result files exist
 res=0
-if [[ -f {{sim_dir}}/IM_calc/{{sim_name}}.csv ]] && [[ -f {{sim_dir}}/IM_calc/{{sim_name}}_im_calc.info ]]; then
+if [[ ! -f {{sim_dir}}/IM_calc/{{sim_name}}.csv ]] && [[ ! -f {{sim_dir}}/IM_calc/{{sim_name}}_im_calc.info ]]; then
     res=1
     echo "IM calculation failed, result files do not exist."
 fi
