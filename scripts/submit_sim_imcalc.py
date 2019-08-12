@@ -138,7 +138,7 @@ def submit_im_calc_slurm(
             "fault_name": fault_name,
             "np": options_dict[SlBodyOptConsts.n_procs.value],
             "output_csv": sim_struct.get_IM_csv(sim_dir),
-            "output_info": sim_struct.get_IM_info(sim_dir)
+            "output_info": sim_struct.get_IM_info(sim_dir),
         },
     )
     script_prefix = "sim_im_calc"
@@ -256,3 +256,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     main(args)
+
