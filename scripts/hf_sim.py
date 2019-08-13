@@ -456,11 +456,10 @@ def validate_end(idx_n):
 
 # distribute work, must be sequential for optimisation,
 # and for validation function above to be thread safe
-d = stations_todo.size // size
-r = stations_todo.size % size
-start = rank * d + min(r, rank)
-work = stations_todo[start : start + d + (rank < r)]
-work_idx = stations_todo_idx[start : start + d + (rank < r)]
+# if size=4, rank 0 takes [0,4,8...], rank 1 takes [1,5,9...], rank 2 takes [2,6,10...],
+# rank 3 takes [3,7,11...]
+work = stations_todo[rank::size]
+work_idx = stations_todo_idx[rank::size]
 
 # process data to give Fortran code
 t0 = MPI.Wtime()
@@ -470,8 +469,13 @@ if args.seed >= 0:
     for s in range(work.size):
         if args.site_vm_dir != None:
             vm = os.path.join(args.site_vm_dir, "%s.1d" % (stations_todo[s]["name"]))
-        np.savetxt(in_stats, work[s : s + 1], fmt="%f %f %s")
-        run_hf(in_stats, 1, work_idx[s], velocity_model=vm)
+
+        np.savetxt(
+            in_stats, work[s : s + 1], fmt="%f %f %s"
+        )  # making in_stats file with the list of one station work[s]
+        run_hf(
+            in_stats, 1, work_idx[s], velocity_model=vm
+        )  # passing in_stat with the seed adjustment work_idx[s]
         if rank == size - 1:
             validate_end(work_idx[s] + 1)
 elif args.seed == -1:
