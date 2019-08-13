@@ -25,7 +25,6 @@ HEAD_SIZE = 0x0200
 HEAD_STAT = 0x18
 FLOAT_SIZE = 0x4
 N_COMP = 3
-MAX_STATLIST = 10
 
 # never changed / unknown function (line 6)
 nbu = 4
@@ -92,7 +91,7 @@ if is_master:
     # HF IN, line 7
     arg(
         "--seed",
-        help="random seed (0:randomised reproducible, -1:fully randomised)",
+        help="random seed (0:randomised reproducible)",
         type=int,
         default=constants.HF_DEFAULT_SEED,
     )
@@ -172,9 +171,8 @@ if is_master:
     logger.debug("=" * 50)
     # random seed
     seed_file = os.path.join(os.path.dirname(args.out_file), "SEED")
-    if args.seed == -1:
-        logger.debug("seed is always randomised.")
-    elif os.path.isfile(seed_file):
+
+    if os.path.isfile(seed_file):
         args.seed = np.loadtxt(seed_file, dtype="i", ndmin=1)[0]
         logger.debug("seed taken from file: {}".format(args.seed))
     elif args.seed == 0:
@@ -183,14 +181,14 @@ if is_master:
         logger.debug("seed generated: {}".format(args.seed))
     else:
         logger.debug("seed from command line: {}".format(args.seed))
+    assert args.seed >= 0  # don't like negative seed
+
     # Logging each argument
     for key in vars(args):
         logger.debug("{} : {}".format(key, getattr(args, key)))
 
 args = comm.bcast(args, root=master)
 
-# if not args.independent:
-#     args.seed += rank
 
 mh = MPIFileHandler.MPIFileHandler(
     os.path.join(os.path.dirname(args.out_file), "HF.log")
@@ -464,31 +462,21 @@ work_idx = stations_todo_idx[rank::size]
 # process data to give Fortran code
 t0 = MPI.Wtime()
 in_stats = mkstemp()[1]
-if args.seed >= 0:
-    vm = args.velocity_model
-    for s in range(work.size):
-        if args.site_vm_dir != None:
-            vm = os.path.join(args.site_vm_dir, "%s.1d" % (stations_todo[s]["name"]))
 
-        np.savetxt(
-            in_stats, work[s : s + 1], fmt="%f %f %s"
-        )  # making in_stats file with the list of one station work[s]
-        run_hf(
-            in_stats, 1, work_idx[s], velocity_model=vm
-        )  # passing in_stat with the seed adjustment work_idx[s]
-        if rank == size - 1:
-            validate_end(work_idx[s] + 1)
-elif args.seed == -1:
-    # have to be careful if checkpointing, work is not always consecutive
-    c0 = 0
-    for c_work_idx in np.split(work_idx, np.where(np.diff(work_idx) != 1)[0] + 1):
-        for s in range(0, c_work_idx.size, MAX_STATLIST):
-            n_stat = min(MAX_STATLIST, c_work_idx.size - s)
-            np.savetxt(in_stats, work[c0 + s : c0 + s + n_stat], fmt="%f %f %s")
-            run_hf(in_stats, n_stat, c_work_idx[s])
-        c0 += c_work_idx.size
-        if rank == size - 1:
-            validate_end(work_idx[c0 - 1] + 1)
+vm = args.velocity_model
+for s in range(work.size):
+    if args.site_vm_dir != None:
+        vm = os.path.join(args.site_vm_dir, "%s.1d" % (stations_todo[s]["name"]))
+
+    np.savetxt(
+        in_stats, work[s : s + 1], fmt="%f %f %s"
+    )  # making in_stats file with the list of one station work[s]
+    run_hf(
+        in_stats, 1, work_idx[s], velocity_model=vm
+    )  # passing in_stat with the seed adjustment work_idx[s]
+    if s == (work.size - 1):
+        validate_end(work_idx[s] + 1)
+
 os.remove(in_stats)
 print("Process %03d of %03d finished (%.2fs)." % (rank, size, MPI.Wtime() - t0))
 logger.debug(
