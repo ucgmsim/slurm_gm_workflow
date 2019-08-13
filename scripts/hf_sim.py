@@ -474,8 +474,10 @@ for s in range(work.size):
     run_hf(
         in_stats, 1, work_idx[s], velocity_model=vm
     )  # passing in_stat with the seed adjustment work_idx[s]
+
 if work_idx[-1] == stations_todo_idx[-1]:
     validate_end(work_idx[-1] + 1)
+
 
 os.remove(in_stats)
 print("Process %03d of %03d finished (%.2fs)." % (rank, size, MPI.Wtime() - t0))
