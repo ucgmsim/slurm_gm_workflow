@@ -474,7 +474,7 @@ for s in range(work.size):
     run_hf(
         in_stats, 1, work_idx[s], velocity_model=vm
     )  # passing in_stat with the seed adjustment work_idx[s]
-    if s == (work.size - 1):
+    if work_idx[s] == stations_todo_idx[-1]:
         validate_end(work_idx[s] + 1)
 
 os.remove(in_stats)
