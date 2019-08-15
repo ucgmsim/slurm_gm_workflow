@@ -161,7 +161,8 @@ if is_master:
     )
     try:
         args = parser.parse_args()
-    except SystemExit:
+    except SystemExit as e:
+        print(e, flush=True)
         # invalid arguments or -h
         comm.Abort()
 
