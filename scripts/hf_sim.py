@@ -475,7 +475,9 @@ for s in range(work.size):
         in_stats, 1, work_idx[s], velocity_model=vm
     )  # passing in_stat with the seed adjustment work_idx[s]
 
-if work_idx[-1] == stations_todo_idx[-1]: #if this rank did the last station in the full list
+if (
+    work_idx[-1] == stations_todo_idx[-1]
+):  # if this rank did the last station in the full list
     validate_end(work_idx[-1] + 1)
 
 
