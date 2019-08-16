@@ -2,6 +2,13 @@ Slurm Ground Motion Workflow
 # Changelog
 (Based on https://wiki.canterbury.ac.nz/download/attachments/58458136/CodeVersioning_v18p2.pdf?version=1&modificationDate=1519269238437&api=v2 )
 
+
+## [19.6.8] - 2019-08-16 -- Improved load balancing for HF calculation
+### Changed
+    - Updated the way station list is split to achieve improved load balancing for HF calculation
+### Removed
+    - Removed --seed: -1 option which allowed fully random run of HF calculation 
+    
 ## [19.6.7] - 2019-08-07 -- Add HF log aggregation
 ### Added
     - Added a script to aggregate HF logs into a csv with the amount of core hours lost to thread idling
