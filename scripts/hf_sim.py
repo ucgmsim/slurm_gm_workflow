@@ -477,7 +477,9 @@ for s in range(work.size):
     )  # passing in_stat with the seed adjustment work_idx[s]
 
 if (
-    work_idx[-1] == stations_todo_idx[-1]
+    len(work_idx) > 0
+    and len(stations_todo_idx) > 0
+    and work_idx[-1] == stations_todo_idx[-1]
 ):  # if this rank did the last station in the full list
     validate_end(work_idx[-1] + 1)
 
@@ -486,7 +488,7 @@ os.remove(in_stats)
 print("Process %03d of %03d finished (%.2fs)." % (rank, size, MPI.Wtime() - t0))
 logger.debug(
     "Process {} of {} completed {} stations ({:.2f}).".format(
-        rank, size, len(stations_todo), MPI.Wtime() - t0
+        rank, size, work.size, MPI.Wtime() - t0
     )
 )
 comm.Barrier()  # all ranks wait here until rank 0 arrives to announce all completed
