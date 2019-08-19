@@ -2,6 +2,10 @@ Slurm Ground Motion Workflow
 # Changelog
 (Based on https://wiki.canterbury.ac.nz/download/attachments/58458136/CodeVersioning_v18p2.pdf?version=1&modificationDate=1519269238437&api=v2 )
 
+## [19.6.8] - 2019-08-19 -- Add metadata for failed runs
+### Added
+    - Added metadata logging for failed runs in queue monitor
+
 ## [19.6.7] - 2019-08-07 -- Add HF log aggregation
 ### Added
     - Added a script to aggregate HF logs into a csv with the amount of core hours lost to thread idling
