@@ -477,7 +477,9 @@ for s in range(work.size):
     )  # passing in_stat with the seed adjustment work_idx[s]
 
 if (
-    len(word_idx)>0 and len(stations_todo_idx)>0 andwork_idx[-1] == stations_todo_idx[-1]
+    len(work_idx) > 0
+    and len(stations_todo_idx) > 0
+    and work_idx[-1] == stations_todo_idx[-1]
 ):  # if this rank did the last station in the full list
     validate_end(work_idx[-1] + 1)
 
