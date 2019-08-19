@@ -17,6 +17,7 @@ from qcore import qclogging
 from scripts.management.MgmtDB import MgmtDB, SlurmTask
 from shared_workflow.shared_automated_workflow import get_queued_tasks, check_mgmt_queue
 from metadata.log_metadata import store_metadata
+
 # Have to include sub-seconds, as clean up can run sub one second.
 
 QUEUE_MONITOR_LOG_FILE_NAME = "queue_monitor_log_{}.txt"
@@ -63,7 +64,7 @@ def update_tasks(
     squeue_tasks: Dict[str, str],
     db_running_tasks: List[SlurmTask],
     task_logger: Logger,
-    root_folder
+    root_folder,
 ):
     """Updates the mgmt db entries based on the HPC queue"""
     tasks_to_do = []
@@ -160,14 +161,26 @@ def update_tasks(
             # 578928.extern  extern            01:45:32     00:00:00  1840    1368K COMPLETED
             # 578928.0       rose-mpi-laun+    01:45:10  65-09:40:37   896 1799220K COMPLETED
 
-            run_time = subprocess.check_output("sacct -n -j {} -A nesi00213 --format=elapsed".format(db_running_task.job_id), shell=True).decode("utf-8").strip().split()[0]
+            run_time = (
+                subprocess.check_output(
+                    "sacct -n -j {} -A nesi00213 --format=elapsed".format(
+                        db_running_task.job_id
+                    ),
+                    shell=True,
+                )
+                .decode("utf-8")
+                .strip()
+                .split()[0]
+            )
             # if run_time exceeds one day
-            if '-' in run_time:
-                d = float(run_time.split('-')[0])
-                h, m, s = map(float, run_time.split('-')[1].split(':'))
-                total_seconds = timedelta(days=d, hours=h, minutes=m, seconds=s).total_seconds()
+            if "-" in run_time:
+                d = float(run_time.split("-")[0])
+                h, m, s = map(float, run_time.split("-")[1].split(":"))
+                total_seconds = timedelta(
+                    days=d, hours=h, minutes=m, seconds=s
+                ).total_seconds()
             else:
-                h, m, s = map(float, run_time.split(':'))
+                h, m, s = map(float, run_time.split(":"))
                 total_seconds = timedelta(hours=h, minutes=m, seconds=s).total_seconds()
             sim_dir = sim_struct.get_sim_dir(root_folder, db_running_task.run_name)
             log_file = os.path.join(sim_dir, "ch_log", const.METADATA_LOG_FILENAME)
@@ -175,7 +188,12 @@ def update_tasks(
             store_metadata(
                 log_file,
                 const.ProcessType(db_running_task.proc_type).str_value,
-                {"run_time": total_seconds, "err_log_time": datetime.now().strftime(const.METADATA_TIMESTAMP_FMT)},
+                {
+                    "run_time": total_seconds,
+                    "err_log_time": datetime.now().strftime(
+                        const.METADATA_TIMESTAMP_FMT
+                    ),
+                },
                 logger=task_logger,
             )
     return tasks_to_do
@@ -253,7 +271,13 @@ def main(
                 entries.insert(0, entry)
 
         entries.extend(
-            update_tasks(entry_files, squeue_tasks, db_in_progress_tasks, queue_logger, root_folder)
+            update_tasks(
+                entry_files,
+                squeue_tasks,
+                db_in_progress_tasks,
+                queue_logger,
+                root_folder,
+            )
         )
 
         if len(entries) > 0:
@@ -325,4 +349,3 @@ if __name__ == "__main__":
 
     signal.signal(signal.SIGINT, on_exit)
     main(root_folder, args.sleep_time, args.n_max_retries, logger)
-
