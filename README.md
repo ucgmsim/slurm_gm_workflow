@@ -1,4 +1,5 @@
 [![Build Status](https://travis-ci.org/ucgmsim/slurm_gm_workflow.svg?branch=master)](https://travis-ci.org/ucgmsim/slurm_gm_workflow)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## Slurm GM Simulation Workflow
 
@@ -55,7 +56,7 @@ and list.txt is a list of the faults to run, along with the number of realisatio
 Hossack 4r
 RepongaereF4 10r
 ```
-seed is an optional integer argument to specify the seed to be used for HF calculations. If it is not given a random one will be chosen
+seed is an optional integer argument to specify the seed to be used for HF calculations. If it is not given, a value in SEED file will be used if the file exists. Otherwise, a random seed will be chosen and kept in SEED file for next use.
 
 ### Running
 To run the installed simulations, copy the task_config.yaml configuration file to the run directory and modify it to 
