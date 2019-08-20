@@ -34,11 +34,11 @@ def load_metadata_df(csv_file: str):
     """Loads the metadata dataframe and converts the columns to the
     correct types"""
     df = pd.read_csv(csv_file, index_col=[0], header=[0, 1])
-
+   
     for col in df.columns:
         if col[1] in DATE_COLUMNS:
             df[col] = pd.to_datetime(df[col])
-
+    print("load_metadata_Df", df)
     return df
 
 
@@ -46,7 +46,7 @@ def get_row(json_file):
     """Gets a row of metadata for the single simulation json log file"""
     with open(json_file) as f:
         data_dict = json.load(f)
-
+    print("data_dict", data_dict)
     sim_name = data_dict.get(MetadataField.sim_name.value)
     if sim_name is None:
         print("No simulation name found in json file {}, skipping.".format(json_file))
@@ -79,7 +79,7 @@ def get_row(json_file):
 
                     columns.append((proc_type, metadata_field))
                     data.append(data_dict[proc_type][metadata_field])
-
+    print("sim_name, cloumns, data", sim_name, columns, data)
     return sim_name, columns, data
 
 
@@ -108,7 +108,7 @@ def convert_df(df: pd.DataFrame):
                     df[proc_type, meta_col] = pd.to_numeric(
                         df[proc_type, meta_col], errors="coerce", downcast=None
                     )
-
+    print("convert df", df)
     return df
 
 
@@ -203,7 +203,7 @@ def create_dataframe(json_files: List[str], n_procs: int, calc_core_hours: bool)
             * cur_df[MetadataField.ny.value]
             * cur_df[MetadataField.nz.value]
         )
-
+    print("create data fram",df)
     return df
 
 

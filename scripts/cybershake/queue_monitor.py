@@ -59,7 +59,7 @@ def get_queue_entry(
     )
 
 
-def sacct_metadata(db_running_task: SlurmTask, task_logger: Logger):
+def sacct_metadata(db_running_task: SlurmTask, task_logger: Logger, root_folder: str):
     cmd = "sacct -n -X -j {} -o 'jobid%10,jobname%35,Submit,Start,End,NCPUS,CPUTimeRAW%18,State,Nodelist%60'"
     output = (
         subprocess.check_output(cmd.format(db_running_task.job_id), shell=True)
@@ -69,23 +69,22 @@ def sacct_metadata(db_running_task: SlurmTask, task_logger: Logger):
     )
     # ['578928', 'u-bl689.atmos_main.18621001T0000Z', '2019-08-16T13:05:06', '2019-08-16T13:12:56', '2019-08-16T14:58:28', '1840', '11650880', 'COMPLETED', 'nid00[166-171,180-196]']
     submit_time, start_time, end_time = [x.replace("T", "_") for x in output[2:5]]
-    n_cores = output[5]
-    run_time = float(output[6])
+    n_cores = float(output[5])
+    run_time = float(output[6]) / n_cores
     sim_dir = sim_struct.get_sim_dir(root_folder, db_running_task.run_name)
     log_file = os.path.join(sim_dir, "ch_log", const.METADATA_LOG_FILENAME)
     with open("/home/melody.zhu/meta.txt", "a") as f:
-        f.write("{} {} {} {} {}\n".format(submit_time, start_time, end_time, n_cores, run_time))
+        f.write("{} {} {} {} {} {} {}\n".format(db_running_task.run_name, db_running_task.job_id, submit_time, start_time, end_time, n_cores, run_time))
     # now log metadata
     store_metadata(
         log_file,
         const.ProcessType(db_running_task.proc_type).str_value,
         {
-            "submit_time": submit_time,
-            "run_time": run_time,
             "start_time": start_time,
             "end_time": end_time,
+            "run_time": run_time,
             "cores": n_cores,
-            "err_log_time": datetime.now().strftime(const.METADATA_TIMESTAMP_FMT),
+            "status": output[7],
         },
         logger=task_logger,
     )
@@ -187,7 +186,7 @@ def update_tasks(
             )
             # When job failed, we want to log metadata as well
 
-            sacct_metadata(db_running_task, task_logger)
+            sacct_metadata(db_running_task, task_logger, root_folder)
     return tasks_to_do
 
 
