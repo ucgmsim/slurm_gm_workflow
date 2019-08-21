@@ -24,15 +24,12 @@ DEFAULT_N_MAX_RETRIES = 2
 
 SLURM_TO_STATUS_DICT = {"R": 3, "PD": 2, "CG": 3}
 
-logger = None
+global_logger = qclogging.get_basic_logger()
 keepAlive = True
 
 
 def on_exit(signum, frame):
-    global logger
-    if not logger:
-        logger = qclogging.get_basic_logger()
-    logger.critical("SIGINT recieved, exiting queue-monitor.")
+    global_logger.critical("SIGINT recieved, exiting queue-monitor.")
     exit()
 
 
@@ -161,7 +158,7 @@ def update_tasks(
     return tasks_to_do
 
 
-def main(
+def queue_monitor_loop(
     root_folder: str,
     sleep_time: int,
     max_retries: int,
@@ -187,8 +184,8 @@ def main(
             try:
                 squeued_tasks = get_queued_tasks(machine=hpc)
             except EnvironmentError as e:
-                logger.critical(e)
-                logger.critical(
+                queue_logger.critical(e)
+                queue_logger.critical(
                     "An error was encountered when attempting to check squeue for HPC {}. "
                     "Tasks will not be submitted to this HPC until the issue is resolved".format(
                         hpc
@@ -273,7 +270,7 @@ def main(
         time.sleep(sleep_time)
 
 
-if __name__ == "__main__":
+def main():
     logger = qclogging.get_logger()
 
     parser = argparse.ArgumentParser()
@@ -321,5 +318,11 @@ if __name__ == "__main__":
     qclogging.add_general_file_handler(logger, log_file_name)
     logger.debug("Successfully added {} as the log file.".format(log_file_name))
 
+    global global_logger
+    global_logger = logger
     signal.signal(signal.SIGINT, on_exit)
-    main(root_folder, args.sleep_time, args.n_max_retries, logger)
+    queue_monitor_loop(root_folder, args.sleep_time, args.n_max_retries, logger)
+
+
+if __name__ == '__main__':
+    main()

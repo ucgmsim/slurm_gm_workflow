@@ -360,7 +360,7 @@ def run_main_submit_loop(
                     user=user, machine=hpc
                 )
             except EnvironmentError as e:
-                logger.critical(e)
+                main_logger.critical(e)
                 n_tasks_to_run[hpc] = 0
             else:
                 n_tasks_to_run[hpc] = n_runs[hpc] - len(squeued_tasks)
@@ -465,8 +465,7 @@ def run_main_submit_loop(
     main_logger.info("Nothing was running or ready to run last cycle, exiting now")
 
 
-if __name__ == "__main__":
-
+def main():
     logger = qclogging.get_logger()
 
     parser = argparse.ArgumentParser()
@@ -622,3 +621,7 @@ if __name__ == "__main__":
         (lf_est_model, hf_est_model, bb_est_model, im_est_model),
         main_logger=logger,
     )
+
+
+if __name__ == '__main__':
+    main()
