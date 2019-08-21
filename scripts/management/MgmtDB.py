@@ -325,7 +325,11 @@ class MgmtDB:
                 (entry.status, entry.run_name, entry.proc_type, entry.status),
             )
         if cur.rowcount > 1:
-            logger.warning("Last database update caused {} entries to be updated".format(cur.rowcount))
+            logger.warning(
+                "Last database update caused {} entries to be updated".format(
+                    cur.rowcount
+                )
+            )
         if entry.error is not None:
             cur.execute(
                 """INSERT INTO error (task_id, error)
