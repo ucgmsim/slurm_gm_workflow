@@ -43,6 +43,7 @@ if is_master:
     arg("--fmin", help="fmin for site amplification", type=float, default=0.2)
     arg("--fmidbot", help="fmidbot for site amplification", type=float, default=0.5)
     arg("--lfvsref", help="Override LF Vs30 reference value (m/s)", type=float)
+    arg("--dt", help="timestep (seconds)", type=float)
     arg(
         "--no-lf-amp",
         help="Disable site amplification for LF component",
@@ -103,7 +104,11 @@ if is_master:
 # load metadata
 lf_start_sec = -1.0
 bb_start_sec = min(lf_start_sec, hf.start_sec)
-bb_dt = min(lf.dt, hf.dt)
+if args.dt is None:
+    bb_dt = min(lf.dt, hf.dt)
+else:
+    bb_dt = args.dt
+    
 d_nt = int(round(max(lf_start_sec, hf.start_sec) - bb_start_sec) / bb_dt)
 bb_nt = int(round(max(lf.duration, hf.duration) / bb_dt + d_nt))
 n2 = nt2n(bb_nt)
