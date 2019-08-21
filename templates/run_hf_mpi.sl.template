@@ -6,7 +6,7 @@ if [[ ! -d {{mgmt_db_location}}/mgmt_db_queue ]]; then
     mkdir {{mgmt_db_location}}/mgmt_db_queue
 fi
 timestamp=`date +%Y%m%d_%H%M%S`
-python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py {{mgmt_db_location}}/mgmt_db_queue {{srf_name}} HF running
+python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py {{mgmt_db_location}}/mgmt_db_queue {{srf_name}} HF running $SLURM_JOB_ID
 
 runtime_fmt="%Y-%m-%d_%H:%M:%S"
 start_time=`date +$runtime_fmt`
@@ -20,7 +20,7 @@ timestamp=`date +%Y%m%d_%H%M%S`
 res=`$gmsim/workflow/scripts/{{test_hf_script}} {{sim_dir}} `
 if [[ $? == 0 ]]; then
     #passed
-    python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py {{mgmt_db_location}}/mgmt_db_queue {{srf_name}} HF completed
+    python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py {{mgmt_db_location}}/mgmt_db_queue {{srf_name}} HF completed $SLURM_JOB_ID
 
     #save the parameters
     if [[ ! -d {{sim_dir}}/ch_log ]]; then
@@ -34,7 +34,7 @@ if [[ $? == 0 ]]; then
 else
     #reformat $res to remove '\n'
     res=`echo $res | tr -d '\n'`
-    python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py {{mgmt_db_location}}/mgmt_db_queue {{srf_name}} HF failed --error "$res"
+    python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py {{mgmt_db_location}}/mgmt_db_queue {{srf_name}} HF failed $SLURM_JOB_ID --error "$res"
     backup_directory="$nobackup/tmp/$USER/""$SLURM_JOB_ID""_{{srf_name}}_HF"
     echo "Completion test failed, moving all files to $backup_directory"
     mkdir -p $backup_directory

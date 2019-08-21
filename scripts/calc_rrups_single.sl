@@ -43,7 +43,7 @@ then
     echo ___calculating rrups___
 
     start_time=`date +${runtime_fmt}`
-    python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $REL_NAME rrup running
+    python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $REL_NAME rrup running $SLURM_JOB_ID
 
     time python ${IMPATH}/calculate_rrups_single.py -fd ${FD} -o ${OUT_DIR}/rrup_${REL_NAME}.csv ${STATION_FILE} ${SRF_FILE}
 else
@@ -55,7 +55,7 @@ if [[ -f ${OUT_DIR}/rrup_${REL_NAME}.csv ]]
 then
     if [[ $(wc -l < ${OUT_DIR}/rrup_${REL_NAME}.csv) == $(( $(wc -l < ${FD}) + 1)) ]]
     then
-        python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $REL_NAME rrup completed
+        python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $REL_NAME rrup completed $SLURM_JOB_ID
     else
         res="Not enough rrups for the station file"
     fi
@@ -65,7 +65,7 @@ fi
 
 if [[ -n ${res} ]]
 then
-    python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $REL_NAME rrup failed --error '$res'
+    python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $REL_NAME rrup failed $SLURM_JOB_ID --error '$res'
 fi
 
 date

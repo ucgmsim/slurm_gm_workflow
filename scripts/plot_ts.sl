@@ -27,7 +27,7 @@ timestamp=`date +%Y%m%d_%H%M%S`
 start_time=`date +${runtime_fmt}`
 echo ___plotting ts___
 
-python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $SRF_NAME plot_ts running
+python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $SRF_NAME plot_ts running $SLURM_JOB_ID
 res=`python $gmsim/visualization/visualization/gmt/plot_ts.py $XYTS_PATH --srf $SRF_PATH --output $OUTPUT_TS_PATH -n 36`
 exit_val=$?
 
@@ -37,8 +37,8 @@ echo $end_time
 if [[ $exit_val == 0 ]]; then
     #passed
 
-    python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $SRF_NAME plot_ts completed
+    python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $SRF_NAME plot_ts completed $SLURM_JOB_ID
 
 else
-    python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $SRF_NAME plot_ts failed --error "$res"
+    python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $SRF_NAME plot_ts failed $SLURM_JOB_ID --error "$res"
 fi

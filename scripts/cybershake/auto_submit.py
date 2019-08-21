@@ -355,14 +355,20 @@ def run_main_submit_loop(
         # Get in progress tasks in the db and the HPC queue
         n_tasks_to_run = {}
         for hpc in const.HPC:
-            n_tasks_to_run[hpc] = n_runs[hpc] - len(
-                shared_automated_workflow.get_queued_tasks(user=user, machine=hpc)
-            )
-            if n_tasks_to_run[hpc] < n_runs[hpc]:
-                main_logger.debug(
-                    "There was at least one job in squeue, resetting timeout"
+            try:
+                squeued_tasks = shared_automated_workflow.get_queued_tasks(
+                    user=user, machine=hpc
                 )
-                time_since_something_happened = cycle_timeout
+            except EnvironmentError as e:
+                logger.critical(e)
+                n_tasks_to_run[hpc] = 0
+            else:
+                n_tasks_to_run[hpc] = n_runs[hpc] - len(squeued_tasks)
+                if n_tasks_to_run[hpc] < n_runs[hpc]:
+                    main_logger.debug(
+                        "There was at least one job in squeue, resetting timeout"
+                    )
+                    time_since_something_happened = cycle_timeout
 
         # Gets all runnable tasks based on mgmt db state
         runnable_tasks = mgmt_db.get_runnable_tasks(
