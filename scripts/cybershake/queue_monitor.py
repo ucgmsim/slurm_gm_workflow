@@ -324,5 +324,5 @@ def main():
     queue_monitor_loop(root_folder, args.sleep_time, args.n_max_retries, logger)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
