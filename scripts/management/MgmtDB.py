@@ -284,7 +284,7 @@ class MgmtDB:
         """Updates all fields that have a value for the specific entry"""
         if entry.status == const.Status.queued.value:
             logger.debug(
-                "Got entry {} with status created. Setting status and job id in the db".format(
+                "Got entry {} with status queued. Setting status and job id in the db".format(
                     entry
                 )
             )
