@@ -59,6 +59,37 @@ def get_queue_entry(
     )
 
 
+def sacct_metadata(db_running_task: SlurmTask, task_logger: Logger, root_folder: str):
+    cmd = "sacct -n -X -j {} -o 'jobid%10,jobname%35,Submit,Start,End,NCPUS,CPUTimeRAW%18,State,Nodelist%60'"
+    output = (
+        subprocess.check_output(cmd.format(db_running_task.job_id), shell=True)
+        .decode("utf-8")
+        .strip()
+        .split()
+    )
+    # ['578928', 'u-bl689.atmos_main.18621001T0000Z', '2019-08-16T13:05:06', '2019-08-16T13:12:56', '2019-08-16T14:58:28', '1840', '11650880', 'COMPLETED', 'nid00[166-171,180-196]']
+    submit_time, start_time, end_time = [x.replace("T", "_") for x in output[2:5]]
+    n_cores = float(output[5])
+    run_time = float(output[6]) / n_cores
+    sim_dir = sim_struct.get_sim_dir(root_folder, db_running_task.run_name)
+    log_file = os.path.join(sim_dir, "ch_log", const.METADATA_LOG_FILENAME)
+    with open("/home/melody.zhu/meta.txt", "a") as f:
+        f.write("{} {} {} {} {} {} {}\n".format(db_running_task.run_name, db_running_task.job_id, submit_time, start_time, end_time, n_cores, run_time))
+    # now log metadata
+    store_metadata(
+        log_file,
+        const.ProcessType(db_running_task.proc_type).str_value,
+        {
+            "start_time": start_time,
+            "end_time": end_time,
+            "run_time": run_time,
+            "cores": n_cores,
+            "status": output[7],
+        },
+        logger=task_logger,
+    )
+
+
 def update_tasks(
     mgmt_queue_entries: List[str],
     squeue_tasks: Dict[str, str],
@@ -154,48 +185,8 @@ def update_tasks(
                 )
             )
             # When job failed, we want to log metadata as well
-            # Assumes that when enter a jobid, only one row will be will returnerd
-            # Sometimes, when enter a job id eg.578928, several rows would be returned eg.
-            # 578928         u-bl689.atmos+    01:45:32  65-09:41:09  1840          COMPLETED
-            # 578928.batch   batch             01:45:32    00:32.704    40  458464K COMPLETED
-            # 578928.extern  extern            01:45:32     00:00:00  1840    1368K COMPLETED
-            # 578928.0       rose-mpi-laun+    01:45:10  65-09:40:37   896 1799220K COMPLETED
 
-            run_time = (
-                subprocess.check_output(
-                    "sacct -n -j {} -A nesi00213 --format=elapsed".format(
-                        db_running_task.job_id
-                    ),
-                    shell=True,
-                )
-                .decode("utf-8")
-                .strip()
-                .split()[0]
-            )
-            # if run_time exceeds one day
-            if "-" in run_time:
-                d = float(run_time.split("-")[0])
-                h, m, s = map(float, run_time.split("-")[1].split(":"))
-                total_seconds = timedelta(
-                    days=d, hours=h, minutes=m, seconds=s
-                ).total_seconds()
-            else:
-                h, m, s = map(float, run_time.split(":"))
-                total_seconds = timedelta(hours=h, minutes=m, seconds=s).total_seconds()
-            sim_dir = sim_struct.get_sim_dir(root_folder, db_running_task.run_name)
-            log_file = os.path.join(sim_dir, "ch_log", const.METADATA_LOG_FILENAME)
-            # now log metadata
-            store_metadata(
-                log_file,
-                const.ProcessType(db_running_task.proc_type).str_value,
-                {
-                    "run_time": total_seconds,
-                    "err_log_time": datetime.now().strftime(
-                        const.METADATA_TIMESTAMP_FMT
-                    ),
-                },
-                logger=task_logger,
-            )
+            sacct_metadata(db_running_task, task_logger, root_folder)
     return tasks_to_do
 
 
@@ -349,3 +340,4 @@ if __name__ == "__main__":
 
     signal.signal(signal.SIGINT, on_exit)
     main(root_folder, args.sleep_time, args.n_max_retries, logger)
+

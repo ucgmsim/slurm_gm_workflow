@@ -34,7 +34,7 @@ if [[ $? == 0 ]]; then
     python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py {{mgmt_db_location}}/mgmt_db_queue {{srf_name}} merge_ts completed
 
     #save meta data
-    python $gmsim/workflow/metadata/log_metadata.py {{sim_dir}} merge_ts start_time=$start_time end_time=$end_time
+    python $gmsim/workflow/metadata/log_metadata.py {{sim_dir}} merge_ts start_time=$start_time end_time=$end_time status="COMPLETED"
 
 else
     python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py {{mgmt_db_location}}/mgmt_db_queue {{srf_name}} merge_ts failed --error "$res"

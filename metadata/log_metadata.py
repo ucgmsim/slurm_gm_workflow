@@ -219,7 +219,7 @@ def main(args):
             const.METADATA_TIMESTAMP_FMT,
         )
         metadata_dict[const.MetadataField.run_time.value] = (
-            tdelta.total_seconds() / 3600
+            tdelta.total_seconds()
         )
 
     # Load the params
