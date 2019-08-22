@@ -24,6 +24,7 @@ from qcore.constants import (
     ProcessType,
     MetadataField,
     Components,
+    Status,
     METADATA_TIMESTAMP_FMT,
 )
 
@@ -42,10 +43,14 @@ def load_metadata_df(csv_file: str):
     return df
 
 
+
+
+
 def get_row(json_file):
     """Gets a row of metadata for the single simulation json log file"""
     with open(json_file) as f:
         data_dict = json.load(f)
+    print("get_row data_dict", data_dict)
 
     sim_name = data_dict.get(MetadataField.sim_name.value)
     if sim_name is None:
@@ -57,20 +62,24 @@ def get_row(json_file):
 
     # Iterate over the json and aggregate the data
     for proc_type in data_dict.keys():
+        #print("proc type in data_dict keys", proc_type)
         if ProcessType.has_str_value(proc_type):
+            #print("ProcessType.has_str_value(proc_type)",proc_type)
             for metadata_field in data_dict[proc_type].keys():
-                if MetadataField.has_value(metadata_field):
-
+               # print("for metadata_field in data_dict[proc_type].keys()", metadata_field,data_dict[proc_type].keys())
+                if MetadataField.is_substring(metadata_field):
+                    #print("MetadataField.has_value(metadata_field)",metadata_field)
                     # Special handling as dataframes do not like lists
-                    if metadata_field == MetadataField.im_comp.value:
+                    if MetadataField.im_comp.value in metadata_field and MetadataField.im_comp_count.value not in metadata_field:   # excludes "im_components_count"
                         for comp in data_dict[proc_type][metadata_field]:
+                          #  print("comps",data_dict[proc_type][metadata_field])
                             columns.append((proc_type, comp))
                             data.append(1)
                         continue
 
                     # Adjust hyperthreaded number of cores to physical cores
                     if (
-                        metadata_field == MetadataField.n_cores.value
+                        MetadataField.n_cores.value in metadata_field
                         and ProcessType.from_str(proc_type).is_hyperth
                     ):
                         columns.append((proc_type, metadata_field))
@@ -90,8 +99,10 @@ def convert_df(df: pd.DataFrame):
         if proc_type in df.columns.levels[0].values:
             # All available metadata
             for meta_col in df[proc_type].columns.values:
+                print("mmmmmmmmmmmmmmmmmmm", meta_col)
                 # Convert date strings to date type
-                if meta_col in DATE_COLUMNS:
+                if "time" in meta_col and "run" not in meta_col:
+                    print("time in meta cl")
                     df[proc_type, meta_col] = pd.to_datetime(
                         df[proc_type, meta_col],
                         format=METADATA_TIMESTAMP_FMT,
@@ -104,6 +115,10 @@ def convert_df(df: pd.DataFrame):
                         np.bool
                     )
                 # Try to convert everything else to numeric
+                elif "status" in meta_col: # status, status_1
+                    print("is ssssssssssssssssssssssstatus", df)
+                    df[proc_type, meta_col] = df[proc_type, meta_col]
+                    # )
                 else:
                     df[proc_type, meta_col] = pd.to_numeric(
                         df[proc_type, meta_col], errors="coerce", downcast=None
@@ -144,11 +159,13 @@ def create_dataframe(json_files: List[str], n_procs: int, calc_core_hours: bool)
     print("Creating dataframe...")
     df = None
     for sim_name, columns, data in rows:
+        print(sim_name, columns, data)
         if sim_name is None and columns is None and data is None:
             continue
 
         # Create the dataframe
         if df is None:
+            print("df is none")
             df = pd.DataFrame(
                 index=[sim_name],
                 columns=pd.MultiIndex.from_tuples(columns),
@@ -156,6 +173,7 @@ def create_dataframe(json_files: List[str], n_procs: int, calc_core_hours: bool)
             )
         else:
             # Check/Add missing columns
+            print("else")
             column_mask = np.asarray(
                 [True if col in df.columns else False for col in columns]
             )
@@ -174,26 +192,7 @@ def create_dataframe(json_files: List[str], n_procs: int, calc_core_hours: bool)
     if calc_core_hours:
         for proc_type in ProcessType.iterate_str_values():
             if proc_type in df.columns.levels[0].values:
-                cur_df = df.loc[:, proc_type]
-
-                if (
-                    MetadataField.run_time.value in cur_df.columns
-                    and MetadataField.n_cores.value in cur_df.columns
-                ):
-                    df.loc[:, (proc_type, MetadataField.core_hours.value)] = (
-                        cur_df.loc[:, MetadataField.run_time.value]
-                        * cur_df.loc[:, MetadataField.n_cores.value]
-                    )
-                # Missing run time and number of cores column
-                else:
-                    print(
-                        "Columns {} and {} do no exist for "
-                        "simulation type {}".format(
-                            MetadataField.run_time.value,
-                            MetadataField.run_time.value,
-                            proc_type,
-                        )
-                    )
+                get_core_hours(df, proc_type)
 
     # Add n_steps to EMOD3D
     if ProcessType.EMOD3D.str_value in df.columns:
@@ -203,8 +202,32 @@ def create_dataframe(json_files: List[str], n_procs: int, calc_core_hours: bool)
             * cur_df[MetadataField.ny.value]
             * cur_df[MetadataField.nz.value]
         )
-
     return df
+
+
+def get_core_hours(df, proc_type):
+    cur_df = df.loc[:, proc_type]
+    # Missing run time and number of cores column
+    if (MetadataField.run_time.value not in cur_df.columns or MetadataField.n_cores.value not in cur_df.columns):
+        print(
+            "Columns {} and {} do no exist for "
+            "simulation type {}".format(
+                MetadataField.run_time.value,
+                MetadataField.run_time.value,
+                proc_type,
+            )
+        )
+    else:
+        for col in cur_df.columns:
+            print("col", col)
+            if MetadataField.run_time.value in col:  # run_time_1
+                n_cores_col = col.replace(MetadataField.run_time.value, MetadataField.n_cores.value)  # cores_1
+                if n_cores_col in cur_df.columns:
+                    core_hours_col = col.replace(MetadataField.run_time.value, MetadataField.core_hours.value)  # core_hours_1
+                    df.loc[:, (proc_type, core_hours_col)] = (
+                        cur_df.loc[:, col]
+                        * cur_df.loc[:, n_cores_col] / 3600.
+                    )
 
 
 def main(args):
