@@ -128,7 +128,7 @@ def run_automated_workflow(
     queue_monitor_thread = threading.Thread(
         name="queue monitor",
         daemon=True,
-        target=queue_monitor.main,
+        target=queue_monitor.queue_monitor_loop,
         args=(root_folder, sleep_time, n_max_retries, queue_logger),
     )
     wrapper_logger.info("Created queue_monitor thread")
