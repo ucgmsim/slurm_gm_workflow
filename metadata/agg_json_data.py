@@ -43,9 +43,6 @@ def load_metadata_df(csv_file: str):
     return df
 
 
-
-
-
 def get_row(json_file):
     """Gets a row of metadata for the single simulation json log file"""
     with open(json_file) as f:
@@ -62,21 +59,16 @@ def get_row(json_file):
 
     # Iterate over the json and aggregate the data
     for proc_type in data_dict.keys():
-        #print("proc type in data_dict keys", proc_type)
         if ProcessType.has_str_value(proc_type):
-            #print("ProcessType.has_str_value(proc_type)",proc_type)
             for metadata_field in data_dict[proc_type].keys():
-               # print("for metadata_field in data_dict[proc_type].keys()", metadata_field,data_dict[proc_type].keys())
                 if MetadataField.is_substring(metadata_field):
-                    #print("MetadataField.has_value(metadata_field)",metadata_field)
                     # Special handling as dataframes do not like lists
-                    if MetadataField.im_comp.value in metadata_field and MetadataField.im_comp_count.value not in metadata_field:   # excludes "im_components_count"
+                    # excludes "im_components_count", only consider im_components, im_components_1 etc
+                    if MetadataField.im_comp.value in metadata_field and MetadataField.im_comp_count.value not in metadata_field:
                         for comp in data_dict[proc_type][metadata_field]:
-                          #  print("comps",data_dict[proc_type][metadata_field])
                             columns.append((proc_type, comp))
                             data.append(1)
                         continue
-
                     # Adjust hyperthreaded number of cores to physical cores
                     if (
                         MetadataField.n_cores.value in metadata_field
@@ -99,10 +91,9 @@ def convert_df(df: pd.DataFrame):
         if proc_type in df.columns.levels[0].values:
             # All available metadata
             for meta_col in df[proc_type].columns.values:
-                print("mmmmmmmmmmmmmmmmmmm", meta_col)
                 # Convert date strings to date type
-                if "time" in meta_col and "run" not in meta_col:
-                    print("time in meta cl")
+                # submit_time*, start_time*, end_time, excludes run_time*
+                if MetadataField.submit_time.value in meta_col or MetadataField.start_time.value in meta_col or MetadataField.end_time.value in meta_col:
                     df[proc_type, meta_col] = pd.to_datetime(
                         df[proc_type, meta_col],
                         format=METADATA_TIMESTAMP_FMT,
@@ -114,11 +105,10 @@ def convert_df(df: pd.DataFrame):
                     df[(proc_type, meta_col)] = df[(proc_type, meta_col)].astype(
                         np.bool
                     )
+                # status, status_1, do nothing to df, keep status string as it is
+                elif MetadataField.status.value in meta_col:
+                    continue
                 # Try to convert everything else to numeric
-                elif "status" in meta_col: # status, status_1
-                    print("is ssssssssssssssssssssssstatus", df)
-                    df[proc_type, meta_col] = df[proc_type, meta_col]
-                    # )
                 else:
                     df[proc_type, meta_col] = pd.to_numeric(
                         df[proc_type, meta_col], errors="coerce", downcast=None
@@ -226,7 +216,7 @@ def get_core_hours(df, proc_type):
                     core_hours_col = col.replace(MetadataField.run_time.value, MetadataField.core_hours.value)  # core_hours_1
                     df.loc[:, (proc_type, core_hours_col)] = (
                         cur_df.loc[:, col]
-                        * cur_df.loc[:, n_cores_col] / 3600.
+                        * cur_df.loc[:, n_cores_col] / 3600.  # run_time was in seconds, converting to hours
                     )
 
 
