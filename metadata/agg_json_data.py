@@ -64,7 +64,10 @@ def get_row(json_file):
                 if MetadataField.is_substring(metadata_field):
                     # Special handling as dataframes do not like lists
                     # excludes "im_components_count", only consider im_components, im_components_1 etc
-                    if MetadataField.im_comp.value in metadata_field and MetadataField.im_comp_count.value not in metadata_field:
+                    if (
+                        MetadataField.im_comp.value in metadata_field
+                        and MetadataField.im_comp_count.value not in metadata_field
+                    ):
                         for comp in data_dict[proc_type][metadata_field]:
                             columns.append((proc_type, comp))
                             data.append(1)
@@ -93,7 +96,11 @@ def convert_df(df: pd.DataFrame):
             for meta_col in df[proc_type].columns.values:
                 # Convert date strings to date type
                 # submit_time*, start_time*, end_time, excludes run_time*
-                if MetadataField.submit_time.value in meta_col or MetadataField.start_time.value in meta_col or MetadataField.end_time.value in meta_col:
+                if (
+                    MetadataField.submit_time.value in meta_col
+                    or MetadataField.start_time.value in meta_col
+                    or MetadataField.end_time.value in meta_col
+                ):
                     df[proc_type, meta_col] = pd.to_datetime(
                         df[proc_type, meta_col],
                         format=METADATA_TIMESTAMP_FMT,
@@ -198,25 +205,31 @@ def create_dataframe(json_files: List[str], n_procs: int, calc_core_hours: bool)
 def get_core_hours(df, proc_type):
     cur_df = df.loc[:, proc_type]
     # Missing run time and number of cores column
-    if (MetadataField.run_time.value not in cur_df.columns or MetadataField.n_cores.value not in cur_df.columns):
+    if (
+        MetadataField.run_time.value not in cur_df.columns
+        or MetadataField.n_cores.value not in cur_df.columns
+    ):
         print(
             "Columns {} and {} do no exist for "
             "simulation type {}".format(
-                MetadataField.run_time.value,
-                MetadataField.run_time.value,
-                proc_type,
+                MetadataField.run_time.value, MetadataField.run_time.value, proc_type
             )
         )
     else:
         for col in cur_df.columns:
             print("col", col)
             if MetadataField.run_time.value in col:  # run_time_1
-                n_cores_col = col.replace(MetadataField.run_time.value, MetadataField.n_cores.value)  # cores_1
+                n_cores_col = col.replace(
+                    MetadataField.run_time.value, MetadataField.n_cores.value
+                )  # cores_1
                 if n_cores_col in cur_df.columns:
-                    core_hours_col = col.replace(MetadataField.run_time.value, MetadataField.core_hours.value)  # core_hours_1
+                    core_hours_col = col.replace(
+                        MetadataField.run_time.value, MetadataField.core_hours.value
+                    )  # core_hours_1
                     df.loc[:, (proc_type, core_hours_col)] = (
                         cur_df.loc[:, col]
-                        * cur_df.loc[:, n_cores_col] / 3600.  # run_time was in seconds, converting to hours
+                        * cur_df.loc[:, n_cores_col]
+                        / 3600.0  # run_time was in seconds, converting to hours
                     )
 
 
