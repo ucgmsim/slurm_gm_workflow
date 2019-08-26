@@ -30,10 +30,17 @@ def get_queued_tasks(user=None, machine=const.HPC.maui):
     process = Popen(shlex.split(cmd), stdout=PIPE, encoding="utf-8")
     (output, err) = process.communicate()
     process.wait()
-    if output.split("\n")[0] != "JOBID ST":
+    try:
+        header = output.split("\n")[1]
+    except:
         raise EnvironmentError(
             "squeue did not return expected output. Ignoring for this iteration."
         )
+    else:
+        if header != "JOBID ST":
+            raise EnvironmentError(
+                "squeue did not return expected output. Ignoring for this iteration."
+            )
 
     output_list = list(filter(None, output.split("\n")[1:]))
     return output_list
