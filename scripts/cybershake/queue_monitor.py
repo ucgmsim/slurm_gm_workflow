@@ -25,15 +25,12 @@ DEFAULT_N_MAX_RETRIES = 2
 
 SLURM_TO_STATUS_DICT = {"R": 3, "PD": 2, "CG": 3}
 
-logger = None
+global_logger = qclogging.get_basic_logger()
 keepAlive = True
 
 
 def on_exit(signum, frame):
-    global logger
-    if not logger:
-        logger = qclogging.get_basic_logger()
-    logger.critical("SIGINT recieved, exiting queue-monitor.")
+    global_logger.critical("SIGINT recieved, exiting queue-monitor.")
     exit()
 
 
@@ -92,6 +89,7 @@ def update_tasks(
     mgmt_queue_entries: List[str],
     squeue_tasks: Dict[str, str],
     db_running_tasks: List[SlurmTask],
+    complete_data: bool,
     task_logger: Logger,
     root_folder,
 ):
@@ -165,30 +163,35 @@ def update_tasks(
             db_running_task.proc_type,
             logger=task_logger,
         ):
-            task_logger.warning(
-                "Task '{}' on '{}' not found on squeue or in the management db folder; resetting the status "
-                "to 'created' for resubmission".format(
-                    const.ProcessType(db_running_task.proc_type).str_value,
-                    db_running_task.run_name,
+            if not complete_data:
+                task_logger.warning(
+                    "Task '{}' not found on squeue or in the management db folder, "
+                    "but errors were encountered when querying squeue. Not resubmitting."
                 )
-            )
-            # Add an error
-            tasks_to_do.append(
-                SlurmTask(
-                    db_running_task.run_name,
-                    db_running_task.proc_type,
-                    const.Status.failed.value,
-                    None,
-                    "Disappeared from squeue. Creating a new task.",
+            else:
+                task_logger.warning(
+                    "Task '{}' on '{}' not found on squeue or in the management db folder; resetting the status "
+                    "to 'created' for resubmission".format(
+                        const.ProcessType(db_running_task.proc_type).str_value,
+                        db_running_task.run_name,
+                    )
                 )
-            )
+                # Add an error
+                tasks_to_do.append(
+                    SlurmTask(
+                        db_running_task.run_name,
+                        db_running_task.proc_type,
+                        const.Status.failed.value,
+                        None,
+                        "Disappeared from squeue. Creating a new task.",
+                    )
+                )
             # When job failed, we want to log metadata as well
-
             sacct_metadata(db_running_task, task_logger, root_folder)
     return tasks_to_do
 
 
-def main(
+def queue_monitor_loop(
     root_folder: str,
     sleep_time: int,
     max_retries: int,
@@ -203,16 +206,28 @@ def main(
 
     sqlite_tmpdir = "/tmp/cer"
     while keepAlive:
+        complete_data = True
         if not os.path.exists(sqlite_tmpdir):
             os.makedirs(sqlite_tmpdir)
             queue_logger.debug("Set up the sqlite_tmpdir")
 
         # For each hpc get a list of job id and status', and for each pair save them in a dictionary
-        squeue_tasks = {
-            task.split()[0]: task.split()[1]
-            for hpc in const.HPC
-            for task in get_queued_tasks(machine=hpc)
-        }
+        squeue_tasks = {}
+        for hpc in const.HPC:
+            try:
+                squeued_tasks = get_queued_tasks(machine=hpc)
+            except EnvironmentError as e:
+                queue_logger.critical(e)
+                queue_logger.critical(
+                    "An error was encountered when attempting to check squeue for HPC {}. "
+                    "Tasks will not be submitted to this HPC until the issue is resolved".format(
+                        hpc
+                    )
+                )
+                complete_data = False
+            else:
+                for task in squeued_tasks:
+                    squeue_tasks[task.split()[0]] = task.split()[1]
 
         if len(squeue_tasks) > 0:
             queue_logger.info(
@@ -264,8 +279,9 @@ def main(
                 entry_files,
                 squeue_tasks,
                 db_in_progress_tasks,
+                complete_data,
                 queue_logger,
-                root_folder,
+                root_folder
             )
         )
 
@@ -288,7 +304,7 @@ def main(
         time.sleep(sleep_time)
 
 
-if __name__ == "__main__":
+def main():
     logger = qclogging.get_logger()
 
     parser = argparse.ArgumentParser()
@@ -336,6 +352,12 @@ if __name__ == "__main__":
     qclogging.add_general_file_handler(logger, log_file_name)
     logger.debug("Successfully added {} as the log file.".format(log_file_name))
 
+    global global_logger
+    global_logger = logger
     signal.signal(signal.SIGINT, on_exit)
-    main(root_folder, args.sleep_time, args.n_max_retries, logger)
+    queue_monitor_loop(root_folder, args.sleep_time, args.n_max_retries, logger)
+
+
+if __name__ == "__main__":
+    main()
 

@@ -2,9 +2,15 @@ Slurm Ground Motion Workflow
 # Changelog
 (Based on https://wiki.canterbury.ac.nz/download/attachments/58458136/CodeVersioning_v18p2.pdf?version=1&modificationDate=1519269238437&api=v2 )
 
-## [19.6.11] - 2019-08-19 -- Add metadata for failed runs
+## [19.6.12] - 2019-08-26 -- Add metadata for failed runs
 ### Added
     - Added metadata logging for failed runs in queue monitor
+
+## [19.6.11] - 2019-08-21 -- Squeue failure detection
+### Changed
+    - If squeue does not return the expected headers, it is assumed to have failed. In this case no jobs will be marked as failed and requiring resubmitting
+    - add_to_mgmt_queue now optionally takes in the slurm job id. If it is given it is used to match the update with an existing database entry, if it is not given the user is warned and the update is applied anyway
+    - If more than one entry in the database is updated by an update the user is alerted to this
 
 ## [19.6.10] - 2019-08-16 -- Improved load balancing for HF calculation
 ### Changed

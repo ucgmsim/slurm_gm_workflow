@@ -31,7 +31,7 @@ timestamp=`date +%Y%m%d_%H%M%S`
 start_time=`date +${runtime_fmt}`
 echo ___im plot___
 
-python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $SRF_NAME IM_plot running
+python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $SRF_NAME IM_plot running $SLURM_JOB_ID
 res=`python $gmsim/visualization/visualization/im_plotting/im_plot.py $CSV_PATH $STATION_FILE_PATH --output $OUTPUT_XYZ_DIR`
 
 exit_val=$?
@@ -94,13 +94,13 @@ if [[ $exit_val == 0 ]]; then
         echo "srf_file $SRF_PATH"
         echo "model_params $MODEL_PARAMS"
         printf '%s\n' "${success_msgs[@]}" 
-        python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $SRF_NAME IM_plot completed
+        python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $SRF_NAME IM_plot completed $SLURM_JOB_ID
     else
        printf '%s\n' "${failed_msgs[@]}" 
-       python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $SRF_NAME IM_plot failed --error "$failed_msgs" 
+       python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $SRF_NAME IM_plot failed $SLURM_JOB_ID --error "$failed_msgs"
     fi
 else
-    python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $SRF_NAME IM_plot failed --error "$res"
+    python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $SRF_NAME IM_plot failed $SLURM_JOB_ID --error "$res"
 fi
 
 end_time=`date +$runtime_fmt`
