@@ -94,13 +94,13 @@ class DataCollector:
 
         self.ssh_cmd_template = "ssh {}@{} {}"
 
-    def run(self, users):
+    def run(self, users, project_id):
         """Runs the data collection"""
         while True:
             # Collect the data
             print("{} - Collecting data from HPC {}".format(datetime.now(), self.hpc))
             for data_hpc in self.hpc:
-                self.collect_data(data_hpc, users)
+                self.collect_data(data_hpc, users, project_id)
             print("{} - Done".format(datetime.now()))
 
             time.sleep(self.interval)
@@ -126,7 +126,7 @@ class DataCollector:
 
         return start_utc_time_string, end_utc_time_string
 
-    def collect_data(self, hpc: const.HPC, users: Iterable[str]):
+    def collect_data(self, hpc: const.HPC, users: Iterable[str], project_id: str):
         """Collects data from the specified HPC and adds it to the
         dashboard db
         """
@@ -134,7 +134,7 @@ class DataCollector:
         # Get daily core hours usage
         rt_daily_ch_output = self.run_cmd(
             "sreport -M {} -n -t Hours cluster AccountUtilizationByUser Accounts={} start={} end={} format=Cluster,Accounts,Login%30,Proper,Used".format(
-                hpc.value, PROJECT_ID, start_time, end_time
+                hpc.value, project_id, start_time, end_time
             )
         )
         if rt_daily_ch_output:
@@ -142,7 +142,7 @@ class DataCollector:
 
         rt_total_ch_output = self.run_cmd(
             "sreport -M {} -n -t Hours cluster AccountUtilizationByUser Accounts={} start={} end={} format=Cluster,Accounts,Login%30,Proper,Used".format(
-                hpc.value, PROJECT_ID, self.total_start_time, end_time
+                hpc.value, project_id, self.total_start_time, end_time
             )
         )
         if rt_total_ch_output:
@@ -195,8 +195,8 @@ class DataCollector:
 
         # user daily core hour usage
         user_ch_output = self.run_cmd(
-            "sreport -M {} -t Hours cluster AccountUtilizationByUser Users={} start={} end={} -n format=Cluster,Account,Login%30,Proper,Used".format(
-                hpc.value, " ".join(users), start_time, end_time
+            "sreport -M {} -t Hours cluster AccountUtilizationByUser Accounts={} Users={} start={} end={} -n format=Cluster,Account,Login%30,Proper,Used".format(
+                hpc.value, project_id, " ".join(users), start_time, end_time
             )
         )
         if user_ch_output:
@@ -378,7 +378,7 @@ def main(args):
         else [const.HPC(cur_hpc) for cur_hpc in args.hpc]
     )
     data_col = DataCollector(args.user, hpc, args.dashboard_db, args.update_interval)
-    data_col.run(args.users)
+    data_col.run(args.users, args.project_id)
 
 
 if __name__ == "__main__":
@@ -407,6 +407,15 @@ if __name__ == "__main__":
         ),
         default=USERS.keys(),
     )
+
+    parser.add_argument(
+        "--project_id",
+        type=str,
+        help="Specify the project ID to collect old daily core hours usages for (back from today),"
+        " default is {}".format(const.DEFAULT_ACCOUNT),
+        default=const.DEFAULT_ACCOUNT,
+    )
+
     args = parser.parse_args()
 
     main(args)
