@@ -195,8 +195,8 @@ class DataCollector:
 
         # user daily core hour usage
         user_ch_output = self.run_cmd(
-            "sreport -M {} -t Hours cluster AccountUtilizationByUser Users={} start={} end={} -n format=Cluster,Account,Login%30,Proper,Used".format(
-                hpc.value, " ".join(users), start_time, end_time
+            "sreport -M {} -t Hours cluster AccountUtilizationByUser Accounts={} Users={} start={} end={} -n format=Cluster,Account,Login%30,Proper,Used".format(
+                hpc.value, PROJECT_ID, " ".join(users), start_time, end_time
             )
         )
         if user_ch_output:

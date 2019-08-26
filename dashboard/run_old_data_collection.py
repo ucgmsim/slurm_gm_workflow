@@ -47,7 +47,7 @@ def collect_old_data(
     """Collect old core hours usage for a specified users in a previous day"""
     local_date, start_time, end_time = get_old_utc_times(day_shift)
 
-    cmd = "sreport -M {} -t Hours cluster AccountUtilizationByUser Users={} start={} end={} -n format=Cluster,Accounts,Login%30,Proper,Used".format(
+    cmd = "sreport -M {} -t Hours cluster AccountUtilizationByUser Accounts=nesi00213 Users={} start={} end={} -n format=Cluster,Accounts,Login%30,Proper,Used".format(
         hpc.value, " ".join(users), start_time, end_time
     )
     user_ch_output = (
