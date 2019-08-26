@@ -47,7 +47,6 @@ def get_row(json_file):
     """Gets a row of metadata for the single simulation json log file"""
     with open(json_file) as f:
         data_dict = json.load(f)
-    print("get_row data_dict", data_dict)
 
     sim_name = data_dict.get(MetadataField.sim_name.value)
     if sim_name is None:
@@ -170,7 +169,6 @@ def create_dataframe(json_files: List[str], n_procs: int, calc_core_hours: bool)
             )
         else:
             # Check/Add missing columns
-            print("else")
             column_mask = np.asarray(
                 [True if col in df.columns else False for col in columns]
             )
@@ -217,7 +215,6 @@ def get_core_hours(df, proc_type):
         )
     else:
         for col in cur_df.columns:
-            print("col", col)
             if MetadataField.run_time.value in col:  # run_time_1
                 n_cores_col = col.replace(
                     MetadataField.run_time.value, MetadataField.n_cores.value

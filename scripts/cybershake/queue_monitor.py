@@ -73,8 +73,6 @@ def sacct_metadata(db_running_task: SlurmTask, task_logger: Logger, root_folder:
     run_time = float(output[6]) / n_cores
     sim_dir = sim_struct.get_sim_dir(root_folder, db_running_task.run_name)
     log_file = os.path.join(sim_dir, "ch_log", const.METADATA_LOG_FILENAME)
-    with open("/home/melody.zhu/meta.txt", "a") as f:
-        f.write("{} {} {} {} {} {} {}\n".format(db_running_task.run_name, db_running_task.job_id, submit_time, start_time, end_time, n_cores, run_time))
     # now log metadata
     store_metadata(
         log_file,
