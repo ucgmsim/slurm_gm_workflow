@@ -23,6 +23,13 @@ if __name__ == "__main__":
         choices=list(const.Status.iterate_str_values()),
     )
     parser.add_argument(
+        "job_id",
+        type=int,
+        nargs="?",
+        help="The job id. Used for setting on job queueing, used for matching on following steps",
+        default=None,
+    )
+    parser.add_argument(
         "--error",
         type=str,
         help="Errors that occurred during the execution of the script.",
@@ -34,5 +41,6 @@ if __name__ == "__main__":
         args.run_name,
         const.ProcessType.from_str(args.proc_type).value,
         const.Status.from_str(args.status).value,
+        job_id=args.job_id,
         error=args.error,
     )

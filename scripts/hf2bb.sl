@@ -32,7 +32,7 @@ if [[ ! -d $MGMT_DB_LOC/mgmt_db_queue ]]; then
     mkdir $MGMT_DB_LOC/mgmt_db_queue
 fi
 timestamp=`date +%Y%m%d_%H%M%S`
-python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $REL_NAME HF2BB running
+python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $REL_NAME HF2BB running $SLURM_JOB_ID
 
 runtime_fmt="%Y-%m-%d_%H:%M:%S"
 start_time=`date +$runtime_fmt`
@@ -49,7 +49,7 @@ timestamp=`date +%Y%m%d_%H%M%S`
 res=`$gmsim/workflow/scripts/test_bb.sh $REL_LOC `
 if [[ $? == 0 ]]; then
     #passed
-    python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $REL_NAME HF2BB completed
+    python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $REL_NAME HF2BB completed $SLURM_JOB_ID
 
     if [[ ! -d $REL_LOC/ch_log ]]; then
         mkdir $REL_LOC/ch_log
@@ -62,5 +62,5 @@ if [[ $? == 0 ]]; then
 else
     #reformat $res to remove '\n'
     res=`echo $res | tr -d '\n'`
-    python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $REL_NAME HF2BB failed --error "$res"
+    python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $REL_NAME HF2BB failed $SLURM_JOB_ID --error "$res"
 fi

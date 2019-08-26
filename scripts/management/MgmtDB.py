@@ -81,7 +81,7 @@ class MgmtDB:
                     logger.debug("New task added to the db, continuing to next process")
                     continue
                 logger.debug("Updating task in the db")
-                self._update_entry(cur, entry)
+                self._update_entry(cur, entry, logger=logger)
                 logger.debug("Task successfully updated")
 
                 if (
@@ -278,17 +278,58 @@ class MgmtDB:
         logger.debug("{} has remaining deps: {}".format(task, remaining_deps))
         return len(remaining_deps) == 0
 
-    def _update_entry(self, cur: sql.Cursor, entry: SlurmTask):
+    def _update_entry(
+        self, cur: sql.Cursor, entry: SlurmTask, logger: Logger = get_basic_logger()
+    ):
         """Updates all fields that have a value for the specific entry"""
-        for field, value in zip(
-            (self.col_job_id, self.col_status), (entry.job_id, entry.status)
-        ):
-            if value is not None:
-                cur.execute(
-                    "UPDATE state SET {} = ?, last_modified = strftime('%s','now') "
-                    "WHERE run_name = ? AND proc_type = ? and status < ?".format(field),
-                    (value, entry.run_name, entry.proc_type, entry.status),
+        if entry.status == const.Status.queued.value:
+            logger.debug(
+                "Got entry {} with status queued. Setting status and job id in the db".format(
+                    entry
                 )
+            )
+            cur.execute(
+                "UPDATE state SET {} = ?, {} = ?, last_modified = strftime('%s','now') "
+                "WHERE run_name = ? AND proc_type = ? and status < ?".format(
+                    self.col_job_id, self.col_status
+                ),
+                (
+                    entry.job_id,
+                    entry.status,
+                    entry.run_name,
+                    entry.proc_type,
+                    entry.status,
+                ),
+            )
+        elif entry.job_id is not None:
+            cur.execute(
+                "UPDATE state SET status = ?, last_modified = strftime('%s','now') "
+                "WHERE run_name = ? AND proc_type = ? and status < ? and job_id = ?",
+                (
+                    entry.status,
+                    entry.run_name,
+                    entry.proc_type,
+                    entry.status,
+                    entry.job_id,
+                ),
+            )
+        else:
+            logger.warning(
+                "Recieved entry {}, status is more than created but the job_id is not set.".format(
+                    entry
+                )
+            )
+            cur.execute(
+                "UPDATE state SET status = ?, last_modified = strftime('%s','now') "
+                "WHERE run_name = ? AND proc_type = ? and status < ?",
+                (entry.status, entry.run_name, entry.proc_type, entry.status),
+            )
+        if cur.rowcount > 1:
+            logger.warning(
+                "Last database update caused {} entries to be updated".format(
+                    cur.rowcount
+                )
+            )
         if entry.error is not None:
             cur.execute(
                 """INSERT INTO error (task_id, error)
