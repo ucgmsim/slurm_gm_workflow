@@ -43,7 +43,7 @@ def collect_old_data(
     login_user: str,
     users: Iterable[str],
     day_shift: int,
-    project_id: str
+    project_id: str,
 ):
     """Collect old core hours usage for a specified users in a previous day"""
     local_date, start_time, end_time = get_old_utc_times(day_shift)
@@ -65,8 +65,8 @@ def collect_old_data(
             DataCollector.parse_user_chours_usage(user_ch_output, users, local_date),
             local_date,
         )
-    cmd2 = "sreport -M {} -n -t Hours cluster AccountUtilizationByUser Accounts={} start={} end={} format=Cluster,Accounts,Login%30,Proper,Used".format(hpc.value, project_id,
-        start_time, end_time
+    cmd2 = "sreport -M {} -n -t Hours cluster AccountUtilizationByUser Accounts={} start={} end={} format=Cluster,Accounts,Login%30,Proper,Used".format(
+        hpc.value, project_id, start_time, end_time
     )
 
     rt_daily_ch_output = (
@@ -80,8 +80,8 @@ def collect_old_data(
     rt_daily_ch = DataCollector.parse_chours_usage(rt_daily_ch_output)
 
     # Get total core hours usage, start from 188 days ago
-    cmd3 = "sreport -M {} -n -t Hours cluster AccountUtilizationByUser Accounts={} start={} end={} format=Cluster,Accounts,Login%30,Proper,Used".format(hpc.value, project_id,
-        DataCollector.total_start_time, end_time
+    cmd3 = "sreport -M {} -n -t Hours cluster AccountUtilizationByUser Accounts={} start={} end={} format=Cluster,Accounts,Login%30,Proper,Used".format(
+        hpc.value, project_id, DataCollector.total_start_time, end_time
     )
 
     rt_total_ch_output = (
@@ -104,7 +104,7 @@ def run_old_collection(
     login_user: str,
     users: Iterable[str],
     days_shift: int,
-    project_id: str
+    project_id: str,
 ):
     """Runs the data collection for a specified period"""
     # Iterate through the specifid days period
@@ -112,7 +112,9 @@ def run_old_collection(
         # Collect the data
         print("{} - Collecting data from HPC {}".format(datetime.now(), hpcs))
         for hpc in hpcs:
-            collect_old_data(dashboard_db, hpc, login_user, users, day_shift, project_id)
+            collect_old_data(
+                dashboard_db, hpc, login_user, users, day_shift, project_id
+            )
             print("{} - Done".format(datetime.now()))
 
 
@@ -127,7 +129,9 @@ def main(args):
     else:
         dashboard_db = DashboardDB(args.dashboard_db)
 
-    run_old_collection(dashboard_db, hpc, args.user, args.users, args.days_shift, args.project_id)
+    run_old_collection(
+        dashboard_db, hpc, args.user, args.users, args.days_shift, args.project_id
+    )
 
 
 if __name__ == "__main__":
@@ -169,7 +173,7 @@ if __name__ == "__main__":
         "--project_id",
         type=str,
         help="Specify the project ID to collect old daily core hours usages for (back from today),"
-             " default is {}".format(const.DEFAULT_ACCOUNT),
+        " default is {}".format(const.DEFAULT_ACCOUNT),
         default=const.DEFAULT_ACCOUNT,
     )
     args = parser.parse_args()

@@ -412,7 +412,7 @@ if __name__ == "__main__":
         "--project_id",
         type=str,
         help="Specify the project ID to collect old daily core hours usages for (back from today),"
-             " default is {}".format(const.DEFAULT_ACCOUNT),
+        " default is {}".format(const.DEFAULT_ACCOUNT),
         default=const.DEFAULT_ACCOUNT,
     )
 
