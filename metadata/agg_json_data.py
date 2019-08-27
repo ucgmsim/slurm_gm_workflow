@@ -241,7 +241,7 @@ def main(args):
     file_pattern = (
         "{}.json".format(args.filename_pattern)
         if args.not_recursive
-        else os.path.join("**/", "{}.json".format(args.filename_pattern))
+        else os.path.join("**/", "{}*.json".format(args.filename_pattern))
     )
 
     json_files = [
