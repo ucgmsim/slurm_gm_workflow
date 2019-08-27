@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """This script is used from inside the submit/run slurm scripts to store metadata in a
 json file.
-
 Example:
 python3 log_metadata.py ./log_dir LF cores=12 run_time=12.5
 """
@@ -74,19 +73,16 @@ def store_metadata(
     logger: Logger = get_basic_logger(),
 ):
     """Store metadata values in the specified json log file for a specific process type.
-
     Metadata values are stored as key, value pairs if a key already exists,
     it is not changed and instead new values are added with a postfix such as _1, _2, etc
     The exception are keys that are in the metaconst_to_add list, additional keys are
     also stored with a prefix, however their value is also added to the primary
     key (i.e. the one without a postfix). This is only allowed for values that can be
     converted to int or float.
-
     To prevent locking or any race condition the a lock for the log file is
     aquired at the start of the function and released at the end of it.
     The lock is kept for the full duration of the function and not just the read/write
     part as the file is overwritten and not updated.
-
     Parameters
     ----------
     log_file: str
@@ -154,8 +150,7 @@ def store_metadata(
     if proc_data is None:
         proc_data = {}
         json_data[proc_type] = proc_data
-    f=open("/home/melody.zhu/meta_debug.txt",'a')
-    f.write("meta_dict {}\nproc_Data {}\n".format(metadata_dict,proc_data))
+
     for k, v in metadata_dict.items():
         if type(v) is str:
             v = convert_to_numeric(v)
@@ -163,13 +158,12 @@ def store_metadata(
         # Key doesn't exists yet
         if k not in proc_data.keys():
             proc_data[k] = v
-            print("{} not in proc_Data.keys(),value {}\n".format(k,v))
             continue
 
         # Key already exists
         if k in proc_data.keys():
             k_count = sum([1 for cur_k in proc_data.keys() if k in cur_k])
-            f.write("k_count {}".format(k_count))
+
             # Key has only been added once before (i.e. primary value)
             # Duplicate and add _1 postfix
             if k_count == 1:
@@ -185,7 +179,6 @@ def store_metadata(
             # Some additional values are required to be added to the existing
             # value (e.g. run_time)
             if k in metaconst_to_add:
-                f.write("k in metaconst_to_add k is {}, metaconst to add is {}".format(k, metaconst_to_add))
                 if type(v) is not int and type(v) is not float:
                     logger.warning(
                         "Unsupported metadata value type for addition. "
@@ -195,7 +188,6 @@ def store_metadata(
                     continue
                 else:
                     proc_data[k] = proc_data[k] + v
-                    f.write("proc_data[k] {} = proc_data[k] {}+ v {}".format(proc_data[k] + v,proc_data[k],v))
 
     # Write the json
     with open(log_file, "w") as f:
