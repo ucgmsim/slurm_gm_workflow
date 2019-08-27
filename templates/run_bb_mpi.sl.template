@@ -30,7 +30,7 @@ if [[ $? == 0 ]]; then
     fd_count=`cat $fd_name | wc -l`
     
     # save meta data
-    python $gmsim/workflow/metadata/log_metadata.py {{sim_dir}} BB cores=$SLURM_NTASKS fd_count=$fd_count start_time=$start_time end_time=$end_time status="COMPLETED"
+    python $gmsim/workflow/metadata/log_metadata.py {{sim_dir}} BB $SLURM_JOBID cores=$SLURM_NTASKS fd_count=$fd_count start_time=$start_time end_time=$end_time status="COMPLETED"
 else
     #reformat $res to remove '\n'
     res=`echo $res | tr -d '\n'`

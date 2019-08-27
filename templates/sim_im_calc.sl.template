@@ -56,7 +56,7 @@ if [[ $res == 0 ]]; then
 
     # log metadata
     if [[ $checkpoint_check != 0 ]]; then
-        python $gmsim/workflow/metadata/log_metadata.py {{sim_dir}} IM_calc cores={{np}} pSA_count=$pSA_count fd_count=$fd_count start_time=$start_time end_time=$end_time status="COMPLETED"
+        python $gmsim/workflow/metadata/log_metadata.py {{sim_dir}} IM_calc $SLURM_JOBID cores={{np}} pSA_count=$pSA_count fd_count=$fd_count start_time=$start_time end_time=$end_time status="COMPLETED"
     fi
 else
     #failed
