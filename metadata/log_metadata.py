@@ -205,7 +205,6 @@ def main(args):
     log_dir = os.path.join(args.sim_dir, "ch_log", const.METADATA_LOG_FILENAME)
 
     metadata_dict = getattr(args, METADATA_VALUES)
-
     # Determine run_time from start and end time
     if (
         const.MetadataField.start_time.value in metadata_dict.keys()
@@ -218,6 +217,14 @@ def main(args):
             metadata_dict[const.MetadataField.start_time.value],
             const.METADATA_TIMESTAMP_FMT,
         )
+        with open("/home/melody.zhu/run_time_log3.txt", 'a') as f:
+            f.write("metadatadict {}\n".format(metadata_dict))
+
+            f.write("calc run time {} {} {} {} {} {}\n".format(datetime.strptime(
+            metadata_dict[const.MetadataField.end_time.value],
+            const.METADATA_TIMESTAMP_FMT), datetime.strptime(
+            metadata_dict[const.MetadataField.start_time.value],
+            const.METADATA_TIMESTAMP_FMT),tdelta,tdelta.total_seconds(), metadata_dict[const.MetadataField.end_time.value], metadata_dict[const.MetadataField.start_time.value]))
         metadata_dict[const.MetadataField.run_time.value] = (
             tdelta.total_seconds()
         )
