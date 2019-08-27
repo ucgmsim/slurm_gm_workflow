@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """This script is used from inside the submit/run slurm scripts to store metadata in a
 json file.
-
 Example:
 python3 log_metadata.py ./log_dir LF cores=12 run_time=12.5
 """
