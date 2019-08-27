@@ -154,7 +154,8 @@ def store_metadata(
     if proc_data is None:
         proc_data = {}
         json_data[proc_type] = proc_data
-
+    f=open("/home/melody.zhu/meta_debug.txt",'a')
+    f.write("meta_dict {}\nproc_Data {}\n".format(metadata_dict,proc_data))
     for k, v in metadata_dict.items():
         if type(v) is str:
             v = convert_to_numeric(v)
@@ -162,12 +163,13 @@ def store_metadata(
         # Key doesn't exists yet
         if k not in proc_data.keys():
             proc_data[k] = v
+            print("{} not in proc_Data.keys(),value {}\n".format(k,v))
             continue
 
         # Key already exists
         if k in proc_data.keys():
             k_count = sum([1 for cur_k in proc_data.keys() if k in cur_k])
-
+            f.write("k_count {}".format(k_count))
             # Key has only been added once before (i.e. primary value)
             # Duplicate and add _1 postfix
             if k_count == 1:
@@ -183,6 +185,7 @@ def store_metadata(
             # Some additional values are required to be added to the existing
             # value (e.g. run_time)
             if k in metaconst_to_add:
+                f.write("k in metaconst_to_add k is {}, metaconst to add is {}".format(k, metaconst_to_add))
                 if type(v) is not int and type(v) is not float:
                     logger.warning(
                         "Unsupported metadata value type for addition. "
@@ -192,6 +195,7 @@ def store_metadata(
                     continue
                 else:
                     proc_data[k] = proc_data[k] + v
+                    f.write("proc_data[k] {} = proc_data[k] {}+ v {}".format(proc_data[k] + v,proc_data[k],v))
 
     # Write the json
     with open(log_file, "w") as f:
