@@ -73,16 +73,19 @@ def store_metadata(
     logger: Logger = get_basic_logger(),
 ):
     """Store metadata values in the specified json log file for a specific process type.
+
     Metadata values are stored as key, value pairs if a key already exists,
     it is not changed and instead new values are added with a postfix such as _1, _2, etc
     The exception are keys that are in the metaconst_to_add list, additional keys are
     also stored with a prefix, however their value is also added to the primary
     key (i.e. the one without a postfix). This is only allowed for values that can be
     converted to int or float.
+
     To prevent locking or any race condition the a lock for the log file is
     aquired at the start of the function and released at the end of it.
     The lock is kept for the full duration of the function and not just the read/write
     part as the file is overwritten and not updated.
+
     Parameters
     ----------
     log_file: str
