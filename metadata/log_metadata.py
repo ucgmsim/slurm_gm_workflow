@@ -179,18 +179,18 @@ def store_metadata(
                 # Don't need a +1 as the count includes the primary value
                 proc_data["{}_{}".format(k, k_count)] = v
 
-            # Some additional values are required to be added to the existing
-            # value (e.g. run_time)
-            if k in metaconst_to_add:
-                if type(v) is not int and type(v) is not float:
-                    logger.warning(
-                        "Unsupported metadata value type for addition. "
-                        "Check metadata values. "
-                        "Value {} for key {} not added.".format(v, k)
-                    )
-                    continue
-                else:
-                    proc_data[k] = proc_data[k] + v
+            # # Some additional values are required to be added to the existing
+            # # value (e.g. run_time)
+            # if k in metaconst_to_add:
+            #     if type(v) is not int and type(v) is not float:
+            #         logger.warning(
+            #             "Unsupported metadata value type for addition. "
+            #             "Check metadata values. "
+            #             "Value {} for key {} not added.".format(v, k)
+            #         )
+            #         continue
+            #     else:
+            #         proc_data[k] = proc_data[k] + v
 
     # Write the json
     with open(log_file, "w") as f:
@@ -204,22 +204,49 @@ def main(args):
     log_dir = os.path.join(args.sim_dir, "ch_log", const.METADATA_LOG_FILENAME)
 
     metadata_dict = getattr(args, METADATA_VALUES)
-
+    start_time = metadata_dict[const.MetadataField.start_time.value].replace('T', '_')
+    end_time = metadata_dict[const.MetadataField.end_time.value].replace('T', '_')
+    cmd = "sacct -n -X -j {} -S {} -E {} -o 'jobid%10,jobname%35,Submit,Start,End,NCPUS,CPUTimeRAW%18,State,Nodelist%60'".format(args.job_id, start_time, end_time)
+    output = (
+        subprocess.check_output(cmd, shell=True)
+            .decode("utf-8")
+            .strip()
+            .split()
+    )
+    with open('/home/melody.zhu/cmd_log.txt','w') as f:
+        f.write(cmd +'\n')
+    # ['578928', 'u-bl689.atmos_main.18621001T0000Z', '2019-08-16T13:05:06', '2019-08-16T13:12:56', '2019-08-16T14:58:28', '1840', '11650880', 'CANCELLED+', 'nid00[166-171,180-196]']
+    #submit_time, start_time, end_time = [x.replace("T", "_") for x in output[2:5]]
+    n_cores = float(output[5])
+    run_time = float(output[6]) / n_cores
+    # sim_dir = sim_struct.get_sim_dir(root_folder, db_running_task.run_name)
+    # log_file = os.path.join(sim_dir, "ch_log", const.METADATA_LOG_FILENAME)
+    # # now log metadata
+    # store_metadata(
+    #     log_file,
+    #     const.ProcessType(db_running_task.proc_type).str_value,
+    #     {
+    #         "start_time": start_time,
+    #         "end_time": end_time,
+    #         "run_time": run_time,
+    #         "cores": n_cores,
+    #         "status": output[7],
+    #     },
+    #     logger=task_logger,
+    # )
     # Determine run_time from start and end time
-    if (
-        const.MetadataField.start_time.value in metadata_dict.keys()
-        and const.MetadataField.end_time.value in metadata_dict.keys()
-    ):
-        tdelta = datetime.strptime(
-            metadata_dict[const.MetadataField.end_time.value],
-            const.METADATA_TIMESTAMP_FMT,
-        ) - datetime.strptime(
-            metadata_dict[const.MetadataField.start_time.value],
-            const.METADATA_TIMESTAMP_FMT,
-        )
-        metadata_dict[const.MetadataField.run_time.value] = (
-            tdelta.total_seconds()
-        )
+    # if (
+    #     const.MetadataField.start_time.value in metadata_dict.keys()
+    #     and const.MetadataField.end_time.value in metadata_dict.keys()
+    # ):
+    #     tdelta = datetime.strptime(
+    #         metadata_dict[const.MetadataField.end_time.value],
+    #         const.METADATA_TIMESTAMP_FMT,
+    #     ) - datetime.strptime(
+    #         metadata_dict[const.MetadataField.start_time.value],
+    #         const.METADATA_TIMESTAMP_FMT,
+    #     )
+    metadata_dict[const.MetadataField.run_time.value] = run_time
 
     # Load the params
     params = utils.load_sim_params(
@@ -268,6 +295,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
     parser.add_argument("sim_dir", type=str, help="The log directory")
+    parser.add_argument("job_id", type=str, help="slurm job id")
     parser.add_argument(
         "proc_type",
         type=str,
