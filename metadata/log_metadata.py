@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """This script is used from inside the submit/run slurm scripts to store metadata in a
 json file.
-
 Example:
 python3 log_metadata.py ./log_dir LF cores=12 run_time=12.5
 """
@@ -154,8 +153,7 @@ def store_metadata(
     if proc_data is None:
         proc_data = {}
         json_data[proc_type] = proc_data
-    f=open("/home/melody.zhu/meta_debug2.txt",'a')
-    f.write("meta_dict {}\nproc_Data {}\n".format(metadata_dict,proc_data))
+
     for k, v in metadata_dict.items():
         if type(v) is str:
             v = convert_to_numeric(v)
@@ -169,7 +167,7 @@ def store_metadata(
         # Key already exists
         if k in proc_data.keys():
             k_count = sum([1 for cur_k in proc_data.keys() if k in cur_k])
-            f.write("k_count {}".format(k_count))
+            
             # Key has only been added once before (i.e. primary value)
             # Duplicate and add _1 postfix
             if k_count == 1:
@@ -181,22 +179,6 @@ def store_metadata(
             else:
                 # Don't need a +1 as the count includes the primary value
                 proc_data["{}_{}".format(k, k_count)] = v
-
-            # Some additional values are required to be added to the existing
-            # value (e.g. run_time)
-            if k in metaconst_to_add:
-                f.write("k in metaconst_to_add k is {}, metaconst to add is {}".format(k, metaconst_to_add))
-                if type(v) is not int and type(v) is not float:
-                    logger.warning(
-                        "Unsupported metadata value type for addition. "
-                        "Check metadata values. "
-                        "Value {} for key {} not added.".format(v, k)
-                    )
-                    continue
-                else:
-                    proc_data[k] = proc_data[k] + v
-                    f.write("proc_data[k] {} = proc_data[k] {}+ v {}".format(proc_data[k] + v,proc_data[k],v))
-
 
     # Write the json
     with open(log_file, "w") as f:
@@ -222,15 +204,7 @@ def main(args):
             metadata_dict[const.MetadataField.start_time.value],
             const.METADATA_TIMESTAMP_FMT,
         )
-        with open("/home/melody.zhu/run_time_log3.txt", 'a') as f:
-            f.write("metadatadict {}\n".format(metadata_dict))
-
-            f.write("calc run time {} {} {} {} {} {}\n".format(datetime.strptime(
-            metadata_dict[const.MetadataField.end_time.value],
-            const.METADATA_TIMESTAMP_FMT), datetime.strptime(
-            metadata_dict[const.MetadataField.start_time.value],
-            const.METADATA_TIMESTAMP_FMT),tdelta,tdelta.total_seconds(), metadata_dict[const.MetadataField.end_time.value], metadata_dict[const.MetadataField.start_time.value]))
-        metadata_dict[const.MetadataField.run_time.value] = (
+         metadata_dict[const.MetadataField.run_time.value] = (
             tdelta.total_seconds()
         )
 

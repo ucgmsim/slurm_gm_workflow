@@ -19,32 +19,27 @@ from qcore.qclogging import get_basic_logger, NOPRINTCRITICAL
 
 def get_queued_tasks(user=None, machine=const.HPC.maui):
     if user is not None:
-        cmd = "squeue -A {} -o '%A %t' -h -M {} -u {}".format(
+        cmd = "squeue -A {} -o '%A %t' -M {} -u {}".format(
             const.DEFAULT_ACCOUNT, machine.value, user
         )
     else:
-        cmd = "squeue -A {} -o '%A %t' -h -M {}".format(
+        cmd = "squeue -A {} -o '%A %t' -M {}".format(
             const.DEFAULT_ACCOUNT, machine.value
         )
-    print("cmd", cmd)
     process = Popen(shlex.split(cmd), stdout=PIPE, encoding="utf-8")
     (output, err) = process.communicate()
     process.wait()
-    # squeue -A uoa02762 -o '%A %t' -h -M maui
-    #CLUSTER: maui
-    #600514 R
-    #600515 R
-    #600517 R
-    # or
-    #CLUSTER: maui
-
     try:
-        header = output.split("\n")[0]
-        print("header is", header)
-    except IndexError:
+        header = output.split("\n")[1]
+    except:
         raise EnvironmentError(
             "squeue did not return expected output. Ignoring for this iteration."
         )
+    else:
+        if header != "JOBID ST":
+            raise EnvironmentError(
+                "squeue did not return expected output. Ignoring for this iteration."
+            )
     output_list = list(filter(None, output.split("\n")[1:]))
     return output_list
 
@@ -169,7 +164,6 @@ def exe(
     this is to accommodate the default shell=False. (for security reason)
     If we wish to support a simple shell command like "echo hello"
     without switching on shell=True, cmd should be given as a list.
-
     If non_blocking is set, then the Popen instance is returned instead of the
     output and error.
     """
