@@ -64,7 +64,7 @@ def sacct_metadata(db_running_task: SlurmTask, task_logger: Logger, root_folder:
         .strip()
         .split()
     )
-    # ['578928', 'u-bl689.atmos_main.18621001T0000Z', '2019-08-16T13:05:06', '2019-08-16T13:12:56', '2019-08-16T14:58:28', '1840', '11650880', 'COMPLETED', 'nid00[166-171,180-196]']
+    # ['578928', 'u-bl689.atmos_main.18621001T0000Z', '2019-08-16T13:05:06', '2019-08-16T13:12:56', '2019-08-16T14:58:28', '1840', '11650880', 'CANCELLED+', 'nid00[166-171,180-196]']
     submit_time, start_time, end_time = [x.replace("T", "_") for x in output[2:5]]
     n_cores = float(output[5])
     run_time = float(output[6]) / n_cores
