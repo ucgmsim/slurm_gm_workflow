@@ -281,7 +281,7 @@ def queue_monitor_loop(
                 db_in_progress_tasks,
                 complete_data,
                 queue_logger,
-                root_folder
+                root_folder,
             )
         )
 
@@ -360,4 +360,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

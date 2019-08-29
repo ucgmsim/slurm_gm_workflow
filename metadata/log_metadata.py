@@ -161,13 +161,13 @@ def store_metadata(
         # Key doesn't exists yet
         if k not in proc_data.keys():
             proc_data[k] = v
-            print("{} not in proc_Data.keys(),value {}\n".format(k,v))
+            print("{} not in proc_Data.keys(),value {}\n".format(k, v))
             continue
 
         # Key already exists
         if k in proc_data.keys():
             k_count = sum([1 for cur_k in proc_data.keys() if k in cur_k])
-            
+
             # Key has only been added once before (i.e. primary value)
             # Duplicate and add _1 postfix
             if k_count == 1:
@@ -204,9 +204,7 @@ def main(args):
             metadata_dict[const.MetadataField.start_time.value],
             const.METADATA_TIMESTAMP_FMT,
         )
-        metadata_dict[const.MetadataField.run_time.value] = (
-            tdelta.total_seconds()
-        )
+        metadata_dict[const.MetadataField.run_time.value] = tdelta.total_seconds()
 
     # Load the params
     params = utils.load_sim_params(
