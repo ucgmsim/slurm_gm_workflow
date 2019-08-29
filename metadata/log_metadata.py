@@ -204,7 +204,7 @@ def main(args):
             metadata_dict[const.MetadataField.start_time.value],
             const.METADATA_TIMESTAMP_FMT,
         )
-         metadata_dict[const.MetadataField.run_time.value] = (
+        metadata_dict[const.MetadataField.run_time.value] = (
             tdelta.total_seconds()
         )
 
