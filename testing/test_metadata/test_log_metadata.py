@@ -94,7 +94,6 @@ class TestLogMetadata:
                 "test2_1": values_1[1],
                 "test2_2": values_2[1],
                 "test2_3": values_3[1],
-                METACONST_TO_ADD[0]: values_1[2] + values_2[2] + values_3[2],
                 "{}_1".format(METACONST_TO_ADD[0]): values_1[2],
                 "{}_2".format(METACONST_TO_ADD[0]): values_2[2],
                 "{}_3".format(METACONST_TO_ADD[0]): values_3[2],
