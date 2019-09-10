@@ -2,6 +2,10 @@ Slurm Ground Motion Workflow
 # Changelog
 (Based on https://wiki.canterbury.ac.nz/download/attachments/58458136/CodeVersioning_v18p2.pdf?version=1&modificationDate=1519269238437&api=v2 )
 
+## [19.6.12] - 2019-08-26 -- Add metadata for failed runs
+### Added
+    - Added metadata logging for failed runs in queue monitor
+
 ## [19.6.11] - 2019-08-21 -- Squeue failure detection
 ### Changed
     - If squeue does not return the expected headers, it is assumed to have failed. In this case no jobs will be marked as failed and requiring resubmitting
@@ -17,6 +21,7 @@ Slurm Ground Motion Workflow
 ## [19.6.9] - 2019-08-14 --Added MIT license
 ### Added
     - Added MIT License
+
 ## [19.6.8] - 2019-08-12 -- Fixed IM_calculation completion check
 ### Changed
     - fixed logic bug checking completion of IM_calculation

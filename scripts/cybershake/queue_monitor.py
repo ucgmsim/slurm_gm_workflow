@@ -2,20 +2,21 @@
 """Script for continuously updating the slurm mgmt db from the queue."""
 import logging
 import signal
+import subprocess
 import os
 import json
 import argparse
 import time
 from logging import Logger
 from typing import List, Dict
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import qcore.constants as const
 import qcore.simulation_structure as sim_struct
 from qcore import qclogging
 from scripts.management.MgmtDB import MgmtDB, SlurmTask
 from shared_workflow.shared_automated_workflow import get_queued_tasks, check_mgmt_queue
-
+from metadata.log_metadata import store_metadata
 
 # Have to include sub-seconds, as clean up can run sub one second.
 
@@ -55,12 +56,42 @@ def get_queue_entry(
     )
 
 
+def sacct_metadata(db_running_task: SlurmTask, task_logger: Logger, root_folder: str):
+    cmd = "sacct -n -X -j {} -o 'jobid%10,jobname%35,Submit,Start,End,NCPUS,CPUTimeRAW%18,State,Nodelist%60'"
+    output = (
+        subprocess.check_output(cmd.format(db_running_task.job_id), shell=True)
+        .decode("utf-8")
+        .strip()
+        .split()
+    )
+    # ['578928', 'u-bl689.atmos_main.18621001T0000Z', '2019-08-16T13:05:06', '2019-08-16T13:12:56', '2019-08-16T14:58:28', '1840', '11650880', 'CANCELLED+', 'nid00[166-171,180-196]']
+    submit_time, start_time, end_time = [x.replace("T", "_") for x in output[2:5]]
+    n_cores = float(output[5])
+    run_time = float(output[6]) / n_cores
+    sim_dir = sim_struct.get_sim_dir(root_folder, db_running_task.run_name)
+    log_file = os.path.join(sim_dir, "ch_log", "metadata_log.json")
+    # now log metadata
+    store_metadata(
+        log_file,
+        const.ProcessType(db_running_task.proc_type).str_value,
+        {
+            "start_time": start_time,
+            "end_time": end_time,
+            "run_time": run_time,
+            "cores": n_cores,
+            "status": output[7],
+        },
+        logger=task_logger,
+    )
+
+
 def update_tasks(
     mgmt_queue_entries: List[str],
     squeue_tasks: Dict[str, str],
     db_running_tasks: List[SlurmTask],
     complete_data: bool,
     task_logger: Logger,
+    root_folder,
 ):
     """Updates the mgmt db entries based on the HPC queue"""
     tasks_to_do = []
@@ -155,6 +186,8 @@ def update_tasks(
                         "Disappeared from squeue. Creating a new task.",
                     )
                 )
+            # When job failed, we want to log metadata as well
+            sacct_metadata(db_running_task, task_logger, root_folder)
     return tasks_to_do
 
 
@@ -248,6 +281,7 @@ def queue_monitor_loop(
                 db_in_progress_tasks,
                 complete_data,
                 queue_logger,
+                root_folder,
             )
         )
 

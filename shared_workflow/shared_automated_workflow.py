@@ -164,7 +164,6 @@ def exe(
     this is to accommodate the default shell=False. (for security reason)
     If we wish to support a simple shell command like "echo hello"
     without switching on shell=True, cmd should be given as a list.
-
     If non_blocking is set, then the Popen instance is returned instead of the
     output and error.
     """
