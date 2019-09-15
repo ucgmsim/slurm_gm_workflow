@@ -22,8 +22,8 @@ REM_ARGS="$@"
 
 REL_NAME=`basename $REL_LOC`
 
-HF_LOC=$1/HF/Acc/HF.bin
-BB_LOC=$1/BB/Acc/BB.bin
+HF_LOC=$REL_LOC/HF/Acc/HF.bin
+BB_LOC=$REL_LOC/BB/Acc/BB.bin
 
 if [[ ! -d $REL_LOC/BB/Acc ]]; then
     mkdir -p $REL_LOC/BB/Acc
