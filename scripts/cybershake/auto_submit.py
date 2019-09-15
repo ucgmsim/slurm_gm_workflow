@@ -278,13 +278,15 @@ def submit_task(
             target_machine=JOB_RUN_MACHINE[const.ProcessType.LF2BB].value,
         )
     elif proc_type == const.ProcessType.HF2BB.value:
+        params = utils.load_sim_params(os.path.join(sim_dir, "sim_params.yaml"))
         submit_sl_script(
-            "--output {} --error {} {} {} {}".format(
+            "--output {} --error {} {} {} {} {}".format(
                 os.path.join(sim_dir, "%x_%j.out"),
                 os.path.join(sim_dir, "%x_%j.err"),
                 os.path.expandvars("$gmsim/workflow/scripts/hf2bb.sl"),
                 sim_dir,
                 root_folder,
+                " ".join(["--{} {}".format(key, item) for key, item in params.bb.items()]),
             ),
             target_machine=JOB_RUN_MACHINE[const.ProcessType.HF2BB].value,
         )

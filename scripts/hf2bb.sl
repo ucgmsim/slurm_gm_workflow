@@ -17,6 +17,9 @@ fi
 REL_LOC=$1
 MGMT_DB_LOC=$2
 
+shift 2
+REM_ARGS="$@"
+
 REL_NAME=`basename $REL_LOC`
 
 HF_LOC=$1/HF/Acc/HF.bin
@@ -39,7 +42,7 @@ start_time=`date +$runtime_fmt`
 echo $start_time
 
 echo "python $gmsim/workflow/scripts/hf2bb.py $HF_LOC $BB_LOC"
-python $gmsim/workflow/scripts/hf2bb.py $HF_LOC $BB_LOC
+python $gmsim/workflow/scripts/hf2bb.py $HF_LOC $BB_LOC $REM_ARGS
 
 end_time=`date +$runtime_fmt`
 echo $end_time
