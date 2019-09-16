@@ -90,7 +90,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("hf_bin_loc", help="Location of the hf binary file")
     parser.add_argument("bb_bin_loc", help="Location to save the bb binary to")
-    parser.add_argument("--dt", help="Change the dt of the HF simulation", default=None)
+    parser.add_argument("--dt", help="Change the dt of the HF simulation", default=None, type=float)
     args, extra = parser.parse_known_args()
     if len(extra) > 0:
         print("Not sure what to do with arguments \"{}\", ignoring".format(" ".join(extra)))
