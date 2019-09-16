@@ -65,9 +65,7 @@ def hf2bb(hf_bin, bb_bin, dt=None):
     with open(bb_bin, "wb") as out:
         # Write the header
         np.array([hf_data.stations.size, hf_data.nt], dtype="i4").tofile(out)
-        np.array(
-            [hf_data.nt * dt, dt, hf_data.start_sec], dtype="f4"
-        ).tofile(out)
+        np.array([hf_data.nt * dt, dt, hf_data.start_sec], dtype="f4").tofile(out)
         np.array(["", "", hf_bin], dtype="|S256").tofile(out)
 
         # Write the station data
@@ -90,10 +88,14 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("hf_bin_loc", help="Location of the hf binary file")
     parser.add_argument("bb_bin_loc", help="Location to save the bb binary to")
-    parser.add_argument("--dt", help="Change the dt of the HF simulation", default=None, type=float)
+    parser.add_argument(
+        "--dt", help="Change the dt of the HF simulation", default=None, type=float
+    )
     args, extra = parser.parse_known_args()
     if len(extra) > 0:
-        print("Not sure what to do with arguments \"{}\", ignoring".format(" ".join(extra)))
+        print(
+            'Not sure what to do with arguments "{}", ignoring'.format(" ".join(extra))
+        )
     hf2bb(args.hf_bin_loc, args.bb_bin_loc, args.dt)
 
 

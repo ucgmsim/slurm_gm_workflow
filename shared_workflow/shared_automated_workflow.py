@@ -38,7 +38,9 @@ def get_queued_tasks(user=None, machine=const.HPC.maui):
     process.wait()
     if output.split("\n")[0] != "CLUSTER: {}".format(machine.value):
         raise EnvironmentError(
-            "squeue did not return expected output. Ignoring for this iteration. Actual output: {}".format(output)
+            "squeue did not return expected output. Ignoring for this iteration. Actual output: {}".format(
+                output
+            )
         )
 
     output_list = list(filter(None, output.split("\n")[1:]))
