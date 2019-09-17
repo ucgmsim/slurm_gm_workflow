@@ -13,16 +13,39 @@ MB_PER_GB = 1024.
 DEFAULT_NTASKS = 1
 DEFAULT_CPUS_PER_TASK = 1
 
-MAUI_PARTITIONS= ['nesi_research']
-MAHUIKA_PARTITIONS = ["large", "long", "prepost", "bigmem", "hugemem"]
+MAHUIKA_SLURM_CONF = '/scale_wlg_persistent/filesets/home/slurm/mahuika/etc/opt/slurm/slurm.conf'
+MAUI_SLUM_CONF = '/etc/opt/slurm.conf'
 
 
+# can use from qcore
+class HPC(Enum):
+    maui = "maui"
+    mahuika = "mahuika"
+
+
+# can be moved to qcore const
 class SlurmHeader(Enum):
-    ACCOUNT = "account"
-    PARTITION = "partition"
-    NTASKS = "ntasks"
-    CPUS_PER_TASK = "cpus-per-task"
-    MEM_PER_CPU = "mem-per-cpu"
+    account = "account"
+    partition = "partition"
+    ntasks = "ntasks"
+    cpus_per_task = "cpus-per-task"
+    mem_per_cpu = "mem-per-cpu"
+
+
+class MahuikaPartition(Enum):
+    large = "large"
+    long = "long"
+    perpost = "prepost"
+    bigmem = "bigmem"
+    hugmem = "hugemem"
+    ga_bigmem = "ga_bigmem"
+    ga_hugemem = "ga_hugemem"
+    gpu = "gpu"
+    igpu = "igpu"
+
+
+class MauiPartition(Enum):
+    nesi_research = "nesi_research"
 
 
 def get_billing_weights(line):
@@ -37,9 +60,9 @@ def get_billing_weights(line):
 def get_default_mem_per_cpu(slurm_conf):
     with open(slurm_conf) as f:
         lines = f.readlines()
-    # PartitionName=DEFAULT PreemptMode=OFF DefMemPerCPU=512 DefaultTime=15 MaxTime=3-00:00 TRESBillingWeights="CPU=0.5,Mem=0.3333G"
+    # partitionName=DEFAULT PreemptMode=OFF DefMemPerCPU=512 DefaultTime=15 MaxTime=3-00:00 TRESBillingWeights="CPU=0.5,Mem=0.3333G"
     for line in lines[::-1]:
-        if line.startswith("PartitionName=DEFAULT"):
+        if line.startswith("partitionName=DEFAULT"):
             default_mem_per_cpu = float(line.strip().split("DefMemPerCPU=")[-1].split()[0])
             return default_mem_per_cpu
 
@@ -47,19 +70,19 @@ def get_default_mem_per_cpu(slurm_conf):
 def read_slurm_conf(slurm_conf, partition_name):
     with open(slurm_conf) as f:
         lines = f.readlines()
-    for line in lines[::-1]:  # PartitionName is at the end of file
-        if line.startswith("PartitionName={}".format(partition_name)):
-            #PartitionName=prepost    Nodes=wbl[001-005,008-011] TRESBillingWeights="CPU=1.0,Mem=0.1429G"  QOS=p_prepost2 MaxTime=03:00:00 PriorityTier=1
+    for line in lines[::-1]:  # partitionName is at the end of file
+        if line.startswith("partitionName={}".format(partition_name)):
+            #partitionName=prepost    Nodes=wbl[001-005,008-011] TRESBillingWeights="CPU=1.0,Mem=0.1429G"  QOS=p_prepost2 MaxTime=03:00:00 PriorityTier=1
             try:
                 return get_billing_weights(line)
             except (IndexError, ValueError):
                 # TRESBillingWeights not found, use default cpu and mem
                 for l in lines[::-1]:
-                    if l.startswith("PartitionName=DEFAULT"):
+                    if l.startswith("partitionName=DEFAULT"):
                         return get_billing_weights(l)
 
 
-def calculate_requested_chours(cpu_billing_weights, mem_billing_weights, mem_per_cpu, ntasks=DEFAULT_NTASKS, cpus_per_task=DEFAULT_NTASKS, priority=False):
+def calculate_requested_chours(cpu_billing_weights, mem_billing_weights, mem_per_cpu, ntasks=DEFAULT_NTASKS, cpus_per_task=DEFAULT_CPUS_PER_TASK, priority=False):
     # https://slurm.schedmd.com/tres.html
     # see above link for calculating formula
     total_cpus = ntasks * cpus_per_task
@@ -79,7 +102,6 @@ def get_available_chours(json_file, account, username):
     print(json_array)
     for d in json_array:
         if d.get(account) is not None:
-            print("adsf")
             for user_dict in d[account]:
                 if user_dict.get(username) is not None:
                     print(user_dict)
@@ -126,32 +148,35 @@ def process_mem_per_cpu(mem_per_cpu):
 
 
 def process_header_values(slurm_header_dict, slurm_conf, hpc):
-    if not slurm_header_dict[SlurmHeader.NTASKS.value]:  # None, set to default
-        slurm_header_dict[SlurmHeader.NTASKS.value] = DEFAULT_NTASKS
+    if not slurm_header_dict[SlurmHeader.ntasks.value]:  # None, set to default
+        slurm_header_dict[SlurmHeader.ntasks.value] = DEFAULT_NTASKS
     else: # not None, convert str to int
-        slurm_header_dict[SlurmHeader.NTASKS.value] = int(slurm_header_dict[SlurmHeader.NTASKS.value])
+        slurm_header_dict[SlurmHeader.ntasks.value] = int(slurm_header_dict[SlurmHeader.ntasks.value])
 
-    if not slurm_header_dict[SlurmHeader.CPUS_PER_TASK.value]:
-        slurm_header_dict[SlurmHeader.CPUS_PER_TASK.value] = DEFAULT_CPUS_PER_TASK
+    if not slurm_header_dict[SlurmHeader.cpus_per_task.value]:
+        slurm_header_dict[SlurmHeader.cpus_per_task.value] = DEFAULT_CPUS_PER_TASK
     else:
-        slurm_header_dict[SlurmHeader.CPUS_PER_TASK.value] = int(slurm_header_dict[SlurmHeader.CPUS_PER_TASK.value])
+        slurm_header_dict[SlurmHeader.cpus_per_task.value] = int(slurm_header_dict[SlurmHeader.cpus_per_task.value])
 
-    if hpc == "mahuika":
-        if not slurm_header_dict[SlurmHeader.MEM_PER_CPU.value]:
-            slurm_header_dict[SlurmHeader.MEM_PER_CPU.value] = get_default_mem_per_cpu(slurm_conf)
+    if hpc == HPC.mahuika.value:
+        if not slurm_header_dict[SlurmHeader.mem_per_cpu.value]:
+            slurm_header_dict[SlurmHeader.mem_per_cpu.value] = get_default_mem_per_cpu(slurm_conf)
         else:
-            slurm_header_dict[SlurmHeader.MEM_PER_CPU.value] = process_mem_per_cpu(slurm_header_dict[SlurmHeader.MEM_PER_CPU.value])
+            slurm_header_dict[SlurmHeader.mem_per_cpu.value] = process_mem_per_cpu(slurm_header_dict[SlurmHeader.mem_per_cpu.value])
 
     return slurm_header_dict
 
 
 def get_hpc_conf(partition):
-    if partition in MAUI_PARTITIONS:
-        slurm_conf = '/etc/opt/slurm.conf'
-        hpc = "maui"
-    if partition in MAHUIKA_PARTITIONS:
-        slurm_conf = '/scale_wlg_persistent/filesets/home/slurm/mahuika/etc/opt/slurm/slurm.conf'
-        hpc = "mahuika"
+    if partition in [p.value for p in MauiPartition]:
+        slurm_conf = MAUI_SLUM_CONF
+        hpc = HPC.maui.value
+    elif partition in [p.value for p in MahuikaPartition]:
+        slurm_conf = MAHUIKA_SLURM_CONF
+        hpc = HPC.mahuika.value
+    else:
+        sys.exit("{} partition does not exit")
+
     return hpc, slurm_conf
 
 
@@ -163,32 +188,32 @@ cpu_weights, mem_weights = read_slurm_conf(sf, 'large')
 header_dict = process_slurm_header(sl)
 header_dict = process_header_values(header_dict, "mahuika", sf)
 print(header_dict)
-req_hours = calculate_requested_chours(cpu_weights, mem_weights, header_dict[SlurmHeader.MEM_PER_CPU.value], header_dict[SlurmHeader.NTASKS.value], header_dict[SlurmHeader.CPUS_PER_TASK.value])
+req_hours = calculate_requested_chours(cpu_weights, mem_weights, header_dict[SlurmHeader.mem_per_cpu.value], header_dict[SlurmHeader.ntasks.value], header_dict[SlurmHeader.cpus_per_task.value])
 compare_hours(req_hours, avai_hours)
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("slurm_to_sbatch", help="path to slurm file to be sbatched")
-    parser.add_argument("--core_hour_json", default = '/home/melody/core_hours.json', help="path to core hour json file")
-    parser.add_argument("--user", default=getpass.getuser(), help="path to core hour json file")
+    parser.add_argument("--core_hour_json", default='core_hours.json', help="path to core hour json file")
+    parser.add_argument("--user", default=getpass.getuser(), help="the user who's sbatching the job")
     args = parser.parse_args()
 
     header_dict = process_slurm_header(args.slurm_to_sbatch)
 
-    hpc, slurm_conf = get_hpc_conf(header_dict[SlurmHeader.PARTITION.value])
+    hpc, slurm_conf = get_hpc_conf(header_dict[SlurmHeader.partition.value])
 
     header_dict = process_header_values(header_dict, hpc, slurm_conf)
 
-    avai_hours = get_available_chours(args.core_hour_json, header_dict[SlurmHeader.ACCOUNT.value], args.user)
+    avai_hours = get_available_chours(args.core_hour_json, header_dict[SlurmHeader.account.value], args.user)
 
-    if hpc =="mahuika":
-        cpu_weights, mem_weights = read_slurm_conf(slurm_conf, header_dict[SlurmHeader.PARTITION.value])
-        req_hours = calculate_requested_chours(cpu_weights, mem_weights, header_dict[SlurmHeader.MEM_PER_CPU.value],
-                                           header_dict[SlurmHeader.NTASKS.value],
-                                           header_dict[SlurmHeader.CPUS_PER_TASK.value])
-    elif hpc =="maui":
-        req_hours = calculate_requested_chours(1, 1, 0,
-                                               header_dict[SlurmHeader.NTASKS.value],
-                                               header_dict[SlurmHeader.CPUS_PER_TASK.value])
+    if hpc == HPC.mahuika.value:
+        cpu_weights, mem_weights = read_slurm_conf(slurm_conf, header_dict[SlurmHeader.partition.value])
+        req_hours = calculate_requested_chours(cpu_weights, mem_weights, header_dict[SlurmHeader.mem_per_cpu.value],
+                                           header_dict[SlurmHeader.ntasks.value],
+                                           header_dict[SlurmHeader.cpus_per_task.value])
+    elif hpc == HPC.maui.value:
+        # maui only bill against total cpus, no cpu_weights or mem_weights
+        req_hours = header_dict[SlurmHeader.ntasks.value] * header_dict[SlurmHeader.cpus_per_task.value]
+
     compare_hours(req_hours, avai_hours)
