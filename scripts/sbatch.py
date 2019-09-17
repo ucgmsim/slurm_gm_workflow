@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import sys
+import os
 import json
 import subprocess
 import argparse
@@ -58,27 +59,27 @@ def get_billing_weights(line):
 
 
 def get_default_mem_per_cpu(slurm_conf):
-    with open(slurm_conf) as f:
+    with open(slurm_conf, 'r') as f:
         lines = f.readlines()
     # partitionName=DEFAULT PreemptMode=OFF DefMemPerCPU=512 DefaultTime=15 MaxTime=3-00:00 TRESBillingWeights="CPU=0.5,Mem=0.3333G"
     for line in lines[::-1]:
-        if line.startswith("partitionName=DEFAULT"):
-            default_mem_per_cpu = float(line.strip().split("DefMemPerCPU=")[-1].split()[0])
+        if line.startswith("PartitionName=DEFAULT"):
+            default_mem_per_cpu = float(line.strip().split("DefMemPerCPU=")[-1].split()[0]) / MB_PER_GB
             return default_mem_per_cpu
 
 
 def read_slurm_conf(slurm_conf, partition_name):
-    with open(slurm_conf) as f:
+    with open(slurm_conf, 'r') as f:
         lines = f.readlines()
     for line in lines[::-1]:  # partitionName is at the end of file
-        if line.startswith("partitionName={}".format(partition_name)):
+        if line.startswith("PartitionName={}".format(partition_name)):
             #partitionName=prepost    Nodes=wbl[001-005,008-011] TRESBillingWeights="CPU=1.0,Mem=0.1429G"  QOS=p_prepost2 MaxTime=03:00:00 PriorityTier=1
             try:
                 return get_billing_weights(line)
             except (IndexError, ValueError):
                 # TRESBillingWeights not found, use default cpu and mem
                 for l in lines[::-1]:
-                    if l.startswith("partitionName=DEFAULT"):
+                    if l.startswith("PartitionName=DEFAULT"):
                         return get_billing_weights(l)
 
 
@@ -87,7 +88,7 @@ def calculate_requested_chours(cpu_billing_weights, mem_billing_weights, mem_per
     # see above link for calculating formula
     total_cpus = ntasks * cpus_per_task
     total_mem = total_cpus * mem_per_cpu
-
+    print(cpu_billing_weights, mem_billing_weights, mem_per_cpu, ntasks, cpus_per_task)
     if not priority:
         requested_hours = (total_cpus * cpu_billing_weights) + (total_mem * mem_billing_weights)
     else:
@@ -99,7 +100,6 @@ def calculate_requested_chours(cpu_billing_weights, mem_billing_weights, mem_per
 def get_available_chours(json_file, account, username):
     with open(json_file, 'r') as f:
         json_array = json.load(f)
-    print(json_array)
     for d in json_array:
         if d.get(account) is not None:
             for user_dict in d[account]:
@@ -140,7 +140,7 @@ def process_mem_per_cpu(mem_per_cpu):
             mem_per_cpu = float(mem_per_cpu[:-1])  # 521MB to 0.5
         elif mem_per_cpu[-2:] == 'MB':
             mem_per_cpu = float(mem_per_cpu[:-2]) / MB_PER_GB
-    elif isinstance(mem_per_cpu, float) or isinstance(mem_per_cpu, int):
+    elif (isinstance(mem_per_cpu, float) or isinstance(mem_per_cpu, int)) and mem_per_cpu > 100:
         mem_per_cpu = mem_per_cpu / MB_PER_GB  # 521MB to 0.5
     else:
         sys.exit("undefined mem per cpu")
@@ -176,35 +176,24 @@ def get_hpc_conf(partition):
         hpc = HPC.mahuika.value
     else:
         sys.exit("{} partition does not exit")
-
+    print("hpc {}, partition {}".format(hpc, partition))
     return hpc, slurm_conf
-
-
-sf = '/home/melody/slurm.conf'
-jf = '/home/melody/core_hours.json'
-sl ='/home/melody/sim_bb.sl'
-avai_hours = get_available_chours(jf, 'nesi00213', 'melody.zhu')
-cpu_weights, mem_weights = read_slurm_conf(sf, 'large')
-header_dict = process_slurm_header(sl)
-header_dict = process_header_values(header_dict, "mahuika", sf)
-print(header_dict)
-req_hours = calculate_requested_chours(cpu_weights, mem_weights, header_dict[SlurmHeader.mem_per_cpu.value], header_dict[SlurmHeader.ntasks.value], header_dict[SlurmHeader.cpus_per_task.value])
-compare_hours(req_hours, avai_hours)
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("slurm_to_sbatch", help="path to slurm file to be sbatched")
-    parser.add_argument("--core_hour_json", default='core_hours.json', help="path to core hour json file")
+    parser.add_argument("--core_hour_json", default='core_hours.json', help="path to core hour json file, default is core_hours.json")
     parser.add_argument("--user", default=getpass.getuser(), help="the user who's sbatching the job")
     args = parser.parse_args()
-
+    assert os.path.exists(args.slurm_to_sbatch)
+    assert os.path.exists(args.core_hour_json)
     header_dict = process_slurm_header(args.slurm_to_sbatch)
 
     hpc, slurm_conf = get_hpc_conf(header_dict[SlurmHeader.partition.value])
 
-    header_dict = process_header_values(header_dict, hpc, slurm_conf)
-
+    header_dict = process_header_values(header_dict, slurm_conf, hpc)
+    print("processed header_dict", header_dict)
     avai_hours = get_available_chours(args.core_hour_json, header_dict[SlurmHeader.account.value], args.user)
 
     if hpc == HPC.mahuika.value:
@@ -215,5 +204,10 @@ def main():
     elif hpc == HPC.maui.value:
         # maui only bill against total cpus, no cpu_weights or mem_weights
         req_hours = header_dict[SlurmHeader.ntasks.value] * header_dict[SlurmHeader.cpus_per_task.value]
-
+    print("reqested hours {}".format(req_hours))
+    print("available_hours {}".format(avai_hours))
     compare_hours(req_hours, avai_hours)
+
+
+if __name__ == "__main__":
+    main()
