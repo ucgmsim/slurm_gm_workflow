@@ -2,6 +2,10 @@ Slurm Ground Motion Workflow
 # Changelog
 (Based on https://wiki.canterbury.ac.nz/download/attachments/58458136/CodeVersioning_v18p2.pdf?version=1&modificationDate=1519269238437&api=v2 )
 
+## [19.6.13] - 2019-08-26 -- Add sbatch script
+### Added
+    - Added sbatch script and sample core_hours.json file so that we submit/reject the job based on available core hour allocations
+
 ## [19.6.12] - 2019-08-26 -- Add metadata for failed runs
 ### Added
     - Added metadata logging for failed runs in queue monitor
