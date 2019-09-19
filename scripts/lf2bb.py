@@ -22,7 +22,7 @@ def lf2bb(outbin, vs30file, bb_file, dt=None):
         dt = lf_data.dt
 
     if dt != lf_data.dt:
-        nt = int(lf_data.duration/dt)+1
+        nt = int(lf_data.duration / dt) + 1
     else:
         nt = lf_data.nt
 

@@ -21,7 +21,7 @@ def hf2bb(hf_bin, bb_bin, dt=None):
         dt = hf_data.dt
 
     if dt != hf_data.dt:
-        nt = int(hf_data.duration/dt)+1
+        nt = int(hf_data.duration / dt) + 1
     else:
         nt = hf_data.nt
 

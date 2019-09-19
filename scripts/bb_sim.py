@@ -108,7 +108,7 @@ if args.dt is None:
     bb_dt = min(lf.dt, hf.dt)
 else:
     bb_dt = args.dt
-    
+
 d_nt = int(round(max(lf_start_sec, hf.start_sec) - bb_start_sec) / bb_dt)
 bb_nt = int(round(max(lf.duration, hf.duration) / bb_dt + d_nt))
 n2 = nt2n(bb_nt)

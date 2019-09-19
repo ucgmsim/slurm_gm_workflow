@@ -275,7 +275,9 @@ def submit_task(
                 utils.load_sim_params(
                     os.path.join(sim_dir, "sim_params.yaml")
                 ).stat_vs_est,
-                " ".join(["--{} {}".format(key, item) for key, item in params.bb.items()]),
+                " ".join(
+                    ["--{} {}".format(key, item) for key, item in params.bb.items()]
+                ),
             ),
             target_machine=JOB_RUN_MACHINE[const.ProcessType.LF2BB].value,
         )
@@ -288,7 +290,9 @@ def submit_task(
                 os.path.expandvars("$gmsim/workflow/scripts/hf2bb.sl"),
                 sim_dir,
                 root_folder,
-                " ".join(["--{} {}".format(key, item) for key, item in params.bb.items()]),
+                " ".join(
+                    ["--{} {}".format(key, item) for key, item in params.bb.items()]
+                ),
             ),
             target_machine=JOB_RUN_MACHINE[const.ProcessType.HF2BB].value,
         )
