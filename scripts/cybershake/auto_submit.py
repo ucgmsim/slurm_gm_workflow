@@ -470,7 +470,6 @@ def run_main_submit_loop(
 
 
 def main():
-
     logger = qclogging.get_logger()
 
     parser = argparse.ArgumentParser()
@@ -628,5 +627,5 @@ def main():
     )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

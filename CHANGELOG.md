@@ -2,9 +2,19 @@ Slurm Ground Motion Workflow
 # Changelog
 (Based on https://wiki.canterbury.ac.nz/download/attachments/58458136/CodeVersioning_v18p2.pdf?version=1&modificationDate=1519269238437&api=v2 )
 
-## [19.6.11] - 2019-09-19
+## [19.6.13] - 2019-09-19
 ### Changed
     - For BB, HF2BB, LF2BB the dt can now be set and the given data will be interpolated to that level
+
+## [19.6.12] - 2019-08-26 -- Add metadata for failed runs
+### Added
+    - Added metadata logging for failed runs in queue monitor
+
+## [19.6.11] - 2019-08-21 -- Squeue failure detection
+### Changed
+    - If squeue does not return the expected headers, it is assumed to have failed. In this case no jobs will be marked as failed and requiring resubmitting
+    - add_to_mgmt_queue now optionally takes in the slurm job id. If it is given it is used to match the update with an existing database entry, if it is not given the user is warned and the update is applied anyway
+    - If more than one entry in the database is updated by an update the user is alerted to this
 
 ## [19.6.10] - 2019-08-16 -- Improved load balancing for HF calculation
 ### Changed
@@ -15,6 +25,7 @@ Slurm Ground Motion Workflow
 ## [19.6.9] - 2019-08-14 --Added MIT license
 ### Added
     - Added MIT License
+
 ## [19.6.8] - 2019-08-12 -- Fixed IM_calculation completion check
 ### Changed
     - fixed logic bug checking completion of IM_calculation
