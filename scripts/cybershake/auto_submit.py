@@ -264,8 +264,9 @@ def submit_task(
             script, target_machine=JOB_RUN_MACHINE[const.ProcessType.clean_up].value
         )
     elif proc_type == const.ProcessType.LF2BB.value:
+        params = utils.load_sim_params(os.path.join(sim_dir, "sim_params.yaml"))
         submit_sl_script(
-            "--output {} --error {} {} {} {} {}".format(
+            "--output {} --error {} {} {} {} {} {}".format(
                 os.path.join(sim_dir, "%x_%j.out"),
                 os.path.join(sim_dir, "%x_%j.err"),
                 os.path.expandvars("$gmsim/workflow/scripts/lf2bb.sl"),
@@ -274,6 +275,7 @@ def submit_task(
                 utils.load_sim_params(
                     os.path.join(sim_dir, "sim_params.yaml")
                 ).stat_vs_est,
+                " ".join(["--{} {}".format(key, item) for key, item in params.bb.items()]),
             ),
             target_machine=JOB_RUN_MACHINE[const.ProcessType.LF2BB].value,
         )
