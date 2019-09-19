@@ -2,7 +2,9 @@ Slurm Ground Motion Workflow
 # Changelog
 (Based on https://wiki.canterbury.ac.nz/download/attachments/58458136/CodeVersioning_v18p2.pdf?version=1&modificationDate=1519269238437&api=v2 )
 
-
+## [19.6.11] - 2019-09-19
+### Changed
+    - For BB, HF2BB, LF2BB the dt can now be set and the given data will be interpolated to that level
 
 ## [19.6.10] - 2019-08-16 -- Improved load balancing for HF calculation
 ### Changed
