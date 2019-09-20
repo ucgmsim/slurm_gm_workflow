@@ -5,7 +5,7 @@ import numpy as np
 from qcore.timeseries import BBSeis, LFSeis
 
 
-def lf2bb(outbin, vs30file, bb_file):
+def lf2bb(outbin, vs30file, bb_file, dt=None):
     """Converts the contents of the outbin folder to a BB binary at the given location.
     Writes the header using any available information, the parts provided by HF are blank however.
     :param outbin: The location of the outbin directory
@@ -18,8 +18,16 @@ def lf2bb(outbin, vs30file, bb_file):
 
     lf_data = LFSeis(outbin)
 
+    if dt is None:
+        dt = lf_data.dt
+
+    if dt != lf_data.dt:
+        nt = int(lf_data.duration / dt) + 1
+    else:
+        nt = lf_data.nt
+
     head_total = HEAD_SIZE + lf_data.stations.size * HEAD_STAT
-    file_size = head_total + lf_data.stations.size * lf_data.nt * N_COMP * FLOAT_SIZE
+    file_size = head_total + lf_data.stations.size * nt * N_COMP * FLOAT_SIZE
 
     bb_stations = np.rec.array(
         np.zeros(
@@ -56,6 +64,7 @@ def lf2bb(outbin, vs30file, bb_file):
     for col in bb_stations.dtype.names:
         if col in lf_data.stations.dtype.names:
             bb_stations[col] = lf_data.stations[col]
+
     bb_stations["vsite"] = np.vectorize(
         dict(
             np.loadtxt(
@@ -66,8 +75,8 @@ def lf2bb(outbin, vs30file, bb_file):
 
     with open(bb_file, "wb") as out:
         # Write the header
-        np.array([lf_data.stations.size, lf_data.nt], dtype="i4").tofile(out)
-        np.array([lf_data.nt * lf_data.dt, lf_data.dt, -1], dtype="f4").tofile(out)
+        np.array([lf_data.stations.size, nt], dtype="i4").tofile(out)
+        np.array([nt * dt, dt, -1], dtype="f4").tofile(out)
         np.array([os.path.abspath(outbin), "", ""], dtype="|S256").tofile(out)
 
         # Write the station information
@@ -80,9 +89,9 @@ def lf2bb(outbin, vs30file, bb_file):
 
         # Write the acceleration data for each station in units of g (9.81m/s/s)
         out.seek(head_total)
-        acc_dat = np.empty((lf_data.nt, N_COMP), dtype="f4")
+        acc_dat = np.empty((nt, N_COMP), dtype="f4")
         for i, stat in enumerate(lf_data.stations):
-            acc_dat[:] = (lf_data.acc(stat.name) / 981)[:]
+            acc_dat[:] = (lf_data.acc(stat.name, dt=dt) / 981)[:]
             acc_dat.tofile(out)
 
 
@@ -91,8 +100,11 @@ def main():
     parser.add_argument("outbin_dir_loc", help="Location of the outbin directory")
     parser.add_argument("vsite_file", help="Vs30 station file")
     parser.add_argument("bb_bin_loc", help="Location to save the bb binary to")
+    parser.add_argument(
+        "--dt", help="Change the dt of the LF simulation", default=None, type=float
+    )
     args = parser.parse_args()
-    lf2bb(args.outbin_dir_loc, args.vsite_file, args.bb_bin_loc)
+    lf2bb(args.outbin_dir_loc, args.vsite_file, args.bb_bin_loc, args.dt)
 
 
 if __name__ == "__main__":

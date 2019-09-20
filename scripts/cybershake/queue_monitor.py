@@ -25,13 +25,7 @@ DEFAULT_N_MAX_RETRIES = 2
 
 SLURM_TO_STATUS_DICT = {"R": 3, "PD": 2, "CG": 3}
 
-global_logger = qclogging.get_basic_logger()
 keepAlive = True
-
-
-def on_exit(signum, frame):
-    global_logger.critical("SIGINT recieved, exiting queue-monitor.")
-    exit()
 
 
 def get_queue_entry(
@@ -91,7 +85,7 @@ def update_tasks(
     db_running_tasks: List[SlurmTask],
     complete_data: bool,
     task_logger: Logger,
-    root_folder,
+    root_folder: str,
 ):
     """Updates the mgmt db entries based on the HPC queue"""
     tasks_to_do = []
@@ -304,7 +298,7 @@ def queue_monitor_loop(
         time.sleep(sleep_time)
 
 
-def main():
+def initialisation():
     logger = qclogging.get_logger()
 
     parser = argparse.ArgumentParser()
@@ -352,11 +346,8 @@ def main():
     qclogging.add_general_file_handler(logger, log_file_name)
     logger.debug("Successfully added {} as the log file.".format(log_file_name))
 
-    global global_logger
-    global_logger = logger
-    signal.signal(signal.SIGINT, on_exit)
     queue_monitor_loop(root_folder, args.sleep_time, args.n_max_retries, logger)
 
 
 if __name__ == "__main__":
-    main()
+    initialisation()
