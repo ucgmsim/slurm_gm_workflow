@@ -2,6 +2,10 @@ Slurm Ground Motion Workflow
 # Changelog
 (Based on https://wiki.canterbury.ac.nz/download/attachments/58458136/CodeVersioning_v18p2.pdf?version=1&modificationDate=1519269238437&api=v2 )
 
+## [19.6.11] - 2019-09-23 --Update Dashboard
+### Changed
+    - Updated deprecated DashTable attributes so the app can run without error
+
 ## [19.6.11] - 2019-08-21 -- Squeue failure detection
 ### Changed
     - If squeue does not return the expected headers, it is assumed to have failed. In this case no jobs will be marked as failed and requiring resubmitting
