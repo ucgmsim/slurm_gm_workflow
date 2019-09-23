@@ -2,6 +2,10 @@ Slurm Ground Motion Workflow
 # Changelog
 (Based on https://wiki.canterbury.ac.nz/download/attachments/58458136/CodeVersioning_v18p2.pdf?version=1&modificationDate=1519269238437&api=v2 )
 
+## [19.6.14] - 2019-09-23 --Update Dashboard app code
+### Changed
+    - Updated deprecated DashTable attributes so the app can run without error
+
 ## [19.6.13] - 2019-09-19
 ### Changed
     - For BB, HF2BB, LF2BB the dt can now be set and the given data will be interpolated to that level

@@ -468,10 +468,10 @@ def generate_table_interactive(squeue_entries: List[SQueueEntry]):
                     for i in SQueueEntry._fields
                 ],
                 data=squeue_entries,
-                filtering=True,
-                filtering_settings="account eq 'nesi00213'",
-                sorting=True,
-                sorting_type="multi",
+                filter_action="native",
+                filter_query="account eq 'nesi00213'",
+                sort_action="native",
+                sort_mode="multi",
             ),
             html.Div(id="datatable-interactivity-container"),
         ]
