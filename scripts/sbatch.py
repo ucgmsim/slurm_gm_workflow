@@ -32,7 +32,6 @@ class SlurmHeader(Enum):
     partition = "partition"
     ntasks = "ntasks"
     ntasks_per_core = "ntasks-per-core"
-    ncpus = "ncpus"
     cpus_per_task = "cpus-per-task"
     mem_per_cpu = "mem-per-cpu"
 
