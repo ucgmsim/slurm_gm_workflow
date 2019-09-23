@@ -13,28 +13,41 @@ from typing import List
 
 import qcore.constants as const
 from qcore.config import host
+from qcore.utils import load_yaml
 from scripts.management.MgmtDB import MgmtDB
 from qcore.qclogging import get_basic_logger, NOPRINTCRITICAL
+
+ALL = "ALL"
+ONCE = "ONCE"
+ONCE_PATTERN = "%_REL01"
+NONE = "NONE"
 
 
 def get_queued_tasks(user=None, machine=const.HPC.maui):
     if user is not None:
-        cmd = "squeue -A {} -o '%A %t' -h -M {} -u {}".format(
+        cmd = "squeue -A {} -o '%A %t' -M {} -u {}".format(
             const.DEFAULT_ACCOUNT, machine.value, user
         )
     else:
-        cmd = "squeue -A {} -o '%A %t' -h -M {}".format(
+        cmd = "squeue -A {} -o '%A %t' -M {}".format(
             const.DEFAULT_ACCOUNT, machine.value
         )
-
     process = Popen(shlex.split(cmd), stdout=PIPE, encoding="utf-8")
     (output, err) = process.communicate()
     process.wait()
-    if output.split("\n")[0] != "JOBID ST":
+    try:
+        header = output.split("\n")[1]
+    except:
         raise EnvironmentError(
-            "squeue did not return expected output. Ignoring for this iteration."
+            "squeue did not return expected output. Ignoring for this iteration. Actual output: {}".format(
+                output
+            )
         )
-
+    else:
+        if header != "JOBID ST":
+            raise EnvironmentError(
+                "squeue did not return expected output. Ignoring for this iteration."
+            )
     output_list = list(filter(None, output.split("\n")[1:]))
     return output_list
 
@@ -159,7 +172,6 @@ def exe(
     this is to accommodate the default shell=False. (for security reason)
     If we wish to support a simple shell command like "echo hello"
     without switching on shell=True, cmd should be given as a list.
-
     If non_blocking is set, then the Popen instance is returned instead of the
     output and error.
     """
@@ -205,3 +217,37 @@ def check_mgmt_queue(
             return True
     logger.debug("No match found")
     return False
+
+
+def parse_config_file(config_file_location: str, logger: Logger = get_basic_logger()):
+    """Takes in the location of a wrapper config file and creates the tasks to be run.
+    Each task that is desired to be run should have its name as given in qcore.constants followed by the relevant
+    keyword or sqlite formatted query string, which uses % as the wildcard character.
+    The keywords NONE, ONCE and ALL correspond to the patterns nothing, "%_REL01", "%" respectively.
+    :param config_file_location: The location of the config file
+    :param logger: The logger object used to record messages
+    :return: A list containing the tasks to be run on all processes and a dictionary of pattern, task list pairs which
+    state which query patterns should run which tasks
+    """
+    config = load_yaml(config_file_location)
+
+    tasks_to_run_for_all = []
+    tasks_with_pattern_match = {}
+
+    for proc_name, pattern in config.items():
+        proc = const.ProcessType.get_by_name(proc_name)
+        if pattern == ALL:
+            tasks_to_run_for_all.append(proc)
+        elif pattern == NONE:
+            pass
+        else:
+            if pattern == ONCE:
+                pattern = ONCE_PATTERN
+            if pattern not in tasks_with_pattern_match.keys():
+                tasks_with_pattern_match.update({pattern: []})
+            tasks_with_pattern_match[pattern].append(proc)
+    logger.info("Master script will run {}".format(tasks_to_run_for_all))
+    for pattern, tasks in tasks_with_pattern_match.items():
+        logger.info("Pattern {} will run tasks {}".format(pattern, tasks))
+
+    return tasks_to_run_for_all, tasks_with_pattern_match.items()

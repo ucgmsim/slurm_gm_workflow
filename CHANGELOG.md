@@ -2,9 +2,17 @@ Slurm Ground Motion Workflow
 # Changelog
 (Based on https://wiki.canterbury.ac.nz/download/attachments/58458136/CodeVersioning_v18p2.pdf?version=1&modificationDate=1519269238437&api=v2 )
 
-## [19.6.11] - 2019-09-23 --Update Dashboard
+## [19.6.14] - 2019-09-23 --Update Dashboard app code
 ### Changed
     - Updated deprecated DashTable attributes so the app can run without error
+
+## [19.6.13] - 2019-09-19
+### Changed
+    - For BB, HF2BB, LF2BB the dt can now be set and the given data will be interpolated to that level
+
+## [19.6.12] - 2019-08-26 -- Add metadata for failed runs
+### Added
+    - Added metadata logging for failed runs in queue monitor
 
 ## [19.6.11] - 2019-08-21 -- Squeue failure detection
 ### Changed
@@ -21,6 +29,7 @@ Slurm Ground Motion Workflow
 ## [19.6.9] - 2019-08-14 --Added MIT license
 ### Added
     - Added MIT License
+
 ## [19.6.8] - 2019-08-12 -- Fixed IM_calculation completion check
 ### Changed
     - fixed logic bug checking completion of IM_calculation

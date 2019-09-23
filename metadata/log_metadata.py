@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """This script is used from inside the submit/run slurm scripts to store metadata in a
 json file.
-
 Example:
 python3 log_metadata.py ./log_dir LF cores=12 run_time=12.5
 """
@@ -162,6 +161,7 @@ def store_metadata(
         # Key doesn't exists yet
         if k not in proc_data.keys():
             proc_data[k] = v
+            print("{} not in proc_Data.keys(),value {}\n".format(k, v))
             continue
 
         # Key already exists
@@ -180,19 +180,6 @@ def store_metadata(
                 # Don't need a +1 as the count includes the primary value
                 proc_data["{}_{}".format(k, k_count)] = v
 
-            # Some additional values are required to be added to the existing
-            # value (e.g. run_time)
-            if k in metaconst_to_add:
-                if type(v) is not int and type(v) is not float:
-                    logger.warning(
-                        "Unsupported metadata value type for addition. "
-                        "Check metadata values. "
-                        "Value {} for key {} not added.".format(v, k)
-                    )
-                    continue
-                else:
-                    proc_data[k] = proc_data[k] + v
-
     # Write the json
     with open(log_file, "w") as f:
         json.dump(json_data, f)
@@ -205,7 +192,6 @@ def main(args):
     log_dir = os.path.join(args.sim_dir, "ch_log", const.METADATA_LOG_FILENAME)
 
     metadata_dict = getattr(args, METADATA_VALUES)
-
     # Determine run_time from start and end time
     if (
         const.MetadataField.start_time.value in metadata_dict.keys()
@@ -218,9 +204,7 @@ def main(args):
             metadata_dict[const.MetadataField.start_time.value],
             const.METADATA_TIMESTAMP_FMT,
         )
-        metadata_dict[const.MetadataField.run_time.value] = (
-            tdelta.total_seconds() / 3600
-        )
+        metadata_dict[const.MetadataField.run_time.value] = tdelta.total_seconds()
 
     # Load the params
     params = utils.load_sim_params(
