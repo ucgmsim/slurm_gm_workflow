@@ -14,6 +14,7 @@ from datetime import datetime, timedelta
 import qcore.constants as const
 import qcore.simulation_structure as sim_struct
 from qcore import qclogging
+from scripts.cybershake.auto_submit import JOB_RUN_MACHINE
 from scripts.management.MgmtDB import MgmtDB, SlurmTask
 from shared_workflow.shared_automated_workflow import get_queued_tasks, check_mgmt_queue
 from metadata.log_metadata import store_metadata
@@ -51,9 +52,15 @@ def get_queue_entry(
 
 
 def sacct_metadata(db_running_task: SlurmTask, task_logger: Logger, root_folder: str):
-    cmd = "sacct -n -X -j {} -o 'jobid%10,jobname%35,Submit,Start,End,NCPUS,CPUTimeRAW%18,State,Nodelist%60'"
+    cmd = "sacct -n -X -j {} -M {} -o 'jobid%10,jobname%35,Submit,Start,End,NCPUS,CPUTimeRAW%18,State,Nodelist%60'"
     output = (
-        subprocess.check_output(cmd.format(db_running_task.job_id), shell=True)
+        subprocess.check_output(
+            cmd.format(
+                db_running_task.job_id,
+                JOB_RUN_MACHINE[const.ProcessType[db_running_task.proc_type]].value,
+            ),
+            shell=True,
+        )
         .decode("utf-8")
         .strip()
         .split()
