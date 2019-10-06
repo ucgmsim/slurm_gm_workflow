@@ -1,105 +1,262 @@
 #!/usr/bin/env python3
 
-import sys
-import os
-import json
-import subprocess
 import argparse
-import getpass
 from enum import Enum
+import getpass
+import json
+from math import ceil
+import os
+import re
+import subprocess
+import sys
 
 MB_PER_GB = 1024.0
 
-DEFAULTS = {'ntasks': 1, 'nodes': 1, 'cpus-per-task': 1, 'ntasks-per-core': 1, 'cpu_weights': 1, "mem_weights": 0}
+#DEFAULTS = {'ntasks': 1, 'nodes': 1, 'cpus-per-task': 1, 'ntasks-per-core': 1,
+#            'nomultithread': False, "exclusive": False}
 
-MAHUIKA_SLURM_CONF = (
-    "/scale_wlg_persistent/filesets/home/slurm/mahuika/etc/opt/slurm/slurm.conf"
-)
-MAUI_SLUM_CONF = "/scale_wlg_persistent/filesets/home/slurm/maui/etc/opt/slurm/slurm.conf.factory"
+
+
+MAHUIKA_SLURM_CONF = "/scale_wlg_persistent/filesets/home/slurm/mahuika/etc/opt/slurm/slurm.conf"
+MAUI_SLUM_CONF = "/scale_wlg_persistent/filesets/home/slurm/maui/etc/opt/slurm/slurm.conf"
+MAUI_ANCIL_SLUM_CONF = "/scale_wlg_persistent/filesets/home/slurm/maui_ancil/etc/opt/slurm/slurm.conf"
 
 SBATCH_BIN = "/opt/slurm/18.08.7/bin/sbatch"
 
 
 # can use from qcore
 class HPC(Enum):
-    maui = "maui"
-    mahuika = "mahuika"
+    #since default value for multithread is True, the numbers are logical cores
+    maui = (0,"maui")
+    maui_ancil = (1,"maui_ancil")
+    mahuika = (2,"mahuika",)
+
+    def __new__(cls, value, id):
+        obj = object.__new__(cls)
+        obj._value_ = value
+        obj.id = id
+        return obj
+
+#Trace-able resources and the default weight value for Billing
+class TRESWeight(Enum):
+    cpu = (0,"CPU", 1.0)
+    mem = (1,"Mem", 0.0)
+    gpu = (2,"gpu", 0.0)
+
+    def __new__(cls, value, id, weight):
+        obj = object.__new__(cls)
+        obj._value_ = value
+        obj.id = id
+        obj.default_weight = weight
+        return obj
+# levels of parameters in config
+class varLevel(Enum):
+    specific = 0,'specific'
+    default = 1,'DEFAULT'
+    root = 2,'root'
+    def __new__(cls, value, id):
+        obj = object.__new__(cls)
+        obj._value_ = value
+        obj.id = id
+        return obj 
 
 
 # can be moved to qcore const
 class SlurmHeader(Enum):
-    account = "account"
-    partition = "partition"
-    ntasks = "ntasks"
-    ntasks_per_core = "ntasks-per-core"
-    cpus_per_task = "cpus-per-task"
-    mem_per_cpu = "mem-per-cpu"
+    account = (0,"account", str, 'nesi00213')
+    partition = (1,"partition", str, None)
+    ntasks = (2,"ntasks", int, 1)
+    ntasks_per_core = (3,"ntasks-per-core", int, 1)
+    cpus_per_task = (4,"cpus-per-task", int, 1)
+    mem_per_cpu = (5,"mem-per-cpu", str, None)
+    ntasks_per_node = (6, "ntasks-per-node", int, 0)
+    #flags
+    nomultithread = (7,"hint=nomultithread", bool, False)
+    exclusive = (8,"exclusive", bool, False)
 
-
+    def __new__(cls, value, id,type, default):
+        obj = object.__new__(cls)
+        obj._value_ = value
+        obj.id = id
+        obj.type = type
+        obj.default = default
+        return obj
+#TODO:nest partition classes with HPC classes so no double define
 class MahuikaPartition(Enum):
-    large = "large"
-    long = "long"
-    perpost = "prepost"
-    bigmem = "bigmem"
-    hugmem = "hugemem"
-    ga_bigmem = "ga_bigmem"
-    ga_hugemem = "ga_hugemem"
-    gpu = "gpu"
-    igpu = "igpu"
+    large = (0, "large", 72, 108*MB_PER_GB)
+    long = (1, "long", 72, 108*MB_PER_GB)
+    perpost = (2, "prepost", 72, 480*MB_PER_GB)
+    bigmem = (3, "bigmem", 72, 480*MB_PER_GB)
+    hugmem = (4, "hugemem", 128, 4000*MB_PER_GB)
+    ga_bigmem = (5, "ga_bigmem", 72, 480*MB_PER_GB)
+    ga_hugemem = (6, "ga_hugemem", 128, 4000*MB_PER_GB)
+    gpu = (7, "gpu", 8, 108*MB_PER_GB)
+    igpu = (8, "igpu", 8, 108*MB_PER_GB)
+
+    def __new__(cls, value, id, cpu_per_node, mem_per_node):
+        obj = object.__new__(cls)
+        obj._value_ = value
+        obj.id = id
+        obj.cpus = cpu_per_node
+        obj.mem = mem_per_node
+        obj.config_path = MAHUIKA_SLURM_CONF
+        obj.hpc = 1
+        return obj
 
 
 class MauiPartition(Enum):
-    nesi_research = "nesi_research"
+    nesi_research = (0, "nesi_research", 80, 160*MB_PER_GB)
+
+    def __new__(cls, value, id, cpu_per_node, mem_per_node):
+        obj = object.__new__(cls)
+        obj._value_ = value
+        obj.id = id
+        obj.cpus = cpu_per_node
+        obj.mem = mem_per_node
+        obj.config_path = MAUI_SLUM_CONF
+        obj.hpc = 0
+        return obj
 
 
-def get_billing_weights(line):
-    """Get cpu_weights and memory_weights from the line containing TresBilling attribute on mahuika"""
-    # ["'CPU=1.0,Mem=0.1429G'", 'QOS=p_prepost2', 'MaxTime=03:00:00', 'PriorityTier=1']
-    cpu, mem = line.strip().split("TRESBillingWeights=")[-1].split()[0].split(",")
-    cpu = float(cpu.split("=")[-1])
-    mem = float(mem.split("=")[-1][:-2])
+class MauiAncilPartition(Enum):
+    nesi_prepost = (0, "nesi_prepost", 80, 720*MB_PER_GB)
+    nesi_gpu = (1,"nesi_gpu", 4, 12*MB_PER_GB)
+    nesi_igpu = (2,"nesi_igpu", 4, 12*MB_PER_GB)
+    
+    def __new__(cls, value, id, cpu_per_node, mem_per_node):
+        obj = object.__new__(cls)
+        obj._value_ = value
+        obj.id = id
+        obj.cpus = cpu_per_node
+        obj.mem = mem_per_node
+        #TODO: as stated above, nest these classes
+        obj.config_path = MAUI_ANCIL_SLUM_CONF
+        obj.hpc = 1
+        return obj
 
-    return cpu, mem
+
+def get_value_from_line(line, keyword, all2float=False):
+    value = line.strip().split(keyword)[-1].split()[0]
+    #removes non-digital number if = or : is included
+    #must be careful that the string
+    if all2float:
+        value = float(re.findall(r"[-+]?\d*\.\d+|\d+", value)[0])
+    
+    return value
 
 
-def get_default_mem_per_cpu(slurm_conf):
+def get_value_from_conf(slurm_conf, partition,keyword, all2float=False):
     """"Read a slurm.conf file and gets the default memory per cpu"""
+
     with open(slurm_conf, "r") as f:
         lines = f.readlines()
+    
     # PartitionName=DEFAULT PreemptMode=OFF DefMemPerCPU=512 DefaultTime=15 MaxTime=3-00:00 TRESBillingWeights="CPU=0.5,Mem=0.3333G"
+#    keyword = "DefMemPerCPU="
+    #initializing some values
+    line_with_keyword = []
+    partition_keyword_value = None
+    default_partition_keyword_value = None
+    default_keyword_value = None
+    
     for line in lines[::-1]:
-        if line.startswith("PartitionName=DEFAULT"):
-            # 512 /1024
-            try:
-                default_mem_per_cpu = (
-                    float(line.strip().split("DefMemPerCPU=")[-1].split()[0]) / MB_PER_GB
-                )
-            except (IndexError, ValueError):  # maui slum.conf may not have DefMemPerCPU attribute
-                default_mem_per_cpu = 0
-            return default_mem_per_cpu
+        #scan through whole confige file and find lines with keyword
+        if keyword in line:
+            line_with_keyword.append(line)
+    # raise error if none were found
+    if len(line_with_keyword) == 0:
+        raise ValueError("failed to find keyword:{} in config".format(keyword))
+    else:
+        #try find value from partion first. if not, try partition=DEFAULT, else try a global value
+        for line in line_with_keyword:
+            #removes potential unexpected indent
+            line = line.strip()
+            if line.startswith("PartitionName={}".format(partition)):
+                partition_keyword_value = get_value_from_line(line, keyword, all2float) 
+            elif line.startswith("PartitionName={}".format(varLevel.default.id)):
+                default_partition_keyword_value =  get_value_from_line(line, keyword, all2float) 
+            elif line.startswith(keyword):
+                default_keyword_value = get_value_from_line(line, keyword,all2float) 
+        # return a value from narrow to broad
+        if partition_keyword_value is not None:
+            return partition_keyword_value
+        elif default_partition_keyword_value is not None:
+            return default_partition_keyword_value
+        elif default_keyword_value is not None:
+            return default_keyword_value
+        else:
+            #last catch of errors if something unexpected happened
+            raise ValueError("keyword:{} were found but none were parsed correctly".format(keyword))
 
+def weight_dict_from_line(line):
+    #replace ',' with ' ' if multiple TRES were defined
+    line = line.replace(",", " ").strip()
+    tmp_dict = []
+    for res in TRES:
+        tmp_dict[res.value] = get_value_from_line(line, res.id, all2float=True)
+    
+    return tmp_dict
 
-def read_slurm_conf(slurm_conf, partition_name):
+def billing_weight_from_conf(slurm_conf, partition_name):
     """
        Read a slurm.conf and returns the correspoding cpu_weights and mem_weights according to the partition_name
-       Currently only used for mahuika slurm.conf
+       if nothing were found, a default of cpu=1.0 mem=0 will be used
     """
     with open(slurm_conf, "r") as f:
         lines = f.readlines()
+    #initialize
+    TRES_dict = {vl.value: None for vl in varLevel}
+    
     # PartitionName is at the end of file
     for line in lines[::-1]:
-        if line.startswith("PartitionName={}".format(partition_name)):
+        #scans for all lines constains TRESBillingWeights
+        line_with_keyword = []
+        keyword = "TRESBillingWeights"
+        if keyword in line:
+            line_with_keyword.append(line)
+    #check if anything is greped
+    if len(line_with_keyword) == 0:
+        #none were found, using default values
+        TRES_dict[varLevel.root.value] = {}
+        for res in TRESWeight:
+            TRES_dict[varLevel.root.value][res.value] = res.default_weight
+    else:
+        #lines with TRES found in config
+        for line in line_with_keyword:
+            #removes potential unexpected indent
+            line = line.strip() 
+            if line.startswith("PartitionName={}".format(partition_name)):
             # PartitionName=prepost    Nodes=wbl[001-005,008-011] TRESBillingWeights="CPU=1.0,Mem=0.1429G"  QOS=p_prepost2 MaxTime=03:00:00 PriorityTier=1
-            try:
-                return get_billing_weights(line)
-            except (IndexError, ValueError):
-                # TRESBillingWeights not found, use default cpu_weights and mem_weights
-                for l in lines[::-1]:
-                    if l.startswith("PartitionName=DEFAULT"):
-                        try:
-                            return get_billing_weights(l)
-                        except (IndexError, ValueError):
-                            return DEFAULTS['cpu_weights'], DEFAULTS["mem_weights"]
+                TRES_dict[varLevel.specific.value] = weight_dict_from_line(get_value_from_line(line, keyword))
+            elif line.startswith("PartitionName={}".format(varLevel.default.id)):
+                TRES_dict[varLevel.default.value] = weight_dict_from_line(get_value_from_line(line, keyword))
+            elif line.startswith(keyword):
+                TRES_dict[varLevel.root.value] = weight_dict_from_line(get_value_from_line(line, keyword))
+    #return the value dictionary bottom-up
+    for i in range(0,len(varLevel)):
+        if TRES_dict[i] is not None:
+            return TRES_dict[i]
+
+
+def shared_TRES_conf(slurm_conf, partition_name):
+    """
+    read the config and see if Shared=Exclusive is defined
+    if defined, allocation are based on nodes instead of cpus
+    """
+    keyword="Shared="
+    #NOTE: this keyword may change if NeSI updates the slurm version
+    #"OverSubscribe" instead of "Shared"
+    try:
+        value = get_value_from_conf(slurm_conf, partition_name, keyword)
+        if value == "Exclusive":
+            return False
+        else:
+            return True        
+    except ValueError:
+        print("no shared definition found, assuming TRES are shared")
+        return True
+    
+     
 
 
 def calculate_requested_chours(
@@ -109,13 +266,34 @@ def calculate_requested_chours(
         ntasks,
         ntasks_per_core,
         cpus_per_task,
+        exclusive,
+        cpu_per_node,
+        mem_per_node,
+        ntasks_per_node,
+        nodes=None,
 ):
-    """Calculate requested core hours for a job on mahuika"""
+    """Calculate requested core hours for a job """
     # https://slurm.schedmd.com/tres.html
     # see above link for calculating formula
-    total_cpus = ntasks * ntasks_per_core * cpus_per_task
-    total_mem = total_cpus * mem_per_cpu
 
+    if (cpus_per_task is not SlurmHeader.cpus_per_task.default):
+        total_cpus = ntasks * cpus_per_task
+    else:
+        total_cpus = ntasks / ntasks_per_core
+    print("total_cpu: {}".format(total_cpus))
+    if exclusive:
+        nodes = ceil(total_cpus/cpu_per_node)
+        if ntasks_per_node is not SlurmHeader.ntasks_per_node.default:
+            nodes = nodes * (ntasks/ntasks_per_node)
+        total_cpus = nodes * cpu_per_node
+        total_mem  = nodes * mem_per_node
+#    print("value: {} ".format(total_cpus))
+#    print("type: {}".format(type(total_cpus)))
+    else:
+        total_mem = total_cpus * mem_per_cpu
+    print("total_cpu: {}".format(total_cpus))
+
+    #TODO:GPU may need to be included
     requested_hours = (total_cpus * cpu_billing_weights) + (
         total_mem * mem_billing_weights
     )
@@ -130,6 +308,7 @@ def get_available_chours(json_file, account, username):
     """
     with open(json_file, "r") as f:
         json_array = json.load(f)
+#    print(json_array)
     for d in json_array:
         if d.get(account) is not None:
             for user_dict in d[account]:
@@ -137,15 +316,13 @@ def get_available_chours(json_file, account, username):
                     return (
                         user_dict[username]["allocation"] - user_dict[username]["used"]
                     )
-                else:
-                    sys.exit(
-                        "No core hours usage info for {} {} from json file {}".format(
-                            account, username, json_file
-                        )
-                    )
+            #no data for a user is found while account exist
+            sys.exit(
+                "No core hours usage info for {} {} from json file {}".format(
+                    account, username, json_file))
         else:
             sys.exit(
-                "No core hours usage info for {} from json file {}".format(
+                "No account info for {} from json file {}".format(
                     account, json_file
                 )
             )
@@ -156,62 +333,72 @@ def process_slurm_header(sl_file):
     with open(sl_file) as f:
         lines = f.readlines()
     # SBATCH --account=nesi00213
-    header_dict = {h.value: None for h in SlurmHeader}
+    header_dict = {h.value: h.default for h in SlurmHeader}
     for line in lines:
-        if line.startswith("#") and "SBATCH" in line.upper():
-            for header in header_dict.keys():
-                if "{}=".format(header) in line:
-                    value = line.strip().split("--{}=".format(header))[-1]
-                    header_dict[header] = value
+        if line.upper().startswith("#SBATCH"):
+            for header in SlurmHeader:
+                if header.type is not bool and "--{}=".format(header.id) in line:
+                    value = line.strip().split("--{}=".format(header.id))[-1]
+                    header_dict[header.value] = header.type(value)
                     break
+                elif header.type is bool and "--{}".format(header.id) in line:
+                    header_dict[header.value] = True
+                    
     return header_dict
 
 
 def process_mem_per_cpu(mem_per_cpu):
     """Convert a mem_per_cpu string to float"""
     if isinstance(mem_per_cpu, str):
-        if mem_per_cpu[-1].upper() == "G" or mem_per_cpu[-2:].upper() == "GB":
-            # 0.5G to 0.5
-            mem_per_cpu = float(mem_per_cpu[:-1])
-    else:  # no unit or unit=MB, All default to MB
-        mem_per_cpu = float(mem_per_cpu[:-2]) / MB_PER_GB
-    return mem_per_cpu
+            value = float(re.findall(r"[-+]?\d*\.\d+|\d+", mem_per_cpu)[0])
+    else:
+        value = mem_per_cpu
+    if 'G' not in mem_per_cpu.upper():  # no unit (default =MB) or unit=MB, transforming to GB
+        value = float(value) / MB_PER_GB
+#    print(value)
+    return value
 
 
 def process_header_values(slurm_header_dict, slurm_conf):
     """
        Process header dict values
-       For maui, mem_per_cpu is None as mem is not calculated against billing
+       get defaul values if not provided
     """
     for header in [SlurmHeader.ntasks, SlurmHeader.cpus_per_task, SlurmHeader.ntasks_per_core]:
         if not slurm_header_dict[header.value]:
-            slurm_header_dict[header.value] = DEFAULTS[header.value]
+            slurm_header_dict[header.value] = header.default
+            slurm_header_dict[header.value] = header.default
         else:
             slurm_header_dict[header.value] = int(slurm_header_dict[header.value])
-
+#    print(slurm_header_dict)
     if not slurm_header_dict[SlurmHeader.mem_per_cpu.value]:
-        slurm_header_dict[SlurmHeader.mem_per_cpu.value] = get_default_mem_per_cpu(
-            slurm_conf
-        )
+        slurm_header_dict[SlurmHeader.mem_per_cpu.value] = process_mem_per_cpu(get_value_from_conf(
+            slurm_conf,
+            slurm_header_dict.partition,
+            keyword="DefMemPerCPU",
+            all2float=True,
+        ))
     else:
         slurm_header_dict[SlurmHeader.mem_per_cpu.value] = process_mem_per_cpu(
             slurm_header_dict[SlurmHeader.mem_per_cpu.value]
         )
-
+    #rule for share node resource
+    slurm_header_dict[SlurmHeader.exclusive.value]=shared_TRES_conf(slurm_conf, slurm_header_dict[SlurmHeader.partition.value]) 
     return slurm_header_dict
 
 
 def get_hpc_conf(partition):
     """Get hpc name and path to slurm.conf according to partition name in the slurm file header"""
-    if partition in [p.value for p in MauiPartition]:
-        slurm_conf = MAUI_SLUM_CONF  # dummy, not used
-        hpc = HPC.maui.value
-    elif partition in [p.value for p in MahuikaPartition]:
-        slurm_conf = MAHUIKA_SLURM_CONF
-        hpc = HPC.mahuika.value
-    else:
-        sys.exit("{} partition does not exist")
-    return hpc, slurm_conf
+    for machine in [MauiPartition,MauiAncilPartition,MahuikaPartition]:
+        for p in machine:
+            if partition in p.id:
+                slurm_conf = p.config_path  
+                hpc = p.hpc
+                cpu_per_node = p.cpus
+                mem_per_node = p.mem
+            
+                return hpc, slurm_conf, cpu_per_node, mem_per_node
+    raise IndexError("no matching partition name found")
 
 
 def compare_hours_and_sbatch(requested_hours, available_hours, hpc, sl_to_sbatch, sbatch_extra_args):
@@ -221,7 +408,8 @@ def compare_hours_and_sbatch(requested_hours, available_hours, hpc, sl_to_sbatch
     """
     if requested_hours <= available_hours:
         cmd = "{} -M {} {} {}".format(SBATCH_BIN, hpc, sl_to_sbatch, sbatch_extra_args)
-        subprocess.call(cmd, shell=True)
+        print(cmd)
+#        subprocess.call(cmd, shell=True)
     else:
         sys.exit("Not enough core hours left, please apply for more")
 
@@ -245,30 +433,39 @@ def main():
 
     # Get raw headers
     header_dict = process_slurm_header(args.slurm_to_sbatch)
-    print(header_dict)
-    # Get hpc_name and path to slurm.conf
-    hpc, slurm_conf = get_hpc_conf(header_dict[SlurmHeader.partition.value])
+    #print(header_dict)
+    # Get hpc_name and path to slurm.conf base on partition name
+    hpc, slurm_conf, cpu_per_node, mem_per_node = get_hpc_conf(header_dict[SlurmHeader.partition.value])
 
     # Process headers for calculation
     header_dict = process_header_values(header_dict, slurm_conf)
-    print(header_dict)
+    #print(header_dict)
     # Get available hours
+#    print(args.core_hour_json)
+#    print(header_dict[SlurmHeader.account.value])
+#    print( args.user)
     avai_hours = get_available_chours(
         args.core_hour_json, header_dict[SlurmHeader.account.value], args.user
     )
 
     # Calculate requested hours
-    cpu_weights, mem_weights = read_slurm_conf(
+    TRESBillingWeight_dict = billing_weight_from_conf(
         slurm_conf, header_dict[SlurmHeader.partition.value]
     )
-    print("cpu weights {}\nmem_weights {}".format(cpu_weights, mem_weights))
+    #print(header_dict)
+    #print("cpu weights {}\nmem_weights {}".format(cpu_weights, mem_weights))
+    print("TRES Billing Weight : {}".format(TRESBillingWeight_dict))
     req_hours = calculate_requested_chours(
-        cpu_weights,
-        mem_weights,
+        TRESBillingWeight_dict[TRESWeight.cpu.value],
+        TRESBillingWeight_dict[TRESWeight.mem.value],
         header_dict[SlurmHeader.mem_per_cpu.value],
         header_dict[SlurmHeader.ntasks.value],
         header_dict[SlurmHeader.ntasks_per_core.value],
         header_dict[SlurmHeader.cpus_per_task.value],
+        header_dict[SlurmHeader.exclusive.value],
+        cpu_per_node,
+        mem_per_node,
+        header_dict[SlurmHeader.ntasks_per_node.value],
     )
 
     print("Reqested hours {}".format(req_hours))
