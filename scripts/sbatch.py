@@ -253,7 +253,8 @@ def shared_TRES_conf(slurm_conf, partition_name):
     #"OverSubscribe" instead of "Shared"
     try:
         value = get_value_from_conf(slurm_conf, partition_name, keyword)
-        if value == "Exclusive":
+        print(value)
+        if value.upper() == "EXCLUSIVE":
             return False
         else:
             return True        
@@ -270,7 +271,7 @@ def calculate_requested_chours(
         ntasks,
         ntasks_per_core,
         cpus_per_task,
-        exclusive,
+        shared,
         cpu_per_node,
         mem_per_node,
         ntasks_per_node,
@@ -279,12 +280,12 @@ def calculate_requested_chours(
     """Calculate requested core hours for a job """
     # https://slurm.schedmd.com/tres.html
     # see above link for calculating formula
-
+    print("total_seconds_requested, : {}".format(total_seconds_requested))
     if (cpus_per_task is not SlurmHeader.cpus_per_task.default):
         total_cpus = ntasks * cpus_per_task
     else:
         total_cpus = ntasks / ntasks_per_core
-    if exclusive:
+    if shared == False:
         nodes = ceil(total_cpus/cpu_per_node)
         if ntasks_per_node is not SlurmHeader.ntasks_per_node.default:
             nodes = nodes * (ntasks/ntasks_per_node)
@@ -292,6 +293,8 @@ def calculate_requested_chours(
         total_mem  = nodes * mem_per_node
     else:
         total_mem = total_cpus * mem_per_cpu
+    print("shared: {}".format(shared))
+    print("total_cpus : {}".format(total_cpus))
     #TODO:GPU may need to be included
     requested_hours = (total_seconds_requested * (total_cpus * cpu_billing_weights)) + (
         total_mem * mem_billing_weights
