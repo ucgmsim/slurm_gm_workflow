@@ -3,6 +3,7 @@
 import argparse
 from enum import Enum
 import getpass
+import datetime
 import json
 from math import ceil
 import os
@@ -70,9 +71,10 @@ class SlurmHeader(Enum):
     cpus_per_task = (4,"cpus-per-task", int, 1)
     mem_per_cpu = (5,"mem-per-cpu", str, None)
     ntasks_per_node = (6, "ntasks-per-node", int, 0)
+    time = (7, "time", int, 0) #in seconds
     #flags
-    nomultithread = (7,"hint=nomultithread", bool, False)
-    exclusive = (8,"exclusive", bool, False)
+    nomultithread = (8,"hint=nomultithread", bool, False)
+    exclusive = (9,"exclusive", bool, False)
 
     def __new__(cls, value, id,type, default):
         obj = object.__new__(cls)
@@ -100,7 +102,7 @@ class MahuikaPartition(Enum):
         obj.cpus = cpu_per_node
         obj.mem = mem_per_node
         obj.config_path = MAHUIKA_SLURM_CONF
-        obj.hpc = 1
+        obj.hpc = HPC.mahuika.value
         return obj
 
 
@@ -114,7 +116,7 @@ class MauiPartition(Enum):
         obj.cpus = cpu_per_node
         obj.mem = mem_per_node
         obj.config_path = MAUI_SLUM_CONF
-        obj.hpc = 0
+        obj.hpc = HPC.maui.value
         return obj
 
 
@@ -131,7 +133,7 @@ class MauiAncilPartition(Enum):
         obj.mem = mem_per_node
         #TODO: as stated above, nest these classes
         obj.config_path = MAUI_ANCIL_SLUM_CONF
-        obj.hpc = 1
+        obj.hpc = HPC.maui_ancil.value
         return obj
 
 
@@ -262,6 +264,7 @@ def shared_TRES_conf(slurm_conf, partition_name):
 def calculate_requested_chours(
         cpu_billing_weights,
         mem_billing_weights,
+        total_seconds_requested,
         mem_per_cpu,
         ntasks,
         ntasks_per_core,
@@ -280,7 +283,7 @@ def calculate_requested_chours(
         total_cpus = ntasks * cpus_per_task
     else:
         total_cpus = ntasks / ntasks_per_core
-    print("total_cpu: {}".format(total_cpus))
+#    print("total_cpu: {}".format(total_cpus))
     if exclusive:
         nodes = ceil(total_cpus/cpu_per_node)
         if ntasks_per_node is not SlurmHeader.ntasks_per_node.default:
@@ -291,13 +294,14 @@ def calculate_requested_chours(
 #    print("type: {}".format(type(total_cpus)))
     else:
         total_mem = total_cpus * mem_per_cpu
-    print("total_cpu: {}".format(total_cpus))
-
+#    print("total_cpu: {}".format(total_cpus))
+#    print("total_seconds_requested : {}".format(total_seconds_requested))
     #TODO:GPU may need to be included
-    requested_hours = (total_cpus * cpu_billing_weights) + (
+    #TODO: should store in seconds instead of hours (since thats how slurm stores it)
+    requested_hours = total_seconds_requested * ((total_cpus * cpu_billing_weights) + (
         total_mem * mem_billing_weights
-    )
-
+    )) / 3600
+#    print("requested_hours : {}".format(requested_hours))
     return requested_hours
 
 
@@ -339,6 +343,14 @@ def process_slurm_header(sl_file):
             for header in SlurmHeader:
                 if header.type is not bool and "--{}=".format(header.id) in line:
                     value = line.strip().split("--{}=".format(header.id))[-1]
+                    #special case for WCT(time) parameter
+                    if header is SlurmHeader.time:
+                        #a day is specified, i.e. "%d-%H:%M:%S"
+                        wct_list = list( map(int, re.findall(r"[-+]?\d*\.\d+|\d+", value)))
+                        #filter the value to contain 4 fields, day, h, m, s
+                        while len(wct_list) < 4: 
+                            wct_list.insert(0,0)
+                        value = datetime.timedelta(days=wct_list[0],hours=wct_list[1],minutes=wct_list[2],seconds=wct_list[3]).total_seconds()
                     header_dict[header.value] = header.type(value)
                     break
                 elif header.type is bool and "--{}".format(header.id) in line:
@@ -371,6 +383,8 @@ def process_header_values(slurm_header_dict, slurm_conf):
         else:
             slurm_header_dict[header.value] = int(slurm_header_dict[header.value])
 #    print(slurm_header_dict)
+    #special treatment for WCT.
+    # convert str to datetime -> datetime to second
     if not slurm_header_dict[SlurmHeader.mem_per_cpu.value]:
         slurm_header_dict[SlurmHeader.mem_per_cpu.value] = process_mem_per_cpu(get_value_from_conf(
             slurm_conf,
@@ -452,12 +466,13 @@ def main():
     TRESBillingWeight_dict = billing_weight_from_conf(
         slurm_conf, header_dict[SlurmHeader.partition.value]
     )
-    #print(header_dict)
+    print(header_dict)
     #print("cpu weights {}\nmem_weights {}".format(cpu_weights, mem_weights))
     print("TRES Billing Weight : {}".format(TRESBillingWeight_dict))
     req_hours = calculate_requested_chours(
         TRESBillingWeight_dict[TRESWeight.cpu.value],
         TRESBillingWeight_dict[TRESWeight.mem.value],
+        header_dict[SlurmHeader.time.value],
         header_dict[SlurmHeader.mem_per_cpu.value],
         header_dict[SlurmHeader.ntasks.value],
         header_dict[SlurmHeader.ntasks_per_core.value],
