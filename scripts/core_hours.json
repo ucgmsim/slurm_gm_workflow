@@ -1,17 +1,17 @@
 [{"nesi00213": 
 	[{"melody.zhu":
-		{"allocation": 5000, "used": 4090}
+		{"allocation": 18000000, "used": 409000}
 	},
 	{"ykh22":
-		{"allocation": 6000, "used": 3000}
-	}]
+		{"allocation": 21600000, "used": 0}
+    }]
 },
 {"comm00213": 
 	[{"jpa198":
-		{"allocation": 8000, "used": 4000}
+		{"allocation": 3600000, "used": 1400000}
 	},
 	{"ykh22":
-		{"allocation": 5000, "used": 4000}
+		{"allocation": 3600000, "used": 320000}
 	}]
 }]
 
