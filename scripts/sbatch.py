@@ -13,11 +13,6 @@ import sys
 
 MB_PER_GB = 1024.0
 
-#DEFAULTS = {'ntasks': 1, 'nodes': 1, 'cpus-per-task': 1, 'ntasks-per-core': 1,
-#            'nomultithread': False, "exclusive": False}
-
-
-
 MAHUIKA_SLURM_CONF = "/scale_wlg_persistent/filesets/home/slurm/mahuika/etc/opt/slurm/slurm.conf"
 MAUI_SLUM_CONF = "/scale_wlg_persistent/filesets/home/slurm/maui/etc/opt/slurm/slurm.conf"
 MAUI_ANCIL_SLUM_CONF = "/scale_wlg_persistent/filesets/home/slurm/maui_ancil/etc/opt/slurm/slurm.conf"
@@ -25,7 +20,7 @@ MAUI_ANCIL_SLUM_CONF = "/scale_wlg_persistent/filesets/home/slurm/maui_ancil/etc
 SBATCH_BIN = "/opt/slurm/18.08.7/bin/sbatch"
 
 
-# can use from qcore
+#TODO: classes can be included into qcore libs ( if qcore become a required dependency)
 class HPC(Enum):
     #since default value for multithread is True, the numbers are logical cores
     maui = (0,"maui")
@@ -37,6 +32,7 @@ class HPC(Enum):
         obj._value_ = value
         obj.id = id
         return obj
+
 
 #Trace-able resources and the default weight value for Billing
 class TRESWeight(Enum):
@@ -50,6 +46,8 @@ class TRESWeight(Enum):
         obj.id = id
         obj.default_weight = weight
         return obj
+
+
 # levels of parameters in config
 class varLevel(Enum):
     specific = 0,'specific'
@@ -83,6 +81,8 @@ class SlurmHeader(Enum):
         obj.type = type
         obj.default = default
         return obj
+
+
 #TODO:nest partition classes with HPC classes so no double define
 class MahuikaPartition(Enum):
     large = (0, "large", 72, 108*MB_PER_GB)
@@ -153,8 +153,9 @@ def get_value_from_conf(slurm_conf, partition,keyword, all2float=False):
     with open(slurm_conf, "r") as f:
         lines = f.readlines()
     
+    #example line in conf:
     # PartitionName=DEFAULT PreemptMode=OFF DefMemPerCPU=512 DefaultTime=15 MaxTime=3-00:00 TRESBillingWeights="CPU=0.5,Mem=0.3333G"
-#    keyword = "DefMemPerCPU="
+
     #initializing some values
     line_with_keyword = []
     partition_keyword_value = None
@@ -190,6 +191,7 @@ def get_value_from_conf(slurm_conf, partition,keyword, all2float=False):
             #last catch of errors if something unexpected happened
             raise ValueError("keyword:{} were found but none were parsed correctly".format(keyword))
 
+
 def weight_dict_from_line(line):
     #replace ',' with ' ' if multiple TRES were defined
     line = line.replace(",", " ").strip()
@@ -198,6 +200,7 @@ def weight_dict_from_line(line):
         tmp_dict[res.value] = get_value_from_line(line, res.id, all2float=True)
     
     return tmp_dict
+
 
 def billing_weight_from_conf(slurm_conf, partition_name):
     """
@@ -258,8 +261,6 @@ def shared_TRES_conf(slurm_conf, partition_name):
         print("no shared definition found, assuming TRES are shared")
         return True
     
-     
-
 
 def calculate_requested_chours(
         cpu_billing_weights,
@@ -283,25 +284,18 @@ def calculate_requested_chours(
         total_cpus = ntasks * cpus_per_task
     else:
         total_cpus = ntasks / ntasks_per_core
-#    print("total_cpu: {}".format(total_cpus))
     if exclusive:
         nodes = ceil(total_cpus/cpu_per_node)
         if ntasks_per_node is not SlurmHeader.ntasks_per_node.default:
             nodes = nodes * (ntasks/ntasks_per_node)
         total_cpus = nodes * cpu_per_node
         total_mem  = nodes * mem_per_node
-#    print("value: {} ".format(total_cpus))
-#    print("type: {}".format(type(total_cpus)))
     else:
         total_mem = total_cpus * mem_per_cpu
-#    print("total_cpu: {}".format(total_cpus))
-#    print("total_seconds_requested : {}".format(total_seconds_requested))
     #TODO:GPU may need to be included
-    #TODO: should store in seconds instead of hours (since thats how slurm stores it)
     requested_hours = total_seconds_requested * ((total_cpus * cpu_billing_weights) + (
         total_mem * mem_billing_weights
-    )) / 3600
-#    print("requested_hours : {}".format(requested_hours))
+    )) 
     return requested_hours
 
 
@@ -331,7 +325,7 @@ def process_slurm_header(sl_file):
     """Read a slurm file and returns the wanted header values as a dictionary"""
     with open(sl_file) as f:
         lines = f.readlines()
-    # SBATCH --account=nesi00213
+    #example line: SBATCH --header=value
     header_dict = {h.value: h.default for h in SlurmHeader}
     for line in lines:
         if line.upper().startswith("#SBATCH"):
@@ -362,7 +356,7 @@ def process_mem_per_cpu(mem_per_cpu):
         value = mem_per_cpu
     if 'G' not in mem_per_cpu.upper():  # no unit (default =MB) or unit=MB, transforming to GB
         value = float(value) / MB_PER_GB
-#    print(value)
+    
     return value
 
 
@@ -377,7 +371,6 @@ def process_header_values(slurm_header_dict, slurm_conf):
             slurm_header_dict[header.value] = header.default
         else:
             slurm_header_dict[header.value] = int(slurm_header_dict[header.value])
-#    print(slurm_header_dict)
     #special treatment for WCT.
     # convert str to datetime -> datetime to second
     if not slurm_header_dict[SlurmHeader.mem_per_cpu.value]:
@@ -418,7 +411,7 @@ def compare_hours_and_sbatch(requested_hours, available_hours, hpc, sl_to_sbatch
     if requested_hours <= available_hours:
         cmd = "{} -M {} {} {}".format(SBATCH_BIN, hpc, sl_to_sbatch, sbatch_extra_args)
         print(cmd)
-#        subprocess.call(cmd, shell=True)
+        subprocess.call(cmd, shell=True)
     else:
         sys.exit("Not enough core hours left, please apply for more")
 
@@ -442,17 +435,12 @@ def main():
 
     # Get raw headers
     header_dict = process_slurm_header(args.slurm_to_sbatch)
-    #print(header_dict)
     # Get hpc_name and path to slurm.conf base on partition name
     hpc, slurm_conf, cpu_per_node, mem_per_node = get_hpc_conf(header_dict[SlurmHeader.partition.value])
 
     # Process headers for calculation
     header_dict = process_header_values(header_dict, slurm_conf)
-    #print(header_dict)
     # Get available hours
-#    print(args.core_hour_json)
-#    print(header_dict[SlurmHeader.account.value])
-#    print( args.user)
     avai_hours = get_available_chours(
         args.core_hour_json, header_dict[SlurmHeader.account.value], args.user
     )
@@ -462,7 +450,6 @@ def main():
         slurm_conf, header_dict[SlurmHeader.partition.value]
     )
     print(header_dict)
-    #print("cpu weights {}\nmem_weights {}".format(cpu_weights, mem_weights))
     print("TRES Billing Weight : {}".format(TRESBillingWeight_dict))
     req_hours = calculate_requested_chours(
         TRESBillingWeight_dict[TRESWeight.cpu.value],
