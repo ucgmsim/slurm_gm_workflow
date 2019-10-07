@@ -312,7 +312,6 @@ def get_available_chours(json_file, account, username):
     """
     with open(json_file, "r") as f:
         json_array = json.load(f)
-#    print(json_array)
     for d in json_array:
         if d.get(account) is not None:
             for user_dict in d[account]:
@@ -324,12 +323,8 @@ def get_available_chours(json_file, account, username):
             sys.exit(
                 "No core hours usage info for {} {} from json file {}".format(
                     account, username, json_file))
-        else:
-            sys.exit(
-                "No account info for {} from json file {}".format(
-                    account, json_file
-                )
-            )
+    #all project names looped raise error
+    raise IndexError("No account info for {} from json file {}".format(account, json_file))
 
 
 def process_slurm_header(sl_file):
