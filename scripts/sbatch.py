@@ -293,9 +293,9 @@ def calculate_requested_chours(
     else:
         total_mem = total_cpus * mem_per_cpu
     #TODO:GPU may need to be included
-    requested_hours = total_seconds_requested * ((total_cpus * cpu_billing_weights) + (
+    requested_hours = (total_seconds_requested * (total_cpus * cpu_billing_weights)) + (
         total_mem * mem_billing_weights
-    )) 
+    ) 
     return requested_hours
 
 
