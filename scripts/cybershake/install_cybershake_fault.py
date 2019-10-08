@@ -168,12 +168,17 @@ def install_fault(
             extended_period=extended_period,
         )
 
-        if not isclose(vm_params_dict['flo'], root_params_dict['flo']):
+        if not isclose(vm_params_dict["flo"], root_params_dict["flo"]):
             logger.critical(
                 "The parameter 'flo' doe not match in the VM params and root params files. "
                 "Please ensure you are installing the correct gmsim version"
             )
-            root_params_dict, fault_params_dict, sim_params_dict, vm_add_params_dict = None, None, None, None
+            root_params_dict, fault_params_dict, sim_params_dict, vm_add_params_dict = (
+                None,
+                None,
+                None,
+                None,
+            )
 
         if (
             root_params_dict is None
@@ -181,6 +186,7 @@ def install_fault(
             and sim_params_dict is None
             and vm_add_params_dict is None
         ):
+            # Something has gone wrong, returning without saving anything
             return
 
         vm_params_dict.update(vm_add_params_dict)
