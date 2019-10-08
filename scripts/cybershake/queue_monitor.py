@@ -57,7 +57,7 @@ def sacct_metadata(db_running_task: SlurmTask, task_logger: Logger, root_folder:
         subprocess.check_output(
             cmd.format(
                 db_running_task.job_id,
-                JOB_RUN_MACHINE[const.ProcessType[db_running_task.proc_type]].value,
+                JOB_RUN_MACHINE[const.ProcessType(db_running_task.proc_type)].value,
             ),
             shell=True,
         )
