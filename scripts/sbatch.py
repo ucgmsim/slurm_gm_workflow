@@ -374,7 +374,7 @@ def process_mem_per_cpu(mem_per_cpu):
 def process_header_values(slurm_header_dict, slurm_conf):
     """
        Process header dict values
-       get defaul values if not provided
+       get default values if not provided
     """
     for header in [SlurmHeader.ntasks, SlurmHeader.cpus_per_task, SlurmHeader.ntasks_per_core]:
         if not slurm_header_dict[header.value]:
@@ -442,6 +442,7 @@ def main():
     assert os.path.exists(args.core_hour_json)
 
     # Get raw headers
+    #TODO: consider sbatch_extra_args and resolve the conflicts
     header_dict = process_slurm_header(args.slurm_to_sbatch)
     # Get hpc_name and path to slurm.conf base on partition name
     hpc, slurm_conf, cpu_per_node, mem_per_node = get_hpc_conf(header_dict[SlurmHeader.partition.value])
