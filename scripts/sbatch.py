@@ -73,6 +73,7 @@ class SlurmHeader(Enum):
     #flags
     nomultithread = (8,"hint=nomultithread", bool, False)
     exclusive = (9,"exclusive", bool, False)
+    maxtres = (10, "MAX_TRES", bool, True) #changes the behavior of billing
 
     def __new__(cls, value, id,type, default):
         obj = object.__new__(cls)
@@ -87,9 +88,9 @@ class SlurmHeader(Enum):
 class MahuikaPartition(Enum):
     large = (0, "large", 72, 108*MB_PER_GB)
     long = (1, "long", 72, 108*MB_PER_GB)
-    perpost = (2, "prepost", 72, 480*MB_PER_GB)
+    prepost = (2, "prepost", 72, 480*MB_PER_GB)
     bigmem = (3, "bigmem", 72, 480*MB_PER_GB)
-    hugmem = (4, "hugemem", 128, 4000*MB_PER_GB)
+    hugemem = (4, "hugemem", 128, 4000*MB_PER_GB)
     ga_bigmem = (5, "ga_bigmem", 72, 480*MB_PER_GB)
     ga_hugemem = (6, "ga_hugemem", 128, 4000*MB_PER_GB)
     gpu = (7, "gpu", 8, 108*MB_PER_GB)
@@ -139,6 +140,7 @@ class MauiAncilPartition(Enum):
 
 def get_value_from_line(line, keyword, all2float=False):
     value = line.strip().split(keyword)[-1].split()[0]
+    value = re.sub('[^A-Za-z0-9\,\. \-\_\%\:]+', '', value)
     #removes non-digital number if = or : is included
     #must be careful that the string
     if all2float:
@@ -158,10 +160,8 @@ def get_value_from_conf(slurm_conf, partition,keyword, all2float=False):
 
     #initializing some values
     line_with_keyword = []
-    partition_keyword_value = None
-    default_partition_keyword_value = None
-    default_keyword_value = None
-    
+    value_dict = {vl.value: None for vl in varLevel}
+         
     for line in lines[::-1]:
         #scan through whole confige file and find lines with keyword
         if keyword in line:
@@ -175,29 +175,30 @@ def get_value_from_conf(slurm_conf, partition,keyword, all2float=False):
             #removes potential unexpected indent
             line = line.strip()
             if line.startswith("PartitionName={}".format(partition)):
-                partition_keyword_value = get_value_from_line(line, keyword, all2float) 
+                value_dict[varLevel.specific.value] = get_value_from_line(line, keyword, all2float) 
             elif line.startswith("PartitionName={}".format(varLevel.default.id)):
-                default_partition_keyword_value =  get_value_from_line(line, keyword, all2float) 
+                value_dict[varLevel.default.value] = get_value_from_line(line, keyword, all2float) 
             elif line.startswith(keyword):
-                default_keyword_value = get_value_from_line(line, keyword,all2float) 
+                value_dict[varLevel.root.value] = get_value_from_line(line, keyword,all2float) 
         # return a value from narrow to broad
-        if partition_keyword_value is not None:
-            return partition_keyword_value
-        elif default_partition_keyword_value is not None:
-            return default_partition_keyword_value
-        elif default_keyword_value is not None:
-            return default_keyword_value
-        else:
-            #last catch of errors if something unexpected happened
-            raise ValueError("keyword:{} were found but none were parsed correctly".format(keyword))
+        for i in range(0, len(varLevel)):
+            if value_dict[i] is not None:
+                return value_dict[i]
+        #last catch of errors if something unexpected happened
+        raise ValueError("keyword:{} was found but none were parsed correctly".format(keyword))
 
 
 def weight_dict_from_line(line):
     #replace ',' with ' ' if multiple TRES were defined
     line = line.replace(",", " ").strip()
-    tmp_dict = []
-    for res in TRES:
-        tmp_dict[res.value] = get_value_from_line(line, res.id, all2float=True)
+    tmp_dict = {vl.value: None for vl in varLevel}
+    for res in TRESWeight:
+        #special case for mem (since the unit may change)
+        if res == TRESWeight.mem:
+            tmp_value = get_value_from_line(line, res.id)
+            tmp_dict[res.value] = process_mem_per_cpu(tmp_value)
+        else:
+            tmp_dict[res.value] =   get_value_from_line(line, res.id, all2float=True)
     
     return tmp_dict
 
@@ -212,10 +213,9 @@ def billing_weight_from_conf(slurm_conf, partition_name):
     #initialize
     TRES_dict = {vl.value: None for vl in varLevel}
     
-    # PartitionName is at the end of file
-    for line in lines[::-1]:
+    line_with_keyword = []
+    for line in lines:
         #scans for all lines constains TRESBillingWeights
-        line_with_keyword = []
         keyword = "TRESBillingWeights"
         if keyword in line:
             line_with_keyword.append(line)
@@ -265,12 +265,14 @@ def shared_TRES_conf(slurm_conf, partition_name):
 def calculate_requested_chours(
         cpu_billing_weights,
         mem_billing_weights,
+        gpu_billing_weights,
         total_seconds_requested,
         mem_per_cpu,
         ntasks,
         ntasks_per_core,
         cpus_per_task,
         shared,
+        maxtres,
         cpu_per_node,
         mem_per_node,
         ntasks_per_node,
@@ -292,9 +294,17 @@ def calculate_requested_chours(
     else:
         total_mem = total_cpus * mem_per_cpu
     #TODO:GPU may need to be included
-    requested_hours = (total_seconds_requested * (total_cpus * cpu_billing_weights)) + (
-        total_mem * mem_billing_weights
-    ) 
+    if maxtres: #billing is only weighted towards the max TRES
+        billing_weight = max(total_cpus * cpu_billing_weights, total_mem * mem_billing_weights)
+        requested_hours = total_seconds_requested * billing_weight
+        
+    else:
+        requested_hours = total_seconds_requested * (
+            (total_cpus * cpu_billing_weights) + (total_mem * mem_billing_weights) 
+        )
+    #requested_hours = total_seconds_requested * (
+    #    (total_cpus * cpu_billing_weights) + (total_mem * mem_billing_weights) 
+    #)
     return requested_hours
 
 
@@ -327,10 +337,12 @@ def process_slurm_header(sl_file):
     #example line: SBATCH --header=value
     header_dict = {h.value: h.default for h in SlurmHeader}
     for line in lines:
+        if line.startswith("##"): continue
         if line.upper().startswith("#SBATCH"):
             for header in SlurmHeader:
-                if header.type is not bool and "--{}=".format(header.id) in line:
-                    value = line.strip().split("--{}=".format(header.id))[-1]
+                sbatch_header = re.sub('[^A-Za-z0-9 \-\_]+', ' ', line)
+                if header.type is not bool and "--{} ".format(header.id) in sbatch_header:
+                    value = get_value_from_line(line.strip().split("--{} ".format(header.id))[-1], header.id)
                     #special case for WCT(time) parameter
                     if header is SlurmHeader.time:
                         #a day is specified, i.e. "%d-%H:%M:%S"
@@ -341,7 +353,7 @@ def process_slurm_header(sl_file):
                         value = datetime.timedelta(days=wct_list[0],hours=wct_list[1],minutes=wct_list[2],seconds=wct_list[3]).total_seconds()
                     header_dict[header.value] = header.type(value)
                     break
-                elif header.type is bool and "--{}".format(header.id) in line:
+                elif header.type is bool and "--{}".format(header.id) in sbatch_header:
                     header_dict[header.value] = True
                     
     return header_dict
@@ -370,14 +382,11 @@ def process_header_values(slurm_header_dict, slurm_conf):
             slurm_header_dict[header.value] = header.default
         else:
             slurm_header_dict[header.value] = int(slurm_header_dict[header.value])
-    #special treatment for WCT.
-    # convert str to datetime -> datetime to second
     if not slurm_header_dict[SlurmHeader.mem_per_cpu.value]:
         slurm_header_dict[SlurmHeader.mem_per_cpu.value] = process_mem_per_cpu(get_value_from_conf(
             slurm_conf,
-            slurm_header_dict.partition,
+            slurm_header_dict[SlurmHeader.partition.value],
             keyword="DefMemPerCPU",
-            all2float=True,
         ))
     else:
         slurm_header_dict[SlurmHeader.mem_per_cpu.value] = process_mem_per_cpu(
@@ -392,7 +401,7 @@ def get_hpc_conf(partition):
     """Get hpc name and path to slurm.conf according to partition name in the slurm file header"""
     for machine in [MauiPartition,MauiAncilPartition,MahuikaPartition]:
         for p in machine:
-            if partition in p.id:
+            if partition == p.id:
                 slurm_conf = p.config_path  
                 hpc = p.hpc
                 cpu_per_node = p.cpus
@@ -408,7 +417,7 @@ def compare_hours_and_sbatch(requested_hours, available_hours, hpc, sl_to_sbatch
        and either submit the job or reject
     """
     if requested_hours <= available_hours:
-        cmd = "{} -M {} {} {}".format(SBATCH_BIN, hpc, sl_to_sbatch, sbatch_extra_args)
+        cmd = "{} -M {} {} {}".format(SBATCH_BIN, HPC(hpc).id, sl_to_sbatch, " ".join(sbatch_extra_args))
         print(cmd)
         subprocess.call(cmd, shell=True)
     else:
@@ -436,7 +445,6 @@ def main():
     header_dict = process_slurm_header(args.slurm_to_sbatch)
     # Get hpc_name and path to slurm.conf base on partition name
     hpc, slurm_conf, cpu_per_node, mem_per_node = get_hpc_conf(header_dict[SlurmHeader.partition.value])
-
     # Process headers for calculation
     header_dict = process_header_values(header_dict, slurm_conf)
     # Get available hours
@@ -453,12 +461,14 @@ def main():
     req_hours = calculate_requested_chours(
         TRESBillingWeight_dict[TRESWeight.cpu.value],
         TRESBillingWeight_dict[TRESWeight.mem.value],
+        TRESBillingWeight_dict[TRESWeight.gpu.value],
         header_dict[SlurmHeader.time.value],
         header_dict[SlurmHeader.mem_per_cpu.value],
         header_dict[SlurmHeader.ntasks.value],
         header_dict[SlurmHeader.ntasks_per_core.value],
         header_dict[SlurmHeader.cpus_per_task.value],
         header_dict[SlurmHeader.exclusive.value],
+        header_dict[SlurmHeader.maxtres.value],
         cpu_per_node,
         mem_per_node,
         header_dict[SlurmHeader.ntasks_per_node.value],
