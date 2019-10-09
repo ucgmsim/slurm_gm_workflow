@@ -337,8 +337,13 @@ def process_slurm_header(sl_file):
     #example line: SBATCH --header=value
     header_dict = {h.value: h.default for h in SlurmHeader}
     for line in lines:
-        if line.startswith("##"): continue
-        if line.upper().startswith("#SBATCH"):
+        if line.startswith("##") or len(line.strip()) == 0:
+            #skip when its a empty line or double commented
+            continue
+        if not line.startswith('#'):
+            #breaks the whole loop if none-comment line occured
+            break
+        elif line.upper().startswith("#SBATCH"):
             for header in SlurmHeader:
                 sbatch_header = re.sub('[^A-Za-z0-9 \-\_]+', ' ', line)
                 if header.type is not bool and "--{} ".format(header.id) in sbatch_header:
