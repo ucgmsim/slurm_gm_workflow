@@ -31,6 +31,7 @@ fi
 if [[ $? == 0 ]]; then
     #passed
     python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py {{mgmt_db_location}}/mgmt_db_queue {{srf_name}} EMOD3D completed $SLURM_JOB_ID
+    ln -s {{sim_dir}}/LF/e3d.par {{sim_dir}}/LF/OutBin/e3d.par
     rm {{sim_dir}}/LF/Restart/*
 
     if [[ ! -d {{sim_dir}}/ch_log ]]; then
