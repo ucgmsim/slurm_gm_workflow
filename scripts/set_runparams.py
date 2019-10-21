@@ -11,12 +11,12 @@ ISSUES: remove default values in e3d_default.par where not needed.
 from __future__ import print_function
 import sys
 import os.path
+from distutils import version
 from logging import Logger
 from os.path import basename
 
 from shared_workflow import shared
-from qcore import utils
-from qcore import binary_version
+from qcore import utils, binary_version, constants
 from shared_workflow import load_config
 from qcore.qclogging import get_basic_logger
 
@@ -49,6 +49,15 @@ def create_run_params(
     e3d_dict = utils.load_yaml(e3d_yaml)
     # skip all logic if a specific srf_name is provided
     if srf_name is None or srf_name == os.path.splitext(basename(params.srf_file))[0]:
+
+        sim_duration_extension = 1 / float(params.flo)
+        if (
+            version.LooseVersion(emod3d_version)
+            > constants.MAXIMUM_EMOD3D_TIMESHIFT_1_VERSION
+        ):
+            sim_duration_extension *= 3
+        extended_sim_duration = params.sim_duration + sim_duration_extension
+
         srf_file_basename = os.path.splitext(os.path.basename(params.srf_file))[0]
         e3d_dict["version"] = emod3d_version + "-mpi"
 
@@ -60,7 +69,10 @@ def create_run_params(
         e3d_dict["nz"] = params.nz
         e3d_dict["h"] = params.hh
         e3d_dict["dt"] = params.dt
-        e3d_dict["nt"] = str(int(round(float(params.sim_duration) / float(params.dt))))
+
+        e3d_dict["nt"] = str(
+            int(round(float(extended_sim_duration) / float(params.dt)))
+        )
         e3d_dict["flo"] = float(params.flo)
 
         e3d_dict["faultfile"] = params.srf_file
@@ -80,7 +92,7 @@ def create_run_params(
 
         e3d_dict["ts_total"] = str(
             int(
-                float(params.sim_duration)
+                float(extended_sim_duration)
                 / (float(e3d_dict["dt"]) * float(e3d_dict["dtts"]))
             )
         )
