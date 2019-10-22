@@ -11,10 +11,11 @@ ISSUES: remove default values in e3d_default.par where not needed.
 from __future__ import print_function
 import sys
 import os.path
-from distutils import version
 from logging import Logger
 from os.path import basename
 
+from qcore.constants import MAXIMUM_EMOD3D_TIMESHIFT_1_VERSION
+from qcore.utils import compare_versions
 from shared_workflow import shared
 from qcore import utils, binary_version, constants
 from shared_workflow import load_config
@@ -51,10 +52,7 @@ def create_run_params(
     if srf_name is None or srf_name == os.path.splitext(basename(params.srf_file))[0]:
 
         sim_duration_extension = 1 / float(params.flo)
-        if (
-            version.LooseVersion(emod3d_version)
-            > constants.MAXIMUM_EMOD3D_TIMESHIFT_1_VERSION
-        ):
+        if compare_versions(emod3d_version, MAXIMUM_EMOD3D_TIMESHIFT_1_VERSION) > 0:
             sim_duration_extension *= 3
         extended_sim_duration = params.sim_duration + sim_duration_extension
 
