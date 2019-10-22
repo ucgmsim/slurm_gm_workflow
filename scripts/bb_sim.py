@@ -95,9 +95,13 @@ if is_master:
     if not np.array_equiv(lf.stations.name, hf.stations.name):
         logger.error("LF and HF were run with different station files")
         comm.Abort()
-    if not np.isclose(lf.dt * lf.nt, hf.dt * hf.nt, atol=min(lf.dt, hf.dt)):
+    if not np.isclose(
+        lf.dt * lf.nt + lf.start_sec, hf.dt * hf.nt, atol=min(lf.dt, hf.dt)
+    ):
         logger.error(
-            "LF duration != HF duration. {} vs {}".format(lf.dt * lf.nt, hf.dt * hf.nt)
+            "LF duration != HF duration. {} vs {}".format(
+                lf.dt * lf.nt + lf.start_sec, hf.dt * hf.nt
+            )
         )
         comm.Abort()
 
@@ -111,21 +115,21 @@ bb_start_sec = min(lf.start_sec, hf.start_sec)
 lf_start_sec_offset = max(lf.start_sec - hf.start_sec, 0)
 hf_start_sec_offset = max(hf.start_sec - lf.start_sec, 0)
 
-lf_start_padding = lf_start_sec_offset // bb_dt
-hf_start_padding = hf_start_sec_offset // bb_dt
+lf_start_padding = int(lf_start_sec_offset // bb_dt)
+hf_start_padding = int(hf_start_sec_offset // bb_dt)
 
-lf_end_padding = (
+lf_end_padding = int(
     max(hf.duration + hf_start_sec_offset - (lf.duration + lf_start_sec_offset), 0)
     // bb_dt
 )
-hf_end_padding = (
+hf_end_padding = int(
     max(lf.duration + lf_start_sec_offset - (hf.duration + hf_start_sec_offset), 0)
     // bb_dt
 )
 
 assert (
-    lf_start_padding + lf.duration // bb_dt + lf_end_padding
-    == hf_start_padding + hf.duration // bb_dt + hf_end_padding
+    lf_start_padding + round(lf.duration / bb_dt) + lf_end_padding
+    == hf_start_padding + round(hf.duration / bb_dt) + hf_end_padding
 )
 
 bb_nt = lf_start_padding + lf.duration // bb_dt + lf_end_padding
