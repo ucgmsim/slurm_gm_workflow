@@ -4,7 +4,9 @@ if [[ ! -d {{mgmt_db_location}}/mgmt_db_queue ]]; then
     mkdir {{mgmt_db_location}}/mgmt_db_queue
 fi
 
-if [[ -d "{{sim_dir}}/LF/Restart" ]] && [[ `ls -1 {{sim_dir}}/LF/Restart | wc -l` != 0 ]]; then
+SUCCESS_CODE=0
+
+if [[ -d "{{sim_dir}}/LF/Restart" ]] && [[ `ls -1 {{sim_dir}}/LF/Restart | wc -l` != $SUCCESS_CODE ]]; then
     echo "Checkpointed run found, attempting to resume from checkpoint"
     sed -i 's/read_restart=.*/read_restart="1"/' {{sim_dir}}/LF/e3d.par
 fi
@@ -24,11 +26,13 @@ echo $end_time
 #test before update
 timestamp=`date +%Y%m%d_%H%M%S`
 res=`$gmsim/workflow/scripts/test_emod3d.sh {{sim_dir}} {{srf_name}}`
-if [[ $? == 0 ]]; then
+success=$?
+if [[ $success == $SUCCESS_CODE ]]; then
     sleep 2
     res=`$gmsim/workflow/scripts/test_emod3d.sh {{sim_dir}} {{srf_name}}`
+    success=$?
 fi
-if [[ $? == 0 ]]; then
+if [[ $success == $SUCCESS_CODE ]]; then
     #passed
     python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py {{mgmt_db_location}}/mgmt_db_queue {{srf_name}} EMOD3D completed $SLURM_JOB_ID
     rm {{sim_dir}}/LF/Restart/*
