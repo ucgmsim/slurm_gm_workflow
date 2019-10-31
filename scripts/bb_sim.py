@@ -132,7 +132,7 @@ assert (
     == hf_start_padding + round(hf.duration / bb_dt) + hf_end_padding
 )
 
-bb_nt = lf_start_padding + lf.duration // bb_dt + lf_end_padding
+bb_nt = lf_start_padding + round(lf.duration / bb_dt) + lf_end_padding
 n2 = nt2n(bb_nt)
 
 lf_start_padding_ts = np.zeros(lf_start_padding)
@@ -193,7 +193,6 @@ except AssertionError:
 else:
     if is_master:
         logger.debug("vs30 loaded successfully.")
-
 
 # initialise output with general metadata
 def initialise(check_only=False):
@@ -325,6 +324,7 @@ fmidbot = args.fmidbot
 t0 = MPI.Wtime()
 bb_acc = np.empty((bb_nt, N_COMP), dtype="f4")
 for i, stat in enumerate(stations_todo):
+    logger.debug(f"Working on {stat.name}, number {100*i/len(stations_todo)}")
     vs30 = vs30s[stations_todo_idx[i]]
     lfvs30ref = lfvs30refs[stations_todo_idx[i]]
     lf_acc = np.copy(lf.acc(stat.name, dt=bb_dt))
