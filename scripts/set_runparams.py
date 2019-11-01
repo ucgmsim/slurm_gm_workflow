@@ -38,8 +38,9 @@ def create_run_params(
             os.path.dirname(os.path.realpath(__file__)), "workflow_config.json"
         )
     global_root = workflow_config["global_root"]
-    tools_dir = binary_version.get_lf_bin(params.emod3d.emod3d_version)
-    emod3d_version = workflow_config["emod3d_version"]
+    emod3d_version = params["emod3d"]["emod3d_version"]
+    tools_dir = binary_version.get_lf_bin(emod3d_version)
+
 
     e3d_yaml = os.path.join(
         workflow_config["templates_dir"],
