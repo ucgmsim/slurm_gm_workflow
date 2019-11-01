@@ -4,7 +4,8 @@ Slurm Ground Motion Workflow
 
 ## [19.6.15] - 2019-11-01 -- Add timeshifting for LF
 ### Added
-    - LF now has additional sim duration time added to account for time shifts to preserve causality 
+    - LF now has additional sim duration time added to account for time shifts to preserve causality
+    - Version 3.0.4 of EMOD3D had a time shift of 1/flo, while proceeding versions have a time shift of 3/flo 
 
 ## [19.6.14] - 2019-09-23 --Update Dashboard app code
 ### Changed

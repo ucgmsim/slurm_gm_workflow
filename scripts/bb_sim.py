@@ -111,6 +111,9 @@ if args.dt is None:
 else:
     bb_dt = args.dt
 
+# As LF has a start time offset it is necessary to pad the start of HF by the same number of timesteps
+# Similar code to account for an end time difference is also present
+# allowing for HF and LF to have separate start times and durations
 bb_start_sec = min(lf.start_sec, hf.start_sec)
 lf_start_sec_offset = max(lf.start_sec - hf.start_sec, 0)
 hf_start_sec_offset = max(hf.start_sec - lf.start_sec, 0)
