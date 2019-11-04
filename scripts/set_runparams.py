@@ -60,7 +60,7 @@ def create_run_params(
         if compare_versions(emod3d_version, MAXIMUM_EMOD3D_TIMESHIFT_1_VERSION) > 0:
             sim_duration_extension *= 3
 
-        extended_sim_duration = params.sim_duration + sim_duration_extension
+        extended_sim_duration = float(params.sim_duration) + sim_duration_extension
 
         srf_file_basename = os.path.splitext(os.path.basename(params.srf_file))[0]
         e3d_dict["version"] = emod3d_version + "-mpi"
@@ -75,7 +75,7 @@ def create_run_params(
         e3d_dict["dt"] = params.dt
 
         e3d_dict["nt"] = str(
-            int(round(float(extended_sim_duration) / float(params.dt)))
+            int(round(extended_sim_duration / float(params.dt)))
         )
         e3d_dict["flo"] = float(params.flo)
 
@@ -96,7 +96,7 @@ def create_run_params(
 
         e3d_dict["ts_total"] = str(
             int(
-                float(extended_sim_duration)
+                extended_sim_duration
                 / (float(e3d_dict["dt"]) * float(e3d_dict["dtts"]))
             )
         )
