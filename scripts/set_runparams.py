@@ -74,9 +74,7 @@ def create_run_params(
         e3d_dict["h"] = params.hh
         e3d_dict["dt"] = params.dt
 
-        e3d_dict["nt"] = str(
-            int(round(extended_sim_duration / float(params.dt)))
-        )
+        e3d_dict["nt"] = str(int(round(extended_sim_duration / float(params.dt))))
         e3d_dict["flo"] = float(params.flo)
 
         e3d_dict["faultfile"] = params.srf_file
