@@ -59,24 +59,13 @@ if [[ `which python` != *"${name}"* && `which pip` != *"${name}"* ]]; then
     exit
 fi
 
-# Run setup for IM_calculation
-echo "Running setup for IM_calculation"
-#check and install Cython before IM_calc
-pip show Cython
-if [[ $? -ne 0 ]];then
-    pip install Cython
-fi
-cd IM_calculation
-python setup.py install
-cd ../
-
 # Install python packages
 # Using xargs means that each package is installed individually, which
 # means that if there is an error (i.e. can't find qcore), then the other
 # packages are still installed. However, this is slower.
 xargs -n 1 -a ${env_path}/workflow/install_workflow/maui_python3_requirements.txt pip install
 
-# Install qcore & Empirical Engine
+# Install qcore & Empirical Engine & IM_calc
 pip install -I --no-deps -e ./qcore
 pip install -I --no-deps -e ./Empirical_Engine
 pip install -I --no-deps -e ./IM_calculation
