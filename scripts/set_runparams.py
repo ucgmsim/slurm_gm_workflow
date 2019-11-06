@@ -14,9 +14,10 @@ import os.path
 from logging import Logger
 from os.path import basename
 
+from qcore.constants import MAXIMUM_EMOD3D_TIMESHIFT_1_VERSION
+from qcore.utils import compare_versions
 from shared_workflow import shared
-from qcore import utils
-from qcore import binary_version
+from qcore import utils, binary_version, constants
 from shared_workflow import load_config
 from qcore.qclogging import get_basic_logger
 
@@ -49,6 +50,18 @@ def create_run_params(
     e3d_dict = utils.load_yaml(e3d_yaml)
     # skip all logic if a specific srf_name is provided
     if srf_name is None or srf_name == os.path.splitext(basename(params.srf_file))[0]:
+
+        # EMOD3D adds a timeshift to the event rupture time
+        # this must be accounted for as EMOD3D does not extend the sim duration by the amount of time shift
+        # As flo is in Hz, the sim_duration_extension is in s
+        # Version 3.0.4 was the last version of EMOD3D to have a shift of 1/flo,
+        # while versions after it have a shift of 3/flo
+        sim_duration_extension = 1 / float(params.flo)
+        if compare_versions(emod3d_version, MAXIMUM_EMOD3D_TIMESHIFT_1_VERSION) > 0:
+            sim_duration_extension *= 3
+
+        extended_sim_duration = float(params.sim_duration) + sim_duration_extension
+
         srf_file_basename = os.path.splitext(os.path.basename(params.srf_file))[0]
         e3d_dict["version"] = emod3d_version + "-mpi"
 
@@ -60,7 +73,8 @@ def create_run_params(
         e3d_dict["nz"] = params.nz
         e3d_dict["h"] = params.hh
         e3d_dict["dt"] = params.dt
-        e3d_dict["nt"] = str(int(round(float(params.sim_duration) / float(params.dt))))
+
+        e3d_dict["nt"] = str(int(round(extended_sim_duration / float(params.dt))))
         e3d_dict["flo"] = float(params.flo)
 
         e3d_dict["faultfile"] = params.srf_file
@@ -80,7 +94,7 @@ def create_run_params(
 
         e3d_dict["ts_total"] = str(
             int(
-                float(params.sim_duration)
+                extended_sim_duration
                 / (float(e3d_dict["dt"]) * float(e3d_dict["dtts"]))
             )
         )

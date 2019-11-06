@@ -95,24 +95,54 @@ if is_master:
     if not np.array_equiv(lf.stations.name, hf.stations.name):
         logger.error("LF and HF were run with different station files")
         comm.Abort()
-    if not np.isclose(lf.dt * lf.nt, hf.dt * hf.nt, atol=min(lf.dt, hf.dt)):
+    if not np.isclose(
+        lf.dt * lf.nt + lf.start_sec, hf.dt * hf.nt, atol=min(lf.dt, hf.dt)
+    ):
         logger.error(
-            "LF duration != HF duration. {} vs {}".format(lf.dt * lf.nt, hf.dt * hf.nt)
+            "LF duration != HF duration. {} vs {}".format(
+                lf.dt * lf.nt + lf.start_sec, hf.dt * hf.nt
+            )
         )
         comm.Abort()
 
 # load metadata
-lf_start_sec = -1.0
-bb_start_sec = min(lf_start_sec, hf.start_sec)
 if args.dt is None:
     bb_dt = min(lf.dt, hf.dt)
 else:
     bb_dt = args.dt
 
-d_nt = int(round(max(lf_start_sec, hf.start_sec) - bb_start_sec) / bb_dt)
-bb_nt = int(round(max(lf.duration, hf.duration) / bb_dt + d_nt))
+# As LF has a start time offset it is necessary to pad the start of HF by the same number of timesteps
+# Similar code to account for an end time difference is also present
+# allowing for HF and LF to have separate start times and durations
+bb_start_sec = min(lf.start_sec, hf.start_sec)
+lf_start_sec_offset = max(lf.start_sec - hf.start_sec, 0)
+hf_start_sec_offset = max(hf.start_sec - lf.start_sec, 0)
+
+lf_start_padding = int(lf_start_sec_offset // bb_dt)
+hf_start_padding = int(hf_start_sec_offset // bb_dt)
+
+lf_end_padding = int(
+    max(hf.duration + hf_start_sec_offset - (lf.duration + lf_start_sec_offset), 0)
+    // bb_dt
+)
+hf_end_padding = int(
+    max(lf.duration + lf_start_sec_offset - (hf.duration + hf_start_sec_offset), 0)
+    // bb_dt
+)
+
+assert (
+    lf_start_padding + round(lf.duration / bb_dt) + lf_end_padding
+    == hf_start_padding + round(hf.duration / bb_dt) + hf_end_padding
+)
+
+bb_nt = lf_start_padding + round(lf.duration / bb_dt) + lf_end_padding
 n2 = nt2n(bb_nt)
-d_ts = np.zeros(d_nt)
+
+lf_start_padding_ts = np.zeros(lf_start_padding)
+hf_start_padding_ts = np.zeros(hf_start_padding)
+lf_end_padding_ts = np.zeros(lf_end_padding)
+hf_end_padding_ts = np.zeros(hf_end_padding)
+
 head_total = HEAD_SIZE + lf.stations.size * HEAD_STAT
 file_size = head_total + lf.stations.size * bb_nt * N_COMP * FLOAT_SIZE
 if args.flo is None:
@@ -297,6 +327,7 @@ fmidbot = args.fmidbot
 t0 = MPI.Wtime()
 bb_acc = np.empty((bb_nt, N_COMP), dtype="f4")
 for i, stat in enumerate(stations_todo):
+    logger.debug(f"Working on {stat.name}, number {100*i/len(stations_todo)}")
     vs30 = vs30s[stations_todo_idx[i]]
     lfvs30ref = lfvs30refs[stations_todo_idx[i]]
     lf_acc = np.copy(lf.acc(stat.name, dt=bb_dt))
@@ -350,7 +381,8 @@ for i, stat in enumerate(stations_todo):
                 )
                 comm.Abort()
         bb_acc[:, c] = (
-            np.hstack((d_ts, hf_acc[:, c])) + np.hstack((lf_acc[:, c], d_ts))
+            np.hstack((hf_start_padding_ts, hf_acc[:, c], hf_end_padding_ts))
+            + np.hstack((lf_start_padding_ts, lf_acc[:, c], lf_end_padding_ts))
         ) / 981.0
     bin_data.seek(bin_seek[i])
     bb_acc.tofile(bin_data)
