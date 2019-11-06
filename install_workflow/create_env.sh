@@ -61,7 +61,11 @@ fi
 
 # Run setup for IM_calculation
 echo "Running setup for IM_calculation"
-pip install Cython
+#check and install Cython before IM_calc
+pip show Cython
+if [[ $? -ne 0 ]];then
+    pip install Cython
+fi
 cd IM_calculation
 python setup.py install
 cd ../
