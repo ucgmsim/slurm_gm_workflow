@@ -45,13 +45,6 @@ git clone git@github.com:ucgmsim/Empirical_Engine.git
 echo "Cloning visualization"
 git clone git@github.com:ucgmsim/visualization.git
 
-# Run setup for IM_calculation
-echo "Running setup for IM_calculation"
-cd IM_calculation
-python setup_rspectra.py build_ext --inplace
-cd ../
-
-
 # Create virtual environment
 mkdir virt_envs
 python3 -m venv virt_envs/python3_maui
@@ -66,10 +59,18 @@ if [[ `which python` != *"${name}"* && `which pip` != *"${name}"* ]]; then
     exit
 fi
 
+# Run setup for IM_calculation
+echo "Running setup for IM_calculation"
+pip install Cython
+cd IM_calculation
+python setup.py install
+cd ../
+
 # Install python packages
 # Using xargs means that each package is installed individually, which
 # means that if there is an error (i.e. can't find qcore), then the other
 # packages are still installed. However, this is slower.
+exit
 xargs -n 1 -a ${env_path}/workflow/install_workflow/maui_python3_requirements.txt pip install
 
 # Install qcore & Empirical Engine
