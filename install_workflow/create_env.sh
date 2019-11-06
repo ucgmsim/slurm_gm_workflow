@@ -45,13 +45,6 @@ git clone git@github.com:ucgmsim/Empirical_Engine.git
 echo "Cloning visualization"
 git clone git@github.com:ucgmsim/visualization.git
 
-# Run setup for IM_calculation
-echo "Running setup for IM_calculation"
-cd IM_calculation
-python setup_rspectra.py build_ext --inplace
-cd ../
-
-
 # Create virtual environment
 mkdir virt_envs
 python3 -m venv virt_envs/python3_maui
@@ -65,6 +58,17 @@ if [[ `which python` != *"${name}"* && `which pip` != *"${name}"* ]]; then
     environment. Quitting"
     exit
 fi
+
+# Run setup for IM_calculation
+echo "Running setup for IM_calculation"
+#check and install Cython before IM_calc
+pip show Cython
+if [[ $? -ne 0 ]];then
+    pip install Cython
+fi
+cd IM_calculation
+python setup.py install
+cd ../
 
 # Install python packages
 # Using xargs means that each package is installed individually, which
