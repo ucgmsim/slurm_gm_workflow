@@ -135,7 +135,7 @@ assert (
     == hf_start_padding + round(hf.duration / bb_dt) + hf_end_padding
 )
 
-bb_nt = lf_start_padding + round(lf.duration / bb_dt) + lf_end_padding
+bb_nt = int(lf_start_padding + round(lf.duration / bb_dt) + lf_end_padding)
 n2 = nt2n(bb_nt)
 
 lf_start_padding_ts = np.zeros(lf_start_padding)
