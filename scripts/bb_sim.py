@@ -373,17 +373,15 @@ for i, stat in enumerate(stations_todo):
             args.flo,
             "lowpass",
         )
+        hf_c = np.hstack((hf_start_padding_ts, hf_acc[:, c], hf_end_padding_ts))
+        lf_c = np.hstack((lf_start_padding_ts, lf_acc[:, c], lf_end_padding_ts))
         if is_master and i == 0:
-            if len(hf_acc[:, c]) != len(lf_acc[:, c]):
+            if len(hf_c) != len(lf_c):
                 logger.critical(
-                    "hf and lf have different number of timesteps, aborting. "
-                    "Check that your sim_duration is a multiple of both the hf and lf dt."
+                    "padded hf and lf have different number of timesteps, aborting. "
                 )
                 comm.Abort()
-        bb_acc[:, c] = (
-            np.hstack((hf_start_padding_ts, hf_acc[:, c], hf_end_padding_ts))
-            + np.hstack((lf_start_padding_ts, lf_acc[:, c], lf_end_padding_ts))
-        ) / 981.0
+        bb_acc[:, c] = (hf_c + lf_c) / 981.0
     bin_data.seek(bin_seek[i])
     bb_acc.tofile(bin_data)
     # write vsite as used for checkpointing
