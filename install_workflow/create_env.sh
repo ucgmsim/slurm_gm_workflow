@@ -45,13 +45,6 @@ git clone git@github.com:ucgmsim/Empirical_Engine.git
 echo "Cloning visualization"
 git clone git@github.com:ucgmsim/visualization.git
 
-# Run setup for IM_calculation
-echo "Running setup for IM_calculation"
-cd IM_calculation
-python setup_rspectra.py build_ext --inplace
-cd ../
-
-
 # Create virtual environment
 mkdir virt_envs
 python3 -m venv virt_envs/python3_maui
@@ -72,7 +65,7 @@ fi
 # packages are still installed. However, this is slower.
 xargs -n 1 -a ${env_path}/workflow/install_workflow/maui_python3_requirements.txt pip install
 
-# Install qcore & Empirical Engine
+# Install qcore & Empirical Engine & IM_calc
 pip install -I --no-deps -e ./qcore
 pip install -I --no-deps -e ./Empirical_Engine
 pip install -I --no-deps -e ./IM_calculation

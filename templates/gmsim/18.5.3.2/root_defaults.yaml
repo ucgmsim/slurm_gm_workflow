@@ -1,0 +1,19 @@
+hf:
+  version: 5.4.5.1
+  dt: 0.005
+  rvfac: 0.8
+  sdrop: 50
+  path_dur: 11
+  kappa: 0.045
+bb:
+  version: 3.0.4
+  site_specific: false
+  fmin: 0.5
+  fmidbot: 1.0
+  no-lf-amp: True
+emod3d:
+   emod3d_version: 3.0.4
+flo: 0.5
+dt: 0.01
+global_root: /nesi/project/nesi00213
+v_1d_mod: /nesi/project/nesi00213/VelocityModel/Mod-1D/Cant1D_v3-midQ_OneRay.1d
