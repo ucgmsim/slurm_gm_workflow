@@ -2,6 +2,10 @@ Slurm Ground Motion Workflow
 # Changelog
 (Based on https://wiki.canterbury.ac.nz/download/attachments/58458136/CodeVersioning_v18p2.pdf?version=1&modificationDate=1519269238437&api=v2 )
 
+## [19.6.16] - 2019-11-20 -- Add additional gmsim versions
+### Added
+    - Version files for gm versions 18.5.3.2, 18.5.3.1, 18.5.4.1
+
 ## [19.6.15] - 2019-11-01 -- Add timeshifting for LF
 ### Added
     - LF now has additional sim duration time added to account for time shifts to preserve causality
