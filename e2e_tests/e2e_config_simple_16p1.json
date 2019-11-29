@@ -1,8 +1,8 @@
 {
   "test_dir": "/nesi/nobackup/nesi00213/RunFolder/EndToEndTest/tests/",
-  "data_dir": "/nesi/project/nesi00213/EndToEndTest/test_data_simple/Data",
-  "fault_list": "/nesi/project/nesi00213/EndToEndTest/test_data_simple/list.txt",
-  "bench_dir": "/nesi/project/nesi00213/EndToEndTest/test_data_simple/benchmark",
+  "data_dir": "/nesi/project/nesi00213/EndToEndTest/test_1911/test_data_simple/Data",
+  "fault_list": "/nesi/project/nesi00213/EndToEndTest/test_1911/test_data_simple/list.txt",
+  "bench_dir": "/nesi/project/nesi00213/EndToEndTest/test_1911/test_data_simple/benchmark",
   "test_checkpoint": true,
   "timeout": 10,
   "version": "16.1",
