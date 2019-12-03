@@ -2,6 +2,10 @@ Slurm Ground Motion Workflow
 # Changelog
 (Based on https://wiki.canterbury.ac.nz/download/attachments/58458136/CodeVersioning_v18p2.pdf?version=1&modificationDate=1519269238437&api=v2 )
 
+## [19.6.17] - 2019-11-29 -- Updated e2e test data
+### Changed
+    - Test data for v16p1 simple and validation, and 18p5p3p4 simple updated to have data for the updated workflow with timeshifting. Old test data is still available for testing old workflow versions.
+
 ## [19.6.16] - 2019-11-20 -- Add additional gmsim versions
 ### Added
     - Version files for gm versions 18.5.3.2, 18.5.3.1, 18.5.4.1
