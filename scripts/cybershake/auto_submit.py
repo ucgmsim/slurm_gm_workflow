@@ -43,6 +43,7 @@ JOB_RUN_MACHINE = {
     const.ProcessType.LF2BB: const.HPC.mahuika,
     const.ProcessType.HF2BB: const.HPC.mahuika,
     const.ProcessType.plot_srf: const.HPC.mahuika,
+    const.ProcessType.advanced_IM: const.HPC.mahuika,
 }
 
 
@@ -313,9 +314,33 @@ def submit_task(
         submit_sl_script(
             script, target_machine=JOB_RUN_MACHINE[const.ProcessType.plot_srf].value
         )
+    elif proc_type == const.ProcessType.advanced_IM.value:
+        params = utils.load_sim_params(os.path.join(sim_dir, "sim_params.yaml"),load_vm=False)
+        options_dict = {
+            "auto": True,
+            "machine": JOB_RUN_MACHINE[const.ProcessType.advanced_IM].value,
+            "write_directory": sim_dir,
+            const.ProcessType.advanced_IM.value : params[const.ProcessType.advanced_IM.value].models
+        }
+        
+        submit_im_calc_slurm(
+            sim_dir=sim_dir,
+            options_dict=options_dict,
+            est_model=models[3],
+            logger=task_logger,
+        )
+         
+        task_logger.debug("Submit Advanced_IM calc arguments: {}".format(options_dict))
+        store_metadata(
+            log_file,
+            const.ProcessType.IM_calculation.str_value,
+            {"submit_time": submitted_time},
+            logger=task_logger,
+        )
 
     qclogging.clean_up_logger(task_logger)
 
+        
 
 def run_main_submit_loop(
     root_folder: str,

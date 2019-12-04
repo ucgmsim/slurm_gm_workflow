@@ -66,9 +66,17 @@ def sacct_metadata(db_running_task: SlurmTask, task_logger: Logger, root_folder:
         .split()
     )
     # ['578928', 'u-bl689.atmos_main.18621001T0000Z', '2019-08-16T13:05:06', '2019-08-16T13:12:56', '2019-08-16T14:58:28', '1840', '11650880', 'CANCELLED+', 'nid00[166-171,180-196]']
-    submit_time, start_time, end_time = [x.replace("T", "_") for x in output[2:5]]
-    n_cores = float(output[5])
-    run_time = float(output[6]) / n_cores
+    try:
+        submit_time, start_time, end_time = [x.replace("T", "_") for x in output[2:5]]
+        n_cores = float(output[5])
+        run_time = float(output[6]) / n_cores
+        status = output[7]
+    
+    except:
+         submit_time, start_time, end_time = [ 0 for x in range(3)]
+         n_cores = 0.0
+         run_time = 0
+         status = 'CANCELLED'
     sim_dir = sim_struct.get_sim_dir(root_folder, db_running_task.run_name)
     log_file = os.path.join(sim_dir, "ch_log", "metadata_log.json")
     # now log metadata
@@ -80,7 +88,7 @@ def sacct_metadata(db_running_task: SlurmTask, task_logger: Logger, root_folder:
             "end_time": end_time,
             "run_time": run_time,
             "cores": n_cores,
-            "status": output[7],
+            "status": status,
         },
         logger=task_logger,
     )

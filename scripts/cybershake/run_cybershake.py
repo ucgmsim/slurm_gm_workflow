@@ -264,11 +264,11 @@ def main():
     parser.add_argument(
         "--n_runs",
         default=None,
-        type=list,
+        type=int,
         nargs="+",
         help="The number of processes each machine can run at once. If a single value is given this is used for all "
         "machines, otherwise one value per machine must be given. The current order is: {}".format(
-            (x.str_value for x in const.HPC)
+            list(x.value for x in const.HPC)
         ),
     )
     parser.add_argument(
@@ -310,7 +310,7 @@ def main():
         if len(args.n_runs) == 1:
             n_runs = {hpc: args.n_runs[0] for hpc in const.HPC}
             wrapper_logger.debug(
-                "Using {} as the maximum number of jobs per machine".format(n_runs[0])
+                "Using {} as the maximum number of jobs per machine".format(args.n_runs[0])
             )
         elif len(args.n_runs) == len(const.HPC):
             n_runs = {}

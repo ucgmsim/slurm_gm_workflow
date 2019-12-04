@@ -1,4 +1,7 @@
 
+if [[ ! -z ${CUR_ENV} && ${CUR_HPC} != "mahuika" ]]; then
+    source $CUR_ENV/workflow/install_workflow/helper_functions/activate_env.sh $CUR_ENV "mahuika"
+fi
 
 export IMPATH=$gmsim/IM_calculation/IM_calculation/scripts
 export PYTHONPATH=$gmsim/qcore:/$PYTHONPATH:$IMPATH
