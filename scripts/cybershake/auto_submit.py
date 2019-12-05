@@ -372,7 +372,7 @@ def run_main_submit_loop(
                 n_tasks_to_run[hpc] = 0
             else:
                 n_tasks_to_run[hpc] = n_runs[hpc] - len(squeued_tasks)
-                if n_tasks_to_run[hpc] < n_runs[hpc]:
+                if len(squeued_tasks) > 0:
                     main_logger.debug(
                         "There was at least one job in squeue, resetting timeout"
                     )
