@@ -246,7 +246,7 @@ def submit_task(
             False,
             root_folder,
             "nesi00213",
-            run_name,
+            [run_name],
             sim_dir,
         )
         submit_sl_script(sl_script)

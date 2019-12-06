@@ -14,7 +14,7 @@ echo ___calculating empirical___
     {% set output_dir = mgmt_db_location ~"Runs/" ~fault_name ~"/" ~run_name ~"/" ~"verification/" %}
     #update db to running
     timestamp=`date +%Y%m%d_%H%M%S`
-    echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} Empirical running --run_name {{run_name}} --j $SLURM_JOBID" >> {{mgmt_db_location}}/mgmt_db_queue/$timestamp\_$SLURM_JOBID
+    python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py {{mgmt_db_location}}/mgmt_db_queue {{srf_name}} Empirical running $SLURM_JOB_ID
     #run the script
     time $EMP_PATH/calculate_empirical.py -i {{run_name}} {{extended}} -r {{rrup_file}} -srf {{srf_info}} {{output_dir}} --vs30_file /nesi/project/nesi00213/StationInfo/non_uniform_whole_nz_with_real_stations-hh400_v18p6.vs30
     time $EMP_PATH/emp_aggregation.py -o {{output_dir}} -i {{run_name}} -r {{fault_name}} {{output_dir}}/{{run_name}}_*.csv
@@ -26,11 +26,11 @@ echo ___calculating empirical___
 #update mgmt_db
     if [[ $? == 0 ]]; then
         #passed
-        echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} Empirical completed --run_name {{sim_name}} --force" >> {{mgmt_db_location}}/mgmt_db_queue/$timestamp\_$SLURM_JOBID
+        python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py {{mgmt_db_location}}/mgmt_db_queue {{srf_name}} Empirical completed $SLURM_JOB_ID
         #save metadata for collection
     else
         #failed
-        echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} Empirical failed --run_name {{sim_name}} --error '$res' --force"  >> {{mgmt_db_location}}/mgmt_db_queue/$timestamp\_$SLURM_JOBID
+        python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py {{mgmt_db_location}}/mgmt_db_queue {{srf_name}} Empirical failed $SLURM_JOB_ID --error "$res"
     fi
 {% endfor %}
 date
