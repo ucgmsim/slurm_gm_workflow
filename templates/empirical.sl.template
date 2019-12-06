@@ -1,4 +1,7 @@
-source machine_env.sh
+
+if [[ ! -z ${CUR_ENV} && ${CUR_HPC} != "mahuika" ]]; then
+    source $CUR_ENV/workflow/install_workflow/helper_functions/activate_env.sh $CUR_ENV "mahuika"
+fi
 
 export EMP_PATH=$gmsim/Empirical_Engine
 export PYTHONPATH=$gmsim/qcore:/$PYTHONPATH:$IMPATH
@@ -16,8 +19,8 @@ echo ___calculating empirical___
     timestamp=`date +%Y%m%d_%H%M%S`
     python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py {{mgmt_db_location}}/mgmt_db_queue {{run_name}} Empirical running $SLURM_JOB_ID
     #run the script
-    time $EMP_PATH/calculate_empirical.py -i {{run_name}} {{extended}} -r {{rrup_file}} -srf {{srf_info}} {{output_dir}} --vs30_file /nesi/project/nesi00213/StationInfo/non_uniform_whole_nz_with_real_stations-hh400_v18p6.vs30
-    time $EMP_PATH/emp_aggregation.py -o {{output_dir}} -i {{run_name}} -r {{fault_name}} {{output_dir}}/{{run_name}}_*.csv
+    time $EMP_PATH/empirical/scripts/calculate_empirical.py -i {{run_name}} {{extended}} -r {{rrup_file}} -srf {{srf_info}} {{output_dir}} --vs30_file /nesi/project/nesi00213/StationInfo/non_uniform_whole_nz_with_real_stations-hh400_v18p6.vs30
+    time $EMP_PATH/empirical/scripts/emp_aggregation.py -o {{output_dir}} -i {{run_name}} -r {{fault_name}} {{output_dir}}/{{run_name}}_*.csv
     time $gmsim/workflow/verification/calculate_epsilon.py {{mgmt_db_location}}/Runs/{{fault_name}}/{{run_name}}/IM_calc/{{run_name}}.csv {{output_dir}}/{{run_name}}.csv {{output_dir}}/{{run_name}}_epsilon.csv
 
 #test before update mgmt_db -- Needs a test to see if files are output
