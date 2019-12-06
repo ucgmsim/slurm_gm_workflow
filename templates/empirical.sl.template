@@ -10,15 +10,15 @@ echo ___calculating empirical___
 {% for run_name, fault_name in run_data %}
     echo {{run_name}}
     {% set srf_info = mgmt_db_location ~"Data/Sources/" ~fault_name ~"/Srf/" ~run_name ~".info" %}
-    {% set rrup_file = mgmt_db_location ~"Runs/" ~fault_name ~"/" ~"verification/" ~"rrup_" ~run_name ~".csv" %}
-    {% set output_dir = mgmt_db_location ~"Runs/" ~fault_name ~"/" ~"verification/" %}
+    {% set rrup_file = mgmt_db_location ~"Runs/" ~fault_name ~"/" ~run_name ~"/" ~"verification/" ~"rrup_" ~run_name ~".csv" %}
+    {% set output_dir = mgmt_db_location ~"Runs/" ~fault_name ~"/" ~run_name ~"/" ~"verification/" %}
     #update db to running
     timestamp=`date +%Y%m%d_%H%M%S`
     echo "python $gmsim/workflow/scripts/management/update_mgmt_db.py {{mgmt_db_location}} Empirical running --run_name {{run_name}} --j $SLURM_JOBID" >> {{mgmt_db_location}}/mgmt_db_queue/$timestamp\_$SLURM_JOBID
     #run the script
     time $EMP_PATH/calculate_empirical.py -i {{run_name}} {{extended}} -r {{rrup_file}} -srf {{srf_info}} {{output_dir}} --vs30_file /nesi/project/nesi00213/StationInfo/non_uniform_whole_nz_with_real_stations-hh400_v18p6.vs30
     time $EMP_PATH/emp_aggregation.py -o {{output_dir}} -i {{run_name}} -r {{fault_name}} {{output_dir}}/{{run_name}}_*.csv
-    time $gmsim/workflow/verification/calculate_epsilon.py {{mgmt_db_location}}/{{fault}}/IM_calc/{{run_name}}/{{run_name}}.csv {{output_dir}}/{{run_name}}.csv {{output_dir}}/{{run_name}}_epsilon.csv
+    time $gmsim/workflow/verification/calculate_epsilon.py {{mgmt_db_location}}/Runs/{{fault_name}}/{{run_name}}/IM_calc/{{run_name}}.csv {{output_dir}}/{{run_name}}.csv {{output_dir}}/{{run_name}}_epsilon.csv
 
 #test before update mgmt_db -- Needs a test to see if files are output
     timestamp=`date +%Y%m%d_%H%M%S`

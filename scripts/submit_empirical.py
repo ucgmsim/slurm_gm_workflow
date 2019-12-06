@@ -4,6 +4,7 @@ import argparse
 from datetime import datetime
 import os
 
+from shared_workflow.shared_defaults import recipe_dir
 from shared_workflow.shared_template import generate_context, resolve_header
 
 DEFAULT_ACCOUNT = "nesi00213"
@@ -43,6 +44,7 @@ def generate_sl(np, extended, cybershake_folder, account, realisations):
     )
 
     header = resolve_header(
+        recipe_dir,
         account,
         np,
         wallclock_limit="00:30:00",
@@ -52,6 +54,10 @@ def generate_sl(np, extended, cybershake_folder, account, realisations):
         exe_time="%j",
         job_description="Empirical Engine",
         mail="",
+        partition=None,
+        additional_lines="",
+        template_path="slurm_header.cfg",
+        write_directory=".",
     )
     context = generate_context(
         template_dir,

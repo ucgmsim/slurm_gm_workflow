@@ -54,7 +54,7 @@ else
     echo "Checking that there are enough rrups in it"
 fi
 
-if [[ -f ${OUT_DIR}/rrup_${REL_NAME}.csv ]]
+if [[ -f ${OUT_FILE} ]]
 then
     if [[ $(wc -l < ${OUT_FILE}) == $(( $(wc -l < ${FD}) + 1)) ]]
     then
@@ -68,7 +68,7 @@ fi
 
 if [[ -n ${res} ]]
 then
-    python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $REL_NAME rrup failed $SLURM_JOB_ID --error '$res'
+    python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $REL_NAME rrup failed $SLURM_JOB_ID --error $res
 fi
 
 date
