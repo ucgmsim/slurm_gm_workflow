@@ -17,7 +17,7 @@ def get_fault_name(run_name):
 
 def rrup_file_exists(cybershake_folder, fault, realisation):
     rrup_file = os.path.join(
-        cybershake_folder, "Runs/", fault, "verification/rrup_" + realisation + ".csv"
+        cybershake_folder, "Runs/", fault, realisation, "verification/rrup_" + fault + ".csv"
     )
     return os.path.exists(rrup_file)
 
@@ -28,7 +28,7 @@ def write_sl(sl_name, content):
         f.write(content)
 
 
-def generate_sl(np, extended, cybershake_folder, account, realisations):
+def generate_sl(np, extended, cybershake_folder, account, realisations, out_dir):
     faults = map(get_fault_name, realisations)
     run_data = zip(realisations, faults)
     run_data = [
@@ -69,9 +69,10 @@ def generate_sl(np, extended, cybershake_folder, account, realisations):
             "mgmt_db_location": cybershake_folder,
         },
     )
-    sl_name = "run_empirical_{}.sl".format(timestamp)
+    sl_name = os.path.join(out_dir, "run_empirical_{}.sl".format(timestamp))
     content = "{}\n{}".format(header, context)
     write_sl(sl_name, content)
+    return sl_name
 
 
 def main():
@@ -90,6 +91,7 @@ def main():
     parser.add_argument(
         "--account", default=DEFAULT_ACCOUNT, help="specify the NeSI project"
     )
+    parser.add_argument("-o", "--output_dir", type=os.path.abspath())
 
     args = parser.parse_args()
 
@@ -99,6 +101,7 @@ def main():
         args.cybershake_folder,
         args.account,
         args.identifiers,
+        args.output_dir,
     )
 
 

@@ -19,6 +19,7 @@ import estimation.estimate_wct as est
 from metadata.log_metadata import store_metadata
 from scripts.management.MgmtDB import MgmtDB
 from scripts.submit_emod3d import main as submit_lf_main
+from scripts.submit_empirical import generate_sl
 from scripts.submit_post_emod3d import main as submit_post_lf_main
 from scripts.submit_hf import main as submit_hf_main
 from scripts.submit_bb import main as submit_bb_main
@@ -240,11 +241,15 @@ def submit_task(
             target_machine=JOB_RUN_MACHINE[const.ProcessType.rrup].value,
         )
     elif proc_type == const.ProcessType.Empirical.value:
-        cmd = "python $gmsim/workflow/scripts/submit_empirical.py -np 40 -i {} {}".format(
-            run_name, root_folder
+        sl_script = generate_sl(
+            40,
+            False,
+            root_folder,
+            "nesi00213",
+            run_name,
+            sim_dir,
         )
-        task_logger.debug(cmd)
-        call(cmd, shell=True)
+        submit_sl_script(sl_script)
     elif proc_type == const.ProcessType.Verification.value:
         pass
     elif proc_type == const.ProcessType.clean_up.value:
