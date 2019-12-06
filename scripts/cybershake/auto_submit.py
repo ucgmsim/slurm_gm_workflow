@@ -240,7 +240,7 @@ def submit_task(
             target_machine=JOB_RUN_MACHINE[const.ProcessType.rrup].value,
         )
     elif proc_type == const.ProcessType.Empirical.value:
-        cmd = "$gmsim/workflow/scripts/submit_empirical.py -np 40 -i {} {}".format(
+        cmd = "python $gmsim/workflow/scripts/submit_empirical.py -np 40 -i {} {}".format(
             run_name, root_folder
         )
         task_logger.debug(cmd)
@@ -371,6 +371,7 @@ def run_main_submit_loop(
                 main_logger.critical(e)
                 n_tasks_to_run[hpc] = 0
             else:
+                squeued_tasks.pop(0)
                 n_tasks_to_run[hpc] = n_runs[hpc] - len(squeued_tasks)
                 if len(squeued_tasks) > 0:
                     main_logger.debug(
