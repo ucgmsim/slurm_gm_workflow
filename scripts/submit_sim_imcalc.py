@@ -96,6 +96,7 @@ def submit_im_calc_slurm(
 
     sim_name = os.path.basename(sim_dir)
     fault_name = sim_name.split("_")[0]
+    proc_type = const.ProcessType.advanced_IM if options_dict[SlBodyOptConsts.advanced_IM.value] else const.ProcessType.IM_calculation
 
     if est_model is None:
         workflow_config = load(
@@ -119,11 +120,14 @@ def submit_im_calc_slurm(
     wct = set_wct(
         est_run_time, options_dict[SlBodyOptConsts.n_procs.value], options_dict["auto"]
     )
-
+    
+    #adv_im related check
+    
     header_dict = {
         "wallclock_limit": wct,
         "job_name": "{}_{}".format(
-            options_dict[SlHdrOptConsts.job_name_prefix.value], fault_name
+            #options_dict[SlHdrOptConsts.job_name_prefix.value], fault_name
+            proc_type.str_value, fault_name
         ),
         "exe_time": const.timestamp,
         "target_host": options_dict["machine"],
@@ -137,7 +141,7 @@ def submit_im_calc_slurm(
     #construct parameters thats matches qcore.const.ProccessType.command_template
     command_template_parameters = {
         SlBodyOptConsts.sim_dir.value: sim_dir,
-        SlBodyOptConsts.component.value: "-c {}".format(" ".join(options_dict[SlBodyOptConsts.component.value])) if not options_dict[SlBodyOptConsts.advanced_IM.value] else "",
+        SlBodyOptConsts.component.value: "-c {}".format(options_dict[SlBodyOptConsts.component.value]) if not options_dict[SlBodyOptConsts.advanced_IM.value] else "",
         SlBodyOptConsts.sim_name.value: sim_name,
         SlBodyOptConsts.fault_name.value: fault_name,
         SlBodyOptConsts.n_procs.value: options_dict[SlBodyOptConsts.n_procs.value],
@@ -161,13 +165,14 @@ def submit_im_calc_slurm(
             "np": options_dict[SlBodyOptConsts.n_procs.value],
             "output_csv": sim_struct.get_IM_csv(sim_dir),
             "output_info": sim_struct.get_IM_info(sim_dir),
+            "models": " ".join(options_dict[SlBodyOptConsts.advanced_IM.value])
         },
     )
     script_prefix = "sim_im_calc"
     script_file_path = write_sl_script(
         options_dict["write_directory"],
         sim_dir,
-        const.ProcessType.IM_calculation,
+        proc_type,
         script_prefix,
         header_dict,
         body_template_params,
@@ -187,7 +192,7 @@ def submit_im_calc_slurm(
     
     submit_sl_script(
         script_file_path,
-        const.ProcessType.IM_calculation.value,
+        proc_type.value,
         sim_struct.get_mgmt_db_queue(params.mgmt_db_location),
         os.path.splitext(os.path.basename(params.srf_file))[0],
         submit_yes=submit_yes,

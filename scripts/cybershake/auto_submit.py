@@ -320,7 +320,7 @@ def submit_task(
             "auto": True,
             "machine": JOB_RUN_MACHINE[const.ProcessType.advanced_IM].value,
             "write_directory": sim_dir,
-            const.ProcessType.advanced_IM.value : params[const.ProcessType.advanced_IM.value].models
+            const.ProcessType.advanced_IM.str_value : params[const.ProcessType.advanced_IM.str_value].models
         }
         
         submit_im_calc_slurm(
@@ -333,7 +333,7 @@ def submit_task(
         task_logger.debug("Submit Advanced_IM calc arguments: {}".format(options_dict))
         store_metadata(
             log_file,
-            const.ProcessType.IM_calculation.str_value,
+            const.ProcessType.advanced_IM.str_value,
             {"submit_time": submitted_time},
             logger=task_logger,
         )

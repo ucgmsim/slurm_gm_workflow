@@ -1,3 +1,10 @@
+
+if [[ ! -z ${CUR_ENV} && ${CUR_HPC} != "mahuika" ]]; then
+    source $CUR_ENV/workflow/install_workflow/helper_functions/activate_env.sh $CUR_ENV "mahuika"
+fi
+
+module load OpenSees/3.0.0-gimkl-2017a
+
 step_name=advanced_IM
 
 export IMPATH=$gmsim/IM_calculation/IM_calculation/scripts
@@ -26,7 +33,7 @@ start_time=`date +$runtime_fmt`
 end_time=`date +$runtime_fmt`
 
 # Check that the result files exist
-res=`python $gmsim/workflow/script/test_adv_IM.py {{sim_dir}} {{models}}`
+res=`python $gmsim/workflow/scripts/test_adv_IM.py {{sim_dir}} {{models}}`
 success=$?
 
 # Update mgmt_db
