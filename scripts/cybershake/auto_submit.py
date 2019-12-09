@@ -249,7 +249,10 @@ def submit_task(
             [run_name],
             sim_dir,
         )
-        submit_sl_script(sl_script)
+        submit_sl_script(
+            sl_script,
+            target_machine=JOB_RUN_MACHINE[const.Empirical.rrup].value,
+        )
     elif proc_type == const.ProcessType.Verification.value:
         pass
     elif proc_type == const.ProcessType.clean_up.value:
