@@ -2,6 +2,16 @@ Slurm Ground Motion Workflow
 # Changelog
 (Based on https://wiki.canterbury.ac.nz/download/attachments/58458136/CodeVersioning_v18p2.pdf?version=1&modificationDate=1519269238437&api=v2 )
 
+
+
+## [19.6.18] - 2019-12-09 -- Updated Rrups and bug fixes
+### Changed
+    - Rrups has had some buggy behaviour removed, was previously failing due to bad bash
+    - If an event or fault only has 1 realisation to be run it is installed without the _REL suffix
+    - Fixed auto close time out behaviour for run_cybershake and auto_submit, should finish as expected like previous behaviour 
+    - Increased timeout to two iterations of each task subthread
+    - Empiricals don't work yet, but have had updates to be closer to working
+
 ## [19.6.17] - 2019-11-29 -- Updated e2e test data
 ### Changed
     - Test data for v16p1 simple and validation, and 18p5p3p4 simple updated to have data for the updated workflow with timeshifting. Old test data is still available for testing old workflow versions.
