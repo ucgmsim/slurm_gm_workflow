@@ -31,8 +31,9 @@ class SlHdrOptConsts(Enum):
     version = "version"
     description = "job_description"
 
-#these values has to match the command_template in qcore.const.ProcessType
-#TODO: move these classes to qcore.constant
+
+# these values has to match the command_template in qcore.const.ProcessType
+# TODO: move these classes to qcore.constant
 class SlBodyOptConsts(Enum):
     component = "component"
     n_procs = "np"
@@ -44,7 +45,6 @@ class SlBodyOptConsts(Enum):
     simple_out = "simple"
     advanced_IM = const.ProcessType.advanced_IM.str_value
     mgmt_db = "mgmt_db"
-
 
 
 DEFAULT_OPTIONS = {
@@ -90,13 +90,19 @@ def submit_im_calc_slurm(
     if options_dict["write_directory"] is None:
         options_dict["write_directory"] = sim_dir
     if options_dict[SlBodyOptConsts.advanced_IM.value]:
-        #TODO: update this to use number from adv_im estmation model after it exist
+        # TODO: update this to use number from adv_im estmation model after it exist
         options_dict[SlBodyOptConsts.n_procs.value] = 36
-        options_dict[SlHdrOptConsts.n_tasks.value]= options_dict[SlBodyOptConsts.n_procs.value] 
+        options_dict[SlHdrOptConsts.n_tasks.value] = options_dict[
+            SlBodyOptConsts.n_procs.value
+        ]
 
     sim_name = os.path.basename(sim_dir)
     fault_name = sim_name.split("_")[0]
-    proc_type = const.ProcessType.advanced_IM if options_dict[SlBodyOptConsts.advanced_IM.value] else const.ProcessType.IM_calculation
+    proc_type = (
+        const.ProcessType.advanced_IM
+        if options_dict[SlBodyOptConsts.advanced_IM.value]
+        else const.ProcessType.IM_calculation
+    )
 
     if est_model is None:
         workflow_config = load(
@@ -120,42 +126,58 @@ def submit_im_calc_slurm(
     wct = set_wct(
         est_run_time, options_dict[SlBodyOptConsts.n_procs.value], options_dict["auto"]
     )
-    
-    #adv_im related check
-    
+
+    # adv_im related check
+
     header_dict = {
         "wallclock_limit": wct,
         "job_name": "{}_{}".format(
-            #options_dict[SlHdrOptConsts.job_name_prefix.value], fault_name
-            proc_type.str_value, fault_name
+            # options_dict[SlHdrOptConsts.job_name_prefix.value], fault_name
+            proc_type.str_value,
+            fault_name,
         ),
         "exe_time": const.timestamp,
         "target_host": options_dict["machine"],
         "write_directory": options_dict["write_directory"],
         "n_tasks": options_dict[SlHdrOptConsts.n_tasks.value],
         "job_description": options_dict[SlHdrOptConsts.description.value],
-        #TODO: this logic may need update along with adv_im_est_model
-        SlHdrOptConsts.additional.value: options_dict[SlHdrOptConsts.additional.value] + "\n#SBATCH --nodes=1" if options_dict[SlBodyOptConsts.advanced_IM.value] else options_dict[SlHdrOptConsts.additional.value] ,
+        # TODO: this logic may need update along with adv_im_est_model
+        SlHdrOptConsts.additional.value: options_dict[SlHdrOptConsts.additional.value]
+        + "\n#SBATCH --nodes=1"
+        if options_dict[SlBodyOptConsts.advanced_IM.value]
+        else options_dict[SlHdrOptConsts.additional.value],
     }
 
-    #construct parameters thats matches qcore.const.ProccessType.command_template
+    # construct parameters thats matches qcore.const.ProccessType.command_template
     command_template_parameters = {
         SlBodyOptConsts.sim_dir.value: sim_dir,
-        SlBodyOptConsts.component.value: "-c {}".format(options_dict[SlBodyOptConsts.component.value]) if not options_dict[SlBodyOptConsts.advanced_IM.value] else "",
+        SlBodyOptConsts.component.value: "-c {}".format(
+            options_dict[SlBodyOptConsts.component.value]
+        )
+        if not options_dict[SlBodyOptConsts.advanced_IM.value]
+        else "",
         SlBodyOptConsts.sim_name.value: sim_name,
         SlBodyOptConsts.fault_name.value: fault_name,
         SlBodyOptConsts.n_procs.value: options_dict[SlBodyOptConsts.n_procs.value],
-        SlBodyOptConsts.extended.value: "-e" if options_dict[SlBodyOptConsts.extended.value] else "",
-        SlBodyOptConsts.simple_out.value: "-s" if options_dict[SlBodyOptConsts.simple_out.value] else "",
-        SlBodyOptConsts.advanced_IM.value: "-a {}".format(" ".join(options_dict[SlBodyOptConsts.advanced_IM.value])) if options_dict[SlBodyOptConsts.advanced_IM.value] else "",
+        SlBodyOptConsts.extended.value: "-e"
+        if options_dict[SlBodyOptConsts.extended.value]
+        else "",
+        SlBodyOptConsts.simple_out.value: "-s"
+        if options_dict[SlBodyOptConsts.simple_out.value]
+        else "",
+        SlBodyOptConsts.advanced_IM.value: "-a {}".format(
+            " ".join(options_dict[SlBodyOptConsts.advanced_IM.value])
+        )
+        if options_dict[SlBodyOptConsts.advanced_IM.value]
+        else "",
     }
 
-    #determind script template, base on advanced_IM or not
+    # determind script template, base on advanced_IM or not
     if options_dict[SlBodyOptConsts.advanced_IM.value]:
         sl_template = "adv_im_calc.sl.template"
     else:
-        sl_template = "sim_im_calc.sl.template" 
-    
+        sl_template = "sim_im_calc.sl.template"
+
     body_template_params = (
         sl_template,
         {
@@ -165,7 +187,7 @@ def submit_im_calc_slurm(
             "np": options_dict[SlBodyOptConsts.n_procs.value],
             "output_csv": sim_struct.get_IM_csv(sim_dir),
             "output_info": sim_struct.get_IM_info(sim_dir),
-            "models": " ".join(options_dict[SlBodyOptConsts.advanced_IM.value])
+            "models": " ".join(options_dict[SlBodyOptConsts.advanced_IM.value]),
         },
     )
     script_prefix = "sim_im_calc"
@@ -189,7 +211,6 @@ def submit_im_calc_slurm(
         True if options_dict["auto"] else confirm("Also submit the job for you?")
     )
 
-    
     submit_sl_script(
         script_file_path,
         proc_type.value,

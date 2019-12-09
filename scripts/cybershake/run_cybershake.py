@@ -310,7 +310,9 @@ def main():
         if len(args.n_runs) == 1:
             n_runs = {hpc: args.n_runs[0] for hpc in const.HPC}
             wrapper_logger.debug(
-                "Using {} as the maximum number of jobs per machine".format(args.n_runs[0])
+                "Using {} as the maximum number of jobs per machine".format(
+                    args.n_runs[0]
+                )
             )
         elif len(args.n_runs) == len(const.HPC):
             n_runs = {}
