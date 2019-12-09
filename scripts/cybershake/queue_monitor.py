@@ -71,12 +71,16 @@ def sacct_metadata(db_running_task: SlurmTask, task_logger: Logger, root_folder:
         n_cores = float(output[5])
         run_time = float(output[6]) / n_cores
         status = output[7]
-    
+
     except:
-         submit_time, start_time, end_time = [ 0 for x in range(3)]
-         n_cores = 0.0
-         run_time = 0
-         status = 'CANCELLED'
+        # a special case when a job is cancelled before getting logged in sacct
+        task_logger.warning(
+            "job data cannot be retrieved from sacct. likely the job is cancelled before recording. setting job status to CANCELLED"
+        )
+        submit_time, start_time, end_time = [0 for x in range(3)]
+        n_cores = 0.0
+        run_time = 0
+        status = "CANCELLED"
     sim_dir = sim_struct.get_sim_dir(root_folder, db_running_task.run_name)
     log_file = os.path.join(sim_dir, "ch_log", "metadata_log.json")
     # now log metadata
