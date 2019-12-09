@@ -94,10 +94,9 @@ def install_fault(
     # get all srf from source
     srf_dir = simulation_structure.get_srf_dir(root_folder, fault_name)
 
-    if n_rel == 1:
+    list_srf = glob.glob(os.path.join(srf_dir, "*_REL*.srf"))
+    if len(list_srf) == 0:
         list_srf = glob.glob(os.path.join(srf_dir, "*.srf"))
-    else:
-        list_srf = glob.glob(os.path.join(srf_dir, "*_REL??.srf"))
 
     list_srf.sort()
     if n_rel is not None and len(list_srf) != n_rel:
