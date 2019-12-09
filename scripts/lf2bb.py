@@ -104,7 +104,7 @@ def main():
         "--dt", help="Change the dt of the LF simulation", default=None, type=float
     )
     args, extras = parser.parse_known_args()
-    print("Got unknown arguments: {}.\Continuing.".format(extra))
+    print("Got unknown arguments: {}.\Continuing.".format(extras))
     lf2bb(args.outbin_dir_loc, args.vsite_file, args.bb_bin_loc, args.dt)
 
 
