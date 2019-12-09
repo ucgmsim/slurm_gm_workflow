@@ -10,7 +10,7 @@ Slurm Ground Motion Workflow
 ## [19.6.18] - 2019-12-09 -- Updated Rrups and bug fixes
 ### Changed
   - Rrups has had some buggy behaviour removed, was previously failing due to bad bash
-  - If an event or fault only has 1 realisation to be run it is installed without the _REL suffix
+  - If an event or fault only has 1 realisation to be run it is installed without the \_REL suffix
   - Fixed auto close time out behaviour for run_cybershake and auto_submit, should finish as expected like previous behaviour 
   - Increased timeout to two iterations of each task subthread
   - Empiricals don't work yet, but have had updates to be closer to working
