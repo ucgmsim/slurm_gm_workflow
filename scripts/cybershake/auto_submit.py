@@ -242,16 +242,10 @@ def submit_task(
         )
     elif proc_type == const.ProcessType.Empirical.value:
         sl_script = generate_sl(
-            40,
-            False,
-            root_folder,
-            "nesi00213",
-            [run_name],
-            sim_dir,
+            40, False, root_folder, "nesi00213", [run_name], sim_dir
         )
         submit_sl_script(
-            sl_script,
-            target_machine=JOB_RUN_MACHINE[const.Empirical.rrup].value,
+            sl_script, target_machine=JOB_RUN_MACHINE[const.Empirical.rrup].value
         )
     elif proc_type == const.ProcessType.Verification.value:
         pass

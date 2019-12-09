@@ -17,7 +17,11 @@ def get_fault_name(run_name):
 
 def rrup_file_exists(cybershake_folder, fault, realisation):
     rrup_file = os.path.join(
-        cybershake_folder, "Runs/", fault, realisation, "verification/rrup_" + fault + ".csv"
+        cybershake_folder,
+        "Runs/",
+        fault,
+        realisation,
+        "verification/rrup_" + fault + ".csv",
     )
     return os.path.exists(rrup_file)
 
