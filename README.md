@@ -18,6 +18,7 @@ the workflow in a sandbox
 - Code/Scripts for collection of HPC usage information and displaying it on a
 dashboard.
 - End-to-End tests of the automated workflow
+- Scripts for manual generation and aggregation of empirical intensity measures after the automated workflow has run
 
 ### Running the automated workflow
 
