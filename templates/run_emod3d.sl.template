@@ -24,6 +24,7 @@ echo $end_time
 
 #run test script and update mgmt_db
 #test before update
+ln -s {{sim_dir}}/LF/e3d.par {{sim_dir}}/LF/OutBin/e3d.par
 timestamp=`date +%Y%m%d_%H%M%S`
 res=`$gmsim/workflow/scripts/test_emod3d.sh {{sim_dir}} {{srf_name}}`
 success=$?
@@ -35,7 +36,6 @@ fi
 if [[ $success == $SUCCESS_CODE ]]; then
     #passed
     python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py {{mgmt_db_location}}/mgmt_db_queue {{srf_name}} EMOD3D completed $SLURM_JOB_ID
-    ln -s {{sim_dir}}/LF/e3d.par {{sim_dir}}/LF/OutBin/e3d.par
     rm {{sim_dir}}/LF/Restart/*
 
     if [[ ! -d {{sim_dir}}/ch_log ]]; then
