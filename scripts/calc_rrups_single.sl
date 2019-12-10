@@ -28,7 +28,7 @@ REL=$1
 MGMT_DB_LOC=$2
 
 REL_NAME=`basename $REL`
-REL_YAML="$REL/sim_params.yaml"
+REL_YAML=$(python -c "from qcore.simulation_structure import get_sim_params_yaml_path; print(get_sim_params_yaml_path('${REL}'))")
 
 SRF_FILE=$(getFromYaml ${REL_YAML} srf_file)
 # Get median srf file
@@ -36,13 +36,13 @@ SRF_FILE=${SRF_FILE//_REL??/}
 STATION_FILE=$(getFromYaml ${REL_YAML} stat_file)
 FD=$(getFromYaml ${REL_YAML} FD_STATLIST)
 
-OUT_DIR=${REL}/verification
-OUT_FILE=${OUT_DIR}/rrup_${REL_NAME//_REL??/}.csv
+OUT_FILE=$(python -c "from qcore.simulation_structure import get_rrup_path; print(get_rrup_path('${REL}'))")
+OUT_DIR=`dirname $OUT_FILE`
+mkdir -p $OUT_DIR
 
 if [[ ! -f ${OUT_FILE} ]]
 then
     # Create the output folder if needed
-    mkdir -p $OUT_DIR
     echo ___calculating rrups___
 
     start_time=`date +${runtime_fmt}`

@@ -15,7 +15,8 @@ from qcore.simulation_structure import (
     get_realisation_name,
     get_fault_from_realisation,
     get_srf_info_location,
-    get_realisation_verification_dir,
+    get_rrup_location,
+    get_rrup_path,
 )
 from qcore.utils import load_yaml
 
@@ -82,10 +83,8 @@ def create_event_tasks(
         )
         event_name = get_fault_from_realisation(realisation_name)
         fault_info = sources / get_srf_info_location(event_name)
-        output_dir = pathlib.Path(
-            get_realisation_verification_dir(sim_root, realisation_name)
-        )
-        rupture_distance = output_dir / f"rrup_{event_name}.csv"
+        output_dir = get_rrup_location(sim_root, realisation_name)
+        rupture_distance = get_rrup_path(sim_root, realisation_name)
         tasks.append(
             [
                 event_name,
