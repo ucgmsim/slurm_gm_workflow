@@ -91,7 +91,7 @@ def submit_im_calc_slurm(
         options_dict["write_directory"] = sim_dir
     if options_dict[SlBodyOptConsts.advanced_IM.value]:
         # TODO: update this to use number from adv_im estmation model after it exist
-        options_dict[SlBodyOptConsts.n_procs.value] = 36
+        options_dict[SlBodyOptConsts.n_procs.value] = 18
         options_dict[SlHdrOptConsts.n_tasks.value] = options_dict[
             SlBodyOptConsts.n_procs.value
         ]
@@ -172,7 +172,7 @@ def submit_im_calc_slurm(
         else "",
     }
 
-    # determind script template, base on advanced_IM or not
+    # determine script template based on advanced_IM or not
     if options_dict[SlBodyOptConsts.advanced_IM.value]:
         sl_template = "adv_im_calc.sl.template"
     else:

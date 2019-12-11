@@ -77,7 +77,7 @@ def sacct_metadata(db_running_task: SlurmTask, task_logger: Logger, root_folder:
         task_logger.warning(
             "job data cannot be retrieved from sacct. likely the job is cancelled before recording. setting job status to CANCELLED"
         )
-        submit_time, start_time, end_time = [0 for x in range(3)]
+        submit_time, start_time, end_time = [0] * 3
         n_cores = 0.0
         run_time = 0
         status = "CANCELLED"
