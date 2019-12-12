@@ -66,7 +66,7 @@ def aggregate_simulation_empirical_im_permutations(
         agg_emp_perms,
         [
             (
-                get_sim_dir(sim_root, event),
+                pathlib.Path(get_sim_dir(sim_root, event)),
                 version,
                 get_realisation_logger(logger, event).name,
             )
