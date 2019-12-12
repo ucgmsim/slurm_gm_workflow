@@ -5,7 +5,7 @@
 
 #SBATCH --job-name=calc_rrups_single
 #SBATCH --account=nesi00213
-#SBATCH --partition=prepost
+#SBATCH --partition=prepost,long,large
 #SBATCH --time=00:10:00
 #SBATCH --cpus-per-task=12
 
@@ -28,32 +28,35 @@ REL=$1
 MGMT_DB_LOC=$2
 
 REL_NAME=`basename $REL`
-REL_YAML="$REL/sim_params.yaml"
+REL_YAML=$(python -c "from qcore.simulation_structure import get_sim_params_yaml_path; print(get_sim_params_yaml_path('${REL}'))")
 
 SRF_FILE=$(getFromYaml ${REL_YAML} srf_file)
+# Get median srf file
+SRF_FILE=${SRF_FILE//_REL??/}
 STATION_FILE=$(getFromYaml ${REL_YAML} stat_file)
 FD=$(getFromYaml ${REL_YAML} FD_STATLIST)
 
-OUT_DIR=${REL}/verification
+OUT_FILE=$(python -c "from qcore.simulation_structure import get_rrup_path; print(get_rrup_path('${REL}'))")
+OUT_DIR=`dirname $OUT_FILE`
+mkdir -p $OUT_DIR
 
-if [[ ! -f ${OUT_DIR}/rrup_${REL_NAME}.csv ]]
+if [[ ! -f ${OUT_FILE} ]]
 then
     # Create the output folder if needed
-    mkdir -p $OUT_DIR
     echo ___calculating rrups___
 
     start_time=`date +${runtime_fmt}`
     python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $REL_NAME rrup running $SLURM_JOB_ID
 
-    time python ${IMPATH}/calculate_rrups_single.py -fd ${FD} -o ${OUT_DIR}/rrup_${REL_NAME}.csv ${STATION_FILE} ${SRF_FILE}
+    time python ${IMPATH}/calculate_rrups_single.py -fd ${FD} -o ${OUT_FILE} ${STATION_FILE} ${SRF_FILE}
 else
-    echo "rrup file already present: ${OUT_DIR}/rrup_${REL_NAME}.csv"
+    echo "rrup file already present: ${OUT_FILE}"
     echo "Checking that there are enough rrups in it"
 fi
 
-if [[ -f ${OUT_DIR}/rrup_${REL_NAME}.csv ]]
+if [[ -f ${OUT_FILE} ]]
 then
-    if [[ $(wc -l < ${OUT_DIR}/rrup_${REL_NAME}.csv) == $(( $(wc -l < ${FD}) + 1)) ]]
+    if [[ $(wc -l < ${OUT_FILE}) == $(( $(wc -l < ${FD}) + 1)) ]]
     then
         python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $REL_NAME rrup completed $SLURM_JOB_ID
     else
@@ -65,7 +68,7 @@ fi
 
 if [[ -n ${res} ]]
 then
-    python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $REL_NAME rrup failed $SLURM_JOB_ID --error '$res'
+    python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $REL_NAME rrup failed $SLURM_JOB_ID --error $res
 fi
 
 date

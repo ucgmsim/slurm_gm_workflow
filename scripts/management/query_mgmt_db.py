@@ -76,7 +76,6 @@ def print_run_status(db, run_name, error=False, count=False, config_file=None):
                     AND state.status = status_enum.id
                     AND state.run_name LIKE ?
                     AND state.proc_type IN (?{})
-                    AND 
                     ORDER BY state.run_name, status_enum.id
                     """.format(
                             ",?" * (len(tasks) - 1)
