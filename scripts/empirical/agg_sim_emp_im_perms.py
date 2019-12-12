@@ -14,7 +14,7 @@ from qcore.qclogging import (
     get_realisation_logger,
     add_general_file_handler,
 )
-from qcore.simulation_structure import get_realisation_name, get_sim_dir
+from qcore.simulation_structure import get_realisation_name, get_sim_dir, get_empirical_dir
 
 from empirical.scripts.aggregate_empirical_im_permutations import agg_emp_perms
 
@@ -66,7 +66,8 @@ def aggregate_simulation_empirical_im_permutations(
         agg_emp_perms,
         [
             (
-                pathlib.Path(get_sim_dir(sim_root, event)),
+                pathlib.Path(get_empirical_dir(sim_root, event)),
+                event,
                 version,
                 get_realisation_logger(logger, event).name,
             )
