@@ -76,7 +76,7 @@ def lf2bb(outbin, vs30file, bb_file, dt=None):
     with open(bb_file, "wb") as out:
         # Write the header
         np.array([lf_data.stations.size, nt], dtype="i4").tofile(out)
-        np.array([nt * dt, dt, -1], dtype="f4").tofile(out)
+        np.array([nt * dt, dt, lf_data.start_sec], dtype="f4").tofile(out)
         np.array([os.path.abspath(outbin), "", ""], dtype="|S256").tofile(out)
 
         # Write the station information
