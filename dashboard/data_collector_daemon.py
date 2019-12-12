@@ -31,6 +31,8 @@ from dashboard.DashboardDB import (
 )
 
 LOGDIR="/home/baes/dashboard_daemon/log"
+
+KEYFILE="/home/baes/dashboard_daemon/aws_seistech_key.pem"
 LOCAL_DB="/home/baes/dashboard_daemon/dashboard.db"
 REMOTE_DB="ec2-user@seistech.nz:/home/ec2-user/dashboard/dashboard.db"
 
@@ -140,9 +142,8 @@ class DataCollector:
             for data_hpc in self.hpc:
                 self.collect_data(data_hpc, self.users, self.project_id)
             logger.debug("{} - Done".format(datetime.now()))
-            keyfile = join(dirname(LOCAL_DB),"aws_seistech_key.pem")
-            logger.debug("Keyfile : {}".format(keyfile))
-            out = run_cmd("scp -i {} {} {}".format(keyfile, LOCAL_DB, REMOTE_DB))
+            logger.debug("Keyfile : {}".format(KEYFILE))
+            out = run_cmd("scp -i {} {} {}".format(KEYFILE, LOCAL_DB, REMOTE_DB))
             if out:
                 logger.debug("DB uploaded successfully")
             else:
