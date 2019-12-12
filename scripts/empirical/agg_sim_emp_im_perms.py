@@ -14,7 +14,7 @@ from qcore.qclogging import (
     get_realisation_logger,
     add_general_file_handler,
 )
-from qcore.simulation_structure import get_realisation_name, get_sim_dir, get_empirical_dir
+from qcore.simulation_structure import get_realisation_name, get_empirical_dir
 
 from empirical.scripts.aggregate_empirical_im_permutations import agg_emp_perms
 
