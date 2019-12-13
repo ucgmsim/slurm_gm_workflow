@@ -2,6 +2,10 @@ Slurm Ground Motion Workflow
 # Changelog
 (Based on https://wiki.canterbury.ac.nz/download/attachments/58458136/CodeVersioning_v18p2.pdf?version=1&modificationDate=1519269238437&api=v2 )
 
+## [19.6.20] - 2019-12-13 -- Removed dashboard
+### Removed
+  - Dashboard has been relocated to a separete dashboard repo
+
 ## [19.6.19] - 2019-12-10 -- Added empirical calculation and aggregation orchestration scripts
 ### Added
   - Empirical calculation and aggregation scripts to the scripts/empirical directory
