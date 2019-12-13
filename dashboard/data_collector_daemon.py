@@ -54,15 +54,14 @@ USERS = {
     "jagdish.vyas": "Jagdish Vyas",
 }
 
-
-
 pid = LOGDIR+"/data_collection.pid"
+
 
 #logging.basicConfig(format='%(asctime)s: %(levelname)s: %(message)s')
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 logger.propagate = False
-fh = logging.FileHandler(LOGDIR+"/data_collection.log", "w")
+fh = logging.FileHandler(LOGDIR+"/data_collection.log", "a")
 fh.setLevel(logging.DEBUG)
 fh.setFormatter(logging.Formatter('%(asctime)s: %(levelname)s: %(message)s'))
 logger.addHandler(fh)
@@ -371,21 +370,20 @@ class DataCollector:
                 entries.append(UserChEntry(day, user, 0))
         return entries
 
-def _start(args, debug=True):
-    main(args)
-    if debug:
+def _start(args):
+    if exists(pid):
+        print("Already running. Ignored")
+    else:
+        main(args)
         logger.debug(" ---- Started")
-def _stop(args, debug=True):
+
+def _stop(args):
     if exists(pid):
         cmd = "kill `cat {}`".format(pid)
         run_cmd(cmd)
-        if debug:
-            logger.debug(" ---- Stopped")
-
-def _restart(args):
-    _stop(args,debug=False)
-    _start(args,debug=False)
-    logger.debug(" ---- Restarted")
+        logger.debug(" ---- Stopped")
+    else:
+        print("No running instance found. Ignored")
 
 def main(args):
     hpc = (
@@ -405,12 +403,11 @@ if __name__ == "__main__":
     sp = parser.add_subparsers()
     sp_start = sp.add_parser('start', help='Starts %(prog)s daemon')
     sp_stop = sp.add_parser('stop', help='Stops %(prog)s daemon')
-    sp_restart = sp.add_parser('restart', help='Restarts %(prog)s daemon')
 
     parser.add_argument(
         "--update_interval",
         help="Interval between data collection (seconds)",
-        default=300,
+        default=3600,
     )
     parser.add_argument(
         "--hpc",
@@ -437,8 +434,8 @@ if __name__ == "__main__":
 
     sp_start.set_defaults(func=_start)
     sp_stop.set_defaults(func=_stop)
-    sp_restart.set_defaults(func=_restart)
 
     args = parser.parse_args()
     args.func(args)
+
 
