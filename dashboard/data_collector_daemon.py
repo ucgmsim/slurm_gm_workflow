@@ -10,8 +10,15 @@ import time
 import re
 import subprocess
 import argparse
+from daemonize import Daemonize
+from time import sleep
+from os.path import exists,join,dirname,abspath
+
 from typing import Iterable, List, Union
 from datetime import datetime, date, timedelta
+import logging
+
+from qcore.shared import exe
 
 import qcore.constants as const
 from dashboard.DashboardDB import (
@@ -23,9 +30,14 @@ from dashboard.DashboardDB import (
     HPCProperty,
 )
 
+LOGDIR="/home/baes/dashboard_daemon/log"
+
+KEYFILE="/home/baes/dashboard_daemon/aws_seistech_key.pem"
+LOCAL_DB="/home/baes/dashboard_daemon/dashboard.db"
+REMOTE_DB="ec2-user@seistech.nz:/home/ec2-user/dashboard/dashboard.db"
+
 MAX_NODES = 264
 CH_REPORT_PATH = "/nesi/project/nesi00213/workflow/scripts/CH_report.sh"
-PROJECT_ID = "nesi00213"
 TIME_FORMAT = "%Y_%m_%d-%H_%M_%S"
 HPCS = [hpc.value for hpc in const.HPC]
 USERS = {
@@ -42,6 +54,35 @@ USERS = {
     "jagdish.vyas": "Jagdish Vyas",
 }
 
+pid = LOGDIR+"/data_collection.pid"
+
+
+#logging.basicConfig(format='%(asctime)s: %(levelname)s: %(message)s')
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+logger.propagate = False
+fh = logging.FileHandler(LOGDIR+"/data_collection.log", "a")
+fh.setLevel(logging.DEBUG)
+fh.setFormatter(logging.Formatter('%(asctime)s: %(levelname)s: %(message)s'))
+logger.addHandler(fh)
+keep_fds = [fh.stream.fileno()]
+
+def run_cmd(cmd: str, timeout: int = 180):
+    """Runs the specified command remotely on the specified hpc using the
+    specified user id.
+    Returns False if the command fails for some reason.
+    """
+    logger.debug("EXEC: {}".format(cmd))
+    try:
+        out = subprocess.check_output(cmd, stderr=subprocess.STDOUT, shell=True)
+    except subprocess.CalledProcessError as e:
+        logger.debug("ERR: {} {}".format(e.returncode, e.output.decode("utf-8")))
+        return False
+    else:
+        out=out.decode("utf-8").strip()
+        logger.debug("OUT: \n  {}".format(out))
+        return out.split("\n")
+
 
 class DataCollector:
 
@@ -54,27 +95,22 @@ class DataCollector:
 
     def __init__(
         self,
-        user: str,
         hpc: Union[List[const.HPC], const.HPC],
-        dashboard_db: str,
-        interval: int = 30,
+        users: List[str],
+        project_id: str = const.DEFAULT_ACCOUNT,
+        interval: int = 3600,
         error_th: int = 3,
     ):
         """
         Params
         ------
-        user: str,
-            Username used for executing commands on HPC
         hpc: HPC enum, or List of HPC enums
             The HPC clusters to collect data from
-        dashboard_db: str
-            Filepath for the db to save data to
         interval: int
             How often to collect data
         error_th: int
             After how many executive errors to stop execution
         """
-        self.user = user
         if type(hpc) is const.HPC:
             self.hpc = [hpc]
             self.login_hpc = hpc.value
@@ -83,27 +119,37 @@ class DataCollector:
             self.login_hpc = "maui"
         # self.hpc = [hpc] if type(hpc) is const.HPC else hpc
         self.interval = interval
-
+        dashboard_db = LOCAL_DB
         try:
             self.dashboard_db = DashboardDB(dashboard_db)
         except FileNotFoundError:
             self.dashboard_db = DashboardDB.create_db(dashboard_db)
+
+        self.users = users
+        self.project_id = project_id
 
         self.error_ctr = 0
         self.error_th = error_th
 
         self.ssh_cmd_template = "ssh {}@{} {}"
 
-    def run(self, users, project_id):
+    def run(self):
         """Runs the data collection"""
         while True:
             # Collect the data
-            print("{} - Collecting data from HPC {}".format(datetime.now(), self.hpc))
+            logger.debug("{} - Collecting data from HPC {}".format(datetime.now(), self.hpc))
             for data_hpc in self.hpc:
-                self.collect_data(data_hpc, users, project_id)
-            print("{} - Done".format(datetime.now()))
+                self.collect_data(data_hpc, self.users, self.project_id)
+            logger.debug("{} - Done".format(datetime.now()))
+            logger.debug("Keyfile : {}".format(KEYFILE))
+            out = run_cmd("scp -i {} {} {}".format(KEYFILE, LOCAL_DB, REMOTE_DB))
+            if out:
+                logger.debug("DB uploaded successfully")
+            else:
+                logger.error("DB upload failed")
 
             time.sleep(self.interval)
+
 
     def get_utc_times(self):
         """Get the hpc utc time based on current real time
@@ -132,15 +178,16 @@ class DataCollector:
         """
         start_time, end_time = self.get_utc_times()
         # Get daily core hours usage
-        rt_daily_ch_output = self.run_cmd(
+        rt_daily_ch_output = run_cmd(
             "sreport -M {} -n -t Hours cluster AccountUtilizationByUser Accounts={} start={} end={} format=Cluster,Accounts,Login%30,Proper,Used".format(
                 hpc.value, project_id, start_time, end_time
             )
         )
         if rt_daily_ch_output:
+            print(rt_daily_ch_output)
             rt_daily_ch_output = self.parse_chours_usage(rt_daily_ch_output)
 
-        rt_total_ch_output = self.run_cmd(
+        rt_total_ch_output = run_cmd(
             "sreport -M {} -n -t Hours cluster AccountUtilizationByUser Accounts={} start={} end={} format=Cluster,Accounts,Login%30,Proper,Used".format(
                 hpc.value, project_id, self.total_start_time, end_time
             )
@@ -152,7 +199,7 @@ class DataCollector:
             )
 
         # Squeue, formatted to show full account name
-        sq_output = self.run_cmd(
+        sq_output = run_cmd(
             "squeue -M {} --format=%18i%25u%12a%60j%20T%25r%20S%18M%18L%10D%10C".format(
                 hpc.value
             )
@@ -163,7 +210,7 @@ class DataCollector:
         # Node capacity
         # 'NODES\n23\n32\n'---> ['NODES', '23', '32']
         if hpc == const.HPC.maui:
-            capa_output = self.run_cmd(
+            capa_output = run_cmd(
                 "squeue -M {} -p nesi_research ".format(hpc.value)
                 + "| awk '{print $10}'"
             )
@@ -187,14 +234,14 @@ class DataCollector:
                     ),
                 )
         # get quota
-        quota_output = self.run_cmd(
+        quota_output = run_cmd(
             "nn_storage_quota {} | grep 'nesi00213'".format(hpc.value)
         )
         if quota_output:
             self.dashboard_db.update_daily_quota(self._parse_quota(quota_output), hpc)
 
         # user daily core hour usage
-        user_ch_output = self.run_cmd(
+        user_ch_output = run_cmd(
             "sreport -M {} -t Hours cluster AccountUtilizationByUser Accounts={} Users={} start={} end={} -n format=Cluster,Account,Login%30,Proper,Used".format(
                 hpc.value, project_id, " ".join(users), start_time, end_time
             )
@@ -202,53 +249,6 @@ class DataCollector:
         if user_ch_output:
             self.dashboard_db.update_user_chours(
                 hpc, self.parse_user_chours_usage(user_ch_output, users)
-            )
-
-    def run_cmd(self, cmd: str, timeout: int = 180):
-        """Runs the specified command remotely on the specified hpc using the
-        specified user id.
-        Returns False if the command fails for some reason.
-        """
-        try:
-            print(self.ssh_cmd_template.format(self.user, self.login_hpc, cmd))
-            result = (
-                subprocess.check_output(
-                    self.ssh_cmd_template.format(self.user, self.login_hpc, cmd),
-                    shell=True,
-                    timeout=timeout,
-                )
-                .decode("utf-8")
-                .strip()
-                .split("\n")
-            )
-
-        except subprocess.CalledProcessError:
-            print("Cmd {} returned a non-zero exit status.".format(cmd))
-            self.error_ctr += 1
-        except subprocess.TimeoutExpired:
-            print("The timeout of {} expired for cmd {}.".format(timeout, cmd))
-            self.error_ctr += 1
-        else:
-            self.error_ctr = 0
-            return result
-
-        # Check that everything went well
-        if self.error_th < self.error_ctr <= (2 * self.error_th):
-            self.ssh_cmd_template = (
-                "ssh {}@{}02 {}"
-            )  # try login to maui02 and pull mahuika data
-        elif self.error_th < self.error_ctr <= (3 * self.error_th):
-            self.ssh_cmd_template = "ssh {}@{} {}"
-            self.login_hpc = "mahuika"  # try login to mahuika01 and pull maui data
-        elif self.error_th < self.error_ctr <= (4 * self.error_th):
-            self.ssh_cmd_template = (
-                "ssh {}@{}02 {}"
-            )  # try login to mahuika01 and pull maui data
-        elif self.error_ctr > (4 * self.error_th):
-            raise Exception(
-                "There have been {} consecutive collection cmd failures".format(
-                    self.error_ctr
-                )
             )
 
     def _parse_squeue(self, lines: Iterable[str]):
@@ -276,7 +276,7 @@ class DataCollector:
                     )
                 )
             except IndexError:
-                print(
+                logger.error(
                     "Failed to convert squeue line \n{}\n to "
                     "a valid SQueueEntry. Ignored!".format(line)
                 )
@@ -293,7 +293,7 @@ class DataCollector:
         except IndexError:
             return 0
         except ValueError:
-            print("Failed to convert total core hours to integer.")
+            logger.error("Failed to convert total core hours to integer.")
 
     def _parse_quota(self, lines: Iterable[str]):
         """
@@ -330,7 +330,7 @@ class DataCollector:
                         )
                     )
             except ValueError:
-                print(
+                logger.error(
                     "Failed to convert quota usage line \n{}\n to "
                     "a valid QuotaEntry. Ignored!".format(line)
                 )
@@ -360,7 +360,7 @@ class DataCollector:
                 try:
                     entries.append(UserChEntry(day, line[2], line[-1]))
                 except ValueError:
-                    print(
+                    logger.error(
                         "Failed to convert user core hours usage line \n{}\n to "
                         "a valid UserChEntry. Ignored!".format(line)
                     )
@@ -370,6 +370,20 @@ class DataCollector:
                 entries.append(UserChEntry(day, user, 0))
         return entries
 
+def _start(args):
+    if exists(pid):
+        print("Already running. Ignored")
+    else:
+        main(args)
+        logger.debug(" ---- Started")
+
+def _stop(args):
+    if exists(pid):
+        cmd = "kill `cat {}`".format(pid)
+        run_cmd(cmd)
+        logger.debug(" ---- Stopped")
+    else:
+        print("No running instance found. Ignored")
 
 def main(args):
     hpc = (
@@ -377,21 +391,23 @@ def main(args):
         if type(args.hpc) is str
         else [const.HPC(cur_hpc) for cur_hpc in args.hpc]
     )
-    data_col = DataCollector(args.user, hpc, args.dashboard_db, args.update_interval)
-    data_col.run(args.users, args.project_id)
+    data_col = DataCollector(hpc, args.users, args.project_id, args.update_interval)
+#    data_col.run() # for easier debug, replace this line with the below.
+    daemon = Daemonize(app="data_collection_app", pid=pid, action=data_col.run, keep_fds=keep_fds)
+    daemon.start()
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "user",
-        help="Username to run the data collection under, needs to have an open ssh socket to the HPC(s)",
-    )
-    parser.add_argument("dashboard_db", help="The dashboard db to use")
+    parser = argparse.ArgumentParser(prog='data_collection')
+
+    sp = parser.add_subparsers()
+    sp_start = sp.add_parser('start', help='Starts %(prog)s daemon')
+    sp_stop = sp.add_parser('stop', help='Stops %(prog)s daemon')
+
     parser.add_argument(
         "--update_interval",
         help="Interval between data collection (seconds)",
-        default=300,
+        default=3600,
     )
     parser.add_argument(
         "--hpc",
@@ -416,6 +432,10 @@ if __name__ == "__main__":
         default=const.DEFAULT_ACCOUNT,
     )
 
-    args = parser.parse_args()
+    sp_start.set_defaults(func=_start)
+    sp_stop.set_defaults(func=_stop)
 
-    main(args)
+    args = parser.parse_args()
+    args.func(args)
+
+
