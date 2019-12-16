@@ -353,7 +353,7 @@ def generate_fd_files(
     sxy = []
     suname = []
     for i in range(len(xy)):
-        if xy[i] is None:
+        if xy[i] is None or xy[i][0] == nx-1 or xy[i][1] == ny-1:
             logger.log(VERYVERBOSE, "Station outside domain: {}".format(sname[i]))
         elif xy[i] not in sxy:
             sxy.append(xy[i])
