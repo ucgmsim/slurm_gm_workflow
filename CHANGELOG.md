@@ -2,11 +2,15 @@ Slurm Ground Motion Workflow
 # Changelog
 (Based on https://wiki.canterbury.ac.nz/download/attachments/58458136/CodeVersioning_v18p2.pdf?version=1&modificationDate=1519269238437&api=v2 )
 
-## [19.6.20] - 2019-12-18 -- Removed stations along South and East edge of VM domain
+## [19.6.21] - 2019-12-18 -- Removed stations along South and East edge of VM domain
 ### Removed
   - Stations along the South or Eastern edge of the VM domain had a broken component, so for now these stations have been removed from the station list.
 ### Changed
   - End to end test data has been updated to remove the dropped stations 
+
+## [19.6.20] - 2019-12-13 -- Removed dashboard
+### Removed
+  - Dashboard has been relocated to a separete dashboard repo
 
 ## [19.6.19] - 2019-12-10 -- Added empirical calculation and aggregation orchestration scripts
 ### Added
