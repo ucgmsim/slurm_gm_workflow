@@ -175,8 +175,10 @@ def submit_im_calc_slurm(
     # determine script template based on advanced_IM or not
     if options_dict[SlBodyOptConsts.advanced_IM.value]:
         sl_template = "adv_im_calc.sl.template"
+        script_prefix = "adv_im_calc"
     else:
         sl_template = "sim_im_calc.sl.template"
+        script_prefix = "sim_im_calc"
 
     body_template_params = (
         sl_template,
@@ -187,10 +189,9 @@ def submit_im_calc_slurm(
             "np": options_dict[SlBodyOptConsts.n_procs.value],
             "output_csv": sim_struct.get_IM_csv(sim_dir),
             "output_info": sim_struct.get_IM_info(sim_dir),
-            "models": " ".join(options_dict[SlBodyOptConsts.advanced_IM.value]),
+            "models": " ".join(options_dict[SlBodyOptConsts.advanced_IM.value]) if options_dict[SlBodyOptConsts.advanced_IM.value] else None,
         },
     )
-    script_prefix = "sim_im_calc"
     script_file_path = write_sl_script(
         options_dict["write_directory"],
         sim_dir,

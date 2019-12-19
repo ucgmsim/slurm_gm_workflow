@@ -2,6 +2,17 @@ Slurm Ground Motion Workflow
 # Changelog
 (Based on https://wiki.canterbury.ac.nz/download/attachments/58458136/CodeVersioning_v18p2.pdf?version=1&modificationDate=1519269238437&api=v2 )
 
+## [19.6.18] -  2019-11-29 -- Added Advanced_IM into automated workflow
+### Added
+    - Added slurm templates related to Advanced_IM
+    - Added adv_im related logic to submit_sim_imcalc
+    - Added simple tests for adv_im output to check for blank fields
+### Changed
+    - Updated log_metadata to handle adv_im related metadata
+    - Updated automated workflow to be able to handle adv_im as a step
+    - Updated queue_monitor to be able to handle a specific case where job is missing in queue and also not store in sacct history
+    - Updated unit test to test for 15 steps intead of 14
+
 ## [19.6.17] - 2019-11-29 -- Updated e2e test data
 ### Changed
     - Test data for v16p1 simple and validation, and 18p5p3p4 simple updated to have data for the updated workflow with timeshifting. Old test data is still available for testing old workflow versions.
