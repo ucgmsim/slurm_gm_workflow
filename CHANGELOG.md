@@ -2,7 +2,7 @@ Slurm Ground Motion Workflow
 # Changelog
 (Based on https://wiki.canterbury.ac.nz/download/attachments/58458136/CodeVersioning_v18p2.pdf?version=1&modificationDate=1519269238437&api=v2 )
 
-## [19.6.21] -  2019-11-29 -- Added Advanced_IM into automated workflow
+## [19.6.21] -  2019-12-19 -- Added Advanced_IM into automated workflow
 ### Added
     - Added slurm templates related to Advanced_IM
     - Added adv_im related logic to submit_sim_imcalc
