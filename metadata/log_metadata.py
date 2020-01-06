@@ -245,7 +245,7 @@ def main(args):
         metadata_dict[const.MetadataField.im_comp_count.value] = len(im_comp)
     # Advanced_IM
     elif args.proc_type == const.ProcessType.advanced_IM.str_value:
-       metadata_dict[const.MetadataField.nt.value] = int(
+        metadata_dict[const.MetadataField.nt.value] = int(
             float(params.sim_duration) / float(params.hf.dt)
         )
 

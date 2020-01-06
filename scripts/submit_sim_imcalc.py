@@ -189,7 +189,9 @@ def submit_im_calc_slurm(
             "np": options_dict[SlBodyOptConsts.n_procs.value],
             "output_csv": sim_struct.get_IM_csv(sim_dir),
             "output_info": sim_struct.get_IM_info(sim_dir),
-            "models": " ".join(options_dict[SlBodyOptConsts.advanced_IM.value]) if options_dict[SlBodyOptConsts.advanced_IM.value] else None,
+            "models": " ".join(options_dict[SlBodyOptConsts.advanced_IM.value])
+            if options_dict[SlBodyOptConsts.advanced_IM.value]
+            else None,
         },
     )
     script_file_path = write_sl_script(
