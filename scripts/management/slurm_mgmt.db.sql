@@ -45,6 +45,7 @@ INSERT OR IGNORE INTO `proc_type_enum` (id,proc_type) VALUES (11,'clean_up');
 INSERT OR IGNORE INTO `proc_type_enum` (id,proc_type) VALUES (12,'LF2BB');
 INSERT OR IGNORE INTO `proc_type_enum` (id,proc_type) VALUES (13,'HF2BB');
 INSERT OR IGNORE INTO `proc_type_enum` (id,proc_type) VALUES (14,'plot_srf');
+INSERT OR IGNORE INTO `proc_type_enum` (id,proc_type) VALUES (15,'advanced_IM');
 CREATE TABLE IF NOT EXISTS `task_time_log` (
 	`id`	INTEGER NOT NULL UNIQUE,
 	`state_id`	INTEGER,
