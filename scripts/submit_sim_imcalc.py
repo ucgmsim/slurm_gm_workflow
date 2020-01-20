@@ -152,7 +152,7 @@ def submit_im_calc_slurm(
     command_template_parameters = {
         SlBodyOptConsts.sim_dir.value: sim_dir,
         SlBodyOptConsts.component.value: "-c {}".format(
-            options_dict[SlBodyOptConsts.component.value]
+            " ".join(options_dict[SlBodyOptConsts.component.value])
         )
         if not options_dict[SlBodyOptConsts.advanced_IM.value]
         else "",
@@ -281,9 +281,11 @@ if __name__ == "__main__":
     parser.add_argument(
         "-c",
         "--comp",
-        default=const.IM_CALC_COMPONENTS[0],
+        nargs="*",
+        choices=list(const.Components.iterate_str_values()),
+        default=[const.Components.cgeom.str_value],
         help="specify which velocity component to calculate. choose from {}. Default is {}".format(
-            const.IM_CALC_COMPONENTS, const.IM_CALC_COMPONENTS[0]
+            ", ".join((list(const.Components.iterate_str_values()))), const.Components.cgeom.str_value
         ),
     )
     parser.add_argument(
