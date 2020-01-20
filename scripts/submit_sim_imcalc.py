@@ -241,7 +241,7 @@ def main(args):
             SlBodyOptConsts.extended.value: args.extended_period,
             SlBodyOptConsts.simple_out.value: args.simple_output,
             SlBodyOptConsts.component.value: args.comp,
-            SlBodyOptConsts.advanced_IM.value: args.advanced_ims,
+            # SlBodyOptConsts.advanced_IM.value: args.advanced_ims,
             "auto": args.auto,
             "machine": args.machine,
             "write_directory": args.write_directory,
@@ -308,13 +308,13 @@ if __name__ == "__main__":
         default=None,
     )
 
-    parser.add_argument(
-        "-a",
-        "--advanced_ims",
-        nargs="+",
-        choices=advanced_IM_factory.get_im_list(parent_args[0].advanced_im_config),
-        help="Provides the list of Advanced IMs to be calculated",
-    )
+    # parser.add_argument(
+    #     "-a",
+    #     "--advanced_ims",
+    #     nargs="+",
+    #     choices=advanced_IM_factory.get_im_list(parent_args[0].advanced_im_config),
+    #     help="Provides the list of Advanced IMs to be calculated",
+    # )
 
     args = parser.parse_args()
 
