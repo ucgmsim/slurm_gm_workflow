@@ -18,6 +18,7 @@ from shared_workflow.load_config import load
 from shared_workflow.shared import set_wct, confirm
 from shared_workflow.shared_automated_workflow import submit_sl_script
 from shared_workflow.shared_template import write_sl_script
+
 # from IM_calculation.Advanced_IM import advanced_IM_factory
 
 
@@ -57,7 +58,9 @@ DEFAULT_OPTIONS = {
     SlHdrOptConsts.n_tasks.value: 1,
     SlHdrOptConsts.version.value: "slurm",
     # Body
-    SlBodyOptConsts.component.value: " ".join(list(const.Components.iterate_str_values())[:3]),
+    SlBodyOptConsts.component.value: " ".join(
+        list(const.Components.iterate_str_values())[:3]
+    ),
     SlBodyOptConsts.n_procs.value: const.IM_CALC_DEFAULT_N_CORES,
     SlBodyOptConsts.extended.value: False,
     SlBodyOptConsts.simple_out.value: True,
@@ -279,7 +282,8 @@ if __name__ == "__main__":
         choices=list(const.Components.iterate_str_values()),
         default=[const.Components.cgeom.str_value],
         help="specify which velocity component to calculate. choose from {}. Default is {}".format(
-            ", ".join((list(const.Components.iterate_str_values()))), const.Components.cgeom.str_value
+            ", ".join((list(const.Components.iterate_str_values()))),
+            const.Components.cgeom.str_value,
         ),
     )
     parser.add_argument(
