@@ -235,7 +235,7 @@ def parse_config_file(config_file_location: str, logger: Logger = get_basic_logg
     tasks_with_pattern_match = {}
 
     for proc_name, pattern in config.items():
-        proc = const.ProcessType.get_by_name(proc_name)
+        proc = const.ProcessType.from_str(proc_name)
         if pattern == ALL:
             tasks_to_run_for_all.append(proc)
         elif pattern == NONE:
