@@ -18,7 +18,8 @@ from shared_workflow.load_config import load
 from shared_workflow.shared import set_wct, confirm
 from shared_workflow.shared_automated_workflow import submit_sl_script
 from shared_workflow.shared_template import write_sl_script
-from IM_calculation.Advanced_IM import advanced_IM_factory
+
+# from IM_calculation.Advanced_IM import advanced_IM_factory
 
 
 class SlHdrOptConsts(Enum):
@@ -57,7 +58,9 @@ DEFAULT_OPTIONS = {
     SlHdrOptConsts.n_tasks.value: 1,
     SlHdrOptConsts.version.value: "slurm",
     # Body
-    SlBodyOptConsts.component.value: const.IM_CALC_COMPONENTS[0],
+    SlBodyOptConsts.component.value: " ".join(
+        list(const.Components.iterate_str_values())[:3]
+    ),
     SlBodyOptConsts.n_procs.value: const.IM_CALC_DEFAULT_N_CORES,
     SlBodyOptConsts.extended.value: False,
     SlBodyOptConsts.simple_out.value: True,
@@ -152,7 +155,7 @@ def submit_im_calc_slurm(
     command_template_parameters = {
         SlBodyOptConsts.sim_dir.value: sim_dir,
         SlBodyOptConsts.component.value: "-c {}".format(
-            options_dict[SlBodyOptConsts.component.value]
+            " ".join(options_dict[SlBodyOptConsts.component.value])
         )
         if not options_dict[SlBodyOptConsts.advanced_IM.value]
         else "",
@@ -228,12 +231,6 @@ def submit_im_calc_slurm(
 
 
 def main(args):
-    if not args.comp in const.IM_CALC_COMPONENTS:
-        parser.error(
-            "Velocity component must be in {}, where ellipsis means calculating "
-            "all components".format(const.IM_CALC_COMPONENTS)
-        )
-
     submit_im_calc_slurm(
         args.sim_dir,
         {
@@ -241,7 +238,7 @@ def main(args):
             SlBodyOptConsts.extended.value: args.extended_period,
             SlBodyOptConsts.simple_out.value: args.simple_output,
             SlBodyOptConsts.component.value: args.comp,
-            SlBodyOptConsts.advanced_IM.value: args.advanced_ims,
+            # SlBodyOptConsts.advanced_IM.value: args.advanced_ims,
             "auto": args.auto,
             "machine": args.machine,
             "write_directory": args.write_directory,
@@ -281,9 +278,12 @@ if __name__ == "__main__":
     parser.add_argument(
         "-c",
         "--comp",
-        default=const.IM_CALC_COMPONENTS[0],
+        nargs="*",
+        choices=list(const.Components.iterate_str_values()),
+        default=[const.Components.cgeom.str_value],
         help="specify which velocity component to calculate. choose from {}. Default is {}".format(
-            const.IM_CALC_COMPONENTS, const.IM_CALC_COMPONENTS[0]
+            ", ".join((list(const.Components.iterate_str_values()))),
+            const.Components.cgeom.str_value,
         ),
     )
     parser.add_argument(
@@ -306,13 +306,13 @@ if __name__ == "__main__":
         default=None,
     )
 
-    parser.add_argument(
-        "-a",
-        "--advanced_ims",
-        nargs="+",
-        choices=advanced_IM_factory.get_im_list(parent_args[0].advanced_im_config),
-        help="Provides the list of Advanced IMs to be calculated",
-    )
+    # parser.add_argument(
+    #     "-a",
+    #     "--advanced_ims",
+    #     nargs="+",
+    #     choices=advanced_IM_factory.get_im_list(parent_args[0].advanced_im_config),
+    #     help="Provides the list of Advanced IMs to be calculated",
+    # )
 
     args = parser.parse_args()
 
