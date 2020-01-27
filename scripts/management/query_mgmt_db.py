@@ -178,7 +178,7 @@ def print_run_status(
                         AND state.proc_type IN (?{})
                         ORDER BY state.run_name, status_enum.id
                         """.format(
-                        ",?" * (len(tasks_n) - 1)
+                            ",?" * (len(tasks_n) - 1)
                         ),
                         [i.value for i in tasks_n],
                     ).fetchall()
