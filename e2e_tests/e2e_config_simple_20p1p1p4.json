@@ -2,10 +2,10 @@
   "test_dir": "/nesi/nobackup/nesi00213/RunFolder/EndToEndTest/tests/",
   "data_dir": "/nesi/project/nesi00213/EndToEndTest/test_data_simple_18p5p3p4/Data",
   "fault_list": "/nesi/project/nesi00213/EndToEndTest/test_data_simple_18p5p3p4/list.txt",
-  "bench_dir": "/nesi/project/nesi00213/EndToEndTest/test_1912/test_data_simple_18p5p3p4/benchmark",
+  "bench_dir": "/nesi/project/nesi00213/EndToEndTest/test_2001/test_data_simple_18p5p3p4/benchmark",
   "test_checkpoint": true,
   "timeout": 10,
-  "version": "18.5.3.4",
+  "version": "20.1.1.4",
   "seed": 34580,
   "stat_file": "/nesi/project/nesi00213/StationInfo/non_uniform_whole_nz_with_real_stations-hh400_v18p6p2.ll",
   "wrapper_config": "auto_config.yaml"
