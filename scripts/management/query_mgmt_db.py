@@ -5,6 +5,8 @@ A script that queries a slurm mgmt db and returns the status of a task
 """
 
 import argparse
+from typing import Union, List
+
 import scripts.management.db_helper as db_helper
 
 from shared_workflow.shared_automated_workflow import parse_config_file
@@ -13,13 +15,13 @@ PATTERN_FORMATTER = "{:>25}, {:>15}: created: {:>5}, queued: {:>5}, running: {:>
 
 
 def state_table_query_builder(
-    what,
-    state=None,
-    process_type=None,
-    run_name_exact: bool = None,
-    run_name_similar: bool = None,
-    task_id=None,
-    ordering=None,
+    what: Union[str, List[str]],
+    state: Union[bool, int] = False,
+    process_type: Union[bool, int] = False,
+    run_name_exact: bool = False,
+    run_name_similar: bool = False,
+    task_id: Union[bool, int] = False,
+    ordering: Union[bool, str, List[str]] = False,
 ):
     """
     Creates queries for the state table.
@@ -33,10 +35,12 @@ def state_table_query_builder(
     :param ordering: The columns to order the results by
     :return: The string to be used as the query
     """
-    query = f"SELECT {', '.join(list(what))} FROM state"
+    if isinstance(what, str):
+        what = [what]
+    query = f"SELECT {', '.join(what)} FROM state "
 
     wheres = []
-    if state is not None:
+    if state is not False:
         if state is not True:
             wheres.append(f"status in (?{',?'*(state-1)})")
         else:
@@ -45,12 +49,12 @@ def state_table_query_builder(
         wheres.append(f"run_name = ?")
     elif run_name_similar:
         wheres.append(f"run_name like ?")
-    if task_id is not None:
+    if task_id is not False:
         if task_id is not True:
             wheres.append(f"task_id in (?{',?'*(task_id-1)})")
         else:
             wheres.append("task_id = ?")
-    if process_type is not None:
+    if process_type is not False:
         if process_type is not True:
             wheres.append(f"proc_type in (?{',?'*(process_type-1)})")
         else:
@@ -59,8 +63,10 @@ def state_table_query_builder(
     if len(wheres) > 0:
         query = query + "Where " + " AND ".join(wheres)
 
-    if ordering is not None:
-        query = query + f" ORDER BY {ordering}"
+    if ordering is not False:
+        if isinstance(ordering, str):
+            ordering = [ordering]
+        query = query + f" ORDER BY {', '.join(list(ordering))}"
     return query
 
 
