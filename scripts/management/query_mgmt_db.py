@@ -40,15 +40,16 @@ def state_table_query_builder(
     query = f"SELECT {', '.join(what)} FROM state "
 
     wheres = []
+    if run_name_exact:
+        wheres.append(f"run_name = ?")
+    elif run_name_similar:
+        wheres.append(f"run_name like ?")
+
     if state is not False:
         if state is not True:
             wheres.append(f"status in (?{',?'*(state-1)})")
         else:
             wheres.append(f"status = ?")
-    if run_name_exact:
-        wheres.append(f"run_name = ?")
-    elif run_name_similar:
-        wheres.append(f"run_name like ?")
     if task_id is not False:
         if task_id is not True:
             wheres.append(f"task_id in (?{',?'*(task_id-1)})")
@@ -172,7 +173,7 @@ def show_pattern_state_counts(config_file, db):
                     state_table_query_builder(
                         "COUNT(*)", state=True, run_name_similar=True
                     ),
-                    (i, pattern),
+                    (pattern, i),
                 ).fetchone()[0]
             )
         print(PATTERN_FORMATTER.format(pattern, *vals, sum(vals)))
@@ -193,7 +194,6 @@ def show_detailed_config_counts(config_file, db):
             )
         print(PATTERN_FORMATTER.format("ALL", j.str_value, *vals, sum(vals)))
     for pattern, tasks in tasks_to_match:
-        tasks = [i.value for i in tasks]
         for j in tasks:
             vals = []
             for i in range(1, 7):
@@ -205,7 +205,7 @@ def show_detailed_config_counts(config_file, db):
                             process_type=True,
                             run_name_similar=True,
                         ),
-                        (i, j.value, pattern),
+                        (pattern, i, j.value),
                     ).fetchone()[0]
                 )
             print(PATTERN_FORMATTER.format(pattern, j.str_value, *vals, sum(vals)))
