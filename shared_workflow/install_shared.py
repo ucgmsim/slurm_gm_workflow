@@ -173,17 +173,8 @@ def install_simulation(
 
     sim_params_dict["emod3d"] = {}
 
-    with h5open(srf_file.replace(".srf", ".info"), "r") as h:
-        mag = h.attrs["mag"]
-        length = h.attrs["length"]
-        width = h.attrs["width"]
 
-    sim_params_dict["hf"] = {
-        SimParams.slip.value: stoch_file,
-        "mag":  mag,
-        "fault_area": sum(length*width),
-
-    }
+    sim_params_dict["hf"] = {SimParams.slip.value: stoch_file}
 
     sim_params_dict["bb"] = {}
 

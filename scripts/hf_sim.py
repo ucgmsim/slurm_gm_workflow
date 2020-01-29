@@ -158,23 +158,6 @@ if is_master:
         type=int,
         default=1,
     )
-    arg(
-        "--sdrop_adjust",
-        type=int,
-        choices=[0, 1, 2],
-        default=0,
-        help="Use hf bins built in Leonard magnitude scaling relations"
-    )
-    arg(
-        "--mag",
-        type=float,
-        default=-1,
-    )
-    arg(
-        "--fault_area",
-        type=float,
-        default=-1,
-    )
     try:
         args = parser.parse_args()
     except SystemExit as e:
@@ -415,7 +398,7 @@ def run_hf(local_statfile, n_stat, idx_0, velocity_model=args.velocity_model):
             velocity_name,
             "%s %s %s" % (args.fa_sig1, args.fa_sig2, args.rv_sig1),
             str(args.path_dur),
-            "{} {} {}".format(args.sdrop_adjust, args.mag, args.fault_area),
+            "1 -1 -1",
             str(head_total + idx_0 * (nt * N_COMP * FLOAT_SIZE)),
             "",
         ]
