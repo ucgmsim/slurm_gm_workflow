@@ -80,7 +80,7 @@ if is_master:
         help="ray types 1:direct 2:moho",
         nargs="+",
         type=int,
-        default=[1, 2],
+        default=[1],
     )
     # HF IN, line 5
     arg(
