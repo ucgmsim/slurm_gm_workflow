@@ -398,6 +398,7 @@ def run_hf(local_statfile, n_stat, idx_0, velocity_model=args.velocity_model):
             velocity_name,
             "%s %s %s" % (args.fa_sig1, args.fa_sig2, args.rv_sig1),
             str(args.path_dur),
+            "1 -1 -1",
             str(head_total + idx_0 * (nt * N_COMP * FLOAT_SIZE)),
             "",
         ]

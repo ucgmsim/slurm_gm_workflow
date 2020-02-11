@@ -73,7 +73,7 @@ def submit_sl_script(
             )
         else:
             res = exe("sbatch {}".format(script), debug=False)
-        if len(res[1]) == 0:
+        if len(res[1]) == 0 or res[0].startswith("Submitted"):
             logger.debug("Successfully submitted task to slurm")
             # no errors, return the job id
             return_words = res[0].split()
