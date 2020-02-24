@@ -58,9 +58,7 @@ DEFAULT_OPTIONS = {
     SlHdrOptConsts.n_tasks.value: 1,
     SlHdrOptConsts.version.value: "slurm",
     # Body
-    SlBodyOptConsts.component.value: " ".join(
-        list(const.Components.iterate_str_values())[:3]
-    ),
+    SlBodyOptConsts.component.value: const.Components.cgeom.str_value,
     SlBodyOptConsts.n_procs.value: const.IM_CALC_DEFAULT_N_CORES,
     SlBodyOptConsts.extended.value: False,
     SlBodyOptConsts.simple_out.value: True,
@@ -155,7 +153,7 @@ def submit_im_calc_slurm(
     command_template_parameters = {
         SlBodyOptConsts.sim_dir.value: sim_dir,
         SlBodyOptConsts.component.value: "-c {}".format(
-            " ".join(options_dict[SlBodyOptConsts.component.value])
+            (options_dict[SlBodyOptConsts.component.value])
         )
         if not options_dict[SlBodyOptConsts.advanced_IM.value]
         else "",
