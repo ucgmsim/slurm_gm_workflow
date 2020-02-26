@@ -75,13 +75,7 @@ if is_master:
     # HF IN, line 1
     arg("--sdrop", help="stress drop average (bars)", type=float, default=50.0)
     # HF IN, line 4
-    arg(
-        "--rayset",
-        help="ray types 1:direct 2:moho",
-        nargs="+",
-        type=int,
-        default=[1],
-    )
+    arg("--rayset", help="ray types 1:direct 2:moho", nargs="+", type=int, default=[1])
     # HF IN, line 5
     arg(
         "--no-siteamp",
