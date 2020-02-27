@@ -2,6 +2,10 @@ Slurm Ground Motion Workflow
 # Changelog
 (Based on https://wiki.canterbury.ac.nz/download/attachments/58458136/CodeVersioning_v18p2.pdf?version=1&modificationDate=1519269238437&api=v2 )
 
+## [19.6.23] -  2020-02-11 -- Changed HF Rayset default to 1 
+### Changed
+    - Changed HF Rayset default from 1 2 to 1, which is internally handled as [1]. 
+
 ## [19.6.22] -  2019-12-19 -- Added Advanced_IM into automated workflow
 ### Added
     - Added slurm templates related to Advanced_IM
