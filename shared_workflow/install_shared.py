@@ -6,6 +6,8 @@ from logging import Logger
 from numpy import isclose
 import yaml
 
+from h5py import File as h5open
+
 from qcore import geo, utils, simulation_structure
 from qcore.qclogging import get_basic_logger, VERYVERBOSE
 from qcore.constants import (
@@ -118,6 +120,7 @@ def install_simulation(
     root_params_dict[RootParams.stat_vs_est.value] = vs30_file_path
     root_params_dict[RootParams.stat_vs_ref.value] = vs30ref_file_path
     root_params_dict["hf"][RootParams.seed.value] = seed
+    root_params_dict["hf"]["sdrop_adjust"] = 0
 
     # Fault params
     fault_params_dict = {
@@ -169,6 +172,7 @@ def install_simulation(
         return None, None, None, None
 
     sim_params_dict["emod3d"] = {}
+
 
     sim_params_dict["hf"] = {SimParams.slip.value: stoch_file}
 

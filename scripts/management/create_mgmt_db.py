@@ -30,7 +30,7 @@ def main():
     )
     args = parser.parse_args()
 
-    create_mgmt_db(args.realisation, args.mgmt_db_file)
+    create_mgmt_db(args.realisations, args.mgmt_db_file)
 
 
 if __name__ == "__main__":
