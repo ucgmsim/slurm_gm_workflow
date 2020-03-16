@@ -50,4 +50,6 @@ def test_install_simulation(set_up, mocker):
 
         test_output = install_shared.install_simulation(*input_params)
         bench_output = get_bench_output(root_path, func_name)
+        print(test_output[0])
+        print(bench_output[0])
         assert test_output[0] == bench_output[0]
