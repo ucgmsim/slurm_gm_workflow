@@ -28,11 +28,15 @@ def write_sl(sl_name, content):
 
 
 def generate_sl(np, extended, cybershake_folder, account, realisations, out_dir):
-    #extended is '-e' or ''
+    # extended is '-e' or ''
 
     faults = map(get_fault_name, realisations)
     run_data = zip(realisations, faults)
-    run_data = [(rel,fault) for (rel,fault) in run_data if rrup_file_exists(cybershake_folder, fault,rel)]
+    run_data = [
+        (rel, fault)
+        for (rel, fault) in run_data
+        if rrup_file_exists(cybershake_folder, fault, rel)
+    ]
 
     timestamp_format = "%Y%m%d_%H%M%S"
     timestamp = datetime.now().strftime(timestamp_format)
