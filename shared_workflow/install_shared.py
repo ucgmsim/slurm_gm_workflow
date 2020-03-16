@@ -172,7 +172,6 @@ def install_simulation(
 
     sim_params_dict["emod3d"] = {}
 
-
     sim_params_dict["hf"] = {SimParams.slip.value: stoch_file}
 
     sim_params_dict["bb"] = {}
