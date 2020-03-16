@@ -64,12 +64,12 @@ if is_master:
     arg(
         "--sim_bin",
         help="high frequency binary (modified for binary out)",
-        default=binary_version.get_hf_binmod("5.4.5"),
+        default=binary_version.get_hf_binmod("6.0.3"),
     )
     arg(
         "--version",
         help="binary version, similar to --sim_bin but not full path.",
-        default=None,
+        default="6.0.3",  # 5.4.5, 6.0.3 are supported
     )
     arg("--t-sec", help="high frequency output start time", type=float, default=0.0)
     # HF IN, line 1
@@ -152,6 +152,17 @@ if is_master:
         type=int,
         default=1,
     )
+
+    arg(
+        "--stress_param_adj",
+        help="""stress parameter adjustment X Y Z
+        X: Adjustment option 0 = off 1 = active tectonic, 2 = stable continent
+        Y: Target magnitude (auto = -1 or specified mag.)
+        Z: Fault area (auto = -1 or specified area in km^2)""",
+        nargs=3,
+        default=["1", "-1", "-1"],
+    )
+
     try:
         args = parser.parse_args()
     except SystemExit as e:
@@ -369,33 +380,40 @@ def run_hf(local_statfile, n_stat, idx_0, velocity_model=args.velocity_model):
     logger.debug(
         "run_hf({}, {}, {}) seed: {}".format(local_statfile, n_stat, idx_0, seed)
     )
-    stdin = "\n".join(
-        [
-            "",
-            str(args.sdrop),
-            local_statfile,
-            args.out_file,
-            "%d %s" % (len(args.rayset), " ".join(map(str, args.rayset))),
-            str(int(not args.no_siteamp)),
-            "%d %d %s %s" % (nbu, ift, flo, fhi),
-            str(seed),
-            str(n_stat),
-            "%s %s %s %s %s"
-            % (args.duration, args.dt, args.fmax, args.kappa, args.qfexp),
-            "%s %s %s %s %s"
-            % (args.rvfac, args.rvfac_shal, args.rvfac_deep, args.czero, args.calpha),
-            "%s %s" % (args.mom, args.rupv),
-            args.stoch_file,
-            args.velocity_model,
-            str(args.vs_moho),
-            "%d %s %s %s %s %d" % (nl_skip, vp_sig, vsh_sig, rho_sig, qs_sig, ic_flag),
-            velocity_name,
-            "%s %s %s" % (args.fa_sig1, args.fa_sig2, args.rv_sig1),
-            str(args.path_dur),
-            str(head_total + idx_0 * (nt * N_COMP * FLOAT_SIZE)),
-            "",
-        ]
-    )
+
+    hf_sim_args = [
+        "",
+        str(args.sdrop),
+        local_statfile,
+        args.out_file,
+        "%d %s" % (len(args.rayset), " ".join(map(str, args.rayset))),
+        str(int(not args.no_siteamp)),
+        "%d %d %s %s" % (nbu, ift, flo, fhi),
+        str(seed),
+        str(n_stat),
+        "%s %s %s %s %s" % (args.duration, args.dt, args.fmax, args.kappa, args.qfexp),
+        "%s %s %s %s %s"
+        % (args.rvfac, args.rvfac_shal, args.rvfac_deep, args.czero, args.calpha),
+        "%s %s" % (args.mom, args.rupv),
+        args.stoch_file,
+        args.velocity_model,
+        str(args.vs_moho),
+        "%d %s %s %s %s %d" % (nl_skip, vp_sig, vsh_sig, rho_sig, qs_sig, ic_flag),
+        velocity_name,
+        str(args.path_dur),
+    ]
+    if utils.compare_versions(args.version, "6.0.3") >= 0:
+        hf_sim_args.append(
+            "{} {} {}".format(
+                args.stress_param_adj[0],
+                args.stress_param_adj[1],
+                args.stress_param_adj[2],
+            )
+        )
+
+    hf_sim_args.extend([str(head_total + idx_0 * (nt * N_COMP * FLOAT_SIZE)), ""])
+
+    stdin = "\n".join(hf_sim_args)
 
     # run HF binary
     p = Popen([args.sim_bin], stdin=PIPE, stderr=PIPE, universal_newlines=True)

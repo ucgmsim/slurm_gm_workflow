@@ -6,6 +6,8 @@ from logging import Logger
 from numpy import isclose
 import yaml
 
+from h5py import File as h5open
+
 from qcore import geo, utils, simulation_structure
 from qcore.qclogging import get_basic_logger, VERYVERBOSE
 from qcore.constants import (
