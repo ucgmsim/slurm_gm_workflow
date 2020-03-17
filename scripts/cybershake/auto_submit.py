@@ -242,7 +242,7 @@ def submit_task(
             target_machine=JOB_RUN_MACHINE[const.ProcessType.rrup].value,
         )
     elif proc_type == const.ProcessType.Empirical.value:
-        extended_period_switch="-e" if extended_period else ""
+        extended_period_switch = "-e" if extended_period else ""
         sl_script = generate_sl(
             40, extended_period_switch, root_folder, "nesi00213", [run_name], sim_dir
         )
