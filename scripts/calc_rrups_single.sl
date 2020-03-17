@@ -35,6 +35,7 @@ SRF_FILE=$(getFromYaml ${REL_YAML} srf_file)
 SRF_FILE=${SRF_FILE//_REL??/}
 STATION_FILE=$(getFromYaml ${REL_YAML} stat_file)
 FD=$(getFromYaml ${REL_YAML} FD_STATLIST)
+
 OUT_FILE=$(python -c "from qcore.simulation_structure import get_rrup_path; print(get_rrup_path('${MGMT_DB_LOC}', '${REL}'))")
 OUT_DIR=`dirname $OUT_FILE`
 mkdir -p $OUT_DIR
