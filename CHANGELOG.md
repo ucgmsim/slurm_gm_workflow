@@ -11,7 +11,7 @@ Slurm Ground Motion Workflow
     - Changed the default version of HF to 6.0.3
     - Can be switched back to 5.4.5 with "--version 5.4.5" option for hf_sim.py
     - If version 6.0.3 is used, it utilizes a new argument--stress_param_adj
->>>>>>> 143937c84e7a042f5ee5fb3695cdd31e0d10bc48
+
 ## [19.6.23] -  2020-02-11 -- Changed HF Rayset default to 1 
 ### Changed
     - Changed HF Rayset default from 1 2 to 1, which is internally handled as [1]. 

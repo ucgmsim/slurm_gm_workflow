@@ -120,6 +120,7 @@ def install_simulation(
     root_params_dict[RootParams.stat_vs_est.value] = vs30_file_path
     root_params_dict[RootParams.stat_vs_ref.value] = vs30ref_file_path
     root_params_dict["hf"][RootParams.seed.value] = seed
+    root_params_dict["hf"]["sdrop_adjust"] = 0
 
     # Fault params
     fault_params_dict = {
