@@ -304,6 +304,7 @@ def generate_fd_files(
     output_path,
     vm_params_dict,
     stat_file="default.ll",
+    keep_dup_station = True,
     logger: Logger = get_basic_logger(),
 ):
     MODEL_LAT = vm_params_dict["MODEL_LAT"]
@@ -360,7 +361,12 @@ def generate_fd_files(
         elif xy[i] not in sxy:
             sxy.append(xy[i])
             suname.append(sname[i])
-        else:
+        elif keep_dup_station:
+            # still adds in the station but raise a warning
+            sxy.append(xy[i])
+            suname.append(sname[i])
+            logger.log(WARNING, f"Duplicate Station added: {sname[i]} at {xy[i]}")
+        else:            
             logger.log(VERYVERBOSE, "Duplicate Station Ignored: {}".format(sname[i]))
 
     # create grid point file
