@@ -9,7 +9,7 @@ import yaml
 from h5py import File as h5open
 
 from qcore import geo, utils, simulation_structure
-from qcore.qclogging import get_basic_logger, VERYVERBOSE
+from qcore.qclogging import get_basic_logger, VERYVERBOSE,NOPRINTWARNING
 from qcore.constants import (
     SimParams,
     FaultParams,
@@ -365,7 +365,7 @@ def generate_fd_files(
             # still adds in the station but raise a warning
             sxy.append(xy[i])
             suname.append(sname[i])
-            logger.log(WARNING, f"Duplicate Station added: {sname[i]} at {xy[i]}")
+            logger.log(NOPRINTWARNING, f"Duplicate Station added: {sname[i]} at {xy[i]}")
         else:            
             logger.log(VERYVERBOSE, "Duplicate Station Ignored: {}".format(sname[i]))
 
