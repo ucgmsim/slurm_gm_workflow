@@ -14,7 +14,7 @@ import numpy as np
 import logging
 
 from shared_workflow import shared_defaults
-from qcore import binary_version, MPIFileHandler, constants
+from qcore import binary_version, MPIFileHandler, constants, utils
 
 comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
@@ -367,7 +367,9 @@ stations_todo = stations[station_mask]
 stations_todo_idx = np.arange(stations.size)[station_mask]
 
 
-def run_hf(local_statfile, n_stat, idx_0, velocity_model=args.velocity_model):
+def run_hf(
+    local_statfile, n_stat, idx_0, velocity_model=args.velocity_model, bin_mod=True
+):
     """
     Runs HF Fortran code.
     """
@@ -400,8 +402,11 @@ def run_hf(local_statfile, n_stat, idx_0, velocity_model=args.velocity_model):
         str(args.vs_moho),
         "%d %s %s %s %s %d" % (nl_skip, vp_sig, vsh_sig, rho_sig, qs_sig, ic_flag),
         velocity_name,
+        "%s %s %s" % (args.fa_sig1, args.fa_sig2, args.rv_sig1),
         str(args.path_dur),
     ]
+
+    # extra params needed for v6.0
     if utils.compare_versions(args.version, "6.0.3") >= 0:
         hf_sim_args.append(
             "{} {} {}".format(
@@ -410,8 +415,12 @@ def run_hf(local_statfile, n_stat, idx_0, velocity_model=args.velocity_model):
                 args.stress_param_adj[2],
             )
         )
+    # add seekbyte for qcore adjusted version
+    if bin_mod:
+        hf_sim_args.append(str(head_total + idx_0 * (nt * N_COMP * FLOAT_SIZE)))
 
-    hf_sim_args.extend([str(head_total + idx_0 * (nt * N_COMP * FLOAT_SIZE)), ""])
+    # add empty '' for extra \n at the end( needed as input)
+    hf_sim_args.append("")
 
     stdin = "\n".join(hf_sim_args)
 
