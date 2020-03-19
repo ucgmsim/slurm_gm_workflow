@@ -367,7 +367,7 @@ stations_todo = stations[station_mask]
 stations_todo_idx = np.arange(stations.size)[station_mask]
 
 
-def run_hf(local_statfile, n_stat, idx_0, velocity_model=args.velocity_model):
+def run_hf(local_statfile, n_stat, idx_0, velocity_model=args.velocity_model, bin_mod=True):
     """
     Runs HF Fortran code.
     """
@@ -402,18 +402,22 @@ def run_hf(local_statfile, n_stat, idx_0, velocity_model=args.velocity_model):
         velocity_name,
         "%s %s %s" % (args.fa_sig1, args.fa_sig2, args.rv_sig1),
         str(args.path_dur),
-        str(head_total + idx_0 * (nt * N_COMP * FLOAT_SIZE)),
         "",
     ]
+    
+    # extra params needed for v6.0
     if utils.compare_versions(args.version, "6.0.3") >= 0:
         hf_sim_args.insert(
-            -2,
+            -1,
             "{} {} {}".format(
                 args.stress_param_adj[0],
                 args.stress_param_adj[1],
                 args.stress_param_adj[2],
             ),
         )
+    # add seekbyte for qcore adjusted version
+    if bin_mod:
+        hf_sim_args.insert(-1, str(head_total + idx_0 * (nt * N_COMP * FLOAT_SIZE)))
 
     stdin = "\n".join(hf_sim_args)
 
