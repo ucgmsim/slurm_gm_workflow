@@ -404,22 +404,23 @@ def run_hf(
         velocity_name,
         "%s %s %s" % (args.fa_sig1, args.fa_sig2, args.rv_sig1),
         str(args.path_dur),
-        "",
     ]
 
     # extra params needed for v6.0
     if utils.compare_versions(args.version, "6.0.3") >= 0:
-        hf_sim_args.insert(
-            -1,
+        hf_sim_args.append(
             "{} {} {}".format(
                 args.stress_param_adj[0],
                 args.stress_param_adj[1],
                 args.stress_param_adj[2],
-            ),
+            )
         )
     # add seekbyte for qcore adjusted version
     if bin_mod:
-        hf_sim_args.insert(-1, str(head_total + idx_0 * (nt * N_COMP * FLOAT_SIZE)))
+        hf_sim_args.append(str(head_total + idx_0 * (nt * N_COMP * FLOAT_SIZE)))
+
+    # add empty '' for extra \n at the end( needed as input)
+    hf_sim_args.append("")
 
     stdin = "\n".join(hf_sim_args)
 
