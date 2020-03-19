@@ -406,12 +406,13 @@ def run_hf(local_statfile, n_stat, idx_0, velocity_model=args.velocity_model):
         "",
     ]
     if utils.compare_versions(args.version, "6.0.3") >= 0:
-        hf_sim_args.insert(-2,
+        hf_sim_args.insert(
+            -2,
             "{} {} {}".format(
                 args.stress_param_adj[0],
                 args.stress_param_adj[1],
                 args.stress_param_adj[2],
-            )
+            ),
         )
 
     stdin = "\n".join(hf_sim_args)
