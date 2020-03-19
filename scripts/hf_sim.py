@@ -14,7 +14,7 @@ import numpy as np
 import logging
 
 from shared_workflow import shared_defaults
-from qcore import binary_version, MPIFileHandler, constants
+from qcore import binary_version, MPIFileHandler, constants, utils
 
 comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
