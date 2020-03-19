@@ -367,7 +367,9 @@ stations_todo = stations[station_mask]
 stations_todo_idx = np.arange(stations.size)[station_mask]
 
 
-def run_hf(local_statfile, n_stat, idx_0, velocity_model=args.velocity_model, bin_mod=True):
+def run_hf(
+    local_statfile, n_stat, idx_0, velocity_model=args.velocity_model, bin_mod=True
+):
     """
     Runs HF Fortran code.
     """
@@ -404,7 +406,7 @@ def run_hf(local_statfile, n_stat, idx_0, velocity_model=args.velocity_model, bi
         str(args.path_dur),
         "",
     ]
-    
+
     # extra params needed for v6.0
     if utils.compare_versions(args.version, "6.0.3") >= 0:
         hf_sim_args.insert(
