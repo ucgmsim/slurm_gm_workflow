@@ -400,18 +400,19 @@ def run_hf(local_statfile, n_stat, idx_0, velocity_model=args.velocity_model):
         str(args.vs_moho),
         "%d %s %s %s %s %d" % (nl_skip, vp_sig, vsh_sig, rho_sig, qs_sig, ic_flag),
         velocity_name,
+        "%s %s %s" % (args.fa_sig1, args.fa_sig2, args.rv_sig1),
         str(args.path_dur),
+        str(head_total + idx_0 * (nt * N_COMP * FLOAT_SIZE)),
+        "",
     ]
     if utils.compare_versions(args.version, "6.0.3") >= 0:
-        hf_sim_args.append(
+        hf_sim_args.insert(-2,
             "{} {} {}".format(
                 args.stress_param_adj[0],
                 args.stress_param_adj[1],
                 args.stress_param_adj[2],
             )
         )
-
-    hf_sim_args.extend([str(head_total + idx_0 * (nt * N_COMP * FLOAT_SIZE)), ""])
 
     stdin = "\n".join(hf_sim_args)
 
