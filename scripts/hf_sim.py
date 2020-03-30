@@ -9,18 +9,24 @@ from subprocess import Popen, PIPE
 import sys
 from tempfile import mkstemp
 
-from mpi4py import MPI
 import numpy as np
 import logging
 
 from shared_workflow import shared_defaults
-from qcore import binary_version, MPIFileHandler, constants, utils
+from qcore import binary_version, constants, utils
 
-comm = MPI.COMM_WORLD
-rank = comm.Get_rank()
-size = comm.Get_size()
-master = 0
-is_master = not rank
+if __name__ == "__main__":
+    from qcore import MPIFileHandler
+    from mpi4py import MPI
+    comm = MPI.COMM_WORLD
+    rank = comm.Get_rank()
+    size = comm.Get_size()
+    master = 0
+    is_master = not rank
+
+    logger = logging.getLogger("rank_%i" % comm.rank)
+    logger.setLevel(logging.DEBUG)
+
 HEAD_SIZE = 0x0200
 HEAD_STAT = 0x18
 FLOAT_SIZE = 0x4
@@ -42,16 +48,16 @@ ic_flag = True
 velocity_name = "-1"
 
 
-logger = logging.getLogger("rank_%i" % comm.rank)
-logger.setLevel(logging.DEBUG)
-
-
 def random_seed():
     return random.randrange(1000000, 9999999)
 
+# argparse
+def args_parser(cmd=None):
+    """ 
+    CMD is a list of strings to parse
+    While, not None, cmd will be used to parse
+    """
 
-args = None
-if is_master:
     parser = ArgumentParser()
     arg = parser.add_argument
     # HF IN, line 12
@@ -163,63 +169,132 @@ if is_master:
         default=["1", "-1", "-1"],
     )
 
-    try:
-        args = parser.parse_args()
-    except SystemExit as e:
-        print(e, flush=True)
-        # invalid arguments or -h
-        comm.Abort()
-
-if hasattr(args, "version") and args.version is not None:
-    args.sim_bin = binary_version.get_hf_binmod(args.version)
-
-if is_master:
-    logger.debug("=" * 50)
-    # random seed
-    seed_file = os.path.join(os.path.dirname(args.out_file), "SEED")
-
-    if os.path.isfile(seed_file):
-        args.seed = np.loadtxt(seed_file, dtype="i", ndmin=1)[0]
-        logger.debug("seed taken from file: {}".format(args.seed))
-    elif args.seed == 0:
-        args.seed = random_seed()
-        np.savetxt(seed_file, np.array([args.seed], dtype=np.int32), fmt="%i")
-        logger.debug("seed generated: {}".format(args.seed))
-    else:
-        logger.debug("seed from command line: {}".format(args.seed))
-    assert args.seed >= 0  # don't like negative seed
-
-    # Logging each argument
-    for key in vars(args):
-        logger.debug("{} : {}".format(key, getattr(args, key)))
-
-args = comm.bcast(args, root=master)
+    args = parser.parse_args(cmd)
+    
+    return args
 
 
-mh = MPIFileHandler.MPIFileHandler(
-    os.path.join(os.path.dirname(args.out_file), "HF.log")
-)
-formatter = logging.Formatter("%(asctime)s:%(name)s:%(levelname)s:%(message)s")
-mh.setFormatter(formatter)
-logger.addHandler(mh)
+#main function
+def main():
+    args = None
+    if is_master:
+        try:
+            args = args_parser()
+        except SystemExit as e:
+            print(e, flush=True)
+            # invalid arguments or -h
+            comm.Abort()
+    if hasattr(args, "version") and args.version is not None:
+        args.sim_bin = binary_version.get_hf_binmod(args.version)
 
-nt = int(round(args.duration / args.dt))
-stations = np.loadtxt(
-    args.station_file, ndmin=1, dtype=[("lon", "f4"), ("lat", "f4"), ("name", "|S8")]
-)
-head_total = HEAD_SIZE + HEAD_STAT * stations.size
-block_size = nt * N_COMP * FLOAT_SIZE
-file_size = head_total + stations.size * block_size
+    if is_master:
+        logger.debug("=" * 50)
+        # random seed
+        seed_file = os.path.join(os.path.dirname(args.out_file), "SEED")
 
-# initialise output with general metadata
-def initialise(check_only=False):
+        if os.path.isfile(seed_file):
+            args.seed = np.loadtxt(seed_file, dtype="i", ndmin=1)[0]
+            logger.debug("seed taken from file: {}".format(args.seed))
+        elif args.seed == 0:
+            args.seed = random_seed()
+            np.savetxt(seed_file, np.array([args.seed], dtype=np.int32), fmt="%i")
+            logger.debug("seed generated: {}".format(args.seed))
+        else:
+            logger.debug("seed from command line: {}".format(args.seed))
+        assert args.seed >= 0  # don't like negative seed
+
+        # Logging each argument
+        for key in vars(args):
+            logger.debug("{} : {}".format(key, getattr(args, key)))
+
+    args = comm.bcast(args, root=master)
+
+    mh = MPIFileHandler.MPIFileHandler(
+        os.path.join(os.path.dirname(args.out_file), "HF.log")
+    )
+
+    formatter = logging.Formatter("%(asctime)s:%(name)s:%(levelname)s:%(message)s")
+    mh.setFormatter(formatter)
+    logger.addHandler(mh)
+    args.nt = int(round(args.duration / args.dt))
+    args.stations = np.loadtxt(
+        args.station_file, ndmin=1, dtype=[("lon", "f4"), ("lat", "f4"), ("name", "|S8")]
+    )
+    args.head_total = HEAD_SIZE + HEAD_STAT * args.stations.size
+    args.block_size = args.nt * N_COMP * FLOAT_SIZE
+    args.file_size = args.head_total + args.stations.size * args.block_size
+
+    station_mask = None
+    if is_master:
+        station_mask = unfinished(args)
+        if station_mask is None or sum(station_mask) == args.stations.size:
+            logger.debug("No valid checkpoints found. Starting fresh simulation.")
+            initialise(args)
+            station_mask = np.ones(args.stations.size, dtype=np.bool)
+        else:
+            try:
+                initialise(args, check_only=True)
+                logger.info(
+                    "{} of {} stations completed. Resuming simulation.".format(
+                        args.stations.size - sum(station_mask), args.stations.size
+                    )
+                )
+            except AssertionError:
+                logger.warning("Simulation parameters mismatch. Starting fresh simulation.")
+                initialise(args)
+                station_mask = np.ones(args.stations.size, dtype=np.bool)
+    station_mask = comm.bcast(station_mask, root=master)
+    stations_todo = args.stations[station_mask]
+    stations_todo_idx = np.arange(args.stations.size)[station_mask]
+    # distribute work, must be sequential for optimisation,
+    # and for validation function above to be thread safe
+    # if size=4, rank 0 takes [0,4,8...], rank 1 takes [1,5,9...], rank 2 takes [2,6,10...],
+    # rank 3 takes [3,7,11...]
+    work = stations_todo[rank::size]
+    work_idx = stations_todo_idx[rank::size]
+    # process data to give Fortran code
+    t0 = MPI.Wtime()
+    in_stats = mkstemp()[1]
+
+    vm = args.velocity_model
+    for s in range(work.size):
+        if args.site_vm_dir != None:
+            vm = os.path.join(args.site_vm_dir, "%s.1d" % (stations_todo[s]["name"]))
+        np.savetxt(
+            in_stats, work[s : s + 1], fmt="%f %f %s"
+        )  # making in_stats file with the list of one station work[s]
+        run_hf(
+            args, in_stats, 1, work_idx[s], velocity_model=vm
+        )  # passing in_stat with the seed adjustment work_idx[s]
+    if (
+        len(work_idx) > 0
+        and len(stations_todo_idx) > 0
+        and work_idx[-1] == stations_todo_idx[-1]
+    ):  # if this rank did the last station in the full list
+        validate_end(args, work_idx[-1] + 1)
+
+    os.remove(in_stats)
+    print("Process %03d of %03d finished (%.2fs)." % (rank, size, MPI.Wtime() - t0))
+    logger.debug(
+        "Process {} of {} completed {} stations ({:.2f}).".format(
+            rank, size, work.size, MPI.Wtime() - t0
+        )
+    )
+    print('waiting for others')
+    comm.Barrier()  # all ranks wait here until rank 0 arrives to announce all completed
+    if is_master:
+        logger.debug("Simulation completed.")
+
+
+    # initialise output with general metadata
+def initialise(args, check_only=False):
     with open(args.out_file, mode="rb" if check_only else "w+b") as out:
         # int/bool parameters, rayset must be fixed to length = 4
         fwrs = args.rayset + [0] * (4 - len(args.rayset))
         i4 = np.array(
             [
-                stations.size,
-                nt,
+                args.stations.size,
+                args.nt,
                 args.seed,
                 not args.no_siteamp,
                 args.path_dur,
@@ -275,7 +350,7 @@ def initialise(check_only=False):
         s64 = np.array(list(map(os.path.basename, [args.stoch_file, vm])), dtype="|S64")
         # station metadata
         stat_head = np.zeros(
-            stations.size,
+            args.stations.size,
             dtype={
                 "names": ["lon", "lat", "name"],
                 "formats": ["f4", "f4", "|S8"],
@@ -283,8 +358,7 @@ def initialise(check_only=False):
             },
         )
         for column in stat_head.dtype.names:
-            stat_head[column] = stations[column]
-
+            stat_head[column] = args.stations[column]
         # verify or write
         if check_only:
             assert np.min(np.fromfile(out, dtype=i4.dtype, count=i4.size) == i4)
@@ -303,16 +377,16 @@ def initialise(check_only=False):
             stat_head.tofile(out)
 
 
-def unfinished(out_file):
+def unfinished(args):
     try:
-        with open(out_file, "rb") as hff:
+        with open(args.out_file, "rb") as hff:
             hff.seek(HEAD_SIZE)
             # checkpoints are vs and e_dist written to file
             # assume continuing machine is the same endian
             checkpoints = (
                 np.fromfile(
                     hff,
-                    count=stations.size,
+                    count=args.stations.size,
                     dtype={
                         "names": ["vs"],
                         "formats": ["f4"],
@@ -325,7 +399,7 @@ def unfinished(out_file):
     except IOError:
         # file not created yet
         return
-    if checkpoints.size < stations.size:
+    if checkpoints.size < args.stations.size:
         # file size is too short (simulation not even started properly)
         return
     if os.stat(args.out_file).st_size > file_size:
@@ -334,7 +408,7 @@ def unfinished(out_file):
     if np.min(checkpoints):
         try:
             logger.debug("Checkpoints found.")
-            initialise(check_only=True)
+            initialise(args, check_only=True)
             logger.error("HF Simulation already completed.")
             comm.Abort()
         except AssertionError:
@@ -343,32 +417,10 @@ def unfinished(out_file):
     return np.invert(checkpoints)
 
 
-station_mask = None
-if is_master:
-    station_mask = unfinished(args.out_file)
-    if station_mask is None or sum(station_mask) == stations.size:
-        logger.debug("No valid checkpoints found. Starting fresh simulation.")
-        initialise()
-        station_mask = np.ones(stations.size, dtype=np.bool)
-    else:
-        try:
-            initialise(check_only=True)
-            logger.info(
-                "{} of {} stations completed. Resuming simulation.".format(
-                    stations.size - sum(station_mask), stations.size
-                )
-            )
-        except AssertionError:
-            logger.warning("Simulation parameters mismatch. Starting fresh simulation.")
-            initialise()
-            station_mask = np.ones(stations.size, dtype=np.bool)
-station_mask = comm.bcast(station_mask, root=master)
-stations_todo = stations[station_mask]
-stations_todo_idx = np.arange(stations.size)[station_mask]
 
 
 def run_hf(
-    local_statfile, n_stat, idx_0, velocity_model=args.velocity_model, bin_mod=True
+    args, local_statfile, n_stat, idx_0, velocity_model, bin_mod=True
 ):
     """
     Runs HF Fortran code.
@@ -417,19 +469,22 @@ def run_hf(
         )
     # add seekbyte for qcore adjusted version
     if bin_mod:
-        hf_sim_args.append(str(head_total + idx_0 * (nt * N_COMP * FLOAT_SIZE)))
+        hf_sim_args.append(str(args.head_total + idx_0 * (args.nt * N_COMP * FLOAT_SIZE)))
 
     # add empty '' for extra \n at the end( needed as input)
     hf_sim_args.append("")
 
     stdin = "\n".join(hf_sim_args)
 
+    #print(stdin)
+    
     # run HF binary
     p = Popen([args.sim_bin], stdin=PIPE, stderr=PIPE, universal_newlines=True)
     stderr = p.communicate(stdin)[1]
 
+    #print(f'one executed {comm.rank}')
     # load vs
-    with open(velocity_model, "r") as vm:
+    with open(args.velocity_model, "r") as vm:
         vm.readline()
         vs = np.float32(float(vm.readline().split()[2]) * 1000.0)
 
@@ -454,16 +509,16 @@ def run_hf(
             vs.tofile(out)
 
 
-def validate_end(idx_n):
+def validate_end(args, idx_n):
     """
     Verify filesize has been extended by the correct amount.
     idx_n: position (starting at 1) of last station to be completed
     """
     try:
-        assert os.stat(args.out_file).st_size == head_total + idx_n * block_size
+        assert os.stat(args.out_file).st_size == args.head_total + idx_n * args.block_size
     except AssertionError:
         msg = "Expected size: %d bytes (last stat idx: %d), actual %d bytes." % (
-            head_total + idx_n * block_size,
+            args.head_total + idx_n * args.block_size,
             idx_n,
             os.stat(args.out_file).st_size,
         )
@@ -473,45 +528,6 @@ def validate_end(idx_n):
         logger.error("Validation failed: {}".format(msg))
         comm.Abort()
 
+if __name__ == "__main__":
+    main()
 
-# distribute work, must be sequential for optimisation,
-# and for validation function above to be thread safe
-# if size=4, rank 0 takes [0,4,8...], rank 1 takes [1,5,9...], rank 2 takes [2,6,10...],
-# rank 3 takes [3,7,11...]
-work = stations_todo[rank::size]
-work_idx = stations_todo_idx[rank::size]
-
-# process data to give Fortran code
-t0 = MPI.Wtime()
-in_stats = mkstemp()[1]
-
-vm = args.velocity_model
-for s in range(work.size):
-    if args.site_vm_dir != None:
-        vm = os.path.join(args.site_vm_dir, "%s.1d" % (stations_todo[s]["name"]))
-
-    np.savetxt(
-        in_stats, work[s : s + 1], fmt="%f %f %s"
-    )  # making in_stats file with the list of one station work[s]
-    run_hf(
-        in_stats, 1, work_idx[s], velocity_model=vm
-    )  # passing in_stat with the seed adjustment work_idx[s]
-
-if (
-    len(work_idx) > 0
-    and len(stations_todo_idx) > 0
-    and work_idx[-1] == stations_todo_idx[-1]
-):  # if this rank did the last station in the full list
-    validate_end(work_idx[-1] + 1)
-
-
-os.remove(in_stats)
-print("Process %03d of %03d finished (%.2fs)." % (rank, size, MPI.Wtime() - t0))
-logger.debug(
-    "Process {} of {} completed {} stations ({:.2f}).".format(
-        rank, size, work.size, MPI.Wtime() - t0
-    )
-)
-comm.Barrier()  # all ranks wait here until rank 0 arrives to announce all completed
-if is_master:
-    logger.debug("Simulation completed.")
