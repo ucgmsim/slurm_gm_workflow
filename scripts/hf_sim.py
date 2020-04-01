@@ -15,15 +15,16 @@ import logging
 from shared_workflow import shared_defaults
 from qcore import binary_version, constants, utils
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     from qcore import MPIFileHandler
     from mpi4py import MPI
+
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
     size = comm.Get_size()
     master = 0
     is_master = not rank
-    
+
     logger = logging.getLogger("rank_%i" % comm.rank)
     logger.setLevel(logging.DEBUG)
 
@@ -46,7 +47,6 @@ qs_sig = 0.0
 ic_flag = True
 # seems to store details in {velocity_name}_{station_name}.1d if not '-1'
 velocity_name = "-1"
-
 
 
 def random_seed():
@@ -170,12 +170,13 @@ def args_parser(cmd=None):
         nargs=3,
         default=["1", "-1", "-1"],
     )
-    
+
     args = parser.parse_args(cmd)
 
     return args
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     args = None
     if is_master:
 
@@ -211,7 +212,6 @@ if __name__ == '__main__':
 
     args = comm.bcast(args, root=master)
 
-
     mh = MPIFileHandler.MPIFileHandler(
         os.path.join(os.path.dirname(args.out_file), "HF.log")
     )
@@ -221,7 +221,9 @@ if __name__ == '__main__':
 
     nt = int(round(args.duration / args.dt))
     stations = np.loadtxt(
-        args.station_file, ndmin=1, dtype=[("lon", "f4"), ("lat", "f4"), ("name", "|S8")]
+        args.station_file,
+        ndmin=1,
+        dtype=[("lon", "f4"), ("lat", "f4"), ("name", "|S8")],
     )
     head_total = HEAD_SIZE + HEAD_STAT * stations.size
     block_size = nt * N_COMP * FLOAT_SIZE
@@ -288,7 +290,9 @@ if __name__ == '__main__':
                 vm = args.site_vm_dir
             else:
                 vm = args.velocity_model
-            s64 = np.array(list(map(os.path.basename, [args.stoch_file, vm])), dtype="|S64")
+            s64 = np.array(
+                list(map(os.path.basename, [args.stoch_file, vm])), dtype="|S64"
+            )
             # station metadata
             stat_head = np.zeros(
                 stations.size,
@@ -317,7 +321,6 @@ if __name__ == '__main__':
                 s64.tofile(out)
                 out.seek(HEAD_SIZE)
                 stat_head.tofile(out)
-
 
     def unfinished(out_file):
         try:
@@ -358,7 +361,6 @@ if __name__ == '__main__':
         # seems ok to continue simulation
         return np.invert(checkpoints)
 
-
     station_mask = None
     if is_master:
         station_mask = unfinished(args.out_file)
@@ -375,13 +377,14 @@ if __name__ == '__main__':
                     )
                 )
             except AssertionError:
-                logger.warning("Simulation parameters mismatch. Starting fresh simulation.")
+                logger.warning(
+                    "Simulation parameters mismatch. Starting fresh simulation."
+                )
                 initialise()
                 station_mask = np.ones(stations.size, dtype=np.bool)
     station_mask = comm.bcast(station_mask, root=master)
     stations_todo = stations[station_mask]
     stations_todo_idx = np.arange(stations.size)[station_mask]
-
 
     def run_hf(
         local_statfile, n_stat, idx_0, velocity_model=args.velocity_model, bin_mod=True
@@ -409,7 +412,8 @@ if __name__ == '__main__':
             "%d %d %s %s" % (nbu, ift, flo, fhi),
             str(seed),
             str(n_stat),
-            "%s %s %s %s %s" % (args.duration, args.dt, args.fmax, args.kappa, args.qfexp),
+            "%s %s %s %s %s"
+            % (args.duration, args.dt, args.fmax, args.kappa, args.qfexp),
             "%s %s %s %s %s"
             % (args.rvfac, args.rvfac_shal, args.rvfac_deep, args.czero, args.calpha),
             "%s %s" % (args.mom, args.rupv),
@@ -454,7 +458,9 @@ if __name__ == '__main__':
         try:
             assert e_dist.size == n_stat
         except AssertionError:
-            logger.error("Expected {} e_dist values, got {}".format(n_stat, e_dist.size))
+            logger.error(
+                "Expected {} e_dist values, got {}".format(n_stat, e_dist.size)
+            )
             logger.error("Dumping Fortran stderr to hf_err_{}".format(idx_0))
 
             with open("hf_err_%d" % (idx_0), "w") as e:
@@ -468,7 +474,6 @@ if __name__ == '__main__':
                 out.seek(HEAD_STAT - 2 * FLOAT_SIZE, 1)
                 e_dist[i].tofile(out)
                 vs.tofile(out)
-
 
     def validate_end(idx_n):
         """
@@ -488,7 +493,6 @@ if __name__ == '__main__':
                 e.write(msg)
             logger.error("Validation failed: {}".format(msg))
             comm.Abort()
-
 
     # distribute work, must be sequential for optimisation,
     # and for validation function above to be thread safe
@@ -519,7 +523,6 @@ if __name__ == '__main__':
         and work_idx[-1] == stations_todo_idx[-1]
     ):  # if this rank did the last station in the full list
         validate_end(work_idx[-1] + 1)
-
 
     os.remove(in_stats)
     print("Process %03d of %03d finished (%.2fs)." % (rank, size, MPI.Wtime() - t0))

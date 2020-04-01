@@ -40,6 +40,7 @@ def gen_command_template(params, machine, seed=const.HF_DEFAULT_SEED):
 
     return command_template_parameters, add_args
 
+
 def main(
     args: argparse.Namespace,
     est_model: est.EstModel = None,
@@ -121,13 +122,14 @@ def main(
             "job_description": "HF calculation",
             "additional_lines": "###SBATCH -C avx",
         }
-        command_template_parameters, add_args = gen_command_template(params, args.machine, seed=args.seed)
+        command_template_parameters, add_args = gen_command_template(
+            params, args.machine, seed=args.seed
+        )
 
         body_template_params = (
             "{}.sl.template".format(ll_name_prefix),
             {"hf_sim_dir": hf_sim_dir, "test_hf_script": "test_hf.sh"},
         )
-
 
         script_prefix = "{}_{}".format(ll_name_prefix, underscored_srf)
         script_file_path = write_sl_script(

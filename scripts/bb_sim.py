@@ -50,8 +50,7 @@ def args_parser(cmd=None):
 
     args = parser.parse_args(cmd)
     return args
-   
- 
+
 
 if __name__ == "__main__":
     comm = MPI.COMM_WORLD
@@ -83,7 +82,6 @@ if __name__ == "__main__":
     mh.setFormatter(formatter)
     logger.addHandler(mh)
 
-
     if args.no_lf_amp:
 
         def ampdeamp_lf(series, *x, **y):
@@ -91,7 +89,6 @@ if __name__ == "__main__":
 
         def cb_amp_lf(*x, **y):
             pass
-
 
     else:
         ampdeamp_lf = ampdeamp
@@ -239,7 +236,17 @@ if __name__ == "__main__":
                             "hf_vs_ref",
                             "lf_vs_ref",
                         ],
-                        "formats": ["f4", "f4", "|S8", "i4", "i4", "i4", "f4", "f4", "f4"],
+                        "formats": [
+                            "f4",
+                            "f4",
+                            "|S8",
+                            "i4",
+                            "i4",
+                            "i4",
+                            "f4",
+                            "f4",
+                            "f4",
+                        ],
                         "itemsize": HEAD_STAT,
                     },
                 )
@@ -269,7 +276,6 @@ if __name__ == "__main__":
                 # fill space
                 out.seek(file_size - FLOAT_SIZE)
                 np.float32().tofile(out)
-
 
     def unfinished():
         try:
@@ -307,7 +313,6 @@ if __name__ == "__main__":
         # seems ok to continue simulation
         return np.invert(ckpoints)
 
-
     station_mask = None
     if is_master:
         station_mask = unfinished()
@@ -325,7 +330,9 @@ if __name__ == "__main__":
                 )
 
             except AssertionError:
-                logger.warning("Simulation parameters mismatch. Starting fresh simulation.")
+                logger.warning(
+                    "Simulation parameters mismatch. Starting fresh simulation."
+                )
                 initialise()
                 station_mask = np.ones(lf.stations.size, dtype=np.bool)
     station_mask = comm.bcast(station_mask, root=master)

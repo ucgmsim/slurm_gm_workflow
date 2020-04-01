@@ -34,7 +34,8 @@ from shared_workflow.install_shared import (
     dump_all_yamls,
 )
 from shared_workflow.shared_defaults import recipe_dir
-#from shared_workflow.shared_template import generate_command
+
+# from shared_workflow.shared_template import generate_command
 
 
 def main():
@@ -73,28 +74,24 @@ def main():
 
 
 def gen_args_cmd(
-    process: ProcessType,
-    sim_dir,
-    command_template,
-    template_parameters,
-    add_args={},
+    process: ProcessType, sim_dir, command_template, template_parameters, add_args={}
 ):
-    #this function is adapted from generate_command from shared_workflow.shared_template
+    # this function is adapted from generate_command from shared_workflow.shared_template
     command_parts = []
 
     command_parts = command_template.format(**template_parameters).split()
-    #remove srun, python, and *.py from the command
+    # remove srun, python, and *.py from the command
     for i in list(command_parts):
-        if (any([ i == x for x in ['srun','python']]) or i[-3:] == '.py'):
+        if any([i == x for x in ["srun", "python"]]) or i[-3:] == ".py":
             command_parts.remove(i)
-            
+
     for key in add_args:
         command_parts.append("--" + key)
         if add_args[key] is True:
             continue
         command_parts.append(str(add_args[key]))
 
-    return (list(map(str, command_parts)))
+    return list(map(str, command_parts))
 
 
 def install_fault(
@@ -262,18 +259,31 @@ def install_fault(
 
         # temporary change the script name to hf_sim, due to how error message are shown
         main_script_name = sys.argv[0]
-        sys.argv[0] = 'hf_simi.py'
+        sys.argv[0] = "hf_simi.py"
 
-        command_template, add_args = hf_gen_command_template(sim_params, list(HPC)[0].value, seed)
-        run_command = gen_args_cmd(ProcessType.HF, sim_params.sim_dir, ProcessType.HF.command_template, command_template, add_args)
+        command_template, add_args = hf_gen_command_template(
+            sim_params, list(HPC)[0].value, seed
+        )
+        run_command = gen_args_cmd(
+            ProcessType.HF,
+            sim_params.sim_dir,
+            ProcessType.HF.command_template,
+            command_template,
+            add_args,
+        )
         hf_args_parser(cmd=run_command)
 
-
         # check bb
-        sys.argv[0] = 'bb_sim.py'
+        sys.argv[0] = "bb_sim.py"
 
         command_template, add_args = bb_gen_command_template(sim_params)
-        run_command = gen_args_cmd(ProcessType.BB, sim_params.sim_dir, ProcessType.BB.command_template, command_template, add_args)
+        run_command = gen_args_cmd(
+            ProcessType.BB,
+            sim_params.sim_dir,
+            ProcessType.BB.command_template,
+            command_template,
+            add_args,
+        )
         bb_args_parser(cmd=run_command)
         # change back, to prevent unexpected error
         sys.argv[0] = main_script_name

@@ -237,7 +237,7 @@ def install_bb(
         # temporary removed because master version of bb_sim does not take this as a argument
         # TODO: most of these logic are not required and should be removed
         # these logic are now depending on gmsim_version_template
-        #root_dict["bb"]["site_specific"] = False
+        # root_dict["bb"]["site_specific"] = False
         root_dict["v_mod_1d_name"] = v_mod_1d_selected
 
     # TODO:add in logic for site specific as well, if the user provided as args
@@ -248,7 +248,7 @@ def install_bb(
             v1d_mod_dir=site_v1d_dir,
             logger=logger,
         )
-        #root_dict["bb"]["site_specific"] = True
+        # root_dict["bb"]["site_specific"] = True
         root_dict["v_mod_1d_name"] = v_mod_1d_path
         root_dict["hf_stat_vs_ref"] = hf_stat_vs_ref
     else:
@@ -257,12 +257,12 @@ def install_bb(
             v_mod_1d_path, hf_stat_vs_ref = shared.get_site_specific_path(
                 os.path.dirname(stat_file), logger=logger
             )
-            #root_dict["bb"]["site_specific"] = True
+            # root_dict["bb"]["site_specific"] = True
             root_dict["v_mod_1d_name"] = v_mod_1d_path
             root_dict["hf_stat_vs_ref"] = hf_stat_vs_ref
         else:
             v_mod_1d_name, v_mod_1d_selected = q_1d_velocity_model(v1d_dir)
-            #root_dict["bb"]["site_specific"] = False
+            # root_dict["bb"]["site_specific"] = False
             root_dict["v_mod_1d_name"] = v_mod_1d_selected
 
 
