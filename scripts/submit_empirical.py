@@ -6,6 +6,7 @@ import os
 
 from shared_workflow.shared_defaults import recipe_dir
 from shared_workflow.shared_template import generate_context, resolve_header
+from qcore.simulation_structure import get_rrup_path
 
 DEFAULT_ACCOUNT = "nesi00213"
 
@@ -16,13 +17,7 @@ def get_fault_name(run_name):
 
 
 def rrup_file_exists(cybershake_folder, fault, realisation):
-    rrup_file = os.path.join(
-        cybershake_folder,
-        "Runs/",
-        fault,
-        realisation,
-        "verification/rrup_" + fault + ".csv",
-    )
+    rrup_file = get_rrup_path(cybershake_folder, realisation)
     return os.path.exists(rrup_file)
 
 
@@ -33,13 +28,16 @@ def write_sl(sl_name, content):
 
 
 def generate_sl(np, extended, cybershake_folder, account, realisations, out_dir):
+    # extended is '-e' or ''
+
     faults = map(get_fault_name, realisations)
     run_data = zip(realisations, faults)
     run_data = [
-        (realisation, fault)
-        for realisation, fault in run_data
-        if rrup_file_exists(cybershake_folder, fault, realisation)
+        (rel, fault)
+        for (rel, fault) in run_data
+        if rrup_file_exists(cybershake_folder, fault, rel)
     ]
+
     timestamp_format = "%Y%m%d_%H%M%S"
     timestamp = datetime.now().strftime(timestamp_format)
 
@@ -61,7 +59,7 @@ def generate_sl(np, extended, cybershake_folder, account, realisations, out_dir)
         partition=None,
         additional_lines="",
         template_path="slurm_header.cfg",
-        write_directory=".",
+        write_directory=out_dir,
     )
     context = generate_context(
         template_dir,
