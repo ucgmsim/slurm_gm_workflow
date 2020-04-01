@@ -22,6 +22,24 @@ SCALE_NCORES = True
 default_wct = "00:30:00"
 
 
+def gen_command_template(params, machine, seed=const.HF_DEFAULT_SEED):
+    command_template_parameters = {
+        "fd_statlist": params.FD_STATLIST,
+        "hf_bin_path": sim_struct.get_hf_bin_path(params.sim_dir),
+        "v_mod_1d_name": params.v_mod_1d_name,
+        "duration": params.sim_duration,
+        "dt": params.hf.dt,
+        "version": params.hf.version,
+        "sim_bin_path": binary_version.get_hf_binmod(
+            params.hf.version, get_machine_config(machine)["tools_dir"]
+        ),
+    }
+
+    add_args = dict(params.hf)
+    add_args.update({const.RootParams.seed.value: seed})
+
+    return command_template_parameters, add_args
+
 def main(
     args: argparse.Namespace,
     est_model: est.EstModel = None,
@@ -90,7 +108,7 @@ def main(
                 est_run_time_scaled = est_run_time * (int(args.retries) + 1)
 
         wct = set_wct(est_run_time_scaled, est_cores, args.auto)
-        hf_sim_dir = os.path.join(params.sim_dir, "HF")
+        hf_sim_dir = sim_struct.get_hf_dir(params.sim_dir)
         write_directory = (
             args.write_directory if args.write_directory else params.sim_dir
         )
@@ -103,26 +121,13 @@ def main(
             "job_description": "HF calculation",
             "additional_lines": "###SBATCH -C avx",
         }
-
-        command_template_parameters = {
-            "fd_statlist": params.FD_STATLIST,
-            "hf_bin_path": os.path.join(hf_sim_dir, "Acc/HF.bin"),
-            "v_mod_1d_name": params.v_mod_1d_name,
-            "duration": params.sim_duration,
-            "dt": params.hf.dt,
-            "version": params.hf.version,
-            "sim_bin_path": binary_version.get_hf_binmod(
-                params.hf.version, get_machine_config(args.machine)["tools_dir"]
-            ),
-        }
+        command_template_parameters, add_args = gen_command_template(hf_sim_dir, params, args.machine, seed=args.seed)
 
         body_template_params = (
             "{}.sl.template".format(ll_name_prefix),
             {"hf_sim_dir": hf_sim_dir, "test_hf_script": "test_hf.sh"},
         )
 
-        add_args = dict(params.hf)
-        add_args.update({const.RootParams.seed.value: args.seed})
 
         script_prefix = "{}_{}".format(ll_name_prefix, underscored_srf)
         script_file_path = write_sl_script(

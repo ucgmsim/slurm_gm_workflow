@@ -9,6 +9,11 @@ import glob
 import argparse
 from logging import Logger
 
+#from scripts.bb_sim import args_parser as bb_args_parser
+from scripts.hf_sim import args_parser as hf_args_parser
+#from scripts.submit_bb import gen_commmand_template as bb_gen_command_template
+from scripts.submit_hf import gen_command_template as hf_gen_command_template
+
 from numpy import isclose
 from qcore import utils, validate_vm, simulation_structure
 from qcore.constants import (
@@ -16,9 +21,10 @@ from qcore.constants import (
     ROOT_DEFAULTS_FILE_NAME,
     VM_PARAMS_FILE_NAME,
     HF_DEFAULT_SEED,
+    HPC,
+    ProcessType,
 )
 from qcore.qclogging import get_basic_logger, NOPRINTCRITICAL
-import qcore.simulation_structure as sim_struct
 
 from scripts.management import create_mgmt_db
 from shared_workflow.install_shared import (
@@ -27,6 +33,7 @@ from shared_workflow.install_shared import (
     dump_all_yamls,
 )
 from shared_workflow.shared_defaults import recipe_dir
+#from shared_workflow.shared_template import generate_command
 
 
 def main():
@@ -62,6 +69,32 @@ def main():
         args.version,
         args.seed,
     )
+
+
+def gen_args_cmd(
+    process: ProcessType,
+    sim_dir,
+    command_template,
+    template_parameters,
+    add_args={},
+):
+    #this function is adapted from generate_command from shared_workflow.shared_template
+    command_parts = []
+
+    command_parts = command_template.format(**template_parameters).split()
+    #remove srun, python, and *.py from the command
+    for i in list(command_parts):
+        print(f'i: {i}')
+        if (any([ i == x for x in ['srun','python']]) or i[-3:] == '.py'):
+            command_parts.remove(i)
+            
+    for key in add_args:
+        command_parts.append("--" + key)
+        if add_args[key] is True:
+            continue
+        command_parts.append(str(add_args[key]))
+
+    return (list(map(str, command_parts)))
 
 
 def install_fault(
@@ -198,7 +231,7 @@ def install_fault(
         vm_params_dict.update(vm_add_params_dict)
 
         create_mgmt_db.create_mgmt_db(
-            [], sim_struct.get_mgmt_db(root_folder), srf_files=srf
+            [], simulation_structure.get_mgmt_db(root_folder), srf_files=srf
         )
         utils.setup_dir(os.path.join(root_folder, "mgmt_db_queue"))
         root_params_dict["mgmt_db_location"] = root_folder
@@ -222,6 +255,15 @@ def install_fault(
             sim_params_dict,
             vm_params_dict,
         )
+
+        # test if the params are accepted by steps
+        sim_params = utils.load_sim_params(os.path.join(sim_dir, "sim_params.yaml"))
+        # check hf
+        command_template, add_args = hf_gen_command_template(sim_params, list(HPC)[0].value, seed)
+        run_command = gen_args_cmd(ProcessType.HF, sim_params.sim_dir, ProcessType.HF.command_template, command_template, add_args)
+        hf_args_parser(cmd=run_command)
+        # check bb
+        
 
 
 if __name__ == "__main__":
