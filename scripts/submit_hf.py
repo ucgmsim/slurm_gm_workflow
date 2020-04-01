@@ -121,7 +121,7 @@ def main(
             "job_description": "HF calculation",
             "additional_lines": "###SBATCH -C avx",
         }
-        command_template_parameters, add_args = gen_command_template(hf_sim_dir, params, args.machine, seed=args.seed)
+        command_template_parameters, add_args = gen_command_template(params, args.machine, seed=args.seed)
 
         body_template_params = (
             "{}.sl.template".format(ll_name_prefix),

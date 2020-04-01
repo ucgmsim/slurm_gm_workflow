@@ -28,6 +28,7 @@ def args_parser(cmd=None):
     """
     CMD is a list of strings to parse
     While, not None, cmd will be used to parse
+    if cmd == None, default behavior sys.argv[1:] will be used
     """
     parser = ArgumentParser()
     arg = parser.add_argument
