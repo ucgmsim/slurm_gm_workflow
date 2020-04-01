@@ -17,6 +17,17 @@ from shared_workflow.shared_template import write_sl_script
 
 default_wct = "00:30:00"
 
+def gen_command_template(params):
+    command_template_parameters = {
+        "outbin_dir": sim_struct.get_lf_outbin_dir(params.sim_dir),
+        "vel_mod_dir": params.vel_mod_dir,
+        "hf_bin_path": sim_struct.get_hf_bin_path(params.sim_dir),
+        "stat_vs_est": params.stat_vs_est,
+        "bb_bin_path": sim_struct.get_bb_bin_path(params.sim_dir),
+        "flo": params.flo,
+    }
+   
+    return command_template_parameters, params.bb
 
 def main(
     args: argparse.Namespace,
@@ -85,19 +96,13 @@ def main(
             "additional_lines": "###SBATCH -C avx",
         }
 
-        command_template_parameters = {
-            "outbin_dir": os.path.join(params.sim_dir, "LF", "OutBin"),
-            "vel_mod_dir": params.vel_mod_dir,
-            "hf_bin_path": os.path.join(params.sim_dir, "HF", "Acc/HF.bin"),
-            "stat_vs_est": params.stat_vs_est,
-            "bb_bin_path": os.path.join(bb_sim_dir, "Acc/BB.bin"),
-            "flo": params.flo,
-        }
 
         body_template_params = (
             "{}.sl.template".format(sl_name_prefix),
             {"test_bb_script": "test_bb.sh"},
         )
+        
+        command_template_parameters, add_args = gen_command_template(params)
 
         script_prefix = "{}_{}".format(sl_name_prefix, underscored_srf)
         script_file_path = write_sl_script(
@@ -109,7 +114,7 @@ def main(
             body_template_params,
             command_template_parameters,
             args,
-            params.bb,
+            add_args,
         )
 
         # Submit the script

@@ -5,13 +5,14 @@ Called from inside a loop in install_cybershake.sh
 """
 
 import os
+import sys
 import glob
 import argparse
 from logging import Logger
 
-#from scripts.bb_sim import args_parser as bb_args_parser
+from scripts.bb_sim import args_parser as bb_args_parser
 from scripts.hf_sim import args_parser as hf_args_parser
-#from scripts.submit_bb import gen_commmand_template as bb_gen_command_template
+from scripts.submit_bb import gen_command_template as bb_gen_command_template
 from scripts.submit_hf import gen_command_template as hf_gen_command_template
 
 from numpy import isclose
@@ -255,14 +256,28 @@ def install_fault(
             vm_params_dict,
         )
 
-        # test if the params are accepted by steps
+        # test if the params are accepted by steps HF and BB
         sim_params = utils.load_sim_params(os.path.join(sim_dir, "sim_params.yaml"))
         # check hf
+
+        # temporary change the script name to hf_sim, due to how error message are shown
+        main_script_name = sys.argv[0]
+        sys.argv[0] = 'hf_simi.py'
+
         command_template, add_args = hf_gen_command_template(sim_params, list(HPC)[0].value, seed)
         run_command = gen_args_cmd(ProcessType.HF, sim_params.sim_dir, ProcessType.HF.command_template, command_template, add_args)
         hf_args_parser(cmd=run_command)
+
+
         # check bb
-        
+        sys.argv[0] = 'bb_sim.py'
+
+        command_template, add_args = bb_gen_command_template(sim_params)
+        run_command = gen_args_cmd(ProcessType.BB, sim_params.sim_dir, ProcessType.BB.command_template, command_template, add_args)
+        print(run_command)
+        bb_args_parser(cmd=run_command)
+        # change back, to prevent unexpected error
+        sys.argv[0] = main_script_name
 
 
 if __name__ == "__main__":
