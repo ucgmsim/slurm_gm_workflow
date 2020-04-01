@@ -274,7 +274,6 @@ def install_fault(
 
         command_template, add_args = bb_gen_command_template(sim_params)
         run_command = gen_args_cmd(ProcessType.BB, sim_params.sim_dir, ProcessType.BB.command_template, command_template, add_args)
-        print(run_command)
         bb_args_parser(cmd=run_command)
         # change back, to prevent unexpected error
         sys.argv[0] = main_script_name
