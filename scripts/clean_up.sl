@@ -5,7 +5,7 @@
 
 #SBATCH --job-name=clean_up
 #SBATCH --account=nesi00213
-#SBATCH --partition=prepost
+#SBATCH --partition=large,prepost
 #SBATCH --time=00:30:00
 #SBATCH --cpus-per-task=1
 
