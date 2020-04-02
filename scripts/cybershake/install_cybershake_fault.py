@@ -82,7 +82,7 @@ def gen_args_cmd(
     command_parts = command_template.format(**template_parameters).split()
     # remove srun, python, and *.py from the command
     for i in list(command_parts):
-        if any([i == x for x in ["srun", "python"]]) or i[-3:] == ".py":
+        if any([i == x for x in ["srun", "python"]]) or i.endswith(".py"):
             command_parts.remove(i)
 
     for key in add_args:
@@ -259,7 +259,7 @@ def install_fault(
 
         # temporary change the script name to hf_sim, due to how error message are shown
         main_script_name = sys.argv[0]
-        sys.argv[0] = "hf_simi.py"
+        sys.argv[0] = "hf_sim.py"
 
         command_template, add_args = hf_gen_command_template(
             sim_params, list(HPC)[0].value, seed

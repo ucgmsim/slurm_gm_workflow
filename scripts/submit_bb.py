@@ -6,7 +6,7 @@ from logging import Logger
 
 import estimation.estimate_wct as est
 import qcore.constants as const
-import qcore.simulation_structure as sim_struct
+import qcore.simulation_structure 
 from qcore import utils, shared
 from qcore.config import host
 from qcore.qclogging import get_basic_logger
@@ -20,11 +20,11 @@ default_wct = "00:30:00"
 
 def gen_command_template(params):
     command_template_parameters = {
-        "outbin_dir": sim_struct.get_lf_outbin_dir(params.sim_dir),
+        "outbin_dir": simulation_structure.get_lf_outbin_dir(params.sim_dir),
         "vel_mod_dir": params.vel_mod_dir,
-        "hf_bin_path": sim_struct.get_hf_bin_path(params.sim_dir),
+        "hf_bin_path": simulation_structure.get_hf_bin_path(params.sim_dir),
         "stat_vs_est": params.stat_vs_est,
-        "bb_bin_path": sim_struct.get_bb_bin_path(params.sim_dir),
+        "bb_bin_path": simulation_structure.get_bb_bin_path(params.sim_dir),
         "flo": params.flo,
     }
 
@@ -77,7 +77,7 @@ def main(
             try:
                 from qcore.timeseries import BBSeis
 
-                bin = BBSeis(sim_struct.get_bb_bin_path(params.sim_dir))
+                bin = BBSeis(simulation_structure.get_bb_bin_path(params.sim_dir))
             except:
                 logger.debug("Retried count > 0 but BB.bin is not readable")
             else:
@@ -123,7 +123,7 @@ def main(
         submit_sl_script(
             script_file_path,
             const.ProcessType.BB.value,
-            sim_struct.get_mgmt_db_queue(params.mgmt_db_location),
+            simulation_structure.get_mgmt_db_queue(params.mgmt_db_location),
             srf_name,
             submit_yes=submit_yes,
             target_machine=args.machine,
