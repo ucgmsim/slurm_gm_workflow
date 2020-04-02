@@ -81,7 +81,7 @@ def gen_args_cmd(
 
     command_parts = command_template.format(**template_parameters).split()
     # remove srun, python, and *.py from the command
-    for i in list(command_parts):
+    for i in command_parts:
         if any([i == x for x in ["srun", "python"]]) or i.endswith(".py"):
             command_parts.remove(i)
 
