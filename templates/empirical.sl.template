@@ -19,7 +19,7 @@ echo ___calculating empirical___
     timestamp=`date +%Y%m%d_%H%M%S`
     python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py {{mgmt_db_location}}/mgmt_db_queue {{run_name}} Empirical running $SLURM_JOB_ID
     #run the script
-    time $EMP_PATH/empirical/scripts/calculate_empirical.py {{output_dir}} -i {{run_name}} {{extended}} -r {{rrup_file}} -srf {{srf_info}} --vs30_file /nesi/project/nesi00213/StationInfo/non_uniform_whole_nz_with_real_stations-hh400_v18p6.vs30
+    time $EMP_PATH/empirical/scripts/calculate_empirical.py {{output_dir}} -i {{run_name}} {{extended}} -r {{rrup_file}} -srf {{srf_info}} --vs30_file {{vs30_file}}
  #   time $EMP_PATH/empirical/scripts/emp_aggregation.py {{output_dir}}/{{run_name}}_*.csv -o {{output_dir}} -i {{run_name}} -r {{fault_name}}
  #   time $gmsim/workflow/verification/calculate_epsilon.py {{mgmt_db_location}}/Runs/{{fault_name}}/{{run_name}}/IM_calc/{{run_name}}.csv {{output_dir}}/{{run_name}}.csv {{output_dir}}/{{run_name}}_epsilon.csv
 
