@@ -6,7 +6,7 @@ from logging import Logger
 
 import estimation.estimate_wct as est
 import qcore.constants as const
-import qcore.simulation_structure as sim_struct
+import qcore.simulation_structure
 from qcore import utils, shared
 from qcore.config import host
 from qcore.qclogging import get_basic_logger
@@ -16,6 +16,19 @@ from shared_workflow.shared_automated_workflow import submit_sl_script
 from shared_workflow.shared_template import write_sl_script
 
 default_wct = "00:30:00"
+
+
+def gen_command_template(params):
+    command_template_parameters = {
+        "outbin_dir": simulation_structure.get_lf_outbin_dir(params.sim_dir),
+        "vel_mod_dir": params.vel_mod_dir,
+        "hf_bin_path": simulation_structure.get_hf_bin_path(params.sim_dir),
+        "stat_vs_est": params.stat_vs_est,
+        "bb_bin_path": simulation_structure.get_bb_bin_path(params.sim_dir),
+        "flo": params.flo,
+    }
+
+    return command_template_parameters, params.bb
 
 
 def main(
@@ -64,7 +77,7 @@ def main(
             try:
                 from qcore.timeseries import BBSeis
 
-                bin = BBSeis(sim_struct.get_bb_bin_path(params.sim_dir))
+                bin = BBSeis(simulation_structure.get_bb_bin_path(params.sim_dir))
             except:
                 logger.debug("Retried count > 0 but BB.bin is not readable")
             else:
@@ -85,19 +98,12 @@ def main(
             "additional_lines": "###SBATCH -C avx",
         }
 
-        command_template_parameters = {
-            "outbin_dir": os.path.join(params.sim_dir, "LF", "OutBin"),
-            "vel_mod_dir": params.vel_mod_dir,
-            "hf_bin_path": os.path.join(params.sim_dir, "HF", "Acc/HF.bin"),
-            "stat_vs_est": params.stat_vs_est,
-            "bb_bin_path": os.path.join(bb_sim_dir, "Acc/BB.bin"),
-            "flo": params.flo,
-        }
-
         body_template_params = (
             "{}.sl.template".format(sl_name_prefix),
             {"test_bb_script": "test_bb.sh"},
         )
+
+        command_template_parameters, add_args = gen_command_template(params)
 
         script_prefix = "{}_{}".format(sl_name_prefix, underscored_srf)
         script_file_path = write_sl_script(
@@ -109,7 +115,7 @@ def main(
             body_template_params,
             command_template_parameters,
             args,
-            params.bb,
+            add_args,
         )
 
         # Submit the script
@@ -117,7 +123,7 @@ def main(
         submit_sl_script(
             script_file_path,
             const.ProcessType.BB.value,
-            sim_struct.get_mgmt_db_queue(params.mgmt_db_location),
+            simulation_structure.get_mgmt_db_queue(params.mgmt_db_location),
             srf_name,
             submit_yes=submit_yes,
             target_machine=args.machine,
