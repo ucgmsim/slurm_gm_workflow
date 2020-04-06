@@ -1,19 +1,15 @@
 hf:
-  version: 6.0.3.2
-  dt: 0.005
+  version: 5.4.5.3
+  dt: 0.02
   rvfac: 0.8
   sdrop: 50
   path_dur: 11
   kappa: 0.045
-  rvfac_shal: 0.6
-  rvfac_deep: 0.6
-  czero: 2.0
 bb:
-  version: 3.0.8
-  site_specific: false
-  fmin: 0.5
-  fmidbot: 1.0
+  fmin: 0.2
+  fmidbot: 0.25
   no-lf-amp: True
+  dt: 0.005
 emod3d:
    emod3d_version: 3.0.8
 flo: 0.25

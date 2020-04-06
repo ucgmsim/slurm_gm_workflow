@@ -80,10 +80,12 @@ def gen_args_cmd(
     command_parts = []
 
     command_parts = command_template.format(**template_parameters).split()
+    command_parts_copy = list(command_parts)
     # remove srun, python, and *.py from the command
     for i in command_parts:
-        if any([i == x for x in ["srun", "python"]]) or i.endswith(".py"):
-            command_parts.remove(i)
+        if i in ["srun", "python"] or i.endswith(".py"):
+            command_parts_copy.remove(i)
+    command_parts = command_parts_copy
 
     for key in add_args:
         command_parts.append("--" + key)

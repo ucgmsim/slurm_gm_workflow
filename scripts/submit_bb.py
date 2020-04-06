@@ -6,7 +6,7 @@ from logging import Logger
 
 import estimation.estimate_wct as est
 import qcore.constants as const
-import qcore.simulation_structure
+from qcore import simulation_structure
 from qcore import utils, shared
 from qcore.config import host
 from qcore.qclogging import get_basic_logger
