@@ -129,17 +129,27 @@ if __name__ == "__main__":
     lf_start_sec_offset = max(lf.start_sec - hf.start_sec, 0)
     hf_start_sec_offset = max(hf.start_sec - lf.start_sec, 0)
 
-    lf_start_padding = int(round(lf_start_sec_offset / bb_dt)) # Uses np.round
+    lf_start_padding = int(round(lf_start_sec_offset / bb_dt))  # Uses np.round
     hf_start_padding = int(round(hf_start_sec_offset / bb_dt))
 
-    lf_end_padding = int(round(
-        max(hf.duration + hf_start_sec_offset - (lf.duration + lf_start_sec_offset), 0)
-        / bb_dt
-    ))
-    hf_end_padding = int(round(
-        max(lf.duration + lf_start_sec_offset - (hf.duration + hf_start_sec_offset), 0)
-        / bb_dt
-    ))
+    lf_end_padding = int(
+        round(
+            max(
+                hf.duration + hf_start_sec_offset - (lf.duration + lf_start_sec_offset),
+                0,
+            )
+            / bb_dt
+        )
+    )
+    hf_end_padding = int(
+        round(
+            max(
+                lf.duration + lf_start_sec_offset - (hf.duration + hf_start_sec_offset),
+                0,
+            )
+            / bb_dt
+        )
+    )
 
     assert (
         lf_start_padding + round(lf.duration / bb_dt) + lf_end_padding
