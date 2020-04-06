@@ -150,8 +150,8 @@ def install_fault(
     vm_params_path = os.path.join(vel_mod_dir, VM_PARAMS_FILE_NAME)
     vm_params_dict = utils.load_yaml(vm_params_path)
     yes_model_params = (
-        False
-    )  # statgrid should normally be already generated with Velocity Model
+        False  # statgrid should normally be already generated with Velocity Model
+    )
 
     sim_root_dir = simulation_structure.get_runs_dir(root_folder)
     fault_yaml_path = simulation_structure.get_fault_yaml_path(sim_root_dir, fault_name)
@@ -174,7 +174,12 @@ def install_fault(
 
         # install pairs one by one to fit the new structure
         sim_dir = simulation_structure.get_sim_dir(root_folder, srf_name)
-        root_params_dict, fault_params_dict, sim_params_dict, vm_add_params_dict = install_simulation(
+        (
+            root_params_dict,
+            fault_params_dict,
+            sim_params_dict,
+            vm_add_params_dict,
+        ) = install_simulation(
             version=version,
             sim_dir=sim_dir,
             event_name=event_name,
