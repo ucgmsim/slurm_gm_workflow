@@ -66,9 +66,7 @@ if __name__ == "__main__":
     args = None
     if is_master:
         try:
-            args, e = args_parser()
-            if len(e) > 0:
-                logger.warning("extra arguments are not recognized: {}".format(e))
+            args = args_parser()
         except SystemExit:
             # invalid arguments or -h
             comm.Abort()
@@ -131,17 +129,17 @@ if __name__ == "__main__":
     lf_start_sec_offset = max(lf.start_sec - hf.start_sec, 0)
     hf_start_sec_offset = max(hf.start_sec - lf.start_sec, 0)
 
-    lf_start_padding = int(lf_start_sec_offset // bb_dt)
-    hf_start_padding = int(hf_start_sec_offset // bb_dt)
+    lf_start_padding = int(round(lf_start_sec_offset / bb_dt)) # Uses np.round
+    hf_start_padding = int(round(hf_start_sec_offset / bb_dt))
 
-    lf_end_padding = int(
+    lf_end_padding = int(round(
         max(hf.duration + hf_start_sec_offset - (lf.duration + lf_start_sec_offset), 0)
-        // bb_dt
-    )
-    hf_end_padding = int(
+        / bb_dt
+    ))
+    hf_end_padding = int(round(
         max(lf.duration + lf_start_sec_offset - (hf.duration + hf_start_sec_offset), 0)
-        // bb_dt
-    )
+        / bb_dt
+    ))
 
     assert (
         lf_start_padding + round(lf.duration / bb_dt) + lf_end_padding
