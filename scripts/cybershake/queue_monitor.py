@@ -209,6 +209,7 @@ def queue_monitor_loop(
     sleep_time: int,
     max_retries: int,
     queue_logger: Logger = qclogging.get_basic_logger(),
+    alert_url=None,
 ):
     mgmt_db = MgmtDB(sim_struct.get_mgmt_db(root_folder))
     queue_folder = sim_struct.get_mgmt_db_queue(root_folder)
@@ -300,7 +301,7 @@ def queue_monitor_loop(
 
         if len(entries) > 0:
             queue_logger.info("Updating {} mgmt db tasks.".format(len(entries)))
-            if mgmt_db.update_entries_live(entries, max_retries, queue_logger):
+            if mgmt_db.update_entries_live(entries, max_retries, queue_logger, alert_url=alert_url):
                 for file_name in entry_files:
                     os.remove(os.path.join(queue_folder, file_name))
             else:
@@ -345,6 +346,11 @@ def initialisation():
     parser.add_argument(
         "--debug", action="store_true", help="Print debug messages to stdout"
     )
+    parser.add_argument(
+        "--alert_url",
+        help="the url to slack alert channel",
+        default=None,
+    )
     args = parser.parse_args()
 
     root_folder = os.path.abspath(args.root_folder)
@@ -365,7 +371,7 @@ def initialisation():
     qclogging.add_general_file_handler(logger, log_file_name)
     logger.debug("Successfully added {} as the log file.".format(log_file_name))
 
-    queue_monitor_loop(root_folder, args.sleep_time, args.n_max_retries, logger)
+    queue_monitor_loop(root_folder, args.sleep_time, args.n_max_retries, logger, alert_url = args.alert_url)
 
 
 if __name__ == "__main__":
