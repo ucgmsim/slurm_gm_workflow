@@ -283,9 +283,7 @@ def main():
         "--debug", action="store_true", help="Print debug messages to stdout"
     )
     parser.add_argument(
-        "--alert_url",
-        help="the url to slack alert channel",
-        default=None,
+        "--alert_url", help="the url to slack alert channel", default=None
     )
     args = parser.parse_args()
 
