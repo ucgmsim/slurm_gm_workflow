@@ -1,7 +1,6 @@
 import os
 import sqlite3 as sql
 from logging import Logger
-import requests
 
 from typing import List, Union
 from collections import namedtuple
@@ -52,7 +51,6 @@ class MgmtDB:
         entries: List[SlurmTask],
         retry_max: int,
         logger: Logger = get_basic_logger(),
-        alert_url = None,
     ):
         """Updates the specified entries in the db. Leaves the connection open,
         so this should only be used when continuously updating entries.
@@ -96,14 +94,6 @@ class MgmtDB:
                     )
                     self._insert_task(cur, realisation_name, process)
                     logger.debug("New task added to the db")
-                    #send light warnings to alert_url
-                    if alert_url != None:
-                        msg = f"fault:{entry.run_name} step:{entry.proc_type} has failed with error:{entry.error}"
-                        r = requests.post(alert_url, json={'text':msg})
-                elif (entry.status == const.Status.failed.value and self.get_retries(process, realisation_name) >= retry_max) and alert_url != None:
-                    #task failed and meet the cap or retries, send a @here to alert_url for higher attention
-                    msg = f"@here fault:{entry.run_name} step:{entry.proc_type} has failed with error:{entry.error} and meet the retry cap"
-                    r = requests.post(alert_url, json={'text':msg}) 
         except sql.Error as ex:
             self._conn.rollback()
             logger.critical(
