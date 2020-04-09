@@ -5,6 +5,7 @@ import signal
 import subprocess
 import os
 import json
+import urllib
 import argparse
 import time
 from logging import Logger
@@ -27,6 +28,18 @@ DEFAULT_N_MAX_RETRIES = 2
 SLURM_TO_STATUS_DICT = {"R": 3, "PD": 2, "CG": 3}
 
 keepAlive = True
+
+
+def send_alert(msg, alert_url):
+    data = {"text": msg}
+
+    req = urllib.request.Request(alert_url)
+    # create header and data, slack-bot requires json data
+    req.add_header("Content-Type", "application/json; charset=utf-8")
+    jsondata = json.dumps(data)
+    jsondataasbytes = jsondata.encode("utf-8")
+    req.add_header("Content-Length", len(jsondataasbytes))
+    response = urllib.request.urlopen(req, jsondataasbytes)
 
 
 def get_queue_entry(
@@ -209,6 +222,7 @@ def queue_monitor_loop(
     sleep_time: int,
     max_retries: int,
     queue_logger: Logger = qclogging.get_basic_logger(),
+    alert_url=None,
 ):
     mgmt_db = MgmtDB(sim_struct.get_mgmt_db(root_folder))
     queue_folder = sim_struct.get_mgmt_db_queue(root_folder)
@@ -303,6 +317,18 @@ def queue_monitor_loop(
             if mgmt_db.update_entries_live(entries, max_retries, queue_logger):
                 for file_name in entry_files:
                     os.remove(os.path.join(queue_folder, file_name))
+                # check for jobs that matches alert criteria
+                if alert_url != None:
+                    for entry in entries:
+                        if entry.status == const.Status.failed.value:
+                            entry_retries = mgmt_db.get_retries(
+                                entry.proc_type, entry.run_name
+                            )
+                            if entry_retries < max_retries:
+                                msg = f"fault:{entry.run_name} step:{entry.proc_type} has failed with error:{entry.error}"
+                            elif entry_retries >= retry_max:
+                                msg = f"@here fault:{entry.run_name} step:{entry.proc_type} has failed with error:{entry.error} and meet the retry cap"
+                            send_alert(msg, alert_url)
             else:
                 queue_logger.error(
                     "Failed to update the current entries in the mgmt db queue. "
@@ -345,6 +371,9 @@ def initialisation():
     parser.add_argument(
         "--debug", action="store_true", help="Print debug messages to stdout"
     )
+    parser.add_argument(
+        "--alert_url", help="the url to slack alert channel", default=None
+    )
     args = parser.parse_args()
 
     root_folder = os.path.abspath(args.root_folder)
@@ -365,7 +394,13 @@ def initialisation():
     qclogging.add_general_file_handler(logger, log_file_name)
     logger.debug("Successfully added {} as the log file.".format(log_file_name))
 
-    queue_monitor_loop(root_folder, args.sleep_time, args.n_max_retries, logger)
+    queue_monitor_loop(
+        root_folder,
+        args.sleep_time,
+        args.n_max_retries,
+        logger,
+        alert_url=args.alert_url,
+    )
 
 
 if __name__ == "__main__":
