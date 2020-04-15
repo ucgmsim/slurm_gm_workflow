@@ -187,7 +187,7 @@ def run_automated_workflow(
                 sleep_time,
                 (lf_est_model, hf_est_model, bb_est_model, im_est_model),
                 main_logger=pattern_logger,
-                cycle_timeout=1,
+                cycle_timeout=0,
             )
     bulk_auto_submit_thread.join()
     wrapper_logger.info(
