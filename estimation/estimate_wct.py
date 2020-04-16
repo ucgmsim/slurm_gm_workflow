@@ -25,7 +25,7 @@ MAX_JOB_WCT = 24
 MAX_NODES_PER_JOB = 66
 PHYSICAL_NCORES_PER_NODE = 40
 
-CH_SAFETY_FACTOR = 1.75
+CH_SAFETY_FACTOR = 1.5
 DEFAULT_MODEL_TYPE = const.EstModelType.NN_SVR
 
 EstModel = namedtuple("EstModel", ["nn_model", "nn_scaler", "svr_model", "svr_scaler"])
