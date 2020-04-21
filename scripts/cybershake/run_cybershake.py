@@ -38,6 +38,7 @@ def run_automated_workflow(
     tasks_to_run_with_pattern: List[Tuple[str, List[const.ProcessType]]],
     wrapper_logger: Logger,
     debug: bool,
+    alert_url=None,
 ):
     """Runs the automated workflow. Beings the queue monitor script and the script for tasks that apply to all
     realisations. Then while the all realisation thread is running go through each pattern and run all tasks that are
@@ -129,7 +130,7 @@ def run_automated_workflow(
         name="queue monitor",
         daemon=True,
         target=queue_monitor.queue_monitor_loop,
-        args=(root_folder, sleep_time, n_max_retries, queue_logger),
+        args=(root_folder, sleep_time, n_max_retries, queue_logger, alert_url),
     )
     wrapper_logger.info("Created queue_monitor thread")
 
@@ -186,7 +187,7 @@ def run_automated_workflow(
                 sleep_time,
                 (lf_est_model, hf_est_model, bb_est_model, im_est_model),
                 main_logger=pattern_logger,
-                cycle_timeout=1,
+                cycle_timeout=0,
             )
     bulk_auto_submit_thread.join()
     wrapper_logger.info(
@@ -281,6 +282,9 @@ def main():
     parser.add_argument(
         "--debug", action="store_true", help="Print debug messages to stdout"
     )
+    parser.add_argument(
+        "--alert_url", help="the url to slack alert channel", default=None
+    )
     args = parser.parse_args()
 
     wrapper_logger = qclogging.get_logger(name="cybershake_wrapper", threaded=True)
@@ -349,6 +353,7 @@ def main():
         tasks_to_match,
         wrapper_logger,
         args.debug,
+        alert_url=args.alert_url,
     )
 
 

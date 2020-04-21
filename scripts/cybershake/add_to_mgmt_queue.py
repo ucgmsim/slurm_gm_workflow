@@ -33,6 +33,7 @@ if __name__ == "__main__":
         "--error",
         type=str,
         help="Errors that occurred during the execution of the script.",
+        default=None,
     )
 
     args = parser.parse_args()
