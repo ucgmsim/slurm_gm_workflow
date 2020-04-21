@@ -5,6 +5,10 @@ Slurm Ground Motion Workflow
 ## [19.6.25] -  2020-03-16 -- Enabled automated Empirical calculation
 ### Added
     - Added Empirical calculation as a part of automated workflow
+### Changed
+    - IM plot to use python 3 workflow
+    - removed partition specifier for mahuika slurm scripts (as per NeSI recommendations)
+    - lowered core requirements on quick animation, less queue time
 
 ## [19.6.24] -  2020-03-10 -- Changed default HF to 6.0.3
 ### Changed

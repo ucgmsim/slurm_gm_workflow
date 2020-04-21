@@ -1,6 +1,6 @@
 hf:
   version: 5.4.5.3
-  dt: 0.02
+  dt: 0.01
   rvfac: 0.8
   sdrop: 50
   path_dur: 11

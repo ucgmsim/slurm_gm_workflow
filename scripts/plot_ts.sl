@@ -5,9 +5,8 @@
 
 #SBATCH --job-name=plot_ts
 #SBATCH --account=nesi00213
-#SBATCH --partition=prepost
-#SBATCH --time=00:30:00
-#SBATCH --cpus-per-task=36
+#SBATCH --time=01:30:00
+#SBATCH --cpus-per-task=8
 
 if [[ ! -z ${CUR_ENV} && ${CUR_HPC} != "mahuika" ]]; then
     source $CUR_ENV/workflow/install_workflow/helper_functions/activate_env.sh $CUR_ENV "mahuika"
@@ -28,7 +27,7 @@ start_time=`date +${runtime_fmt}`
 echo ___plotting ts___
 
 python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $SRF_NAME plot_ts running $SLURM_JOB_ID
-res=`python $gmsim/visualization/visualization/gmt/plot_ts.py $XYTS_PATH --srf $SRF_PATH --output $OUTPUT_TS_PATH -n 36`
+res=`python $gmsim/visualization/visualization/gmt/plot_ts.py $XYTS_PATH --srf $SRF_PATH --output $OUTPUT_TS_PATH -n 8`
 exit_val=$?
 
 end_time=`date +$runtime_fmt`

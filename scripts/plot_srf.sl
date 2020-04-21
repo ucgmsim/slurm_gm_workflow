@@ -5,7 +5,6 @@
 
 #SBATCH --job-name=plot_srf
 #SBATCH --account=nesi00213
-#SBATCH --partition=prepost
 #SBATCH --time=00:30:00
 #SBATCH --cpus-per-task=1
 

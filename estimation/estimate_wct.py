@@ -25,24 +25,23 @@ MAX_JOB_WCT = 24
 MAX_NODES_PER_JOB = 66
 PHYSICAL_NCORES_PER_NODE = 40
 
-OVERESTIMATE_FRACTION = 0.5
+CH_SAFETY_FACTOR = 1.5
 DEFAULT_MODEL_TYPE = const.EstModelType.NN_SVR
 
 EstModel = namedtuple("EstModel", ["nn_model", "nn_scaler", "svr_model", "svr_scaler"])
 
 
-def get_wct(run_time, overestimate_factor=OVERESTIMATE_FRACTION):
+def get_wct(run_time, ch_safety_factor=CH_SAFETY_FACTOR):
     """Pad the run time (in hours) by the specified factor.
     Then convert to wall clock time.
 
     Use this when estimation as max run time in a slurm script.
     """
-    if (run_time * (1.0 + overestimate_factor)) < (
-        (const.CHECKPOINT_DURATION * 3) / 60.0
-    ):
+    wct_with_safety_factor = run_time * ch_safety_factor
+    if wct_with_safety_factor < ((const.CHECKPOINT_DURATION * 3) / 60.0):
         return convert_to_wct((const.CHECKPOINT_DURATION * 3) / 60.0)
     else:
-        return convert_to_wct(run_time * (1.0 + overestimate_factor))
+        return convert_to_wct(wct_with_safety_factor)
 
 
 def convert_to_wct(run_time):
