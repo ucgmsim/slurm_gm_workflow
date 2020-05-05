@@ -92,7 +92,6 @@ def gen_args_cmd(
         command_parts.append("--" + key)
         if add_args[key] is True:
             continue
-        command_parts.append(str(add_args[key]))
         argument = str(add_args[key])
 
         for arg in shlex.split(argument):
