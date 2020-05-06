@@ -7,7 +7,8 @@
   "timeout": 240,
   "version": "18.5.3.4",
   "seed": 5481190,
-  "stat_file": "/nesi/project/nesi00213/StationInfo/geoNe2e_config_validation_18p5p3p4.jsonet_stats+2018-05-22.ll",
+  "stat_file": "/nesi/project/nesi00213/StationInfo/geoNet_stats+2018-05-22.ll",
   "extended_period": true,
-  "wrapper_config": "auto_config.yaml"
+  "wrapper_config": "auto_config.yaml",
+  "keep_dup_stations": false
 }
