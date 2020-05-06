@@ -49,5 +49,11 @@ def test_install_simulation(set_up, mocker):
                 input_params[i] = os.path.join(root_path, input_params[i])
 
         test_output = install_shared.install_simulation(*input_params)
+        root_params_dict = test_output[0]
+
+        #  accounting for removed parameters
+        root_params_dict['bb']['version'] = "3.0.4"
+        root_params_dict['bb']['site_specfic'] = False
+
         bench_output = get_bench_output(root_path, func_name)
-        assert test_output[0] == bench_output[0]
+        assert root_params_dict == bench_output[0]
