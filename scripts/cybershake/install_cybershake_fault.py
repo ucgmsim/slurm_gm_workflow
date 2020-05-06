@@ -108,6 +108,7 @@ def install_fault(
     stat_file_path,
     seed=HF_DEFAULT_SEED,
     extended_period=False,
+    keep_dup_station=True,
     logger: Logger = get_basic_logger(),
 ):
 
@@ -250,6 +251,7 @@ def install_fault(
             vm_params_dict,
             stat_file=stat_file_path,
             logger=logger,
+            keep_dup_station=keep_dup_station
         )
 
         fault_params_dict[FaultParams.stat_coords.value] = fd_statcords

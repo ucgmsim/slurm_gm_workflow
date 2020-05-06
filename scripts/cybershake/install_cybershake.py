@@ -56,6 +56,11 @@ def main():
         help="Location of the log file to use. Defaults to 'cybershake_log.txt' in the location root_folder. "
         "Must be absolute or relative to the root_folder.",
     )
+    parser.add_argument(
+        "--keep_dup_station",
+        action="store true",
+        help="Keep stations if they snap to the same grid-point"
+    )
 
     args = parser.parse_args()
 
@@ -123,7 +128,8 @@ def main():
             args.stat_file_path,
             args.seed,
             args.extended_period,
-            qclogging.get_realisation_logger(logger, fault),
+            keep_dup_station=args.keep_dup_station,
+            logger=qclogging.get_realisation_logger(logger, fault),
         )
 
 
