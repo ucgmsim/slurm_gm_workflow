@@ -5,6 +5,7 @@ hf:
   sdrop: 50
   path_dur: 11
   kappa: 0.045
+  rayset: 1
 bb:
   fmin: 0.2
   fmidbot: 0.25

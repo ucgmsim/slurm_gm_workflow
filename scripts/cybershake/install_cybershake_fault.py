@@ -9,6 +9,7 @@ import sys
 import glob
 import argparse
 from logging import Logger
+import shlex
 
 from scripts.bb_sim import args_parser as bb_args_parser
 from scripts.hf_sim import args_parser as hf_args_parser
@@ -91,7 +92,10 @@ def gen_args_cmd(
         command_parts.append("--" + key)
         if add_args[key] is True:
             continue
-        command_parts.append(str(add_args[key]))
+        argument = str(add_args[key])
+
+        for arg in shlex.split(argument):
+            command_parts.append(arg)
 
     return list(map(str, command_parts))
 

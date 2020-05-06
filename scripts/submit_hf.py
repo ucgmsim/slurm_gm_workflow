@@ -34,8 +34,10 @@ def gen_command_template(params, machine, seed=const.HF_DEFAULT_SEED):
             params.hf.version, get_machine_config(machine)["tools_dir"]
         ),
     }
+    add_args = {}
+    for k, v in params.hf.items():
+        add_args[k] = " ".join(map(str, v)) if (type(v) is list) else v
 
-    add_args = dict(params.hf)
     add_args.update({const.RootParams.seed.value: seed})
 
     return command_template_parameters, add_args
