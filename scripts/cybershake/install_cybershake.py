@@ -59,7 +59,7 @@ def main():
     parser.add_argument(
         "--keep_dup_station",
         action="store_true",
-        help="Keep stations if they snap to the same grid-point"
+        help="Keep stations if they snap to the same grid-point",
     )
 
     args = parser.parse_args()

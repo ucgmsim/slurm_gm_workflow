@@ -251,7 +251,7 @@ def install_fault(
             vm_params_dict,
             stat_file=stat_file_path,
             logger=logger,
-            keep_dup_station=keep_dup_station
+            keep_dup_station=keep_dup_station,
         )
 
         fault_params_dict[FaultParams.stat_coords.value] = fd_statcords
