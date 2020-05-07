@@ -53,7 +53,7 @@ def test_install_simulation(set_up, mocker):
 
         #  accounting for removed parameters
         root_params_dict['bb']['version'] = "3.0.4"
-        root_params_dict['bb']['site_specfic'] = False
+        root_params_dict['bb']['site_specific'] = False
 
         bench_output = get_bench_output(root_path, func_name)
         assert root_params_dict == bench_output[0]
