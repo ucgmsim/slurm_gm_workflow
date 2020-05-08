@@ -6,8 +6,6 @@ hf:
   path_dur: 1
   kappa: 0.045
 bb:
-  version: 3.0.4
-  site_specific: false
   fmin: 0.2
   fmidbot: 0.5
   lfvsref: 500.0

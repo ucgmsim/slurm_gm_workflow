@@ -9,6 +9,8 @@ Slurm Ground Motion Workflow
     - IM plot to use python 3 workflow
     - removed partition specifier for mahuika slurm scripts (as per NeSI recommendations)
     - lowered core requirements on quick animation, less queue time
+### Updated
+    - E2E tests bugs fixed
 
 ## [19.6.24] -  2020-03-10 -- Changed default HF to 6.0.3
 ### Changed

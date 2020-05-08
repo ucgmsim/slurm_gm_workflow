@@ -30,7 +30,7 @@ The final suffix of .4, .2 or .1 denotes the grid spacing used of 400m, 200m or 
     
 #Version 20.4.1.4
 #####Similar to 18.5.3
-    - hb_high version = 6.0.3.2
+    - hb_high version = 5.4.5.3
     - czero = 2.0
     - rvfac_shal = 0.6
     - rvfac_deep = 0.6

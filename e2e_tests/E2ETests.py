@@ -246,6 +246,11 @@ class E2ETests(object):
             if self.config_dict.get("extended_period") is True
             else cmd
         )
+        cmd = (
+            cmd + " --keep_dup_stations"
+            if self.config_dict.get("keep_dup_stations") is True
+            else cmd
+        )
 
         print("Running install...\nCmd: {}".format(cmd))
         out_file = os.path.join(self.stage_dir, self.install_out_file)
