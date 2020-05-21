@@ -373,7 +373,7 @@ class MgmtDB:
             self._insert_task(cur, run_name, proc_type)
 
     @staticmethod
-    def _insert_task(self, cur: sql.Cursor, run_name: str, proc_type: int):
+    def _insert_task(cur: sql.Cursor, run_name: str, proc_type: int):
         cur.execute(
             """INSERT OR IGNORE INTO `state`(run_name, proc_type, status, 
             last_modified) VALUES(?, ?, 1, strftime('%s','now'))""",
@@ -384,11 +384,11 @@ class MgmtDB:
     def _does_task_exists(cur: sql.Cursor, run_name: str, proc_type: int):
         """Checks if there is a non-failed task with the same name"""
         count = cur.execute(
-            "COUNT(*) from `state`, `status_enum` "
+            "SELECT COUNT(*) from `state`, `status_enum` "
             "WHERE `run_name` = ? "
             "AND `proc_type` = ? "
-            "AND state.state = status_enum.id "
-            "AND status.state <> 'failed'",
+            "AND state.status = status_enum.id "
+            "AND status_enum.state <> 'failed'",
             (run_name, proc_type),
         ).fetchone()[0]
         return count > 0
