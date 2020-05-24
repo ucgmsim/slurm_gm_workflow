@@ -77,6 +77,12 @@ class MgmtDB:
                     # Something has attempted to set a task to created
                     # Make a new task with created status and move to the next task
                     logger.debug("Adding new task to the db")
+                    # Check that there isn't already a task with the same realisation name
+                    if self._does_task_exists(cur, realisation_name, process):
+                        logger.debug(
+                            "task is already in progress - does not need to be readded"
+                        )
+                        continue
                     self._insert_task(cur, realisation_name, process)
                     logger.debug("New task added to the db, continuing to next process")
                     continue
@@ -358,19 +364,34 @@ class MgmtDB:
 
                 for run_name in realisations:
                     for proc in procs_to_be_done:
-                        self._insert_task(cur, run_name, proc[0])
+                        if not self._does_task_exists(cur, run_name, proc[0]):
+                            self._insert_task(cur, run_name, proc[0])
 
     def insert(self, run_name: str, proc_type: int):
         """Inserts a task into the mgmt db"""
         with connect_db_ctx(self._db_file) as cur:
             self._insert_task(cur, run_name, proc_type)
 
-    def _insert_task(self, cur: sql.Cursor, run_name: str, proc_type: int):
+    @staticmethod
+    def _insert_task(cur: sql.Cursor, run_name: str, proc_type: int):
         cur.execute(
             """INSERT OR IGNORE INTO `state`(run_name, proc_type, status, 
             last_modified) VALUES(?, ?, 1, strftime('%s','now'))""",
             (run_name, proc_type),
         )
+
+    @staticmethod
+    def _does_task_exists(cur: sql.Cursor, run_name: str, proc_type: int):
+        """Checks if there is a non-failed task with the same name"""
+        count = cur.execute(
+            "SELECT COUNT(*) from `state`, `status_enum` "
+            "WHERE `run_name` = ? "
+            "AND `proc_type` = ? "
+            "AND state.status = status_enum.id "
+            "AND status_enum.state <> 'failed'",
+            (run_name, proc_type),
+        ).fetchone()[0]
+        return count > 0
 
     @classmethod
     def init_db(cls, db_file: str, init_script: str):
