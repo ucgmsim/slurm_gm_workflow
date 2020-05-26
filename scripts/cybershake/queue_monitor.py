@@ -326,8 +326,8 @@ def queue_monitor_loop(
                             )
                             if entry_retries < max_retries:
                                 msg = f"fault:{entry.run_name} step:{entry.proc_type} has failed with error:{entry.error}"
-                            elif entry_retries >= retry_max:
-                                msg = f"@here fault:{entry.run_name} step:{entry.proc_type} has failed with error:{entry.error} and meet the retry cap"
+                            elif entry_retries >= max_retries:
+                                msg = f"@here fault:{entry.run_name} step:{entry.proc_type} has failed with error:{entry.error} and met the retry cap"
                             send_alert(msg, alert_url)
             else:
                 queue_logger.error(
