@@ -171,8 +171,8 @@ def submit_im_calc_slurm(
         )
         if options_dict[SlBodyOptConsts.advanced_IM.value]
         else "",
-        "pSA_period": f"{' '.join(str(p) for p in options_dict['pSA_period'])}"
-        if options_dict["pSA_period"]
+        "pSA_period": f"{' '.join(str(p) for p in params['pSA_period'])}"
+        if "pSA_period" in params
         else "",
     }
 
