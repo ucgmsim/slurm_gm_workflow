@@ -36,11 +36,12 @@ The final suffix of .4, .2 or .1 denotes the grid spacing used of 400m, 200m or 
     - rvfac_deep = 0.6
     - emod3d version = 3.0.8
     - rayset 1
+    - Added pSA periods, default in this version is now 31 periods 
 
 #Version 20.4.1.2
 #####Similar to 20.4.1.4
-   - flo: 0.5
-   - dt: 0.01
-   - fmin: 0.25
-   - fmidbot: 0.5 
+    - flo: 0.5
+    - dt: 0.01
+    - fmin: 0.25
+    - fmidbot: 0.5 
 
