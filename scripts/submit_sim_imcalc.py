@@ -171,6 +171,9 @@ def submit_im_calc_slurm(
         )
         if options_dict[SlBodyOptConsts.advanced_IM.value]
         else "",
+        "pSA_periods": f"-p {' '.join(str(p) for p in params['pSA_periods'])}"
+        if "pSA_periods" in params
+        else "",
     }
 
     # determine script template based on advanced_IM or not
