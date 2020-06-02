@@ -37,7 +37,6 @@ For a larger end to end test timeout might also have to be increased, it is set 
 The config file specifies, where the required data is located, i.e.
 - VMs
 - Sources
-- cybershake_config
 - fault list
 
 and the benchmark data. 
@@ -45,10 +44,16 @@ and the benchmark data.
 ```json
 {
   "test_dir": "/nesi/nobackup/nesi00213/RunFolder/EndToEndTest/tests/",
-  "data_dir": "/nesi/nobackup/nesi00213/RunFolder/EndToEndTest/test_data/Data",
-  "cybershake_config": "/nesi/nobackup/nesi00213/RunFolder/EndToEndTest/test_data/cybershake_config.json",
-  "fault_list": "/nesi/nobackup/nesi00213/RunFolder/EndToEndTest/test_data/list.txt",
-  "bench_dir": "/nesi/nobackup/nesi00213/RunFolder/EndToEndTest/benchmark"
+  "data_dir": "/nesi/project/nesi00213/EndToEndTest/test_data_simple/Data",
+  "fault_list": "/nesi/project/nesi00213/EndToEndTest/test_data_simple/list.txt",
+  "bench_dir": "/nesi/project/nesi00213/EndToEndTest/test_1912/test_data_simple/benchmark",
+  "test_checkpoint": true,
+  "timeout": 10,
+  "version": "16.1",
+  "seed": 34580,
+  "stat_file": "/nesi/project/nesi00213/StationInfo/archive/18p6_nonuniform/non_uniform_whole_nz_with_real_stations-hh400_v18p6.ll",
+  "wrapper_config": "auto_config.yaml",
+  "keep_dup_stations": false
 }
 ```
 
