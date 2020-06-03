@@ -9,6 +9,7 @@ import yaml
 from h5py import File as h5open
 
 from qcore import geo, utils, simulation_structure
+from qcore.shared import exe
 from qcore.qclogging import get_basic_logger, VERYVERBOSE, NOPRINTWARNING
 from qcore.constants import (
     SimParams,
@@ -18,7 +19,7 @@ from qcore.constants import (
     ROOT_DEFAULTS_FILE_NAME,
     HF_DEFAULT_SEED,
 )
-from shared_workflow import shared, shared_automated_workflow
+from shared_workflow import shared
 import shared_workflow.shared_defaults as defaults
 
 
@@ -95,20 +96,20 @@ def install_simulation(
                 os.path.join(defaults.latest_ll_dir, defaults.latest_ll + ".ll"),
                 stat_file_path,
             )
-            shared_automated_workflow.exe(cmd)
+            exe(cmd)
 
             # making symbolic link to lastest_ll.vs30 and .vs30ref
             cmd = "ln -s {} {}".format(
                 os.path.join(defaults.latest_ll_dir, defaults.latest_ll + ".vs30"),
                 vs30_file_path,
             )
-            shared_automated_workflow.exe(cmd)
+            exe(cmd)
 
             cmd = "ln -s {} {}".format(
                 os.path.join(defaults.latest_ll_dir, defaults.latest_ll + ".vs30ref"),
                 vs30ref_file_path,
             )
-            shared_automated_workflow.exe(cmd)
+            exe(cmd)
 
     template_path = os.path.join(defaults.recipe_dir, "gmsim", version)
     root_params_dict = utils.load_yaml(

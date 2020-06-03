@@ -12,10 +12,12 @@ from qcore.utils import load_yaml
 import estimation.estimate_wct as est
 from scripts.cybershake import queue_monitor
 from scripts.cybershake.auto_submit import run_main_submit_loop
+from scripts.schedulers.scheduler_factory import initialise_scheduler
 from shared_workflow import load_config
 from shared_workflow.shared_defaults import recipe_dir
 
 MASTER_LOG_NAME = "master_log_{}.txt"
+SCHEDULER_LOG_NAME = "scheduler_log_{}.txt"
 WRAPPER_LOG_FILE_NAME = "wrapper_log_{}.txt"
 QUEUE_MONITOR_LOG_FILE_NAME = "queue_monitor_log_{}.txt"
 MASTER_AUTO_SUBMIT_LOG_FILE_NAME = "main_auto_submit_log_{}.txt"
@@ -178,17 +180,9 @@ def run_automated_workflow(
                     pattern, tasks
                 )
             )
-            run_main_submit_loop(
-                root_folder,
-                user,
-                n_runs,
-                pattern,
-                tasks,
-                sleep_time,
-                (lf_est_model, hf_est_model, bb_est_model, im_est_model),
-                main_logger=pattern_logger,
-                cycle_timeout=0,
-            )
+            run_main_submit_loop(root_folder, n_runs, pattern, tasks, sleep_time,
+                                 (lf_est_model, hf_est_model, bb_est_model, im_est_model), main_logger=pattern_logger,
+                                 cycle_timeout=0)
     bulk_auto_submit_thread.join()
     wrapper_logger.info(
         "The main auto_submit thread has terminated, and all auto_submit patterns have completed a final run through"
@@ -304,10 +298,20 @@ def main():
         log_directory,
         MASTER_LOG_NAME.format(datetime.now().strftime(const.TIMESTAMP_FORMAT)),
     )
+    scheduler_log_file = join(
+        log_directory,
+        SCHEDULER_LOG_NAME.format(datetime.now().strftime(const.TIMESTAMP_FORMAT)),
+    )
 
     qclogging.add_general_file_handler(master_logger, master_log_file)
     qclogging.add_general_file_handler(wrapper_logger, wrapper_log_file)
     wrapper_logger.info("Logger file added")
+
+    scheduler_logger = qclogging.get_logger(name="scheduler", threaded=True)
+    qclogging.add_general_file_handler(scheduler_logger, scheduler_log_file)
+    initialise_scheduler(
+        "bash", user=args.user, account=args.user, logger=scheduler_logger
+    )
 
     n_runs = 0
     if args.n_runs is not None:

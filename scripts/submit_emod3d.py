@@ -116,16 +116,15 @@ def main(
             command_template_parameters,
             args,
         )
-
-        submit_sl_script(
-            script_file_path,
-            const.ProcessType.EMOD3D.value,
-            sim_struct.get_mgmt_db_queue(params.mgmt_db_location),
-            srf_name,
-            submit_yes=submit_yes,
-            target_machine=args.machine,
-            logger=logger,
-        )
+        if submit_yes:
+            submit_sl_script(
+                script_file_path,
+                const.ProcessType.EMOD3D.value,
+                sim_struct.get_mgmt_db_queue(params.mgmt_db_location),
+                srf_name,
+                target_machine=args.machine,
+                logger=logger,
+            )
 
 
 if __name__ == "__main__":

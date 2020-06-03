@@ -218,15 +218,15 @@ def submit_im_calc_slurm(
         True if options_dict["auto"] else confirm("Also submit the job for you?")
     )
 
-    submit_sl_script(
-        script_file_path,
-        proc_type.value,
-        sim_struct.get_mgmt_db_queue(params.mgmt_db_location),
-        os.path.splitext(os.path.basename(params.srf_file))[0],
-        submit_yes=submit_yes,
-        target_machine=options_dict["machine"],
-        logger=logger,
-    )
+    if submit_yes:
+        submit_sl_script(
+            script_file_path,
+            proc_type.value,
+            sim_struct.get_mgmt_db_queue(params.mgmt_db_location),
+            os.path.splitext(os.path.basename(params.srf_file))[0],
+            target_machine=options_dict["machine"],
+            logger=logger,
+        )
 
     return script_file_path
 

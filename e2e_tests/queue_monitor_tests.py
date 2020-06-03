@@ -12,10 +12,10 @@ import sqlite3 as sql
 
 import qcore.constants as const
 import qcore.simulation_structure as sim_struct
+from qcore.shared import exe
 from scripts.cybershake.add_to_mgmt_queue import add_to_queue
 from scripts.management import create_mgmt_db
 from scripts.management.db_helper import connect_db_ctx
-from shared_workflow.shared_automated_workflow import exe
 from e2e_tests.E2ETests import NonBlockingStreamReader, Error
 
 

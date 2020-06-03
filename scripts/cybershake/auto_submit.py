@@ -78,9 +78,7 @@ def submit_task(
             proc_type,
             sim_struct.get_mgmt_db_queue(root_folder),
             run_name,
-            submit_yes=True,
             logger=task_logger,
-            **kwargs,
         )
 
     if proc_type == const.ProcessType.EMOD3D.value:
@@ -355,7 +353,6 @@ def submit_task(
 
 def run_main_submit_loop(
     root_folder: str,
-    user: str,
     n_runs: Dict[str, int],
     rels_to_run: str,
     given_tasks_to_run: List[const.ProcessType],
@@ -401,7 +398,7 @@ def run_main_submit_loop(
         for hpc in const.HPC:
             try:
                 squeued_tasks = shared_automated_workflow.get_queued_tasks(
-                    user=user, machine=hpc
+                    user=True, machine=hpc
                 )
             except EnvironmentError as e:
                 main_logger.critical(e)
@@ -658,7 +655,6 @@ def main():
 
     run_main_submit_loop(
         root_folder,
-        args.user,
         n_runs,
         args.rels_to_run,
         task_types_to_run,

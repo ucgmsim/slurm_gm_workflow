@@ -76,16 +76,15 @@ def main(args, logger: Logger = get_basic_logger()):
         command_template_parameters,
         args,
     )
-
-    submit_sl_script(
-        script_file_path,
-        const.ProcessType.merge_ts.value,
-        sim_struct.get_mgmt_db_queue(mgmt_db_loc),
-        srf_name,
-        submit_yes=submit_yes,
-        target_machine=args.machine,
-        logger=logger,
-    )
+    if submit_yes:
+        submit_sl_script(
+            script_file_path,
+            const.ProcessType.merge_ts.value,
+            sim_struct.get_mgmt_db_queue(mgmt_db_loc),
+            srf_name,
+            target_machine=args.machine,
+            logger=logger,
+        )
 
 
 if __name__ == "__main__":

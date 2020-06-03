@@ -8,14 +8,13 @@ import subprocess
 import sys
 from datetime import datetime
 from logging import Logger
-from subprocess import Popen, PIPE
 from typing import List
 
 import qcore.constants as const
-from qcore.config import host
 from qcore.utils import load_yaml
 from scripts.management.MgmtDB import MgmtDB
 from qcore.qclogging import get_basic_logger, NOPRINTCRITICAL
+from scripts.schedulers.scheduler_factory import get_scheduler
 
 ALL = "ALL"
 ONCE = "ONCE"
@@ -23,32 +22,9 @@ ONCE_PATTERN = "%_REL01"
 NONE = "NONE"
 
 
-def get_queued_tasks(user=None, machine=const.HPC.maui):
-    if user is not None:
-        cmd = "squeue -A {} -o '%A %t' -M {} -u {}".format(
-            const.DEFAULT_ACCOUNT, machine.value, user
-        )
-    else:
-        cmd = "squeue -A {} -o '%A %t' -M {}".format(
-            const.DEFAULT_ACCOUNT, machine.value
-        )
-    process = Popen(shlex.split(cmd), stdout=PIPE, encoding="utf-8")
-    (output, err) = process.communicate()
-    process.wait()
-    try:
-        header = output.split("\n")[1]
-    except:
-        raise EnvironmentError(
-            "squeue did not return expected output. Ignoring for this iteration. Actual output: {}".format(
-                output
-            )
-        )
-    else:
-        if header != "JOBID ST":
-            raise EnvironmentError(
-                "squeue did not return expected output. Ignoring for this iteration."
-            )
-    output_list = list(filter(None, output.split("\n")[1:]))
+def get_queued_tasks(user=None, machine=None):
+    scheduler = get_scheduler()
+    output_list = scheduler.check_queues(user=user, target_machine=machine)
     return output_list
 
 
@@ -57,52 +33,33 @@ def submit_sl_script(
     proc_type: int,
     queue_folder: str,
     run_name: str,
-    submit_yes: bool = False,
     target_machine: str = None,
     logger: Logger = get_basic_logger(),
 ):
-    """Submits the slurm script and updates the management db"""
-    if submit_yes:
-        logger.debug("Submitting {} on machine {}".format(script, target_machine))
-        if target_machine and target_machine != host:
-            res = exe(
-                "sbatch --export=CUR_ENV,CUR_HPC -M {} {}".format(
-                    target_machine, script
-                ),
-                debug=False,
-            )
-        else:
-            res = exe("sbatch {}".format(script), debug=False)
-        if len(res[1]) == 0 or res[0].startswith("Submitted"):
-            logger.debug("Successfully submitted task to slurm")
-            # no errors, return the job id
-            return_words = res[0].split()
-            job_index = return_words.index("job")
-            jobid = return_words[job_index + 1]
-            try:
-                int(jobid)
-            except ValueError:
-                logger.critical(
-                    "{} is not a valid jobid. Submitting the "
-                    "job most likely failed. The return message was {}".format(
-                        jobid, res[0]
-                    )
-                )
-                sys.exit()
+    """
+    Submits the slurm script and updates the management db.
+    Calling the scheduler submitter may result in an error being raised.
+    This is not caught in order to get immediate attention of broken runs.
+    :param script: The location of the script to be run
+    :param proc_type: The process type of the job being run
+    :param queue_folder: Where the folder for database updates is
+    :param run_name: The name of the realisation
+    :param target_machine: The
+    :param logger:
+    :return:
+    """
+    scheduler = get_scheduler()
 
-            add_to_queue(
-                queue_folder,
-                run_name,
-                proc_type,
-                const.Status.queued.value,
-                job_id=jobid,
-                logger=logger,
-            )
-            return jobid
-        else:
-            logger.error("An error occurred during job submission: {}".format(res[1]))
-    else:
-        logger.info("User chose to submit the job manually")
+    job_id = scheduler.submit_job(script, target_machine=target_machine)
+
+    add_to_queue(
+        queue_folder,
+        run_name,
+        proc_type,
+        const.Status.queued.value,
+        job_id=job_id,
+        logger=logger,
+    )
 
 
 def add_to_queue(
