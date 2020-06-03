@@ -310,7 +310,7 @@ def main():
     scheduler_logger = qclogging.get_logger(name="scheduler", threaded=True)
     qclogging.add_general_file_handler(scheduler_logger, scheduler_log_file)
     initialise_scheduler(
-        "bash", user=args.user, account=args.user, logger=scheduler_logger
+        "slurm", user=args.user, account="nesi00213", logger=scheduler_logger
     )
 
     n_runs = 0

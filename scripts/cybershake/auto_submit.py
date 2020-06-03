@@ -18,6 +18,7 @@ import qcore.simulation_structure as sim_struct
 import estimation.estimate_wct as est
 from metadata.log_metadata import store_metadata
 from scripts.management.MgmtDB import MgmtDB
+from scripts.schedulers.scheduler_factory import initialise_scheduler
 from scripts.submit_emod3d import main as submit_lf_main
 from scripts.submit_empirical import generate_sl
 from scripts.submit_post_emod3d import main as submit_post_lf_main
@@ -637,6 +638,11 @@ def main():
         parser.error(mutually_exclusive_task_error)
 
     logger.debug("Processed args are as follows: {}".format(str(args)))
+
+    scheduler_logger = qclogging.get_logger(name=f"{logger.name}.scheduler")
+    initialise_scheduler(
+        "slurm", user=args.user, account="nesi00213", logger=scheduler_logger
+    )
 
     logger.info("Loading estimation models")
     workflow_config = ldcfg.load()
