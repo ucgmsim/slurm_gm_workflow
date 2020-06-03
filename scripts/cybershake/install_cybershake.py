@@ -41,7 +41,7 @@ def main():
     parser.add_argument(
         "--stat_file_path",
         type=str,
-        default="/nesi/project/nesi00213/StationInfo/non_uniform_whole_nz_with_real_stations-hh400_v18p6p2.ll",
+        default="/nesi/project/nesi00213/StationInfo/non_uniform_whole_nz_with_real_stations-hh400_v20p3_land.ll",
         help="The path to the station info file path.",
     )
     parser.add_argument(
