@@ -11,6 +11,7 @@ import yaml
 from argparse import ArgumentParser
 from typing import List
 
+from qcore.config import platform_config
 import qcore.constants as const
 from qcore import shared, srf, utils
 from estimation import estimate_wct
@@ -399,7 +400,8 @@ def main(args):
     nt = fault_sim_durations / dt
 
     lf_ncores = (
-        np.ones(fault_names.shape[0], dtype=np.float32) * const.LF_DEFAULT_NCORES
+        np.ones(fault_names.shape[0], dtype=np.float32)
+        * platform_config[const.PLATFORM_CONFIG.LF_DEFAULT_NCORES]
     )
     lf_input_data = np.concatenate(
         (vm_params[:, :3], nt.reshape(-1, 1), lf_ncores.reshape(-1, 1)), axis=1
@@ -412,7 +414,8 @@ def main(args):
         print("Preparing HF estimation input data")
         # Have to repeat/extend the fault sim_durations to per realisation
         r_hf_ncores = np.repeat(
-            np.ones(realisations.shape[0], dtype=np.float32) * const.HF_DEFAULT_NCORES,
+            np.ones(realisations.shape[0], dtype=np.float32)
+            * platform_config[const.PLATFORM_CONFIG.HF_DEFAULT_NCORES],
             r_counts,
         )
 
@@ -449,7 +452,8 @@ def main(args):
 
         print("Preparing BB estimation input data")
         r_bb_ncores = np.repeat(
-            np.ones(realisations.shape[0], dtype=np.float32) * const.BB_DEFAULT_NCORES,
+            np.ones(realisations.shape[0], dtype=np.float32)
+            * platform_config[const.PLATFORM_CONFIG.BB_DEFAULT_NCORES],
             r_counts,
         )
 

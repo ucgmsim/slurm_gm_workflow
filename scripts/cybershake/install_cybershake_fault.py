@@ -22,10 +22,11 @@ from qcore.constants import (
     FaultParams,
     ROOT_DEFAULTS_FILE_NAME,
     VM_PARAMS_FILE_NAME,
-    HF_DEFAULT_SEED,
     HPC,
     ProcessType,
+    PLATFORM_CONFIG,
 )
+from qcore.config import platform_config
 from qcore.qclogging import get_basic_logger, NOPRINTCRITICAL
 
 from scripts.management import create_mgmt_db
@@ -59,7 +60,7 @@ def main():
     parser.add_argument(
         "--seed",
         type=int,
-        default=HF_DEFAULT_SEED,
+        default=platform_config[PLATFORM_CONFIG.HF_DEFAULT_SEED.value],
         help="The seed to be used for HF simulations",
     )
 
@@ -106,7 +107,7 @@ def install_fault(
     root_folder,
     version,
     stat_file_path,
-    seed=HF_DEFAULT_SEED,
+    seed=platform_config[PLATFORM_CONFIG.HF_DEFAULT_SEED.value],
     extended_period=False,
     keep_dup_station=True,
     logger: Logger = get_basic_logger(),

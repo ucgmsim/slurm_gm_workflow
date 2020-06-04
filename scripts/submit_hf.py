@@ -6,7 +6,7 @@ from logging import Logger
 
 import estimation.estimate_wct as est
 from qcore import utils, shared, srf, binary_version
-from qcore.config import host, get_machine_config
+from qcore.config import host, get_machine_config, platform_config
 import qcore.constants as const
 from qcore.qclogging import get_basic_logger
 import qcore.simulation_structure as sim_struct
@@ -22,7 +22,9 @@ SCALE_NCORES = True
 default_wct = "00:30:00"
 
 
-def gen_command_template(params, machine, seed=const.HF_DEFAULT_SEED):
+def gen_command_template(
+    params, machine, seed=platform_config[const.PLATFORM_CONFIG.HF_DEFAULT_SEED.value]
+):
     command_template_parameters = {
         "fd_statlist": params.FD_STATLIST,
         "hf_bin_path": sim_struct.get_hf_bin_path(params.sim_dir),
@@ -59,11 +61,12 @@ def main(
         if args.version is not None:
             logger.error(
                 "{} cannot be recognize as a valid version option. version is set to default: {}".format(
-                    args.version, const.HF_DEFAULT_VERSION
+                    args.version,
+                    platform_config[const.PLATFORM_CONFIG.HF_DEFAULT_VERSION.value],
                 )
             )
-        version = const.HF_DEFAULT_VERSION
-        ll_name_prefix = const.HF_DEFAULT_VERSION
+        version = platform_config[const.PLATFORM_CONFIG.HF_DEFAULT_VERSION.value]
+        ll_name_prefix = platform_config[const.PLATFORM_CONFIG.HF_DEFAULT_VERSION.value]
     logger.debug("version: {}".format(version))
 
     # modify the logic to use the same as in install_bb:
@@ -165,7 +168,11 @@ if __name__ == "__main__":
     )
 
     parser.add_argument("--version", type=str, default=None, const=None)
-    parser.add_argument("--ncore", type=int, default=const.HF_DEFAULT_NCORES)
+    parser.add_argument(
+        "--ncore",
+        type=int,
+        default=platform_config[const.PLATFORM_CONFIG.HF_DEFAULT_NCORES.value],
+    )
 
     # if the --auto flag is used, wall clock time will be estimated the job
     # submitted automatically
@@ -174,12 +181,16 @@ if __name__ == "__main__":
     parser.add_argument(
         "--site_specific", type=int, nargs="?", default=None, const=True
     )
-    parser.add_argument("--account", type=str, default=const.DEFAULT_ACCOUNT)
+    parser.add_argument(
+        "--account",
+        type=str,
+        default=platform_config[const.PLATFORM_CONFIG.DEFAULT_ACCOUNT.value],
+    )
     parser.add_argument("--srf", type=str, default=None)
     parser.add_argument(
         "--seed",
         type=int,
-        default=const.HF_DEFAULT_SEED,
+        default=platform_config[const.PLATFORM_CONFIG.HF_DEFAULT_SEED.value],
         help="random seed number(0 for randomized seed)",
     )
     parser.add_argument(

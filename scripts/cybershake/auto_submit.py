@@ -6,17 +6,18 @@ import os
 
 from datetime import datetime
 from logging import Logger
-from subprocess import call
 from typing import List, Dict, Tuple
 
 import numpy as np
 
 from qcore import utils, qclogging
+from qcore.config import platform_config
 import qcore.constants as const
 import qcore.simulation_structure as sim_struct
 
 import estimation.estimate_wct as est
 from metadata.log_metadata import store_metadata
+
 from scripts.management.MgmtDB import MgmtDB
 from scripts.schedulers.scheduler_factory import initialise_scheduler
 from scripts.submit_emod3d import main as submit_lf_main
@@ -28,27 +29,6 @@ from scripts.submit_sim_imcalc import submit_im_calc_slurm, SlBodyOptConsts
 from shared_workflow import shared_automated_workflow
 import shared_workflow.load_config as ldcfg
 
-DEFAULT_N_RUNS = {const.HPC.maui: 12, const.HPC.mahuika: 12}
-
-JOB_RUN_MACHINE = {
-    const.ProcessType.EMOD3D: const.HPC.maui,
-    const.ProcessType.merge_ts: const.HPC.mahuika,
-    const.ProcessType.plot_ts: const.HPC.mahuika,
-    const.ProcessType.HF: const.HPC.maui,
-    const.ProcessType.BB: const.HPC.maui,
-    const.ProcessType.IM_calculation: const.HPC.maui,
-    const.ProcessType.IM_plot: const.HPC.mahuika,
-    const.ProcessType.rrup: const.HPC.mahuika,
-    const.ProcessType.Empirical: const.HPC.mahuika,
-    const.ProcessType.Verification: const.HPC.mahuika,
-    const.ProcessType.clean_up: const.HPC.mahuika,
-    const.ProcessType.LF2BB: const.HPC.mahuika,
-    const.ProcessType.HF2BB: const.HPC.mahuika,
-    const.ProcessType.plot_srf: const.HPC.mahuika,
-    const.ProcessType.advanced_IM: const.HPC.mahuika,
-}
-
-
 AUTO_SUBMIT_LOG_FILE_NAME = "auto_submit_log_{}.txt"
 
 
@@ -59,7 +39,7 @@ def submit_task(
     root_folder,
     parent_logger,
     retries=None,
-    hf_seed=const.HF_DEFAULT_SEED,
+    hf_seed=platform_config[const.PLATFORM_CONFIG.HF_DEFAULT_SEED.value],
     extended_period=False,
     models=None,
 ):
@@ -88,9 +68,11 @@ def submit_task(
         args = argparse.Namespace(
             auto=True,
             srf=run_name,
-            ncore=const.LF_DEFAULT_NCORES,
-            account=const.DEFAULT_ACCOUNT,
-            machine=JOB_RUN_MACHINE[const.ProcessType.EMOD3D].value,
+            ncore=platform_config[const.PLATFORM_CONFIG.LF_DEFAULT_NCORES.value],
+            account=platform_config[const.PLATFORM_CONFIG.DEFAULT_ACCOUNT.value],
+            machine=platform_config[const.PLATFORM_CONFIG.MACHINE_TASKS.value][
+                const.ProcessType.EMOD3D.name
+            ],
             rel_dir=sim_dir,
             write_directory=sim_dir,
             retries=retries,
@@ -107,8 +89,10 @@ def submit_task(
         args = argparse.Namespace(
             auto=True,
             srf=run_name,
-            account=const.DEFAULT_ACCOUNT,
-            machine=JOB_RUN_MACHINE[const.ProcessType.merge_ts].value,
+            account=platform_config[const.PLATFORM_CONFIG.DEFAULT_ACCOUNT.value],
+            machine=platform_config[const.PLATFORM_CONFIG.MACHINE_TASKS.value][
+                const.ProcessType.merge_ts.name
+            ],
             rel_dir=sim_dir,
             write_directory=sim_dir,
         )
@@ -143,7 +127,10 @@ def submit_task(
             error_file=os.path.join(sim_dir, "%x_%j.err"),
         )
         submit_sl_script(
-            script, target_machine=JOB_RUN_MACHINE[const.ProcessType.plot_ts].value
+            script,
+            target_machine=platform_config[const.PLATFORM_CONFIG.MACHINE_TASKS.value][
+                const.ProcessType.plot_ts.name
+            ],
         )
 
     elif proc_type == const.ProcessType.HF.value:
@@ -151,11 +138,13 @@ def submit_task(
             auto=True,
             srf=run_name,
             seed=hf_seed,
-            ncore=const.HF_DEFAULT_NCORES,
-            version=const.HF_DEFAULT_VERSION,
+            ncore=platform_config[const.PLATFORM_CONFIG.HF_DEFAULT_NCORES.value],
+            version=platform_config[const.PLATFORM_CONFIG.HF_DEFAULT_VERSION.value],
             site_specific=None,
-            account=const.DEFAULT_ACCOUNT,
-            machine=JOB_RUN_MACHINE[const.ProcessType.HF].value,
+            account=platform_config[const.PLATFORM_CONFIG.DEFAULT_ACCOUNT.value],
+            machine=platform_config[const.PLATFORM_CONFIG.MACHINE_TASKS.value][
+                const.ProcessType.HF.name
+            ],
             rel_dir=sim_dir,
             write_directory=sim_dir,
             debug=False,
@@ -173,9 +162,11 @@ def submit_task(
         args = argparse.Namespace(
             auto=True,
             srf=run_name,
-            version=const.BB_DEFAULT_VERSION,
-            account=const.DEFAULT_ACCOUNT,
-            machine=JOB_RUN_MACHINE[const.ProcessType.BB].value,
+            version=platform_config[const.PLATFORM_CONFIG.BB_DEFAULT_VERSION.value],
+            account=platform_config[const.PLATFORM_CONFIG.DEFAULT_ACCOUNT.value],
+            machine=platform_config[const.PLATFORM_CONFIG.MACHINE_TASKS.value][
+                const.ProcessType.BB.name
+            ],
             rel_dir=sim_dir,
             write_directory=sim_dir,
             retries=retries,
@@ -193,7 +184,9 @@ def submit_task(
             SlBodyOptConsts.extended.value: True if extended_period else False,
             SlBodyOptConsts.simple_out.value: True,
             "auto": True,
-            "machine": JOB_RUN_MACHINE[const.ProcessType.IM_calculation].value,
+            "machine": platform_config[const.PLATFORM_CONFIG.MACHINE_TASKS.value][
+                const.ProcessType.IM_calculation.name
+            ],
             "write_directory": sim_dir,
         }
         submit_im_calc_slurm(
@@ -228,7 +221,10 @@ def submit_task(
             error_file=os.path.join(sim_dir, "%x_%j.err"),
         )
         submit_sl_script(
-            script, target_machine=JOB_RUN_MACHINE[const.ProcessType.IM_plot].value
+            script,
+            target_machine=platform_config[const.PLATFORM_CONFIG.MACHINE_TASKS.value][
+                const.ProcessType.IM_plot.name
+            ],
         )
     elif proc_type == const.ProcessType.rrup.value:
         submit_sl_script(
@@ -239,7 +235,9 @@ def submit_task(
                 sim_dir,
                 root_folder,
             ),
-            target_machine=JOB_RUN_MACHINE[const.ProcessType.rrup].value,
+            target_machine=platform_config[const.PLATFORM_CONFIG.MACHINE_TASKS.value][
+                const.ProcessType.rrup.name
+            ],
         )
     elif proc_type == const.ProcessType.Empirical.value:
         extended_period_switch = "-e" if extended_period else ""
@@ -249,10 +247,15 @@ def submit_task(
             "nesi00213",
             [run_name],
             sim_dir,
-            target_machine=JOB_RUN_MACHINE[const.ProcessType.Empirical].value,
+            target_machine=platform_config[const.PLATFORM_CONFIG.MACHINE_TASKS.value][
+                const.ProcessType.Empirical.name
+            ],
         )
         submit_sl_script(
-            sl_script, target_machine=JOB_RUN_MACHINE[const.ProcessType.Empirical].value
+            sl_script,
+            target_machine=platform_config[const.PLATFORM_CONFIG.MACHINE_TASKS.value][
+                const.ProcessType.Empirical.name
+            ],
         )
     elif proc_type == const.ProcessType.Verification.value:
         pass
@@ -270,7 +273,10 @@ def submit_task(
             error_file=os.path.join(sim_dir, "%x_%j.err"),
         )
         submit_sl_script(
-            script, target_machine=JOB_RUN_MACHINE[const.ProcessType.clean_up].value
+            script,
+            target_machine=platform_config[const.PLATFORM_CONFIG.MACHINE_TASKS.value][
+                const.ProcessType.clean_up
+            ],
         )
     elif proc_type == const.ProcessType.LF2BB.value:
         params = utils.load_sim_params(os.path.join(sim_dir, "sim_params.yaml"))
@@ -288,7 +294,9 @@ def submit_task(
                     ["--{} {}".format(key, item) for key, item in params.bb.items()]
                 ),
             ),
-            target_machine=JOB_RUN_MACHINE[const.ProcessType.LF2BB].value,
+            target_machine=platform_config[const.PLATFORM_CONFIG.MACHINE_TASKS.value][
+                const.ProcessType.LF2BB
+            ],
         )
     elif proc_type == const.ProcessType.HF2BB.value:
         params = utils.load_sim_params(os.path.join(sim_dir, "sim_params.yaml"))
@@ -303,7 +311,9 @@ def submit_task(
                     ["--{} {}".format(key, item) for key, item in params.bb.items()]
                 ),
             ),
-            target_machine=JOB_RUN_MACHINE[const.ProcessType.HF2BB].value,
+            target_machine=platform_config[const.PLATFORM_CONFIG.MACHINE_TASKS.value][
+                const.ProcessType.HF2BB
+            ],
         )
     elif proc_type == const.ProcessType.plot_srf.value:
         plot_srf_template = (
@@ -320,7 +330,10 @@ def submit_task(
             error_file=os.path.join(sim_dir, "%x_%j.err"),
         )
         submit_sl_script(
-            script, target_machine=JOB_RUN_MACHINE[const.ProcessType.plot_srf].value
+            script,
+            target_machine=platform_config[const.PLATFORM_CONFIG.MACHINE_TASKS.value][
+                const.ProcessType.plot_srf
+            ],
         )
     elif proc_type == const.ProcessType.advanced_IM.value:
         params = utils.load_sim_params(
@@ -328,7 +341,9 @@ def submit_task(
         )
         options_dict = {
             "auto": True,
-            "machine": JOB_RUN_MACHINE[const.ProcessType.advanced_IM].value,
+            "machine": platform_config[const.PLATFORM_CONFIG.MACHINE_TASKS.value][
+                const.ProcessType.advanced_IM
+            ],
             "write_directory": sim_dir,
             const.ProcessType.advanced_IM.str_value: params[
                 const.ProcessType.advanced_IM.str_value
@@ -371,7 +386,10 @@ def run_main_submit_loop(
     config = utils.load_yaml(root_params_file)
     main_logger.info("Loaded root params file: {}".format(root_params_file))
     # Default values
-    hf_seed, extended_period = const.HF_DEFAULT_SEED, False
+    hf_seed, extended_period = (
+        platform_config[const.PLATFORM_CONFIG.HF_DEFAULT_SEED.value],
+        False,
+    )
 
     if const.RootParams.seed.value in config["hf"]:
         hf_seed = config["hf"][const.RootParams.seed.value]
@@ -434,7 +452,9 @@ def run_main_submit_loop(
         tasks_to_run, task_counter = [], {key: 0 for key in const.HPC}
         for cur_proc_type, cur_run_name, retries in runnable_tasks:
 
-            cur_hpc = JOB_RUN_MACHINE[const.ProcessType(cur_proc_type)]
+            cur_hpc = platform_config[const.PLATFORM_CONFIG.MACHINE_TASKS.value][
+                const.ProcessType(cur_proc_type).name
+            ]
             # Add task if limit has not been reached and there are no
             # outstanding mgmt db updates
             if (
@@ -605,7 +625,7 @@ def main():
                 "for each in the following list: {}".format(list(const.HPC))
             )
     else:
-        n_runs = DEFAULT_N_RUNS
+        n_runs = platform_config[const.PLATFORM_CONFIG.DEFAULT_N_RUNS.value]
 
     logger.debug(
         "Processes to be run were: {}. Getting all required dependencies now.".format(

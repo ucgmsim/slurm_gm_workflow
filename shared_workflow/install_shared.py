@@ -17,8 +17,9 @@ from qcore.constants import (
     RootParams,
     VMParams,
     ROOT_DEFAULTS_FILE_NAME,
-    HF_DEFAULT_SEED,
+    PLATFORM_CONFIG,
 )
+from qcore.config import platform_config
 from shared_workflow import shared
 import shared_workflow.shared_defaults as defaults
 
@@ -50,7 +51,7 @@ def install_simulation(
     hf_stat_vs_ref=None,
     v1d_full_path=None,
     sim_params_file="",
-    seed=HF_DEFAULT_SEED,
+    seed=platform_config[PLATFORM_CONFIG.HF_DEFAULT_SEED.value],
     logger: Logger = get_basic_logger(),
     extended_period=False,
 ):

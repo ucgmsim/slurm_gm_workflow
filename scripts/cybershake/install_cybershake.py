@@ -2,13 +2,13 @@ import argparse
 from datetime import datetime
 import os
 
-from qcore.constants import TIMESTAMP_FORMAT
+from qcore.constants import TIMESTAMP_FORMAT, ROOT_DEFAULTS_FILE_NAME, PLATFORM_CONFIG
 from qcore import qclogging
+from qcore.config import platform_config
 
 from scripts.cybershake.install_cybershake_fault import install_fault
 from shared_workflow.shared_defaults import recipe_dir
 
-from qcore.constants import ROOT_DEFAULTS_FILE_NAME, HF_DEFAULT_SEED
 
 AUTO_SUBMIT_LOG_FILE_NAME = "install_cybershake_log_{}.txt"
 
@@ -35,7 +35,7 @@ def main():
     parser.add_argument(
         "--seed",
         type=str,
-        default=HF_DEFAULT_SEED,
+        default=platform_config[PLATFORM_CONFIG.HF_DEFAULT_SEED.value],
         help="The seed to be used for HF simulations. Default is to request a random seed.",
     )
     parser.add_argument(

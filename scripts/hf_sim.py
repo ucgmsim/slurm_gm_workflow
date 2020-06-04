@@ -12,6 +12,7 @@ from tempfile import mkstemp
 import numpy as np
 import logging
 
+import qcore.config
 from shared_workflow import shared_defaults
 from qcore import binary_version, constants, utils
 
@@ -101,7 +102,7 @@ def args_parser(cmd=None):
         "--seed",
         help="random seed (0:randomised reproducible)",
         type=int,
-        default=constants.HF_DEFAULT_SEED,
+        default=qcore.config.HF_DEFAULT_SEED,
     )
     # HF IN, line 9
     arg("--duration", help="output length (seconds)", type=float, default=100.0)

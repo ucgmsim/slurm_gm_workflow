@@ -1,3 +1,4 @@
+import qcore.config
 import qcore.constants as const
 
 from scripts.schedulers.scheduler import Scheduler
@@ -16,15 +17,15 @@ class Slurm(Scheduler):
             target_machine = self.current_machine
         if user is True:
             cmd = "squeue -A {} -o '%A %t' -M {} -u {}".format(
-                const.DEFAULT_ACCOUNT, target_machine.name, self.user_name
+                qcore.config.DEFAULT_ACCOUNT, target_machine.name, self.user_name
             )
         elif user:
             cmd = "squeue -A {} -o '%A %t' -M {} -u {}".format(
-                const.DEFAULT_ACCOUNT, target_machine.name, user
+                qcore.config.DEFAULT_ACCOUNT, target_machine.name, user
             )
         else:
             cmd = "squeue -A {} -o '%A %t' -M {}".format(
-                const.DEFAULT_ACCOUNT, target_machine.name
+                qcore.config.DEFAULT_ACCOUNT, target_machine.name
             )
 
         output, err = self._run_command_and_wait(cmd=[cmd], debug=False, shell=True)
@@ -53,16 +54,11 @@ class Slurm(Scheduler):
             command = (
                 f"sbatch --export=CUR_ENV,CUR_HPC -M {target_machine} {script_location}"
             )
-            # res = exe(
-            #     "sbatch --export=CUR_ENV,CUR_HPC -M {} {}".format(
-            #         target_machine, script_location
-            #     ),
-            #     debug=False,
-            # )
         else:
-            # res = exe("sbatch {}".format(script_location), debug=False)
             command = f"sbatch {script_location}"
+
         out, err = self._run_command_and_wait(cmd=[command], debug=False, shell=True)
+
         if len(err) == 0 and out.startswith("Submitted"):
             self.logger.debug("Successfully submitted task to slurm")
             # no errors, return the job id

@@ -6,7 +6,7 @@ import argparse
 from logging import Logger
 
 from qcore import utils, binary_version
-from qcore.config import get_machine_config, host
+from qcore.config import get_machine_config, host, platform_config
 import qcore.constants as const
 from qcore.qclogging import get_basic_logger
 import qcore.simulation_structure as sim_struct
@@ -47,7 +47,7 @@ def main(args, logger: Logger = get_basic_logger()):
     lf_sim_dir = os.path.join(sim_dir, "LF")
 
     header_dict = {
-        "n_tasks": const.MERGE_TS_DEFAULT_NCORES,
+        "n_tasks": platform_config[const.PLATFORM_CONFIG.MERGE_TS_DEFAULT_NCORES.value],
         "wallclock_limit": default_run_time_merge_ts,
         "job_name": "post_emod3d.merge_ts.{}".format(srf_name),
         "job_description": "post emod3d: merge_ts",
@@ -92,7 +92,11 @@ if __name__ == "__main__":
         description="Create (and submit if specified) the slurm script for HF"
     )
     parser.add_argument("--auto", nargs="?", type=str, const=True)
-    parser.add_argument("--account", type=str, default=const.DEFAULT_ACCOUNT)
+    parser.add_argument(
+        "--account",
+        type=str,
+        default=platform_config[const.PLATFORM_CONFIG.DEFAULT_ACCOUNT.value],
+    )
     parser.add_argument("--srf", type=str, default=None)
     parser.add_argument(
         "--machine",

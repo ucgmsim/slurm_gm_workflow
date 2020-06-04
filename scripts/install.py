@@ -325,7 +325,12 @@ def main_local(args):
     fault_yaml_path = simulation_structure.get_fault_yaml_path(sim_dir)
     root_yaml_path = simulation_structure.get_root_yaml_path(sim_dir)
 
-    root_params_dict, fault_params_dict, sim_params_dict, vm_add_params_dict = install_simulation(
+    (
+        root_params_dict,
+        fault_params_dict,
+        sim_params_dict,
+        vm_add_params_dict,
+    ) = install_simulation(
         args.version,
         sim_dir,
         event_name,
@@ -404,7 +409,12 @@ def main_remote(cfg, args):
 
     # TODO action will return 4 params dict and they will be dumped into yamls.
     # TODO to implement when install_manual is merged
-    root_params_dict, fault_params_dict, sim_params_dict, vm_add_params_dict = install_simulation(
+    (
+        root_params_dict,
+        fault_params_dict,
+        sim_params_dict,
+        vm_add_params_dict,
+    ) = install_simulation(
         args.version,
         sim_dir,
         event_name,

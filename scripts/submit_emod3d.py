@@ -7,7 +7,7 @@ import argparse
 from logging import Logger
 
 from qcore import utils, binary_version
-from qcore.config import get_machine_config, host
+from qcore.config import get_machine_config, host, platform_config
 from qcore.qclogging import get_basic_logger
 import qcore.constants as const
 import qcore.simulation_structure as sim_struct
@@ -132,9 +132,17 @@ if __name__ == "__main__":
         description="Create (and submit if specified) the slurm script for LF"
     )
 
-    parser.add_argument("--ncore", type=int, default=const.LF_DEFAULT_NCORES)
+    parser.add_argument(
+        "--ncore",
+        type=int,
+        default=platform_config[const.PLATFORM_CONFIG.LF_DEFAULT_NCORES.value],
+    )
     parser.add_argument("--auto", nargs="?", type=str, const=True)
-    parser.add_argument("--account", type=str, default=const.DEFAULT_ACCOUNT)
+    parser.add_argument(
+        "--account",
+        type=str,
+        default=platform_config[const.PLATFORM_CONFIG.DEFAULT_ACCOUNT.value],
+    )
     parser.add_argument("--srf", type=str, default=None)
     parser.add_argument(
         "--machine",

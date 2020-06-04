@@ -8,7 +8,7 @@ import estimation.estimate_wct as est
 import qcore.constants as const
 from qcore import simulation_structure
 from qcore import utils, shared
-from qcore.config import host
+from qcore.config import host, platform_config
 from qcore.qclogging import get_basic_logger
 from shared_workflow.load_config import load
 from shared_workflow.shared import set_wct, confirm, get_hf_nt
@@ -37,7 +37,7 @@ def main(
     logger: Logger = get_basic_logger(),
 ):
     params = utils.load_sim_params(os.path.join(args.rel_dir, "sim_params.yaml"))
-    ncores = const.BB_DEFAULT_NCORES
+    ncores = platform_config[const.PLATFORM_CONFIG.BB_DEFAULT_NCORES.value]
 
     version = args.version
     if version in ["mpi", "run_bb_mpi"]:
@@ -46,11 +46,12 @@ def main(
         if version is not None:
             logger.error(
                 "{} cannot be recognized as a valid option. version is set to default:".format(
-                    version, const.BB_DEFAULT_VERSION
+                    version,
+                    platform_config[const.PLATFORM_CONFIG.BB_DEFAULT_VERSION.value],
                 )
             )
-        version = const.BB_DEFAULT_VERSION
-        sl_name_prefix = const.BB_DEFAULT_VERSION
+        version = platform_config[const.PLATFORM_CONFIG.BB_DEFAULT_VERSION.value]
+        sl_name_prefix = platform_config[const.PLATFORM_CONFIG.BB_DEFAULT_VERSION.value]
     logger.debug(version)
 
     srf_name = os.path.splitext(os.path.basename(params.srf_file))[0]
@@ -137,8 +138,16 @@ if __name__ == "__main__":
     )
 
     parser.add_argument("--auto", nargs="?", type=str, const=True)
-    parser.add_argument("--version", type=str, default=const.BB_DEFAULT_VERSION)
-    parser.add_argument("--account", type=str, default=const.DEFAULT_ACCOUNT)
+    parser.add_argument(
+        "--version",
+        type=str,
+        default=platform_config[const.PLATFORM_CONFIG.BB_DEFAULT_VERSION.value],
+    )
+    parser.add_argument(
+        "--account",
+        type=str,
+        default=platform_config[const.PLATFORM_CONFIG.DEFAULT_ACCOUNT.value],
+    )
     parser.add_argument("--srf", type=str, default=None)
     parser.add_argument(
         "--machine",

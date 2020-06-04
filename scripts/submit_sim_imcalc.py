@@ -7,7 +7,7 @@ from logging import Logger
 from typing import Dict
 
 from qcore import utils, shared
-from qcore.config import host
+from qcore.config import host, platform_config
 import qcore.constants as const
 from qcore.qclogging import get_basic_logger
 import qcore.simulation_structure as sim_struct
@@ -52,14 +52,18 @@ DEFAULT_OPTIONS = {
     # Header
     SlHdrOptConsts.job_name_prefix.value: "sim_im_calc",
     SlHdrOptConsts.description.value: "Calculates intensity measures.",
-    SlHdrOptConsts.account.value: const.DEFAULT_ACCOUNT,
+    SlHdrOptConsts.account.value: platform_config[
+        const.PLATFORM_CONFIG.DEFAULT_ACCOUNT.value
+    ],
     SlHdrOptConsts.additional.value: "#SBATCH --hint=nomultithread",
     SlHdrOptConsts.memory.value: "2G",
     SlHdrOptConsts.n_tasks.value: 1,
     SlHdrOptConsts.version.value: "slurm",
     # Body
     SlBodyOptConsts.component.value: const.Components.cgeom.str_value,
-    SlBodyOptConsts.n_procs.value: const.IM_CALC_DEFAULT_N_CORES,
+    SlBodyOptConsts.n_procs.value: platform_config[
+        const.PLATFORM_CONFIG.IM_CALC_DEFAULT_N_CORES.value
+    ],
     SlBodyOptConsts.extended.value: False,
     SlBodyOptConsts.simple_out.value: True,
     "auto": False,
@@ -260,7 +264,7 @@ if __name__ == "__main__":
         "--n_procs",
         type=int,
         help="Number of processes to use",
-        default=const.IM_CALC_DEFAULT_N_CORES,
+        default=platform_config[const.PLATFORM_CONFIG.IM_CALC_DEFAULT_N_CORES.value],
     )
     parser.add_argument(
         "-e",

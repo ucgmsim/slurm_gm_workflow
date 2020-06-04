@@ -15,6 +15,7 @@ from logging import Logger
 
 import numpy as np
 
+from qcore.config import platform_config
 import qcore.constants as const
 from qcore.qclogging import get_basic_logger, NOPRINTCRITICAL
 from estimation.model import CombinedModel, WCEstModel, NNWcEstModel, SVRModel
@@ -147,7 +148,11 @@ def estimate_LF_chours(
     )
 
     core_hours = estimate(
-        data, model, model_type, const.LF_DEFAULT_NCORES, lf_svr_input_data=svr_data
+        data,
+        model,
+        model_type,
+        platform_config[const.PLATFORM_CONFIG.LF_DEFAULT_NCORES],
+        lf_svr_input_data=svr_data,
     )
 
     # data[:, -1] represents the last column of the ndarray data, which contains the number of cores for each task
@@ -253,7 +258,8 @@ def estimate_HF_chours(
         data,
         model,
         model_type,
-        const.HF_DEFAULT_NCORES / hyperthreading_factor,
+        platform_config[const.PLATFORM_CONFIG.HF_DEFAULT_NCORES]
+        / hyperthreading_factor,
         logger=logger,
     )
 
@@ -390,9 +396,9 @@ def estimate_BB_chours(
         data,
         model=model,
         model_type=model_type,
-        default_ncores=const.BB_DEFAULT_NCORES / 2.0
+        default_ncores=platform_config[const.PLATFORM_CONFIG.BB_DEFAULT_NCORES] / 2.0
         if const.ProcessType.BB.is_hyperth
-        else const.BB_DEFAULT_NCORES,
+        else platform_config[const.PLATFORM_CONFIG.BB_DEFAULT_NCORES],
     )
 
     return core_hours, core_hours / data[:, -1]
@@ -437,7 +443,12 @@ def est_IM_chours_single(
         [float(fd_count), float(nt), comp, float(pSA_count), float(n_cores)]
     ).reshape(1, 5)
 
-    core_hours = estimate(data, model, model_type, const.IM_CALC_DEFAULT_N_CORES)[0]
+    core_hours = estimate(
+        data,
+        model,
+        model_type,
+        platform_config[const.PLATFORM_CONFIG.IM_CALC_DEFAULT_N_CORES],
+    )[0]
 
     return core_hours, core_hours / n_cores
 
