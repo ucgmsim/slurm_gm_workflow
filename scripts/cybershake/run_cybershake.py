@@ -228,12 +228,12 @@ def parse_config_file(
         else:
             if isinstance(pattern, str):
                 pattern = [pattern]
-            for i in pattern:
-                if i == ONCE:
-                    i = ONCE_PATTERN
-                if i not in tasks_with_pattern_match.keys():
-                    tasks_with_pattern_match.update({i: []})
-                tasks_with_pattern_match[i].append(proc)
+            for subpattern in pattern:
+                if subpattern == ONCE:
+                    subpattern = ONCE_PATTERN
+                if subpattern not in tasks_with_pattern_match.keys():
+                    tasks_with_pattern_match.update({subpattern: []})
+                tasks_with_pattern_match[subpattern].append(proc)
     logger.info("Master script will run {}".format(tasks_to_run_for_all))
     for pattern, tasks in tasks_with_pattern_match.items():
         logger.info("Pattern {} will run tasks {}".format(pattern, tasks))
