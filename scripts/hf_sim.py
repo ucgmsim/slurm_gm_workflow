@@ -12,9 +12,9 @@ from tempfile import mkstemp
 import numpy as np
 import logging
 
-import qcore.config
 from shared_workflow import shared_defaults
 from qcore import binary_version, constants, utils
+from qcore.config import platform_config
 
 if __name__ == "__main__":
     from qcore import MPIFileHandler
@@ -102,7 +102,7 @@ def args_parser(cmd=None):
         "--seed",
         help="random seed (0:randomised reproducible)",
         type=int,
-        default=qcore.config.HF_DEFAULT_SEED,
+        default=platform_config[constants.PLATFORM_CONFIG.HF_DEFAULT_SEED.value],
     )
     # HF IN, line 9
     arg("--duration", help="output length (seconds)", type=float, default=100.0)

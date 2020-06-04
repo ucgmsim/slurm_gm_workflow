@@ -452,9 +452,9 @@ def run_main_submit_loop(
         tasks_to_run, task_counter = [], {key: 0 for key in const.HPC}
         for cur_proc_type, cur_run_name, retries in runnable_tasks:
 
-            cur_hpc = platform_config[const.PLATFORM_CONFIG.MACHINE_TASKS.value][
+            cur_hpc = const.HPC(platform_config[const.PLATFORM_CONFIG.MACHINE_TASKS.value][
                 const.ProcessType(cur_proc_type).name
-            ]
+            ])
             # Add task if limit has not been reached and there are no
             # outstanding mgmt db updates
             if (

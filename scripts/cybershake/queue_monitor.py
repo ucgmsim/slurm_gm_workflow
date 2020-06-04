@@ -71,7 +71,7 @@ def sacct_metadata(db_running_task: SlurmTask, task_logger: Logger, root_folder:
             cmd.format(
                 db_running_task.job_id,
                 platform_config[const.PLATFORM_CONFIG.MACHINE_TASKS.value][
-                    const.ProcessType(db_running_task.proc_type)
+                    const.ProcessType(db_running_task.proc_type).name
                 ],
             ),
             shell=True,
