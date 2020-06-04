@@ -1,8 +1,8 @@
+import argparse
 from datetime import datetime
 from logging import Logger, DEBUG
 from os.path import abspath, join
 import threading
-import argparse
 from typing import Dict, List, Tuple
 
 from qcore import constants as const
@@ -226,9 +226,7 @@ def parse_config_file(
         elif pattern == NONE:
             pass
         else:
-            try:
-                iter(pattern)
-            except TypeError:
+            if isinstance(pattern, str):
                 pattern = [pattern]
             for i in pattern:
                 if i == ONCE:
