@@ -177,9 +177,16 @@ def run_automated_workflow(
                     pattern, tasks
                 )
             )
-            run_main_submit_loop(root_folder, n_runs, pattern, tasks, sleep_time,
-                                 (lf_est_model, hf_est_model, bb_est_model, im_est_model), main_logger=pattern_logger,
-                                 cycle_timeout=0)
+            run_main_submit_loop(
+                root_folder,
+                n_runs,
+                pattern,
+                tasks,
+                sleep_time,
+                (lf_est_model, hf_est_model, bb_est_model, im_est_model),
+                main_logger=pattern_logger,
+                cycle_timeout=0,
+            )
     bulk_auto_submit_thread.join()
     wrapper_logger.info(
         "The main auto_submit thread has terminated, and all auto_submit patterns have completed a final run through"

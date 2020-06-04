@@ -348,7 +348,7 @@ class E2ETests(object):
                 debug=False,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
-                encoding='utf-8',
+                encoding="utf-8",
             )
             self._processes.append(p_submit)
             p_submit_out_nbsr = NonBlockingStreamReader(p_submit.stdout)
@@ -395,9 +395,11 @@ class E2ETests(object):
                         laps_till_restart = get_laps_till_restart()
 
                 try:
-                    total_count, comp_count, failed_count = (
-                        self.check_mgmt_db_progress()
-                    )
+                    (
+                        total_count,
+                        comp_count,
+                        failed_count,
+                    ) = self.check_mgmt_db_progress()
                     if not self.check_completed():
                         return False
                 except sql.OperationalError as ex:
