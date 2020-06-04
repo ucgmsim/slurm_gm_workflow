@@ -5,6 +5,7 @@ import signal
 
 from e2e_tests.E2ETests import E2ETests
 from e2e_tests.queue_monitor_tests import QueueMonitorStressTest
+from scripts.schedulers.scheduler_factory import initialise_scheduler
 
 
 def on_exit(signum, frame):
@@ -54,6 +55,8 @@ if __name__ == "__main__":
     signal.signal(signal.SIGINT, on_exit)
 
     test_object = None
+
+    initialise_scheduler("slurm", args.user, "nesi00213")
 
     if args.test_queue:
         test_object = QueueMonitorStressTest(args.config_file)

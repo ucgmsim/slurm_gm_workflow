@@ -32,7 +32,6 @@ NONE = "NONE"
 def run_automated_workflow(
     root_folder: str,
     log_directory: str,
-    user: str,
     n_runs: Dict[str, int],
     n_max_retries: int,
     tasks_to_run: List[const.ProcessType],
@@ -50,7 +49,6 @@ def run_automated_workflow(
     may occur, and the task run twice at the same time, resulting in file writing issues.
     :param root_folder: The root directory of the cybershake folder structure
     :param log_directory: The directory the log files are to be placed in
-    :param user: The username of the person running this
     :param n_runs: The maximum number of processes that can be running at once. Note that this will be applied
     individually to each instance of auto_submit and so will effectively be doubled
     :param n_max_retries: The maximum number of times a task can be run before being written off as needing user input
@@ -142,7 +140,6 @@ def run_automated_workflow(
         target=run_main_submit_loop,
         args=(
             root_folder,
-            user,
             n_runs,
             "%",
             tasks_to_run,
@@ -349,7 +346,6 @@ def main():
     run_automated_workflow(
         root_directory,
         log_directory,
-        args.user,
         n_runs,
         args.n_max_retries,
         tasks_n,

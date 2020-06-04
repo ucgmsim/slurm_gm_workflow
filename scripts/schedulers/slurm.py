@@ -11,23 +11,23 @@ class Slurm(Scheduler):
         Scheduler.__init__(self, user, account, logger)
         self.current_machine = current_machine
 
-    def check_queues(self, user=False, target_machine=None):
+    def check_queues(self, user=False, target_machine: const.HPC = None):
         if target_machine is None:
             target_machine = self.current_machine
         if user is True:
             cmd = "squeue -A {} -o '%A %t' -M {} -u {}".format(
-                const.DEFAULT_ACCOUNT, target_machine, self.user_name
+                const.DEFAULT_ACCOUNT, target_machine.name, self.user_name
             )
         elif user:
             cmd = "squeue -A {} -o '%A %t' -M {} -u {}".format(
-                const.DEFAULT_ACCOUNT, target_machine, user
+                const.DEFAULT_ACCOUNT, target_machine.name, user
             )
         else:
             cmd = "squeue -A {} -o '%A %t' -M {}".format(
-                const.DEFAULT_ACCOUNT, target_machine
+                const.DEFAULT_ACCOUNT, target_machine.name
             )
 
-        output, err = self.__run_command_and_wait(cmd=cmd)
+        output, err = self._run_command_and_wait(cmd=[cmd], debug=False, shell=True)
         message = ""
 
         try:
@@ -62,7 +62,7 @@ class Slurm(Scheduler):
         else:
             # res = exe("sbatch {}".format(script_location), debug=False)
             command = f"sbatch {script_location}"
-        out, err = self.__run_command_and_wait(cmd=command)
+        out, err = self._run_command_and_wait(cmd=[command], debug=False, shell=True)
         if len(err) == 0 and out.startswith("Submitted"):
             self.logger.debug("Successfully submitted task to slurm")
             # no errors, return the job id
@@ -97,7 +97,7 @@ class Slurm(Scheduler):
         else:
             command = f"scancel {job_id}"
 
-        out, err = self.__run_command_and_wait(command=command)
+        out, err = self._run_command_and_wait(cmd=[command], debug=False, shell=True)
 
         if "error" not in out.lower() and "error" not in err.lower():
             self.logger.debug(f"Cancelled job-id {job_id} successfully")

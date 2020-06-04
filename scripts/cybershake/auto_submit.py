@@ -73,12 +73,13 @@ def submit_task(
     submitted_time = datetime.now().strftime(const.METADATA_TIMESTAMP_FMT)
     log_file = os.path.join(sim_dir, "ch_log", const.METADATA_LOG_FILENAME)
 
-    def submit_sl_script(script_name, **kwargs):
+    def submit_sl_script(script_name, target_machine=None, **kwargs):
         shared_automated_workflow.submit_sl_script(
             script_name,
             proc_type,
             sim_struct.get_mgmt_db_queue(root_folder),
             run_name,
+            target_machine=target_machine,
             logger=task_logger,
         )
 

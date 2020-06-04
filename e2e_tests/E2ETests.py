@@ -21,7 +21,7 @@ from scripts.management.db_helper import connect_db_ctx
 from scripts.management.MgmtDB import SlurmTask
 import qcore.constants as const
 import qcore.simulation_structure as sim_struct
-from qcore.shared import exe
+from qcore.shared import non_blocking_exe, exe
 
 
 def get_sim_dirs(runs_dir):
@@ -343,12 +343,12 @@ class E2ETests(object):
             ]
 
         def run_wrapper(command: str):
-            p_submit = exe(
+            p_submit = non_blocking_exe(
                 command,
                 debug=False,
-                non_blocking=True,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
+                encoding='utf-8',
             )
             self._processes.append(p_submit)
             p_submit_out_nbsr = NonBlockingStreamReader(p_submit.stdout)

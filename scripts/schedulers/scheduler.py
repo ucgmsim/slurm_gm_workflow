@@ -6,6 +6,10 @@ from qcore.shared import exe
 from qcore.qclogging import VERYVERBOSE, NOPRINTERROR
 
 
+def task_runner_no_debug(*args, **kwargs):
+    return exe(*args, debug=False, **kwargs)
+
+
 class SchedulerException(EnvironmentError):
     pass
 
@@ -21,6 +25,7 @@ class Scheduler(ABC):
         self.user_name = user
         self.account = account
         self.logger = logger
+        self._run_command_and_wait = self.logging_wrapper(task_runner_no_debug)
 
     @abstractmethod
     def submit_job(self, script_location: str, target_machine: str = None) -> int:
@@ -43,7 +48,7 @@ class Scheduler(ABC):
 
     @abstractmethod
     def check_queues(
-        self, user: str = None, target_machine=None
+            self, user: str = None, target_machine=None
     ) -> List[str]:
         """
         Checks the schedulers queue(s) for running jobs
@@ -69,20 +74,6 @@ class Scheduler(ABC):
             return res
 
         return wrapper
-
-    __run_command_and_wait = logging_wrapper(exe)
-
-    # def __run_command_and_wait(self, cmd, debug=True, shell=False, stdout=True, stderr=True, stdin=None):
-    #     """
-    #     Runs a command and logs the output to the logger under a very verbose level.
-    #     Effectively a wrapper for qcore.shared.exe with logging
-    #     :param cmd: The command to be run
-    #     :param kwargs: Any other named arguments to be passed to exe
-    #     :return:
-    #     """
-    #     out, err = exe(cmd, debug=debug, shell=shell, stdout=True, stderr=True, stdin=None)
-    #     self.logger.log(VERYVERBOSE, f"{cmd} out: {out}, err: {err}")
-    #     return out, err
 
     def raise_scheduler_exception(self, message) -> SchedulerException:
         """
