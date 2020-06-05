@@ -106,6 +106,8 @@ class MgmtDB:
                 if entry.status == const.Status.failed.value:
                     for process in const.ProcessType:
                         for dependency in process.dependencies:
+                            if iter(dependency):
+                                dependency = dependency[0]
                             print("dependant process", entry.proc_type, dependency)
                             if entry.proc_type == dependency:
                                 job_id = cur.execute(
