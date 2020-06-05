@@ -22,12 +22,6 @@ def test_main(set_up, mocker):
         "scripts.submit_hf.est.est_HF_chours_single",
         lambda *args, **kwargs: (2, 0.05, 40),
     )
-    mocker.patch(
-        "shared_workflow.shared_template.recipe_dir",
-        os.path.join(
-            os.path.dirname(os.path.realpath(__file__)), "..", "..", "templates"
-        ),
-    )
 
     for root_path, realisation in set_up:
         args = get_input_params(

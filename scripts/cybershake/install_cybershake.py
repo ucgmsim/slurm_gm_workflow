@@ -7,7 +7,6 @@ from qcore import qclogging
 from qcore.config import platform_config
 
 from scripts.cybershake.install_cybershake_fault import install_fault
-from shared_workflow.shared_defaults import recipe_dir
 
 
 AUTO_SUBMIT_LOG_FILE_NAME = "install_cybershake_log_{}.txt"
@@ -35,7 +34,7 @@ def main():
     parser.add_argument(
         "--seed",
         type=str,
-        default=platform_config[PLATFORM_CONFIG.HF_DEFAULT_SEED.value],
+        default=platform_config[PLATFORM_CONFIG.HF_DEFAULT_SEED.name],
         help="The seed to be used for HF simulations. Default is to request a random seed.",
     )
     parser.add_argument(
@@ -83,8 +82,8 @@ def main():
     logger.debug("Added file handler to the logger")
 
     if not os.path.exists(
-        os.path.join(recipe_dir, "gmsim", args.version)
-    ) or os.path.isfile(os.path.join(recipe_dir, "gmsim", args.version)):
+        os.path.join(platform_config[PLATFORM_CONFIG.TEMPLATES_DIR.name], "gmsim", args.version)
+    ) or os.path.isfile(os.path.join(platform_config[PLATFORM_CONFIG.TEMPLATES_DIR.name], "gmsim", args.version)):
         logger.critical(
             "Version {} does not exist in templates/gmsim directory.".format(
                 args.version
@@ -94,13 +93,13 @@ def main():
             "Version {} does not exist, place a directory with that name into {}\n"
             "Also ensure it has contents of {} and {}".format(
                 args.version,
-                os.path.join(recipe_dir, "gmsim"),
+                os.path.join(platform_config[PLATFORM_CONFIG.TEMPLATES_DIR.name], "gmsim"),
                 ROOT_DEFAULTS_FILE_NAME,
                 "emod3d_defaults.yaml",
             )
         )
     for f_name in [ROOT_DEFAULTS_FILE_NAME, "emod3d_defaults.yaml"]:
-        if not os.path.exists(os.path.join(recipe_dir, "gmsim", args.version, f_name)):
+        if not os.path.exists(os.path.join(platform_config[PLATFORM_CONFIG.TEMPLATES_DIR.name], "gmsim", args.version, f_name)):
             logger.critical(
                 "Version {} does not have the file {}".format(args.version, f_name)
             )
@@ -108,7 +107,7 @@ def main():
                 "Version {} does not have a required {} file in the directory {}".format(
                     args.version,
                     f_name,
-                    os.path.join(recipe_dir, "gmsim", args.version),
+                    os.path.join(platform_config[PLATFORM_CONFIG.TEMPLATES_DIR.name], "gmsim", args.version),
                 )
             )
 

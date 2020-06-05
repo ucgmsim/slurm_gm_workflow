@@ -14,7 +14,6 @@ import qcore.simulation_structure as sim_struct
 from qcore.utils import DotDictify
 
 from estimation.estimate_wct import est_IM_chours_single, EstModel
-from shared_workflow.load_config import load
 from shared_workflow.shared import set_wct, confirm
 from shared_workflow.shared_automated_workflow import submit_sl_script
 from shared_workflow.shared_template import write_sl_script
@@ -53,7 +52,7 @@ DEFAULT_OPTIONS = {
     SlHdrOptConsts.job_name_prefix.value: "sim_im_calc",
     SlHdrOptConsts.description.value: "Calculates intensity measures.",
     SlHdrOptConsts.account.value: platform_config[
-        const.PLATFORM_CONFIG.DEFAULT_ACCOUNT.value
+        const.PLATFORM_CONFIG.DEFAULT_ACCOUNT.name
     ],
     SlHdrOptConsts.additional.value: "#SBATCH --hint=nomultithread",
     SlHdrOptConsts.memory.value: "2G",
@@ -62,7 +61,7 @@ DEFAULT_OPTIONS = {
     # Body
     SlBodyOptConsts.component.value: const.Components.cgeom.str_value,
     SlBodyOptConsts.n_procs.value: platform_config[
-        const.PLATFORM_CONFIG.IM_CALC_DEFAULT_N_CORES.value
+        const.PLATFORM_CONFIG.IM_CALC_DEFAULT_N_CORES.name
     ],
     SlBodyOptConsts.extended.value: False,
     SlBodyOptConsts.simple_out.value: True,
@@ -110,10 +109,7 @@ def submit_im_calc_slurm(
     )
 
     if est_model is None:
-        workflow_config = load(
-            os.path.dirname(os.path.realpath(__file__)), "workflow_config.json"
-        )
-        est_model = os.path.join(workflow_config["estimation_models_dir"], "IM")
+        est_model = os.path.join(platform_config[const.PLATFORM_CONFIG.ESTIMATION_MODELS_DIR.name], "IM")
 
     # Get wall clock estimation
     logger.info(
@@ -264,7 +260,7 @@ if __name__ == "__main__":
         "--n_procs",
         type=int,
         help="Number of processes to use",
-        default=platform_config[const.PLATFORM_CONFIG.IM_CALC_DEFAULT_N_CORES.value],
+        default=platform_config[const.PLATFORM_CONFIG.IM_CALC_DEFAULT_N_CORES.name],
     )
     parser.add_argument(
         "-e",

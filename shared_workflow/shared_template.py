@@ -7,7 +7,6 @@ import qcore.constants as const
 from qcore.config import host, platform_config
 from qcore.utils import load_sim_params
 from shared_workflow.shared import write_file
-from shared_workflow.shared_defaults import recipe_dir
 
 
 def write_sl_script(
@@ -23,8 +22,8 @@ def write_sl_script(
 ):
     params = load_sim_params(os.path.join(sim_dir, "sim_params.yaml"))
     common_header_dict = {
-        "template_dir": recipe_dir,
-        "memory": platform_config[const.PLATFORM_CONFIG.DEFAULT_MEMORY.value],
+        "template_dir": platform_config[const.PLATFORM_CONFIG.TEMPLATES_DIR.name],
+        "memory": platform_config[const.PLATFORM_CONFIG.DEFAULT_MEMORY.name],
         "exe_time": const.timestamp,
         "version": "slurm",
         "account": cmd_args.account,
@@ -49,7 +48,7 @@ def write_sl_script(
 
     (template_name, template_params) = body_template_params
     common_template_params.update(template_params)
-    body = generate_context(recipe_dir, template_name, common_template_params)
+    body = generate_context(platform_config[const.PLATFORM_CONFIG.TEMPLATES_DIR.name], template_name, common_template_params)
 
     script_name = os.path.abspath(
         os.path.join(
@@ -140,9 +139,9 @@ def resolve_header(
 
 
 def get_partition(machine, core_hours=None):
-    if machine == const.HPC.maui.value:
+    if machine == "maui":
         partition = "nesi_research"
-    elif machine == const.HPC.mahuika.value:
+    elif machine == "mahuika":
         if core_hours and core_hours < 6:
             partition = "large"
         else:

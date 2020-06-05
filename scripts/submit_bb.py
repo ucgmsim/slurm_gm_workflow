@@ -10,7 +10,6 @@ from qcore import simulation_structure
 from qcore import utils, shared
 from qcore.config import host, platform_config
 from qcore.qclogging import get_basic_logger
-from shared_workflow.load_config import load
 from shared_workflow.shared import set_wct, confirm, get_hf_nt
 from shared_workflow.shared_automated_workflow import submit_sl_script
 from shared_workflow.shared_template import write_sl_script
@@ -37,7 +36,7 @@ def main(
     logger: Logger = get_basic_logger(),
 ):
     params = utils.load_sim_params(os.path.join(args.rel_dir, "sim_params.yaml"))
-    ncores = platform_config[const.PLATFORM_CONFIG.BB_DEFAULT_NCORES.value]
+    ncores = platform_config[const.PLATFORM_CONFIG.BB_DEFAULT_NCORES.name]
 
     version = args.version
     if version in ["mpi", "run_bb_mpi"]:
@@ -47,11 +46,11 @@ def main(
             logger.error(
                 "{} cannot be recognized as a valid option. version is set to default:".format(
                     version,
-                    platform_config[const.PLATFORM_CONFIG.BB_DEFAULT_VERSION.value],
+                    platform_config[const.PLATFORM_CONFIG.BB_DEFAULT_VERSION.name],
                 )
             )
-        version = platform_config[const.PLATFORM_CONFIG.BB_DEFAULT_VERSION.value]
-        sl_name_prefix = platform_config[const.PLATFORM_CONFIG.BB_DEFAULT_VERSION.value]
+        version = platform_config[const.PLATFORM_CONFIG.BB_DEFAULT_VERSION.name]
+        sl_name_prefix = platform_config[const.PLATFORM_CONFIG.BB_DEFAULT_VERSION.name]
     logger.debug(version)
 
     srf_name = os.path.splitext(os.path.basename(params.srf_file))[0]
@@ -62,10 +61,7 @@ def main(
         fd_count = len(shared.get_stations(params.FD_STATLIST))
 
         if est_model is None:
-            workflow_config = load(
-                os.path.dirname(os.path.realpath(__file__)), "workflow_config.json"
-            )
-            est_model = os.path.join(workflow_config["estimation_models_dir"], "BB")
+            est_model = os.path.join(platform_config[const.PLATFORM_CONFIG.ESTIMATION_MODELS_DIR.name], "BB")
 
         est_core_hours, est_run_time = est.est_BB_chours_single(
             fd_count, nt, ncores, est_model
@@ -141,12 +137,12 @@ if __name__ == "__main__":
     parser.add_argument(
         "--version",
         type=str,
-        default=platform_config[const.PLATFORM_CONFIG.BB_DEFAULT_VERSION.value],
+        default=platform_config[const.PLATFORM_CONFIG.BB_DEFAULT_VERSION.name],
     )
     parser.add_argument(
         "--account",
         type=str,
-        default=platform_config[const.PLATFORM_CONFIG.DEFAULT_ACCOUNT.value],
+        default=platform_config[const.PLATFORM_CONFIG.DEFAULT_ACCOUNT.name],
     )
     parser.add_argument("--srf", type=str, default=None)
     parser.add_argument(

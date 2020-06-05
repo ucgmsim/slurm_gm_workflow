@@ -4,10 +4,11 @@ import argparse
 from datetime import datetime
 import os
 
-from shared_workflow.shared_defaults import recipe_dir
+import qcore.config
 from shared_workflow.shared_template import generate_context, resolve_header
 from qcore import simulation_structure, utils
 from qcore import constants as const
+from qcore.config import platform_config
 
 DEFAULT_ACCOUNT = "nesi00213"
 
@@ -41,9 +42,9 @@ def generate_sl(
     ]
     # determine NP
     # TODO: empirical are currently not parallel, update this when they are
-    if target_machine == const.HPC.mahuika.value:
+    if target_machine == qcore.config.HPC.mahuika.value:
         np = 1
-    elif target_machine == const.HPC.maui.value:
+    elif target_machine == qcore.config.HPC.maui.value:
         np = 1
     else:
         raise SystemError(f"cannot recognize target_machine :{target_machine}")
@@ -62,7 +63,7 @@ def generate_sl(
     )
 
     header = resolve_header(
-        recipe_dir,
+        platform_config[const.PLATFORM_CONFIG.TEMPLATES_DIR.name],
         account,
         np,
         wallclock_limit="00:30:00",

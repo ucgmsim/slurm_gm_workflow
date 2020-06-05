@@ -21,13 +21,11 @@ from qcore.constants import (
 )
 from qcore.config import platform_config
 from shared_workflow import shared
-import shared_workflow.shared_defaults as defaults
 
 
 def install_simulation(
     version,
     sim_dir,
-    event_name,
     run_name,
     run_dir,
     vel_mod_dir,
@@ -44,14 +42,13 @@ def install_simulation(
     yes_model_params,
     fault_yaml_path,
     root_yaml_path,
-    v1d_dir=defaults.vel_mod_dir,
-    user_root=defaults.user_root,
-    stat_dir=defaults.stat_dir,
+    v1d_full_path,
+    user_root,
+    v1d_dir=platform_config[PLATFORM_CONFIG.VELOCITY_MODEL_DIR.name],
     site_v1d_dir=None,
     hf_stat_vs_ref=None,
-    v1d_full_path=None,
-    sim_params_file="",
-    seed=platform_config[PLATFORM_CONFIG.HF_DEFAULT_SEED.value],
+    sim_params_file=None,
+    seed=platform_config[PLATFORM_CONFIG.HF_DEFAULT_SEED.name],
     logger: Logger = get_basic_logger(),
     extended_period=False,
 ):
@@ -76,43 +73,7 @@ def install_simulation(
         )
         vel_mod_params_dir = vel_mod_dir
 
-    if stat_file_path == "":
-        # stat_path seems to empty, assigning all related value to latest_ll
-        logger.info(
-            "stat_file_path is not specified. Using {}".format(defaults.latest_ll)
-        )
-        run_stat_dir = os.path.join(stat_dir, event_name)
-        stat_file_path = os.path.join(run_stat_dir, event_name + ".ll")
-        vs30_file_path = os.path.join(run_stat_dir, event_name + ".vs30")
-        vs30ref_file_path = os.path.join(run_stat_dir, event_name + ".vs30ref")
-
-        # creating sub-folder for run_name
-        # check if folder already exist
-        if not os.path.isdir(run_stat_dir):
-            # folder not exist, creating
-            os.mkdir(run_stat_dir)
-
-            # making symbolic link to latest_ll
-            cmd = "ln -s {} {}".format(
-                os.path.join(defaults.latest_ll_dir, defaults.latest_ll + ".ll"),
-                stat_file_path,
-            )
-            exe(cmd)
-
-            # making symbolic link to lastest_ll.vs30 and .vs30ref
-            cmd = "ln -s {} {}".format(
-                os.path.join(defaults.latest_ll_dir, defaults.latest_ll + ".vs30"),
-                vs30_file_path,
-            )
-            exe(cmd)
-
-            cmd = "ln -s {} {}".format(
-                os.path.join(defaults.latest_ll_dir, defaults.latest_ll + ".vs30ref"),
-                vs30ref_file_path,
-            )
-            exe(cmd)
-
-    template_path = os.path.join(defaults.recipe_dir, "gmsim", version)
+    template_path = os.path.join(platform_config[PLATFORM_CONFIG.TEMPLATES_DIR.name], "gmsim", version)
     root_params_dict = utils.load_yaml(
         os.path.join(template_path, ROOT_DEFAULTS_FILE_NAME)
     )
@@ -205,7 +166,7 @@ def install_simulation(
     )
     logger.info("installing bb finished")
 
-    if sim_params_file and os.path.isfile(sim_params_file):
+    if sim_params_file is not None and os.path.isfile(sim_params_file):
         with open(sim_params_file) as spf:
             extra_sims_params = yaml.load(spf)
         for key, value in extra_sims_params.items():
@@ -225,7 +186,7 @@ def install_simulation(
 def install_bb(
     stat_file,
     root_dict,
-    v1d_dir=defaults.vel_mod_dir,
+    v1d_dir,
     v1d_full_path=None,
     site_v1d_dir=None,
     hf_stat_vs_ref=None,

@@ -151,7 +151,7 @@ def estimate_LF_chours(
         data,
         model,
         model_type,
-        platform_config[const.PLATFORM_CONFIG.LF_DEFAULT_NCORES.value],
+        platform_config[const.PLATFORM_CONFIG.LF_DEFAULT_NCORES.name],
         lf_svr_input_data=svr_data,
     )
 
@@ -258,7 +258,7 @@ def estimate_HF_chours(
         data,
         model,
         model_type,
-        platform_config[const.PLATFORM_CONFIG.HF_DEFAULT_NCORES.value]
+        platform_config[const.PLATFORM_CONFIG.HF_DEFAULT_NCORES.name]
         / hyperthreading_factor,
         logger=logger,
     )
@@ -396,9 +396,9 @@ def estimate_BB_chours(
         data,
         model=model,
         model_type=model_type,
-        default_ncores=platform_config[const.PLATFORM_CONFIG.BB_DEFAULT_NCORES.value] / 2.0
+        default_ncores=platform_config[const.PLATFORM_CONFIG.BB_DEFAULT_NCORES.name] / 2.0
         if const.ProcessType.BB.is_hyperth
-        else platform_config[const.PLATFORM_CONFIG.BB_DEFAULT_NCORES.value],
+        else platform_config[const.PLATFORM_CONFIG.BB_DEFAULT_NCORES.name],
     )
 
     return core_hours, core_hours / data[:, -1]
@@ -447,7 +447,7 @@ def est_IM_chours_single(
         data,
         model,
         model_type,
-        platform_config[const.PLATFORM_CONFIG.IM_CALC_DEFAULT_N_CORES.value],
+        platform_config[const.PLATFORM_CONFIG.IM_CALC_DEFAULT_N_CORES.name],
     )[0]
 
     return core_hours, core_hours / n_cores

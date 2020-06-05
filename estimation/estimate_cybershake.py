@@ -15,7 +15,6 @@ from qcore.config import platform_config
 import qcore.constants as const
 from qcore import shared, srf, utils
 from estimation import estimate_wct
-from shared_workflow.load_config import load
 
 VM_PARAMS_FILENAME = "vm_params.yaml"
 
@@ -322,11 +321,7 @@ def main(args):
     )
 
     if args.models_dir is None:
-        workflow_config = load(
-            os.path.join(os.path.dirname(os.path.abspath(__file__)), "../", "scripts"),
-            "workflow_config.json",
-        )
-        models_dir = workflow_config["estimation_models_dir"]
+        models_dir = platform_config[const.PLATFORM_CONFIG.ESTIMATION_MODELS_DIR.name]
     else:
         models_dir = args.models_dir
     model_dir_dict = {

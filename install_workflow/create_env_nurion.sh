@@ -25,9 +25,6 @@ echo "Cloning workflow"
 git clone https://github.com/ucgmsim/slurm_gm_workflow.git
 mv ./slurm_gm_workflow ./workflow
 
-# Create workflow config
-python ./workflow/install_workflow/create_config_file.py ${env_path}
-
 # Create version
 echo "dev" > ${env_path}/workflow/version
 

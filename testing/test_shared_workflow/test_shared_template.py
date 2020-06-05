@@ -25,12 +25,6 @@ def test_write_sl_script(set_up, mocker):
     func_name = "write_sl_script"
     func = shared_template.write_sl_script
     params = inspect.getfullargspec(func).args
-    mocker.patch(
-        "shared_workflow.shared_template.recipe_dir",
-        os.path.join(
-            os.path.dirname(os.path.realpath(__file__)), "..", "..", "templates"
-        ),
-    )
     for root_path, realisation in set_up:
         input_params = get_input_params(root_path, func_name, params)
 

@@ -14,7 +14,6 @@ import qcore.simulation_structure as sim_struct
 
 import estimation.estimate_wct as est
 import scripts.set_runparams as set_runparams
-from shared_workflow import load_config
 from shared_workflow.shared import confirm, set_wct
 from shared_workflow.shared_automated_workflow import submit_sl_script
 from shared_workflow.shared_template import write_sl_script
@@ -28,10 +27,6 @@ def main(
     params = utils.load_sim_params(os.path.join(args.rel_dir, "sim_params.yaml"))
 
     submit_yes = True if args.auto else confirm("Also submit the job for you?")
-
-    workflow_config = load_config.load(
-        os.path.dirname(os.path.realpath(__file__)), "workflow_config.json"
-    )
 
     logger.debug("params.srf_file {}".format(params.srf_file))
     # Get the srf(rup) name without extensions
@@ -47,7 +42,7 @@ def main(
         model = (
             est_model
             if est_model is not None
-            else os.path.join(workflow_config["estimation_models_dir"], "LF")
+            else os.path.join(platform_config[const.PLATFORM_CONFIG.ESTIMATION_MODELS_DIR.name], "LF")
         )
         est_core_hours, est_run_time, est_cores = est.est_LF_chours_single(
             int(params.nx), int(params.ny), int(params.nz), nt, args.ncore, model, True
@@ -83,12 +78,7 @@ def main(
             args.write_directory if args.write_directory else params.sim_dir
         )
 
-        set_runparams.create_run_params(
-            sim_dir,
-            workflow_config=workflow_config,
-            steps_per_checkpoint=steps_per_checkpoint,
-            logger=logger,
-        )
+        set_runparams.create_run_params(sim_dir, steps_per_checkpoint=steps_per_checkpoint, logger=logger)
 
         header_dict = {
             "n_tasks": est_cores,
@@ -135,13 +125,13 @@ if __name__ == "__main__":
     parser.add_argument(
         "--ncore",
         type=int,
-        default=platform_config[const.PLATFORM_CONFIG.LF_DEFAULT_NCORES.value],
+        default=platform_config[const.PLATFORM_CONFIG.LF_DEFAULT_NCORES.name],
     )
     parser.add_argument("--auto", nargs="?", type=str, const=True)
     parser.add_argument(
         "--account",
         type=str,
-        default=platform_config[const.PLATFORM_CONFIG.DEFAULT_ACCOUNT.value],
+        default=platform_config[const.PLATFORM_CONFIG.DEFAULT_ACCOUNT.name],
     )
     parser.add_argument("--srf", type=str, default=None)
     parser.add_argument(

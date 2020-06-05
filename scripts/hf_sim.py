@@ -12,7 +12,6 @@ from tempfile import mkstemp
 import numpy as np
 import logging
 
-from shared_workflow import shared_defaults
 from qcore import binary_version, constants, utils
 from qcore.config import platform_config
 
@@ -102,7 +101,7 @@ def args_parser(cmd=None):
         "--seed",
         help="random seed (0:randomised reproducible)",
         type=int,
-        default=platform_config[constants.PLATFORM_CONFIG.HF_DEFAULT_SEED.value],
+        default=platform_config[constants.PLATFORM_CONFIG.HF_DEFAULT_SEED.name],
     )
     # HF IN, line 9
     arg("--duration", help="output length (seconds)", type=float, default=100.0)
@@ -145,7 +144,7 @@ def args_parser(cmd=None):
         "--velocity-model",
         help="path to velocity model (1D)",
         default=os.path.join(
-            shared_defaults.vel_mod_dir, "Mod-1D/Cant1D_v2-midQ_leer.1d"
+            platform_config[constants.PLATFORM_CONFIG.VELOCITY_MODEL_DIR.name], "Mod-1D/Cant1D_v2-midQ_leer.1d"
         ),
     )
     arg("-s", "--site-vm-dir", help="dir containing site specific velocity models (1D)")

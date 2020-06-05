@@ -47,7 +47,7 @@ def main(args, logger: Logger = get_basic_logger()):
     lf_sim_dir = os.path.join(sim_dir, "LF")
 
     header_dict = {
-        "n_tasks": platform_config[const.PLATFORM_CONFIG.MERGE_TS_DEFAULT_NCORES.value],
+        "n_tasks": platform_config[const.PLATFORM_CONFIG.MERGE_TS_DEFAULT_NCORES.name],
         "wallclock_limit": default_run_time_merge_ts,
         "job_name": "post_emod3d.merge_ts.{}".format(srf_name),
         "job_description": "post emod3d: merge_ts",
@@ -95,7 +95,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--account",
         type=str,
-        default=platform_config[const.PLATFORM_CONFIG.DEFAULT_ACCOUNT.value],
+        default=platform_config[const.PLATFORM_CONFIG.DEFAULT_ACCOUNT.name],
     )
     parser.add_argument("--srf", type=str, default=None)
     parser.add_argument(

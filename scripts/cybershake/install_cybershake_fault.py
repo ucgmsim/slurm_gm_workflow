@@ -22,11 +22,10 @@ from qcore.constants import (
     FaultParams,
     ROOT_DEFAULTS_FILE_NAME,
     VM_PARAMS_FILE_NAME,
-    HPC,
     ProcessType,
     PLATFORM_CONFIG,
 )
-from qcore.config import platform_config
+from qcore.config import platform_config, HPC
 from qcore.qclogging import get_basic_logger, NOPRINTCRITICAL
 
 from scripts.management import create_mgmt_db
@@ -35,7 +34,6 @@ from shared_workflow.install_shared import (
     generate_fd_files,
     dump_all_yamls,
 )
-from shared_workflow.shared_defaults import recipe_dir
 
 # from shared_workflow.shared_template import generate_command
 
@@ -60,7 +58,7 @@ def main():
     parser.add_argument(
         "--seed",
         type=int,
-        default=platform_config[PLATFORM_CONFIG.HF_DEFAULT_SEED.value],
+        default=platform_config[PLATFORM_CONFIG.HF_DEFAULT_SEED.name],
         help="The seed to be used for HF simulations",
     )
 
@@ -75,12 +73,8 @@ def main():
     )
 
 
-def gen_args_cmd(
-    process: ProcessType, sim_dir, command_template, template_parameters, add_args={}
-):
+def gen_args_cmd(command_template, template_parameters, add_args={}):
     # this function is adapted from generate_command from shared_workflow.shared_template
-    command_parts = []
-
     command_parts = command_template.format(**template_parameters).split()
     command_parts_copy = list(command_parts)
     # remove srun, python, and *.py from the command
@@ -107,14 +101,19 @@ def install_fault(
     root_folder,
     version,
     stat_file_path,
-    seed=platform_config[PLATFORM_CONFIG.HF_DEFAULT_SEED.value],
+    seed=platform_config[PLATFORM_CONFIG.HF_DEFAULT_SEED.name],
     extended_period=False,
     keep_dup_station=True,
     logger: Logger = get_basic_logger(),
 ):
 
     config_dict = utils.load_yaml(
-        os.path.join(recipe_dir, "gmsim", version, ROOT_DEFAULTS_FILE_NAME)
+        os.path.join(
+            platform_config[PLATFORM_CONFIG.TEMPLATES_DIR.name],
+            "gmsim",
+            version,
+            ROOT_DEFAULTS_FILE_NAME,
+        )
     )
     # Load variables from cybershake config
 
@@ -188,7 +187,6 @@ def install_fault(
         ) = install_simulation(
             version=version,
             sim_dir=sim_dir,
-            event_name=event_name,
             run_name=fault_name,
             run_dir=sim_root_dir,
             vel_mod_dir=vel_mod_dir,
@@ -279,11 +277,7 @@ def install_fault(
             sim_params, list(HPC)[0].value, seed
         )
         run_command = gen_args_cmd(
-            ProcessType.HF,
-            sim_params.sim_dir,
-            ProcessType.HF.command_template,
-            command_template,
-            add_args,
+            ProcessType.HF.command_template, command_template, add_args
         )
         hf_args_parser(cmd=run_command)
 
@@ -292,11 +286,7 @@ def install_fault(
 
         command_template, add_args = bb_gen_command_template(sim_params)
         run_command = gen_args_cmd(
-            ProcessType.BB,
-            sim_params.sim_dir,
-            ProcessType.BB.command_template,
-            command_template,
-            add_args,
+            ProcessType.BB.command_template, command_template, add_args
         )
         bb_args_parser(cmd=run_command)
         # change back, to prevent unexpected error

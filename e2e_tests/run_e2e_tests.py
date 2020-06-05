@@ -56,7 +56,7 @@ if __name__ == "__main__":
 
     test_object = None
 
-    initialise_scheduler("slurm", args.user, "nesi00213")
+    initialise_scheduler(args.user)
 
     if args.test_queue:
         test_object = QueueMonitorStressTest(args.config_file)

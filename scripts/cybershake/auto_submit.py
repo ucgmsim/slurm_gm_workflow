@@ -11,7 +11,7 @@ from typing import List, Dict, Tuple
 import numpy as np
 
 from qcore import utils, qclogging
-from qcore.config import platform_config
+from qcore.config import platform_config, HPC
 import qcore.constants as const
 import qcore.simulation_structure as sim_struct
 
@@ -27,7 +27,6 @@ from scripts.submit_hf import main as submit_hf_main
 from scripts.submit_bb import main as submit_bb_main
 from scripts.submit_sim_imcalc import submit_im_calc_slurm, SlBodyOptConsts
 from shared_workflow import shared_automated_workflow
-import shared_workflow.load_config as ldcfg
 
 AUTO_SUBMIT_LOG_FILE_NAME = "auto_submit_log_{}.txt"
 
@@ -39,7 +38,7 @@ def submit_task(
     root_folder,
     parent_logger,
     retries=None,
-    hf_seed=platform_config[const.PLATFORM_CONFIG.HF_DEFAULT_SEED.value],
+    hf_seed=platform_config[const.PLATFORM_CONFIG.HF_DEFAULT_SEED.name],
     extended_period=False,
     models=None,
 ):
@@ -68,9 +67,9 @@ def submit_task(
         args = argparse.Namespace(
             auto=True,
             srf=run_name,
-            ncore=platform_config[const.PLATFORM_CONFIG.LF_DEFAULT_NCORES.value],
-            account=platform_config[const.PLATFORM_CONFIG.DEFAULT_ACCOUNT.value],
-            machine=platform_config[const.PLATFORM_CONFIG.MACHINE_TASKS.value][
+            ncore=platform_config[const.PLATFORM_CONFIG.LF_DEFAULT_NCORES.name],
+            account=platform_config[const.PLATFORM_CONFIG.DEFAULT_ACCOUNT.name],
+            machine=platform_config[const.PLATFORM_CONFIG.MACHINE_TASKS.name][
                 const.ProcessType.EMOD3D.name
             ],
             rel_dir=sim_dir,
@@ -89,8 +88,8 @@ def submit_task(
         args = argparse.Namespace(
             auto=True,
             srf=run_name,
-            account=platform_config[const.PLATFORM_CONFIG.DEFAULT_ACCOUNT.value],
-            machine=platform_config[const.PLATFORM_CONFIG.MACHINE_TASKS.value][
+            account=platform_config[const.PLATFORM_CONFIG.DEFAULT_ACCOUNT.name],
+            machine=platform_config[const.PLATFORM_CONFIG.MACHINE_TASKS.name][
                 const.ProcessType.merge_ts.name
             ],
             rel_dir=sim_dir,
@@ -128,7 +127,7 @@ def submit_task(
         )
         submit_sl_script(
             script,
-            target_machine=platform_config[const.PLATFORM_CONFIG.MACHINE_TASKS.value][
+            target_machine=platform_config[const.PLATFORM_CONFIG.MACHINE_TASKS.name][
                 const.ProcessType.plot_ts.name
             ],
         )
@@ -138,11 +137,11 @@ def submit_task(
             auto=True,
             srf=run_name,
             seed=hf_seed,
-            ncore=platform_config[const.PLATFORM_CONFIG.HF_DEFAULT_NCORES.value],
-            version=platform_config[const.PLATFORM_CONFIG.HF_DEFAULT_VERSION.value],
+            ncore=platform_config[const.PLATFORM_CONFIG.HF_DEFAULT_NCORES.name],
+            version=platform_config[const.PLATFORM_CONFIG.HF_DEFAULT_VERSION.name],
             site_specific=None,
-            account=platform_config[const.PLATFORM_CONFIG.DEFAULT_ACCOUNT.value],
-            machine=platform_config[const.PLATFORM_CONFIG.MACHINE_TASKS.value][
+            account=platform_config[const.PLATFORM_CONFIG.DEFAULT_ACCOUNT.name],
+            machine=platform_config[const.PLATFORM_CONFIG.MACHINE_TASKS.name][
                 const.ProcessType.HF.name
             ],
             rel_dir=sim_dir,
@@ -162,9 +161,9 @@ def submit_task(
         args = argparse.Namespace(
             auto=True,
             srf=run_name,
-            version=platform_config[const.PLATFORM_CONFIG.BB_DEFAULT_VERSION.value],
-            account=platform_config[const.PLATFORM_CONFIG.DEFAULT_ACCOUNT.value],
-            machine=platform_config[const.PLATFORM_CONFIG.MACHINE_TASKS.value][
+            version=platform_config[const.PLATFORM_CONFIG.BB_DEFAULT_VERSION.name],
+            account=platform_config[const.PLATFORM_CONFIG.DEFAULT_ACCOUNT.name],
+            machine=platform_config[const.PLATFORM_CONFIG.MACHINE_TASKS.name][
                 const.ProcessType.BB.name
             ],
             rel_dir=sim_dir,
@@ -184,7 +183,7 @@ def submit_task(
             SlBodyOptConsts.extended.value: True if extended_period else False,
             SlBodyOptConsts.simple_out.value: True,
             "auto": True,
-            "machine": platform_config[const.PLATFORM_CONFIG.MACHINE_TASKS.value][
+            "machine": platform_config[const.PLATFORM_CONFIG.MACHINE_TASKS.name][
                 const.ProcessType.IM_calculation.name
             ],
             "write_directory": sim_dir,
@@ -222,7 +221,7 @@ def submit_task(
         )
         submit_sl_script(
             script,
-            target_machine=platform_config[const.PLATFORM_CONFIG.MACHINE_TASKS.value][
+            target_machine=platform_config[const.PLATFORM_CONFIG.MACHINE_TASKS.name][
                 const.ProcessType.IM_plot.name
             ],
         )
@@ -235,7 +234,7 @@ def submit_task(
                 sim_dir,
                 root_folder,
             ),
-            target_machine=platform_config[const.PLATFORM_CONFIG.MACHINE_TASKS.value][
+            target_machine=platform_config[const.PLATFORM_CONFIG.MACHINE_TASKS.name][
                 const.ProcessType.rrup.name
             ],
         )
@@ -247,13 +246,13 @@ def submit_task(
             "nesi00213",
             [run_name],
             sim_dir,
-            target_machine=platform_config[const.PLATFORM_CONFIG.MACHINE_TASKS.value][
+            target_machine=platform_config[const.PLATFORM_CONFIG.MACHINE_TASKS.name][
                 const.ProcessType.Empirical.name
             ],
         )
         submit_sl_script(
             sl_script,
-            target_machine=platform_config[const.PLATFORM_CONFIG.MACHINE_TASKS.value][
+            target_machine=platform_config[const.PLATFORM_CONFIG.MACHINE_TASKS.name][
                 const.ProcessType.Empirical.name
             ],
         )
@@ -274,7 +273,7 @@ def submit_task(
         )
         submit_sl_script(
             script,
-            target_machine=platform_config[const.PLATFORM_CONFIG.MACHINE_TASKS.value][
+            target_machine=platform_config[const.PLATFORM_CONFIG.MACHINE_TASKS.name][
                 const.ProcessType.clean_up
             ],
         )
@@ -294,7 +293,7 @@ def submit_task(
                     ["--{} {}".format(key, item) for key, item in params.bb.items()]
                 ),
             ),
-            target_machine=platform_config[const.PLATFORM_CONFIG.MACHINE_TASKS.value][
+            target_machine=platform_config[const.PLATFORM_CONFIG.MACHINE_TASKS.name][
                 const.ProcessType.LF2BB
             ],
         )
@@ -311,7 +310,7 @@ def submit_task(
                     ["--{} {}".format(key, item) for key, item in params.bb.items()]
                 ),
             ),
-            target_machine=platform_config[const.PLATFORM_CONFIG.MACHINE_TASKS.value][
+            target_machine=platform_config[const.PLATFORM_CONFIG.MACHINE_TASKS.name][
                 const.ProcessType.HF2BB
             ],
         )
@@ -331,7 +330,7 @@ def submit_task(
         )
         submit_sl_script(
             script,
-            target_machine=platform_config[const.PLATFORM_CONFIG.MACHINE_TASKS.value][
+            target_machine=platform_config[const.PLATFORM_CONFIG.MACHINE_TASKS.name][
                 const.ProcessType.plot_srf
             ],
         )
@@ -341,7 +340,7 @@ def submit_task(
         )
         options_dict = {
             "auto": True,
-            "machine": platform_config[const.PLATFORM_CONFIG.MACHINE_TASKS.value][
+            "machine": platform_config[const.PLATFORM_CONFIG.MACHINE_TASKS.name][
                 const.ProcessType.advanced_IM
             ],
             "write_directory": sim_dir,
@@ -387,7 +386,7 @@ def run_main_submit_loop(
     main_logger.info("Loaded root params file: {}".format(root_params_file))
     # Default values
     hf_seed, extended_period = (
-        platform_config[const.PLATFORM_CONFIG.HF_DEFAULT_SEED.value],
+        platform_config[const.PLATFORM_CONFIG.HF_DEFAULT_SEED.name],
         False,
     )
 
@@ -415,7 +414,7 @@ def run_main_submit_loop(
 
         # Get in progress tasks in the db and the HPC queue
         n_tasks_to_run = {}
-        for hpc in const.HPC:
+        for hpc in HPC:
             try:
                 squeued_tasks = shared_automated_workflow.get_queued_tasks(
                     user=True, machine=hpc
@@ -449,10 +448,10 @@ def run_main_submit_loop(
 
         # Select the first ntask_to_run that are not waiting
         # for mgmt db updates (i.e. items in the queue)
-        tasks_to_run, task_counter = [], {key: 0 for key in const.HPC}
+        tasks_to_run, task_counter = [], {key: 0 for key in HPC}
         for cur_proc_type, cur_run_name, retries in runnable_tasks:
 
-            cur_hpc = const.HPC(platform_config[const.PLATFORM_CONFIG.MACHINE_TASKS.value][
+            cur_hpc = HPC(platform_config[const.PLATFORM_CONFIG.MACHINE_TASKS.name][
                 const.ProcessType(cur_proc_type).name
             ])
             # Add task if limit has not been reached and there are no
@@ -542,7 +541,7 @@ def main():
         nargs="+",
         help="The number of processes each machine can run at once. If a single value is given this is used for all "
         "machines, otherwise one value per machine must be given. The current order is: {}".format(
-            (x.str_value for x in const.HPC)
+            (x.str_value for x in HPC)
         ),
     )
     parser.add_argument(
@@ -599,15 +598,15 @@ def main():
     n_runs = 0
     if args.n_runs is not None:
         if len(args.n_runs) == 1:
-            n_runs = {hpc: args.n_runs[0] for hpc in const.HPC}
+            n_runs = {hpc: args.n_runs[0] for hpc in HPC}
             logger.debug(
                 "Using {} as the maximum number of jobs per machine".format(
                     args.n_runs[0]
                 )
             )
-        elif len(args.n_runs) == len(const.HPC):
+        elif len(args.n_runs) == len(HPC):
             n_runs = {}
-            for index, hpc in enumerate(const.HPC):
+            for index, hpc in enumerate(HPC):
                 logger.debug(
                     "Setting {} to have at most {} concurrently running jobs".format(
                         hpc, args.n_runs[index]
@@ -617,15 +616,15 @@ def main():
         else:
             logger.critical(
                 "Expected either 1 or {} values for --n_runs, got {} values. Specifically: {}. Exiting now".format(
-                    len(const.HPC), len(args.n_runs), args.n_runs
+                    len(HPC), len(args.n_runs), args.n_runs
                 )
             )
             parser.error(
                 "You must specify wither one common value for --n_runs, or one "
-                "for each in the following list: {}".format(list(const.HPC))
+                "for each in the following list: {}".format(list(HPC))
             )
     else:
-        n_runs = platform_config[const.PLATFORM_CONFIG.DEFAULT_N_RUNS.value]
+        n_runs = platform_config[const.PLATFORM_CONFIG.DEFAULT_N_RUNS.name]
 
     logger.debug(
         "Processes to be run were: {}. Getting all required dependencies now.".format(
@@ -661,23 +660,20 @@ def main():
     logger.debug("Processed args are as follows: {}".format(str(args)))
 
     scheduler_logger = qclogging.get_logger(name=f"{logger.name}.scheduler")
-    initialise_scheduler(
-        "slurm", user=args.user, account="nesi00213", logger=scheduler_logger
-    )
+    initialise_scheduler(user=args.user, logger=scheduler_logger)
 
     logger.info("Loading estimation models")
-    workflow_config = ldcfg.load()
     lf_est_model = est.load_full_model(
-        os.path.join(workflow_config["estimation_models_dir"], "LF"), logger=logger
+        os.path.join(platform_config[const.PLATFORM_CONFIG.ESTIMATION_MODELS_DIR.name], "LF"), logger=logger
     )
     hf_est_model = est.load_full_model(
-        os.path.join(workflow_config["estimation_models_dir"], "HF"), logger=logger
+        os.path.join(platform_config[const.PLATFORM_CONFIG.ESTIMATION_MODELS_DIR.name], "HF"), logger=logger
     )
     bb_est_model = est.load_full_model(
-        os.path.join(workflow_config["estimation_models_dir"], "BB"), logger=logger
+        os.path.join(platform_config[const.PLATFORM_CONFIG.ESTIMATION_MODELS_DIR.name], "BB"), logger=logger
     )
     im_est_model = est.load_full_model(
-        os.path.join(workflow_config["estimation_models_dir"], "IM"), logger=logger
+        os.path.join(platform_config[const.PLATFORM_CONFIG.ESTIMATION_MODELS_DIR.name], "IM"), logger=logger
     )
 
     run_main_submit_loop(

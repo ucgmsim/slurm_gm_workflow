@@ -11,7 +11,6 @@ import qcore.constants as const
 from qcore.qclogging import get_basic_logger
 import qcore.simulation_structure as sim_struct
 
-from shared_workflow.load_config import load
 from shared_workflow.shared import set_wct, confirm, get_hf_nt
 from shared_workflow.shared_automated_workflow import submit_sl_script
 from shared_workflow.shared_template import write_sl_script
@@ -23,7 +22,7 @@ default_wct = "00:30:00"
 
 
 def gen_command_template(
-    params, machine, seed=platform_config[const.PLATFORM_CONFIG.HF_DEFAULT_SEED.value]
+    params, machine, seed=platform_config[const.PLATFORM_CONFIG.HF_DEFAULT_SEED.name]
 ):
     command_template_parameters = {
         "fd_statlist": params.FD_STATLIST,
@@ -62,11 +61,11 @@ def main(
             logger.error(
                 "{} cannot be recognize as a valid version option. version is set to default: {}".format(
                     args.version,
-                    platform_config[const.PLATFORM_CONFIG.HF_DEFAULT_VERSION.value],
+                    platform_config[const.PLATFORM_CONFIG.HF_DEFAULT_VERSION.name],
                 )
             )
-        version = platform_config[const.PLATFORM_CONFIG.HF_DEFAULT_VERSION.value]
-        ll_name_prefix = platform_config[const.PLATFORM_CONFIG.HF_DEFAULT_VERSION.value]
+        version = platform_config[const.PLATFORM_CONFIG.HF_DEFAULT_VERSION.name]
+        ll_name_prefix = platform_config[const.PLATFORM_CONFIG.HF_DEFAULT_VERSION.name]
     logger.debug("version: {}".format(version))
 
     # modify the logic to use the same as in install_bb:
@@ -85,10 +84,7 @@ def main(
         nsub_stoch, sub_fault_area = srf.get_nsub_stoch(params.hf.slip, get_area=True)
 
         if est_model is None:
-            workflow_config = load(
-                os.path.dirname(os.path.realpath(__file__)), "workflow_config.json"
-            )
-            est_model = os.path.join(workflow_config["estimation_models_dir"], "HF")
+            est_model = os.path.join(platform_config[const.PLATFORM_CONFIG.ESTIMATION_MODELS_DIR.name], "HF")
         est_core_hours, est_run_time, est_cores = est.est_HF_chours_single(
             fd_count,
             nsub_stoch,
@@ -171,7 +167,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--ncore",
         type=int,
-        default=platform_config[const.PLATFORM_CONFIG.HF_DEFAULT_NCORES.value],
+        default=platform_config[const.PLATFORM_CONFIG.HF_DEFAULT_NCORES.name],
     )
 
     # if the --auto flag is used, wall clock time will be estimated the job
@@ -184,13 +180,13 @@ if __name__ == "__main__":
     parser.add_argument(
         "--account",
         type=str,
-        default=platform_config[const.PLATFORM_CONFIG.DEFAULT_ACCOUNT.value],
+        default=platform_config[const.PLATFORM_CONFIG.DEFAULT_ACCOUNT.name],
     )
     parser.add_argument("--srf", type=str, default=None)
     parser.add_argument(
         "--seed",
         type=int,
-        default=platform_config[const.PLATFORM_CONFIG.HF_DEFAULT_SEED.value],
+        default=platform_config[const.PLATFORM_CONFIG.HF_DEFAULT_SEED.name],
         help="random seed number(0 for randomized seed)",
     )
     parser.add_argument(

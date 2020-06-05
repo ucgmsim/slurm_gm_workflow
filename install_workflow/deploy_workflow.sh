@@ -55,16 +55,6 @@ echo $version >> ${ROOT}/workflow/version
 
 touch ../scripts ${ROOT}/workflow/{scripts,templates,shared_workflow}/__init__.py
 
-# Adding legacy install.sh
-echo '#!/usr/bin/env bash
-
-python '${ROOT}/workflow/scripts'/install.py $@
-' > ${ROOT}/RunFolder/install.sh
-chmod +x ${ROOT}/RunFolder/install.sh
-
-# Create a JSON config file for python
-python create_config_file.py ${ROOT}
-
 # Edit the machine_env.sh file to have the correct paths
 print_message "Remember to edit the $ROOT/workflow/templates/machine_env.sh to fit your current system"
 

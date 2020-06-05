@@ -5,6 +5,7 @@ import threading
 import argparse
 from typing import Dict, List, Tuple
 
+from qcore.config import platform_config, HPC
 from qcore import constants as const
 from qcore import qclogging
 from qcore.utils import load_yaml
@@ -13,8 +14,6 @@ import estimation.estimate_wct as est
 from scripts.cybershake import queue_monitor
 from scripts.cybershake.auto_submit import run_main_submit_loop
 from scripts.schedulers.scheduler_factory import initialise_scheduler
-from shared_workflow import load_config
-from shared_workflow.shared_defaults import recipe_dir
 
 MASTER_LOG_NAME = "master_log_{}.txt"
 SCHEDULER_LOG_NAME = "scheduler_log_{}.txt"
@@ -60,18 +59,17 @@ def run_automated_workflow(
     """
 
     wrapper_logger.info("Loading estimation models")
-    workflow_config = load_config.load()
     lf_est_model = est.load_full_model(
-        join(workflow_config["estimation_models_dir"], "LF"), logger=wrapper_logger
+        join(platform_config[const.PLATFORM_CONFIG.ESTIMATION_MODELS_DIR.name], "LF"), logger=wrapper_logger
     )
     hf_est_model = est.load_full_model(
-        join(workflow_config["estimation_models_dir"], "HF"), logger=wrapper_logger
+        join(platform_config[const.PLATFORM_CONFIG.ESTIMATION_MODELS_DIR.name], "HF"), logger=wrapper_logger
     )
     bb_est_model = est.load_full_model(
-        join(workflow_config["estimation_models_dir"], "BB"), logger=wrapper_logger
+        join(platform_config[const.PLATFORM_CONFIG.ESTIMATION_MODELS_DIR.name], "BB"), logger=wrapper_logger
     )
     im_est_model = est.load_full_model(
-        join(workflow_config["estimation_models_dir"], "IM"), logger=wrapper_logger
+        join(platform_config[const.PLATFORM_CONFIG.ESTIMATION_MODELS_DIR.name], "IM"), logger=wrapper_logger
     )
 
     bulk_logger = qclogging.get_logger(name="auto_submit_main", threaded=True)
@@ -246,7 +244,7 @@ def main():
         "config_file",
         help="The location of the config file containing everything to be run",
         nargs="?",
-        default=join(recipe_dir, "task_config.yaml"),
+        default=join(platform_config[const.PLATFORM_CONFIG.TEMPLATES_DIR.name], "task_config.yaml"),
     )
     parser.add_argument(
         "--sleep_time",
@@ -267,7 +265,7 @@ def main():
         nargs="+",
         help="The number of processes each machine can run at once. If a single value is given this is used for all "
         "machines, otherwise one value per machine must be given. The current order is: {}".format(
-            list(x.value for x in const.HPC)
+            list(x.value for x in HPC)
         ),
     )
     parser.add_argument(
@@ -313,22 +311,20 @@ def main():
 
     scheduler_logger = qclogging.get_logger(name="scheduler", threaded=True)
     qclogging.add_general_file_handler(scheduler_logger, scheduler_log_file)
-    initialise_scheduler(
-        "slurm", user=args.user, account="nesi00213", logger=scheduler_logger
-    )
+    initialise_scheduler(user=args.user, logger=scheduler_logger)
 
     n_runs = 0
     if args.n_runs is not None:
         if len(args.n_runs) == 1:
-            n_runs = {hpc: args.n_runs[0] for hpc in const.HPC}
+            n_runs = {hpc: args.n_runs[0] for hpc in HPC}
             wrapper_logger.debug(
                 "Using {} as the maximum number of jobs per machine".format(
                     args.n_runs[0]
                 )
             )
-        elif len(args.n_runs) == len(const.HPC):
+        elif len(args.n_runs) == len(HPC):
             n_runs = {}
-            for index, hpc in enumerate(const.HPC):
+            for index, hpc in enumerate(HPC):
                 wrapper_logger.debug(
                     "Setting {} to have at most {} concurrently running jobs".format(
                         hpc, args.n_runs[index]
@@ -338,12 +334,12 @@ def main():
         else:
             incorrect_n_runs = (
                 "You must specify wither one common value for --n_runs, or one "
-                "for each in the following list: {}".format(list(const.HPC))
+                "for each in the following list: {}".format(list(HPC))
             )
             wrapper_logger.log(qclogging.NOPRINTCRITICAL, incorrect_n_runs)
             parser.error(incorrect_n_runs)
     else:
-        n_runs = {const.HPC.maui: 12, const.HPC.mahuika: 12}
+        n_runs = platform_config[const.PLATFORM_CONFIG.DEFAULT_N_RUNS.name]
     wrapper_logger.debug(
         "Machines will allow up to {} jobs to run simultaneously".format(n_runs)
     )

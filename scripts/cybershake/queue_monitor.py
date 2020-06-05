@@ -12,6 +12,7 @@ from logging import Logger
 from typing import List, Dict
 from datetime import datetime, timedelta
 
+from qcore.config import HPC
 import qcore.constants as const
 import qcore.simulation_structure as sim_struct
 from qcore import qclogging
@@ -70,7 +71,7 @@ def sacct_metadata(db_running_task: SlurmTask, task_logger: Logger, root_folder:
         subprocess.check_output(
             cmd.format(
                 db_running_task.job_id,
-                platform_config[const.PLATFORM_CONFIG.MACHINE_TASKS.value][
+                platform_config[const.PLATFORM_CONFIG.MACHINE_TASKS.name][
                     const.ProcessType(db_running_task.proc_type).name
                 ],
             ),
@@ -242,7 +243,7 @@ def queue_monitor_loop(
 
         # For each hpc get a list of job id and status', and for each pair save them in a dictionary
         squeue_tasks = {}
-        for hpc in const.HPC:
+        for hpc in HPC:
             try:
                 squeued_tasks = get_queued_tasks(machine=hpc)
             except EnvironmentError as e:

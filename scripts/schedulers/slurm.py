@@ -1,4 +1,4 @@
-import qcore.constants as const
+from qcore.config import HPC
 
 from scripts.schedulers.scheduler import Scheduler
 
@@ -11,7 +11,7 @@ class Slurm(Scheduler):
         Scheduler.__init__(self, user, account, logger)
         self.current_machine = current_machine
 
-    def check_queues(self, user=False, target_machine: const.HPC = None):
+    def check_queues(self, user=False, target_machine: HPC = None):
         self.logger.debug(f"Checking queues for user {user} and machine {target_machine}")
 
         if target_machine is None:
