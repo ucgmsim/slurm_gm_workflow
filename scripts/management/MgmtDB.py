@@ -102,9 +102,11 @@ class MgmtDB:
                     logger.debug("New task added to the db")
 
                 # fails dependant task if parent task fails
+                print("status", entry.status, const.Status.failed.value)
                 if entry.status == const.Status.failed.value:
                     for process in const.ProcessType:
                         for dependency in process.dependencies:
+                            print("dependant process", entry.proc_type, dependency)
                             if entry.proc_type == dependency:
                                 job_id = cur.execute(
                                     "SELECT `job_id` FROM `state` WHERE proc_type = ? and status = ? and run_name = ?",
@@ -114,6 +116,7 @@ class MgmtDB:
                                         entry.run_name,
                                     ),
                                 ).fetchone()
+                                print(job_id)
 
                                 if job_id is not None:
                                     dependant_entry = SlurmTask(
@@ -124,6 +127,7 @@ class MgmtDB:
                                         None,
                                     )
                                     self._update_entry(cur, dependant_entry, logger=logger)
+                                    logger.debug(f"Cascading failure for {entry.run_name} - {entry.proc_type}")
 
         except sql.Error as ex:
             self._conn.rollback()
