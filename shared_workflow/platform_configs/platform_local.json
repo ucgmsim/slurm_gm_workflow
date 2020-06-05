@@ -8,14 +8,13 @@
   "IM_SIM_CALC_TEMPLATE_NAME" : "sim_im_calc.sl.template",
   "IM_SIM_SL_SCRIPT_NAME" : "sim_im_calc_{}.sl",
   "MERGE_TS_DEFAULT_NCORES" : 1,
-  "HEADER_TEMPLATE" : "slurm_header.cfg",
   "DEFAULT_ACCOUNT" : "nesi00213",
   "DEFAULT_MEMORY" : "16G",
   "SCHEDULER": "slurm",
   "AVAILABLE_MACHINES":  ["local"],
+  "VELOCITY_MODEL_DIR": "/nesi/project/nesi00213/VelocityModel",
   "ESTIMATION_MODELS_DIR": "/home/jpa198/PycharmProjects/workflow/estimation/models",
   "TEMPLATES_DIR": "/home/jpa198/PycharmProjects/workflow/templates",
-  "VELOCITY_MODEL_DIR": "/nesi/project/nesi00213/VelocityModel",
   "DEFAULT_N_RUNS": {
     "local": 1
   },

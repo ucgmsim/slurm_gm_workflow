@@ -13,7 +13,6 @@
   "SCHEDULER": "slurm",
   "AVAILABLE_MACHINES":  ["nurion"],
   "VELOCITY_MODEL_DIR": "/nesi/project/nesi00213/VelocityModel",
-  "STATION_INFO": "/home01/hpc11a02/gmsim/StationInfo",
   "ESTIMATION_MODELS_DIR": "$gmsim/workflow/estimation/models",
   "TEMPLATES_DIR": "$gmsim/workflow/templates",
   "DEFAULT_N_RUNS": {

@@ -8,8 +8,9 @@ import estimation.estimate_wct as est
 import qcore.constants as const
 from qcore import simulation_structure
 from qcore import utils, shared
-from qcore.config import host, platform_config
+from qcore.config import host
 from qcore.qclogging import get_basic_logger
+from shared_workflow.platform_config import platform_config
 from shared_workflow.shared import set_wct, confirm, get_hf_nt
 from shared_workflow.shared_automated_workflow import submit_sl_script
 from shared_workflow.shared_template import write_sl_script
