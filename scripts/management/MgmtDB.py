@@ -100,6 +100,31 @@ class MgmtDB:
                     )
                     self._insert_task(cur, realisation_name, process)
                     logger.debug("New task added to the db")
+
+                # fails dependant task if parent task fails
+                if entry.status == const.Status.failed.value:
+                    for process in const.ProcessType:
+                        for dependency in process.dependencies:
+                            if entry.proc_type == dependency:
+                                job_id = cur.execute(
+                                    "SELECT `job_id` FROM `state` WHERE proc_type = ? and status = ? and run_name = ?",
+                                    (
+                                        process.value,
+                                        const.Status.completed.value,
+                                        entry.run_name,
+                                    ),
+                                ).fetchone()
+
+                                if job_id is not None:
+                                    dependant_entry = SlurmTask(
+                                        entry.run_name,
+                                        process.value,
+                                        const.Status.failed.value,
+                                        job_id,
+                                        None,
+                                    )
+                                    self._update_entry(cur, dependant_entry, logger=logger)
+
         except sql.Error as ex:
             self._conn.rollback()
             logger.critical(
