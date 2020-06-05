@@ -117,15 +117,15 @@ class MgmtDB:
                                         const.Status.completed.value,
                                         entry.run_name,
                                     ),
-                                ).fetchone()[0]
-                                print(job_id)
+                                ).fetchone()
 
                                 if job_id is not None:
+                                    print(job_id[0])
                                     dependant_entry = SlurmTask(
                                         entry.run_name,
                                         process.value,
                                         const.Status.failed.value,
-                                        job_id,
+                                        job_id[0],
                                         None,
                                     )
                                     self._update_entry(cur, dependant_entry, logger=logger)
