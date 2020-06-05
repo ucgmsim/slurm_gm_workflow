@@ -5,6 +5,7 @@ Slurm Ground Motion Workflow
 ## [19.6.25] -  2020-03-16 -- Enabled automated Empirical calculation
 ### Added
     - Added Empirical calculation as a part of automated workflow
+    - Run_cybershake can take a list as part of each task entry
 ### Changed
     - IM plot to use python 3 workflow
     - removed partition specifier for mahuika slurm scripts (as per NeSI recommendations)

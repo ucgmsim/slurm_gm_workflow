@@ -1,8 +1,8 @@
+import argparse
 from datetime import datetime
 from logging import Logger, DEBUG
 from os.path import abspath, join
 import threading
-import argparse
 from typing import Dict, List, Tuple
 
 from qcore.config import platform_config, HPC
@@ -222,11 +222,14 @@ def parse_config_file(
         elif pattern == NONE:
             pass
         else:
-            if pattern == ONCE:
-                pattern = ONCE_PATTERN
-            if pattern not in tasks_with_pattern_match.keys():
-                tasks_with_pattern_match.update({pattern: []})
-            tasks_with_pattern_match[pattern].append(proc)
+            if isinstance(pattern, str):
+                pattern = [pattern]
+            for subpattern in pattern:
+                if subpattern == ONCE:
+                    subpattern = ONCE_PATTERN
+                if subpattern not in tasks_with_pattern_match.keys():
+                    tasks_with_pattern_match.update({subpattern: []})
+                tasks_with_pattern_match[subpattern].append(proc)
     logger.info("Master script will run {}".format(tasks_to_run_for_all))
     for pattern, tasks in tasks_with_pattern_match.items():
         logger.info("Pattern {} will run tasks {}".format(pattern, tasks))
