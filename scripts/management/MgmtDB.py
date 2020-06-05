@@ -117,7 +117,7 @@ class MgmtDB:
                                         const.Status.completed.value,
                                         entry.run_name,
                                     ),
-                                ).fetchone()
+                                ).fetchone()[0]
                                 print(job_id)
 
                                 if job_id is not None:
