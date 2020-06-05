@@ -1,11 +1,11 @@
-from qcore.config import HPC
-
 from scripts.schedulers.scheduler import Scheduler
+from shared_workflow.platform_config import HPC
 
 
 class Slurm(Scheduler):
 
     RUN_COMMAND = "srun"
+    HEADER_TEMPLATE = "slurm_header.cfg"
 
     def __init__(self, user, account, current_machine, logger):
         Scheduler.__init__(self, user, account, logger)

@@ -4,20 +4,14 @@ import argparse
 from datetime import datetime
 import os
 
-import qcore.config
+from scripts.schedulers.scheduler_factory import get_scheduler
+from shared_workflow.platform_config import platform_config, HPC
 from shared_workflow.shared_template import generate_context, resolve_header
 from qcore import simulation_structure, utils
 from qcore import constants as const
-from qcore.config import platform_config
-
-DEFAULT_ACCOUNT = "nesi00213"
-
-# TODO: Create library for this
-def get_fault_name(run_name):
-    return run_name.split("_")[0]
 
 
-def rrup_file_exists(cybershake_folder, fault, realisation):
+def rrup_file_exists(cybershake_folder, realisation):
     rrup_file = simulation_structure.get_rrup_path(cybershake_folder, realisation)
     return os.path.exists(rrup_file)
 
@@ -33,18 +27,18 @@ def generate_sl(
 ):
     # extended is '-e' or ''
 
-    faults = map(get_fault_name, realisations)
+    faults = map(simulation_structure.get_fault_from_realisation, realisations)
     run_data = zip(realisations, faults)
     run_data = [
         (rel, fault)
         for (rel, fault) in run_data
-        if rrup_file_exists(cybershake_folder, fault, rel)
+        if rrup_file_exists(cybershake_folder, rel)
     ]
     # determine NP
     # TODO: empirical are currently not parallel, update this when they are
-    if target_machine == qcore.config.HPC.mahuika.value:
+    if target_machine == HPC.mahuika.value:
         np = 1
-    elif target_machine == qcore.config.HPC.maui.value:
+    elif target_machine == HPC.maui.value:
         np = 1
     else:
         raise SystemError(f"cannot recognize target_machine :{target_machine}")
@@ -76,7 +70,7 @@ def generate_sl(
         target_host=target_machine,
         partition=None,
         additional_lines="",
-        template_path="slurm_header.cfg",
+        template_path=get_scheduler().HEADER_TEMPLATE,
         write_directory=out_dir,
     )
     context = generate_context(
@@ -110,7 +104,7 @@ def main():
     )
     parser.add_argument("-np", default=40, help="number of processes to use")
     parser.add_argument(
-        "--account", default=DEFAULT_ACCOUNT, help="specify the NeSI project"
+        "--account", default=platform_config[const.PLATFORM_CONFIG.DEFAULT_ACCOUNT], help="specify the NeSI project"
     )
     parser.add_argument("-o", "--output_dir", type=os.path.abspath())
 

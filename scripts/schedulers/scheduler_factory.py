@@ -1,12 +1,13 @@
 from logging import Logger
 
 from qcore.constants import PLATFORM_CONFIG
-from qcore.config import platform_config, host
+from qcore.config import host
 from qcore.qclogging import get_basic_logger
 from scripts.schedulers.bash import Bash
 
 from scripts.schedulers.scheduler import Scheduler
 from scripts.schedulers.slurm import Slurm
+from shared_workflow.platform_config import platform_config
 
 __scheduler = None
 
@@ -16,9 +17,9 @@ def initialise_scheduler(user: str, account: str = None, logger: Logger = get_ba
     if __scheduler is not None:
         raise RuntimeError("Scheduler already initialised")
 
-    scheduler = platform_config[PLATFORM_CONFIG.SCHEDULER]
+    scheduler = platform_config[PLATFORM_CONFIG.SCHEDULER.name]
     if account is None:
-        account = platform_config[PLATFORM_CONFIG.DEFAULT_ACCOUNT]
+        account = platform_config[PLATFORM_CONFIG.DEFAULT_ACCOUNT.name]
     if scheduler == "slurm":
         __scheduler = Slurm(
             user=user, account=account, current_machine=host, logger=logger

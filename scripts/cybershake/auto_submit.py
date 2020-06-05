@@ -11,7 +11,6 @@ from typing import List, Dict, Tuple
 import numpy as np
 
 from qcore import utils, qclogging
-from qcore.config import platform_config, HPC
 import qcore.constants as const
 import qcore.simulation_structure as sim_struct
 
@@ -27,6 +26,7 @@ from scripts.submit_hf import main as submit_hf_main
 from scripts.submit_bb import main as submit_bb_main
 from scripts.submit_sim_imcalc import submit_im_calc_slurm, SlBodyOptConsts
 from shared_workflow import shared_automated_workflow
+from shared_workflow.platform_config import HPC, platform_config
 
 AUTO_SUBMIT_LOG_FILE_NAME = "auto_submit_log_{}.txt"
 
@@ -38,7 +38,7 @@ def submit_task(
     root_folder,
     parent_logger,
     retries=None,
-    hf_seed=platform_config[const.PLATFORM_CONFIG.HF_DEFAULT_SEED.name],
+    hf_seed=const.HF_DEFAULT_SEED,
     extended_period=False,
     models=None,
 ):
@@ -386,7 +386,7 @@ def run_main_submit_loop(
     main_logger.info("Loaded root params file: {}".format(root_params_file))
     # Default values
     hf_seed, extended_period = (
-        platform_config[const.PLATFORM_CONFIG.HF_DEFAULT_SEED.name],
+        const.HF_DEFAULT_SEED,
         False,
     )
 

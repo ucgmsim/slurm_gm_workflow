@@ -6,10 +6,7 @@ from logging import Logger
 from numpy import isclose
 import yaml
 
-from h5py import File as h5open
-
 from qcore import geo, utils, simulation_structure
-from qcore.shared import exe
 from qcore.qclogging import get_basic_logger, VERYVERBOSE, NOPRINTWARNING
 from qcore.constants import (
     SimParams,
@@ -18,9 +15,10 @@ from qcore.constants import (
     VMParams,
     ROOT_DEFAULTS_FILE_NAME,
     PLATFORM_CONFIG,
+    HF_DEFAULT_SEED,
 )
-from qcore.config import platform_config
 from shared_workflow import shared
+from shared_workflow.platform_config import platform_config
 
 
 def install_simulation(
@@ -48,7 +46,7 @@ def install_simulation(
     site_v1d_dir=None,
     hf_stat_vs_ref=None,
     sim_params_file=None,
-    seed=platform_config[PLATFORM_CONFIG.HF_DEFAULT_SEED.name],
+    seed=HF_DEFAULT_SEED,
     logger: Logger = get_basic_logger(),
     extended_period=False,
 ):

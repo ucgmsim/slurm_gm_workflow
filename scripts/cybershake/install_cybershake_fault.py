@@ -24,8 +24,8 @@ from qcore.constants import (
     VM_PARAMS_FILE_NAME,
     ProcessType,
     PLATFORM_CONFIG,
+    HF_DEFAULT_SEED,
 )
-from qcore.config import platform_config, HPC
 from qcore.qclogging import get_basic_logger, NOPRINTCRITICAL
 
 from scripts.management import create_mgmt_db
@@ -36,6 +36,7 @@ from shared_workflow.install_shared import (
 )
 
 # from shared_workflow.shared_template import generate_command
+from shared_workflow.platform_config import platform_config, HPC
 
 
 def main():
@@ -58,7 +59,7 @@ def main():
     parser.add_argument(
         "--seed",
         type=int,
-        default=platform_config[PLATFORM_CONFIG.HF_DEFAULT_SEED.name],
+        default=HF_DEFAULT_SEED,
         help="The seed to be used for HF simulations",
     )
 
@@ -101,7 +102,7 @@ def install_fault(
     root_folder,
     version,
     stat_file_path,
-    seed=platform_config[PLATFORM_CONFIG.HF_DEFAULT_SEED.name],
+    seed=HF_DEFAULT_SEED,
     extended_period=False,
     keep_dup_station=True,
     logger: Logger = get_basic_logger(),

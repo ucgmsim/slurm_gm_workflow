@@ -20,6 +20,7 @@ class Scheduler(ABC):
     """
 
     RUNCOMMAND: str
+    HEADER_TEMPLATE: str
 
     def __init__(self, user, account, logger: Logger):
         self.user_name = user

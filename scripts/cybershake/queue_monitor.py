@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Script for continuously updating the slurm mgmt db from the queue."""
 import logging
-import signal
 import subprocess
 import os
 import json
@@ -10,14 +9,13 @@ import argparse
 import time
 from logging import Logger
 from typing import List, Dict
-from datetime import datetime, timedelta
+from datetime import datetime
 
-from qcore.config import HPC
 import qcore.constants as const
 import qcore.simulation_structure as sim_struct
 from qcore import qclogging
-from qcore.config import platform_config
 from scripts.management.MgmtDB import MgmtDB, SlurmTask
+from shared_workflow.platform_config import platform_config, HPC
 from shared_workflow.shared_automated_workflow import get_queued_tasks, check_mgmt_queue
 from metadata.log_metadata import store_metadata
 

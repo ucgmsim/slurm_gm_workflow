@@ -4,8 +4,10 @@ from datetime import datetime
 from jinja2 import Environment, FileSystemLoader
 
 import qcore.constants as const
-from qcore.config import host, platform_config
+from qcore.config import host
 from qcore.utils import load_sim_params
+from scripts.schedulers.scheduler_factory import get_scheduler
+from shared_workflow.platform_config import platform_config
 from shared_workflow.shared import write_file
 
 
@@ -112,13 +114,15 @@ def resolve_header(
     job_description,
     partition=None,
     additional_lines="",
-    template_path="slurm_header.cfg",
+    template_path=None,
     target_host=host,
     mail="test@test.com",
     write_directory=".",
 ):
     if partition is None:
         partition = get_partition(target_host, convert_time_to_hours(wallclock_limit))
+    if template_path is None:
+        template_path = get_scheduler().HEADER_TEMPLATE
 
     j2_env = Environment(loader=FileSystemLoader(template_dir), trim_blocks=True)
     header = j2_env.get_template(template_path).render(
@@ -139,6 +143,7 @@ def resolve_header(
 
 
 def get_partition(machine, core_hours=None):
+    # TODO: Add partitions to machine configs and load from there
     if machine == "maui":
         partition = "nesi_research"
     elif machine == "mahuika":

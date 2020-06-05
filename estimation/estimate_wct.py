@@ -15,10 +15,10 @@ from logging import Logger
 
 import numpy as np
 
-from qcore.config import platform_config
 import qcore.constants as const
 from qcore.qclogging import get_basic_logger, NOPRINTCRITICAL
 from estimation.model import CombinedModel, WCEstModel, NNWcEstModel, SVRModel
+from shared_workflow.platform_config import platform_config
 
 SCALER_PREFIX = "scaler_{}"
 

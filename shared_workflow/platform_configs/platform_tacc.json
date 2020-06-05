@@ -1,0 +1,39 @@
+{
+  "LF_DEFAULT_NCORES" : 160,
+  "HF_DEFAULT_NCORES" : 80,
+  "HF_DEFAULT_VERSION" : "run_hf_mpi",
+  "BB_DEFAULT_VERSION" : "run_bb_mpi",
+  "BB_DEFAULT_NCORES" : 80,
+  "IM_CALC_DEFAULT_N_CORES" : 40,
+  "IM_SIM_CALC_TEMPLATE_NAME" : "sim_im_calc.sl.template",
+  "IM_SIM_SL_SCRIPT_NAME" : "sim_im_calc_{}.sl",
+  "MERGE_TS_DEFAULT_NCORES" : 4,
+  "DEFAULT_ACCOUNT" : "DesignSafe-Graves",
+  "DEFAULT_MEMORY" : "16G",
+  "SCHEDULER": "slurm",
+  "AVAILABLE_MACHINES":  ["stampede2"],
+  "VELOCITY_MODEL_DIR": "/nesi/project/nesi00213/VelocityModel",
+  "STATION_INFO": "/nesi/project/nesi00213/StationInfo",
+  "ESTIMATION_MODELS_DIR": "$gmsim/workflow/estimation/models",
+  "TEMPLATES_DIR": "$gmsim/workflow/templates",
+  "DEFAULT_N_RUNS": {
+    "stampede2": 12
+  },
+  "MACHINE_TASKS": {
+    "EMOD3D": "stampede2",
+    "merge_ts": "stampede2",
+    "plot_ts": "stampede2",
+    "HF": "stampede2",
+    "BB": "stampede2",
+    "IM_calculation": "stampede2",
+    "IM_plot": "stampede2",
+    "rrup": "stampede2",
+    "Empirical": "stampede2",
+    "Verification": "stampede2",
+    "clean_up": "stampede2",
+    "LF2BB": "stampede2",
+    "HF2BB": "stampede2",
+    "plot_srf": "stampede2",
+    "advanced_IM": "stampede2"
+  }
+}

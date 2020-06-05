@@ -2,6 +2,8 @@ import inspect
 import io
 import os
 
+import pytest
+
 from shared_workflow import shared_template
 from testing.test_common_set_up import (
     get_input_params,
@@ -21,6 +23,7 @@ def test_convert_time_to_hours():
     assert shared_template.convert_time_to_hours("01:00:00") == 1
 
 
+@pytest.mark.usefixtures("init_scheduler")
 def test_write_sl_script(set_up, mocker):
     func_name = "write_sl_script"
     func = shared_template.write_sl_script

@@ -5,7 +5,6 @@ from os.path import abspath, join
 import threading
 from typing import Dict, List, Tuple
 
-from qcore.config import platform_config, HPC
 from qcore import constants as const
 from qcore import qclogging
 from qcore.utils import load_yaml
@@ -14,6 +13,7 @@ import estimation.estimate_wct as est
 from scripts.cybershake import queue_monitor
 from scripts.cybershake.auto_submit import run_main_submit_loop
 from scripts.schedulers.scheduler_factory import initialise_scheduler
+from shared_workflow.platform_config import platform_config, HPC
 
 MASTER_LOG_NAME = "master_log_{}.txt"
 SCHEDULER_LOG_NAME = "scheduler_log_{}.txt"

@@ -6,14 +6,13 @@ from argparse import ArgumentParser
 import os
 import random
 from subprocess import Popen, PIPE
-import sys
 from tempfile import mkstemp
 
 import numpy as np
 import logging
 
 from qcore import binary_version, constants, utils
-from qcore.config import platform_config
+from shared_workflow.platform_config import platform_config
 
 if __name__ == "__main__":
     from qcore import MPIFileHandler
@@ -101,7 +100,7 @@ def args_parser(cmd=None):
         "--seed",
         help="random seed (0:randomised reproducible)",
         type=int,
-        default=platform_config[constants.PLATFORM_CONFIG.HF_DEFAULT_SEED.name],
+        default=constants.HF_DEFAULT_SEED,
     )
     # HF IN, line 9
     arg("--duration", help="output length (seconds)", type=float, default=100.0)

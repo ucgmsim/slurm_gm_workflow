@@ -6,10 +6,11 @@ from logging import Logger
 
 import estimation.estimate_wct as est
 from qcore import utils, shared, srf, binary_version
-from qcore.config import host, get_machine_config, platform_config
+from qcore.config import host, get_machine_config
 import qcore.constants as const
 from qcore.qclogging import get_basic_logger
 import qcore.simulation_structure as sim_struct
+from shared_workflow.platform_config import platform_config
 
 from shared_workflow.shared import set_wct, confirm, get_hf_nt
 from shared_workflow.shared_automated_workflow import submit_sl_script
@@ -22,7 +23,7 @@ default_wct = "00:30:00"
 
 
 def gen_command_template(
-    params, machine, seed=platform_config[const.PLATFORM_CONFIG.HF_DEFAULT_SEED.name]
+    params, machine, seed=const.HF_DEFAULT_SEED
 ):
     command_template_parameters = {
         "fd_statlist": params.FD_STATLIST,
@@ -186,7 +187,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--seed",
         type=int,
-        default=platform_config[const.PLATFORM_CONFIG.HF_DEFAULT_SEED.name],
+        default=const.HF_DEFAULT_SEED,
         help="random seed number(0 for randomized seed)",
     )
     parser.add_argument(

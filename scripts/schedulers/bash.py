@@ -5,6 +5,10 @@ class Bash(Scheduler):
     job_counter = 0
     task_running = False
 
+    RUN_COMMAND = ""
+    # TODO: Update to empty header?
+    HEADER_TEMPLATE = "slurm_header.cfg"
+
     def submit_job(self, script_location: str, target_machine: str = None):
         """
         Runs job in the bash shell
