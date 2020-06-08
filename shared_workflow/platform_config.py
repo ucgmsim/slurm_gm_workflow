@@ -5,6 +5,9 @@ from qcore.config import determine_machine_config, get_machine_config, host
 from qcore.constants import PLATFORM_CONFIG
 
 
+WORKFLOW_DIR = abspath(join(dirname(__file__), ".."))
+
+
 def determine_platform_config(hostname=determine_machine_config()[0]):
     if hostname == "maui" or hostname == "mahuika":
         hpc_platform = "nesi"
@@ -25,6 +28,11 @@ def determine_platform_config(hostname=determine_machine_config()[0]):
 
 platform, platform_config_path = determine_platform_config(host)
 platform_config = get_machine_config(config_path=platform_config_path)
+
+# Allows for loading data files from the templates and models directories
+for key, value in platform_config.items():
+    if isinstance(value, str) and "$workflow" in value:
+        platform_config[key] = value.replace("$workflow", WORKFLOW_DIR)
 
 errors = set(platform_config.keys()).symmetric_difference(
     set([key.name for key in PLATFORM_CONFIG])
@@ -48,4 +56,6 @@ if errors:
 
 # Dynamically generate the HPC enum
 
-HPC = Enum("HPC", platform_config[PLATFORM_CONFIG.AVAILABLE_MACHINES.name], module=__name__)
+HPC = Enum(
+    "HPC", platform_config[PLATFORM_CONFIG.AVAILABLE_MACHINES.name], module=__name__
+)

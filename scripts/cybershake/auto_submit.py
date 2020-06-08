@@ -451,9 +451,11 @@ def run_main_submit_loop(
         tasks_to_run, task_counter = [], {key: 0 for key in HPC}
         for cur_proc_type, cur_run_name, retries in runnable_tasks:
 
-            cur_hpc = HPC(platform_config[const.PLATFORM_CONFIG.MACHINE_TASKS.name][
-                const.ProcessType(cur_proc_type).name
-            ])
+            cur_hpc = HPC[
+                platform_config[const.PLATFORM_CONFIG.MACHINE_TASKS.name][
+                    const.ProcessType(cur_proc_type).name
+                ]
+            ]
             # Add task if limit has not been reached and there are no
             # outstanding mgmt db updates
             if (
@@ -541,7 +543,7 @@ def main():
         nargs="+",
         help="The number of processes each machine can run at once. If a single value is given this is used for all "
         "machines, otherwise one value per machine must be given. The current order is: {}".format(
-            (x.str_value for x in HPC)
+            (x.name for x in HPC)
         ),
     )
     parser.add_argument(
@@ -664,16 +666,28 @@ def main():
 
     logger.info("Loading estimation models")
     lf_est_model = est.load_full_model(
-        os.path.join(platform_config[const.PLATFORM_CONFIG.ESTIMATION_MODELS_DIR.name], "LF"), logger=logger
+        os.path.join(
+            platform_config[const.PLATFORM_CONFIG.ESTIMATION_MODELS_DIR.name], "LF"
+        ),
+        logger=logger,
     )
     hf_est_model = est.load_full_model(
-        os.path.join(platform_config[const.PLATFORM_CONFIG.ESTIMATION_MODELS_DIR.name], "HF"), logger=logger
+        os.path.join(
+            platform_config[const.PLATFORM_CONFIG.ESTIMATION_MODELS_DIR.name], "HF"
+        ),
+        logger=logger,
     )
     bb_est_model = est.load_full_model(
-        os.path.join(platform_config[const.PLATFORM_CONFIG.ESTIMATION_MODELS_DIR.name], "BB"), logger=logger
+        os.path.join(
+            platform_config[const.PLATFORM_CONFIG.ESTIMATION_MODELS_DIR.name], "BB"
+        ),
+        logger=logger,
     )
     im_est_model = est.load_full_model(
-        os.path.join(platform_config[const.PLATFORM_CONFIG.ESTIMATION_MODELS_DIR.name], "IM"), logger=logger
+        os.path.join(
+            platform_config[const.PLATFORM_CONFIG.ESTIMATION_MODELS_DIR.name], "IM"
+        ),
+        logger=logger,
     )
 
     run_main_submit_loop(

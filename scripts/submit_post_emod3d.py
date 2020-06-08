@@ -6,11 +6,12 @@ import argparse
 from logging import Logger
 
 from qcore import utils, binary_version
-from qcore.config import get_machine_config, host, platform_config
+from qcore.config import get_machine_config, host
 import qcore.constants as const
 from qcore.qclogging import get_basic_logger
 import qcore.simulation_structure as sim_struct
 
+from shared_workflow.platform_config import platform_config
 from shared_workflow.shared import confirm
 from shared_workflow.shared_automated_workflow import submit_sl_script
 from shared_workflow.shared_template import write_sl_script

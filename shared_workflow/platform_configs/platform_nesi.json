@@ -13,8 +13,8 @@
   "SCHEDULER": "slurm",
   "AVAILABLE_MACHINES":  ["maui", "mahuika"],
   "VELOCITY_MODEL_DIR": "/nesi/project/nesi00213/VelocityModel",
-  "ESTIMATION_MODELS_DIR": "$gmsim/workflow/estimation/models",
-  "TEMPLATES_DIR": "$gmsim/workflow/templates",
+  "ESTIMATION_MODELS_DIR": "$workflow/estimation/models",
+  "TEMPLATES_DIR": "$workflow/templates",
   "DEFAULT_N_RUNS": {
     "maui": 12,
     "mahuika": 12

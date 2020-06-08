@@ -12,7 +12,9 @@ from shared_workflow.platform_config import platform_config
 __scheduler = None
 
 
-def initialise_scheduler(user: str, account: str = None, logger: Logger = get_basic_logger()):
+def initialise_scheduler(
+    user: str, account: str = None, logger: Logger = get_basic_logger()
+):
     global __scheduler
     if __scheduler is not None:
         raise RuntimeError("Scheduler already initialised")

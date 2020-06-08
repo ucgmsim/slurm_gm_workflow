@@ -24,7 +24,12 @@ from shared_workflow.platform_config import platform_config
 sys.path.append(os.path.abspath(os.path.curdir))
 
 
-def create_run_params(sim_dir, srf_name=None, steps_per_checkpoint=None, logger: Logger = get_basic_logger()):
+def create_run_params(
+    sim_dir,
+    srf_name=None,
+    steps_per_checkpoint=None,
+    logger: Logger = get_basic_logger(),
+):
     params = utils.load_sim_params(os.path.join(sim_dir, "sim_params.yaml"))
 
     emod3d_version = params["emod3d"]["emod3d_version"]

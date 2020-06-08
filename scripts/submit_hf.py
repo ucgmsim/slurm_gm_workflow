@@ -22,9 +22,7 @@ SCALE_NCORES = True
 default_wct = "00:30:00"
 
 
-def gen_command_template(
-    params, machine, seed=const.HF_DEFAULT_SEED
-):
+def gen_command_template(params, machine, seed=const.HF_DEFAULT_SEED):
     command_template_parameters = {
         "fd_statlist": params.FD_STATLIST,
         "hf_bin_path": sim_struct.get_hf_bin_path(params.sim_dir),
@@ -85,7 +83,9 @@ def main(
         nsub_stoch, sub_fault_area = srf.get_nsub_stoch(params.hf.slip, get_area=True)
 
         if est_model is None:
-            est_model = os.path.join(platform_config[const.PLATFORM_CONFIG.ESTIMATION_MODELS_DIR.name], "HF")
+            est_model = os.path.join(
+                platform_config[const.PLATFORM_CONFIG.ESTIMATION_MODELS_DIR.name], "HF"
+            )
         est_core_hours, est_run_time, est_cores = est.est_HF_chours_single(
             fd_count,
             nsub_stoch,

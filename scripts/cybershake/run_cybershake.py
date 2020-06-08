@@ -60,16 +60,20 @@ def run_automated_workflow(
 
     wrapper_logger.info("Loading estimation models")
     lf_est_model = est.load_full_model(
-        join(platform_config[const.PLATFORM_CONFIG.ESTIMATION_MODELS_DIR.name], "LF"), logger=wrapper_logger
+        join(platform_config[const.PLATFORM_CONFIG.ESTIMATION_MODELS_DIR.name], "LF"),
+        logger=wrapper_logger,
     )
     hf_est_model = est.load_full_model(
-        join(platform_config[const.PLATFORM_CONFIG.ESTIMATION_MODELS_DIR.name], "HF"), logger=wrapper_logger
+        join(platform_config[const.PLATFORM_CONFIG.ESTIMATION_MODELS_DIR.name], "HF"),
+        logger=wrapper_logger,
     )
     bb_est_model = est.load_full_model(
-        join(platform_config[const.PLATFORM_CONFIG.ESTIMATION_MODELS_DIR.name], "BB"), logger=wrapper_logger
+        join(platform_config[const.PLATFORM_CONFIG.ESTIMATION_MODELS_DIR.name], "BB"),
+        logger=wrapper_logger,
     )
     im_est_model = est.load_full_model(
-        join(platform_config[const.PLATFORM_CONFIG.ESTIMATION_MODELS_DIR.name], "IM"), logger=wrapper_logger
+        join(platform_config[const.PLATFORM_CONFIG.ESTIMATION_MODELS_DIR.name], "IM"),
+        logger=wrapper_logger,
     )
 
     bulk_logger = qclogging.get_logger(name="auto_submit_main", threaded=True)
@@ -247,7 +251,10 @@ def main():
         "config_file",
         help="The location of the config file containing everything to be run",
         nargs="?",
-        default=join(platform_config[const.PLATFORM_CONFIG.TEMPLATES_DIR.name], "task_config.yaml"),
+        default=join(
+            platform_config[const.PLATFORM_CONFIG.TEMPLATES_DIR.name],
+            "task_config.yaml",
+        ),
     )
     parser.add_argument(
         "--sleep_time",
@@ -337,12 +344,15 @@ def main():
         else:
             incorrect_n_runs = (
                 "You must specify wither one common value for --n_runs, or one "
-                "for each in the following list: {}".format(list(HPC))
+                "for each in the following list: {}".format([hpc.name for hpc in HPC])
             )
             wrapper_logger.log(qclogging.NOPRINTCRITICAL, incorrect_n_runs)
             parser.error(incorrect_n_runs)
     else:
-        n_runs = platform_config[const.PLATFORM_CONFIG.DEFAULT_N_RUNS.name]
+        n_runs = {
+            HPC[hpc]: platform_config[const.PLATFORM_CONFIG.DEFAULT_N_RUNS.name][hpc]
+            for hpc in platform_config[const.PLATFORM_CONFIG.AVAILABLE_MACHINES.name]
+        }
     wrapper_logger.debug(
         "Machines will allow up to {} jobs to run simultaneously".format(n_runs)
     )

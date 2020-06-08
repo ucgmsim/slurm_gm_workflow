@@ -5,8 +5,6 @@
 
 #SBATCH --cluster=Mahuika
 #SBATCH --job-name=hf2bb
-#SBATCH --account=nesi00213
-#SBATCH --partition=large
 #SBATCH --time=00:15:00
 #SBATCH --cpus-per-task=1
 

@@ -12,7 +12,9 @@ class Slurm(Scheduler):
         self.current_machine = current_machine
 
     def check_queues(self, user=False, target_machine: HPC = None):
-        self.logger.debug(f"Checking queues for user {user} and machine {target_machine}")
+        self.logger.debug(
+            f"Checking queues for user {user} and machine {target_machine}"
+        )
 
         if target_machine is None:
             target_machine = self.current_machine
@@ -54,11 +56,9 @@ class Slurm(Scheduler):
             "Submitting {} on machine {}".format(script_location, target_machine)
         )
         if target_machine and target_machine != self.current_machine:
-            command = (
-                f"sbatch --export=CUR_ENV,CUR_HPC -M {target_machine} {script_location}"
-            )
+            command = f"sbatch -A {self.account} --export=CUR_ENV,CUR_HPC -M {target_machine} {script_location}"
         else:
-            command = f"sbatch {script_location}"
+            command = f"sbatch -A {self.account} {script_location}"
 
         out, err = self._run_command_and_wait(cmd=[command], shell=True)
 

@@ -43,7 +43,9 @@ def main(
         model = (
             est_model
             if est_model is not None
-            else os.path.join(platform_config[const.PLATFORM_CONFIG.ESTIMATION_MODELS_DIR.name], "LF")
+            else os.path.join(
+                platform_config[const.PLATFORM_CONFIG.ESTIMATION_MODELS_DIR.name], "LF"
+            )
         )
         est_core_hours, est_run_time, est_cores = est.est_LF_chours_single(
             int(params.nx), int(params.ny), int(params.nz), nt, args.ncore, model, True
@@ -79,7 +81,9 @@ def main(
             args.write_directory if args.write_directory else params.sim_dir
         )
 
-        set_runparams.create_run_params(sim_dir, steps_per_checkpoint=steps_per_checkpoint, logger=logger)
+        set_runparams.create_run_params(
+            sim_dir, steps_per_checkpoint=steps_per_checkpoint, logger=logger
+        )
 
         header_dict = {
             "n_tasks": est_cores,

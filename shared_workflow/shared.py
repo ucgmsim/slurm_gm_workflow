@@ -30,6 +30,7 @@ def write_to_py(pyfile, vardict):
             else:
                 fp.write("%s=%s\n" % (key, value))
 
+
 def get_stations(source_file, locations=False):
     """returns a list of stations
     sample line in source file:

@@ -13,11 +13,6 @@ from testing.test_common_set_up import (
 )
 
 
-def test_get_partition():
-    assert shared_template.get_partition("maui") == "nesi_research"
-    assert shared_template.get_partition("mahuika") == "large"
-
-
 def test_convert_time_to_hours():
     assert shared_template.convert_time_to_hours("00:10:00") == 10 / 60.0
     assert shared_template.convert_time_to_hours("01:00:00") == 1

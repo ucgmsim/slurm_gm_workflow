@@ -143,7 +143,8 @@ def args_parser(cmd=None):
         "--velocity-model",
         help="path to velocity model (1D)",
         default=os.path.join(
-            platform_config[constants.PLATFORM_CONFIG.VELOCITY_MODEL_DIR.name], "Mod-1D/Cant1D_v2-midQ_leer.1d"
+            platform_config[constants.PLATFORM_CONFIG.VELOCITY_MODEL_DIR.name],
+            "Mod-1D/Cant1D_v2-midQ_leer.1d",
         ),
     )
     arg("-s", "--site-vm-dir", help="dir containing site specific velocity models (1D)")

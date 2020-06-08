@@ -62,7 +62,9 @@ def main(
         fd_count = len(shared.get_stations(params.FD_STATLIST))
 
         if est_model is None:
-            est_model = os.path.join(platform_config[const.PLATFORM_CONFIG.ESTIMATION_MODELS_DIR.name], "BB")
+            est_model = os.path.join(
+                platform_config[const.PLATFORM_CONFIG.ESTIMATION_MODELS_DIR.name], "BB"
+            )
 
         est_core_hours, est_run_time = est.est_BB_chours_single(
             fd_count, nt, ncores, est_model
@@ -82,7 +84,6 @@ def main(
                 est_run_time_scaled = est_run_time * (int(args.retries) + 1)
 
         wct = set_wct(est_run_time_scaled, ncores, args.auto)
-        bb_sim_dir = os.path.join(params.sim_dir, "BB")
         write_directory = (
             args.write_directory if args.write_directory else params.sim_dir
         )

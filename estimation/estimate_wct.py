@@ -396,7 +396,8 @@ def estimate_BB_chours(
         data,
         model=model,
         model_type=model_type,
-        default_ncores=platform_config[const.PLATFORM_CONFIG.BB_DEFAULT_NCORES.name] / 2.0
+        default_ncores=platform_config[const.PLATFORM_CONFIG.BB_DEFAULT_NCORES.name]
+        / 2.0
         if const.ProcessType.BB.is_hyperth
         else platform_config[const.PLATFORM_CONFIG.BB_DEFAULT_NCORES.name],
     )

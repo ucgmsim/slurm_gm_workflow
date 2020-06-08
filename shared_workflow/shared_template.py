@@ -28,8 +28,6 @@ def write_sl_script(
         "memory": platform_config[const.PLATFORM_CONFIG.DEFAULT_MEMORY.name],
         "exe_time": const.timestamp,
         "version": "slurm",
-        "account": cmd_args.account,
-        "target_host": cmd_args.machine,
         "write_directory": write_directory,
     }
     common_template_params = {
@@ -50,7 +48,11 @@ def write_sl_script(
 
     (template_name, template_params) = body_template_params
     common_template_params.update(template_params)
-    body = generate_context(platform_config[const.PLATFORM_CONFIG.TEMPLATES_DIR.name], template_name, common_template_params)
+    body = generate_context(
+        platform_config[const.PLATFORM_CONFIG.TEMPLATES_DIR.name],
+        template_name,
+        common_template_params,
+    )
 
     script_name = os.path.abspath(
         os.path.join(
@@ -104,7 +106,6 @@ def generate_context(simulation_dir, template_path, parameter_dict):
 
 def resolve_header(
     template_dir,
-    account,
     n_tasks,
     wallclock_limit,
     job_name,
@@ -112,15 +113,11 @@ def resolve_header(
     memory,
     exe_time,
     job_description,
-    partition=None,
     additional_lines="",
     template_path=None,
-    target_host=host,
     mail="test@test.com",
     write_directory=".",
 ):
-    if partition is None:
-        partition = get_partition(target_host, convert_time_to_hours(wallclock_limit))
     if template_path is None:
         template_path = get_scheduler().HEADER_TEMPLATE
 
@@ -129,31 +126,15 @@ def resolve_header(
         version=version,
         job_description=job_description,
         job_name=job_name,
-        account=account,
         n_tasks=n_tasks,
         wallclock_limit=wallclock_limit,
         mail=mail,
         memory=memory,
         additional_lines=additional_lines,
         exe_time=exe_time,
-        partition=partition,
         write_dir=write_directory,
     )
     return header
-
-
-def get_partition(machine, core_hours=None):
-    # TODO: Add partitions to machine configs and load from there
-    if machine == "maui":
-        partition = "nesi_research"
-    elif machine == "mahuika":
-        if core_hours and core_hours < 6:
-            partition = "large"
-        else:
-            partition = "large"
-    else:
-        partition = ""
-    return partition
 
 
 def convert_time_to_hours(time_str):

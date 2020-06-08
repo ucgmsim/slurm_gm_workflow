@@ -4,8 +4,6 @@
 # must be run with sbatch calc_rrups_single [observedGroundMotionsDirectory] [managementDBLocation]
 
 #SBATCH --job-name=calc_rrups_single
-#SBATCH --account=nesi00213
-#SBATCH --partition=prepost,long,large
 #SBATCH --time=00:10:00
 #SBATCH --cpus-per-task=12
 

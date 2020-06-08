@@ -7,13 +7,14 @@ from logging import Logger
 from typing import Dict
 
 from qcore import utils, shared
-from qcore.config import host, platform_config
+from qcore.config import host
 import qcore.constants as const
 from qcore.qclogging import get_basic_logger
 import qcore.simulation_structure as sim_struct
 from qcore.utils import DotDictify
 
 from estimation.estimate_wct import est_IM_chours_single, EstModel
+from shared_workflow.platform_config import platform_config
 from shared_workflow.shared import set_wct, confirm
 from shared_workflow.shared_automated_workflow import submit_sl_script
 from shared_workflow.shared_template import write_sl_script
@@ -109,7 +110,9 @@ def submit_im_calc_slurm(
     )
 
     if est_model is None:
-        est_model = os.path.join(platform_config[const.PLATFORM_CONFIG.ESTIMATION_MODELS_DIR.name], "IM")
+        est_model = os.path.join(
+            platform_config[const.PLATFORM_CONFIG.ESTIMATION_MODELS_DIR.name], "IM"
+        )
 
     # Get wall clock estimation
     logger.info(
@@ -138,7 +141,6 @@ def submit_im_calc_slurm(
             fault_name,
         ),
         "exe_time": const.timestamp,
-        "target_host": options_dict["machine"],
         "write_directory": options_dict["write_directory"],
         "n_tasks": options_dict[SlHdrOptConsts.n_tasks.value],
         "job_description": options_dict[SlHdrOptConsts.description.value],

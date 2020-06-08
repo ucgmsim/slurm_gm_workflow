@@ -275,7 +275,7 @@ def install_fault(
         sys.argv[0] = "hf_sim.py"
 
         command_template, add_args = hf_gen_command_template(
-            sim_params, list(HPC)[0].value, seed
+            sim_params, list(HPC)[0].name, seed
         )
         run_command = gen_args_cmd(
             ProcessType.HF.command_template, command_template, add_args
