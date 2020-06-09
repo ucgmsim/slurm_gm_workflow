@@ -9,7 +9,6 @@ from scripts.schedulers.abstractscheduler import AbstractScheduler
 
 
 class Pbs(AbstractScheduler):
-
     def get_metadata(self, db_running_task: SlurmTask, task_logger: Logger):
         pass
 
@@ -17,14 +16,21 @@ class Pbs(AbstractScheduler):
     STATUS_DICT = {"R": 3, "Q": 2, "E": 3, "F": 4}
     SCRIPT_EXTENSION = "pbs"
 
-    def submit_job(self, sim_dir, script_location: str, target_machine: str = None) -> int:
-        self.logger.debug("Submitting {} on machine {}".format(script_location, target_machine))
+    def submit_job(
+        self, sim_dir, script_location: str, target_machine: str = None
+    ) -> int:
+        self.logger.debug(
+            "Submitting {} on machine {}".format(script_location, target_machine)
+        )
 
         if target_machine and target_machine != self.current_machine:
-            raise self.raise_exception("Job submission for different machine is not supported", NotImplementedError)
+            raise self.raise_exception(
+                "Job submission for different machine is not supported",
+                NotImplementedError,
+            )
 
         cwd = os.getcwd()
-        os.chdir(sim_dir) #KISTI doesn't allow job submission from home
+        os.chdir(sim_dir)  # KISTI doesn't allow job submission from home
         out, err = self._run_command_and_wait(f"qsub {script_location}")
         os.chdir(cwd)
         self.logger.debug((out, err))
@@ -36,7 +42,7 @@ class Pbs(AbstractScheduler):
 
         self.logger.debug("Successfully submitted task to slurm")
         # no errors, return the job id
-        return_words = out.split('.pbs') #4027812.pbs
+        return_words = out.split(".pbs")  # 4027812.pbs
         self.logger.debug(return_words)
 
         try:
@@ -48,9 +54,11 @@ class Pbs(AbstractScheduler):
 
         out, err = self._run_command_and_wait(f"qstat {jobid}")
         try:
-            job_name = out.split(' ')[1]
+            job_name = out.split(" ")[1]
         except Exception:
-            raise self.raise_exception("Unable to determine job name from qstat. Exiting")
+            raise self.raise_exception(
+                "Unable to determine job name from qstat. Exiting"
+            )
 
         self.logger.debug(f"Return from qstat, stdout: {out}, stderr:{err}")
 
@@ -64,7 +72,9 @@ class Pbs(AbstractScheduler):
         self._run_command_and_wait(cmd=[f"qdel {job_id}"], shell=True)
 
     def check_queues(self, user: str = None, target_machine=None) -> List[str]:
-        if user is not None:  # just print the list of jobid and status (a space between)
+        if (
+            user is not None
+        ):  # just print the list of jobid and status (a space between)
             cmd = ["qstat", "-u", f"{user}"]
             header_pattern = "pbs:"
             header_idx = 1
@@ -75,7 +85,7 @@ class Pbs(AbstractScheduler):
             header_idx = 0
             job_list_idx = 3
 
-        (output, err) = self._run_command_and_wait(cmd.split(''), encoding="utf-8")
+        (output, err) = self._run_command_and_wait(cmd.split(" "), encoding="utf-8")
 
         try:
             header = output.split("\n")[header_idx]
@@ -92,7 +102,9 @@ class Pbs(AbstractScheduler):
                 )
         # only keep the relevant info
         jobs = []
-        for l in [line.split() for line in output.split("\n")[job_list_idx:-1]]:  # last line is empty
+        for l in [
+            line.split() for line in output.split("\n")[job_list_idx:-1]
+        ]:  # last line is empty
             self.logger.debug(l)
             jobs.append("{} {}".format(l[0].split(".")[0], l[-2]))
 

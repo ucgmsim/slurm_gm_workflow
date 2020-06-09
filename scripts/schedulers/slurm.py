@@ -63,7 +63,7 @@ class Slurm(AbstractScheduler):
         f_name = f"%x_{timestamp}_%j"
         common_pre = f"sbatch -o {join(sim_dir, f'{f_name}.out')} -e {join(sim_dir, f'{f_name}.err')} -A {self.account}"
         if target_machine and target_machine != self.current_machine:
-            mid = "--export=CUR_ENV,CUR_HPC -M {target_machine} {script_location}"
+            mid = f"--export=CUR_ENV,CUR_HPC -M {target_machine}"
         else:
             mid = ""
         command = " ".join([common_pre, mid, script_location])
@@ -116,7 +116,7 @@ class Slurm(AbstractScheduler):
 
     @staticmethod
     def process_arguments(script_path: str, arguments: List[str]):
-        return f"{script_path} {''.join(arguments)}"
+        return f"{script_path} {' '.join(arguments)}"
 
     def get_metadata(self, db_running_task: SlurmTask, task_logger: Logger):
         """

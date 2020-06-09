@@ -52,7 +52,7 @@ def submit_sl_script(
     """
     scheduler = get_scheduler()
 
-    job_id = scheduler.submit_job(sim_dir, script, )
+    job_id = scheduler.submit_job(sim_dir, script, target_machine)
 
     add_to_queue(
         queue_folder,

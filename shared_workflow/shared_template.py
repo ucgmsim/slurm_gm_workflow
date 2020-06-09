@@ -4,7 +4,6 @@ from datetime import datetime
 from jinja2 import Environment, FileSystemLoader
 
 import qcore.constants as const
-from qcore.config import host
 from qcore.utils import load_sim_params
 from scripts.schedulers.scheduler_factory import get_scheduler
 from shared_workflow.platform_config import platform_config
@@ -19,7 +18,6 @@ def write_sl_script(
     header_dict,
     body_template_params,
     command_template_parameters,
-    cmd_args,
     add_args={},
 ):
     params = load_sim_params(os.path.join(sim_dir, "sim_params.yaml"))

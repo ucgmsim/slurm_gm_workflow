@@ -32,7 +32,9 @@ class AbstractScheduler(ABC):
         self._run_command_and_wait = self.logging_wrapper(task_runner_no_debug)
 
     @abstractmethod
-    def submit_job(self, sim_dir, script_location: str, target_machine: str = None) -> int:
+    def submit_job(
+        self, sim_dir, script_location: str, target_machine: str = None
+    ) -> int:
         """
         Submits jobs to the platforms scheduler. Returns the job id of the submitted job.
         Automatically sets the output/error file names
@@ -94,7 +96,9 @@ class AbstractScheduler(ABC):
 
         return wrapper
 
-    def raise_exception(self, message, exception_type: Type[Exception] = SchedulerException) -> Exception:
+    def raise_exception(
+        self, message, exception_type: Type[Exception] = SchedulerException
+    ) -> Exception:
         """
         Logs and raises an exception related to scheduler interaction
         :param exception_type:

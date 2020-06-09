@@ -20,6 +20,7 @@ default_wct = "00:30:00"
 
 def gen_command_template(params):
     command_template_parameters = {
+        "run_command": platform_config[const.PLATFORM_CONFIG.RUN_COMMAND.name],
         "outbin_dir": simulation_structure.get_lf_outbin_dir(params.sim_dir),
         "vel_mod_dir": params.vel_mod_dir,
         "hf_bin_path": simulation_structure.get_hf_bin_path(params.sim_dir),
@@ -113,7 +114,6 @@ def main(
             header_dict,
             body_template_params,
             command_template_parameters,
-            args,
             add_args,
         )
 

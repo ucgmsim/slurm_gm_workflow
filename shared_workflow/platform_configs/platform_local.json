@@ -13,8 +13,9 @@
   "SCHEDULER": "slurm",
   "AVAILABLE_MACHINES":  ["local"],
   "VELOCITY_MODEL_DIR": "/nesi/project/nesi00213/VelocityModel",
-  "ESTIMATION_MODELS_DIR": "/home/jpa198/PycharmProjects/workflow/estimation/models",
-  "TEMPLATES_DIR": "/home/jpa198/PycharmProjects/workflow/templates",
+  "ESTIMATION_MODELS_DIR": "$workflow/estimation/models",
+  "TEMPLATES_DIR": "$workflow/templates",
+  "RUN_COMMAND": "",
   "DEFAULT_N_RUNS": {
     "local": 1
   },

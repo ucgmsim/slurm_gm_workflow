@@ -11,7 +11,6 @@ from qcore.config import host
 import qcore.constants as const
 from qcore.qclogging import get_basic_logger
 import qcore.simulation_structure as sim_struct
-from qcore.utils import DotDictify
 
 from estimation.estimate_wct import est_IM_chours_single, EstModel
 from shared_workflow.platform_config import platform_config
@@ -208,12 +207,6 @@ def submit_im_calc_slurm(
         header_dict,
         body_template_params,
         command_template_parameters,
-        DotDictify(
-            {
-                "account": options_dict[SlHdrOptConsts.account.value],
-                "machine": options_dict["machine"],
-            }
-        ),
     )
 
     submit_yes = (

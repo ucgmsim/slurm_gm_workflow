@@ -56,9 +56,10 @@ def main(args, logger: Logger = get_basic_logger()):
     }
 
     command_template_parameters = {
+        "run_command": platform_config[const.PLATFORM_CONFIG.RUN_COMMAND.name],
         "merge_ts_path": binary_version.get_unversioned_bin(
             "merge_tsP3_par", get_machine_config(args.machine)["tools_dir"]
-        )
+        ),
     }
 
     body_template_params = (
@@ -75,7 +76,6 @@ def main(args, logger: Logger = get_basic_logger()):
         header_dict,
         body_template_params,
         command_template_parameters,
-        args,
     )
     if submit_yes:
         submit_sl_script(

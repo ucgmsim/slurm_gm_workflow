@@ -24,6 +24,7 @@ default_wct = "00:30:00"
 
 def gen_command_template(params, machine, seed=const.HF_DEFAULT_SEED):
     command_template_parameters = {
+        "run_command": platform_config[const.PLATFORM_CONFIG.RUN_COMMAND.name],
         "fd_statlist": params.FD_STATLIST,
         "hf_bin_path": sim_struct.get_hf_bin_path(params.sim_dir),
         "v_mod_1d_name": params.v_mod_1d_name,
@@ -142,7 +143,6 @@ def main(
             header_dict,
             body_template_params,
             command_template_parameters,
-            args,
             add_args,
         )
 

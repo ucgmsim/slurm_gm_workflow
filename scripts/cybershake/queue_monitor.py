@@ -164,8 +164,18 @@ def update_tasks(
                     )
                 )
             # When job failed, we want to log metadata as well
-            start_time, end_time, run_time, n_cores, status = get_scheduler().get_metadata(db_running_task, task_logger)
-            log_file = os.path.join(sim_struct.get_sim_dir(root_folder, db_running_task.run_name), "ch_log", "metadata_log.json")
+            (
+                start_time,
+                end_time,
+                run_time,
+                n_cores,
+                status,
+            ) = get_scheduler().get_metadata(db_running_task, task_logger)
+            log_file = os.path.join(
+                sim_struct.get_sim_dir(root_folder, db_running_task.run_name),
+                "ch_log",
+                "metadata_log.json",
+            )
             # now log metadata
             store_metadata(
                 log_file,

@@ -204,12 +204,13 @@ def submit_task(
             script_location=os.path.expandvars("$gmsim/workflow/scripts/im_plot.sl"),
         )
         submit_sl_script(
-            script,
-            target_machine=get_target_machine(const.ProcessType.IM_plot).name,
+            script, target_machine=get_target_machine(const.ProcessType.IM_plot).name,
         )
     elif proc_type == const.ProcessType.rrup.value:
         submit_sl_script(
-            get_platform_specific_script(const.ProcessType.rrup, [sim_dir, root_folder]),
+            get_platform_specific_script(
+                const.ProcessType.rrup, [sim_dir, root_folder]
+            ),
             target_machine=get_target_machine(const.ProcessType.rrup).name,
         )
     elif proc_type == const.ProcessType.Empirical.value:
@@ -226,24 +227,53 @@ def submit_task(
         raise NotImplementedError("Verifaction is not currently working")
     elif proc_type == const.ProcessType.clean_up.value:
         submit_sl_script(
-            get_platform_specific_script(const.ProcessType.clean_up, [sim_dir, run_name, root_folder]),
+            get_platform_specific_script(
+                const.ProcessType.clean_up, [sim_dir, run_name, root_folder]
+            ),
             target_machine=get_target_machine(const.ProcessType.clean_up).name,
         )
     elif proc_type == const.ProcessType.LF2BB.value:
         params = utils.load_sim_params(os.path.join(sim_dir, "sim_params.yaml"))
         submit_sl_script(
-            get_platform_specific_script(const.ProcessType.LF2BB, [sim_dir, root_folder, params.stat_vs_est, " ".join(["--{} {}".format(key, item) for key, item in params.bb.items()])]),
+            get_platform_specific_script(
+                const.ProcessType.LF2BB,
+                [
+                    sim_dir,
+                    root_folder,
+                    params.stat_vs_est,
+                    " ".join(
+                        ["--{} {}".format(key, item) for key, item in params.bb.items()]
+                    ),
+                ],
+            ),
             target_machine=get_target_machine(const.ProcessType.LF2BB).name,
         )
     elif proc_type == const.ProcessType.HF2BB.value:
         params = utils.load_sim_params(os.path.join(sim_dir, "sim_params.yaml"))
         submit_sl_script(
-            get_platform_specific_script(const.ProcessType.HF2BB, [sim_dir, root_folder, " ".join(["--{} {}".format(key, item) for key, item in params.bb.items()])]),
+            get_platform_specific_script(
+                const.ProcessType.HF2BB,
+                [
+                    sim_dir,
+                    root_folder,
+                    " ".join(
+                        ["--{} {}".format(key, item) for key, item in params.bb.items()]
+                    ),
+                ],
+            ),
             target_machine=get_target_machine(const.ProcessType.HF2BB).name,
         )
     elif proc_type == const.ProcessType.plot_srf.value:
         submit_sl_script(
-            get_platform_specific_script(const.ProcessType.plot_srf, [sim_struct.get_srf_dir(root_folder, run_name), sim_struct.get_sources_plot_dir(root_folder, run_name), root_folder, run_name]),
+            get_platform_specific_script(
+                const.ProcessType.plot_srf,
+                [
+                    sim_struct.get_srf_dir(root_folder, run_name),
+                    sim_struct.get_sources_plot_dir(root_folder, run_name),
+                    root_folder,
+                    run_name,
+                ],
+            ),
             target_machine=get_target_machine(const.ProcessType.plot_srf).name,
         )
     elif proc_type == const.ProcessType.advanced_IM.value:

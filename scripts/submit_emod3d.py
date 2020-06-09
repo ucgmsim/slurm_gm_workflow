@@ -94,6 +94,7 @@ def main(
         }
 
         command_template_parameters = {
+            "run_command": platform_config[const.PLATFORM_CONFIG],
             "emod3d_bin": binary_path,
             "lf_sim_dir": lf_sim_dir,
         }
@@ -109,7 +110,6 @@ def main(
             header_dict,
             body_template_params,
             command_template_parameters,
-            args,
         )
         if submit_yes:
             submit_sl_script(
