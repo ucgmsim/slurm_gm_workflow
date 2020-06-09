@@ -94,7 +94,7 @@ def main(
         }
 
         command_template_parameters = {
-            "run_command": platform_config[const.PLATFORM_CONFIG],
+            "run_command": platform_config[const.PLATFORM_CONFIG.RUN_COMMAND.name],
             "emod3d_bin": binary_path,
             "lf_sim_dir": lf_sim_dir,
         }

@@ -26,6 +26,8 @@ def test_write_sl_script(set_up, mocker):
     for root_path, realisation in set_up:
         input_params = get_input_params(root_path, func_name, params)
 
+        input_params[6]["run_command"] = "srun"
+
         slurm_script = io.StringIO("")
         mocker.patch(
             "shared_workflow.shared_template.write_file",
