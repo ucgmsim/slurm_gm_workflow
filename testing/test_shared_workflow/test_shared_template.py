@@ -26,6 +26,8 @@ def test_write_sl_script(set_up, mocker):
     for root_path, realisation in set_up:
         input_params = get_input_params(root_path, func_name, params)
 
+        input_params[4]["platform_specific_args"] = {"n_tasks": input_params[4]["n_tasks"]}
+        del input_params[4]["n_tasks"]
         input_params[6]["run_command"] = "srun"
 
         slurm_script = io.StringIO("")
@@ -84,6 +86,8 @@ def test_resolve_header(set_up):
         input_params[0] = os.path.join(
             os.path.dirname(os.path.realpath(__file__)), "..", "..", "templates"
         )
+        input_params[8] = "nesi_header.cfg"
+        input_params.append({"n_tasks": 40})
         test_output = func(*input_params)
         bench_output = get_bench_output(root_path, func_name)
         for test_line, bench_line in zip(

@@ -14,7 +14,10 @@ import qcore.simulation_structure as sim_struct
 
 import estimation.estimate_wct as est
 import scripts.set_runparams as set_runparams
-from shared_workflow.platform_config import platform_config
+from shared_workflow.platform_config import (
+    platform_config,
+    get_platform_node_requirements,
+)
 from shared_workflow.shared import confirm, set_wct
 from shared_workflow.shared_automated_workflow import submit_sl_script
 from shared_workflow.shared_template import write_sl_script
@@ -86,11 +89,11 @@ def main(
         )
 
         header_dict = {
-            "n_tasks": est_cores,
             "wallclock_limit": wct,
             "job_name": "run_emod3d.{}".format(srf_name),
             "job_description": "emod3d slurm script",
             "additional_lines": "#SBATCH --hint=nomultithread",
+            "platform_specific_args": get_platform_node_requirements(est_cores),
         }
 
         command_template_parameters = {

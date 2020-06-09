@@ -2,7 +2,9 @@ from enum import Enum
 from os.path import join, dirname, abspath
 from typing import List, Union
 
-from qcore.config import determine_machine_config, get_machine_config, host
+from numpy.ma import ceil
+
+from qcore.config import determine_machine_config, get_machine_config, host, qconfig
 from qcore.constants import PLATFORM_CONFIG, ProcessType
 
 WORKFLOW_DIR = abspath(join(dirname(__file__), ".."))
@@ -98,3 +100,21 @@ def get_platform_specific_script(process: ProcessType, arguments: List[str]) -> 
     }[process]
 
     return scheduler.process_arguments(join(WORKFLOW_DIR, "scripts", platform_dir, f"{script_name}.{script_extension}"), arguments)
+
+
+def get_platform_node_requirements(task_count):
+    if host == "nesi" or host == "local":
+        return {
+            "n_tasks": task_count
+        }
+    elif host == "tacc":
+        return {
+            "n_tasks": task_count,
+            "n_nodes": int(ceil(task_count / qconfig["cores_per_node"]))
+        }
+    elif host == "kisti":
+        n_nodes = int(ceil(task_count / qconfig["cores_per_node"]))
+        return {
+            "n_nodes": n_nodes,
+            "n_tasks_per_node": int(ceil(task_count / n_nodes)),
+        }

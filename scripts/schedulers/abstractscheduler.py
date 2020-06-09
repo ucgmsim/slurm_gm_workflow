@@ -20,7 +20,6 @@ class AbstractScheduler(ABC):
     Defines the generic scheduler API to interact with various platform scheduling software
     """
 
-    HEADER_TEMPLATE: str
     STATUS_DICT: Dict[str, int]
     SCRIPT_EXTENSION: str
 

@@ -10,7 +10,10 @@ from qcore import simulation_structure
 from qcore import utils, shared
 from qcore.config import host
 from qcore.qclogging import get_basic_logger
-from shared_workflow.platform_config import platform_config
+from shared_workflow.platform_config import (
+    platform_config,
+    get_platform_node_requirements,
+)
 from shared_workflow.shared import set_wct, confirm, get_hf_nt
 from shared_workflow.shared_automated_workflow import submit_sl_script
 from shared_workflow.shared_template import write_sl_script
@@ -91,11 +94,11 @@ def main(
         underscored_srf = srf_name.replace("/", "__")
 
         header_dict = {
-            "n_tasks": ncores,
             "wallclock_limit": wct,
             "job_name": "sim_bb.{}".format(underscored_srf),
             "job_description": "BB calculation",
             "additional_lines": "###SBATCH -C avx",
+            "platform_specific_args": get_platform_node_requirements(ncores),
         }
 
         body_template_params = (

@@ -13,7 +13,10 @@ from qcore.qclogging import get_basic_logger
 import qcore.simulation_structure as sim_struct
 
 from estimation.estimate_wct import est_IM_chours_single, EstModel
-from shared_workflow.platform_config import platform_config
+from shared_workflow.platform_config import (
+    platform_config,
+    get_platform_node_requirements,
+)
 from shared_workflow.shared import set_wct, confirm
 from shared_workflow.shared_automated_workflow import submit_sl_script
 from shared_workflow.shared_template import write_sl_script
@@ -141,7 +144,9 @@ def submit_im_calc_slurm(
         ),
         "exe_time": const.timestamp,
         "write_directory": options_dict["write_directory"],
-        "n_tasks": options_dict[SlHdrOptConsts.n_tasks.value],
+        "platform_specific_args": get_platform_node_requirements(
+            options_dict[SlHdrOptConsts.n_tasks.value]
+        ),
         "job_description": options_dict[SlHdrOptConsts.description.value],
         # TODO: this logic may need update along with adv_im_est_model
         SlHdrOptConsts.additional.value: options_dict[SlHdrOptConsts.additional.value]

@@ -10,7 +10,10 @@ from qcore.config import host, get_machine_config
 import qcore.constants as const
 from qcore.qclogging import get_basic_logger
 import qcore.simulation_structure as sim_struct
-from shared_workflow.platform_config import platform_config
+from shared_workflow.platform_config import (
+    platform_config,
+    get_platform_node_requirements,
+)
 
 from shared_workflow.shared import set_wct, confirm, get_hf_nt
 from shared_workflow.shared_automated_workflow import submit_sl_script
@@ -119,7 +122,7 @@ def main(
         underscored_srf = srf_name.replace("/", "__")
 
         header_dict = {
-            "n_tasks": est_cores,
+            "platform_specific_args": get_platform_node_requirements(est_cores),
             "wallclock_limit": wct,
             "job_name": "sim_hf.{}".format(underscored_srf),
             "job_description": "HF calculation",

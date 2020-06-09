@@ -11,6 +11,7 @@
   "DEFAULT_ACCOUNT" : "nesi00213",
   "DEFAULT_MEMORY" : "16G",
   "SCHEDULER": "slurm",
+  "HEADER_FILE": "nesi_header.cfg",
   "AVAILABLE_MACHINES":  ["local"],
   "VELOCITY_MODEL_DIR": "/nesi/project/nesi00213/VelocityModel",
   "ESTIMATION_MODELS_DIR": "$workflow/estimation/models",

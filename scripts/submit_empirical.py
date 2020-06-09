@@ -51,16 +51,15 @@ def generate_sl(np, extended, cybershake_folder, realisations, out_dir):
 
     header = resolve_header(
         platform_config[const.PLATFORM_CONFIG.TEMPLATES_DIR.name],
-        np,
         wallclock_limit="00:30:00",
         job_name="empirical",
         version="slurm",
         memory="2G",
         exe_time="%j",
         job_description="Empirical Engine",
-        mail="",
         additional_lines="",
         template_path=get_scheduler().HEADER_TEMPLATE,
+        mail="",
         write_directory=out_dir,
     )
     context = generate_context(

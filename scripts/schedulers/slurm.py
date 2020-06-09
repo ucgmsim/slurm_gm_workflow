@@ -10,7 +10,6 @@ from shared_workflow.platform_config import HPC, get_target_machine
 
 
 class Slurm(AbstractScheduler):
-    HEADER_TEMPLATE = "slurm_header.cfg"
     STATUS_DICT = {"R": 3, "PD": 2, "CG": 3}
     SCRIPT_EXTENSION = "sl"
 

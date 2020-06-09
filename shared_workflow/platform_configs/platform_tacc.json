@@ -11,6 +11,7 @@
   "DEFAULT_ACCOUNT" : "DesignSafe-Graves",
   "DEFAULT_MEMORY" : "16G",
   "SCHEDULER": "slurm",
+  "HEADER_FILE": "tacc_header.cfg",
   "RUN_COMMAND": "ibrun",
   "AVAILABLE_MACHINES":  ["stampede2"],
   "VELOCITY_MODEL_DIR": "/nesi/project/nesi00213/VelocityModel",

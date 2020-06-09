@@ -5,7 +5,6 @@ from jinja2 import Environment, FileSystemLoader
 
 import qcore.constants as const
 from qcore.utils import load_sim_params
-from scripts.schedulers.scheduler_factory import get_scheduler
 from shared_workflow.platform_config import platform_config
 from shared_workflow.shared import write_file
 
@@ -25,7 +24,7 @@ def write_sl_script(
         "template_dir": platform_config[const.PLATFORM_CONFIG.TEMPLATES_DIR.name],
         "memory": platform_config[const.PLATFORM_CONFIG.DEFAULT_MEMORY.name],
         "exe_time": const.timestamp,
-        "version": "slurm",
+        "version": platform_config[const.PLATFORM_CONFIG.SCHEDULER.name],
         "write_directory": write_directory,
     }
     common_template_params = {
@@ -104,7 +103,6 @@ def generate_context(simulation_dir, template_path, parameter_dict):
 
 def resolve_header(
     template_dir,
-    n_tasks,
     wallclock_limit,
     job_name,
     version,
@@ -115,22 +113,23 @@ def resolve_header(
     template_path=None,
     mail="test@test.com",
     write_directory=".",
+    platform_specific_args={},
 ):
     if template_path is None:
-        template_path = get_scheduler().HEADER_TEMPLATE
+        template_path = platform_config[const.PLATFORM_CONFIG.HEADER_FILE.name]
 
     j2_env = Environment(loader=FileSystemLoader(template_dir), trim_blocks=True)
     header = j2_env.get_template(template_path).render(
         version=version,
         job_description=job_description,
         job_name=job_name,
-        n_tasks=n_tasks,
         wallclock_limit=wallclock_limit,
         mail=mail,
         memory=memory,
         additional_lines=additional_lines,
         exe_time=exe_time,
         write_dir=write_directory,
+        **platform_specific_args,
     )
     return header
 

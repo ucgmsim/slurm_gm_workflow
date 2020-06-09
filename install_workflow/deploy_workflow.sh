@@ -54,20 +54,3 @@ cp -r $script_dir/../metadata ${ROOT}/workflow/
 echo $version >> ${ROOT}/workflow/version
 
 touch ../scripts ${ROOT}/workflow/{scripts,templates,shared_workflow}/__init__.py
-
-# Edit the machine_env.sh file to have the correct paths
-print_message "Remember to edit the $ROOT/workflow/templates/machine_env.sh to fit your current system"
-
-rm -f ${ROOT}/workflow/templates/machine_env.sh
-touch ${ROOT}/workflow/templates/machine_env.sh
-
-#script to change grp
-#cat $script_dir/change_grp.sh >> ${ROOT}/workflow/templates/machine_env.sh
-
-echo "" >> ${ROOT}/workflow/templates/machine_env.sh
-echo "source $ROOT/share/bashrc.uceq" >> ${ROOT}/workflow/templates/machine_env.sh
-echo "export BINPROCESS=$ROOT/workflow/scripts" >> ${ROOT}/workflow/templates/machine_env.sh
-echo "" >> ${ROOT}/workflow/templates/machine_env.sh
-
-print_message "Remember to edit the $ROOT/workflow/templates/slurm_header.cfg with the data needed on your system"
-

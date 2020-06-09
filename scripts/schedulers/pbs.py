@@ -31,7 +31,9 @@ class Pbs(AbstractScheduler):
 
         cwd = os.getcwd()
         os.chdir(sim_dir)  # KISTI doesn't allow job submission from home
-        out, err = self._run_command_and_wait(f"qsub {script_location}")
+        out, err = self._run_command_and_wait(
+            f"qsub -q {self.account} {script_location}"
+        )
         os.chdir(cwd)
         self.logger.debug((out, err))
 

@@ -1,3 +1,7 @@
+from logging import Logger
+from typing import List
+
+from scripts.management.MgmtDB import SlurmTask
 from scripts.schedulers.abstractscheduler import AbstractScheduler
 
 
@@ -6,8 +10,14 @@ class Bash(AbstractScheduler):
     task_running = False
 
     RUN_COMMAND = ""
-    # TODO: Update to empty header?
-    HEADER_TEMPLATE = "slurm_header.cfg"
+    SCRIPT_EXTENSION = "sh"
+
+    @staticmethod
+    def process_arguments(script_path: str, arguments: List[str]):
+        return f"{script_path} {' '.join(arguments)}"
+
+    def get_metadata(self, db_running_task: SlurmTask, task_logger: Logger):
+        pass
 
     def submit_job(self, script_location: str, target_machine: str = None, **kwargs):
         """
@@ -33,9 +43,7 @@ class Bash(AbstractScheduler):
         return self.job_counter
 
     def cancel_job(self, job_id: int, target_machine=None):
-        raise self.raise_scheduler_exception(
-            "Cannot cancel a job with the bash scheduler"
-        )
+        raise self.raise_exception("Cannot cancel a job with the bash scheduler")
 
     def check_queues(self, user: str = None, target_machine=None):
         """
