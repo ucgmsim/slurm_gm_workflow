@@ -153,6 +153,7 @@ def main(
                 script_file_path,
                 const.ProcessType.HF.value,
                 sim_struct.get_mgmt_db_queue(params.mgmt_db_location),
+                params.sim_dir,
                 srf_name,
                 target_machine=args.machine,
                 logger=logger,

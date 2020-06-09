@@ -26,7 +26,12 @@ from scripts.submit_hf import main as submit_hf_main
 from scripts.submit_bb import main as submit_bb_main
 from scripts.submit_sim_imcalc import submit_im_calc_slurm, SlBodyOptConsts
 from shared_workflow import shared_automated_workflow
-from shared_workflow.platform_config import HPC, platform_config
+from shared_workflow.platform_config import (
+    HPC,
+    platform_config,
+    get_platform_specific_script,
+    get_target_machine,
+)
 
 AUTO_SUBMIT_LOG_FILE_NAME = "auto_submit_log_{}.txt"
 
@@ -57,6 +62,7 @@ def submit_task(
             script_name,
             proc_type,
             sim_struct.get_mgmt_db_queue(root_folder),
+            sim_dir,
             run_name,
             target_machine=target_machine,
             logger=task_logger,
@@ -69,9 +75,7 @@ def submit_task(
             srf=run_name,
             ncore=platform_config[const.PLATFORM_CONFIG.LF_DEFAULT_NCORES.name],
             account=platform_config[const.PLATFORM_CONFIG.DEFAULT_ACCOUNT.name],
-            machine=platform_config[const.PLATFORM_CONFIG.MACHINE_TASKS.name][
-                const.ProcessType.EMOD3D.name
-            ],
+            machine=get_target_machine(const.ProcessType.EMOD3D).name,
             rel_dir=sim_dir,
             write_directory=sim_dir,
             retries=retries,
@@ -89,9 +93,7 @@ def submit_task(
             auto=True,
             srf=run_name,
             account=platform_config[const.PLATFORM_CONFIG.DEFAULT_ACCOUNT.name],
-            machine=platform_config[const.PLATFORM_CONFIG.MACHINE_TASKS.name][
-                const.ProcessType.merge_ts.name
-            ],
+            machine=get_target_machine(const.ProcessType.merge_ts).name,
             rel_dir=sim_dir,
             write_directory=sim_dir,
         )
@@ -108,28 +110,21 @@ def submit_task(
         # whereas im_plot does.
         if not os.path.isdir(verification_dir):
             os.mkdir(verification_dir)
-        plot_ts_template = (
-            "--export=CUR_ENV -o {output_file} -e {error_file} {script_location} "
-            "{xyts_path} {srf_path} {output_movie_path} {mgmt_db_loc} {run_name}"
-        )
-        script = plot_ts_template.format(
-            xyts_path=os.path.join(
+        arguments = [
+            os.path.join(
                 sim_struct.get_lf_outbin_dir(sim_dir),
                 "{}_xyts.e3d".format(run_name.split("_")[0]),
             ),
-            srf_path=sim_struct.get_srf_path(root_folder, run_name),
-            output_movie_path=os.path.join(verification_dir, run_name),
-            mgmt_db_loc=root_folder,
-            run_name=run_name,
-            script_location=os.path.expandvars("$gmsim/workflow/scripts/plot_ts.sl"),
-            output_file=os.path.join(sim_dir, "%x_%j.out"),
-            error_file=os.path.join(sim_dir, "%x_%j.err"),
-        )
+            sim_struct.get_srf_path(root_folder, run_name),
+            os.path.join(verification_dir, run_name),
+            root_folder,
+            run_name,
+        ]
+
+        script = get_platform_specific_script(const.ProcessType.plot_ts, arguments)
+
         submit_sl_script(
-            script,
-            target_machine=platform_config[const.PLATFORM_CONFIG.MACHINE_TASKS.name][
-                const.ProcessType.plot_ts.name
-            ],
+            script, target_machine=get_target_machine(const.ProcessType.plot_ts).name,
         )
 
     elif proc_type == const.ProcessType.HF.value:
@@ -141,9 +136,7 @@ def submit_task(
             version=platform_config[const.PLATFORM_CONFIG.HF_DEFAULT_VERSION.name],
             site_specific=None,
             account=platform_config[const.PLATFORM_CONFIG.DEFAULT_ACCOUNT.name],
-            machine=platform_config[const.PLATFORM_CONFIG.MACHINE_TASKS.name][
-                const.ProcessType.HF.name
-            ],
+            machine=get_target_machine(const.ProcessType.HF).name,
             rel_dir=sim_dir,
             write_directory=sim_dir,
             debug=False,
@@ -163,9 +156,7 @@ def submit_task(
             srf=run_name,
             version=platform_config[const.PLATFORM_CONFIG.BB_DEFAULT_VERSION.name],
             account=platform_config[const.PLATFORM_CONFIG.DEFAULT_ACCOUNT.name],
-            machine=platform_config[const.PLATFORM_CONFIG.MACHINE_TASKS.name][
-                const.ProcessType.BB.name
-            ],
+            machine=get_target_machine(const.ProcessType.BB).name,
             rel_dir=sim_dir,
             write_directory=sim_dir,
             retries=retries,
@@ -183,9 +174,7 @@ def submit_task(
             SlBodyOptConsts.extended.value: True if extended_period else False,
             SlBodyOptConsts.simple_out.value: True,
             "auto": True,
-            "machine": platform_config[const.PLATFORM_CONFIG.MACHINE_TASKS.name][
-                const.ProcessType.IM_calculation.name
-            ],
+            "machine": get_target_machine(const.ProcessType.IM_calculation).name,
             "write_directory": sim_dir,
         }
         submit_im_calc_slurm(
@@ -202,10 +191,7 @@ def submit_task(
             logger=task_logger,
         )
     elif proc_type == const.ProcessType.IM_plot.value:
-        im_plot_template = (
-            "--export=CUR_ENV -o {output_file} -e {error_file} {script_location} "
-            "{csv_path} {station_file_path} {output_xyz_dir} {srf_path} {model_params_path} {mgmt_db_loc} {run_name}"
-        )
+        im_plot_template = "{script_location} {csv_path} {station_file_path} {output_xyz_dir} {srf_path} {model_params_path} {mgmt_db_loc} {run_name}"
         params = utils.load_sim_params(os.path.join(sim_dir, "sim_params.yaml"))
         script = im_plot_template.format(
             csv_path=os.path.join(sim_struct.get_IM_csv(sim_dir)),
@@ -216,123 +202,49 @@ def submit_task(
             mgmt_db_loc=root_folder,
             run_name=run_name,
             script_location=os.path.expandvars("$gmsim/workflow/scripts/im_plot.sl"),
-            output_file=os.path.join(sim_dir, "%x_%j.out"),
-            error_file=os.path.join(sim_dir, "%x_%j.err"),
         )
         submit_sl_script(
             script,
-            target_machine=platform_config[const.PLATFORM_CONFIG.MACHINE_TASKS.name][
-                const.ProcessType.IM_plot.name
-            ],
+            target_machine=get_target_machine(const.ProcessType.IM_plot).name,
         )
     elif proc_type == const.ProcessType.rrup.value:
         submit_sl_script(
-            "--output {} --error {} {} {} {}".format(
-                os.path.join(sim_dir, "%x_%j.out"),
-                os.path.join(sim_dir, "%x_%j.err"),
-                os.path.expandvars("$gmsim/workflow/scripts/calc_rrups_single.sl"),
-                sim_dir,
-                root_folder,
-            ),
-            target_machine=platform_config[const.PLATFORM_CONFIG.MACHINE_TASKS.name][
-                const.ProcessType.rrup.name
-            ],
+            get_platform_specific_script(const.ProcessType.rrup, [sim_dir, root_folder]),
+            target_machine=get_target_machine(const.ProcessType.rrup).name,
         )
     elif proc_type == const.ProcessType.Empirical.value:
-        extended_period_switch = "-e" if extended_period else ""
-        sl_script = generate_sl(
-            extended_period_switch,
-            root_folder,
-            "nesi00213",
-            [run_name],
-            sim_dir,
-            target_machine=platform_config[const.PLATFORM_CONFIG.MACHINE_TASKS.name][
-                const.ProcessType.Empirical.name
-            ],
-        )
-        submit_sl_script(
-            sl_script,
-            target_machine=platform_config[const.PLATFORM_CONFIG.MACHINE_TASKS.name][
-                const.ProcessType.Empirical.name
-            ],
-        )
+        raise NotImplementedError("Empirical is not currently working")
+        # extended_period_switch = "-e" if extended_period else ""
+        # sl_script = generate_sl(
+        #     1, extended_period_switch, root_folder, "nesi00213", [run_name], sim_dir,
+        # )
+        # submit_sl_script(
+        #     sl_script,
+        #     target_machine=get_target_machine(const.ProcessType.Empirical).name,
+        # )
     elif proc_type == const.ProcessType.Verification.value:
-        pass
+        raise NotImplementedError("Verifaction is not currently working")
     elif proc_type == const.ProcessType.clean_up.value:
-        clean_up_template = (
-            "--export=CUR_ENV -o {output_file} -e {error_file} {script_location} "
-            "{sim_dir} {srf_name} {mgmt_db_loc} "
-        )
-        script = clean_up_template.format(
-            sim_dir=sim_dir,
-            srf_name=run_name,
-            mgmt_db_loc=root_folder,
-            script_location=os.path.expandvars("$gmsim/workflow/scripts/clean_up.sl"),
-            output_file=os.path.join(sim_dir, "%x_%j.out"),
-            error_file=os.path.join(sim_dir, "%x_%j.err"),
-        )
         submit_sl_script(
-            script,
-            target_machine=platform_config[const.PLATFORM_CONFIG.MACHINE_TASKS.name][
-                const.ProcessType.clean_up
-            ],
+            get_platform_specific_script(const.ProcessType.clean_up, [sim_dir, run_name, root_folder]),
+            target_machine=get_target_machine(const.ProcessType.clean_up).name,
         )
     elif proc_type == const.ProcessType.LF2BB.value:
         params = utils.load_sim_params(os.path.join(sim_dir, "sim_params.yaml"))
         submit_sl_script(
-            "--output {} --error {} {} {} {} {} {}".format(
-                os.path.join(sim_dir, "%x_%j.out"),
-                os.path.join(sim_dir, "%x_%j.err"),
-                os.path.expandvars("$gmsim/workflow/scripts/lf2bb.sl"),
-                sim_dir,
-                root_folder,
-                utils.load_sim_params(
-                    os.path.join(sim_dir, "sim_params.yaml")
-                ).stat_vs_est,
-                " ".join(
-                    ["--{} {}".format(key, item) for key, item in params.bb.items()]
-                ),
-            ),
-            target_machine=platform_config[const.PLATFORM_CONFIG.MACHINE_TASKS.name][
-                const.ProcessType.LF2BB
-            ],
+            get_platform_specific_script(const.ProcessType.LF2BB, [sim_dir, root_folder, params.stat_vs_est, " ".join(["--{} {}".format(key, item) for key, item in params.bb.items()])]),
+            target_machine=get_target_machine(const.ProcessType.LF2BB).name,
         )
     elif proc_type == const.ProcessType.HF2BB.value:
         params = utils.load_sim_params(os.path.join(sim_dir, "sim_params.yaml"))
         submit_sl_script(
-            "--output {} --error {} {} {} {} {}".format(
-                os.path.join(sim_dir, "%x_%j.out"),
-                os.path.join(sim_dir, "%x_%j.err"),
-                os.path.expandvars("$gmsim/workflow/scripts/hf2bb.sl"),
-                sim_dir,
-                root_folder,
-                " ".join(
-                    ["--{} {}".format(key, item) for key, item in params.bb.items()]
-                ),
-            ),
-            target_machine=platform_config[const.PLATFORM_CONFIG.MACHINE_TASKS.name][
-                const.ProcessType.HF2BB
-            ],
+            get_platform_specific_script(const.ProcessType.HF2BB, [sim_dir, root_folder, " ".join(["--{} {}".format(key, item) for key, item in params.bb.items()])]),
+            target_machine=get_target_machine(const.ProcessType.HF2BB).name,
         )
     elif proc_type == const.ProcessType.plot_srf.value:
-        plot_srf_template = (
-            "--export=CUR_ENV -o {output_file} -e {error_file} {script_location} "
-            "{srf_dir} {output_dir} {mgmt_db_loc} {run_name}"
-        )
-        script = plot_srf_template.format(
-            srf_dir=sim_struct.get_srf_dir(root_folder, run_name),
-            output_dir=sim_struct.get_sources_plot_dir(root_folder, run_name),
-            mgmt_db_loc=root_folder,
-            run_name=run_name,
-            script_location=os.path.expandvars("$gmsim/workflow/scripts/plot_srf.sl"),
-            output_file=os.path.join(sim_dir, "%x_%j.out"),
-            error_file=os.path.join(sim_dir, "%x_%j.err"),
-        )
         submit_sl_script(
-            script,
-            target_machine=platform_config[const.PLATFORM_CONFIG.MACHINE_TASKS.name][
-                const.ProcessType.plot_srf
-            ],
+            get_platform_specific_script(const.ProcessType.plot_srf, [sim_struct.get_srf_dir(root_folder, run_name), sim_struct.get_sources_plot_dir(root_folder, run_name), root_folder, run_name]),
+            target_machine=get_target_machine(const.ProcessType.plot_srf).name,
         )
     elif proc_type == const.ProcessType.advanced_IM.value:
         params = utils.load_sim_params(
@@ -340,9 +252,7 @@ def submit_task(
         )
         options_dict = {
             "auto": True,
-            "machine": platform_config[const.PLATFORM_CONFIG.MACHINE_TASKS.name][
-                const.ProcessType.advanced_IM
-            ],
+            "machine": get_target_machine(const.ProcessType.advanced_IM).name,
             "write_directory": sim_dir,
             const.ProcessType.advanced_IM.str_value: params[
                 const.ProcessType.advanced_IM.str_value
@@ -451,11 +361,7 @@ def run_main_submit_loop(
         tasks_to_run, task_counter = [], {key: 0 for key in HPC}
         for cur_proc_type, cur_run_name, retries in runnable_tasks:
 
-            cur_hpc = HPC[
-                platform_config[const.PLATFORM_CONFIG.MACHINE_TASKS.name][
-                    const.ProcessType(cur_proc_type).name
-                ]
-            ]
+            cur_hpc = get_target_machine(cur_proc_type)
             # Add task if limit has not been reached and there are no
             # outstanding mgmt db updates
             if (

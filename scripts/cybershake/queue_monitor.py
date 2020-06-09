@@ -15,6 +15,7 @@ import qcore.constants as const
 import qcore.simulation_structure as sim_struct
 from qcore import qclogging
 from scripts.management.MgmtDB import MgmtDB, SlurmTask
+from scripts.schedulers.scheduler_factory import get_scheduler
 from shared_workflow.platform_config import platform_config, HPC
 from shared_workflow.shared_automated_workflow import get_queued_tasks, check_mgmt_queue
 from metadata.log_metadata import store_metadata
@@ -23,8 +24,6 @@ from metadata.log_metadata import store_metadata
 
 QUEUE_MONITOR_LOG_FILE_NAME = "queue_monitor_log_{}.txt"
 DEFAULT_N_MAX_RETRIES = 2
-
-SLURM_TO_STATUS_DICT = {"R": 3, "PD": 2, "CG": 3}
 
 keepAlive = True
 
@@ -63,55 +62,6 @@ def get_queue_entry(
     )
 
 
-def sacct_metadata(db_running_task: SlurmTask, task_logger: Logger, root_folder: str):
-    cmd = "sacct -n -X -j {} -M {} -o 'jobid%10,jobname%35,Submit,Start,End,NCPUS,CPUTimeRAW%18,State,Nodelist%60'"
-    output = (
-        subprocess.check_output(
-            cmd.format(
-                db_running_task.job_id,
-                platform_config[const.PLATFORM_CONFIG.MACHINE_TASKS.name][
-                    const.ProcessType(db_running_task.proc_type).name
-                ],
-            ),
-            shell=True,
-        )
-        .decode("utf-8")
-        .strip()
-        .split()
-    )
-    # ['578928', 'u-bl689.atmos_main.18621001T0000Z', '2019-08-16T13:05:06', '2019-08-16T13:12:56', '2019-08-16T14:58:28', '1840', '11650880', 'CANCELLED+', 'nid00[166-171,180-196]']
-    try:
-        submit_time, start_time, end_time = [x.replace("T", "_") for x in output[2:5]]
-        n_cores = float(output[5])
-        run_time = float(output[6]) / n_cores
-        status = output[7]
-
-    except:
-        # a special case when a job is cancelled before getting logged in sacct
-        task_logger.warning(
-            "job data cannot be retrieved from sacct. likely the job is cancelled before recording. setting job status to CANCELLED"
-        )
-        submit_time, start_time, end_time = [0] * 3
-        n_cores = 0.0
-        run_time = 0
-        status = "CANCELLED"
-    sim_dir = sim_struct.get_sim_dir(root_folder, db_running_task.run_name)
-    log_file = os.path.join(sim_dir, "ch_log", "metadata_log.json")
-    # now log metadata
-    store_metadata(
-        log_file,
-        const.ProcessType(db_running_task.proc_type).str_value,
-        {
-            "start_time": start_time,
-            "end_time": end_time,
-            "run_time": run_time,
-            "cores": n_cores,
-            "status": status,
-        },
-        logger=task_logger,
-    )
-
-
 def update_tasks(
     mgmt_queue_entries: List[str],
     squeue_tasks: Dict[str, str],
@@ -137,10 +87,10 @@ def update_tasks(
             task_logger.debug("Found task. It has state {}".format(queue_status))
 
             try:
-                queue_status = SLURM_TO_STATUS_DICT[queue_status]
+                queue_status = get_scheduler().STATUS_DICT[queue_status]
             except KeyError:
                 task_logger.error(
-                    "Failed to recogize state code {}, updating to {}".format(
+                    "Failed to recognize state code {}, updating to {}".format(
                         queue_status, const.Status.unknown.value
                     )
                 )
@@ -214,7 +164,21 @@ def update_tasks(
                     )
                 )
             # When job failed, we want to log metadata as well
-            sacct_metadata(db_running_task, task_logger, root_folder)
+            start_time, end_time, run_time, n_cores, status = get_scheduler().get_metadata(db_running_task, task_logger)
+            log_file = os.path.join(sim_struct.get_sim_dir(root_folder, db_running_task.run_name), "ch_log", "metadata_log.json")
+            # now log metadata
+            store_metadata(
+                log_file,
+                const.ProcessType(db_running_task.proc_type).str_value,
+                {
+                    "start_time": start_time,
+                    "end_time": end_time,
+                    "run_time": run_time,
+                    "cores": n_cores,
+                    "status": status,
+                },
+                logger=task_logger,
+            )
     return tasks_to_do
 
 

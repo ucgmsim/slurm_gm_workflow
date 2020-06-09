@@ -9,6 +9,10 @@ if [[ $2 == "maui" ]]; then
     export PYTHONPATH=${env_path}/virt_envs/python3_maui/lib/python3.6/site-packages/:$PYTHONPATH
 elif [[ $2 == "mahuika" ]]; then
     source ${env_path}/workflow/install_workflow/helper_functions/activate_mahuika_python3_virtenv.sh ${env_path}/virt_envs/python3_mahuika
+elif [[ $2 == "stampede" ]]; then
+    source ${env_path}/workflow/install_workflow/helper_functions/activate_stampede_python3_virtenv.sh ${env_path}/virt_envs/python3_stampede
+# elif [[ $2 == "nurion" ]]; then
+#    source ${env_path}/workflow/install_workflow/helper_functions/activate_nurion_python3_virtenv.sh ${env_path}/virt_envs/python3_nurion
 else
     echo "$2, invalid HPC, Quitting!"
     exit

@@ -1,15 +1,18 @@
-from scripts.schedulers.scheduler import Scheduler
-from shared_workflow.platform_config import HPC
+from logging import Logger
+from typing import List
+from os.path import join
+
+from qcore.constants import ProcessType, timestamp
+
+from scripts.management.MgmtDB import SlurmTask
+from scripts.schedulers.abstractscheduler import AbstractScheduler
+from shared_workflow.platform_config import HPC, get_target_machine
 
 
-class Slurm(Scheduler):
-
-    RUN_COMMAND = "srun"
+class Slurm(AbstractScheduler):
     HEADER_TEMPLATE = "slurm_header.cfg"
-
-    def __init__(self, user, account, current_machine, logger):
-        Scheduler.__init__(self, user, account, logger)
-        self.current_machine = current_machine
+    STATUS_DICT = {"R": 3, "PD": 2, "CG": 3}
+    SCRIPT_EXTENSION = "sl"
 
     def check_queues(self, user=False, target_machine: HPC = None):
         self.logger.debug(
@@ -50,16 +53,22 @@ class Slurm(Scheduler):
         output_list = list(filter(None, output.split("\n")[1:]))
         return output_list
 
-    def submit_job(self, script_location, target_machine=None):
-        """Submits the slurm script and updates the management db"""
+    def submit_job(self, sim_dir, script_location, target_machine=None):
+        """Submits the slurm script and updates the management db
+        :param sim_dir:
+        """
         self.logger.debug(
             "Submitting {} on machine {}".format(script_location, target_machine)
         )
+        f_name = f"%x_{timestamp}_%j"
+        common_pre = f"sbatch -o {join(sim_dir, f'{f_name}.out')} -e {join(sim_dir, f'{f_name}.err')} -A {self.account}"
         if target_machine and target_machine != self.current_machine:
-            command = f"sbatch -A {self.account} --export=CUR_ENV,CUR_HPC -M {target_machine} {script_location}"
+            mid = "--export=CUR_ENV,CUR_HPC -M {target_machine} {script_location}"
         else:
-            command = f"sbatch -A {self.account} {script_location}"
+            mid = ""
+        command = " ".join([common_pre, mid, script_location])
 
+        self.logger.debug(f"Submitting command {command}")
         out, err = self._run_command_and_wait(cmd=[command], shell=True)
 
         if len(err) == 0 and out.startswith("Submitted"):
@@ -79,7 +88,7 @@ class Slurm(Scheduler):
                 raise e
             return jobid
         else:
-            raise self.raise_scheduler_exception(
+            raise self.raise_exception(
                 f"An error occurred during job submission: {err}"
             )
 
@@ -101,6 +110,48 @@ class Slurm(Scheduler):
         if "error" not in out.lower() and "error" not in err.lower():
             self.logger.debug(f"Cancelled job-id {job_id} successfully")
         else:
-            raise self.raise_scheduler_exception(
+            raise self.raise_exception(
                 f"An error occurred during job cancellation: {err}"
             )
+
+    @staticmethod
+    def process_arguments(script_path: str, arguments: List[str]):
+        return f"{script_path} {''.join(arguments)}"
+
+    def get_metadata(self, db_running_task: SlurmTask, task_logger: Logger):
+        """
+        TODO: Check Tacc compatibility
+        :param db_running_task: The task to retrieve metadata for
+        :param task_logger: the logger for the task
+        :return:
+        """
+        target_machine = get_target_machine(ProcessType(db_running_task.proc_type))
+        cmd = f"sacct -n -X -j {db_running_task.job_id} -M {target_machine} -o 'jobid%10,jobname%35,Submit,Start,End,NCPUS,CPUTimeRAW%18,State,Nodelist%60'"
+        out, err = self._run_command_and_wait(cmd, shell=True)
+        output = out.strip().split()
+        # ['578928', 'u-bl689.atmos_main.18621001T0000Z', '2019-08-16T13:05:06', '2019-08-16T13:12:56', '2019-08-16T14:58:28', '1840', '11650880', 'CANCELLED+', 'nid00[166-171,180-196]']
+        try:
+            submit_time, start_time, end_time = [
+                x.replace("T", "_") for x in output[2:5]
+            ]
+            n_cores = float(output[5])
+            run_time = float(output[6]) / n_cores
+            status = output[7]
+
+        except Exception:
+            # a special case when a job is cancelled before getting logged in sacct
+            task_logger.warning(
+                "job data cannot be retrieved from sacct. likely the job is cancelled before recording. setting job status to CANCELLED"
+            )
+            submit_time, start_time, end_time = [0] * 3
+            n_cores = 0.0
+            run_time = 0
+            status = "CANCELLED"
+
+        return (
+            start_time,
+            end_time,
+            run_time,
+            n_cores,
+            status,
+        )

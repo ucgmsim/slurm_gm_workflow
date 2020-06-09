@@ -1,9 +1,10 @@
 from abc import ABC, abstractmethod
 from logging import Logger
-from typing import List
+from typing import List, Dict, Type
 
 from qcore.shared import exe
 from qcore.qclogging import VERYVERBOSE, NOPRINTERROR
+from scripts.management.MgmtDB import SlurmTask
 
 
 def task_runner_no_debug(*args, **kwargs):
@@ -14,24 +15,28 @@ class SchedulerException(EnvironmentError):
     pass
 
 
-class Scheduler(ABC):
+class AbstractScheduler(ABC):
     """
     Defines the generic scheduler API to interact with various platform scheduling software
     """
 
-    RUNCOMMAND: str
     HEADER_TEMPLATE: str
+    STATUS_DICT: Dict[str, int]
+    SCRIPT_EXTENSION: str
 
-    def __init__(self, user, account, logger: Logger):
+    def __init__(self, user, account, current_machine, logger: Logger):
         self.user_name = user
         self.account = account
+        self.current_machine = current_machine
         self.logger = logger
         self._run_command_and_wait = self.logging_wrapper(task_runner_no_debug)
 
     @abstractmethod
-    def submit_job(self, script_location: str, target_machine: str = None) -> int:
+    def submit_job(self, sim_dir, script_location: str, target_machine: str = None) -> int:
         """
         Submits jobs to the platforms scheduler. Returns the job id of the submitted job.
+        Automatically sets the output/error file names
+        :param sim_dir: The realisation directory
         :param script_location: The absolute path to the script to be submitted
         :param target_machine: The machine the job is to be submitted to
         :return: The job id of the submitted job
@@ -57,6 +62,21 @@ class Scheduler(ABC):
         """
         pass
 
+    @staticmethod
+    @abstractmethod
+    def process_arguments(script_path: str, arguments: List[str]):
+        """
+        Processes the script path and arguments to return them in a format usable by the scheduler
+        :param script_path: The path to the script (or command to be run)
+        :param arguments: Any arguments to be passed to the script
+        :return: The string to be executed
+        """
+        pass
+
+    @abstractmethod
+    def get_metadata(self, db_running_task: SlurmTask, task_logger: Logger):
+        pass
+
     def logging_wrapper(self, func):
         """
         Wraps an external function so that all input and output is logged at the VERYVERBOSE level
@@ -74,11 +94,12 @@ class Scheduler(ABC):
 
         return wrapper
 
-    def raise_scheduler_exception(self, message) -> SchedulerException:
+    def raise_exception(self, message, exception_type: Type[Exception] = SchedulerException) -> Exception:
         """
         Logs and raises an exception related to scheduler interaction
+        :param exception_type:
         :param message: The message of the exception
         :return: The exception
         """
         self.logger.log(NOPRINTERROR, message)
-        return SchedulerException(message)
+        return exception_type(message)

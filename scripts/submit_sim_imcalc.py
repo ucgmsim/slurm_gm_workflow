@@ -225,6 +225,7 @@ def submit_im_calc_slurm(
             script_file_path,
             proc_type.value,
             sim_struct.get_mgmt_db_queue(params.mgmt_db_location),
+            sim_dir,
             os.path.splitext(os.path.basename(params.srf_file))[0],
             target_machine=options_dict["machine"],
             logger=logger,

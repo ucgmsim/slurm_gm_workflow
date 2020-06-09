@@ -3,7 +3,6 @@
 #
 # must be run with sbatch lf2bb.sl [realisationDirectory] [managementDBLocation]
 
-#SBATCH --cluster=Mahuika
 #SBATCH --job-name=lf2bb
 #SBATCH --time=01:00:00
 #SBATCH --cpus-per-task=1

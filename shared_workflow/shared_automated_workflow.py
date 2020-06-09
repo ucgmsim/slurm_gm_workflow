@@ -32,6 +32,7 @@ def submit_sl_script(
     script: str,
     proc_type: int,
     queue_folder: str,
+    sim_dir: str,
     run_name: str,
     target_machine: str = None,
     logger: Logger = get_basic_logger(),
@@ -40,6 +41,7 @@ def submit_sl_script(
     Submits the slurm script and updates the management db.
     Calling the scheduler submitter may result in an error being raised.
     This is not caught in order to get immediate attention of broken runs.
+    :param sim_dir:
     :param script: The location of the script to be run
     :param proc_type: The process type of the job being run
     :param queue_folder: Where the folder for database updates is
@@ -50,7 +52,7 @@ def submit_sl_script(
     """
     scheduler = get_scheduler()
 
-    job_id = scheduler.submit_job(script, target_machine=target_machine)
+    job_id = scheduler.submit_job(sim_dir, script, )
 
     add_to_queue(
         queue_folder,

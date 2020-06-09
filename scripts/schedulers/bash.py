@@ -1,7 +1,7 @@
-from scripts.schedulers.scheduler import Scheduler
+from scripts.schedulers.abstractscheduler import AbstractScheduler
 
 
-class Bash(Scheduler):
+class Bash(AbstractScheduler):
     job_counter = 0
     task_running = False
 
@@ -9,13 +9,14 @@ class Bash(Scheduler):
     # TODO: Update to empty header?
     HEADER_TEMPLATE = "slurm_header.cfg"
 
-    def submit_job(self, script_location: str, target_machine: str = None):
+    def submit_job(self, script_location: str, target_machine: str = None, **kwargs):
         """
         Runs job in the bash shell
         Will run job until completion
         Enforces that the script is executable, then executes it
         :param script_location:
         :param target_machine:
+        :param **kwargs: Any additional parameters to be passed to the executor
         :return: The index of the task
         """
         self.logger.debug(

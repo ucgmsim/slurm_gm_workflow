@@ -4,7 +4,6 @@
 # must be run with sbatch plot_srf.sl [srf dir] [output folder] [management database location] [realization name]
 
 #SBATCH --job-name=plot_srf
-#SBATCH --account=nesi00213
 #SBATCH --time=00:30:00
 #SBATCH --cpus-per-task=1
 

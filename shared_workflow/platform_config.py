@@ -1,9 +1,9 @@
 from enum import Enum
 from os.path import join, dirname, abspath
+from typing import List, Union
 
 from qcore.config import determine_machine_config, get_machine_config, host
-from qcore.constants import PLATFORM_CONFIG
-
+from qcore.constants import PLATFORM_CONFIG, ProcessType
 
 WORKFLOW_DIR = abspath(join(dirname(__file__), ".."))
 
@@ -59,3 +59,42 @@ if errors:
 HPC = Enum(
     "HPC", platform_config[PLATFORM_CONFIG.AVAILABLE_MACHINES.name], module=__name__
 )
+
+
+def get_target_machine(process: Union[ProcessType, str, int]) -> HPC:
+    """
+    Takes in a process and returns the machine that task is expected to run on
+    :param process: The process to be checked. Represented by either the name index or ProcessType enum
+    :return: The HPC the task is to run on
+    """
+    if isinstance(process, str):
+        process = ProcessType[process]
+    elif isinstance(process, int):
+        process = ProcessType(process)
+    return HPC[platform_config[PLATFORM_CONFIG.MACHINE_TASKS.name][process.name]]
+
+
+def get_platform_specific_script(process: ProcessType, arguments: List[str]) -> str:
+    """
+    Returns the path to the script with arguments correctly formatted for the scheduler
+    :param process: The process to get the script for
+    :param arguments: Any arguments to be passed to the script
+    :return: The string representing the path to the script with the appropriate arguments to run it
+    """
+
+    # To prevent circular dependency
+    from scripts.schedulers.scheduler_factory import get_scheduler
+    scheduler = get_scheduler()
+
+    platform_dir = f"{platform}_scripts"
+    script_extension = scheduler.SCRIPT_EXTENSION
+    script_name = {
+        ProcessType.rrup: "calc_rrups_single",
+        ProcessType.clean_up: "clean_up",
+        ProcessType.HF2BB: "hf2bb",
+        ProcessType.LF2BB: "lf2bb",
+        ProcessType.plot_srf: "plot_srf",
+        ProcessType.plot_ts: "plot_ts",
+    }[process]
+
+    return scheduler.process_arguments(join(WORKFLOW_DIR, "scripts", platform_dir, f"{script_name}.{script_extension}"), arguments)

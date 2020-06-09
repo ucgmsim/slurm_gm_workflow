@@ -16,7 +16,7 @@
   "ESTIMATION_MODELS_DIR": "$workflow/estimation/models",
   "TEMPLATES_DIR": "$workflow/templates",
   "DEFAULT_N_RUNS": {
-    "nurion": 12
+    "nurion": 50
   },
   "MACHINE_TASKS": {
     "EMOD3D": "nurion",
