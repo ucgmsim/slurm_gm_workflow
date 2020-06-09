@@ -105,10 +105,13 @@ class MgmtDB:
                 print("status", entry.status, const.Status.failed.value)
                 if entry.status == const.Status.failed.value:
                     tasks = self.find_dependant_task(cur, entry)
-                    for task in tasks:
+                    i = 0
+                    while i < len(tasks):
+                        task = tasks[i]
                         self._update_entry(cur, task, logger=logger)
                         logger.debug(f"Cascading failure for {entry.run_name} - {task.proc_type}")
                         tasks.extend(self.find_dependant_task(cur, task))
+                        i += 1
 
         except sql.Error as ex:
             self._conn.rollback()
