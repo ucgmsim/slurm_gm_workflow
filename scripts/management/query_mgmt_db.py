@@ -73,7 +73,14 @@ def state_table_query_builder(
 
 
 def print_run_status(
-    db, run_name, error=False, count=False, detailed_count=False, config_file=None, todo=False,
+    db,
+    run_name,
+    error=False,
+    count=False,
+    detailed_count=False,
+    config_file=None,
+    todo=False,
+    max_retry=False,
 ):
     if error:
         show_all_error_entries(db, run_name)
@@ -90,9 +97,11 @@ def print_run_status(
                 show_state_counts(db, todo)
     else:
         if config_file is not None:
-            status = get_all_entries_from_config(config_file, db, todo=todo)
+            status = get_all_entries_from_config(
+                config_file, db, todo=todo, max_retry=max_retry
+            )
         else:
-            status = get_all_entries(db, run_name, todo=todo)
+            status = get_all_entries(db, run_name, todo=todo, max_retry=max_retry)
         print(
             "{:>25} | {:>15} | {:>10} | {:>8} | {:>20}".format(
                 "run_name", "process", "status", "job-id", "last_modified"
@@ -103,48 +112,63 @@ def print_run_status(
             print("{:>25} | {:>15} | {:>10} | {!s:>8} | {:>20}".format(*statum))
 
 
-def get_all_entries(db, run_name, todo=False):
+def get_all_entries(db, run_name, todo=False, max_retry=False):
+    extra_query = ""
     if todo:
-        db.execute(
-            """SELECT state.run_name, proc_type_enum.proc_type, status_enum.state, state.job_id, datetime(last_modified,'unixepoch')
-                    FROM state, status_enum, proc_type_enum
-                    WHERE state.proc_type = proc_type_enum.id 
-                    AND state.status = status_enum.id
-                    AND UPPER(state.run_name) LIKE UPPER(?)
-                    AND status_enum.state = 'created'
-                    ORDER BY state.run_name, status_enum.id
-                    """,
-            (run_name,),)
-    else:
-        db.execute(
-            """SELECT state.run_name, proc_type_enum.proc_type, status_enum.state, state.job_id, datetime(last_modified,'unixepoch')
-                    FROM state, status_enum, proc_type_enum
-                    WHERE state.proc_type = proc_type_enum.id 
-                    AND state.status = status_enum.id
-                    AND UPPER(state.run_name) LIKE UPPER(?)
-                    ORDER BY state.run_name, status_enum.id
-                    """,
-            (run_name,),
-        )
+        extra_query = """AND status_enum.state = 'created'"""
+    elif max_retry:
+        extra_query = """AND (SELECT count(*) 
+                            FROM state as state2, status_enum as status_enum2 
+                            WHERE state2.status = status_enum2.id 
+                            AND status_enum2.state <> 'failed' 
+                            AND state2.run_name = state.run_name 
+                            AND state.proc_type = state2.proc_type)
+                         = 0"""
+
+    db.execute(
+        """SELECT state.run_name, proc_type_enum.proc_type, status_enum.state, state.job_id, datetime(last_modified,'unixepoch')
+                FROM state, status_enum, proc_type_enum
+                WHERE state.proc_type = proc_type_enum.id 
+                AND state.status = status_enum.id
+                AND UPPER(state.run_name) LIKE UPPER(?)
+                """
+        + extra_query
+        + """                
+                ORDER BY state.run_name, status_enum.id
+                """,
+        (run_name,),
+    )
     status = db.fetchall()
     return status
 
 
-def get_all_entries_from_config(config_file, db, todo=False):
+def get_all_entries_from_config(config_file, db, todo=False, max_retry=False):
+    extra_query = ""
+    if todo:
+        extra_query = """AND status_enum.state = 'created'"""
+    elif max_retry:
+        extra_query = """AND (SELECT count(*) 
+                            FROM state as state2, status_enum as status_enum2 
+                            WHERE state2.status = status_enum2.id 
+                            AND status_enum2.state <> 'failed' 
+                            AND state2.run_name = state.run_name 
+                            AND state.proc_type = state2.proc_type)
+                         = 0"""
     tasks_n, tasks_to_match = parse_config_file(config_file)
     status = []
     if len(tasks_n) > 0:
         status.extend(
             db.execute(
-                """SELECT state.run_name, proc_type_enum.proc_type, status_enum.state, state.job_id, datetime(last_modified,'unixepoch')
-                FROM state, status_enum, proc_type_enum
-                WHERE state.proc_type = proc_type_enum.id 
-                AND state.status = status_enum.id
-                AND state.proc_type IN (?{})
-                ORDER BY state.run_name, status_enum.id
-                """.format(
-                    ",?" * (len(tasks_n) - 1)
-                ),
+                (
+                    """ SELECT state.run_name, proc_type_enum.proc_type, status_enum.state, state.job_id, datetime(last_modified,'unixepoch')
+                        FROM state, status_enum, proc_type_enum
+                        WHERE state.proc_type = proc_type_enum.id 
+                        AND state.status = status_enum.id
+                        AND state.proc_type IN (?{})
+                """
+                    + extra_query
+                    + """ORDER BY state.run_name, status_enum.id"""
+                ).format(",?" * (len(tasks_n) - 1)),
                 [i.value for i in tasks_n],
             ).fetchall()
         )
@@ -153,12 +177,15 @@ def get_all_entries_from_config(config_file, db, todo=False):
         status.extend(
             db.execute(
                 """SELECT state.run_name, proc_type_enum.proc_type, status_enum.state, state.job_id, datetime(last_modified,'unixepoch')
-                FROM state, status_enum, proc_type_enum
-                WHERE state.proc_type = proc_type_enum.id 
-                AND state.status = status_enum.id
-                AND state.run_name LIKE ?
-                AND state.proc_type IN (?{})
-                ORDER BY state.run_name, status_enum.id
+                    FROM state, status_enum, proc_type_enum
+                    WHERE state.proc_type = proc_type_enum.id 
+                    AND state.status = status_enum.id
+                    AND state.run_name LIKE ?
+                    AND state.proc_type IN (?{})
+                """
+                + extra_query
+                + """
+                    ORDER BY state.run_name, status_enum.id
                 """.format(
                     ",?" * (len(tasks) - 1)
                 ),
@@ -168,7 +195,7 @@ def get_all_entries_from_config(config_file, db, todo=False):
     return status
 
 
-def show_pattern_state_counts(config_file, db):
+def show_pattern_state_counts(config_file, db, todo=False):
     tasks_n, tasks_to_match = parse_config_file(config_file)
     vals = []
     for i in range(1, 7):
@@ -177,7 +204,10 @@ def show_pattern_state_counts(config_file, db):
                 state_table_query_builder("COUNT(*)", state=True), (i,)
             ).fetchone()[0]
         )
-    print(PATTERN_FORMATTER.format("ALL", *vals, sum(vals)))
+    if todo:
+        print(PATTERN_TODO_FORMATTER.format("ALL", "ALL", vals[0]))
+    else:
+        print(PATTERN_FORMATTER.format("ALL", "ALL", *vals, sum(vals)))
     for pattern, tasks in tasks_to_match:
         vals = []
         for i in range(1, 7):
@@ -189,7 +219,10 @@ def show_pattern_state_counts(config_file, db):
                     (pattern, i),
                 ).fetchone()[0]
             )
-        print(PATTERN_FORMATTER.format(pattern, *vals, sum(vals)))
+        if todo:
+            print(PATTERN_TODO_FORMATTER.format("ALL", "ALL", vals[0]))
+        else:
+            print(PATTERN_FORMATTER.format(pattern, *vals, sum(vals)))
 
 
 def show_detailed_config_counts(config_file, db, todo=False):
@@ -233,12 +266,12 @@ def show_detailed_config_counts(config_file, db, todo=False):
 def show_all_error_entries(db, run_name):
     db.execute(
         """SELECT state.run_name, proc_type_enum.proc_type, status_enum.state, state.job_id, datetime(last_modified,'unixepoch'), error.error
-        FROM state, status_enum, proc_type_enum, error
-        WHERE state.proc_type = proc_type_enum.id 
-        AND state.status = status_enum.id
-        AND UPPER(state.run_name) LIKE UPPER(?) 
-        AND error.task_id = state.id
-        ORDER BY state.run_name, status_enum.id
+            FROM state, status_enum, proc_type_enum, error
+            WHERE state.proc_type = proc_type_enum.id 
+            AND state.status = status_enum.id
+            AND UPPER(state.run_name) LIKE UPPER(?) 
+            AND error.task_id = state.id
+            ORDER BY state.run_name, status_enum.id
         """,
         (run_name,),
     )
@@ -251,7 +284,7 @@ def show_all_error_entries(db, run_name):
         )
 
 
-def show_state_counts(db):
+def show_state_counts(db, todo=False):
     vals = []
     for i in range(1, 7):
         vals.append(
@@ -259,7 +292,10 @@ def show_state_counts(db):
                 state_table_query_builder("COUNT(*)", state=True), (i,)
             ).fetchone()[0]
         )
-    print(PATTERN_FORMATTER.format("All", "All", *vals, sum(vals)))
+    if todo:
+        print(PATTERN_TODO_FORMATTER.format("All", "All", vals[0]))
+    else:
+        print(PATTERN_FORMATTER.format("All", "All", *vals, sum(vals)))
 
 
 def main():
@@ -273,8 +309,8 @@ def main():
     parser.add_argument(
         "--mode",
         "-mode",
-        choices=['error', 'count', 'todo', 'review'],
-        nargs='+',
+        choices=["error", "count", "todo", "max_retry"],
+        nargs="+",
         help="changes the mode of the program to provide different information",
     )
     parser.add_argument(
@@ -304,16 +340,26 @@ def main():
 
     if mode is None:
         mode = []
-    error = todo = count = actionable = False
+    error = todo = count = max_retry = False
     if "error" in mode:
         error = True
     if "todo" in mode:
         todo = True
     if "count" in mode:
         count = True
+    if "max_retry" in mode:
+        max_retry = True
 
-
-    print_run_status(db, run_name, error, count, args.detailed_count, args.config, todo=todo)
+    print_run_status(
+        db,
+        run_name,
+        error,
+        count,
+        args.detailed_count,
+        args.config,
+        todo=todo,
+        max_retry=max_retry,
+    )
 
 
 if __name__ == "__main__":
