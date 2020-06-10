@@ -109,7 +109,9 @@ class MgmtDB:
                     while i < len(tasks):
                         task = tasks[i]
                         self._update_entry(cur, task, logger=logger)
-                        logger.debug(f"Cascading failure for {entry.run_name} - {task.proc_type}")
+                        logger.debug(
+                            f"Cascading failure for {entry.run_name} - {task.proc_type}"
+                        )
                         tasks.extend(self.find_dependant_task(cur, task))
                         i += 1
 
@@ -140,11 +142,7 @@ class MgmtDB:
                 if entry.proc_type == dependency:
                     job_id = cur.execute(
                         "SELECT `job_id` FROM `state` WHERE proc_type = ? and status = ? and run_name = ?",
-                        (
-                            process.value,
-                            const.Status.completed.value,
-                            entry.run_name,
-                        ),
+                        (process.value, const.Status.completed.value, entry.run_name),
                     ).fetchone()
 
                     if job_id is not None:
