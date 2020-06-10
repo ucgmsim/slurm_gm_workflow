@@ -104,7 +104,7 @@ class MgmtDB:
                 # fails dependant task if parent task fails
                 print("status", entry.status, const.Status.failed.value)
                 if entry.status == const.Status.failed.value:
-                    tasks = self.find_dependant_task(cur, entry)
+                    tasks = MgmtDB.find_dependant_task(cur, entry)
                     i = 0
                     while i < len(tasks):
                         task = tasks[i]
@@ -112,7 +112,7 @@ class MgmtDB:
                         logger.debug(
                             f"Cascading failure for {entry.run_name} - {task.proc_type}"
                         )
-                        tasks.extend(self.find_dependant_task(cur, task))
+                        tasks.extend(MgmtDB.find_dependant_task(cur, task))
                         i += 1
 
         except sql.Error as ex:
@@ -133,7 +133,7 @@ class MgmtDB:
         return True
 
     @staticmethod
-    def find_dependant_task(self, cur, entry):
+    def find_dependant_task(cur, entry):
         tasks = []
         for process in const.ProcessType:
             for dependency in process.dependencies:
