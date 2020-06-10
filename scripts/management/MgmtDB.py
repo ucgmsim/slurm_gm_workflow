@@ -100,6 +100,21 @@ class MgmtDB:
                     )
                     self._insert_task(cur, realisation_name, process)
                     logger.debug("New task added to the db")
+
+                # fails dependant task if parent task fails
+                print("status", entry.status, const.Status.failed.value)
+                if entry.status == const.Status.failed.value:
+                    tasks = MgmtDB.find_dependant_task(cur, entry)
+                    i = 0
+                    while i < len(tasks):
+                        task = tasks[i]
+                        self._update_entry(cur, task, logger=logger)
+                        logger.debug(
+                            f"Cascading failure for {entry.run_name} - {task.proc_type}"
+                        )
+                        tasks.extend(MgmtDB.find_dependant_task(cur, task))
+                        i += 1
+
         except sql.Error as ex:
             self._conn.rollback()
             logger.critical(
@@ -116,6 +131,30 @@ class MgmtDB:
             cur.close()
 
         return True
+
+    @staticmethod
+    def find_dependant_task(cur, entry):
+        tasks = []
+        for process in const.ProcessType:
+            for dependency in process.dependencies:
+                if isinstance(dependency, tuple):
+                    dependency = dependency[0]
+                if entry.proc_type == dependency:
+                    job_id = cur.execute(
+                        "SELECT `job_id` FROM `state` WHERE proc_type = ? and status = ? and run_name = ?",
+                        (process.value, const.Status.completed.value, entry.run_name),
+                    ).fetchone()
+
+                    if job_id is not None:
+                        dependant_entry = SlurmTask(
+                            entry.run_name,
+                            process.value,
+                            const.Status.failed.value,
+                            job_id[0],
+                            None,
+                        )
+                        tasks.append(dependant_entry)
+        return tasks
 
     def add_retries(self, n_max_retries: int):
         """Checks the database for failed tasks with less failures than the given n_max_retries.

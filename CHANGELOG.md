@@ -12,6 +12,7 @@ Slurm Ground Motion Workflow
     - removed partition specifier for mahuika slurm scripts (as per NeSI recommendations)
     - lowered core requirements on quick animation, less queue time
     - Does not create new tasks for faults that are re-installed
+    - When marking a task as failed it will mark that tasks depedencies as failed too. The output files are not touched
 ### Updated
     - E2E tests bugs fixed
 
