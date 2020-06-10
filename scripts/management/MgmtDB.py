@@ -130,13 +130,13 @@ class MgmtDB:
 
         return True
 
+    @staticmethod
     def find_dependant_task(self, cur, entry):
         tasks = []
         for process in const.ProcessType:
             for dependency in process.dependencies:
                 if isinstance(dependency, tuple):
                     dependency = dependency[0]
-                print("dependant process", entry.proc_type, dependency)
                 if entry.proc_type == dependency:
                     job_id = cur.execute(
                         "SELECT `job_id` FROM `state` WHERE proc_type = ? and status = ? and run_name = ?",
@@ -148,7 +148,6 @@ class MgmtDB:
                     ).fetchone()
 
                     if job_id is not None:
-                        print(job_id[0])
                         dependant_entry = SlurmTask(
                             entry.run_name,
                             process.value,
@@ -158,7 +157,6 @@ class MgmtDB:
                         )
                         tasks.append(dependant_entry)
         return tasks
-
 
     def add_retries(self, n_max_retries: int):
         """Checks the database for failed tasks with less failures than the given n_max_retries.
