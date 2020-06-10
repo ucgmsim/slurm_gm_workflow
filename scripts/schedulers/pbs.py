@@ -65,7 +65,7 @@ class Pbs(AbstractScheduler):
         self.logger.debug(f"Return from qstat, stdout: {out}, stderr:{err}")
 
         f_name = f"{job_name}_{timestamp}_{jobid}"
-        # Set the error and output logs to <name>_<time>_<job_id> as this cannot be done before run time
+        # Set the error and output logs to <name>_<time>_<job_id> as this cannot be done before submission time
         self._run_command_and_wait(f"qalter -o {f_name}.out {jobid}")
         self._run_command_and_wait(f"qalter -e {f_name}.err {jobid}")
         return jobid
@@ -77,6 +77,8 @@ class Pbs(AbstractScheduler):
         if (
             user is not None
         ):  # just print the list of jobid and status (a space between)
+            if user is True:
+                user = self.user_name
             cmd = ["qstat", "-u", f"{user}"]
             header_pattern = "pbs:"
             header_idx = 1

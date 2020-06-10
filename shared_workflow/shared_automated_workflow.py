@@ -3,9 +3,6 @@ Shared functions only used by the automated workflow
 """
 import json
 import os
-import shlex
-import subprocess
-import sys
 from datetime import datetime
 from logging import Logger
 from typing import List

@@ -1,4 +1,4 @@
-from enum import Enum
+from enum import Enum, auto
 from os.path import join, dirname, abspath
 from typing import List, Union
 
@@ -10,19 +10,31 @@ from qcore.constants import PLATFORM_CONFIG, ProcessType
 WORKFLOW_DIR = abspath(join(dirname(__file__), ".."))
 
 
+class Platforms(Enum):
+    LOCAL = auto()
+    NESI = auto()
+    TACC = auto()
+    KISTI = auto()
+
+
 def determine_platform_config(hostname=determine_machine_config()[0]):
+    """
+    Determines the platform the script is running on
+    :param hostname: The name of the machine currently being run
+    :return: The platform being run, the path to the config for that platform
+    """
     if hostname == "maui" or hostname == "mahuika":
-        hpc_platform = "nesi"
+        hpc_platform = Platforms.NESI
     elif hostname == "stampede2":
-        hpc_platform = "tacc"
+        hpc_platform = Platforms.TACC
     elif hostname == "nurion":
-        hpc_platform = "kisti"
+        hpc_platform = Platforms.KISTI
     elif hostname == "local":
-        hpc_platform = "local"
+        hpc_platform = Platforms.LOCAL
     else:
         raise ValueError("Unexpected host given")
 
-    basename = f"platform_{hpc_platform}.json"
+    basename = f"platform_{hpc_platform.name.lower()}.json"
 
     config_path = join(dirname(abspath(__file__)), "platform_configs", basename)
     return hpc_platform, config_path
@@ -88,7 +100,7 @@ def get_platform_specific_script(process: ProcessType, arguments: List[str]) -> 
     from scripts.schedulers.scheduler_factory import get_scheduler
     scheduler = get_scheduler()
 
-    platform_dir = f"{platform}_scripts"
+    platform_dir = f"{platform.name.lower()}_scripts"
     script_extension = scheduler.SCRIPT_EXTENSION
     script_name = {
         ProcessType.rrup: "calc_rrups_single",
@@ -103,18 +115,24 @@ def get_platform_specific_script(process: ProcessType, arguments: List[str]) -> 
 
 
 def get_platform_node_requirements(task_count):
-    if host == "nesi" or host == "local":
+    """
+    Generates the number of tasks, nodes and tasks per node for each platform as required by the header for that platform
+    :param task_count: The number of cores/threads/tasks the job will take
+    :return: A dictionary containing the values to be used in the header
+    """
+    if platform == Platforms.NESI or platform == Platforms.LOCAL:
         return {
             "n_tasks": task_count
         }
-    elif host == "tacc":
+    elif platform == Platforms.TACC:
         return {
             "n_tasks": task_count,
             "n_nodes": int(ceil(task_count / qconfig["cores_per_node"]))
         }
-    elif host == "kisti":
+    elif platform == Platforms.KISTI:
         n_nodes = int(ceil(task_count / qconfig["cores_per_node"]))
         return {
             "n_nodes": n_nodes,
             "n_tasks_per_node": int(ceil(task_count / n_nodes)),
         }
+    raise NotImplementedError()

@@ -103,7 +103,8 @@ def main():
 
     args = parser.parse_args()
 
-    initialise_scheduler("not_needed", account=args.account)
+    # The name parameter is only used to check user tasks in the queue monitor
+    initialise_scheduler("", args.account)
 
     generate_sl(
         args.np,

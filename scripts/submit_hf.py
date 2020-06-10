@@ -10,6 +10,7 @@ from qcore.config import host, get_machine_config
 import qcore.constants as const
 from qcore.qclogging import get_basic_logger
 import qcore.simulation_structure as sim_struct
+from scripts.schedulers.scheduler_factory import initialise_scheduler
 from shared_workflow.platform_config import (
     platform_config,
     get_platform_node_requirements,
@@ -210,5 +211,8 @@ if __name__ == "__main__":
         "--rel_dir", default=".", type=str, help="The path to the realisation directory"
     )
     args = parser.parse_args()
+
+    # The name parameter is only used to check user tasks in the queue monitor
+    initialise_scheduler("", args.account)
 
     main(args)

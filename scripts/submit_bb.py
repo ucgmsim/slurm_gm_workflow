@@ -17,6 +17,7 @@ from shared_workflow.platform_config import (
 from shared_workflow.shared import set_wct, confirm, get_hf_nt
 from shared_workflow.shared_automated_workflow import submit_sl_script
 from shared_workflow.shared_template import write_sl_script
+from scripts.schedulers.scheduler_factory import initialise_scheduler
 
 default_wct = "00:30:00"
 
@@ -167,5 +168,8 @@ if __name__ == "__main__":
         "--rel_dir", default=".", type=str, help="The path to the realisation directory"
     )
     args = parser.parse_args()
+
+    # The name parameter is only used to check user tasks in the queue monitor
+    initialise_scheduler("", args.account)
 
     main(args)

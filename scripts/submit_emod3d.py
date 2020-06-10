@@ -14,6 +14,7 @@ import qcore.simulation_structure as sim_struct
 
 import estimation.estimate_wct as est
 import scripts.set_runparams as set_runparams
+from scripts.schedulers.scheduler_factory import initialise_scheduler
 from shared_workflow.platform_config import (
     platform_config,
     get_platform_node_requirements,
@@ -159,5 +160,8 @@ if __name__ == "__main__":
         "--rel_dir", default=".", type=str, help="The path to the realisation directory"
     )
     args = parser.parse_args()
+
+    # The name parameter is only used to check user tasks in the queue monitor
+    initialise_scheduler("", args.account)
 
     main(args)
