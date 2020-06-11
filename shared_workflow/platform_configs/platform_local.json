@@ -10,7 +10,7 @@
   "MERGE_TS_DEFAULT_NCORES" : 1,
   "DEFAULT_ACCOUNT" : "nesi00213",
   "DEFAULT_MEMORY" : "16G",
-  "SCHEDULER": "slurm",
+  "SCHEDULER": "bash",
   "HEADER_FILE": "nesi_header.cfg",
   "AVAILABLE_MACHINES":  ["local"],
   "VELOCITY_MODEL_DIR": "/nesi/project/nesi00213/VelocityModel",
