@@ -28,9 +28,9 @@ class Scheduler:
                 user=user, account=account, current_machine=host, logger=logger
             )
         elif scheduler == "pbs":
-            self.__scheduler = Pbs(user=user, account=account, logger=logger)
+            self.__scheduler = Pbs(user=user, account=account, current_machine=host, logger=logger)
         else:
-            __scheduler = Bash(user=user, account=account, logger=logger)
+            __scheduler = Bash(user=user, account=account, current_machine=host, logger=logger)
         self.__scheduler.logger.debug("Scheduler initialised")
 
     def get_scheduler(self) -> AbstractScheduler:

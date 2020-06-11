@@ -10,7 +10,7 @@
   "MERGE_TS_DEFAULT_NCORES" : 4,
   "DEFAULT_ACCOUNT" : "",
   "DEFAULT_MEMORY" : "16G",
-  "SCHEDULER": "slurm",
+  "SCHEDULER": "pbs",
   "HEADER_FILE": "kisti_header.cfg",
   "AVAILABLE_MACHINES":  ["nurion"],
   "VELOCITY_MODEL_DIR": "/nesi/project/nesi00213/VelocityModel",
