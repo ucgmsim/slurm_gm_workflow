@@ -102,7 +102,6 @@ class MgmtDB:
                     logger.debug("New task added to the db")
 
                 # fails dependant task if parent task fails
-                print("status", entry.status, const.Status.failed.value)
                 if entry.status == const.Status.failed.value:
                     tasks = MgmtDB.find_dependant_task(cur, entry)
                     i = 0
