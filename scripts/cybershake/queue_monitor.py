@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Script for continuously updating the slurm mgmt db from the queue."""
 import logging
-import subprocess
 import os
 import json
 import urllib
@@ -16,8 +15,8 @@ import qcore.simulation_structure as sim_struct
 from qcore import qclogging
 from scripts.management.MgmtDB import MgmtDB, SlurmTask
 from scripts.schedulers.scheduler_factory import get_scheduler
-from shared_workflow.platform_config import platform_config, HPC
-from shared_workflow.shared_automated_workflow import get_queued_tasks, check_mgmt_queue
+from shared_workflow.platform_config import HPC
+from shared_workflow.shared_automated_workflow import check_mgmt_queue
 from metadata.log_metadata import store_metadata
 
 # Have to include sub-seconds, as clean up can run sub one second.
@@ -217,7 +216,7 @@ def queue_monitor_loop(
         squeue_tasks = {}
         for hpc in HPC:
             try:
-                squeued_tasks = get_queued_tasks(machine=hpc)
+                squeued_tasks = get_scheduler().check_queues(user=None, target_machine=hpc)
             except EnvironmentError as e:
                 queue_logger.critical(e)
                 queue_logger.critical(
@@ -233,11 +232,11 @@ def queue_monitor_loop(
 
         if len(squeue_tasks) > 0:
             queue_logger.info(
-                "Squeue user tasks: "
+                "Squeue tasks: "
                 + ", ".join([" ".join(task) for task in squeue_tasks.items()])
             )
         else:
-            queue_logger.debug("No squeue user tasks")
+            queue_logger.debug("No squeue tasks")
 
         db_in_progress_tasks = mgmt_db.get_submitted_tasks()
         if len(db_in_progress_tasks) > 0:
@@ -273,8 +272,13 @@ def queue_monitor_loop(
                 )
                 entry_files.remove(file_name)
             else:
-                queue_logger.debug("Adding {} to the list of updates".format(entry))
-                entries.insert(0, entry)
+                if entry.job_id in squeue_tasks.keys():
+                    # This will prevent race conditions if the completion state file is made and picked up before the job actually finishes
+                    # Most notabley happens on Kisti
+                    queue_logger.debug("Job id {} is still running on the HPC, skipping this iteration".format(entry))
+                else:
+                    queue_logger.debug("Adding {} to the list of updates".format(entry))
+                    entries.insert(0, entry)
 
         entries.extend(
             update_tasks(

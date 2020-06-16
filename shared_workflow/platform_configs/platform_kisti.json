@@ -13,7 +13,7 @@
   "SCHEDULER": "pbs",
   "HEADER_FILE": "kisti_header.cfg",
   "AVAILABLE_MACHINES":  ["nurion"],
-  "VELOCITY_MODEL_DIR": "/nesi/project/nesi00213/VelocityModel",
+  "VELOCITY_MODEL_DIR": "/home01/hpc11a02/gmsim/VelocityModel",
   "ESTIMATION_MODELS_DIR": "$workflow/estimation/models",
   "TEMPLATES_DIR": "$workflow/templates",
   "RUN_COMMAND": "mpirun",

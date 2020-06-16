@@ -18,7 +18,7 @@ import estimation.estimate_wct as est
 from metadata.log_metadata import store_metadata
 
 from scripts.management.MgmtDB import MgmtDB
-from scripts.schedulers.scheduler_factory import initialise_scheduler
+from scripts.schedulers.scheduler_factory import initialise_scheduler, get_scheduler
 from scripts.submit_emod3d import main as submit_lf_main
 from scripts.submit_empirical import generate_sl
 from scripts.submit_post_emod3d import main as submit_post_lf_main
@@ -356,14 +356,11 @@ def run_main_submit_loop(
         n_tasks_to_run = {}
         for hpc in HPC:
             try:
-                squeued_tasks = shared_automated_workflow.get_queued_tasks(
-                    user=True, machine=hpc
-                )
+                squeued_tasks = get_scheduler().check_queues(user=True, target_machine=hpc)
             except EnvironmentError as e:
                 main_logger.critical(e)
                 n_tasks_to_run[hpc] = 0
             else:
-                squeued_tasks.pop(0)
                 n_tasks_to_run[hpc] = n_runs[hpc] - len(squeued_tasks)
                 if len(squeued_tasks) > 0:
                     main_logger.debug(

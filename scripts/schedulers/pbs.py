@@ -66,14 +66,15 @@ class Pbs(AbstractScheduler):
 
         f_name = f"{job_name}_{timestamp}_{jobid}"
         # Set the error and output logs to <name>_<time>_<job_id> as this cannot be done before submission time
-        self._run_command_and_wait(f"qalter -o {f_name}.out {jobid}")
-        self._run_command_and_wait(f"qalter -e {f_name}.err {jobid}")
+        self._run_command_and_wait(f"qalter -o {sim_dir}/{f_name}.out {jobid}")
+        self._run_command_and_wait(f"qalter -e {sim_dir}/{f_name}.err {jobid}")
         return jobid
 
     def cancel_job(self, job_id: int, target_machine=None) -> None:
-        self._run_command_and_wait(cmd=[f"qdel {job_id}"], shell=True)
+        return self._run_command_and_wait(cmd=[f"qdel {job_id}"], shell=True)
 
     def check_queues(self, user: str = None, target_machine=None) -> List[str]:
+        self.logger.debug(f"Checking queues with raw input of machine {target_machine} and user {user}")
         if (
             user is not None
         ):  # just print the list of jobid and status (a space between)
@@ -84,13 +85,13 @@ class Pbs(AbstractScheduler):
             header_idx = 1
             job_list_idx = 5
         else:
-            cmd = "qstat "
+            cmd = ["qstat"]
             header_pattern = "Job id"
             header_idx = 0
             job_list_idx = 3
 
-        (output, err) = self._run_command_and_wait(cmd.split(" "), encoding="utf-8")
-
+        (output, err) = self._run_command_and_wait(cmd, encoding="utf-8")
+        self.logger.debug(f"Command {cmd} got response output {output} and error {err}")
         try:
             header = output.split("\n")[header_idx]
         except Exception:

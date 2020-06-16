@@ -307,7 +307,7 @@ if __name__ == "__main__":
         except IOError:
             # file not created yet
             return
-        if os.stat(args.out_file).st_size != file_size:
+        if os.stat(args.out_file).st_size != file_size or len(ckpoints) == 0:
             # file size is incorrect (probably different simulation)
             return
         if np.min(ckpoints):

@@ -50,6 +50,7 @@ class Slurm(AbstractScheduler):
             raise EnvironmentError(message)
 
         output_list = list(filter(None, output.split("\n")[1:]))
+        output_list.pop(0)
         return output_list
 
     def submit_job(self, sim_dir, script_location, target_machine=None):

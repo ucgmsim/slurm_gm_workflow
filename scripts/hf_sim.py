@@ -450,6 +450,8 @@ if __name__ == "__main__":
 
         stdin = "\n".join(hf_sim_args)
 
+        logger.debug(stdin)
+
         # run HF binary
         p = Popen([args.sim_bin], stdin=PIPE, stderr=PIPE, universal_newlines=True)
         stderr = p.communicate(stdin)[1]

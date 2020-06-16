@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from logging import Logger
-from typing import List, Dict, Type
+from typing import List, Dict, Type, Optional
 
 from qcore.shared import exe
 from qcore.qclogging import VERYVERBOSE, NOPRINTERROR
@@ -54,7 +54,7 @@ class AbstractScheduler(ABC):
         pass
 
     @abstractmethod
-    def check_queues(self, user: str = None, target_machine=None) -> List[str]:
+    def check_queues(self, user: Optional[str] = None, target_machine=None) -> List[str]:
         """
         Checks the schedulers queue(s) for running jobs
         :param user: Which user should the jobs be checked for?

@@ -22,6 +22,7 @@ from scripts.management.MgmtDB import SlurmTask
 import qcore.constants as const
 import qcore.simulation_structure as sim_struct
 from qcore.shared import non_blocking_exe, exe
+from scripts.schedulers.scheduler_factory import get_scheduler
 
 
 def get_sim_dirs(runs_dir):
@@ -478,7 +479,7 @@ class E2ETests(object):
                     "for {} and process type {}".format(entry[1], entry[2], entry[0])
                 )
                 self.canceled_running.append(str(entry[1]))
-                out, err = exe("scancel -v {}".format(entry[1]), debug=False)
+                out, err = get_scheduler().cancel_job(entry[1])
 
                 print("Scancel out: ", out, err)
                 if "error" not in out.lower() and "error" not in err.lower():

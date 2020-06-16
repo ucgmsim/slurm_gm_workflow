@@ -19,12 +19,6 @@ ONCE_PATTERN = "%_REL01"
 NONE = "NONE"
 
 
-def get_queued_tasks(user=None, machine=None):
-    scheduler = get_scheduler()
-    output_list = scheduler.check_queues(user=user, target_machine=machine)
-    return output_list
-
-
 def submit_sl_script(
     script: str,
     proc_type: int,
