@@ -274,7 +274,7 @@ if __name__ == "__main__":
                 for a in [i, f, s, bb_stations]:
                     if a is bb_stations:
                         out.seek(HEAD_SIZE)
-                    assert np.min(np.fromfile(out, dtype=a.dtype, count=a.size) == a)
+                    assert np.all(np.fromfile(out, dtype=a.dtype, count=a.size) == a)
             else:
                 i.tofile(out)
                 f.tofile(out)

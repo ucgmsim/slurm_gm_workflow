@@ -32,7 +32,7 @@ class Pbs(AbstractScheduler):
         cwd = os.getcwd()
         os.chdir(sim_dir)  # KISTI doesn't allow job submission from home
         out, err = self._run_command_and_wait(
-            f"qsub -q {self.account} {script_location}"
+            f"qsub -A {self.account} {script_location}"
         )
         os.chdir(cwd)
         self.logger.debug((out, err))
@@ -56,7 +56,7 @@ class Pbs(AbstractScheduler):
 
         out, err = self._run_command_and_wait(f"qstat {jobid}")
         try:
-            job_name = out.split(" ")[1]
+            job_name = out.split("\n")[2].split()[1]
         except Exception:
             raise self.raise_exception(
                 "Unable to determine job name from qstat. Exiting"

@@ -8,7 +8,7 @@
   "IM_SIM_CALC_TEMPLATE_NAME" : "sim_im_calc.sl.template",
   "IM_SIM_SL_SCRIPT_NAME" : "sim_im_calc_{}.sl",
   "MERGE_TS_DEFAULT_NCORES" : 4,
-  "DEFAULT_ACCOUNT" : "",
+  "DEFAULT_ACCOUNT" : "re0016",
   "DEFAULT_MEMORY" : "16G",
   "SCHEDULER": "pbs",
   "HEADER_FILE": "kisti_header.cfg",

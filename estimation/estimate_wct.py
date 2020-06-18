@@ -15,6 +15,7 @@ from logging import Logger
 
 import numpy as np
 
+from qcore import config
 import qcore.constants as const
 from qcore.qclogging import get_basic_logger, NOPRINTCRITICAL
 from estimation.model import CombinedModel, WCEstModel, NNWcEstModel, SVRModel
@@ -22,9 +23,9 @@ from shared_workflow.platform_config import platform_config
 
 SCALER_PREFIX = "scaler_{}"
 
-MAX_JOB_WCT = 24
-MAX_NODES_PER_JOB = 66
-PHYSICAL_NCORES_PER_NODE = 40
+MAX_JOB_WCT = config.qconfig[config.ConfigKeys.MAX_JOB_WCT.name]
+MAX_NODES_PER_JOB = config.qconfig[config.ConfigKeys.MAX_NODES_PER_JOB.name]
+PHYSICAL_NCORES_PER_NODE = config.qconfig[config.ConfigKeys.cores_per_node.name]
 
 CH_SAFETY_FACTOR = 1.5
 DEFAULT_MODEL_TYPE = const.EstModelType.NN_SVR
