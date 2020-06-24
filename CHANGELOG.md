@@ -6,11 +6,14 @@ Slurm Ground Motion Workflow
 ### Added
     - Added Empirical calculation as a part of automated workflow
     - Run_cybershake can take a list as part of each task entry
+    - Extra query modes for query_mgmt_db - todo and to list tasks that have exceeded max_retry count
+    - Extra parameter for BB_Sim - ability to choose the site_amp model from config
 ### Changed
     - IM plot to use python 3 workflow
     - removed partition specifier for mahuika slurm scripts (as per NeSI recommendations)
     - lowered core requirements on quick animation, less queue time
     - Does not create new tasks for faults that are re-installed
+    - When marking a task as failed it will mark that tasks depedencies as failed too. The output files are not touched
 ### Updated
     - E2E tests bugs fixed
 

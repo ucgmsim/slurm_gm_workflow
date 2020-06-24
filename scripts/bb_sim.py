@@ -8,7 +8,7 @@ import os
 import logging
 import numpy as np
 
-from qcore.siteamp_models import nt2n, cb_amp
+from qcore.siteamp_models import nt2n, cb_amp, ba18_amp, init_ba18
 from qcore import timeseries, utils
 from qcore.constants import VM_PARAMS_FILE_NAME
 
@@ -47,6 +47,12 @@ def args_parser(cmd=None):
         help="Disable site amplification for LF component",
         action="store_true",
     )
+    arg(
+        "--site-amp",
+        help="Choose the site-amp model to be used",
+        default="CB14",
+        choices=["CB08", "CB14", "BA18"],
+    )
 
     args = parser.parse_args(cmd)
     return args
@@ -80,17 +86,29 @@ if __name__ == "__main__":
     mh.setFormatter(formatter)
     logger.addHandler(mh)
 
+    site_amp_version = None
+    amp_function = None
+    if args.site_amp == "CB14" or args.site_amp == "CB08":
+        amp_function = cb_amp
+        if args.site_amp == "CB08":
+            site_amp_version = "2008"
+        else:
+            site_amp_version = "2014"
+    elif args.site_amp == "BA18":
+        init_ba18()
+        amp_function = ba18_amp
+
     if args.no_lf_amp:
 
         def ampdeamp_lf(series, *x, **y):
             return series
 
-        def cb_amp_lf(*x, **y):
+        def lf_amp_function(*x, **y):
             pass
 
     else:
         ampdeamp_lf = ampdeamp
-        cb_amp_lf = cb_amp
+        lf_amp_function = amp_function
 
     # load data stores
     lf = timeseries.LFSeis(args.lf_dir)
@@ -369,13 +387,14 @@ if __name__ == "__main__":
             hf_acc[:, c] = bwfilter(
                 ampdeamp(
                     hf_acc[:, c],
-                    cb_amp(
+                    amp_function(
                         bb_dt,
                         n2,
                         stat.vs,
                         vs30,
                         stat.vs,
                         pga[c],
+                        stat.name,
                         fmin=fmin,
                         fmidbot=fmidbot,
                     ),
@@ -388,7 +407,7 @@ if __name__ == "__main__":
             lf_acc[:, c] = bwfilter(
                 ampdeamp_lf(
                     lf_acc[:, c],
-                    cb_amp_lf(
+                    lf_amp_function(
                         bb_dt,
                         n2,
                         lfvs30ref,
