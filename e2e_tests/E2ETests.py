@@ -18,7 +18,7 @@ import sqlite3 as sql
 from pandas.util.testing import assert_frame_equal
 
 from scripts.management.db_helper import connect_db_ctx
-from scripts.management.MgmtDB import SlurmTask
+from scripts.management.MgmtDB import SchedulerTask
 import qcore.constants as const
 import qcore.simulation_structure as sim_struct
 from qcore.shared import non_blocking_exe, exe
@@ -497,7 +497,7 @@ class E2ETests(object):
                 "WHERE proc_type <=6 AND proc_type <> 2 AND proc_type <> 3 AND status != 4"
             ).fetchall()
 
-        entries = [SlurmTask(*entry) for entry in entries]
+        entries = [SchedulerTask(*entry) for entry in entries]
 
         for entry in entries:
             if (

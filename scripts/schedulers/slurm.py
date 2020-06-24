@@ -4,7 +4,7 @@ from os.path import join
 
 from qcore.constants import ProcessType, timestamp
 
-from scripts.management.MgmtDB import SlurmTask
+from scripts.management.MgmtDB import SchedulerTask
 from scripts.schedulers.abstractscheduler import AbstractScheduler
 from shared_workflow.platform_config import HPC, get_target_machine
 
@@ -12,6 +12,8 @@ from shared_workflow.platform_config import HPC, get_target_machine
 class Slurm(AbstractScheduler):
     STATUS_DICT = {"R": 3, "PD": 2, "CG": 3}
     SCRIPT_EXTENSION = "sl"
+    QUEUE_NAME = "squeue"
+    HEADER_TEMPLATE = "slurm_header.cfg"
 
     def check_queues(self, user=False, target_machine: HPC = None):
         self.logger.debug(
@@ -118,7 +120,7 @@ class Slurm(AbstractScheduler):
     def process_arguments(script_path: str, arguments: List[str]):
         return f"{script_path} {' '.join(arguments)}"
 
-    def get_metadata(self, db_running_task: SlurmTask, task_logger: Logger):
+    def get_metadata(self, db_running_task: SchedulerTask, task_logger: Logger):
         """
         TODO: Check Tacc compatibility
         :param db_running_task: The task to retrieve metadata for

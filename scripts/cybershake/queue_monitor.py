@@ -10,10 +10,12 @@ from logging import Logger
 from typing import List, Dict
 from datetime import datetime
 
+from qcore.qclogging import VERYVERBOSE
+
 import qcore.constants as const
 import qcore.simulation_structure as sim_struct
 from qcore import qclogging
-from scripts.management.MgmtDB import MgmtDB, SlurmTask
+from scripts.management.MgmtDB import MgmtDB, SchedulerTask
 from scripts.schedulers.scheduler_factory import get_scheduler
 from shared_workflow.platform_config import HPC
 from shared_workflow.shared_automated_workflow import check_mgmt_queue
@@ -52,7 +54,7 @@ def get_queue_entry(
         )
         return None
 
-    return SlurmTask(
+    return SchedulerTask(
         run_name=os.path.basename(entry_file).split(".")[1],
         proc_type=data_dict[MgmtDB.col_proc_type],
         status=data_dict[MgmtDB.col_status],
@@ -64,7 +66,7 @@ def get_queue_entry(
 def update_tasks(
     mgmt_queue_entries: List[str],
     squeue_tasks: Dict[str, str],
-    db_running_tasks: List[SlurmTask],
+    db_running_tasks: List[SchedulerTask],
     complete_data: bool,
     task_logger: Logger,
     root_folder: str,
@@ -74,9 +76,7 @@ def update_tasks(
 
     task_logger.debug("Checking running tasks in the db for updates")
     task_logger.debug(
-        "The key value pairs found in squeue are as follows: {}".format(
-            squeue_tasks.items()
-        )
+        f"The key value pairs found in {get_scheduler().QUEUE_NAME} are as follows: {squeue_tasks.items()}"
     )
     for db_running_task in db_running_tasks:
         task_logger.debug("Checking task {}".format(db_running_task))
@@ -123,7 +123,7 @@ def update_tasks(
                     )
                 )
                 tasks_to_do.append(
-                    SlurmTask(
+                    SchedulerTask(
                         db_running_task.run_name,
                         db_running_task.proc_type,
                         queue_status,
@@ -141,25 +141,24 @@ def update_tasks(
         ):
             if not complete_data:
                 task_logger.warning(
-                    "Task '{}' not found on squeue or in the management db folder, "
-                    "but errors were encountered when querying squeue. Not resubmitting."
+                    f"Task '{const.ProcessType(db_running_task.proc_type).str_value}' not found on "
+                    f"{get_scheduler().QUEUE_NAME} or in the management db folder, "
+                    f"but errors were encountered when querying {get_scheduler().QUEUE_NAME}. Not resubmitting."
                 )
             else:
                 task_logger.warning(
-                    "Task '{}' on '{}' not found on squeue or in the management db folder; resetting the status "
-                    "to 'created' for resubmission".format(
-                        const.ProcessType(db_running_task.proc_type).str_value,
-                        db_running_task.run_name,
-                    )
+                    f"Task '{const.ProcessType(db_running_task.proc_type).str_value}' on '{db_running_task.run_name}' "
+                    f"not found on {get_scheduler().QUEUE_NAME} or in the management db folder; resetting the status "
+                    "to 'created' for resubmission"
                 )
                 # Add an error
                 tasks_to_do.append(
-                    SlurmTask(
+                    SchedulerTask(
                         db_running_task.run_name,
                         db_running_task.proc_type,
                         const.Status.failed.value,
                         None,
-                        "Disappeared from squeue. Creating a new task.",
+                        f"Disappeared from {get_scheduler().QUEUE_NAME}. Creating a new task.",
                     )
                 )
             # When job failed, we want to log metadata as well
@@ -213,30 +212,38 @@ def queue_monitor_loop(
             queue_logger.debug("Set up the sqlite_tmpdir")
 
         # For each hpc get a list of job id and status', and for each pair save them in a dictionary
-        squeue_tasks = {}
+        queued_tasks = {}
         for hpc in HPC:
             try:
-                squeued_tasks = get_scheduler().check_queues(user=None, target_machine=hpc)
+                squeued_tasks = get_scheduler().check_queues(
+                    user=None, target_machine=hpc
+                )
             except EnvironmentError as e:
                 queue_logger.critical(e)
                 queue_logger.critical(
-                    "An error was encountered when attempting to check squeue for HPC {}. "
-                    "Tasks will not be submitted to this HPC until the issue is resolved".format(
-                        hpc
-                    )
+                    f"An error was encountered when attempting to check {get_scheduler().QUEUE_NAME} for HPC {hpc}. "
+                    "Tasks will not be submitted to this HPC until the issue is resolved"
                 )
                 complete_data = False
             else:
                 for task in squeued_tasks:
-                    squeue_tasks[task.split()[0]] = task.split()[1]
+                    queued_tasks[task.split()[0]] = task.split()[1]
 
-        if len(squeue_tasks) > 0:
-            queue_logger.info(
-                "Squeue tasks: "
-                + ", ".join([" ".join(task) for task in squeue_tasks.items()])
-            )
+        if len(queued_tasks) > 0:
+            if len(queued_tasks) > 200:
+                queue_logger.log(
+                    VERYVERBOSE,
+                    f"{get_scheduler().QUEUE_NAME} tasks: {', '.join([' '.join(task) for task in queued_tasks.items()])}"
+                )
+                queue_logger.info(
+                    f"Over 200 tasks were found in the queue. Check the log for an exact listing of them"
+                )
+            else:
+                queue_logger.info(
+                    f"{get_scheduler().QUEUE_NAME} tasks: {', '.join([' '.join(task) for task in queued_tasks.items()])}"
+                )
         else:
-            queue_logger.debug("No squeue tasks")
+            queue_logger.debug(f"No {get_scheduler().QUEUE_NAME} tasks")
 
         db_in_progress_tasks = mgmt_db.get_submitted_tasks()
         if len(db_in_progress_tasks) > 0:
@@ -272,11 +279,15 @@ def queue_monitor_loop(
                 )
                 entry_files.remove(file_name)
             else:
-                if entry.job_id in squeue_tasks.keys() and entry.status > 3:
+                if str(entry.job_id) in queued_tasks.keys() and entry.status > 3:
                     # This will prevent race conditions if the failure/completion state file is made and picked up before the job actually finishes
                     # Most notabley happens on Kisti
                     # The queued and running states are allowed
-                    queue_logger.debug("Job id {} is still running on the HPC, skipping this iteration".format(entry))
+                    queue_logger.debug(
+                        "Job {} is still running on the HPC, skipping this iteration".format(
+                            entry
+                        )
+                    )
                     entry_files.remove(file_name)
                 else:
                     queue_logger.debug("Adding {} to the list of updates".format(entry))
@@ -285,7 +296,7 @@ def queue_monitor_loop(
         entries.extend(
             update_tasks(
                 entry_files,
-                squeue_tasks,
+                queued_tasks,
                 db_in_progress_tasks,
                 complete_data,
                 queue_logger,

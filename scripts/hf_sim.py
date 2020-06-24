@@ -22,7 +22,7 @@ if __name__ == "__main__":
     rank = comm.Get_rank()
     size = comm.Get_size()
     master = 0
-    is_master = not rank
+    is_master = rank == master
 
     logger = logging.getLogger("rank_%i" % comm.rank)
     logger.setLevel(logging.DEBUG)

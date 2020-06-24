@@ -4,7 +4,7 @@ from typing import List, Dict, Type, Optional
 
 from qcore.shared import exe
 from qcore.qclogging import VERYVERBOSE, NOPRINTERROR
-from scripts.management.MgmtDB import SlurmTask
+from scripts.management.MgmtDB import SchedulerTask
 
 
 def task_runner_no_debug(*args, **kwargs):
@@ -22,6 +22,8 @@ class AbstractScheduler(ABC):
 
     STATUS_DICT: Dict[str, int]
     SCRIPT_EXTENSION: str
+    HEADER_TEMPLATE: str
+    QUEUE_NAME: str
 
     def __init__(self, user, account, current_machine, logger: Logger):
         self.user_name = user
@@ -75,7 +77,7 @@ class AbstractScheduler(ABC):
         pass
 
     @abstractmethod
-    def get_metadata(self, db_running_task: SlurmTask, task_logger: Logger):
+    def get_metadata(self, db_running_task: SchedulerTask, task_logger: Logger):
         pass
 
     def logging_wrapper(self, func):

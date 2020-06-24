@@ -11,11 +11,11 @@ from scripts.management.db_helper import connect_db_ctx
 
 Process = const.ProcessType
 
-SlurmTask = namedtuple(
-    "SlurmTask", ["run_name", "proc_type", "status", "job_id", "error"]
+SchedulerTask = namedtuple(
+    "SchedulerTask", ["run_name", "proc_type", "status", "job_id", "error"]
 )
 # Make error an optional value, once we are using Python 3.7 then this can be made nicer..
-SlurmTask.__new__.__defaults__ = (None,)
+SchedulerTask.__new__.__defaults__ = (None,)
 
 
 class MgmtDB:
@@ -48,7 +48,7 @@ class MgmtDB:
 
     def update_entries_live(
         self,
-        entries: List[SlurmTask],
+        entries: List[SchedulerTask],
         retry_max: int,
         logger: Logger = get_basic_logger(),
     ):
@@ -176,7 +176,7 @@ class MgmtDB:
                 allowed_tasks,
             ).fetchall()
 
-        return [SlurmTask(*entry) for entry in result]
+        return [SchedulerTask(*entry) for entry in result]
 
     def get_runnable_tasks(
         self,
@@ -285,7 +285,7 @@ class MgmtDB:
         return len(remaining_deps) == 0
 
     def _update_entry(
-        self, cur: sql.Cursor, entry: SlurmTask, logger: Logger = get_basic_logger()
+        self, cur: sql.Cursor, entry: SchedulerTask, logger: Logger = get_basic_logger()
     ):
         """Updates all fields that have a value for the specific entry"""
         if entry.status == const.Status.queued.value:

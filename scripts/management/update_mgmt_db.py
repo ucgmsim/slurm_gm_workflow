@@ -7,14 +7,14 @@ import argparse
 import os
 
 from scripts.management import db_helper
-from scripts.management.MgmtDB import MgmtDB, SlurmTask
+from scripts.management.MgmtDB import MgmtDB, SchedulerTask
 import qcore.constants as const
 
 
 def update_db(root_folder, process, status, run_name, job_id, error):
     """Update the database with the given values"""
 
-    entry = SlurmTask(run_name, process, status, job_id, error)
+    entry = SchedulerTask(run_name, process, status, job_id, error)
     database = MgmtDB(root_folder)
 
     # If we are running this manually then we should set the retry limit to be above a reasonable value for manual

@@ -1,7 +1,7 @@
 from logging import Logger
 from typing import List
 
-from scripts.management.MgmtDB import SlurmTask
+from scripts.management.MgmtDB import SchedulerTask
 from scripts.schedulers.abstractscheduler import AbstractScheduler
 
 
@@ -16,7 +16,7 @@ class Bash(AbstractScheduler):
     def process_arguments(script_path: str, arguments: List[str]):
         return f"{script_path} {' '.join(arguments)}"
 
-    def get_metadata(self, db_running_task: SlurmTask, task_logger: Logger):
+    def get_metadata(self, db_running_task: SchedulerTask, task_logger: Logger):
         pass
 
     def submit_job(self, script_location: str, target_machine: str = None, **kwargs):
