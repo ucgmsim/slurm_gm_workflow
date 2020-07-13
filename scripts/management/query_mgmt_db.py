@@ -176,19 +176,19 @@ def get_all_entries_from_config(config_file, db, query_mode):
         tasks = [i.value for i in tasks]
         status.extend(
             db.execute(
-                """SELECT state.run_name, proc_type_enum.proc_type, status_enum.state, state.job_id, datetime(last_modified,'unixepoch')
+                (
+                    """SELECT state.run_name, proc_type_enum.proc_type, status_enum.state, state.job_id, datetime(last_modified,'unixepoch')
                     FROM state, status_enum, proc_type_enum
                     WHERE state.proc_type = proc_type_enum.id 
                     AND state.status = status_enum.id
                     AND state.run_name LIKE ?
                     AND state.proc_type IN (?{})
                 """
-                + extra_query
-                + """
+                    + extra_query
+                    + """
                     ORDER BY state.run_name, status_enum.id
-                """.format(
-                    ",?" * (len(tasks) - 1)
-                ),
+                """
+                ).format(",?" * (len(tasks) - 1)),
                 (pattern, *tasks),
             ).fetchall()
         )
