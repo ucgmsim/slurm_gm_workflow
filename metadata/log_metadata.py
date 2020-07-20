@@ -211,6 +211,11 @@ def main(args):
         os.path.join(args.sim_dir, "sim_params.yaml"), load_vm=True
     )
 
+    if "dt" in params.bb:
+        bb_dt = params.bb.dt
+    else:
+        bb_dt = min(params.dt, params.hf.dt)
+
     # params metadata for LF
     if args.proc_type == const.ProcessType.EMOD3D.str_value:
         metadata_dict[const.MetadataField.nt.value] = int(
@@ -229,11 +234,11 @@ def main(args):
         )
     # BB
     elif args.proc_type == const.ProcessType.BB.str_value:
-        metadata_dict[const.MetadataField.dt.value] = params.hf.dt
+        metadata_dict[const.MetadataField.dt.value] = bb_dt
     # IM_calc
     elif args.proc_type == const.ProcessType.IM_calculation.str_value:
         metadata_dict[const.MetadataField.nt.value] = int(
-            float(params.sim_duration) / float(params.hf.dt)
+            float(params.sim_duration) / float(bb_dt)
         )
         # This should come from a constants file
         im_calc_csv_file = os.path.join(
@@ -246,7 +251,7 @@ def main(args):
     # Advanced_IM
     elif args.proc_type == const.ProcessType.advanced_IM.str_value:
         metadata_dict[const.MetadataField.nt.value] = int(
-            float(params.sim_duration) / float(params.hf.dt)
+            float(params.sim_duration) / float(bb_dt)
         )
 
     store_metadata(

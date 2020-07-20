@@ -14,6 +14,7 @@ Slurm Ground Motion Workflow
     - lowered core requirements on quick animation, less queue time
     - Does not create new tasks for faults that are re-installed
     - When marking a task as failed it will mark that tasks depedencies as failed too. The output files are not touched
+    - Removed default partition on slurm scripts for Mahuika as they aren't necessary anymore
 ### Updated
     - E2E tests bugs fixed
 
