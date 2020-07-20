@@ -166,6 +166,15 @@ def args_parser(cmd=None):
         type=int,
         default=1,
     )
+    arg(
+        "--dpath_pert",
+        help="""path duration perturbation
+        Only to be used with versions greater than 5.4.5.4
+        The path duration is multiplied by the base e exponential of the given value
+        The default value of 0 results in no perturbation""",
+        type=float,
+        default=0.0,
+    )
 
     arg(
         "--stress_param_adj",
@@ -443,6 +452,8 @@ if __name__ == "__main__":
             )
         # add seekbyte for qcore adjusted version
         if bin_mod:
+            if utils.compare_versions(args.version, "5.4.5.4") >= 0:
+                hf_sim_args.append()
             hf_sim_args.append(str(head_total + idx_0 * (nt * N_COMP * FLOAT_SIZE)))
 
         # add empty '' for extra \n at the end( needed as input)
