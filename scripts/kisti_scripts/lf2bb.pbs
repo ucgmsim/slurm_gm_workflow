@@ -1,5 +1,5 @@
 #!/bin/bash
-# script version: slurm
+# script version: pbs
 #
 # must be run with sbatch lf2bb.sl [realisationDirectory] [managementDBLocation]
 

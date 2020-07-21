@@ -17,7 +17,7 @@ from shared_workflow.platform_config import (
     get_platform_node_requirements,
 )
 from shared_workflow.shared import confirm
-from shared_workflow.shared_automated_workflow import submit_sl_script
+from shared_workflow.shared_automated_workflow import submit_script_to_scheduler
 from shared_workflow.shared_template import write_sl_script
 
 
@@ -84,7 +84,7 @@ def main(args, logger: Logger = get_basic_logger()):
         command_template_parameters,
     )
     if submit_yes:
-        submit_sl_script(
+        submit_script_to_scheduler(
             script_file_path,
             const.ProcessType.merge_ts.value,
             sim_struct.get_mgmt_db_queue(mgmt_db_loc),

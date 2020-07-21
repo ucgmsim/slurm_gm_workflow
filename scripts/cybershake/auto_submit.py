@@ -57,8 +57,8 @@ def submit_task(
     submitted_time = datetime.now().strftime(const.METADATA_TIMESTAMP_FMT)
     log_file = os.path.join(sim_dir, "ch_log", const.METADATA_LOG_FILENAME)
 
-    def submit_sl_script(script_name, target_machine=None, **kwargs):
-        shared_automated_workflow.submit_sl_script(
+    def submit_script_to_scheduler(script_name, target_machine=None, **kwargs):
+        shared_automated_workflow.submit_script_to_scheduler(
             script_name,
             proc_type,
             sim_struct.get_mgmt_db_queue(root_folder),
@@ -123,7 +123,7 @@ def submit_task(
 
         script = get_platform_specific_script(const.ProcessType.plot_ts, arguments)
 
-        submit_sl_script(
+        submit_script_to_scheduler(
             script, target_machine=get_target_machine(const.ProcessType.plot_ts).name
         )
 
@@ -203,11 +203,11 @@ def submit_task(
             run_name=run_name,
             script_location=os.path.expandvars("$gmsim/workflow/scripts/im_plot.sl"),
         )
-        submit_sl_script(
+        submit_script_to_scheduler(
             script, target_machine=get_target_machine(const.ProcessType.IM_plot).name
         )
     elif proc_type == const.ProcessType.rrup.value:
-        submit_sl_script(
+        submit_script_to_scheduler(
             get_platform_specific_script(
                 const.ProcessType.rrup, [sim_dir, root_folder]
             ),
@@ -226,7 +226,7 @@ def submit_task(
     elif proc_type == const.ProcessType.Verification.value:
         raise NotImplementedError("Verifaction is not currently working")
     elif proc_type == const.ProcessType.clean_up.value:
-        submit_sl_script(
+        submit_script_to_scheduler(
             get_platform_specific_script(
                 const.ProcessType.clean_up, [sim_dir, run_name, root_folder]
             ),
@@ -234,7 +234,7 @@ def submit_task(
         )
     elif proc_type == const.ProcessType.LF2BB.value:
         params = utils.load_sim_params(os.path.join(sim_dir, "sim_params.yaml"))
-        submit_sl_script(
+        submit_script_to_scheduler(
             get_platform_specific_script(
                 const.ProcessType.LF2BB,
                 [
@@ -250,7 +250,7 @@ def submit_task(
         )
     elif proc_type == const.ProcessType.HF2BB.value:
         params = utils.load_sim_params(os.path.join(sim_dir, "sim_params.yaml"))
-        submit_sl_script(
+        submit_script_to_scheduler(
             get_platform_specific_script(
                 const.ProcessType.HF2BB,
                 [
@@ -264,7 +264,7 @@ def submit_task(
             target_machine=get_target_machine(const.ProcessType.HF2BB).name,
         )
     elif proc_type == const.ProcessType.plot_srf.value:
-        submit_sl_script(
+        submit_script_to_scheduler(
             get_platform_specific_script(
                 const.ProcessType.plot_srf,
                 [

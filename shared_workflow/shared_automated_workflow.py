@@ -19,7 +19,7 @@ ONCE_PATTERN = "%_REL01"
 NONE = "NONE"
 
 
-def submit_sl_script(
+def submit_script_to_scheduler(
     script: str,
     proc_type: int,
     queue_folder: str,

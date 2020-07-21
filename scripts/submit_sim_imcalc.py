@@ -19,7 +19,7 @@ from shared_workflow.platform_config import (
     get_platform_node_requirements,
 )
 from shared_workflow.shared import set_wct, confirm
-from shared_workflow.shared_automated_workflow import submit_sl_script
+from shared_workflow.shared_automated_workflow import submit_script_to_scheduler
 from shared_workflow.shared_template import write_sl_script
 
 # from IM_calculation.Advanced_IM import advanced_IM_factory
@@ -220,7 +220,7 @@ def submit_im_calc_slurm(
     )
 
     if submit_yes:
-        submit_sl_script(
+        submit_script_to_scheduler(
             script_file_path,
             proc_type.value,
             sim_struct.get_mgmt_db_queue(params.mgmt_db_location),
