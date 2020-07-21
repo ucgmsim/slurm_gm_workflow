@@ -21,6 +21,8 @@ def test_install_simulation(set_up):
         root_params_dict = test_output[0]
 
         #  accounting for removed parameters
+        root_params_dict['global_root'] = '/nesi/project/nesi00213'
+        root_params_dict['v_1d_mod'] = '/nesi/project/nesi00213/VelocityModel/Mod-1D/Cant1D_v3-midQ_OneRay.1d'
         root_params_dict['bb']['version'] = "3.0.4"
         root_params_dict['bb']['site_specific'] = False
 
