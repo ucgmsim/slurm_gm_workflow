@@ -233,7 +233,7 @@ def queue_monitor_loop(
             if len(queued_tasks) > 200:
                 queue_logger.log(
                     VERYVERBOSE,
-                    f"{get_scheduler().QUEUE_NAME} tasks: {', '.join([' '.join(task) for task in queued_tasks.items()])}"
+                    f"{get_scheduler().QUEUE_NAME} tasks: {', '.join([' '.join(task) for task in queued_tasks.items()])}",
                 )
                 queue_logger.info(
                     f"Over 200 tasks were found in the queue. Check the log for an exact listing of them"

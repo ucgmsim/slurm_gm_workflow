@@ -205,10 +205,7 @@ if __name__ == "__main__":
     for key in vars(args):
         logger.debug("{} : {}".format(key, getattr(args, key)))
 
-
-    mh = logging.FileHandler(
-        os.path.join(os.path.dirname(args.out_file), "HF.log")
-    )
+    mh = logging.FileHandler(os.path.join(os.path.dirname(args.out_file), "HF.log"))
     formatter = logging.Formatter("%(asctime)s:%(name)s:%(levelname)s:%(message)s")
     mh.setFormatter(formatter)
     logger.addHandler(mh)
@@ -369,9 +366,7 @@ if __name__ == "__main__":
                 )
             )
         except AssertionError:
-            logger.warning(
-                "Simulation parameters mismatch. Starting fresh simulation."
-            )
+            logger.warning("Simulation parameters mismatch. Starting fresh simulation.")
             initialise()
             station_mask = np.ones(stations.size, dtype=np.bool)
     stations_todo = stations[station_mask]
@@ -497,16 +492,16 @@ if __name__ == "__main__":
             vm = os.path.join(args.site_vm_dir, "%s.1d" % (stations_todo[s]["name"]))
 
         np.savetxt(
-            in_stats, stations_todo[s: s + 1], fmt="%f %f %s"
+            in_stats, stations_todo[s : s + 1], fmt="%f %f %s"
         )  # making in_stats file with the list of one station work[s]
         run_hf(
             in_stats, 1, stations_todo_idx[s], velocity_model=vm
         )  # passing in_stat with the seed adjustment work_idx[s]
 
     if (
-            len(stations_todo_idx) > 0
-            and len(stations_todo_idx) > 0
-            and stations_todo_idx[-1] == stations_todo_idx[-1]
+        len(stations_todo_idx) > 0
+        and len(stations_todo_idx) > 0
+        and stations_todo_idx[-1] == stations_todo_idx[-1]
     ):  # if this rank did the last station in the full list
         validate_end(stations_todo_idx[-1] + 1)
 

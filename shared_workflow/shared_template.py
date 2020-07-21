@@ -56,7 +56,9 @@ def write_sl_script(
         os.path.join(
             write_directory,
             "{}_{}.{}".format(
-                script_prefix, datetime.now().strftime(const.TIMESTAMP_FORMAT), get_scheduler().SCRIPT_EXTENSION
+                script_prefix,
+                datetime.now().strftime(const.TIMESTAMP_FORMAT),
+                get_scheduler().SCRIPT_EXTENSION,
             ),
         )
     )

@@ -356,7 +356,9 @@ def run_main_submit_loop(
         n_tasks_to_run = {}
         for hpc in HPC:
             try:
-                squeued_tasks = get_scheduler().check_queues(user=True, target_machine=hpc)
+                squeued_tasks = get_scheduler().check_queues(
+                    user=True, target_machine=hpc
+                )
             except EnvironmentError as e:
                 main_logger.critical(e)
                 n_tasks_to_run[hpc] = 0

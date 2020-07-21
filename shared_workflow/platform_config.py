@@ -98,6 +98,7 @@ def get_platform_specific_script(process: ProcessType, arguments: List[str]) -> 
 
     # To prevent circular dependency
     from scripts.schedulers.scheduler_factory import get_scheduler
+
     scheduler = get_scheduler()
 
     platform_dir = f"{platform.name.lower()}_scripts"
@@ -111,7 +112,12 @@ def get_platform_specific_script(process: ProcessType, arguments: List[str]) -> 
         ProcessType.plot_ts: "plot_ts",
     }[process]
 
-    return scheduler.process_arguments(join(WORKFLOW_DIR, "scripts", platform_dir, f"{script_name}.{script_extension}"), arguments)
+    return scheduler.process_arguments(
+        join(
+            WORKFLOW_DIR, "scripts", platform_dir, f"{script_name}.{script_extension}"
+        ),
+        arguments,
+    )
 
 
 def get_platform_node_requirements(task_count):
@@ -121,13 +127,11 @@ def get_platform_node_requirements(task_count):
     :return: A dictionary containing the values to be used in the header
     """
     if platform == Platforms.NESI or platform == Platforms.LOCAL:
-        return {
-            "n_tasks": task_count
-        }
+        return {"n_tasks": task_count}
     elif platform == Platforms.TACC:
         return {
             "n_tasks": task_count,
-            "n_nodes": int(ceil(task_count / qconfig["cores_per_node"]))
+            "n_nodes": int(ceil(task_count / qconfig["cores_per_node"])),
         }
     elif platform == Platforms.KISTI:
         n_nodes = int(ceil(task_count / qconfig["cores_per_node"]))
@@ -135,4 +139,6 @@ def get_platform_node_requirements(task_count):
             "n_nodes": n_nodes,
             "n_tasks_per_node": qconfig["cores_per_node"],
         }
-    raise NotImplementedError(f"The platform {platform}  does not have related node requirements")
+    raise NotImplementedError(
+        f"The platform {platform}  does not have related node requirements"
+    )

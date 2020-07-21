@@ -20,7 +20,9 @@ class Pbs(AbstractScheduler):
         cmd = f"qstat -f -F json -x {db_running_task.job_id}"
         out, err = self._run_command_and_wait(cmd, shell=True)
         tasks_dict = json.loads(out)["Jobs"]
-        assert len(tasks_dict.keys()) == 1, f"Too many tasks returned by qstat: {tasks_dict.keys()}"
+        assert (
+            len(tasks_dict.keys()) == 1
+        ), f"Too many tasks returned by qstat: {tasks_dict.keys()}"
         task_name = list(tasks_dict.keys()[0])
         task_dict = tasks_dict[task_name]
         try:
@@ -115,7 +117,9 @@ class Pbs(AbstractScheduler):
         return self._run_command_and_wait(cmd=[f"qdel {job_id}"], shell=True)
 
     def check_queues(self, user: str = None, target_machine=None) -> List[str]:
-        self.logger.debug(f"Checking queues with raw input of machine {target_machine} and user {user}")
+        self.logger.debug(
+            f"Checking queues with raw input of machine {target_machine} and user {user}"
+        )
         if (
             user is not None
         ):  # just print the list of jobid and status (a space between)

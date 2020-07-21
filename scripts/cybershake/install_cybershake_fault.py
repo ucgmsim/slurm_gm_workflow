@@ -118,7 +118,11 @@ def install_fault(
     )
     # Load variables from cybershake config
 
-    v1d_full_path = os.path.join(platform_config[PLATFORM_CONFIG.VELOCITY_MODEL_DIR.name], "Mod-1D", "Cant1D_v3-midQ_OneRay.1d")
+    v1d_full_path = os.path.join(
+        platform_config[PLATFORM_CONFIG.VELOCITY_MODEL_DIR.name],
+        "Mod-1D",
+        "Cant1D_v3-midQ_OneRay.1d",
+    )
     site_v1d_dir = config_dict.get("site_v1d_dir")
     hf_stat_vs_ref = config_dict.get("hf_stat_vs_ref")
 
