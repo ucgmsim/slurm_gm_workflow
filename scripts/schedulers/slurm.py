@@ -150,10 +150,4 @@ class Slurm(AbstractScheduler):
             run_time = 0
             status = "CANCELLED"
 
-        return (
-            start_time,
-            end_time,
-            run_time,
-            n_cores,
-            status,
-        )
+        return start_time, end_time, run_time, n_cores, status
