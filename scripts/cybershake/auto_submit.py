@@ -124,7 +124,7 @@ def submit_task(
         script = get_platform_specific_script(const.ProcessType.plot_ts, arguments)
 
         submit_sl_script(
-            script, target_machine=get_target_machine(const.ProcessType.plot_ts).name,
+            script, target_machine=get_target_machine(const.ProcessType.plot_ts).name
         )
 
     elif proc_type == const.ProcessType.HF.value:
@@ -204,7 +204,7 @@ def submit_task(
             script_location=os.path.expandvars("$gmsim/workflow/scripts/im_plot.sl"),
         )
         submit_sl_script(
-            script, target_machine=get_target_machine(const.ProcessType.IM_plot).name,
+            script, target_machine=get_target_machine(const.ProcessType.IM_plot).name
         )
     elif proc_type == const.ProcessType.rrup.value:
         submit_sl_script(
@@ -325,10 +325,7 @@ def run_main_submit_loop(
     config = utils.load_yaml(root_params_file)
     main_logger.info("Loaded root params file: {}".format(root_params_file))
     # Default values
-    hf_seed, extended_period = (
-        const.HF_DEFAULT_SEED,
-        False,
-    )
+    hf_seed, extended_period = (const.HF_DEFAULT_SEED, False)
 
     if const.RootParams.seed.value in config["hf"]:
         hf_seed = config["hf"][const.RootParams.seed.value]
