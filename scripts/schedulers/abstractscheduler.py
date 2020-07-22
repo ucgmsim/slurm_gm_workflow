@@ -57,7 +57,7 @@ class AbstractScheduler(ABC):
 
     @abstractmethod
     def check_queues(
-        self, user: Optional[str] = None, target_machine=None
+        self, user: bool = False, target_machine=None
     ) -> List[str]:
         """
         Checks the schedulers queue(s) for running jobs

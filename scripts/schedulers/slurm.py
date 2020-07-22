@@ -1,5 +1,5 @@
 from logging import Logger
-from typing import Union, Dict
+from typing import Union, Dict, Optional
 from os.path import join
 
 from qcore.constants import ProcessType, timestamp
@@ -15,22 +15,17 @@ class Slurm(AbstractScheduler):
     QUEUE_NAME = "squeue"
     HEADER_TEMPLATE = "slurm_header.cfg"
 
-    def check_queues(self, user: Union[bool, str] = False, target_machine: HPC = None):
+    def check_queues(self, user: bool = False, target_machine: HPC = None):
         self.logger.debug(
-            f"Checking queues for user {user} and machine {target_machine}"
+            f"Checking queues for machine {target_machine}{f' and user {self.user_name}' if user else ''}."
         )
 
         if target_machine is None:
             target_machine = self.current_machine
-        if user is True:
+        if user:
             # user is True, so we use the same use as we use for submission
             cmd = "squeue -A {} -o '%A %t' -M {} -u {}".format(
                 self.account, target_machine.name, self.user_name
-            )
-        elif user:
-            # user is a string, so use that instead
-            cmd = "squeue -A {} -o '%A %t' -M {} -u {}".format(
-                self.account, target_machine.name, user
             )
         else:
             cmd = "squeue -A {} -o '%A %t' -M {}".format(

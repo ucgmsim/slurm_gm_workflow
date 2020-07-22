@@ -216,7 +216,7 @@ def queue_monitor_loop(
         for hpc in HPC:
             try:
                 squeued_tasks = get_scheduler().check_queues(
-                    user=None, target_machine=hpc
+                    user=False, target_machine=hpc
                 )
             except EnvironmentError as e:
                 queue_logger.critical(e)
