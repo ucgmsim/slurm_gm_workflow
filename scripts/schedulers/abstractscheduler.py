@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from collections import OrderedDict
 from logging import Logger
 from typing import List, Dict, Type, Optional
 
@@ -70,11 +69,13 @@ class AbstractScheduler(ABC):
 
     @staticmethod
     @abstractmethod
-    def process_arguments(script_path: str, arguments: OrderedDict[str, str]):
+    def process_arguments(script_path: str, arguments: Dict[str, str]):
         """
         Processes the script path and arguments to return them in a format usable by the scheduler
+        Slurm allows arguments to be passed to scripts. PBS requires values to be assigned to variables
         :param script_path: The path to the script (or command to be run)
-        :param arguments: Any arguments to be passed to the script
+        :param arguments: A dictionary of arguments to be passed to the script.
+                          Normally an OrderedDict, created in placement order or to allow for mapping values to keys.
         :return: The string to be executed
         """
         pass

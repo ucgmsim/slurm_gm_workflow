@@ -1,6 +1,5 @@
-from collections import OrderedDict
 from logging import Logger
-from typing import Union
+from typing import Union, Dict
 from os.path import join
 
 from qcore.constants import ProcessType, timestamp
@@ -120,7 +119,7 @@ class Slurm(AbstractScheduler):
             )
 
     @staticmethod
-    def process_arguments(script_path: str, arguments: OrderedDict[str, str]):
+    def process_arguments(script_path: str, arguments: Dict[str, str]):
         return f"{script_path} {' '.join(arguments.items())}"
 
     def get_metadata(self, db_running_task: SchedulerTask, task_logger: Logger):
