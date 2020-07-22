@@ -4,7 +4,7 @@ import argparse
 from datetime import datetime
 import os
 
-from scripts.schedulers.scheduler_factory import initialise_scheduler, get_scheduler
+from scripts.schedulers.scheduler_factory import Scheduler
 from shared_workflow.platform_config import platform_config
 from shared_workflow.shared_template import generate_context, resolve_header
 from qcore import simulation_structure, utils
@@ -58,7 +58,7 @@ def generate_sl(np, extended, cybershake_folder, realisations, out_dir):
         exe_time="%j",
         job_description="Empirical Engine",
         additional_lines="",
-        template_path=get_scheduler().HEADER_TEMPLATE,
+        template_path=Scheduler.get_scheduler().HEADER_TEMPLATE,
         write_directory=out_dir,
     )
     context = generate_context(
@@ -103,7 +103,7 @@ def main():
     args = parser.parse_args()
 
     # The name parameter is only used to check user tasks in the queue monitor
-    initialise_scheduler("", args.account)
+    Scheduler.initialise_scheduler("", args.account)
 
     generate_sl(
         args.np,

@@ -14,7 +14,7 @@ import qcore.simulation_structure as sim_struct
 
 import estimation.estimate_wct as est
 import scripts.set_runparams as set_runparams
-from scripts.schedulers.scheduler_factory import initialise_scheduler
+from scripts.schedulers.scheduler_factory import Scheduler
 from shared_workflow.platform_config import (
     platform_config,
     get_platform_node_requirements,
@@ -162,6 +162,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # The name parameter is only used to check user tasks in the queue monitor
-    initialise_scheduler("", args.account)
+    Scheduler.initialise_scheduler("", args.account)
 
     main(args)

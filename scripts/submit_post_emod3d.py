@@ -10,7 +10,7 @@ from qcore.config import get_machine_config, host
 import qcore.constants as const
 from qcore.qclogging import get_basic_logger
 import qcore.simulation_structure as sim_struct
-from scripts.schedulers.scheduler_factory import initialise_scheduler
+from scripts.schedulers.scheduler_factory import Scheduler
 
 from shared_workflow.platform_config import (
     platform_config,
@@ -125,6 +125,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # The name parameter is only used to check user tasks in the queue monitor
-    initialise_scheduler("", args.account)
+    Scheduler.initialise_scheduler("", args.account)
 
     main(args)

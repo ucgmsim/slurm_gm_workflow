@@ -12,7 +12,7 @@ from qcore.utils import load_yaml
 import estimation.estimate_wct as est
 from scripts.cybershake import queue_monitor
 from scripts.cybershake.auto_submit import run_main_submit_loop
-from scripts.schedulers.scheduler_factory import initialise_scheduler
+from scripts.schedulers.scheduler_factory import Scheduler
 from shared_workflow.platform_config import platform_config, HPC
 
 MASTER_LOG_NAME = "master_log_{}.txt"
@@ -321,7 +321,7 @@ def main():
 
     scheduler_logger = qclogging.get_logger(name="scheduler", threaded=True)
     qclogging.add_general_file_handler(scheduler_logger, scheduler_log_file)
-    initialise_scheduler(user=args.user, logger=scheduler_logger)
+    Scheduler.initialise_scheduler(user=args.user, logger=scheduler_logger)
 
     n_runs = 0
     if args.n_runs is not None:

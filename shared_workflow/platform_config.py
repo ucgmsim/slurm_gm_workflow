@@ -108,9 +108,9 @@ def get_platform_specific_script(
     """
 
     # To prevent circular dependency
-    from scripts.schedulers.scheduler_factory import get_scheduler
+    from scripts.schedulers.scheduler_factory import Scheduler
 
-    scheduler = get_scheduler()
+    scheduler = Scheduler.get_scheduler()
 
     platform_dir = f"{platform.name.lower()}_scripts"
     script_extension = scheduler.SCRIPT_EXTENSION

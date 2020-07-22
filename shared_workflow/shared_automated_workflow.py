@@ -11,7 +11,7 @@ import qcore.constants as const
 from qcore.utils import load_yaml
 from scripts.management.MgmtDB import MgmtDB
 from qcore.qclogging import get_basic_logger, NOPRINTCRITICAL
-from scripts.schedulers.scheduler_factory import get_scheduler
+from scripts.schedulers.scheduler_factory import Scheduler
 
 ALL = "ALL"
 ONCE = "ONCE"
@@ -41,9 +41,7 @@ def submit_script_to_scheduler(
     :param logger:
     :return:
     """
-    scheduler = get_scheduler()
-
-    job_id = scheduler.submit_job(sim_dir, script, target_machine)
+    job_id = Scheduler.get_scheduler().submit_job(sim_dir, script, target_machine)
 
     add_to_queue(
         queue_folder,

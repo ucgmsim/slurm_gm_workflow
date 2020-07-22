@@ -46,8 +46,3 @@ class Scheduler:
                 "Scheduler has not been initialised. Run initialise_scheduler first."
             )
         return cls.__scheduler
-
-
-# __Scheduler_instance = Scheduler()
-initialise_scheduler = Scheduler.initialise_scheduler
-get_scheduler = Scheduler.get_scheduler

@@ -20,7 +20,7 @@ import estimation.estimate_wct as est
 from metadata.log_metadata import store_metadata
 
 from scripts.management.MgmtDB import MgmtDB
-from scripts.schedulers.scheduler_factory import initialise_scheduler, get_scheduler
+from scripts.schedulers.scheduler_factory import Scheduler
 from scripts.submit_emod3d import main as submit_lf_main
 from scripts.submit_empirical import generate_sl
 from scripts.submit_post_emod3d import main as submit_post_lf_main
@@ -383,7 +383,7 @@ def run_main_submit_loop(
         n_tasks_to_run = {}
         for hpc in HPC:
             try:
-                squeued_tasks = get_scheduler().check_queues(
+                squeued_tasks = Scheduler.get_scheduler().check_queues(
                     user=True, target_machine=hpc
                 )
             except EnvironmentError as e:
@@ -624,7 +624,7 @@ def main():
     logger.debug("Processed args are as follows: {}".format(str(args)))
 
     scheduler_logger = qclogging.get_logger(name=f"{logger.name}.scheduler")
-    initialise_scheduler(user=args.user, logger=scheduler_logger)
+    Scheduler.initialise_scheduler(user=args.user, logger=scheduler_logger)
 
     logger.info("Loading estimation models")
     lf_est_model = est.load_full_model(

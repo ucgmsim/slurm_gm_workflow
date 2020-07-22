@@ -16,7 +16,7 @@ import qcore.constants as const
 import qcore.simulation_structure as sim_struct
 from qcore import qclogging
 from scripts.management.MgmtDB import MgmtDB, SchedulerTask
-from scripts.schedulers.scheduler_factory import get_scheduler
+from scripts.schedulers.scheduler_factory import Scheduler
 from shared_workflow.platform_config import HPC
 from shared_workflow.shared_automated_workflow import check_mgmt_queue
 from metadata.log_metadata import store_metadata
@@ -76,7 +76,7 @@ def update_tasks(
 
     task_logger.debug("Checking running tasks in the db for updates")
     task_logger.debug(
-        f"The key value pairs found in {get_scheduler().QUEUE_NAME} are as follows: {squeue_tasks.items()}"
+        f"The key value pairs found in {Scheduler.get_scheduler().QUEUE_NAME} are as follows: {squeue_tasks.items()}"
     )
     for db_running_task in db_running_tasks:
         task_logger.debug("Checking task {}".format(db_running_task))
@@ -86,7 +86,7 @@ def update_tasks(
             task_logger.debug("Found task. It has state {}".format(queue_status))
 
             try:
-                queue_status = get_scheduler().STATUS_DICT[queue_status]
+                queue_status = Scheduler.get_scheduler().STATUS_DICT[queue_status]
             except KeyError:
                 task_logger.error(
                     "Failed to recognize state code {}, updating to {}".format(
@@ -142,13 +142,13 @@ def update_tasks(
             if not complete_data:
                 task_logger.warning(
                     f"Task '{const.ProcessType(db_running_task.proc_type).str_value}' not found on "
-                    f"{get_scheduler().QUEUE_NAME} or in the management db folder, "
-                    f"but errors were encountered when querying {get_scheduler().QUEUE_NAME}. Not resubmitting."
+                    f"{Scheduler.get_scheduler().QUEUE_NAME} or in the management db folder, "
+                    f"but errors were encountered when querying {Scheduler.get_scheduler().QUEUE_NAME}. Not resubmitting."
                 )
             else:
                 task_logger.warning(
                     f"Task '{const.ProcessType(db_running_task.proc_type).str_value}' on '{db_running_task.run_name}' "
-                    f"not found on {get_scheduler().QUEUE_NAME} or in the management db folder; resetting the status "
+                    f"not found on {Scheduler.get_scheduler().QUEUE_NAME} or in the management db folder; resetting the status "
                     "to 'created' for resubmission"
                 )
                 # Add an error
@@ -158,7 +158,7 @@ def update_tasks(
                         db_running_task.proc_type,
                         const.Status.failed.value,
                         None,
-                        f"Disappeared from {get_scheduler().QUEUE_NAME}. Creating a new task.",
+                        f"Disappeared from {Scheduler.get_scheduler().QUEUE_NAME}. Creating a new task.",
                     )
                 )
             # When job failed, we want to log metadata as well
@@ -168,7 +168,7 @@ def update_tasks(
                 run_time,
                 n_cores,
                 status,
-            ) = get_scheduler().get_metadata(db_running_task, task_logger)
+            ) = Scheduler.get_scheduler().get_metadata(db_running_task, task_logger)
             log_file = os.path.join(
                 sim_struct.get_sim_dir(root_folder, db_running_task.run_name),
                 "ch_log",
@@ -215,13 +215,13 @@ def queue_monitor_loop(
         queued_tasks = {}
         for hpc in HPC:
             try:
-                squeued_tasks = get_scheduler().check_queues(
+                squeued_tasks = Scheduler.get_scheduler().check_queues(
                     user=False, target_machine=hpc
                 )
             except EnvironmentError as e:
                 queue_logger.critical(e)
                 queue_logger.critical(
-                    f"An error was encountered when attempting to check {get_scheduler().QUEUE_NAME} for HPC {hpc}. "
+                    f"An error was encountered when attempting to check {Scheduler.get_scheduler().QUEUE_NAME} for HPC {hpc}. "
                     "Tasks will not be submitted to this HPC until the issue is resolved"
                 )
                 complete_data = False
@@ -233,17 +233,17 @@ def queue_monitor_loop(
             if len(queued_tasks) > 200:
                 queue_logger.log(
                     VERYVERBOSE,
-                    f"{get_scheduler().QUEUE_NAME} tasks: {', '.join([' '.join(task) for task in queued_tasks.items()])}",
+                    f"{Scheduler.get_scheduler().QUEUE_NAME} tasks: {', '.join([' '.join(task) for task in queued_tasks.items()])}",
                 )
                 queue_logger.info(
                     f"Over 200 tasks were found in the queue. Check the log for an exact listing of them"
                 )
             else:
                 queue_logger.info(
-                    f"{get_scheduler().QUEUE_NAME} tasks: {', '.join([' '.join(task) for task in queued_tasks.items()])}"
+                    f"{Scheduler.get_scheduler().QUEUE_NAME} tasks: {', '.join([' '.join(task) for task in queued_tasks.items()])}"
                 )
         else:
-            queue_logger.debug(f"No {get_scheduler().QUEUE_NAME} tasks")
+            queue_logger.debug(f"No {Scheduler.get_scheduler().QUEUE_NAME} tasks")
 
         db_in_progress_tasks = mgmt_db.get_submitted_tasks()
         if len(db_in_progress_tasks) > 0:

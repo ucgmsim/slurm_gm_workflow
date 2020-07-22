@@ -5,7 +5,7 @@ from jinja2 import Environment, FileSystemLoader
 
 import qcore.constants as const
 from qcore.utils import load_sim_params
-from scripts.schedulers.scheduler_factory import get_scheduler
+from scripts.schedulers.scheduler_factory import Scheduler
 from shared_workflow.platform_config import platform_config
 from shared_workflow.shared import write_file
 
@@ -58,7 +58,7 @@ def write_sl_script(
             "{}_{}.{}".format(
                 script_prefix,
                 datetime.now().strftime(const.TIMESTAMP_FORMAT),
-                get_scheduler().SCRIPT_EXTENSION,
+                Scheduler.get_scheduler().SCRIPT_EXTENSION,
             ),
         )
     )
