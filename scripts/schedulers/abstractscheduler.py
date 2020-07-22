@@ -56,9 +56,7 @@ class AbstractScheduler(ABC):
         pass
 
     @abstractmethod
-    def check_queues(
-        self, user: bool = False, target_machine=None
-    ) -> List[str]:
+    def check_queues(self, user: bool = False, target_machine=None) -> List[str]:
         """
         Checks the schedulers queue(s) for running jobs
         :param user: Which user should the jobs be checked for?
