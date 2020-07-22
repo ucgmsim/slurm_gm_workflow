@@ -1,10 +1,17 @@
+from collections import OrderedDict
 from enum import Enum, auto
 from os.path import join, dirname, abspath
 from typing import List, Union
 
 from numpy.ma import ceil
 
-from qcore.config import determine_machine_config, get_machine_config, host, qconfig
+from qcore.config import (
+    determine_machine_config,
+    get_machine_config,
+    host,
+    qconfig,
+    __KnownMachines,
+)
 from qcore.constants import PLATFORM_CONFIG, ProcessType
 
 WORKFLOW_DIR = abspath(join(dirname(__file__), ".."))
@@ -23,13 +30,16 @@ def determine_platform_config(hostname=determine_machine_config()[0]):
     :param hostname: The name of the machine currently being run
     :return: The platform being run, the path to the config for that platform
     """
-    if hostname == "maui" or hostname == "mahuika":
+    if (
+        hostname == __KnownMachines.maui.name
+        or hostname == __KnownMachines.mahuika.name
+    ):
         hpc_platform = Platforms.NESI
-    elif hostname == "stampede2":
+    elif hostname == __KnownMachines.stampede2.name:
         hpc_platform = Platforms.TACC
-    elif hostname == "nurion":
+    elif hostname == __KnownMachines.nurion.name:
         hpc_platform = Platforms.KISTI
-    elif hostname == "local":
+    elif hostname == __KnownMachines.local.name:
         hpc_platform = Platforms.LOCAL
     else:
         raise ValueError("Unexpected host given")
@@ -88,7 +98,9 @@ def get_target_machine(process: Union[ProcessType, str, int]) -> HPC:
     return HPC[platform_config[PLATFORM_CONFIG.MACHINE_TASKS.name][process.name]]
 
 
-def get_platform_specific_script(process: ProcessType, arguments: List[str]) -> str:
+def get_platform_specific_script(
+    process: ProcessType, arguments: OrderedDict[str, str]
+) -> str:
     """
     Returns the path to the script with arguments correctly formatted for the scheduler
     :param process: The process to get the script for

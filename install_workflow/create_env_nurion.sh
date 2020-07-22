@@ -1,24 +1,7 @@
 #!/usr/bin/env bash
-# This script needs to be run with the shared python3 nurion virtual env activated!
 
-name=${1?Error: "A environment name has to be given"}
-conf_file=${2?Error: "A config file path has to be provided"}
-
-# Load all the required value from the json config
-base_path=`jq -r '.base_environments_path' ${conf_file}`
-
-echo $base_path
-# Check that this name isn't already taken.
-env_path=${base_path}/${name}
-if [[ -d "${env_path}" ]]; then
-    echo "Environment with name $name already exists. Quitting."
-    exit
-fi
-
-# Create the directory
-echo "Creating enviroment folder in $env_path"
-mkdir ${env_path} || exit 1
-cd ${env_path}
+my_dir="$(dirname "$0")"
+source "$my_dir/create_env_common_pre.sh"
 
 # Setting up workfow, qcore and IM calc
 echo "Cloning workflow"
@@ -63,8 +46,4 @@ fi
 # packages are still installed. However, this is slower.
 xargs -n 1 -a ${env_path}/workflow/install_workflow/nurion_python3_requirements.txt pip install
 
-# Install qcore & Empirical Engine & IM_calc
-pip install -I --no-deps -e ./qcore
-pip install -I --no-deps -e ./Empirical_Engine
-pip install -I --no-deps -e ./IM_calculation
-pip install -I --no-deps -e ./visualization
+source "$my_dir/create_env_common_post.sh"

@@ -14,38 +14,42 @@ from shared_workflow.platform_config import platform_config
 class Scheduler:
     __scheduler = None
 
+    @staticmethod
+    @classmethod
     def initialise_scheduler(
-        self, user: str, account: str = None, logger: Logger = get_basic_logger()
+        cls, user: str, account: str = None, logger: Logger = get_basic_logger()
     ):
-        if self.__scheduler is not None:
+        if cls.__scheduler is not None:
             raise RuntimeError("Scheduler already initialised")
 
         scheduler = platform_config[PLATFORM_CONFIG.SCHEDULER.name]
         if account is None:
             account = platform_config[PLATFORM_CONFIG.DEFAULT_ACCOUNT.name]
         if scheduler == "slurm":
-            self.__scheduler = Slurm(
+            cls.__scheduler = Slurm(
                 user=user, account=account, current_machine=host, logger=logger
             )
         elif scheduler == "pbs":
-            self.__scheduler = Pbs(
+            cls.__scheduler = Pbs(
                 user=user, account=account, current_machine=host, logger=logger
             )
         else:
-            self.__scheduler = Bash(
+            cls.__scheduler = Bash(
                 user=user, account=account, current_machine=host, logger=logger
             )
-        self.__scheduler.logger.debug("Scheduler initialised")
+        cls.__scheduler.logger.debug("Scheduler initialised")
 
-    def get_scheduler(self) -> AbstractScheduler:
+    @staticmethod
+    @classmethod
+    def get_scheduler(cls) -> AbstractScheduler:
         """Returns the scheduler appropriate for the current machine/platform environment. Should be called"""
-        if self.__scheduler is None:
+        if cls.__scheduler is None:
             raise RuntimeError(
                 "Scheduler has not been initialised. Run initialise_scheduler first."
             )
-        return self.__scheduler
+        return cls.__scheduler
 
 
-__Scheduler_instance = Scheduler()
-initialise_scheduler = __Scheduler_instance.initialise_scheduler
-get_scheduler = __Scheduler_instance.get_scheduler
+# __Scheduler_instance = Scheduler()
+initialise_scheduler = Scheduler.initialise_scheduler
+get_scheduler = Scheduler.get_scheduler

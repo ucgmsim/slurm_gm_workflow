@@ -76,7 +76,7 @@ def args_parser(cmd=None):
     arg(
         "--version",
         help="binary version, similar to --sim_bin but not full path.",
-        default="6.0.3",  # 5.4.5, 6.0.3 are supported
+        default="6.0.3",  # 5.4.5, 5.4.6, 6.0.3 with subversions .1 .2 .3 are supported
     )
     arg("--t-sec", help="high frequency output start time", type=float, default=0.0)
     # HF IN, line 1

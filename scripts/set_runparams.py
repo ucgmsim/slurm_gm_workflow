@@ -112,7 +112,6 @@ def create_run_params(
         # other locations
         e3d_dict["wcc_prog_dir"] = emod3d_filepath
         e3d_dict["vel_mod_params_dir"] = params.vel_mod_dir
-        # e3d_dict["global_root"] = global_root
         e3d_dict["sim_dir"] = params.sim_dir
         e3d_dict["stat_file"] = params.stat_file
         e3d_dict["grid_file"] = params.GRIDFILE

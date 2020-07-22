@@ -1,5 +1,6 @@
 import json
 import os
+from collections import OrderedDict
 from logging import Logger
 from typing import List
 
@@ -157,5 +158,6 @@ class Pbs(AbstractScheduler):
         return output_list
 
     @staticmethod
-    def process_arguments(script_path: str, arguments: List[str]):
-        return f"-V {' '.join(arguments)} {script_path} "
+    def process_arguments(script_path: str, arguments: OrderedDict[str, str]):
+        args = [x for part in arguments.items() for x in part]
+        return f"-V {' '.join(args)} {script_path} "

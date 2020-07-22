@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from collections import OrderedDict
 from logging import Logger
 from typing import List, Dict, Type, Optional
 
@@ -69,7 +70,7 @@ class AbstractScheduler(ABC):
 
     @staticmethod
     @abstractmethod
-    def process_arguments(script_path: str, arguments: List[str]):
+    def process_arguments(script_path: str, arguments: OrderedDict[str, str]):
         """
         Processes the script path and arguments to return them in a format usable by the scheduler
         :param script_path: The path to the script (or command to be run)

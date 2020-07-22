@@ -1,5 +1,6 @@
+from collections import OrderedDict
 from logging import Logger
-from typing import List
+from typing import Union
 from os.path import join
 
 from qcore.constants import ProcessType, timestamp
@@ -15,7 +16,7 @@ class Slurm(AbstractScheduler):
     QUEUE_NAME = "squeue"
     HEADER_TEMPLATE = "slurm_header.cfg"
 
-    def check_queues(self, user=False, target_machine: HPC = None):
+    def check_queues(self, user: Union[bool, str] = False, target_machine: HPC = None):
         self.logger.debug(
             f"Checking queues for user {user} and machine {target_machine}"
         )
@@ -23,10 +24,12 @@ class Slurm(AbstractScheduler):
         if target_machine is None:
             target_machine = self.current_machine
         if user is True:
+            # user is True, so we use the same use as we use for submission
             cmd = "squeue -A {} -o '%A %t' -M {} -u {}".format(
                 self.account, target_machine.name, self.user_name
             )
         elif user:
+            # user is a string, so use that instead
             cmd = "squeue -A {} -o '%A %t' -M {} -u {}".format(
                 self.account, target_machine.name, user
             )
@@ -117,8 +120,8 @@ class Slurm(AbstractScheduler):
             )
 
     @staticmethod
-    def process_arguments(script_path: str, arguments: List[str]):
-        return f"{script_path} {' '.join(arguments)}"
+    def process_arguments(script_path: str, arguments: OrderedDict[str, str]):
+        return f"{script_path} {' '.join(arguments.items())}"
 
     def get_metadata(self, db_running_task: SchedulerTask, task_logger: Logger):
         """

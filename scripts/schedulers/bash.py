@@ -1,5 +1,5 @@
+from collections import OrderedDict
 from logging import Logger
-from typing import List
 
 from scripts.management.MgmtDB import SchedulerTask
 from scripts.schedulers.abstractscheduler import AbstractScheduler
@@ -13,8 +13,8 @@ class Bash(AbstractScheduler):
     SCRIPT_EXTENSION = "sh"
 
     @staticmethod
-    def process_arguments(script_path: str, arguments: List[str]):
-        return f"{script_path} {' '.join(arguments)}"
+    def process_arguments(script_path: str, arguments: OrderedDict[str, str]):
+        return f"{script_path} {' '.join(arguments.items())}"
 
     def get_metadata(self, db_running_task: SchedulerTask, task_logger: Logger):
         pass

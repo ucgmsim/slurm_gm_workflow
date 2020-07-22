@@ -114,7 +114,6 @@ def resolve_header(
     job_description,
     additional_lines="",
     template_path=None,
-    mail="test@test.com",
     write_directory=".",
     platform_specific_args={},
 ):
@@ -127,7 +126,6 @@ def resolve_header(
         job_description=job_description,
         job_name=job_name,
         wallclock_limit=wallclock_limit,
-        mail=mail,
         memory=memory,
         additional_lines=additional_lines,
         exe_time=exe_time,

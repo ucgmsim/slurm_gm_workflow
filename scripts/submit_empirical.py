@@ -59,7 +59,6 @@ def generate_sl(np, extended, cybershake_folder, realisations, out_dir):
         job_description="Empirical Engine",
         additional_lines="",
         template_path=get_scheduler().HEADER_TEMPLATE,
-        mail="",
         write_directory=out_dir,
     )
     context = generate_context(

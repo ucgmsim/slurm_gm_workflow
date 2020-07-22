@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Script for automatic submission of gm simulation jobs"""
 import argparse
+from collections import OrderedDict
+
 import time
 import os
 
@@ -110,16 +112,18 @@ def submit_task(
         # whereas im_plot does.
         if not os.path.isdir(verification_dir):
             os.mkdir(verification_dir)
-        arguments = [
-            os.path.join(
-                sim_struct.get_lf_outbin_dir(sim_dir),
-                "{}_xyts.e3d".format(run_name.split("_")[0]),
-            ),
-            sim_struct.get_srf_path(root_folder, run_name),
-            os.path.join(verification_dir, run_name),
-            root_folder,
-            run_name,
-        ]
+        arguments = OrderedDict(
+            {
+                "XYTS_PATH": os.path.join(
+                    sim_struct.get_lf_outbin_dir(sim_dir),
+                    "{}_xyts.e3d".format(run_name.split("_")[0]),
+                ),
+                "SRF_PATH": sim_struct.get_srf_path(root_folder, run_name),
+                "OUTPUT_TS_PATH": os.path.join(verification_dir, run_name),
+                "MGMT_DB_LOC": root_folder,
+                "SRF_NAME": run_name,
+            }
+        )
 
         script = get_platform_specific_script(const.ProcessType.plot_ts, arguments)
 
@@ -209,7 +213,8 @@ def submit_task(
     elif proc_type == const.ProcessType.rrup.value:
         submit_script_to_scheduler(
             get_platform_specific_script(
-                const.ProcessType.rrup, [sim_dir, root_folder]
+                const.ProcessType.rrup,
+                OrderedDict({"REL": sim_dir, "MGMT_DB_LOC": root_folder}),
             ),
             target_machine=get_target_machine(const.ProcessType.rrup).name,
         )
@@ -224,11 +229,18 @@ def submit_task(
         #     target_machine=get_target_machine(const.ProcessType.Empirical).name,
         # )
     elif proc_type == const.ProcessType.Verification.value:
-        raise NotImplementedError("Verifaction is not currently working")
+        raise NotImplementedError("Verification is not currently working")
     elif proc_type == const.ProcessType.clean_up.value:
         submit_script_to_scheduler(
             get_platform_specific_script(
-                const.ProcessType.clean_up, [sim_dir, run_name, root_folder]
+                const.ProcessType.clean_up,
+                OrderedDict(
+                    {
+                        "SIM_DIR": sim_dir,
+                        "SRF_NAME": run_name,
+                        "MGMT_DB_LOC": root_folder,
+                    }
+                ),
             ),
             target_machine=get_target_machine(const.ProcessType.clean_up).name,
         )
@@ -237,14 +249,21 @@ def submit_task(
         submit_script_to_scheduler(
             get_platform_specific_script(
                 const.ProcessType.LF2BB,
-                [
-                    sim_dir,
-                    root_folder,
-                    params.stat_vs_est,
-                    " ".join(
-                        ["--{} {}".format(key, item) for key, item in params.bb.items()]
-                    ),
-                ],
+                OrderedDict(
+                    {
+                        "REL_LOC": sim_dir,
+                        "MGMT_DB_LOC": root_folder,
+                        "VSITE_FILE": params.stat_vs_est,
+                        "REM_ARGS": "'"
+                        + " ".join(
+                            [
+                                "--{} {}".format(key, item)
+                                for key, item in params.bb.items()
+                            ]
+                        )
+                        + "'",
+                    }
+                ),
             ),
             target_machine=get_target_machine(const.ProcessType.LF2BB).name,
         )
@@ -253,13 +272,20 @@ def submit_task(
         submit_script_to_scheduler(
             get_platform_specific_script(
                 const.ProcessType.HF2BB,
-                [
-                    sim_dir,
-                    root_folder,
-                    " ".join(
-                        ["--{} {}".format(key, item) for key, item in params.bb.items()]
-                    ),
-                ],
+                OrderedDict(
+                    {
+                        "REL_LOC": sim_dir,
+                        "MGMT_DB_LOC": root_folder,
+                        "REM_ARGS": "'"
+                        + " ".join(
+                            [
+                                "--{} {}".format(key, item)
+                                for key, item in params.bb.items()
+                            ]
+                        )
+                        + "'",
+                    }
+                ),
             ),
             target_machine=get_target_machine(const.ProcessType.HF2BB).name,
         )
@@ -267,12 +293,16 @@ def submit_task(
         submit_script_to_scheduler(
             get_platform_specific_script(
                 const.ProcessType.plot_srf,
-                [
-                    sim_struct.get_srf_dir(root_folder, run_name),
-                    sim_struct.get_sources_plot_dir(root_folder, run_name),
-                    root_folder,
-                    run_name,
-                ],
+                OrderedDict(
+                    {
+                        "SRF_DIR": sim_struct.get_srf_dir(root_folder, run_name),
+                        "OUTPUT_DIR": sim_struct.get_sources_plot_dir(
+                            root_folder, run_name
+                        ),
+                        "MGMT_DB_LOC": root_folder,
+                        "SRF_NAME": run_name,
+                    }
+                ),
             ),
             target_machine=get_target_machine(const.ProcessType.plot_srf).name,
         )
