@@ -1,7 +1,6 @@
-from collections import OrderedDict
 from enum import Enum, auto
 from os.path import join, dirname, abspath
-from typing import List, Union
+from typing import Dict, Union
 
 from numpy.ma import ceil
 
@@ -99,7 +98,7 @@ def get_target_machine(process: Union[ProcessType, str, int]) -> HPC:
 
 
 def get_platform_specific_script(
-    process: ProcessType, arguments: OrderedDict[str, str]
+    process: ProcessType, arguments: Dict[str, str]
 ) -> str:
     """
     Returns the path to the script with arguments correctly formatted for the scheduler
