@@ -14,7 +14,6 @@ from shared_workflow.platform_config import platform_config
 class Scheduler:
     __scheduler = None
 
-    @staticmethod
     @classmethod
     def initialise_scheduler(
         cls, user: str, account: str = None, logger: Logger = get_basic_logger()
@@ -39,7 +38,6 @@ class Scheduler:
             )
         cls.__scheduler.logger.debug("Scheduler initialised")
 
-    @staticmethod
     @classmethod
     def get_scheduler(cls) -> AbstractScheduler:
         """Returns the scheduler appropriate for the current machine/platform environment. Should be called"""
