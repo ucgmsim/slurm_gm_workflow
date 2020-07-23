@@ -22,7 +22,7 @@ def write_sl(sl_name, content):
         f.write(content)
 
 
-def generate_sl(np, extended, cybershake_folder, realisations, out_dir):
+def generate_empirical_script(np, extended, cybershake_folder, realisations, out_dir):
     # extended is '-e' or ''
 
     faults = map(simulation_structure.get_fault_from_realisation, realisations)
@@ -105,7 +105,7 @@ def main():
     # The name parameter is only used to check user tasks in the queue monitor
     Scheduler.initialise_scheduler("", args.account)
 
-    generate_sl(
+    generate_empirical_script(
         args.np,
         args.extended_period,
         args.cybershake_folder,

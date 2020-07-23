@@ -22,7 +22,7 @@ from metadata.log_metadata import store_metadata
 from scripts.management.MgmtDB import MgmtDB
 from scripts.schedulers.scheduler_factory import Scheduler
 from scripts.submit_emod3d import main as submit_lf_main
-from scripts.submit_empirical import generate_sl
+from scripts.submit_empirical import generate_empirical_script
 from scripts.submit_post_emod3d import main as submit_post_lf_main
 from scripts.submit_hf import main as submit_hf_main
 from scripts.submit_bb import main as submit_bb_main
@@ -219,15 +219,14 @@ def submit_task(
             target_machine=get_target_machine(const.ProcessType.rrup).name,
         )
     elif proc_type == const.ProcessType.Empirical.value:
-        raise NotImplementedError("Empirical is not currently working")
-        # extended_period_switch = "-e" if extended_period else ""
-        # sl_script = generate_sl(
-        #     1, extended_period_switch, root_folder, "nesi00213", [run_name], sim_dir,
-        # )
-        # submit_sl_script(
-        #     sl_script,
-        #     target_machine=get_target_machine(const.ProcessType.Empirical).name,
-        # )
+        extended_period_switch = "-e" if extended_period else ""
+        sl_script = generate_empirical_script(
+            1, extended_period_switch, root_folder, [run_name], sim_dir,
+        )
+        submit_script_to_scheduler(
+            sl_script,
+            target_machine=get_target_machine(const.ProcessType.Empirical).name,
+        )
     elif proc_type == const.ProcessType.Verification.value:
         raise NotImplementedError("Verification is not currently working")
     elif proc_type == const.ProcessType.clean_up.value:
