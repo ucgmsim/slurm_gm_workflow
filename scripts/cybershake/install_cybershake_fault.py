@@ -121,7 +121,7 @@ def install_fault(
     v1d_full_path = os.path.join(
         platform_config[PLATFORM_CONFIG.VELOCITY_MODEL_DIR.name],
         "Mod-1D",
-        config_dict.get("v_1d_mod")
+        config_dict.get("v_1d_mod"),
     )
     site_v1d_dir = config_dict.get("site_v1d_dir")
     hf_stat_vs_ref = config_dict.get("hf_stat_vs_ref")
