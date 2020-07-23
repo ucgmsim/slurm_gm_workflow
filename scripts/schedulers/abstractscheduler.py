@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from logging import Logger
-from typing import List, Dict, Type, Optional
+from typing import List, Dict, Type, Tuple
 
 from qcore.shared import exe
 from qcore.qclogging import VERYVERBOSE, NOPRINTERROR
@@ -47,7 +47,7 @@ class AbstractScheduler(ABC):
         pass
 
     @abstractmethod
-    def cancel_job(self, job_id: int, target_machine=None) -> None:
+    def cancel_job(self, job_id: int, target_machine=None) -> Tuple[str, str]:
         """
         Cancels the job with the given job id
         :param job_id: The id of the job to be cancelled

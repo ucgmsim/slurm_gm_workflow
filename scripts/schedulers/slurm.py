@@ -112,6 +112,7 @@ class Slurm(AbstractScheduler):
             raise self.raise_exception(
                 f"An error occurred during job cancellation: {err}"
             )
+        return out, err
 
     @staticmethod
     def process_arguments(script_path: str, arguments: Dict[str, str]):
