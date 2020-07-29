@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
-my_dir="$(dirname "$0")"
-source "$my_dir/create_env_common_pre.sh"
+source "${env_path}/workflow/install_workflow/create_env_common_pre.sh"
 
 # Setting up workfow, qcore and IM calc
 echo "Cloning workflow"
@@ -46,4 +45,4 @@ fi
 # packages are still installed. However, this is slower.
 xargs -n 1 -a ${env_path}/workflow/install_workflow/stampede_python3_requirements.txt pip install
 
-source "$my_dir/create_env_common_post.sh"
+source "${env_path}/workflow/install_workflow/create_env_common_post.sh"
