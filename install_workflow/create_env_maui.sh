@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 my_dir="$(dirname "$0")"
-source "$my_dir/create_env_common.sh"
+source "$my_dir/create_env_common_pre.sh"
 
 # Setting up workfow, qcore and IM calc
 echo "Cloning workflow"

@@ -166,7 +166,7 @@ class QueueMonitorStressTest(object):
         sleep_time: int
             Time (in seconds) between progress checks
         """
-        submit_cmd = "python3 {} {} --sleep_time 2".format(
+        submit_cmd = "python {} {} --sleep_time 2".format(
             os.path.join(
                 os.path.dirname(os.path.abspath(__file__)),
                 "../scripts/cybershake/queue_monitor.py",

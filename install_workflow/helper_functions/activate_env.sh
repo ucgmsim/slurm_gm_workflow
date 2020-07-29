@@ -15,7 +15,7 @@ elif [[ $2 == "stampede" ]]; then
     source ${env_path}/workflow/install_workflow/helper_functions/activate_nurion_python3_virtenv.sh ${env_path}/virt_envs/python3_nurion
 else
     echo "$2, invalid HPC, Quitting!"
-    exit
+    # exit
 fi
 
 # PYTHONPATH for workflow

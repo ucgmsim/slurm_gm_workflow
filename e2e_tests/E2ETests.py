@@ -231,7 +231,7 @@ class E2ETests(object):
             os.path.dirname(os.path.abspath(__file__)),
             "../scripts/cybershake/install_cybershake.py",
         )
-        cmd = "python3 {} {} {} {} --seed {} --stat_file_path {}".format(
+        cmd = "python {} {} {} {} --seed {} --stat_file_path {}".format(
             script_path,
             self.stage_dir,
             os.path.join(
@@ -321,7 +321,7 @@ class E2ETests(object):
         sleep_time: int
             Time (in seconds) between progress checks
         """
-        submit_cmd = "python3 {} {} {} {} --sleep_time 2".format(
+        submit_cmd = "python {} {} {} {} --sleep_time 2".format(
             os.path.join(
                 os.path.dirname(os.path.abspath(__file__)),
                 "../scripts/cybershake/run_cybershake.py",

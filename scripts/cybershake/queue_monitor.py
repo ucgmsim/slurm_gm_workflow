@@ -106,8 +106,6 @@ def update_tasks(
                         db_running_task.job_id,
                     )
                 )
-            # Do nothing if there is a pending update for
-            # this run & process type combination
             elif not check_mgmt_queue(
                 mgmt_queue_entries,
                 db_running_task.run_name,
@@ -131,6 +129,10 @@ def update_tasks(
                         None,
                     )
                 )
+            else:
+                # Do nothing if there is a pending update for
+                # this run & process type combination
+                pass
         # Only reset if there is no entry on the mgmt queue for this
         # realisation/proc combination and nothing in the mgmt folder
         elif not check_mgmt_queue(
