@@ -68,9 +68,7 @@ class Pbs(AbstractScheduler):
 
         cwd = os.getcwd()
         os.chdir(sim_dir)  # KISTI doesn't allow job submission from home
-        out, err = self._run_command_and_wait(
-            f"qsub {script_location}"
-        )
+        out, err = self._run_command_and_wait(f"qsub {script_location}")
         os.chdir(cwd)
         self.logger.debug((out, err))
 
@@ -103,7 +101,9 @@ class Pbs(AbstractScheduler):
 
         f_name = f"{job_name}_{timestamp}_{jobid}"
         # Set the error and output logs to <name>_<time>_<job_id> as this cannot be done before submission time
-        self.logger.debug(f"Setting output files for task {jobid} to {sim_dir}/{f_name}.out/.err")
+        self.logger.debug(
+            f"Setting output files for task {jobid} to {sim_dir}/{f_name}.out/.err"
+        )
         self._run_command_and_wait(f"qalter -o {sim_dir}/{f_name}.out {jobid}")
         self._run_command_and_wait(f"qalter -e {sim_dir}/{f_name}.err {jobid}")
         return jobid
@@ -111,7 +111,9 @@ class Pbs(AbstractScheduler):
     def cancel_job(self, job_id: int, target_machine=None) -> None:
         return self._run_command_and_wait(cmd=[f"qdel {job_id}"], shell=True)
 
-    def check_queues(self, user: Union[str, bool] = False, target_machine=None) -> List[str]:
+    def check_queues(
+        self, user: Union[str, bool] = False, target_machine=None
+    ) -> List[str]:
         self.logger.debug(
             f"Checking queues with raw input of machine {target_machine} and user {user}"
         )
