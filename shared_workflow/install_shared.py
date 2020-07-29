@@ -6,8 +6,6 @@ from logging import Logger
 from numpy import isclose
 import yaml
 
-from h5py import File as h5open
-
 from qcore import geo, utils, simulation_structure
 from qcore.qclogging import get_basic_logger, VERYVERBOSE, NOPRINTWARNING
 from qcore.constants import (
@@ -20,6 +18,8 @@ from qcore.constants import (
 )
 from shared_workflow import shared, shared_automated_workflow
 import shared_workflow.shared_defaults as defaults
+
+HF_VEL_MOD_1D = "hf_vel_mod_1d"
 
 
 def install_simulation(
@@ -238,32 +238,32 @@ def install_bb(
         # TODO: most of these logic are not required and should be removed
         # these logic are now depending on gmsim_version_template
         # root_dict["bb"]["site_specific"] = False
-        root_dict["v_mod_1d_name"] = v_mod_1d_selected
+        root_dict["hf"][HF_VEL_MOD_1D] = v_mod_1d_selected
 
     # TODO:add in logic for site specific as well, if the user provided as args
     elif site_v1d_dir is not None and hf_stat_vs_ref is not None:
-        v_mod_1d_path, hf_stat_vs_ref = shared.get_site_specific_path(
+        hf_vel_mod_1d, hf_stat_vs_ref = shared.get_site_specific_path(
             os.path.dirname(stat_file),
             hf_stat_vs_ref=hf_stat_vs_ref,
             v1d_mod_dir=site_v1d_dir,
             logger=logger,
         )
         # root_dict["bb"]["site_specific"] = True
-        root_dict["v_mod_1d_name"] = v_mod_1d_path
+        root_dict["hf"][HF_VEL_MOD_1D] = hf_vel_mod_1d
         root_dict["hf_stat_vs_ref"] = hf_stat_vs_ref
     else:
         is_site_specific_id = q_site_specific()
         if is_site_specific_id:
-            v_mod_1d_path, hf_stat_vs_ref = shared.get_site_specific_path(
+            hf_vel_mod_1d, hf_stat_vs_ref = shared.get_site_specific_path(
                 os.path.dirname(stat_file), logger=logger
             )
             # root_dict["bb"]["site_specific"] = True
-            root_dict["v_mod_1d_name"] = v_mod_1d_path
+            root_dict["hf"][HF_VEL_MOD_1D] = hf_vel_mod_1d
             root_dict["hf_stat_vs_ref"] = hf_stat_vs_ref
         else:
-            v_mod_1d_name, v_mod_1d_selected = q_1d_velocity_model(v1d_dir)
+            hf_vel_mod_1d, v_mod_1d_selected = q_1d_velocity_model(v1d_dir)
             # root_dict["bb"]["site_specific"] = False
-            root_dict["v_mod_1d_name"] = v_mod_1d_selected
+            root_dict["hf"][HF_VEL_MOD_1D] = v_mod_1d_selected
 
 
 def q_1d_velocity_model(v_mod_1d_dir):
@@ -276,9 +276,9 @@ def q_1d_velocity_model(v_mod_1d_dir):
 
     v_mod_1d_selected = shared.show_multiple_choice(v_mod_1d_options)
     print(v_mod_1d_selected)  # full path
-    v_mod_1d_name = os.path.basename(v_mod_1d_selected).replace(".1d", "")
+    hf_vel_mod_1d = os.path.basename(v_mod_1d_selected).replace(".1d", "")
 
-    return v_mod_1d_name, v_mod_1d_selected
+    return hf_vel_mod_1d, v_mod_1d_selected
 
 
 def q_site_specific():

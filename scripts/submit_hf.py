@@ -10,6 +10,7 @@ from qcore.config import host, get_machine_config
 import qcore.constants as const
 from qcore.qclogging import get_basic_logger
 import qcore.simulation_structure as sim_struct
+from shared_workflow.install_shared import HF_VEL_MOD_1D
 
 from shared_workflow.load_config import load
 from shared_workflow.shared import set_wct, confirm, get_hf_nt
@@ -18,6 +19,7 @@ from shared_workflow.shared_template import write_sl_script
 
 # default values
 # Scale the number of nodes to be used for the simulation component
+
 SCALE_NCORES = True
 default_wct = "00:30:00"
 
@@ -26,7 +28,7 @@ def gen_command_template(params, machine, seed=const.HF_DEFAULT_SEED):
     command_template_parameters = {
         "fd_statlist": params.FD_STATLIST,
         "hf_bin_path": sim_struct.get_hf_bin_path(params.sim_dir),
-        "v_mod_1d_name": params.v_mod_1d_name,
+        HF_VEL_MOD_1D: params["hf"][HF_VEL_MOD_1D],
         "duration": params.sim_duration,
         "dt": params.hf.dt,
         "version": params.hf.version,

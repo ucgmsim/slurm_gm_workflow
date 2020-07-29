@@ -141,7 +141,7 @@ def args_parser(cmd=None):
     # HF IN, line 13
     arg(
         "-m",
-        "--velocity-model",
+        f"--hf_vel_mod_1d",
         help="path to velocity model (1D)",
         default=os.path.join(
             shared_defaults.vel_mod_dir, "Mod-1D/Cant1D_v2-midQ_leer.1d"
@@ -304,7 +304,7 @@ if __name__ == "__main__":
             if args.site_vm_dir != None:
                 vm = args.site_vm_dir
             else:
-                vm = args.velocity_model
+                vm = args.hf_vel_mod_1d
             s64 = np.array(
                 list(map(os.path.basename, [args.stoch_file, vm])), dtype="|S64"
             )
@@ -402,7 +402,7 @@ if __name__ == "__main__":
     stations_todo_idx = np.arange(stations.size)[station_mask]
 
     def run_hf(
-        local_statfile, n_stat, idx_0, velocity_model=args.velocity_model, bin_mod=True
+        local_statfile, n_stat, idx_0, velocity_model=args.hf_vel_mod_1d, bin_mod=True
     ):
         """
         Runs HF Fortran code.
@@ -433,7 +433,7 @@ if __name__ == "__main__":
             % (args.rvfac, args.rvfac_shal, args.rvfac_deep, args.czero, args.calpha),
             "%s %s" % (args.mom, args.rupv),
             args.stoch_file,
-            args.velocity_model,
+            args.hf_vel_mod_1d,
             str(args.vs_moho),
             "%d %s %s %s %s %d" % (nl_skip, vp_sig, vsh_sig, rho_sig, qs_sig, ic_flag),
             velocity_name,
@@ -522,7 +522,7 @@ if __name__ == "__main__":
     t0 = MPI.Wtime()
     in_stats = mkstemp()[1]
 
-    vm = args.velocity_model
+    vm = args.hf_vel_mod_1d
     for s in range(work.size):
         if args.site_vm_dir != None:
             vm = os.path.join(args.site_vm_dir, "%s.1d" % (stations_todo[s]["name"]))
