@@ -6,8 +6,8 @@ virtenv_path=$1
 
 # Load python3, have to do this as virtualenv points to this python
 # verions, which is not accessible without loading
-#module load Python/3.6.3-gimkl-2017a
-module add python3
+# module load Python/3.6.3-gimkl-2017a
+# module add python3
 
 # Reset the PYTHONPATH
 export PYTHONPATH=''
