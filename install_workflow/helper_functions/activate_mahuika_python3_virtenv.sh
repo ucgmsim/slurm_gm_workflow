@@ -4,5 +4,4 @@
 # verions, which is not accessible without loading
 module load Python/3.6.3-gimkl-2017a
 
-my_dir="$(dirname "$0")"
-source "$my_dir/activate_common_env.sh"
+source "${env_path}/workflow/install_workflow/helper_functions/activate_common_env.sh"
