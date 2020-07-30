@@ -557,7 +557,7 @@ class E2ETests(object):
             cur_df = pd.read_csv(im_csv)
 
             try:
-                assert_frame_equal(cur_df, bench_df)
+                assert_frame_equal(cur_df, bench_df, atol=1e-04, rtol=1e-03)
             except AssertionError:
                 self.errors.append(
                     Error(
