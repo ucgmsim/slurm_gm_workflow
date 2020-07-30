@@ -10,9 +10,14 @@ from qcore.config import get_machine_config, host
 import qcore.constants as const
 from qcore.qclogging import get_basic_logger
 import qcore.simulation_structure as sim_struct
+from scripts.schedulers.scheduler_factory import Scheduler
 
+from shared_workflow.platform_config import (
+    platform_config,
+    get_platform_node_requirements,
+)
 from shared_workflow.shared import confirm
-from shared_workflow.shared_automated_workflow import submit_sl_script
+from shared_workflow.shared_automated_workflow import submit_script_to_scheduler
 from shared_workflow.shared_template import write_sl_script
 
 
@@ -47,7 +52,9 @@ def main(args, logger: Logger = get_basic_logger()):
     lf_sim_dir = os.path.join(sim_dir, "LF")
 
     header_dict = {
-        "n_tasks": const.MERGE_TS_DEFAULT_NCORES,
+        "platform_specific_args": get_platform_node_requirements(
+            platform_config[const.PLATFORM_CONFIG.MERGE_TS_DEFAULT_NCORES.name]
+        ),
         "wallclock_limit": default_run_time_merge_ts,
         "job_name": "post_emod3d.merge_ts.{}".format(srf_name),
         "job_description": "post emod3d: merge_ts",
@@ -55,9 +62,10 @@ def main(args, logger: Logger = get_basic_logger()):
     }
 
     command_template_parameters = {
+        "run_command": platform_config[const.PLATFORM_CONFIG.RUN_COMMAND.name],
         "merge_ts_path": binary_version.get_unversioned_bin(
             "merge_tsP3_par", get_machine_config(args.machine)["tools_dir"]
-        )
+        ),
     }
 
     body_template_params = (
@@ -74,18 +82,17 @@ def main(args, logger: Logger = get_basic_logger()):
         header_dict,
         body_template_params,
         command_template_parameters,
-        args,
     )
-
-    submit_sl_script(
-        script_file_path,
-        const.ProcessType.merge_ts.value,
-        sim_struct.get_mgmt_db_queue(mgmt_db_loc),
-        srf_name,
-        submit_yes=submit_yes,
-        target_machine=args.machine,
-        logger=logger,
-    )
+    if submit_yes:
+        submit_script_to_scheduler(
+            script_file_path,
+            const.ProcessType.merge_ts.value,
+            sim_struct.get_mgmt_db_queue(mgmt_db_loc),
+            sim_dir,
+            srf_name,
+            target_machine=args.machine,
+            logger=logger,
+        )
 
 
 if __name__ == "__main__":
@@ -93,7 +100,11 @@ if __name__ == "__main__":
         description="Create (and submit if specified) the slurm script for HF"
     )
     parser.add_argument("--auto", nargs="?", type=str, const=True)
-    parser.add_argument("--account", type=str, default=const.DEFAULT_ACCOUNT)
+    parser.add_argument(
+        "--account",
+        type=str,
+        default=platform_config[const.PLATFORM_CONFIG.DEFAULT_ACCOUNT.name],
+    )
     parser.add_argument("--srf", type=str, default=None)
     parser.add_argument(
         "--machine",
@@ -112,5 +123,8 @@ if __name__ == "__main__":
     )
 
     args = parser.parse_args()
+
+    # The name parameter is only used to check user tasks in the queue monitor
+    Scheduler.initialise_scheduler("", args.account)
 
     main(args)

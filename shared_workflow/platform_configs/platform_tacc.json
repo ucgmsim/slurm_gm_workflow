@@ -1,0 +1,40 @@
+{
+  "LF_DEFAULT_NCORES" : 192,
+  "HF_DEFAULT_NCORES" : 64,
+  "HF_DEFAULT_VERSION" : "run_hf_mpi",
+  "BB_DEFAULT_VERSION" : "run_bb_mpi",
+  "BB_DEFAULT_NCORES" : 64,
+  "IM_CALC_DEFAULT_N_CORES" : 64,
+  "IM_SIM_CALC_TEMPLATE_NAME" : "sim_im_calc.sl.template",
+  "IM_SIM_SL_SCRIPT_NAME" : "sim_im_calc_{}.sl",
+  "MERGE_TS_DEFAULT_NCORES" : 4,
+  "DEFAULT_ACCOUNT" : "DesignSafe-Graves",
+  "DEFAULT_MEMORY" : "16G",
+  "SCHEDULER": "slurm",
+  "HEADER_FILE": "tacc_header.cfg",
+  "RUN_COMMAND": "ibrun",
+  "AVAILABLE_MACHINES":  ["stampede2"],
+  "VELOCITY_MODEL_DIR": "/work/06833/sungbae/stampede2/VelocityModel",
+  "ESTIMATION_MODELS_DIR": "$workflow/estimation/models",
+  "TEMPLATES_DIR": "$workflow/templates",
+  "DEFAULT_N_RUNS": {
+    "stampede2": 12
+  },
+  "MACHINE_TASKS": {
+    "EMOD3D": "stampede2",
+    "merge_ts": "stampede2",
+    "plot_ts": "stampede2",
+    "HF": "stampede2",
+    "BB": "stampede2",
+    "IM_calculation": "stampede2",
+    "IM_plot": "stampede2",
+    "rrup": "stampede2",
+    "Empirical": "stampede2",
+    "Verification": "stampede2",
+    "clean_up": "stampede2",
+    "LF2BB": "stampede2",
+    "HF2BB": "stampede2",
+    "plot_srf": "stampede2",
+    "advanced_IM": "stampede2"
+  }
+}

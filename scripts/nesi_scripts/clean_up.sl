@@ -4,7 +4,6 @@
 # must be run with sbatch clean_up.sl [realisation directory] [realisation name] [management database location]
 
 #SBATCH --job-name=clean_up
-#SBATCH --account=nesi00213
 #SBATCH --time=00:30:00
 #SBATCH --cpus-per-task=1
 

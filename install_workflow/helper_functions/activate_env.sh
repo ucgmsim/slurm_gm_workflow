@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Activate a HPC environment
 env_path=${1?Error: "A valid environment path has to be given, e.g. */Environments/name/"}
-hpc=${2?Error: "A valid  HPC has to be specified, either maui or mahuika"}
+hpc=${2?Error: "A valid  HPC has to be specified, maui, mahuika, stampede and nurion are currently available"}
 
 # Load virtual environment
 if [[ $2 == "maui" ]]; then
@@ -9,9 +9,13 @@ if [[ $2 == "maui" ]]; then
     export PYTHONPATH=${env_path}/virt_envs/python3_maui/lib/python3.6/site-packages/:$PYTHONPATH
 elif [[ $2 == "mahuika" ]]; then
     source ${env_path}/workflow/install_workflow/helper_functions/activate_mahuika_python3_virtenv.sh ${env_path}/virt_envs/python3_mahuika
+elif [[ $2 == "stampede" ]]; then
+    source ${env_path}/workflow/install_workflow/helper_functions/activate_stampede_python3_virtenv.sh ${env_path}/virt_envs/python3_stampede
+ elif [[ $2 == "nurion" ]]; then
+    source ${env_path}/workflow/install_workflow/helper_functions/activate_nurion_python3_virtenv.sh ${env_path}/virt_envs/python3_nurion
 else
     echo "$2, invalid HPC, Quitting!"
-    exit
+    # exit
 fi
 
 # PYTHONPATH for workflow

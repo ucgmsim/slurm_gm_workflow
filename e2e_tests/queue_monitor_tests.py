@@ -12,10 +12,10 @@ import sqlite3 as sql
 
 import qcore.constants as const
 import qcore.simulation_structure as sim_struct
+from qcore.shared import exe
 from scripts.cybershake.add_to_mgmt_queue import add_to_queue
 from scripts.management import create_mgmt_db
 from scripts.management.db_helper import connect_db_ctx
-from shared_workflow.shared_automated_workflow import exe
 from e2e_tests.E2ETests import NonBlockingStreamReader, Error
 
 
@@ -166,7 +166,7 @@ class QueueMonitorStressTest(object):
         sleep_time: int
             Time (in seconds) between progress checks
         """
-        submit_cmd = "python3 {} {} --sleep_time 2".format(
+        submit_cmd = "python {} {} --sleep_time 2".format(
             os.path.join(
                 os.path.dirname(os.path.abspath(__file__)),
                 "../scripts/cybershake/queue_monitor.py",

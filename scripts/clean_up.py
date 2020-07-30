@@ -15,8 +15,8 @@ SUBMISSION_DIR_NAME = "submission_temp"
 SUBMISSION_TAR = "submission.tar"
 SUBMISSION_FILES = [
     "flist_*",
-    "slurm_header.cfg",
-    "machine_env.sh",
+    "*_header.cfg",
+    "machine_*.json",
     "submit.sh",
     "*.template",
     "*py",

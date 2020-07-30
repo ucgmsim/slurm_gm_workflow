@@ -2,11 +2,12 @@ import os
 from datetime import datetime
 
 from jinja2 import Environment, FileSystemLoader
-from qcore import constants as const
-from qcore.config import host
+
+import qcore.constants as const
 from qcore.utils import load_sim_params
+from scripts.schedulers.scheduler_factory import Scheduler
+from shared_workflow.platform_config import platform_config
 from shared_workflow.shared import write_file
-from shared_workflow.shared_defaults import recipe_dir
 
 
 def write_sl_script(
@@ -17,17 +18,14 @@ def write_sl_script(
     header_dict,
     body_template_params,
     command_template_parameters,
-    cmd_args,
     add_args={},
 ):
     params = load_sim_params(os.path.join(sim_dir, "sim_params.yaml"))
     common_header_dict = {
-        "template_dir": recipe_dir,
-        "memory": const.DEFAULT_MEMORY,
+        "template_dir": platform_config[const.PLATFORM_CONFIG.TEMPLATES_DIR.name],
+        "memory": platform_config[const.PLATFORM_CONFIG.DEFAULT_MEMORY.name],
         "exe_time": const.timestamp,
-        "version": "slurm",
-        "account": cmd_args.account,
-        "target_host": cmd_args.machine,
+        "version": platform_config[const.PLATFORM_CONFIG.SCHEDULER.name],
         "write_directory": write_directory,
     }
     common_template_params = {
@@ -48,13 +46,19 @@ def write_sl_script(
 
     (template_name, template_params) = body_template_params
     common_template_params.update(template_params)
-    body = generate_context(recipe_dir, template_name, common_template_params)
+    body = generate_context(
+        platform_config[const.PLATFORM_CONFIG.TEMPLATES_DIR.name],
+        template_name,
+        common_template_params,
+    )
 
     script_name = os.path.abspath(
         os.path.join(
             write_directory,
-            "{}_{}.sl".format(
-                script_prefix, datetime.now().strftime(const.TIMESTAMP_FORMAT)
+            "{}_{}.{}".format(
+                script_prefix,
+                datetime.now().strftime(const.TIMESTAMP_FORMAT),
+                Scheduler.get_scheduler().SCRIPT_EXTENSION,
             ),
         )
     )
@@ -102,53 +106,33 @@ def generate_context(simulation_dir, template_path, parameter_dict):
 
 def resolve_header(
     template_dir,
-    account,
-    n_tasks,
     wallclock_limit,
     job_name,
     version,
     memory,
     exe_time,
     job_description,
-    partition=None,
     additional_lines="",
-    template_path="slurm_header.cfg",
-    target_host=host,
-    mail="test@test.com",
+    template_path=None,
     write_directory=".",
+    platform_specific_args={},
 ):
-    if partition is None:
-        partition = get_partition(target_host, convert_time_to_hours(wallclock_limit))
+    if template_path is None:
+        template_path = platform_config[const.PLATFORM_CONFIG.HEADER_FILE.name]
 
     j2_env = Environment(loader=FileSystemLoader(template_dir), trim_blocks=True)
     header = j2_env.get_template(template_path).render(
         version=version,
         job_description=job_description,
         job_name=job_name,
-        account=account,
-        n_tasks=n_tasks,
         wallclock_limit=wallclock_limit,
-        mail=mail,
         memory=memory,
         additional_lines=additional_lines,
         exe_time=exe_time,
-        partition=partition,
         write_dir=write_directory,
+        **platform_specific_args,
     )
     return header
-
-
-def get_partition(machine, core_hours=None):
-    if machine == const.HPC.maui.value:
-        partition = "nesi_research"
-    elif machine == const.HPC.mahuika.value:
-        if core_hours and core_hours < 6:
-            partition = "large"
-        else:
-            partition = "large"
-    else:
-        partition = ""
-    return partition
 
 
 def convert_time_to_hours(time_str):

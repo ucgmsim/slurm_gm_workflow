@@ -11,12 +11,15 @@ from qcore.config import host
 import qcore.constants as const
 from qcore.qclogging import get_basic_logger
 import qcore.simulation_structure as sim_struct
-from qcore.utils import DotDictify
 
 from estimation.estimate_wct import est_IM_chours_single, EstModel
-from shared_workflow.load_config import load
+from scripts.schedulers.scheduler_factory import Scheduler
+from shared_workflow.platform_config import (
+    platform_config,
+    get_platform_node_requirements,
+)
 from shared_workflow.shared import set_wct, confirm
-from shared_workflow.shared_automated_workflow import submit_sl_script
+from shared_workflow.shared_automated_workflow import submit_script_to_scheduler
 from shared_workflow.shared_template import write_sl_script
 
 # from IM_calculation.Advanced_IM import advanced_IM_factory
@@ -52,14 +55,18 @@ DEFAULT_OPTIONS = {
     # Header
     SlHdrOptConsts.job_name_prefix.value: "sim_im_calc",
     SlHdrOptConsts.description.value: "Calculates intensity measures.",
-    SlHdrOptConsts.account.value: const.DEFAULT_ACCOUNT,
+    SlHdrOptConsts.account.value: platform_config[
+        const.PLATFORM_CONFIG.DEFAULT_ACCOUNT.name
+    ],
     SlHdrOptConsts.additional.value: "#SBATCH --hint=nomultithread",
     SlHdrOptConsts.memory.value: "2G",
     SlHdrOptConsts.n_tasks.value: 1,
     SlHdrOptConsts.version.value: "slurm",
     # Body
     SlBodyOptConsts.component.value: const.Components.cgeom.str_value,
-    SlBodyOptConsts.n_procs.value: const.IM_CALC_DEFAULT_N_CORES,
+    SlBodyOptConsts.n_procs.value: platform_config[
+        const.PLATFORM_CONFIG.IM_CALC_DEFAULT_N_CORES.name
+    ],
     SlBodyOptConsts.extended.value: False,
     SlBodyOptConsts.simple_out.value: True,
     "auto": False,
@@ -106,10 +113,9 @@ def submit_im_calc_slurm(
     )
 
     if est_model is None:
-        workflow_config = load(
-            os.path.dirname(os.path.realpath(__file__)), "workflow_config.json"
+        est_model = os.path.join(
+            platform_config[const.PLATFORM_CONFIG.ESTIMATION_MODELS_DIR.name], "IM"
         )
-        est_model = os.path.join(workflow_config["estimation_models_dir"], "IM")
 
     # Get wall clock estimation
     logger.info(
@@ -138,9 +144,10 @@ def submit_im_calc_slurm(
             fault_name,
         ),
         "exe_time": const.timestamp,
-        "target_host": options_dict["machine"],
         "write_directory": options_dict["write_directory"],
-        "n_tasks": options_dict[SlHdrOptConsts.n_tasks.value],
+        "platform_specific_args": get_platform_node_requirements(
+            options_dict[SlHdrOptConsts.n_tasks.value]
+        ),
         "job_description": options_dict[SlHdrOptConsts.description.value],
         # TODO: this logic may need update along with adv_im_est_model
         SlHdrOptConsts.additional.value: options_dict[SlHdrOptConsts.additional.value]
@@ -206,27 +213,22 @@ def submit_im_calc_slurm(
         header_dict,
         body_template_params,
         command_template_parameters,
-        DotDictify(
-            {
-                "account": options_dict[SlHdrOptConsts.account.value],
-                "machine": options_dict["machine"],
-            }
-        ),
     )
 
     submit_yes = (
         True if options_dict["auto"] else confirm("Also submit the job for you?")
     )
 
-    submit_sl_script(
-        script_file_path,
-        proc_type.value,
-        sim_struct.get_mgmt_db_queue(params.mgmt_db_location),
-        os.path.splitext(os.path.basename(params.srf_file))[0],
-        submit_yes=submit_yes,
-        target_machine=options_dict["machine"],
-        logger=logger,
-    )
+    if submit_yes:
+        submit_script_to_scheduler(
+            script_file_path,
+            proc_type.value,
+            sim_struct.get_mgmt_db_queue(params.mgmt_db_location),
+            sim_dir,
+            os.path.splitext(os.path.basename(params.srf_file))[0],
+            target_machine=options_dict["machine"],
+            logger=logger,
+        )
 
     return script_file_path
 
@@ -260,7 +262,7 @@ if __name__ == "__main__":
         "--n_procs",
         type=int,
         help="Number of processes to use",
-        default=const.IM_CALC_DEFAULT_N_CORES,
+        default=platform_config[const.PLATFORM_CONFIG.IM_CALC_DEFAULT_N_CORES.name],
     )
     parser.add_argument(
         "-e",
@@ -316,5 +318,8 @@ if __name__ == "__main__":
     # )
 
     args = parser.parse_args()
+
+    # The name parameter is only used to check user tasks in the queue monitor
+    Scheduler.initialise_scheduler("", args.account)
 
     main(args)

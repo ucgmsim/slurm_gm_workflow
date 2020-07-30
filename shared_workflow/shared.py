@@ -31,20 +31,6 @@ def write_to_py(pyfile, vardict):
                 fp.write("%s=%s\n" % (key, value))
 
 
-def par_value(variable):
-    """reads a parameter from the parameters file (e3d.par)
-    should not be necessary as you can just 'from params import *' (params.py)
-    """
-    result = ""
-    par_handle = open("e3d.par", "r")
-    for line in par_handle:
-        if line.startswith(variable + "="):
-            # keep going and get the last result
-            result = line
-    par_handle.close()
-    return "".join(result.split("=")[1:]).rstrip("\n")
-
-
 def get_stations(source_file, locations=False):
     """returns a list of stations
     sample line in source file:

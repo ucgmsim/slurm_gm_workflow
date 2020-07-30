@@ -18,10 +18,11 @@ import sqlite3 as sql
 from pandas.util.testing import assert_frame_equal
 
 from scripts.management.db_helper import connect_db_ctx
-from scripts.management.MgmtDB import SlurmTask
-from shared_workflow.shared_automated_workflow import exe
+from scripts.management.MgmtDB import SchedulerTask
 import qcore.constants as const
 import qcore.simulation_structure as sim_struct
+from qcore.shared import non_blocking_exe, exe
+from scripts.schedulers.scheduler_factory import Scheduler
 
 
 def get_sim_dirs(runs_dir):
@@ -230,7 +231,7 @@ class E2ETests(object):
             os.path.dirname(os.path.abspath(__file__)),
             "../scripts/cybershake/install_cybershake.py",
         )
-        cmd = "python3 {} {} {} {} --seed {} --stat_file_path {}".format(
+        cmd = "python {} {} {} {} --seed {} --stat_file_path {}".format(
             script_path,
             self.stage_dir,
             os.path.join(
@@ -320,7 +321,7 @@ class E2ETests(object):
         sleep_time: int
             Time (in seconds) between progress checks
         """
-        submit_cmd = "python3 {} {} {} {} --sleep_time 2".format(
+        submit_cmd = "python {} {} {} {} --sleep_time 2".format(
             os.path.join(
                 os.path.dirname(os.path.abspath(__file__)),
                 "../scripts/cybershake/run_cybershake.py",
@@ -343,12 +344,12 @@ class E2ETests(object):
             ]
 
         def run_wrapper(command: str):
-            p_submit = exe(
+            p_submit = non_blocking_exe(
                 command,
                 debug=False,
-                non_blocking=True,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
+                encoding="utf-8",
             )
             self._processes.append(p_submit)
             p_submit_out_nbsr = NonBlockingStreamReader(p_submit.stdout)
@@ -395,9 +396,11 @@ class E2ETests(object):
                         laps_till_restart = get_laps_till_restart()
 
                 try:
-                    total_count, comp_count, failed_count = (
-                        self.check_mgmt_db_progress()
-                    )
+                    (
+                        total_count,
+                        comp_count,
+                        failed_count,
+                    ) = self.check_mgmt_db_progress()
                     if not self.check_completed():
                         return False
                 except sql.OperationalError as ex:
@@ -476,7 +479,7 @@ class E2ETests(object):
                     "for {} and process type {}".format(entry[1], entry[2], entry[0])
                 )
                 self.canceled_running.append(str(entry[1]))
-                out, err = exe("scancel -v {}".format(entry[1]), debug=False)
+                out, err = Scheduler.get_scheduler().cancel_job(entry[1])
 
                 print("Scancel out: ", out, err)
                 if "error" not in out.lower() and "error" not in err.lower():
@@ -494,7 +497,7 @@ class E2ETests(object):
                 "WHERE proc_type <=6 AND proc_type <> 2 AND proc_type <> 3 AND status != 4"
             ).fetchall()
 
-        entries = [SlurmTask(*entry) for entry in entries]
+        entries = [SchedulerTask(*entry) for entry in entries]
 
         for entry in entries:
             if (
@@ -554,7 +557,7 @@ class E2ETests(object):
             cur_df = pd.read_csv(im_csv)
 
             try:
-                assert_frame_equal(cur_df, bench_df)
+                assert_frame_equal(cur_df, bench_df, atol=1e-04, rtol=1e-03)
             except AssertionError:
                 self.errors.append(
                     Error(

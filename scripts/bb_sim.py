@@ -292,7 +292,7 @@ if __name__ == "__main__":
                 for a in [i, f, s, bb_stations]:
                     if a is bb_stations:
                         out.seek(HEAD_SIZE)
-                    assert np.min(np.fromfile(out, dtype=a.dtype, count=a.size) == a)
+                    assert np.all(np.fromfile(out, dtype=a.dtype, count=a.size) == a)
             else:
                 i.tofile(out)
                 f.tofile(out)
@@ -325,7 +325,7 @@ if __name__ == "__main__":
         except IOError:
             # file not created yet
             return
-        if os.stat(args.out_file).st_size != file_size:
+        if os.stat(args.out_file).st_size != file_size or len(ckpoints) == 0:
             # file size is incorrect (probably different simulation)
             return
         if np.min(ckpoints):
