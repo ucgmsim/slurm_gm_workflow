@@ -1,6 +1,8 @@
 import inspect
 import os
 
+import pytest
+
 from qcore.utils import load_sim_params as mocked_load_sim_params
 from shared_workflow.shared import set_wct as mocked_set_wct
 
@@ -9,6 +11,7 @@ from testing.test_common_set_up import set_up, get_input_params, get_fault_from_
 import scripts.submit_hf
 
 
+@pytest.mark.usefixtures("init_scheduler")
 def test_main(set_up, mocker):
     """No return value. Just check that it runs without crashing"""
     function = "main"
@@ -21,12 +24,6 @@ def test_main(set_up, mocker):
     mocker.patch(
         "scripts.submit_hf.est.est_HF_chours_single",
         lambda *args, **kwargs: (2, 0.05, 40),
-    )
-    mocker.patch(
-        "shared_workflow.shared_template.recipe_dir",
-        os.path.join(
-            os.path.dirname(os.path.realpath(__file__)), "..", "..", "templates"
-        ),
     )
 
     for root_path, realisation in set_up:

@@ -4,7 +4,6 @@
 # must be run with sbatch plot_ts.sl [xyts file path] [srf file path] [output ts file path] [management database location] [realization name]
 
 #SBATCH --job-name=plot_ts
-#SBATCH --account=nesi00213
 #SBATCH --time=01:30:00
 #SBATCH --cpus-per-task=8
 

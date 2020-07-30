@@ -19,7 +19,6 @@ before_install:
   - wget $REMOTESOURCE/PangopangoF29_HYP01-10_S1244.zip
 install:
   - unzip -q PangopangoF29_HYP01-10_S1244.zip
-  - cp $BUILDDIR/ucgmsim/slurm_gm_workflow/sample0/AdditionalData/workflow_config.json $BUILDDIR/ucgmsim/slurm_gm_workflow/scripts/
   - cd $BUILDDIR/
   - unzip -q SGMW_bins.zip
   - unzip -q SGMW_usr_lib.zip

@@ -74,7 +74,7 @@ done
 # This is done by attempting to load them into LFSeis which will check them
 if [[ $rlog_check == 0 ]];
 then
-    python3 $gmsim/workflow/scripts/test_lf_seis.py ../OutBin
+    python $gmsim/workflow/scripts/test_lf_seis.py ../OutBin
     seisIntegrity=$?
 fi
 

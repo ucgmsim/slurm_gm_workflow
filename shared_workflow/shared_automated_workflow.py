@@ -3,19 +3,15 @@ Shared functions only used by the automated workflow
 """
 import json
 import os
-import shlex
-import subprocess
-import sys
 from datetime import datetime
 from logging import Logger
-from subprocess import Popen, PIPE
 from typing import List
 
 import qcore.constants as const
-from qcore.config import host
 from qcore.utils import load_yaml
 from scripts.management.MgmtDB import MgmtDB
 from qcore.qclogging import get_basic_logger, NOPRINTCRITICAL
+from scripts.schedulers.scheduler_factory import Scheduler
 
 ALL = "ALL"
 ONCE = "ONCE"
@@ -23,86 +19,38 @@ ONCE_PATTERN = "%_REL01"
 NONE = "NONE"
 
 
-def get_queued_tasks(user=None, machine=const.HPC.maui):
-    if user is not None:
-        cmd = "squeue -A {} -o '%A %t' -M {} -u {}".format(
-            const.DEFAULT_ACCOUNT, machine.value, user
-        )
-    else:
-        cmd = "squeue -A {} -o '%A %t' -M {}".format(
-            const.DEFAULT_ACCOUNT, machine.value
-        )
-    process = Popen(shlex.split(cmd), stdout=PIPE, encoding="utf-8")
-    (output, err) = process.communicate()
-    process.wait()
-    try:
-        header = output.split("\n")[1]
-    except:
-        raise EnvironmentError(
-            "squeue did not return expected output. Ignoring for this iteration. Actual output: {}".format(
-                output
-            )
-        )
-    else:
-        if header != "JOBID ST":
-            raise EnvironmentError(
-                "squeue did not return expected output. Ignoring for this iteration."
-            )
-    output_list = list(filter(None, output.split("\n")[1:]))
-    return output_list
-
-
-def submit_sl_script(
+def submit_script_to_scheduler(
     script: str,
     proc_type: int,
     queue_folder: str,
+    sim_dir: str,
     run_name: str,
-    submit_yes: bool = False,
     target_machine: str = None,
     logger: Logger = get_basic_logger(),
 ):
-    """Submits the slurm script and updates the management db"""
-    if submit_yes:
-        logger.debug("Submitting {} on machine {}".format(script, target_machine))
-        if target_machine and target_machine != host:
-            res = exe(
-                "sbatch --export=CUR_ENV,CUR_HPC -M {} {}".format(
-                    target_machine, script
-                ),
-                debug=False,
-            )
-        else:
-            res = exe("sbatch {}".format(script), debug=False)
-        if len(res[1]) == 0 or res[0].startswith("Submitted"):
-            logger.debug("Successfully submitted task to slurm")
-            # no errors, return the job id
-            return_words = res[0].split()
-            job_index = return_words.index("job")
-            jobid = return_words[job_index + 1]
-            try:
-                int(jobid)
-            except ValueError:
-                logger.critical(
-                    "{} is not a valid jobid. Submitting the "
-                    "job most likely failed. The return message was {}".format(
-                        jobid, res[0]
-                    )
-                )
-                sys.exit()
+    """
+    Submits the slurm script and updates the management db.
+    Calling the scheduler submitter may result in an error being raised.
+    This is not caught in order to get immediate attention of broken runs.
+    :param sim_dir:
+    :param script: The location of the script to be run
+    :param proc_type: The process type of the job being run
+    :param queue_folder: Where the folder for database updates is
+    :param run_name: The name of the realisation
+    :param target_machine: The
+    :param logger:
+    :return:
+    """
+    job_id = Scheduler.get_scheduler().submit_job(sim_dir, script, target_machine)
 
-            add_to_queue(
-                queue_folder,
-                run_name,
-                proc_type,
-                const.Status.queued.value,
-                job_id=jobid,
-                logger=logger,
-            )
-            return jobid
-        else:
-            logger.error("An error occurred during job submission: {}".format(res[1]))
-    else:
-        logger.info("User chose to submit the job manually")
+    add_to_queue(
+        queue_folder,
+        run_name,
+        proc_type,
+        const.Status.queued.value,
+        job_id=job_id,
+        logger=logger,
+    )
 
 
 def add_to_queue(
@@ -158,44 +106,6 @@ def add_to_queue(
         logger.critical("File {} did not successfully write".format(filename))
     else:
         logger.debug("Successfully wrote task update file")
-
-
-def exe(
-    cmd,
-    debug=True,
-    shell=False,
-    stdout=subprocess.PIPE,
-    stderr=subprocess.PIPE,
-    non_blocking=False,
-):
-    """cmd is either a str or a list. but it will be processed as a list.
-    this is to accommodate the default shell=False. (for security reason)
-    If we wish to support a simple shell command like "echo hello"
-    without switching on shell=True, cmd should be given as a list.
-    If non_blocking is set, then the Popen instance is returned instead of the
-    output and error.
-    """
-    if type(cmd) == str:
-        cmd = cmd.split(" ")
-
-    if debug:
-        print(" ".join(cmd))
-
-    p = subprocess.Popen(
-        cmd, shell=shell, stdout=stdout, stderr=stderr, encoding="utf-8"
-    )
-    if non_blocking:
-        return p
-
-    out, err = p.communicate()
-    if debug:
-        if out:
-            print(out)
-        if err:
-            print(err, file=sys.stderr)
-            print(err)  # also printing to stdout (syncing err msg to cmd executed)
-
-    return out, err
 
 
 def check_mgmt_queue(

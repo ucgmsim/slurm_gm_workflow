@@ -4,7 +4,6 @@
 # must be run with sbatch im_plot.sl [imcalc csv path] [station file path] [output xyz dir] [srf path] [model params path] [realisation name] [management database location]
 
 #SBATCH --job-name=im_plot
-#SBATCH --account=nesi00213
 #SBATCH --time=00:30:00
 #SBATCH --cpus-per-task=1
 

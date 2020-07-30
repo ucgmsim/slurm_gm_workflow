@@ -2,6 +2,8 @@ import inspect
 import io
 import os
 
+import pytest
+
 from shared_workflow import shared_template
 from testing.test_common_set_up import (
     get_input_params,
@@ -11,28 +13,22 @@ from testing.test_common_set_up import (
 )
 
 
-def test_get_partition():
-    assert shared_template.get_partition("maui") == "nesi_research"
-    assert shared_template.get_partition("mahuika") == "large"
-
-
 def test_convert_time_to_hours():
     assert shared_template.convert_time_to_hours("00:10:00") == 10 / 60.0
     assert shared_template.convert_time_to_hours("01:00:00") == 1
 
 
+@pytest.mark.usefixtures("init_scheduler")
 def test_write_sl_script(set_up, mocker):
     func_name = "write_sl_script"
     func = shared_template.write_sl_script
     params = inspect.getfullargspec(func).args
-    mocker.patch(
-        "shared_workflow.shared_template.recipe_dir",
-        os.path.join(
-            os.path.dirname(os.path.realpath(__file__)), "..", "..", "templates"
-        ),
-    )
     for root_path, realisation in set_up:
         input_params = get_input_params(root_path, func_name, params)
+
+        input_params[4]["platform_specific_args"] = {"n_tasks": input_params[4]["n_tasks"]}
+        del input_params[4]["n_tasks"]
+        input_params[6]["run_command"] = "srun"
 
         slurm_script = io.StringIO("")
         mocker.patch(
@@ -90,6 +86,8 @@ def test_resolve_header(set_up):
         input_params[0] = os.path.join(
             os.path.dirname(os.path.realpath(__file__)), "..", "..", "templates"
         )
+        input_params[8] = "nesi_header.cfg"
+        input_params.append({"n_tasks": 40})
         test_output = func(*input_params)
         bench_output = get_bench_output(root_path, func_name)
         for test_line, bench_line in zip(
