@@ -111,9 +111,7 @@ class Pbs(AbstractScheduler):
     def cancel_job(self, job_id: int, target_machine=None) -> None:
         return self._run_command_and_wait(cmd=[f"qdel {job_id}"], shell=True)
 
-    def check_queues(
-        self, user: bool = False, target_machine=None
-    ) -> List[str]:
+    def check_queues(self, user: bool = False, target_machine=None) -> List[str]:
         self.logger.debug(
             f"Checking queues with raw input of machine {target_machine} and user {user}"
         )
