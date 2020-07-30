@@ -168,7 +168,7 @@ def install_simulation(
 
     if sim_params_file is not None and os.path.isfile(sim_params_file):
         with open(sim_params_file) as spf:
-            extra_sims_params = yaml.load(spf)
+            extra_sims_params = yaml.safe_load(spf)
         for key, value in extra_sims_params.items():
             # If the key exists in both dictionaries and maps to a dictionary in both, then merge them
             if (
