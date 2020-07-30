@@ -14,9 +14,13 @@ import qcore.simulation_structure as sim_struct
 
 import estimation.estimate_wct as est
 import scripts.set_runparams as set_runparams
-from shared_workflow import load_config
+from scripts.schedulers.scheduler_factory import Scheduler
+from shared_workflow.platform_config import (
+    platform_config,
+    get_platform_node_requirements,
+)
 from shared_workflow.shared import confirm, set_wct
-from shared_workflow.shared_automated_workflow import submit_sl_script
+from shared_workflow.shared_automated_workflow import submit_script_to_scheduler
 from shared_workflow.shared_template import write_sl_script
 
 
@@ -28,10 +32,6 @@ def main(
     params = utils.load_sim_params(os.path.join(args.rel_dir, "sim_params.yaml"))
 
     submit_yes = True if args.auto else confirm("Also submit the job for you?")
-
-    workflow_config = load_config.load(
-        os.path.dirname(os.path.realpath(__file__)), "workflow_config.json"
-    )
 
     logger.debug("params.srf_file {}".format(params.srf_file))
     # Get the srf(rup) name without extensions
@@ -47,7 +47,9 @@ def main(
         model = (
             est_model
             if est_model is not None
-            else os.path.join(workflow_config["estimation_models_dir"], "LF")
+            else os.path.join(
+                platform_config[const.PLATFORM_CONFIG.ESTIMATION_MODELS_DIR.name], "LF"
+            )
         )
         est_core_hours, est_run_time, est_cores = est.est_LF_chours_single(
             int(params.nx), int(params.ny), int(params.nz), nt, args.ncore, model, True
@@ -84,21 +86,19 @@ def main(
         )
 
         set_runparams.create_run_params(
-            sim_dir,
-            workflow_config=workflow_config,
-            steps_per_checkpoint=steps_per_checkpoint,
-            logger=logger,
+            sim_dir, steps_per_checkpoint=steps_per_checkpoint, logger=logger
         )
 
         header_dict = {
-            "n_tasks": est_cores,
             "wallclock_limit": wct,
             "job_name": "run_emod3d.{}".format(srf_name),
             "job_description": "emod3d slurm script",
             "additional_lines": "#SBATCH --hint=nomultithread",
+            "platform_specific_args": get_platform_node_requirements(est_cores),
         }
 
         command_template_parameters = {
+            "run_command": platform_config[const.PLATFORM_CONFIG.RUN_COMMAND.name],
             "emod3d_bin": binary_path,
             "lf_sim_dir": lf_sim_dir,
         }
@@ -114,18 +114,17 @@ def main(
             header_dict,
             body_template_params,
             command_template_parameters,
-            args,
         )
-
-        submit_sl_script(
-            script_file_path,
-            const.ProcessType.EMOD3D.value,
-            sim_struct.get_mgmt_db_queue(params.mgmt_db_location),
-            srf_name,
-            submit_yes=submit_yes,
-            target_machine=args.machine,
-            logger=logger,
-        )
+        if submit_yes:
+            submit_script_to_scheduler(
+                script_file_path,
+                const.ProcessType.EMOD3D.value,
+                sim_struct.get_mgmt_db_queue(params.mgmt_db_location),
+                params.sim_dir,
+                srf_name,
+                target_machine=args.machine,
+                logger=logger,
+            )
 
 
 if __name__ == "__main__":
@@ -133,9 +132,17 @@ if __name__ == "__main__":
         description="Create (and submit if specified) the slurm script for LF"
     )
 
-    parser.add_argument("--ncore", type=int, default=const.LF_DEFAULT_NCORES)
+    parser.add_argument(
+        "--ncore",
+        type=int,
+        default=platform_config[const.PLATFORM_CONFIG.LF_DEFAULT_NCORES.name],
+    )
     parser.add_argument("--auto", nargs="?", type=str, const=True)
-    parser.add_argument("--account", type=str, default=const.DEFAULT_ACCOUNT)
+    parser.add_argument(
+        "--account",
+        type=str,
+        default=platform_config[const.PLATFORM_CONFIG.DEFAULT_ACCOUNT.name],
+    )
     parser.add_argument("--srf", type=str, default=None)
     parser.add_argument(
         "--machine",
@@ -153,5 +160,8 @@ if __name__ == "__main__":
         "--rel_dir", default=".", type=str, help="The path to the realisation directory"
     )
     args = parser.parse_args()
+
+    # The name parameter is only used to check user tasks in the queue monitor
+    Scheduler.initialise_scheduler("", args.account)
 
     main(args)

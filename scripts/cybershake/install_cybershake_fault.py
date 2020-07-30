@@ -22,9 +22,9 @@ from qcore.constants import (
     FaultParams,
     ROOT_DEFAULTS_FILE_NAME,
     VM_PARAMS_FILE_NAME,
-    HF_DEFAULT_SEED,
-    HPC,
     ProcessType,
+    PLATFORM_CONFIG,
+    HF_DEFAULT_SEED,
 )
 from qcore.qclogging import get_basic_logger, NOPRINTCRITICAL
 
@@ -34,9 +34,9 @@ from shared_workflow.install_shared import (
     generate_fd_files,
     dump_all_yamls,
 )
-from shared_workflow.shared_defaults import recipe_dir
 
 # from shared_workflow.shared_template import generate_command
+from shared_workflow.platform_config import platform_config, HPC
 
 
 def main():
@@ -74,17 +74,13 @@ def main():
     )
 
 
-def gen_args_cmd(
-    process: ProcessType, sim_dir, command_template, template_parameters, add_args={}
-):
+def gen_args_cmd(command_template, template_parameters, add_args={}):
     # this function is adapted from generate_command from shared_workflow.shared_template
-    command_parts = []
-
     command_parts = command_template.format(**template_parameters).split()
     command_parts_copy = list(command_parts)
     # remove srun, python, and *.py from the command
     for i in command_parts:
-        if i in ["srun", "python"] or i.endswith(".py"):
+        if i in ["srun", "mpirun", "ibrun", "python"] or i.endswith(".py"):
             command_parts_copy.remove(i)
     command_parts = command_parts_copy
 
@@ -113,11 +109,20 @@ def install_fault(
 ):
 
     config_dict = utils.load_yaml(
-        os.path.join(recipe_dir, "gmsim", version, ROOT_DEFAULTS_FILE_NAME)
+        os.path.join(
+            platform_config[PLATFORM_CONFIG.TEMPLATES_DIR.name],
+            "gmsim",
+            version,
+            ROOT_DEFAULTS_FILE_NAME,
+        )
     )
     # Load variables from cybershake config
 
-    v1d_full_path = config_dict["v_1d_mod"]
+    v1d_full_path = os.path.join(
+        platform_config[PLATFORM_CONFIG.VELOCITY_MODEL_DIR.name],
+        "Mod-1D",
+        config_dict.get("v_1d_mod"),
+    )
     site_v1d_dir = config_dict.get("site_v1d_dir")
     hf_stat_vs_ref = config_dict.get("hf_stat_vs_ref")
 
@@ -187,7 +192,6 @@ def install_fault(
         ) = install_simulation(
             version=version,
             sim_dir=sim_dir,
-            event_name=event_name,
             run_name=fault_name,
             run_dir=sim_root_dir,
             vel_mod_dir=vel_mod_dir,
@@ -275,14 +279,10 @@ def install_fault(
         sys.argv[0] = "hf_sim.py"
 
         command_template, add_args = hf_gen_command_template(
-            sim_params, list(HPC)[0].value, seed
+            sim_params, list(HPC)[0].name, seed
         )
         run_command = gen_args_cmd(
-            ProcessType.HF,
-            sim_params.sim_dir,
-            ProcessType.HF.command_template,
-            command_template,
-            add_args,
+            ProcessType.HF.command_template, command_template, add_args
         )
         hf_args_parser(cmd=run_command)
 
@@ -291,11 +291,7 @@ def install_fault(
 
         command_template, add_args = bb_gen_command_template(sim_params)
         run_command = gen_args_cmd(
-            ProcessType.BB,
-            sim_params.sim_dir,
-            ProcessType.BB.command_template,
-            command_template,
-            add_args,
+            ProcessType.BB.command_template, command_template, add_args
         )
         bb_args_parser(cmd=run_command)
         # change back, to prevent unexpected error

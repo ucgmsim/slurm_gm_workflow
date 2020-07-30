@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 """Script for continuously updating the slurm mgmt db from the queue."""
 import logging
-import signal
-import subprocess
 import os
 import json
 import urllib
@@ -10,22 +8,23 @@ import argparse
 import time
 from logging import Logger
 from typing import List, Dict
-from datetime import datetime, timedelta
+from datetime import datetime
+
+from qcore.qclogging import VERYVERBOSE
 
 import qcore.constants as const
 import qcore.simulation_structure as sim_struct
 from qcore import qclogging
-from scripts.cybershake.auto_submit import JOB_RUN_MACHINE
-from scripts.management.MgmtDB import MgmtDB, SlurmTask
-from shared_workflow.shared_automated_workflow import get_queued_tasks, check_mgmt_queue
+from scripts.management.MgmtDB import MgmtDB, SchedulerTask
+from scripts.schedulers.scheduler_factory import Scheduler
+from shared_workflow.platform_config import HPC
+from shared_workflow.shared_automated_workflow import check_mgmt_queue
 from metadata.log_metadata import store_metadata
 
 # Have to include sub-seconds, as clean up can run sub one second.
 
 QUEUE_MONITOR_LOG_FILE_NAME = "queue_monitor_log_{}.txt"
 DEFAULT_N_MAX_RETRIES = 2
-
-SLURM_TO_STATUS_DICT = {"R": 3, "PD": 2, "CG": 3}
 
 keepAlive = True
 
@@ -55,7 +54,7 @@ def get_queue_entry(
         )
         return None
 
-    return SlurmTask(
+    return SchedulerTask(
         run_name=os.path.basename(entry_file).split(".")[1],
         proc_type=data_dict[MgmtDB.col_proc_type],
         status=data_dict[MgmtDB.col_status],
@@ -64,57 +63,10 @@ def get_queue_entry(
     )
 
 
-def sacct_metadata(db_running_task: SlurmTask, task_logger: Logger, root_folder: str):
-    cmd = "sacct -n -X -j {} -M {} -o 'jobid%10,jobname%35,Submit,Start,End,NCPUS,CPUTimeRAW%18,State,Nodelist%60'"
-    output = (
-        subprocess.check_output(
-            cmd.format(
-                db_running_task.job_id,
-                JOB_RUN_MACHINE[const.ProcessType(db_running_task.proc_type)].value,
-            ),
-            shell=True,
-        )
-        .decode("utf-8")
-        .strip()
-        .split()
-    )
-    # ['578928', 'u-bl689.atmos_main.18621001T0000Z', '2019-08-16T13:05:06', '2019-08-16T13:12:56', '2019-08-16T14:58:28', '1840', '11650880', 'CANCELLED+', 'nid00[166-171,180-196]']
-    try:
-        submit_time, start_time, end_time = [x.replace("T", "_") for x in output[2:5]]
-        n_cores = float(output[5])
-        run_time = float(output[6]) / n_cores
-        status = output[7]
-
-    except:
-        # a special case when a job is cancelled before getting logged in sacct
-        task_logger.warning(
-            "job data cannot be retrieved from sacct. likely the job is cancelled before recording. setting job status to CANCELLED"
-        )
-        submit_time, start_time, end_time = [0] * 3
-        n_cores = 0.0
-        run_time = 0
-        status = "CANCELLED"
-    sim_dir = sim_struct.get_sim_dir(root_folder, db_running_task.run_name)
-    log_file = os.path.join(sim_dir, "ch_log", "metadata_log.json")
-    # now log metadata
-    store_metadata(
-        log_file,
-        const.ProcessType(db_running_task.proc_type).str_value,
-        {
-            "start_time": start_time,
-            "end_time": end_time,
-            "run_time": run_time,
-            "cores": n_cores,
-            "status": status,
-        },
-        logger=task_logger,
-    )
-
-
 def update_tasks(
     mgmt_queue_entries: List[str],
     squeue_tasks: Dict[str, str],
-    db_running_tasks: List[SlurmTask],
+    db_running_tasks: List[SchedulerTask],
     complete_data: bool,
     task_logger: Logger,
     root_folder: str,
@@ -124,9 +76,7 @@ def update_tasks(
 
     task_logger.debug("Checking running tasks in the db for updates")
     task_logger.debug(
-        "The key value pairs found in squeue are as follows: {}".format(
-            squeue_tasks.items()
-        )
+        f"The key value pairs found in {Scheduler.get_scheduler().QUEUE_NAME} are as follows: {squeue_tasks.items()}"
     )
     for db_running_task in db_running_tasks:
         task_logger.debug("Checking task {}".format(db_running_task))
@@ -136,10 +86,10 @@ def update_tasks(
             task_logger.debug("Found task. It has state {}".format(queue_status))
 
             try:
-                queue_status = SLURM_TO_STATUS_DICT[queue_status]
+                queue_status = Scheduler.get_scheduler().STATUS_DICT[queue_status]
             except KeyError:
                 task_logger.error(
-                    "Failed to recogize state code {}, updating to {}".format(
+                    "Failed to recognize state code {}, updating to {}".format(
                         queue_status, const.Status.unknown.value
                     )
                 )
@@ -156,8 +106,6 @@ def update_tasks(
                         db_running_task.job_id,
                     )
                 )
-            # Do nothing if there is a pending update for
-            # this run & process type combination
             elif not check_mgmt_queue(
                 mgmt_queue_entries,
                 db_running_task.run_name,
@@ -173,7 +121,7 @@ def update_tasks(
                     )
                 )
                 tasks_to_do.append(
-                    SlurmTask(
+                    SchedulerTask(
                         db_running_task.run_name,
                         db_running_task.proc_type,
                         queue_status,
@@ -181,6 +129,10 @@ def update_tasks(
                         None,
                     )
                 )
+            else:
+                # Do nothing if there is a pending update for
+                # this run & process type combination
+                pass
         # Only reset if there is no entry on the mgmt queue for this
         # realisation/proc combination and nothing in the mgmt folder
         elif not check_mgmt_queue(
@@ -191,29 +143,52 @@ def update_tasks(
         ):
             if not complete_data:
                 task_logger.warning(
-                    "Task '{}' not found on squeue or in the management db folder, "
-                    "but errors were encountered when querying squeue. Not resubmitting."
+                    f"Task '{const.ProcessType(db_running_task.proc_type).str_value}' not found on "
+                    f"{Scheduler.get_scheduler().QUEUE_NAME} or in the management db folder, "
+                    f"but errors were encountered when querying {Scheduler.get_scheduler().QUEUE_NAME}. Not resubmitting."
                 )
             else:
                 task_logger.warning(
-                    "Task '{}' on '{}' not found on squeue or in the management db folder; resetting the status "
-                    "to 'created' for resubmission".format(
-                        const.ProcessType(db_running_task.proc_type).str_value,
-                        db_running_task.run_name,
-                    )
+                    f"Task '{const.ProcessType(db_running_task.proc_type).str_value}' on '{db_running_task.run_name}' "
+                    f"not found on {Scheduler.get_scheduler().QUEUE_NAME} or in the management db folder; resetting the status "
+                    "to 'created' for resubmission"
                 )
                 # Add an error
                 tasks_to_do.append(
-                    SlurmTask(
+                    SchedulerTask(
                         db_running_task.run_name,
                         db_running_task.proc_type,
                         const.Status.failed.value,
                         None,
-                        "Disappeared from squeue. Creating a new task.",
+                        f"Disappeared from {Scheduler.get_scheduler().QUEUE_NAME}. Creating a new task.",
                     )
                 )
             # When job failed, we want to log metadata as well
-            sacct_metadata(db_running_task, task_logger, root_folder)
+            (
+                start_time,
+                end_time,
+                run_time,
+                n_cores,
+                status,
+            ) = Scheduler.get_scheduler().get_metadata(db_running_task, task_logger)
+            log_file = os.path.join(
+                sim_struct.get_sim_dir(root_folder, db_running_task.run_name),
+                "ch_log",
+                "metadata_log.json",
+            )
+            # now log metadata
+            store_metadata(
+                log_file,
+                const.ProcessType(db_running_task.proc_type).str_value,
+                {
+                    "start_time": start_time,
+                    "end_time": end_time,
+                    "run_time": run_time,
+                    "cores": n_cores,
+                    "status": status,
+                },
+                logger=task_logger,
+            )
     return tasks_to_do
 
 
@@ -239,30 +214,38 @@ def queue_monitor_loop(
             queue_logger.debug("Set up the sqlite_tmpdir")
 
         # For each hpc get a list of job id and status', and for each pair save them in a dictionary
-        squeue_tasks = {}
-        for hpc in const.HPC:
+        queued_tasks = {}
+        for hpc in HPC:
             try:
-                squeued_tasks = get_queued_tasks(machine=hpc)
+                squeued_tasks = Scheduler.get_scheduler().check_queues(
+                    user=False, target_machine=hpc
+                )
             except EnvironmentError as e:
                 queue_logger.critical(e)
                 queue_logger.critical(
-                    "An error was encountered when attempting to check squeue for HPC {}. "
-                    "Tasks will not be submitted to this HPC until the issue is resolved".format(
-                        hpc
-                    )
+                    f"An error was encountered when attempting to check {Scheduler.get_scheduler().QUEUE_NAME} for HPC {hpc}. "
+                    "Tasks will not be submitted to this HPC until the issue is resolved"
                 )
                 complete_data = False
             else:
                 for task in squeued_tasks:
-                    squeue_tasks[task.split()[0]] = task.split()[1]
+                    queued_tasks[task.split()[0]] = task.split()[1]
 
-        if len(squeue_tasks) > 0:
-            queue_logger.info(
-                "Squeue user tasks: "
-                + ", ".join([" ".join(task) for task in squeue_tasks.items()])
-            )
+        if len(queued_tasks) > 0:
+            if len(queued_tasks) > 200:
+                queue_logger.log(
+                    VERYVERBOSE,
+                    f"{Scheduler.get_scheduler().QUEUE_NAME} tasks: {', '.join([' '.join(task) for task in queued_tasks.items()])}",
+                )
+                queue_logger.info(
+                    f"Over 200 tasks were found in the queue. Check the log for an exact listing of them"
+                )
+            else:
+                queue_logger.info(
+                    f"{Scheduler.get_scheduler().QUEUE_NAME} tasks: {', '.join([' '.join(task) for task in queued_tasks.items()])}"
+                )
         else:
-            queue_logger.debug("No squeue user tasks")
+            queue_logger.debug(f"No {Scheduler.get_scheduler().QUEUE_NAME} tasks")
 
         db_in_progress_tasks = mgmt_db.get_submitted_tasks()
         if len(db_in_progress_tasks) > 0:
@@ -298,13 +281,24 @@ def queue_monitor_loop(
                 )
                 entry_files.remove(file_name)
             else:
-                queue_logger.debug("Adding {} to the list of updates".format(entry))
-                entries.insert(0, entry)
+                if str(entry.job_id) in queued_tasks.keys() and entry.status > 3:
+                    # This will prevent race conditions if the failure/completion state file is made and picked up before the job actually finishes
+                    # Most notabley happens on Kisti
+                    # The queued and running states are allowed
+                    queue_logger.debug(
+                        "Job {} is still running on the HPC, skipping this iteration".format(
+                            entry
+                        )
+                    )
+                    entry_files.remove(file_name)
+                else:
+                    queue_logger.debug("Adding {} to the list of updates".format(entry))
+                    entries.insert(0, entry)
 
         entries.extend(
             update_tasks(
                 entry_files,
-                squeue_tasks,
+                queued_tasks,
                 db_in_progress_tasks,
                 complete_data,
                 queue_logger,

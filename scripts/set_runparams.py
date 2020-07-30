@@ -18,8 +18,8 @@ from qcore.constants import MAXIMUM_EMOD3D_TIMESHIFT_1_VERSION
 from qcore.utils import compare_versions
 from shared_workflow import shared
 from qcore import utils, binary_version, constants
-from shared_workflow import load_config
 from qcore.qclogging import get_basic_logger
+from shared_workflow.platform_config import platform_config
 
 sys.path.append(os.path.abspath(os.path.curdir))
 
@@ -27,22 +27,16 @@ sys.path.append(os.path.abspath(os.path.curdir))
 def create_run_params(
     sim_dir,
     srf_name=None,
-    workflow_config=None,
     steps_per_checkpoint=None,
     logger: Logger = get_basic_logger(),
 ):
     params = utils.load_sim_params(os.path.join(sim_dir, "sim_params.yaml"))
 
-    if workflow_config is None:
-        workflow_config = load_config.load(
-            os.path.dirname(os.path.realpath(__file__)), "workflow_config.json"
-        )
-    global_root = workflow_config["global_root"]
     emod3d_version = params["emod3d"]["emod3d_version"]
     emod3d_filepath = binary_version.get_lf_bin(emod3d_version)
 
     e3d_yaml = os.path.join(
-        workflow_config["templates_dir"],
+        platform_config[constants.PLATFORM_CONFIG.TEMPLATES_DIR.name],
         "gmsim",
         params.version,
         "emod3d_defaults.yaml",
@@ -118,7 +112,6 @@ def create_run_params(
         # other locations
         e3d_dict["wcc_prog_dir"] = emod3d_filepath
         e3d_dict["vel_mod_params_dir"] = params.vel_mod_dir
-        e3d_dict["global_root"] = global_root
         e3d_dict["sim_dir"] = params.sim_dir
         e3d_dict["stat_file"] = params.stat_file
         e3d_dict["grid_file"] = params.GRIDFILE

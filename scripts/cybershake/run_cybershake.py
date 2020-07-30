@@ -12,10 +12,11 @@ from qcore.utils import load_yaml
 import estimation.estimate_wct as est
 from scripts.cybershake import queue_monitor
 from scripts.cybershake.auto_submit import run_main_submit_loop
-from shared_workflow import load_config
-from shared_workflow.shared_defaults import recipe_dir
+from scripts.schedulers.scheduler_factory import Scheduler
+from shared_workflow.platform_config import platform_config, HPC
 
 MASTER_LOG_NAME = "master_log_{}.txt"
+SCHEDULER_LOG_NAME = "scheduler_log_{}.txt"
 WRAPPER_LOG_FILE_NAME = "wrapper_log_{}.txt"
 QUEUE_MONITOR_LOG_FILE_NAME = "queue_monitor_log_{}.txt"
 MASTER_AUTO_SUBMIT_LOG_FILE_NAME = "main_auto_submit_log_{}.txt"
@@ -30,7 +31,6 @@ NONE = "NONE"
 def run_automated_workflow(
     root_folder: str,
     log_directory: str,
-    user: str,
     n_runs: Dict[str, int],
     n_max_retries: int,
     tasks_to_run: List[const.ProcessType],
@@ -48,7 +48,6 @@ def run_automated_workflow(
     may occur, and the task run twice at the same time, resulting in file writing issues.
     :param root_folder: The root directory of the cybershake folder structure
     :param log_directory: The directory the log files are to be placed in
-    :param user: The username of the person running this
     :param n_runs: The maximum number of processes that can be running at once. Note that this will be applied
     individually to each instance of auto_submit and so will effectively be doubled
     :param n_max_retries: The maximum number of times a task can be run before being written off as needing user input
@@ -60,18 +59,21 @@ def run_automated_workflow(
     """
 
     wrapper_logger.info("Loading estimation models")
-    workflow_config = load_config.load()
     lf_est_model = est.load_full_model(
-        join(workflow_config["estimation_models_dir"], "LF"), logger=wrapper_logger
+        join(platform_config[const.PLATFORM_CONFIG.ESTIMATION_MODELS_DIR.name], "LF"),
+        logger=wrapper_logger,
     )
     hf_est_model = est.load_full_model(
-        join(workflow_config["estimation_models_dir"], "HF"), logger=wrapper_logger
+        join(platform_config[const.PLATFORM_CONFIG.ESTIMATION_MODELS_DIR.name], "HF"),
+        logger=wrapper_logger,
     )
     bb_est_model = est.load_full_model(
-        join(workflow_config["estimation_models_dir"], "BB"), logger=wrapper_logger
+        join(platform_config[const.PLATFORM_CONFIG.ESTIMATION_MODELS_DIR.name], "BB"),
+        logger=wrapper_logger,
     )
     im_est_model = est.load_full_model(
-        join(workflow_config["estimation_models_dir"], "IM"), logger=wrapper_logger
+        join(platform_config[const.PLATFORM_CONFIG.ESTIMATION_MODELS_DIR.name], "IM"),
+        logger=wrapper_logger,
     )
 
     bulk_logger = qclogging.get_logger(name="auto_submit_main", threaded=True)
@@ -140,7 +142,6 @@ def run_automated_workflow(
         target=run_main_submit_loop,
         args=(
             root_folder,
-            user,
             n_runs,
             "%",
             tasks_to_run,
@@ -149,7 +150,7 @@ def run_automated_workflow(
         ),
         kwargs={
             "main_logger": bulk_logger,
-            "cycle_timeout": 2 * len(tasks_to_run_with_pattern_and_logger) + 1,
+            "cycle_timeout": 2 * len(tasks_to_run_with_pattern_and_logger) + 2,
         },
     )
     wrapper_logger.info("Created main auto_submit thread")
@@ -180,7 +181,6 @@ def run_automated_workflow(
             )
             run_main_submit_loop(
                 root_folder,
-                user,
                 n_runs,
                 pattern,
                 tasks,
@@ -251,7 +251,10 @@ def main():
         "config_file",
         help="The location of the config file containing everything to be run",
         nargs="?",
-        default=join(recipe_dir, "task_config.yaml"),
+        default=join(
+            platform_config[const.PLATFORM_CONFIG.TEMPLATES_DIR.name],
+            "task_config.yaml",
+        ),
     )
     parser.add_argument(
         "--sleep_time",
@@ -272,7 +275,7 @@ def main():
         nargs="+",
         help="The number of processes each machine can run at once. If a single value is given this is used for all "
         "machines, otherwise one value per machine must be given. The current order is: {}".format(
-            list(x.value for x in const.HPC)
+            list(x.value for x in HPC)
         ),
     )
     parser.add_argument(
@@ -307,23 +310,31 @@ def main():
         log_directory,
         MASTER_LOG_NAME.format(datetime.now().strftime(const.TIMESTAMP_FORMAT)),
     )
+    scheduler_log_file = join(
+        log_directory,
+        SCHEDULER_LOG_NAME.format(datetime.now().strftime(const.TIMESTAMP_FORMAT)),
+    )
 
     qclogging.add_general_file_handler(master_logger, master_log_file)
     qclogging.add_general_file_handler(wrapper_logger, wrapper_log_file)
     wrapper_logger.info("Logger file added")
 
+    scheduler_logger = qclogging.get_logger(name="scheduler", threaded=True)
+    qclogging.add_general_file_handler(scheduler_logger, scheduler_log_file)
+    Scheduler.initialise_scheduler(user=args.user, logger=scheduler_logger)
+
     n_runs = 0
     if args.n_runs is not None:
         if len(args.n_runs) == 1:
-            n_runs = {hpc: args.n_runs[0] for hpc in const.HPC}
+            n_runs = {hpc: args.n_runs[0] for hpc in HPC}
             wrapper_logger.debug(
                 "Using {} as the maximum number of jobs per machine".format(
                     args.n_runs[0]
                 )
             )
-        elif len(args.n_runs) == len(const.HPC):
+        elif len(args.n_runs) == len(HPC):
             n_runs = {}
-            for index, hpc in enumerate(const.HPC):
+            for index, hpc in enumerate(HPC):
                 wrapper_logger.debug(
                     "Setting {} to have at most {} concurrently running jobs".format(
                         hpc, args.n_runs[index]
@@ -333,12 +344,15 @@ def main():
         else:
             incorrect_n_runs = (
                 "You must specify wither one common value for --n_runs, or one "
-                "for each in the following list: {}".format(list(const.HPC))
+                "for each in the following list: {}".format([hpc.name for hpc in HPC])
             )
             wrapper_logger.log(qclogging.NOPRINTCRITICAL, incorrect_n_runs)
             parser.error(incorrect_n_runs)
     else:
-        n_runs = {const.HPC.maui: 12, const.HPC.mahuika: 12}
+        n_runs = {
+            HPC[hpc]: platform_config[const.PLATFORM_CONFIG.DEFAULT_N_RUNS.name][hpc]
+            for hpc in platform_config[const.PLATFORM_CONFIG.AVAILABLE_MACHINES.name]
+        }
     wrapper_logger.debug(
         "Machines will allow up to {} jobs to run simultaneously".format(n_runs)
     )
@@ -348,7 +362,6 @@ def main():
     run_automated_workflow(
         root_directory,
         log_directory,
-        args.user,
         n_runs,
         args.n_max_retries,
         tasks_n,

@@ -10,16 +10,21 @@ from qcore import simulation_structure
 from qcore import utils, shared
 from qcore.config import host
 from qcore.qclogging import get_basic_logger
-from shared_workflow.load_config import load
+from shared_workflow.platform_config import (
+    platform_config,
+    get_platform_node_requirements,
+)
 from shared_workflow.shared import set_wct, confirm, get_hf_nt
-from shared_workflow.shared_automated_workflow import submit_sl_script
+from shared_workflow.shared_automated_workflow import submit_script_to_scheduler
 from shared_workflow.shared_template import write_sl_script
+from scripts.schedulers.scheduler_factory import Scheduler
 
 default_wct = "00:30:00"
 
 
 def gen_command_template(params):
     command_template_parameters = {
+        "run_command": platform_config[const.PLATFORM_CONFIG.RUN_COMMAND.name],
         "outbin_dir": simulation_structure.get_lf_outbin_dir(params.sim_dir),
         "vel_mod_dir": params.vel_mod_dir,
         "hf_bin_path": simulation_structure.get_hf_bin_path(params.sim_dir),
@@ -37,7 +42,7 @@ def main(
     logger: Logger = get_basic_logger(),
 ):
     params = utils.load_sim_params(os.path.join(args.rel_dir, "sim_params.yaml"))
-    ncores = const.BB_DEFAULT_NCORES
+    ncores = platform_config[const.PLATFORM_CONFIG.BB_DEFAULT_NCORES.name]
 
     version = args.version
     if version in ["mpi", "run_bb_mpi"]:
@@ -46,11 +51,12 @@ def main(
         if version is not None:
             logger.error(
                 "{} cannot be recognized as a valid option. version is set to default:".format(
-                    version, const.BB_DEFAULT_VERSION
+                    version,
+                    platform_config[const.PLATFORM_CONFIG.BB_DEFAULT_VERSION.name],
                 )
             )
-        version = const.BB_DEFAULT_VERSION
-        sl_name_prefix = const.BB_DEFAULT_VERSION
+        version = platform_config[const.PLATFORM_CONFIG.BB_DEFAULT_VERSION.name]
+        sl_name_prefix = platform_config[const.PLATFORM_CONFIG.BB_DEFAULT_VERSION.name]
     logger.debug(version)
 
     srf_name = os.path.splitext(os.path.basename(params.srf_file))[0]
@@ -61,10 +67,9 @@ def main(
         fd_count = len(shared.get_stations(params.FD_STATLIST))
 
         if est_model is None:
-            workflow_config = load(
-                os.path.dirname(os.path.realpath(__file__)), "workflow_config.json"
+            est_model = os.path.join(
+                platform_config[const.PLATFORM_CONFIG.ESTIMATION_MODELS_DIR.name], "BB"
             )
-            est_model = os.path.join(workflow_config["estimation_models_dir"], "BB")
 
         est_core_hours, est_run_time = est.est_BB_chours_single(
             fd_count, nt, ncores, est_model
@@ -84,18 +89,17 @@ def main(
                 est_run_time_scaled = est_run_time * (int(args.retries) + 1)
 
         wct = set_wct(est_run_time_scaled, ncores, args.auto)
-        bb_sim_dir = os.path.join(params.sim_dir, "BB")
         write_directory = (
             args.write_directory if args.write_directory else params.sim_dir
         )
         underscored_srf = srf_name.replace("/", "__")
 
         header_dict = {
-            "n_tasks": ncores,
             "wallclock_limit": wct,
             "job_name": "sim_bb.{}".format(underscored_srf),
             "job_description": "BB calculation",
             "additional_lines": "###SBATCH -C avx",
+            "platform_specific_args": get_platform_node_requirements(ncores),
         }
 
         body_template_params = (
@@ -114,21 +118,21 @@ def main(
             header_dict,
             body_template_params,
             command_template_parameters,
-            args,
             add_args,
         )
 
         # Submit the script
         submit_yes = True if args.auto else confirm("Also submit the job for you?")
-        submit_sl_script(
-            script_file_path,
-            const.ProcessType.BB.value,
-            simulation_structure.get_mgmt_db_queue(params.mgmt_db_location),
-            srf_name,
-            submit_yes=submit_yes,
-            target_machine=args.machine,
-            logger=logger,
-        )
+        if submit_yes:
+            submit_script_to_scheduler(
+                script_file_path,
+                const.ProcessType.BB.value,
+                simulation_structure.get_mgmt_db_queue(params.mgmt_db_location),
+                params.sim_dir,
+                srf_name,
+                target_machine=args.machine,
+                logger=logger,
+            )
 
 
 if __name__ == "__main__":
@@ -137,8 +141,16 @@ if __name__ == "__main__":
     )
 
     parser.add_argument("--auto", nargs="?", type=str, const=True)
-    parser.add_argument("--version", type=str, default=const.BB_DEFAULT_VERSION)
-    parser.add_argument("--account", type=str, default=const.DEFAULT_ACCOUNT)
+    parser.add_argument(
+        "--version",
+        type=str,
+        default=platform_config[const.PLATFORM_CONFIG.BB_DEFAULT_VERSION.name],
+    )
+    parser.add_argument(
+        "--account",
+        type=str,
+        default=platform_config[const.PLATFORM_CONFIG.DEFAULT_ACCOUNT.name],
+    )
     parser.add_argument("--srf", type=str, default=None)
     parser.add_argument(
         "--machine",
@@ -156,5 +168,8 @@ if __name__ == "__main__":
         "--rel_dir", default=".", type=str, help="The path to the realisation directory"
     )
     args = parser.parse_args()
+
+    # The name parameter is only used to check user tasks in the queue monitor
+    Scheduler.initialise_scheduler("", args.account)
 
     main(args)

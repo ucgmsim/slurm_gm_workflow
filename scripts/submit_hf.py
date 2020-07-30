@@ -11,10 +11,14 @@ import qcore.constants as const
 from qcore.qclogging import get_basic_logger
 import qcore.simulation_structure as sim_struct
 from shared_workflow.install_shared import HF_VEL_MOD_1D
+from scripts.schedulers.scheduler_factory import Scheduler
+from shared_workflow.platform_config import (
+    platform_config,
+    get_platform_node_requirements,
+)
 
-from shared_workflow.load_config import load
 from shared_workflow.shared import set_wct, confirm, get_hf_nt
-from shared_workflow.shared_automated_workflow import submit_sl_script
+from shared_workflow.shared_automated_workflow import submit_script_to_scheduler
 from shared_workflow.shared_template import write_sl_script
 
 # default values
@@ -26,6 +30,7 @@ default_wct = "00:30:00"
 
 def gen_command_template(params, machine, seed=const.HF_DEFAULT_SEED):
     command_template_parameters = {
+        "run_command": platform_config[const.PLATFORM_CONFIG.RUN_COMMAND.name],
         "fd_statlist": params.FD_STATLIST,
         "hf_bin_path": sim_struct.get_hf_bin_path(params.sim_dir),
         HF_VEL_MOD_1D: params["hf"][HF_VEL_MOD_1D],
@@ -61,11 +66,12 @@ def main(
         if args.version is not None:
             logger.error(
                 "{} cannot be recognize as a valid version option. version is set to default: {}".format(
-                    args.version, const.HF_DEFAULT_VERSION
+                    args.version,
+                    platform_config[const.PLATFORM_CONFIG.HF_DEFAULT_VERSION.name],
                 )
             )
-        version = const.HF_DEFAULT_VERSION
-        ll_name_prefix = const.HF_DEFAULT_VERSION
+        version = platform_config[const.PLATFORM_CONFIG.HF_DEFAULT_VERSION.name]
+        ll_name_prefix = platform_config[const.PLATFORM_CONFIG.HF_DEFAULT_VERSION.name]
     logger.debug("version: {}".format(version))
 
     # modify the logic to use the same as in install_bb:
@@ -84,10 +90,9 @@ def main(
         nsub_stoch, sub_fault_area = srf.get_nsub_stoch(params.hf.slip, get_area=True)
 
         if est_model is None:
-            workflow_config = load(
-                os.path.dirname(os.path.realpath(__file__)), "workflow_config.json"
+            est_model = os.path.join(
+                platform_config[const.PLATFORM_CONFIG.ESTIMATION_MODELS_DIR.name], "HF"
             )
-            est_model = os.path.join(workflow_config["estimation_models_dir"], "HF")
         est_core_hours, est_run_time, est_cores = est.est_HF_chours_single(
             fd_count,
             nsub_stoch,
@@ -120,7 +125,7 @@ def main(
         underscored_srf = srf_name.replace("/", "__")
 
         header_dict = {
-            "n_tasks": est_cores,
+            "platform_specific_args": get_platform_node_requirements(est_cores),
             "wallclock_limit": wct,
             "job_name": "sim_hf.{}".format(underscored_srf),
             "job_description": "HF calculation",
@@ -144,21 +149,21 @@ def main(
             header_dict,
             body_template_params,
             command_template_parameters,
-            args,
             add_args,
         )
 
         # Submit the script
         submit_yes = True if args.auto else confirm("Also submit the job for you?")
-        submit_sl_script(
-            script_file_path,
-            const.ProcessType.HF.value,
-            sim_struct.get_mgmt_db_queue(params.mgmt_db_location),
-            srf_name,
-            submit_yes=submit_yes,
-            target_machine=args.machine,
-            logger=logger,
-        )
+        if submit_yes:
+            submit_script_to_scheduler(
+                script_file_path,
+                const.ProcessType.HF.value,
+                sim_struct.get_mgmt_db_queue(params.mgmt_db_location),
+                params.sim_dir,
+                srf_name,
+                target_machine=args.machine,
+                logger=logger,
+            )
 
 
 if __name__ == "__main__":
@@ -167,7 +172,11 @@ if __name__ == "__main__":
     )
 
     parser.add_argument("--version", type=str, default=None, const=None)
-    parser.add_argument("--ncore", type=int, default=const.HF_DEFAULT_NCORES)
+    parser.add_argument(
+        "--ncore",
+        type=int,
+        default=platform_config[const.PLATFORM_CONFIG.HF_DEFAULT_NCORES.name],
+    )
 
     # if the --auto flag is used, wall clock time will be estimated the job
     # submitted automatically
@@ -176,7 +185,11 @@ if __name__ == "__main__":
     parser.add_argument(
         "--site_specific", type=int, nargs="?", default=None, const=True
     )
-    parser.add_argument("--account", type=str, default=const.DEFAULT_ACCOUNT)
+    parser.add_argument(
+        "--account",
+        type=str,
+        default=platform_config[const.PLATFORM_CONFIG.DEFAULT_ACCOUNT.name],
+    )
     parser.add_argument("--srf", type=str, default=None)
     parser.add_argument(
         "--seed",
@@ -200,5 +213,8 @@ if __name__ == "__main__":
         "--rel_dir", default=".", type=str, help="The path to the realisation directory"
     )
     args = parser.parse_args()
+
+    # The name parameter is only used to check user tasks in the queue monitor
+    Scheduler.initialise_scheduler("", args.account)
 
     main(args)

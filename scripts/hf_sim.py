@@ -6,14 +6,13 @@ from argparse import ArgumentParser
 import os
 import random
 from subprocess import Popen, PIPE
-import sys
 from tempfile import mkstemp
 
 import numpy as np
 import logging
 
-from shared_workflow import shared_defaults
 from qcore import binary_version, constants, utils
+from shared_workflow.platform_config import platform_config
 
 if __name__ == "__main__":
     from qcore import MPIFileHandler
@@ -23,7 +22,7 @@ if __name__ == "__main__":
     rank = comm.Get_rank()
     size = comm.Get_size()
     master = 0
-    is_master = not rank
+    is_master = rank == master
 
     logger = logging.getLogger("rank_%i" % comm.rank)
     logger.setLevel(logging.DEBUG)
@@ -77,7 +76,7 @@ def args_parser(cmd=None):
     arg(
         "--version",
         help="binary version, similar to --sim_bin but not full path.",
-        default="6.0.3",  # 5.4.5, 6.0.3 are supported
+        default="6.0.3",  # 5.4.5, 5.4.6, 6.0.3 with subversions .1 .2 .3 are supported
     )
     arg("--t-sec", help="high frequency output start time", type=float, default=0.0)
     # HF IN, line 1
@@ -144,7 +143,8 @@ def args_parser(cmd=None):
         "--hf_vel_mod_1d",
         help="path to velocity model (1D)",
         default=os.path.join(
-            shared_defaults.vel_mod_dir, "Mod-1D/Cant1D_v2-midQ_leer.1d"
+            platform_config[constants.PLATFORM_CONFIG.VELOCITY_MODEL_DIR.name],
+            "Mod-1D/Cant1D_v2-midQ_leer.1d",
         ),
     )
     arg("-s", "--site-vm-dir", help="dir containing site specific velocity models (1D)")
@@ -460,6 +460,8 @@ if __name__ == "__main__":
         hf_sim_args.append("")
 
         stdin = "\n".join(hf_sim_args)
+
+        logger.debug(stdin)
 
         # run HF binary
         p = Popen([args.sim_bin], stdin=PIPE, stderr=PIPE, universal_newlines=True)

@@ -1,15 +1,19 @@
 import inspect
 import os
 
+import pytest
+
 from qcore.utils import load_sim_params as mocked_load_sim_params
 from qcore.utils import load_yaml as mocked_load_yaml
 from shared_workflow.shared import set_wct as mocked_set_wct
 
 from testing.test_common_set_up import set_up, get_input_params, get_fault_from_rel
+# from testing.conftest import init_scheduler
 
 import scripts.submit_emod3d
 
 
+@pytest.mark.usefixtures("init_scheduler")
 def test_main(set_up, mocker):
     """No return value. Just check that it runs without crashing"""
     function = "main"
@@ -38,12 +42,6 @@ def test_main(set_up, mocker):
         )
         if "emod3d_defaults.yaml" in x
         else mocked_load_yaml(x),
-    )
-    mocker.patch(
-        "shared_workflow.shared_template.recipe_dir",
-        os.path.join(
-            os.path.dirname(os.path.realpath(__file__)), "..", "..", "templates"
-        ),
     )
 
     for root_path, realisation in set_up:
