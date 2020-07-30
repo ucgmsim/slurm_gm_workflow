@@ -45,7 +45,7 @@ class Bash(AbstractScheduler):
     def cancel_job(self, job_id: int, target_machine=None):
         raise self.raise_exception("Cannot cancel a job with the bash scheduler")
 
-    def check_queues(self, user: str = False, target_machine=None):
+    def check_queues(self, user: bool = False, target_machine=None):
         """
         If there is a job running in submit_job then this returns the job number
         submit_job needs to be changed to non-blocking to allow the task to enter the 'queued' state in the db

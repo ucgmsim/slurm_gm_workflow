@@ -112,17 +112,13 @@ class Pbs(AbstractScheduler):
         return self._run_command_and_wait(cmd=[f"qdel {job_id}"], shell=True)
 
     def check_queues(
-        self, user: Union[str, bool] = False, target_machine=None
+        self, user: bool = False, target_machine=None
     ) -> List[str]:
         self.logger.debug(
             f"Checking queues with raw input of machine {target_machine} and user {user}"
         )
-        if (
-            user is not False
-        ):  # just print the list of jobid and status (a space between)
-            if user is True:
-                user = self.user_name
-            cmd = ["qstat", "-u", f"{user}"]
+        if user:  # just print the list of jobid and status (a space between)
+            cmd = ["qstat", "-u", f"{self.user_name}"]
             header_pattern = "pbs:"
             header_idx = 1
             job_list_idx = 5
