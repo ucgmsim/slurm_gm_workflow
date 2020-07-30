@@ -141,7 +141,7 @@ def args_parser(cmd=None):
     # HF IN, line 13
     arg(
         "-m",
-        f"--hf_vel_mod_1d",
+        "--hf_vel_mod_1d",
         help="path to velocity model (1D)",
         default=os.path.join(
             shared_defaults.vel_mod_dir, "Mod-1D/Cant1D_v2-midQ_leer.1d"
@@ -453,7 +453,7 @@ if __name__ == "__main__":
         # add seekbyte for qcore adjusted version
         if bin_mod:
             if utils.compare_versions(args.version, "5.4.5.4") >= 0:
-                hf_sim_args.append()
+                hf_sim_args.append(args.dpath_pert)
             hf_sim_args.append(str(head_total + idx_0 * (nt * N_COMP * FLOAT_SIZE)))
 
         # add empty '' for extra \n at the end( needed as input)
