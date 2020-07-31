@@ -15,7 +15,7 @@ from queue import Queue, Empty
 import numpy.random as nprdm
 import pandas as pd
 import sqlite3 as sql
-from pandas.util.testing import assert_frame_equal
+from pandas.testing import assert_frame_equal
 
 from scripts.management.db_helper import connect_db_ctx
 from scripts.management.MgmtDB import SchedulerTask
@@ -100,6 +100,16 @@ class E2ETests(object):
 
     def __init__(self, config_file: str):
         """Constructor, reads input config."""
+
+        try:
+            assert_frame_equal(pd.DataFrame([1]), pd.DataFrame([1]), atol=1e-03)
+        except TypeError as e:
+            print(
+                "Please ensure pandas is at least version 1.1.0. "
+                "The command 'pip install -U pandas' should help you. "
+                "If this still occurs please contact the software team."
+            )
+            exit(1)
 
         with open(config_file, "r") as f:
             self.config_dict = json.load(f)
