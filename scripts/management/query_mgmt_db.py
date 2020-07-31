@@ -167,7 +167,7 @@ def get_all_entries_from_config(config_file, db, query_mode):
                         AND state.proc_type IN (?{})
                 """
                     + extra_query
-                    + """ORDER BY state.run_name, status_enum.id"""
+                    + """ ORDER BY state.run_name, status_enum.id"""
                 ).format(",?" * (len(tasks_n) - 1)),
                 [i.value for i in tasks_n],
             ).fetchall()
