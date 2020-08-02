@@ -140,7 +140,7 @@ def args_parser(cmd=None):
     # HF IN, line 13
     arg(
         "-m",
-        "--velocity-model",
+        "--hf_vel_mod_1d",
         help="path to velocity model (1D)",
         default=os.path.join(
             platform_config[constants.PLATFORM_CONFIG.VELOCITY_MODEL_DIR.name],
@@ -165,6 +165,15 @@ def args_parser(cmd=None):
         12:ENA formulation of BT2015, overpredicts for multiple rays""",
         type=int,
         default=1,
+    )
+    arg(
+        "--dpath_pert",
+        help="""path duration perturbation
+        Only to be used with versions greater than 5.4.5.4
+        The path duration is multiplied by the base e exponential of the given value
+        The default value of 0 results in no perturbation""",
+        type=float,
+        default=0.0,
     )
 
     arg(
@@ -295,7 +304,7 @@ if __name__ == "__main__":
             if args.site_vm_dir != None:
                 vm = args.site_vm_dir
             else:
-                vm = args.velocity_model
+                vm = args.hf_vel_mod_1d
             s64 = np.array(
                 list(map(os.path.basename, [args.stoch_file, vm])), dtype="|S64"
             )
@@ -393,7 +402,7 @@ if __name__ == "__main__":
     stations_todo_idx = np.arange(stations.size)[station_mask]
 
     def run_hf(
-        local_statfile, n_stat, idx_0, velocity_model=args.velocity_model, bin_mod=True
+        local_statfile, n_stat, idx_0, velocity_model=args.hf_vel_mod_1d, bin_mod=True
     ):
         """
         Runs HF Fortran code.
@@ -424,7 +433,7 @@ if __name__ == "__main__":
             % (args.rvfac, args.rvfac_shal, args.rvfac_deep, args.czero, args.calpha),
             "%s %s" % (args.mom, args.rupv),
             args.stoch_file,
-            args.velocity_model,
+            args.hf_vel_mod_1d,
             str(args.vs_moho),
             "%d %s %s %s %s %d" % (nl_skip, vp_sig, vsh_sig, rho_sig, qs_sig, ic_flag),
             velocity_name,
@@ -443,6 +452,12 @@ if __name__ == "__main__":
             )
         # add seekbyte for qcore adjusted version
         if bin_mod:
+            if (
+                utils.compare_versions(args.version, "5.4.5.4") >= 0
+                and len(args.version.split(".")) >= 4
+                and utils.compare_versions(args.version.split(".")[3], "4") >= 0
+            ):
+                hf_sim_args.append(args.dpath_pert)
             hf_sim_args.append(str(head_total + idx_0 * (nt * N_COMP * FLOAT_SIZE)))
 
         # add empty '' for extra \n at the end( needed as input)
@@ -513,7 +528,7 @@ if __name__ == "__main__":
     t0 = MPI.Wtime()
     in_stats = mkstemp()[1]
 
-    vm = args.velocity_model
+    vm = args.hf_vel_mod_1d
     for s in range(work.size):
         if args.site_vm_dir != None:
             vm = os.path.join(args.site_vm_dir, "%s.1d" % (stations_todo[s]["name"]))

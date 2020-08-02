@@ -544,26 +544,3 @@ def get_site_specific_path(
     else:
         hf_stat_vs_ref_selected = hf_stat_vs_ref
     return v_mod_1d_path, hf_stat_vs_ref_selected
-
-
-def get_hf_run_name(v_mod_1d_name, srf, root_dict, hf_version):
-    hf_sim_bin = binary_version.get_hf_np2mm(hf_version)
-    hfVString = "hf" + os.path.basename(hf_sim_bin).split("_")[-1]
-    hf_run_name = "{}_{}_rvf{}_sd{}_k{}".format(
-        v_mod_1d_name,
-        hfVString,
-        str(root_dict["hf"]["rvfac"]),
-        str(root_dict["hf"]["sdrop"]),
-        str(root_dict["hf"]["kappa"]),
-    )
-    hf_run_name = hf_run_name.replace(".", "p")
-    show_horizontal_line()
-    print("- Vel. Model 1D: %s" % v_mod_1d_name)
-    print("- hf_sim_bin: %s" % os.path.basename(hf_sim_bin))
-    print("- hf_rvfac: %s" % root_dict["hf"]["rvfac"])
-    print("- hf_sdrop: %s" % root_dict["hf"]["sdrop"])
-    print("- hf_kappa: %s" % root_dict["hf"]["kappa"])
-    print("- srf file: %s" % srf)
-    #    yes = confirm_name(hf_run_name)
-    yes = True
-    return yes, hf_run_name
