@@ -20,7 +20,8 @@ def test_install_simulation(set_up):
         test_output = install_shared.install_simulation(*input_params)
         root_params_dict = test_output[0]
 
-        #  accounting for removed parameters
+        # Accounting for removed parameters
+        # Simpler solution than downloading, editing and re-uploading the test data
         root_params_dict['global_root'] = '/nesi/project/nesi00213'
         root_params_dict['v_1d_mod'] = '/nesi/project/nesi00213/VelocityModel/Mod-1D/Cant1D_v3-midQ_OneRay.1d'
         root_params_dict['bb']['version'] = "3.0.4"
