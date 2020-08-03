@@ -116,7 +116,7 @@ class Slurm(AbstractScheduler):
 
     @staticmethod
     def process_arguments(script_path: str, arguments: Dict[str, str]):
-        return f"{script_path} {' '.join(arguments.items())}"
+        return f"{script_path} {' '.join(arguments.values())}"
 
     def get_metadata(self, db_running_task: SchedulerTask, task_logger: Logger):
         """
