@@ -84,6 +84,7 @@ def main():
             logger, os.path.join(path_cybershake, args.log_file)
         )
     logger.debug("Added file handler to the logger")
+    logger.debug(f"Arguments are as follows: {args}")
 
     if not os.path.exists(
         os.path.join(
