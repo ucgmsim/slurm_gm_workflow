@@ -457,7 +457,7 @@ if __name__ == "__main__":
                 and len(args.version.split(".")) >= 4
                 and utils.compare_versions(args.version.split(".")[3], "4") >= 0
             ):
-                hf_sim_args.append(args.dpath_pert)
+                hf_sim_args.append(str(args.dpath_pert))
             hf_sim_args.append(str(head_total + idx_0 * (nt * N_COMP * FLOAT_SIZE)))
 
         # add empty '' for extra \n at the end( needed as input)
