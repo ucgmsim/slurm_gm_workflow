@@ -73,8 +73,9 @@ if __name__ == "__main__":
     if is_master:
         try:
             args = args_parser()
-        except SystemExit:
+        except SystemExit as e:
             # invalid arguments or -h
+            print("arg parse error occured:", e)
             comm.Abort()
 
     args = comm.bcast(args, root=master)
