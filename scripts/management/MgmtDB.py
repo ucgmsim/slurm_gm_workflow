@@ -145,7 +145,7 @@ class MgmtDB:
                     ).fetchone()
 
                     if job_id is not None:
-                        dependant_entry = SlurmTask(
+                        dependant_entry = SchedulerTask(
                             entry.run_name,
                             process.value,
                             const.Status.failed.value,
