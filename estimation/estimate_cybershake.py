@@ -11,7 +11,7 @@ import yaml
 from argparse import ArgumentParser
 from typing import List
 
-from qcore.config import platform_config
+from shared_workflow.platform_config import platform_config
 import qcore.constants as const
 from qcore import shared, srf, utils
 from estimation import estimate_wct
