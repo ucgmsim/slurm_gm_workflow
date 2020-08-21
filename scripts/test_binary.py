@@ -11,7 +11,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("bin", type=str)
     parser.add_argument("fd_ll", type=str)
-    parser.add_argument("process_type", type=str, help="Either bb or hf")
+    parser.add_argument("process_type", type=str, choices=["bb", "hf"], help="Either bb or hf")
     parser.add_argument("--verbose", action="store_true", default=False)
 
     args = parser.parse_args()
@@ -60,6 +60,22 @@ if __name__ == "__main__":
         if args.verbose:
             print("Some vs == 0, {} incomplete".format(args.process_type))
         sys.exit(1)
+
+    # binary zero check
+    # Checks 10 random stations for any occurances of 0 in the output (aka results have not been written)
+    for i in range(10):
+        station_idx = np.random.choice(bin.stations.shape[0])
+
+        acc = bin.acc(bin.stations.name[station_idx])
+
+        if np.any(acc == 0):
+            if args.verbose:
+                stat_name = bin.stations.name[station_idx]
+                print(
+                    f"The velocities for station {stat_name} contains zero/s, please investigate. This "
+                    f"is most likely due to crashes during HF or BB resulting in no written output."
+                )
+            sys.exit(1)
 
     # pass both check
     if args.verbose:
