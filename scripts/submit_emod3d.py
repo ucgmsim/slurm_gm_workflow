@@ -78,9 +78,9 @@ def main(
             params.emod3d.emod3d_version, target_qconfig["tools_dir"]
         )
         # use the original estimated run time for determining the checkpoint, or uses a minimum of 3 checkpoints
-        steps_per_checkpoint = int(min(
-            nt / (60.0 * est_run_time) * const.CHECKPOINT_DURATION
-        ), nt // 3)
+        steps_per_checkpoint = int(
+            min(nt / (60.0 * est_run_time) * const.CHECKPOINT_DURATION), nt // 3
+        )
         write_directory = (
             args.write_directory if args.write_directory else params.sim_dir
         )
