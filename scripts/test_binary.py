@@ -63,14 +63,12 @@ if __name__ == "__main__":
 
     # binary zero check
     # Checks 10 random stations for any occurances of 0 in the output (aka results have not been written)
-    for i in range(10):
-        station_idx = np.random.choice(bin.stations.shape[0])
+    for stat_name in np.random.choice(bin.stations.name, replace=False, size=min(10, bin.stations.shape[0])):
 
-        acc = bin.acc(bin.stations.name[station_idx])
+        acc = bin.acc(stat_name)
 
         if np.any(acc == 0):
             if args.verbose:
-                stat_name = bin.stations.name[station_idx]
                 print(
                     f"The velocities for station {stat_name} contains zero/s, please investigate. This "
                     f"is most likely due to crashes during HF or BB resulting in no written output."
