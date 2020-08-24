@@ -11,7 +11,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("bin", type=str)
     parser.add_argument("fd_ll", type=str)
-    parser.add_argument("process_type", type=str, choices=["bb", "hf"], help="Either bb or hf")
+    parser.add_argument(
+        "process_type", type=str, choices=["bb", "hf"], help="Either bb or hf"
+    )
     parser.add_argument("--verbose", action="store_true", default=False)
 
     args = parser.parse_args()
@@ -63,7 +65,9 @@ if __name__ == "__main__":
 
     # binary zero check
     # Checks 10 random stations for any occurances of 0 in the output (aka results have not been written)
-    for stat_name in np.random.choice(bin.stations.name, replace=False, size=min(10, bin.stations.shape[0])):
+    for stat_name in np.random.choice(
+        bin.stations.name, replace=False, size=min(10, bin.stations.shape[0])
+    ):
 
         acc = bin.acc(stat_name)
 
