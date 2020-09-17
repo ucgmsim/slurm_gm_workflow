@@ -58,7 +58,7 @@ def generate_empirical_script(np, extended, cybershake_folder, realisations, out
         exe_time="%j",
         job_description="Empirical Engine",
         additional_lines="",
-        template_path=Scheduler.get_scheduler().HEADER_TEMPLATE,
+        template_path=platform_config[const.PLATFORM_CONFIG.HEADER_FILE.name],
         write_directory=out_dir,
     )
     context = generate_context(
