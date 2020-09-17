@@ -60,6 +60,7 @@ def generate_empirical_script(np, extended, cybershake_folder, realisations, out
         additional_lines="",
         template_path=platform_config[const.PLATFORM_CONFIG.HEADER_FILE.name],
         write_directory=out_dir,
+        platform_specific_args={"n_tasks": np},
     )
     context = generate_context(
         template_dir,
