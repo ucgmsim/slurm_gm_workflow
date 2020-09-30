@@ -4,14 +4,18 @@
 activate_env () {
     env_path=${1?Error: "The environment path has to be provided, e.g. ..../Environments/test_env"}
 
-    if [[ `hostname` =~ 'mahuika' ]] || [[ $HOSTNAME =~ 'wb' ]];then
-        hpc='mahuika'
-    elif [[ `hostname` =~ 'maui' ]] || [[ $HOSTNAME =~ 'ni' ]];then
-        hpc='maui'
-    else
-        echo "You might be lost, or more likely this is not working as planned!"
+    if [[ ! -z "$hpc" ]];then
+        #attemp to find hpc automatically
+        if [[ `hostname` =~ 'mahuika' ]] || [[ $HOSTNAME =~ 'wb' ]];then
+            hpc='mahuika'
+        elif [[ `hostname` =~ 'maui' ]] || [[ $HOSTNAME =~ 'ni' ]];then
+            hpc='maui'
+        elif [[ `hostname` =~ 'stampede' ]];then
+            hpc='stampede'
+        else
+            echo "You might be lost, or more likely this is not working as planned!"
+        fi
     fi
-
     source ${env_path}/workflow/install_workflow/helper_functions/activate_env.sh ${env_path} ${hpc}
 }
 
