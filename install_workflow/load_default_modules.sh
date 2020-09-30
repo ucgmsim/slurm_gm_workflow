@@ -22,6 +22,8 @@ elif [[ `hostname` == maui* ]] || [[ $HOSTNAME == ni* ]];then
     export PATH=/nesi/project/nesi00213/opt/maui/python-packages/bin:$PATH
     #NZVM
     export PATH=/nesi/project/nesi00213/opt/maui/Velocity-Model:$PATH
+    # custom build modules 
+    export MODULEPATH=/nesi/project/nesi00213/opt/maui/modules/all:$MODULEPATH
 
     load_python3_maui
 elif [[ `hostname` == 'w-maui*']] || [[ $HOSTNAME == ws* ]] || [[ $HOSTNAME == vgpuws* ]];then
