@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 
-source "${env_path}/workflow/install_workflow/create_env_common_pre.sh"
+#get the absolute path of this script
+DIR=$( dirname "$( realpath "${BASH_SOURCE[0]}")" )
+source "${DIR}/create_env_common_pre.sh"
 
 # Setting up workfow, qcore and IM calc
 echo "Cloning workflow"
@@ -27,7 +29,7 @@ git clone git@github.com:ucgmsim/visualization.git
 
 # Create virtual environment
 mkdir virt_envs
-python3 -m venv virt_envs/python3_maui
+python3 -m venv virt_envs/python3_maui --system-site-packages
 
 # Activate new python env
 source ./virt_envs/python3_maui/bin/activate
@@ -39,10 +41,13 @@ if [[ `which python` != *"${name}"* && `which pip` != *"${name}"* ]]; then
     exit
 fi
 
+# update pip. python3 come with a v9.0 which is too old.
+pip install --upgrade pip
+
 # Install python packages
 # Using xargs means that each package is installed individually, which
 # means that if there is an error (i.e. can't find qcore), then the other
 # packages are still installed. However, this is slower.
-xargs -n 1 -a ${env_path}/workflow/install_workflow/maui_python3_requirements.txt pip install
+xargs -n 1 -a ${env_path}/workflow/install_workflow/maui_python3_requirements.txt pip install -U
 
 source "${env_path}/workflow/install_workflow/create_env_common_post.sh"
