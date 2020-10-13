@@ -7,7 +7,7 @@ name=`basename ${env_path}`
 
 # Create virtual environment
 cd ${env_path}
-python3 -m venv virt_envs/python3_mahuika
+python3 -m venv virt_envs/python3_mahuika --system-site-packages
 
 # Activate new python env
 source ./virt_envs/python3_mahuika/bin/activate
@@ -19,11 +19,14 @@ if [[ `which python` != *"${name}"* && `which pip` != *"${name}"* ]]; then
     exit
 fi
 
+# update pip. python3 come with a v9.0 which is too old.
+pip install --upgrade pip
+
 # Install python packages
 # Using xargs means that each package is installed individually, which
 # means that if there is an error (i.e. can't find qcore), then the other
 # packages are still installed. However, this is slower.
-xargs -n 1 -a ${env_path}/workflow/install_workflow/mahuika_python3_requirements.txt pip install
+xargs -n 1 -a ${env_path}/workflow/install_workflow/mahuika_python3_requirements.txt pip install -U
 
 # Install qcore
 pip install -e ./qcore
