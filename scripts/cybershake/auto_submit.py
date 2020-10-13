@@ -316,6 +316,7 @@ def submit_task(
             const.ProcessType.advanced_IM.str_value: params[
                 const.ProcessType.advanced_IM.str_value
             ].models,
+            "match_obs_stations":params[const.ProcessType.advanced_IM.str_value].match_obs_stations
         }
 
         submit_im_calc_slurm(

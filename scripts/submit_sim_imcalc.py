@@ -99,7 +99,7 @@ def submit_im_calc_slurm(
         options_dict["write_directory"] = sim_dir
     if options_dict[SlBodyOptConsts.advanced_IM.value]:
         # TODO: update this to use number from adv_im estmation model after it exist
-        options_dict[SlBodyOptConsts.n_procs.value] = 18
+        options_dict[SlBodyOptConsts.n_procs.value] = 40
         options_dict[SlHdrOptConsts.n_tasks.value] = options_dict[
             SlBodyOptConsts.n_procs.value
         ]
@@ -175,7 +175,7 @@ def submit_im_calc_slurm(
         else "",
         SlBodyOptConsts.advanced_IM.value: "-a {}".format(
             " ".join(options_dict[SlBodyOptConsts.advanced_IM.value])
-        )
+        ) + (f" --obs {params.mgmt_db_location}/ObservedGroundMotions/{fault_name}" if options_dict['match_obs_stations'] else "")
         if options_dict[SlBodyOptConsts.advanced_IM.value]
         else "",
         "pSA_periods": f"-p {' '.join(str(p) for p in params['pSA_periods'])}"

@@ -40,8 +40,9 @@ def get_wct(run_time, ch_safety_factor=CH_SAFETY_FACTOR):
     Use this when estimation as max run time in a slurm script.
     """
     wct_with_safety_factor = run_time * ch_safety_factor
-    if wct_with_safety_factor < ((const.CHECKPOINT_DURATION * 3) / 60.0):
-        return convert_to_wct((const.CHECKPOINT_DURATION * 3) / 60.0)
+    threshold_time = (const.CHECKPOINT_DURATION * 3) / 60.0
+    if wct_with_safety_factor < threshold_time:
+        return convert_to_wct(threshold_time)
     else:
         return convert_to_wct(wct_with_safety_factor)
 
