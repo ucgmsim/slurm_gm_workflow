@@ -29,7 +29,7 @@ git clone https://github.com/ucgmsim/visualization.git
 
 # Create virtual environment
 mkdir virt_envs
-python3 -m venv virt_envs/python3_nurion --system-site-packages
+python3 -m venv --system-site-packages virt_envs/python3_nurion
 
 # Activate new python env
 source ./virt_envs/python3_nurion/bin/activate
