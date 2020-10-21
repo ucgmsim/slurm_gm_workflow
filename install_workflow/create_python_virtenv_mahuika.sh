@@ -7,7 +7,7 @@ name=`basename ${env_path}`
 
 # Create virtual environment
 cd ${env_path}
-python3 -m venv virt_envs/python3_mahuika --system-site-packages
+python3 -m venv --system-site-packages virt_envs/python3_mahuika
 
 # Activate new python env
 source ./virt_envs/python3_mahuika/bin/activate
