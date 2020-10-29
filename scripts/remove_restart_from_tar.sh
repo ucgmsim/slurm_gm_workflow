@@ -1,4 +1,6 @@
 #!/bin/bash
+# removes restart files from tar files in a full simulation run
+
 
 if [[ $# -lt 2 ]]; then
     echo "please provide the path to 1. Runs 2. the list of faults to run (without r count)"

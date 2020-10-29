@@ -11,11 +11,22 @@ ADV_IM_NAME=$1
 LIST_EVENTS_F=$2
 
 # some constant variables, only update these when version changes
-VALIDATION_VERSION=v20p5p8
-BBbin_root_dir=/nesi/nobackup/nesi00213/RunFolder/ykh22/Adv_IM/$VALIDATION_VERSION
-SIM_DATA_DIR=/nesi/nobackup/nesi00213/RunFolder/ykh22/Adv_IM/$VALIDATION_VERSION/Data/
-TASK_CONFIG_TEMPLATE=$BBbin_root_dir/task_config.yaml
-OBS_DATA_DIR=/nesi/nobackup/nesi00213/RunFolder/ykh22/Adv_IM/ObservedGroundMotions
+BBbin_root_dir=${3:-/nesi/project/nesi00213/RunFolder/ykh22/Adv_IM/v20p5p8}
+OBS_DATA_DIR=${4:-/nesi/project/nesi00213/RunFolder/ykh22/Adv_IM/ObservedGroundMotions}
+VALIDATION_VERSION=`basename $BBbin_root_dir`
+validation_root_params_yaml=$BBbin_root_dir/Runs/root_params.yaml
+
+# no specifc version supplied use default
+if [[ -z "$3" ]];then
+    gmsim_version=18.5.3.1.a
+else
+    gmsim_version=`python -c "from qcore.utils import load_yaml,DotDictify; p=DotDictify(load_yaml(\"$validation_root_params_yaml\"));print(p.version)"`.a
+fi
+gmsim_version_dir=$gmsim/workflow/templates/gmsim/$gmsim_version/
+TASK_CONFIG_TEMPLATE=$gmsim/workflow/templates/gmsim/18.5.3.1.a/task_config.yaml
+
+SIM_DATA_DIR=$BBbin_root_dir/Data/
+
 FAKE_STATION_LIST=/nesi/project/nesi00213/StationInfo/cantstations.ll #this list is used for install.py not actually used since BB has already ran
 WCT_BENCHMARK_MINSEC=1477 # seconds used to run a ATC12 model on single waveform
 WCT_BENCHMARK_MAXHOUR=6 # the wct for ATC12
@@ -32,6 +43,13 @@ fi
 
 if [[ ! -f $ADV_IM_MODEL_DIR/run.py ]];then
     echo "run.py for $ADV_IM_NAME cannot be found at $ADV_IM_MODEL_DIR"
+    exit 2
+fi
+
+STATION_LIST=`python -c "from qcore.utils import load_yaml,DotDictify; p=DotDictify(load_yaml(\"$validation_root_params_yaml\"));print(p.stat_file)"`
+
+if [[ ! -f $STATION_LIST ]];then
+    echo "station list for validation run cannot be found on $STATION_LIST"
     exit 2
 fi
 
@@ -66,39 +84,60 @@ else
 fi
 
 ################################################################
-# creates a root_faults.yaml using sed to replace ADV_IM_MODELS
-gmsim_version=18.5.3.1.a
-gmsim_version_dir=$gmsim/workflow/templates/gmsim/$gmsim_version/
-
-template_name=root_defaults.yaml_template
-
-sed "s/ADV_IM_MODELS/$ADV_IM_NAME/g" $gmsim_version_dir/$template_name > $gmsim_version_dir/root_defaults.yaml
 
 # link Data folder
 echo $SPLIT_LINE
 echo "linking Data folder"
 ln -s $SIM_DATA_DIR $root_dir
 
+################################################################
+#   determine mag catagory
+################################################################
+max_mag=`grep mag $root_dir/Data/VMs/*/vm_params.yaml | awk '{print $2}' | sort -unr | head -n 1`
+if (( $(echo "$max_mag > 7.0" | bc -l) ));then
+    mag_category=large
+elif (( $(echo "$max_mag > 5.0" | bc -l) ));then
+    mag_category=moderate
+else
+    mag_category=small
+fi
+
 # install the simulation
 echo $SPLIT_LINE
 echo "installing simulation folder"
 echo $SPLIT_LINE
-python $gmsim/workflow/scripts/cybershake/install_cybershake.py $root_dir $LIST_EVENTS_F $gmsim_version --stat_file_path $FAKE_STATION_LIST
+python $gmsim/workflow/scripts/cybershake/install_cybershake.py $root_dir $LIST_EVENTS_F $gmsim_version --stat_file_path $STATION_LIST
+if [[ $? != 0 ]];then
+    exit
+fi
 echo $SPLIT_LINE
 
+################################################################
+# add/update the adv_im models in root_params.yaml
+python $gmsim/workflow/scripts/update_root_yaml.py $root_dir/Runs/root_params.yaml $ADV_IM_NAME
+
 if [[ $? != 0 ]];then
-    exit 1
+    exit 5
 fi
+################################################################
 
 # link BB
 echo $SPLIT_LINE
 echo "linking BB"
 bash $gmsim/workflow/scripts/link_bb.sh $BBbin_root_dir $root_dir $LIST_EVENTS_F
 
+if [[ $? != 0 ]];then
+    exit 
+fi
+
 # link observed data
 echo $SPLIT_LINE
 echo "linking ObservedData"
 bash $gmsim/workflow/scripts/link_obs.sh $OBS_DATA_DIR $root_dir $LIST_EVENTS_F
+
+if [[ $? != 0 ]];then
+    exit 
+fi
 
 # cp task_config.yaml
 if [[ -f $TASK_CONFIG ]];then
@@ -110,17 +149,18 @@ cp $TASK_CONFIG_TEMPLATE $TASK_CONFIG
 # comparing to ATC12_story
 echo $SPLIT_LINE
 echo "Running test station to estimate WCT"
+echo "using waveform from $mag_category event"
 tmp_test_dir=$root_dir/test_tmp
 if [[ ! -d $tmp_test_dir ]]; then
     mkdir -p $tmp_test_dir
 fi
 TIMEFORMAT='%R'
-used_time="$(time (bash $gmsim/test_station/test_runpy.sh $ADV_IM_NAME $tmp_test_dir) 2>&1 1>/dev/null)"
+used_time="$(time (bash $gmsim/test_station/test_runpy.sh $ADV_IM_NAME $mag_category $tmp_test_dir) 2>&1 1>/dev/null)"
 echo "used time: $used_time"
 rm -r $tmp_test_dir
 
 est_ratio=` echo $used_time / $WCT_BENCHMARK_MINSEC | bc -l`
-echo "st_ration = $est_ratio"
+echo "est_ratio = $est_ratio"
 if (( $( echo "$est_ratio > 1" | bc -l ) ));then
     # up-scale the WCT
     sed -i "/threshold_time = /c\    threshold_time = $WCT_BENCHMARK_MAXHOUR*$est_ratio" $gmsim/workflow/estimation/estimate_wct.py
@@ -130,6 +170,7 @@ fi
 
 
 # create screen socket and run automated workflow
+echo screen -d -m -S run_$ADV_IM_NAME bash -c "python $gmsim/workflow/scripts/cybershake/run_cybershake.py $root_dir $USERNAME $TASK_CONFIG --n_max_retries 1"
 screen -d -m -S run_$ADV_IM_NAME bash -c "python $gmsim/workflow/scripts/cybershake/run_cybershake.py $root_dir $USERNAME $TASK_CONFIG --n_max_retries 1"
 
 # Observed related steps
@@ -142,6 +183,6 @@ if [[ $? == 0 ]];then
     # submit each list
     for obs_list in $obs_input_dir/*;
     do
-        sbatch --job-name=`basename $obs_list` $gmsim/workflow/scripts/run_adv_im_obs_maui.sl $obs_linked_folder $obs_list 
+        sbatch --job-name=`basename $obs_list` $gmsim/workflow/scripts/nesi_scripts/run_adv_im_obs_maui.sl $obs_linked_folder $obs_list 
     done
 fi

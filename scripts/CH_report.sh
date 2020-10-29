@@ -23,5 +23,7 @@ start_days_ago=`echo $1 | bc`
 start_date=`date --date="$start_days_ago days ago" $date_pattern`
 
 echo $start_date - $end_date
+sreport -M maui -t Hours cluster AccountUtilizationByUser -T billing Accounts=comm00213 start=$start_date end=$end_date
+sreport -M mahuika -t Hours cluster AccountUtilizationByUser -T billing Accounts=comm00213 start=$start_date end=$end_date
 sreport -M maui -t Hours cluster AccountUtilizationByUser -T billing Accounts=nesi00213 start=$start_date end=$end_date
 sreport -M mahuika -t Hours cluster AccountUtilizationByUser -T billing Accounts=nesi00213 start=$start_date end=$end_date

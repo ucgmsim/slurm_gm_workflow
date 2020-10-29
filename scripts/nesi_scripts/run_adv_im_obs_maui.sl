@@ -25,8 +25,6 @@ fi
 obs_dir=$1
 list_event=$2
 
-# attemp to find the model in root_params.yaml
-#adv_im_models=`python -c '
 
 for event in `cat $list_event | awk '{print $1}'`;
 do 
@@ -60,9 +58,10 @@ do
         adv_IM_csv=$path_event_out/$adv_IM_model\.csv
         if [[ -f $adv_IM_csv ]]; then
             #check for station count
-            #echo csv_station_count=`python -c "import pandas as pd; df = pd.read_csv('$adv_IM_csv'); print(len(df.station))"`
-            exit 
+            csv_station_count=`python -c "import pandas as pd; df = pd.read_csv('$adv_IM_csv'); print(len(sorted(set(df.station))))"`
             if [[ $csv_station_count != station_count ]];then
+                # previous run may be corrupted, remove the old csv.
+                rm $adv_IM_csv
                 run_im=1
             fi
         else
@@ -70,7 +69,14 @@ do
         fi
         if [[ $run_im == 1 ]]; then
             time python $IMPATH/calculate_ims.py $path_eventBB a -o $path_event_out -np 40 -i $event -r $event -t  o -e -a $adv_IM_model --OpenSees_path /nesi/project/nesi00213/opt/maui/tmp/OpenSees 
-            echo $event >> $obs_dir/../list_done_$adv_IM_model
+            # test if station count matches
+            csv_station_count=`python -c "import pandas as pd; df = pd.read_csv('$adv_IM_csv'); print(len(sorted(set(df.station))))"`
+            if [[ $csv_station_count != $station_count ]];then
+                echo "something went wrong, station count does not match, stopping the job"
+                exit 820
+            else
+                echo $event >> $obs_dir/../list_done_$adv_IM_model
+            fi
         fi
     done
 done
