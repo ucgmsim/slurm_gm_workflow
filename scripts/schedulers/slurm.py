@@ -22,14 +22,18 @@ class Slurm(AbstractScheduler):
 
         if target_machine is None:
             target_machine = self.current_machine
+        if isinstance(self.account, dict):
+            account = self.account[target_machine]
+        else:
+            account = self.account
         if user:
             # user is True, so we use the same use as we use for submission
             cmd = "squeue -A {} -o '%A %t' -M {} -u {}".format(
-                self.account, target_machine.name, self.user_name
+                account, target_machine.name, self.user_name
             )
         else:
             cmd = "squeue -A {} -o '%A %t' -M {}".format(
-                self.account, target_machine.name
+                account, target_machine.name
             )
         self.logger.debug(f"Running squeue command: {cmd}")
         output, err = self._run_command_and_wait(cmd=[cmd], shell=True)
