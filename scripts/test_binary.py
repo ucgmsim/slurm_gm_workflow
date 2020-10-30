@@ -77,7 +77,7 @@ if __name__ == "__main__":
                     f"The velocities for station {stat_name} contains zero/s, please investigate. This "
                     f"is most likely due to crashes during HF or BB resulting in no written output."
                 )
-            sys.exit(1)
+            #  sys.exit(1)  # Commenting this line out until further compatibility investigations - Jason: 20-10-30
 
     # pass both check
     if args.verbose:
