@@ -60,7 +60,11 @@ class Slurm(AbstractScheduler):
             "Submitting {} on machine {}".format(script_location, target_machine)
         )
         f_name = f"%x_{timestamp}_%j"
-        common_pre = f"sbatch -o {join(sim_dir, f'{f_name}.out')} -e {join(sim_dir, f'{f_name}.err')} -A {self.account}"
+        if isinstance(self.account, dict):
+            account = self.account["target_machine"]
+        else:
+            account = self.account
+        common_pre = f"sbatch -o {join(sim_dir, f'{f_name}.out')} -e {join(sim_dir, f'{f_name}.err')} -A {account}"
         if target_machine and target_machine != self.current_machine:
             mid = f"--export=CUR_ENV,CUR_HPC -M {target_machine}"
         else:
