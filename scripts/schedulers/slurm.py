@@ -23,7 +23,7 @@ class Slurm(AbstractScheduler):
         if target_machine is None:
             target_machine = self.current_machine
         if isinstance(self.account, dict):
-            account = self.account[target_machine]
+            account = self.account[target_machine.name]
         else:
             account = self.account
         if user:
@@ -65,7 +65,7 @@ class Slurm(AbstractScheduler):
         )
         f_name = f"%x_{timestamp}_%j"
         if isinstance(self.account, dict):
-            account = self.account["target_machine"]
+            account = self.account[target_machine.name]
         else:
             account = self.account
         common_pre = f"sbatch -o {join(sim_dir, f'{f_name}.out')} -e {join(sim_dir, f'{f_name}.err')} -A {account}"
