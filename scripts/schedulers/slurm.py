@@ -32,9 +32,7 @@ class Slurm(AbstractScheduler):
                 account, target_machine.name, self.user_name
             )
         else:
-            cmd = "squeue -A {} -o '%A %t' -M {}".format(
-                account, target_machine.name
-            )
+            cmd = "squeue -A {} -o '%A %t' -M {}".format(account, target_machine.name)
         self.logger.debug(f"Running squeue command: {cmd}")
         output, err = self._run_command_and_wait(cmd=[cmd], shell=True)
         self.logger.debug(f"Squeue got output: {output}")
