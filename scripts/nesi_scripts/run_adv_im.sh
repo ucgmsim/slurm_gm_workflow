@@ -1,5 +1,10 @@
 #!/bin/bash
-
+# A script that prepare and run adv_im using previously ran validation runs
+# arguments: 
+#   1. the name of the adv_im model 
+#   2. a file that contains a list of events to run (must match/subset of arg 3 and 4 below)
+#   3. the path pointing to a simulation's root folder that contains (Runs, Data folder)
+#   4. the path pointing to a directory containing observed data
 # To avoid complexisity this script will only run one Adv_IM model at a time
 if [[ $# -lt 2 ]];then
     # more than one args are provided, exit and warn user
@@ -37,7 +42,18 @@ SPLIT_LINE='#####################################'
 # quick test to see if model exist
 ADV_IM_MODEL_DIR=$gmsim/IM_calculation/IM_calculation/Advanced_IM/Models/$ADV_IM_NAME
 if [[ ! -d $ADV_IM_MODEL_DIR ]];then
-    echo "directory for $ADV_IM_NAME does not exits"
+    echo "directory for adv_im model: $ADV_IM_NAME does not exits"
+    exit 2
+fi
+# check if BBbin_root_dir exist
+if [[ ! -d $BBbin_root_dir ]];then
+    echo "directory for BBbin_root_dir: $BBbin_root_dir does not exits"
+    exit 2
+fi
+
+# check if OBS_DATA_DIR exist
+if [[ ! -d $OBS_DATA_DIR ]];then
+    echo "directory for OBS_DATA_DIR: $OBS_DATA_DIR does not exits"
     exit 2
 fi
 
@@ -67,6 +83,7 @@ else
     mkdir -p $root_dir
 fi
 
+#################################################################
 # OBS related folders
 
 obs_linked_folder=$root_dir/ObservedGroundMotions
@@ -156,6 +173,9 @@ if [[ ! -d $tmp_test_dir ]]; then
 fi
 TIMEFORMAT='%R'
 used_time="$(time (bash $gmsim/test_station/test_runpy.sh $ADV_IM_NAME $mag_category $tmp_test_dir) 2>&1 1>/dev/null)"
+if [[ $? != 0 ]];then
+    exit 10
+fi
 echo "used time: $used_time"
 rm -r $tmp_test_dir
 
@@ -172,7 +192,12 @@ fi
 # create screen socket and run automated workflow
 echo screen -d -m -S run_$ADV_IM_NAME bash -c "python $gmsim/workflow/scripts/cybershake/run_cybershake.py $root_dir $USERNAME $TASK_CONFIG --n_max_retries 1"
 screen -d -m -S run_$ADV_IM_NAME bash -c "python $gmsim/workflow/scripts/cybershake/run_cybershake.py $root_dir $USERNAME $TASK_CONFIG --n_max_retries 1"
-
+while [[ $? != 0 ]]; 
+do
+    echo "failed to start up screen socket, waiting 5 sec to attemp again"
+    sleep 5
+    screen -d -m -S run_$ADV_IM_NAME bash -c "python $gmsim/workflow/scripts/cybershake/run_cybershake.py $root_dir $USERNAME $TASK_CONFIG --n_max_retries 1"
+done
 # Observed related steps
 
 # split list into portions base on ratio of runtime (compared to ATC12)
