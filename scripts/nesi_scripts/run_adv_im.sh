@@ -190,13 +190,15 @@ fi
 
 
 # create screen socket and run automated workflow
-echo screen -d -m -S run_$ADV_IM_NAME bash -c "python $gmsim/workflow/scripts/cybershake/run_cybershake.py $root_dir $USERNAME $TASK_CONFIG --n_max_retries 1"
-screen -d -m -S run_$ADV_IM_NAME bash -c "python $gmsim/workflow/scripts/cybershake/run_cybershake.py $root_dir $USERNAME $TASK_CONFIG --n_max_retries 1"
+function create_runsocket {
+    screen -d -m -S run_$ADV_IM_NAME bash -c "python $gmsim/workflow/scripts/cybershake/run_cybershake.py $root_dir $USERNAME $TASK_CONFIG --n_max_retries 1"
+}
+create_runsocket
 while [[ $? != 0 ]]; 
 do
     echo "failed to start up screen socket, waiting 5 sec to attemp again"
     sleep 5
-    screen -d -m -S run_$ADV_IM_NAME bash -c "python $gmsim/workflow/scripts/cybershake/run_cybershake.py $root_dir $USERNAME $TASK_CONFIG --n_max_retries 1"
+    create_runsocket
 done
 # Observed related steps
 
