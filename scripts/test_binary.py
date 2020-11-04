@@ -70,14 +70,14 @@ if __name__ == "__main__":
     ):
 
         acc = bin.acc(stat_name)
-
-        if np.any(acc == 0):
-            if args.verbose:
-                print(
-                    f"The velocities for station {stat_name} contains zero/s, please investigate. This "
-                    f"is most likely due to crashes during HF or BB resulting in no written output."
-                )
-            #  sys.exit(1)  # Commenting this line out until further compatibility investigations - Jason: 20-10-30
+        for comp in acc.T:
+            if len(comp) == 0 or np.any(np.trim_zeros(comp) == 0):
+                if args.verbose:
+                    print(
+                        f"The velocities for station {stat_name} contains zero/s, please investigate. This "
+                        f"is most likely due to crashes during HF or BB resulting in no written output."
+                    )
+                sys.exit(1)
 
     # pass both check
     if args.verbose:
