@@ -65,6 +65,7 @@ if __name__ == "__main__":
 
     # binary zero check
     # Checks 10 random stations for any occurances of 0 in the output (aka results have not been written)
+    # Removes leading 0s from the test as there may be some time at the start before the waveform starts.
     for stat_name in np.random.choice(
         bin.stations.name, replace=False, size=min(10, bin.stations.shape[0])
     ):
