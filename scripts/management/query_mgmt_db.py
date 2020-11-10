@@ -222,7 +222,11 @@ def show_pattern_state_counts(config_file, db, todo=False):
         if todo:
             print(PATTERN_TODO_FORMATTER.format("ALL", "ALL", vals[0]))
         else:
-            print(PATTERN_FORMATTER.format(", ".join([task.name for task in tasks]), pattern, *vals, sum(vals)))
+            print(
+                PATTERN_FORMATTER.format(
+                    ", ".join([task.name for task in tasks]), pattern, *vals, sum(vals)
+                )
+            )
 
 
 def show_detailed_config_counts(config_file, db, todo=False):
