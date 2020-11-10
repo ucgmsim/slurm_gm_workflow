@@ -15,6 +15,7 @@ Slurm Ground Motion Workflow
     - Does not create new tasks for faults that are re-installed
     - When marking a task as failed it will mark that tasks depedencies as failed too. The output files are not touched
     - Removed default partition on slurm scripts for Mahuika as they aren't necessary anymore
+    - Querymgmtdb now accepts lists as part of the task_config yaml entries.
 ### Updated
     - E2E tests bugs fixed
 
