@@ -202,8 +202,11 @@ if __name__ == "__main__":
             # invalid arguments or -h
             comm.Abort()
 
-    if hasattr(args, "version") and args.version is not None:
-        args.sim_bin = binary_version.get_hf_binmod(args.version)
+    if args.version is not None:
+        if args.sim_bin is None:
+            args.sim_bin = binary_version.get_hf_binmod(args.version)
+        else:
+            assert args.sim_bin.endswith(args.version)
 
     if is_master:
         logger.debug("=" * 50)
