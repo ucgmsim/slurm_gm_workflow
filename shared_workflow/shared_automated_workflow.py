@@ -144,18 +144,21 @@ def parse_config_file(config_file_location: str, logger: Logger = get_basic_logg
     tasks_to_run_for_all = []
     tasks_with_pattern_match = {}
 
-    for proc_name, pattern in config.items():
+    for proc_name, patterns in config.items():
         proc = const.ProcessType.from_str(proc_name)
-        if pattern == ALL:
-            tasks_to_run_for_all.append(proc)
-        elif pattern == NONE:
-            pass
-        else:
-            if pattern == ONCE:
-                pattern = ONCE_PATTERN
-            if pattern not in tasks_with_pattern_match.keys():
-                tasks_with_pattern_match.update({pattern: []})
-            tasks_with_pattern_match[pattern].append(proc)
+        if not isinstance(patterns, list):
+            patterns = [patterns]
+        for pattern in patterns:
+            if pattern == ALL:
+                tasks_to_run_for_all.append(proc)
+            elif pattern == NONE:
+                pass
+            else:
+                if pattern == ONCE:
+                    pattern = ONCE_PATTERN
+                if pattern not in tasks_with_pattern_match.keys():
+                    tasks_with_pattern_match.update({pattern: []})
+                tasks_with_pattern_match[pattern].append(proc)
     logger.info("Master script will run {}".format(tasks_to_run_for_all))
     for pattern, tasks in tasks_with_pattern_match.items():
         logger.info("Pattern {} will run tasks {}".format(pattern, tasks))
