@@ -71,7 +71,8 @@ def args_parser(cmd=None):
     arg(
         "--sim_bin",
         help="high frequency binary (modified for binary out)",
-        default=binary_version.get_hf_binmod("6.0.3"),
+        default=None,
+        type=os.path.abspath,
     )
     arg(
         "--version",
@@ -202,7 +203,7 @@ if __name__ == "__main__":
             # invalid arguments or -h
             comm.Abort()
 
-    if hasattr(args, "version") and args.version is not None:
+    if args.sim_bin is None:
         args.sim_bin = binary_version.get_hf_binmod(args.version)
 
     if is_master:
