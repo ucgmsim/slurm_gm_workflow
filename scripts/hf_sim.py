@@ -71,7 +71,8 @@ def args_parser(cmd=None):
     arg(
         "--sim_bin",
         help="high frequency binary (modified for binary out)",
-        default=binary_version.get_hf_binmod("6.0.3"),
+        default=None,
+        type=os.path.abspath,
     )
     arg(
         "--version",
