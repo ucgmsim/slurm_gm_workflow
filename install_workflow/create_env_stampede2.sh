@@ -29,7 +29,7 @@ git clone git@github.com:ucgmsim/visualization.git
 
 # Create virtual environment
 mkdir virt_envs
-python3 -m venv virt_envs/python3_stampede --system-site-packages
+python3 -m venv --system-site-packages virt_envs/python3_stampede
 
 # Activate new python env
 source ./virt_envs/python3_stampede/bin/activate
