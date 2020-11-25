@@ -11,14 +11,14 @@ pipeline {
 		cd ${env.WORKSPACE}
 		pip install -r requirements.txt
 
-                echo ${env.ghprbActualCommit}
-                mkdir -p /tmp/${env.ghprbActualCommit} 
-                cd /tmp/${env.ghprbActualCommit}
+                echo ${env.JOB_NAME}
+                mkdir -p /tmp/${env.JOB_NAME} 
+                cd /tmp/${env.JOB_NAME}
                 rm -rf qcore
                 git clone https://github.com/ucgmsim/qcore.git
 
-		mkdir -p /tmp/${env.ghprbActualCommit}/build	
-		cd /tmp/${env.ghprbActualCommit}/build 
+		mkdir -p /tmp/${env.JOB_NAME}/build	
+		cd /tmp/${env.JOB_NAME}/build 
 		wget -q https://qc-s3-autotest.s3-ap-southeast-2.amazonaws.com/testing/slurm_gm_workflow/SGMW_bins.zip
 		wget -q https://qc-s3-autotest.s3-ap-southeast-2.amazonaws.com/testing/slurm_gm_workflow/SGMW_usr_lib.zip
 
@@ -39,7 +39,7 @@ pipeline {
             steps {
                 echo "Run pytest through docker: To avoid root writing temp files in workspace, copy files into docker's filesystem first" 
 		sh """
-		docker run  -v /tmp/${env.ghprbActualCommit}/qcore:/home/root/git/qcore -v ${env.WORKSPACE}:/home/root/git/slurm_gm_workflow -v /tmp/${env.ghprbActualCommit}/build/bins:/home/root/bins -v /tmp/${env.ghprbActualCommit}/build/usr_lib:/home/root/libs sungeunbae/qcore-ubuntu-tiny bash -c "
+		docker run  -v /tmp/${env.JOB_NAME}/qcore:/home/root/git/qcore -v ${env.WORKSPACE}:/home/root/git/slurm_gm_workflow -v /tmp/${env.JOB_NAME}/build/bins:/home/root/bins -v /tmp/${env.JOB_NAME}/build/usr_lib:/home/root/libs sungeunbae/qcore-ubuntu-tiny bash -c "
 		cp -rf /home/root/bins/* /;
 		cd /home/root/libs;
 		mkdir -p /usr/local/lib/python3.6;
@@ -57,14 +57,15 @@ pipeline {
 		"""
             }
         }
-        stage('Teardown') {
-            steps {
+    }
+    post {
+	always {
                 echo 'Tear down the environments'
 		sh """
-		rm -rf /tmp/${env.ghprbActualCommit}/*
+		rm -rf /tmp/${env.JOB_NAME}/*
 		docker container prune -f
 		"""
             }
-        }
     }
+
 }
