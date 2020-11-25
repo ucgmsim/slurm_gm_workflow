@@ -48,7 +48,7 @@ pipeline {
 		cd /home/root/test/slurm_gm_workflow;
 		export PYTHONPATH=/home/root/test/slurm_gm_workflow;
 		pytest -vs --ignore testing/test_manual_install &&
-		pytest --block --ignore=testing;"
+		pytest --black --ignore=testing;"
 		"""
             }
         }
