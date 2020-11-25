@@ -58,6 +58,7 @@ pipeline {
                 echo 'Tear down the environments'
 		sh """
 		rm -rf /tmp/${env.ghprbActualCommit}/*
+		docker container prune -f
 		"""
             }
         }
