@@ -403,7 +403,12 @@ if __name__ == "__main__":
     stations_todo_idx = np.arange(stations.size)[station_mask]
 
     def run_hf(
-        local_statfile, n_stat, idx_0, velocity_model=args.hf_vel_mod_1d, bin_mod=True
+        local_statfile,
+        n_stat,
+        idx_0,
+        velocity_model=args.hf_vel_mod_1d,
+        bin_mod=True,
+        retries=3,
     ):
         """
         Runs HF Fortran code.
@@ -468,28 +473,32 @@ if __name__ == "__main__":
 
         logger.debug(stdin)
 
-        # run HF binary
-        p = Popen([args.sim_bin], stdin=PIPE, stderr=PIPE, universal_newlines=True)
-        stderr = p.communicate(stdin)[1]
+        for n in range(retries):
+            # run HF binary
+            p = Popen([args.sim_bin], stdin=PIPE, stderr=PIPE, universal_newlines=True)
+            stderr = p.communicate(stdin)[1]
 
-        # load vs
-        with open(velocity_model, "r") as vm:
-            vm.readline()
-            vs = np.float32(float(vm.readline().split()[2]) * 1000.0)
+            # load vs
+            with open(velocity_model, "r") as vm:
+                vm.readline()
+                vs = np.float32(float(vm.readline().split()[2]) * 1000.0)
 
-        # e_dist is the only other variable that HF calculates
-        e_dist = np.fromstring(stderr, dtype="f4", sep="\n")
-        try:
-            assert e_dist.size == n_stat
-        except AssertionError:
-            logger.error(
-                "Expected {} e_dist values, got {}".format(n_stat, e_dist.size)
-            )
-            logger.error("Dumping Fortran stderr to hf_err_{}".format(idx_0))
+            # e_dist is the only other variable that HF calculates
+            e_dist = np.fromstring(stderr, dtype="f4", sep="\n")
+            try:
+                assert e_dist.size == n_stat
+                break
+            except AssertionError:
+                if n < retries - 1:
+                    continue
+                logger.error(
+                    "Expected {} e_dist values, got {}".format(n_stat, e_dist.size)
+                )
+                logger.error("Dumping Fortran stderr to hf_err_{}".format(idx_0))
 
-            with open("hf_err_%d" % (idx_0), "w") as e:
-                e.write(stderr)
-            comm.Abort()
+                with open("hf_err_%d" % (idx_0), "w") as e:
+                    e.write(stderr)
+                comm.Abort()
 
         # write e_dist and vs to file
         with open(args.out_file, "r+b") as out:
