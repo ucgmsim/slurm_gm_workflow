@@ -38,15 +38,16 @@ pipeline {
                 echo "Run pytest through docker: To avoid root writing temp files in workspace, copy files into docker's filesystem first" 
 		sh """
 		docker run  -v /tmp/${env.ghprbActualCommit}/qcore:/home/root/git/qcore -v ${env.WORKSPACE}:/home/root/git/slurm_gm_workflow -v /tmp/${env.ghprbActualCommit}/build/bins:/home/root/bins -v /tmp/${env.ghprbActualCommit}/build/usr_lib:/home/root/libs sungeunbae/qcore-ubuntu-tiny bash -c "
-		mv -f /home/root/bins/* /;
+		cp -rf /home/root/bins/* /;
 		cd /home/root/libs;
-		mv python3.6 /usr/local/lib;
+		mkdir -p /usr/local/lib/python3.6;
+		cp -r python3.6/* /usr/local/lib/python3.6;
 		mkdir -p /home/root/test/qcore;
-		mv -f /home/root/git/qcore/* /home/root/test/qcore/;
+		cp -rf /home/root/git/qcore/* /home/root/test/qcore;
 		cd /home/root/test/qcore;
 		python setup.py install;
 		mkdir -p /home/root/test/slurm_gm_workflow;
-		mv -f /home/root/git/slurm_gm_workflow/* /home/root/test/slurm_gm_workflow/;
+		cp -rf /home/root/git/slurm_gm_workflow/* /home/root/test/slurm_gm_workflow;
 		cd /home/root/test/slurm_gm_workflow;
 		export PYTHONPATH=/home/root/test/slurm_gm_workflow;
 		pytest -vs --ignore testing/test_manual_install &&
