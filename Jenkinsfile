@@ -32,7 +32,7 @@ pipeline {
 	}
         stage('Run regression tests') {
             steps {
-                echo 'Run pytest through docker' 
+                echo "Run pytest through docker: To avoid root writing temp files in workspace, copy files into docker's filesystem first" 
 		sh """
 		docker run  -v /tmp/${currentBuild}:/home/root/git -v ${env.WORKSPACE}:/home/root/git/slurm_gm_workflow -v ${env.WORKSPACE}/build/bins:/home/root/bins -v ${env.WORKSPACE}/build/usr_lib/python3.6:/usr/local/lib/python3.6 sungeunbae/qcore-ubuntu-tiny bash -c "
 		cp -r /home/root/bins/* /;
