@@ -42,7 +42,7 @@ pipeline {
 		python setup.py install;
 		cp -r /home/root/git/slurm_gm_workflow /home/root/test/slurm_gm_workflow;
 		cd /home/root/test/slurm_gm_workflow;
-		export PYTHONPATH=$PYTHONPATH:/home/root/test/slurm_gm_workflow;
+		export PYTHONPATH=/home/root/test/slurm_gm_workflow;
 		pytest -vs --ignore testing/test_manual_install &&
 		pytest --block --ignore=testing;"
 		"""
