@@ -19,7 +19,9 @@ pipeline {
 		mkdir -p /tmp/${env.ghprbActualCommit}/build	
 		cd /tmp/${env.ghprbActualCommit}/build 
 		wget https://qc-s3-autotest.s3-ap-southeast-2.amazonaws.com/testing/slurm_gm_workflow/SGMW_bins.zip
-		wget https://qc-s3-autotest.s3-ap-southeast-2.amazonaws.com/testing/slurm_gm_workflow/SGMW_usr_lib.zip		      unzip -q SGMW_bins.zip
+		wget https://qc-s3-autotest.s3-ap-southeast-2.amazonaws.com/testing/slurm_gm_workflow/SGMW_usr_lib.zip
+
+		unzip -q SGMW_bins.zip
 		unzip -q SGMW_usr_lib.zip
 	
 		mkdir -p ${env.WORKSPACE}/sample0
