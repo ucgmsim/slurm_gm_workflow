@@ -6,12 +6,7 @@ pipeline {
 		echo "Dependencies"
 		sh """
 	        source /var/lib/jenkins/py3env/bin/activate
-		make -p {env.WORKSPACE}/build	
-		cd ${env.WORKSPACE}/build 
-		wget https://qc-s3-autotest.s3-ap-southeast-2.amazonaws.com/testing/slurm_gm_workflow/SGMW_bins.zip
-		wget https://qc-s3-autotest.s3-ap-southeast-2.amazonaws.com/testing/slurm_gm_workflow/SGMW_usr_lib.zip		      unzip -q SGMW_bins.zip
-		unzip -q SGMW_usr_lib.zip
-		
+	
 		cd ${env.WORKSPACE}
 		pip install -r requirements.txt
 
@@ -21,6 +16,12 @@ pipeline {
                 rm -rf qcore
                 git clone https://github.com/ucgmsim/qcore.git
 
+		mkdir -p /tmp/${currentBuild}/build	
+		cd /tmp/${currentBuild}/build 
+		wget https://qc-s3-autotest.s3-ap-southeast-2.amazonaws.com/testing/slurm_gm_workflow/SGMW_bins.zip
+		wget https://qc-s3-autotest.s3-ap-southeast-2.amazonaws.com/testing/slurm_gm_workflow/SGMW_usr_lib.zip		      unzip -q SGMW_bins.zip
+		unzip -q SGMW_usr_lib.zip
+	
 		mkdir -p ${env.WORKSPACE}/sample0
 		cd ${env.WORKSPACE}/sample0
 		wget https://qc-s3-autotest.s3-ap-southeast-2.amazonaws.com/testing/slurm_gm_workflow/PangopangoF29_HYP01-10_S1244.zip
@@ -32,7 +33,7 @@ pipeline {
             steps {
                 echo "Run pytest through docker: To avoid root writing temp files in workspace, copy files into docker's filesystem first" 
 		sh """
-		docker run  -v /tmp/${currentBuild}:/home/root/git -v ${env.WORKSPACE}:/home/root/git/slurm_gm_workflow -v ${env.WORKSPACE}/build/bins:/home/root/bins -v ${env.WORKSPACE}/build/usr_lib/python3.6:/usr/local/lib/python3.6 sungeunbae/qcore-ubuntu-tiny bash -c "
+		docker run  -v /tmp/${currentBuild}/qcore:/home/root/git/qcore -v ${env.WORKSPACE}:/home/root/git/slurm_gm_workflow -v /tmp/${currentBuild}/build/bins:/home/root/bins -v /tmp/${currentBuild}/build/usr_lib/python3.6:/usr/local/lib/python3.6 sungeunbae/qcore-ubuntu-tiny bash -c "
 		cp -r /home/root/bins/* /;
 		cp -r /home/root/git/qcore /home/root/test/qcore;
 		cd /home/root/test/qcore;
