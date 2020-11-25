@@ -9,7 +9,7 @@ pipeline {
 	
 		docker pull sungeunbae/qcore-ubuntu-tiny
 		
-		cd ${env.WORKSPACE} # $BUILDDIR
+		cd ${env.WORKSPACE} 
 		wget https://qc-s3-autotest.s3-ap-southeast-2.amazonaws.com/testing/slurm_gm_workflow/SGMW_bins.zip
 		wget https://qc-s3-autotest.s3-ap-southeast-2.amazonaws.com/testing/slurm_gm_workflow/SGMW_usr_lib.zip		      unzip -q SGMW_bins.zip
 		unzip -q SGMW_usr_lib.zip
@@ -18,7 +18,7 @@ pipeline {
 		pip install -r requirements.txt
 
                 echo ${currentBuild}
-                mkdir -p /tmp/${currentBuild} #$BUILDDIR/ucgmsim
+                mkdir -p /tmp/${currentBuild} 
                 cd /tmp/${currentBuild}
                 rm -rf qcore
                 git clone https://github.com/ucgmsim/qcore.git
