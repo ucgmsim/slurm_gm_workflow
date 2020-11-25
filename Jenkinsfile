@@ -8,8 +8,8 @@ pipeline {
 	        source /var/lib/jenkins/py3env/bin/activate
 	
 		docker pull sungeunbae/qcore-ubuntu-tiny
-		
-		cd ${env.WORKSPACE} 
+		make -p {env.WORKSPACE}/build	
+		cd ${env.WORKSPACE}/build 
 		wget https://qc-s3-autotest.s3-ap-southeast-2.amazonaws.com/testing/slurm_gm_workflow/SGMW_bins.zip
 		wget https://qc-s3-autotest.s3-ap-southeast-2.amazonaws.com/testing/slurm_gm_workflow/SGMW_usr_lib.zip		      unzip -q SGMW_bins.zip
 		unzip -q SGMW_usr_lib.zip
@@ -34,7 +34,7 @@ pipeline {
             steps {
                 echo 'Run pytest through docker' 
 		sh """
-		docker run  -v /tmp/${currentBuild}:/home/root/git -v ${env.WORKSPACE}:/home/root/git/slurm_gm_workflow ${env.WORKSPACE}/bins:/home/root/bins -v ${env.WORKSPACE}/usr_lib/python3.6:/usr/local/lib/python3.6 sungeunbae/qcore-ubuntu-tiny bash -c "
+		docker run  -v /tmp/${currentBuild}:/home/root/git -v ${env.WORKSPACE}:/home/root/git/slurm_gm_workflow -v ${env.WORKSPACE}/build/bins:/home/root/bins -v ${env.WORKSPACE}/build/usr_lib/python3.6:/usr/local/lib/python3.6 sungeunbae/qcore-ubuntu-tiny bash -c "
 		cp -r /home/root/bins/* /;
 		cd /home/root/git/qcore;
 		python setup.py install;
