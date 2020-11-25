@@ -18,8 +18,8 @@ pipeline {
 
 		mkdir -p /tmp/${env.ghprbActualCommit}/build	
 		cd /tmp/${env.ghprbActualCommit}/build 
-		wget https://qc-s3-autotest.s3-ap-southeast-2.amazonaws.com/testing/slurm_gm_workflow/SGMW_bins.zip
-		wget https://qc-s3-autotest.s3-ap-southeast-2.amazonaws.com/testing/slurm_gm_workflow/SGMW_usr_lib.zip
+		wget -q https://qc-s3-autotest.s3-ap-southeast-2.amazonaws.com/testing/slurm_gm_workflow/SGMW_bins.zip
+		wget -q https://qc-s3-autotest.s3-ap-southeast-2.amazonaws.com/testing/slurm_gm_workflow/SGMW_usr_lib.zip
 
 		unzip -q SGMW_bins.zip
 		unzip -q SGMW_usr_lib.zip
@@ -27,7 +27,7 @@ pipeline {
 	
 		mkdir -p ${env.WORKSPACE}/sample0
 		cd ${env.WORKSPACE}/sample0
-		wget https://qc-s3-autotest.s3-ap-southeast-2.amazonaws.com/testing/slurm_gm_workflow/PangopangoF29_HYP01-10_S1244.zip
+		wget -q https://qc-s3-autotest.s3-ap-southeast-2.amazonaws.com/testing/slurm_gm_workflow/PangopangoF29_HYP01-10_S1244.zip
 		unzip -q PangopangoF29_HYP01-10_S1244.zip
 		rm *.zip
 		"""
