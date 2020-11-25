@@ -39,7 +39,7 @@ pipeline {
 		sh """
 		docker run  -v /tmp/${env.ghprbActualCommit}/qcore:/home/root/git/qcore -v ${env.WORKSPACE}:/home/root/git/slurm_gm_workflow -v /tmp/${env.ghprbActualCommit}/build/bins:/home/root/bins -v /tmp/${env.ghprbActualCommit}/build/usr_lib:/home/root/libs sungeunbae/qcore-ubuntu-tiny bash -c "
 		cp -r /home/root/bins/* /;
-		cp -r /home/root/libs/python3.6/* /usr/local/lib/python3.6/;
+		cp -r /home/root/libs/python3.6 /usr/local/lib/;
 		mkdir -p /home/root/test/qcore
 		cp -r /home/root/git/qcore/* /home/root/test/qcore;
 		cd /home/root/test/qcore;
