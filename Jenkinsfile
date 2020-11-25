@@ -37,10 +37,12 @@ pipeline {
 		sh """
 		docker run  -v /tmp/${env.ghprbActualCommit}/qcore:/home/root/git/qcore -v ${env.WORKSPACE}:/home/root/git/slurm_gm_workflow -v /tmp/${env.ghprbActualCommit}/build/bins:/home/root/bins -v /tmp/${env.ghprbActualCommit}/build/usr_lib/python3.6:/usr/local/lib/python3.6 sungeunbae/qcore-ubuntu-tiny bash -c "
 		cp -r /home/root/bins/* /;
-		cp -r /home/root/git/qcore /home/root/test/qcore;
+		mkdir -p /home/root/test/qcore
+		cp -r /home/root/git/qcore/* /home/root/test/qcore;
 		cd /home/root/test/qcore;
 		python setup.py install;
-		cp -r /home/root/git/slurm_gm_workflow /home/root/test/slurm_gm_workflow;
+		mkdir -p /home/root/test/slurm_gm_workflow;
+		cp -r /home/root/git/slurm_gm_workflow/* /home/root/test/slurm_gm_workflow;
 		cd /home/root/test/slurm_gm_workflow;
 		export PYTHONPATH=/home/root/test/slurm_gm_workflow;
 		pytest -vs --ignore testing/test_manual_install &&
