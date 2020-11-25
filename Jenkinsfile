@@ -6,8 +6,6 @@ pipeline {
 		echo "Dependencies"
 		sh """
 	        source /var/lib/jenkins/py3env/bin/activate
-	
-		docker pull sungeunbae/qcore-ubuntu-tiny
 		make -p {env.WORKSPACE}/build	
 		cd ${env.WORKSPACE}/build 
 		wget https://qc-s3-autotest.s3-ap-southeast-2.amazonaws.com/testing/slurm_gm_workflow/SGMW_bins.zip
@@ -36,12 +34,12 @@ pipeline {
 		sh """
 		docker run  -v /tmp/${currentBuild}:/home/root/git -v ${env.WORKSPACE}:/home/root/git/slurm_gm_workflow -v ${env.WORKSPACE}/build/bins:/home/root/bins -v ${env.WORKSPACE}/build/usr_lib/python3.6:/usr/local/lib/python3.6 sungeunbae/qcore-ubuntu-tiny bash -c "
 		cp -r /home/root/bins/* /;
-		cp -r /home/root/git/qcore /home/root/qcore;
-		cd /home/root/qcore;
+		cp -r /home/root/git/qcore /home/root/test/qcore;
+		cd /home/root/test/qcore;
 		python setup.py install;
-		cp -r /home/root/git/slurm_gm_workflow /home/root/slurm_gm_workflow;
-		cd /home/root/slurm_gm_workflow;
-		export PYTHONPATH=$PYTHONPATH:/home/root/slurm_gm_workflow;
+		cp -r /home/root/git/slurm_gm_workflow /home/root/test/slurm_gm_workflow;
+		cd /home/root/test/slurm_gm_workflow;
+		export PYTHONPATH=$PYTHONPATH:/home/root/test/slurm_gm_workflow;
 		pytest -vs --ignore testing/test_manual_install &&
 		pytest --block --ignore=testing;"
 		"""
