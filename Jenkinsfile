@@ -6,7 +6,8 @@ pipeline {
 		echo "Dependencies"
 		sh """
 	        source /var/lib/jenkins/py3env/bin/activate
-	
+		env
+
 		cd ${env.WORKSPACE}
 		pip install -r requirements.txt
 
@@ -30,6 +31,7 @@ pipeline {
 		wget -q https://qc-s3-autotest.s3-ap-southeast-2.amazonaws.com/testing/slurm_gm_workflow/PangopangoF29_HYP01-10_S1244.zip
 		unzip -q PangopangoF29_HYP01-10_S1244.zip
 		rm *.zip
+		
 		"""
 	    }
 	}
