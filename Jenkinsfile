@@ -13,12 +13,13 @@ pipeline {
 
                 echo ${env.JOB_NAME}
 		rm -rf /tmp/${env.JOB_NAME}
-                mkdir -p /tmp/${env.JOB_NAME} 
+                mkdir -p /tmp/${env.JOB_NAME}/sample0
                 cd /tmp/${env.JOB_NAME}
                 git clone https://github.com/ucgmsim/qcore.git
 
 		ln -s $HOME/data/testing/slurm_gm_workflow/SGMW /tmp/${env.JOB_NAME}/build
-		ln -s $HOME/data/testing/slurm_gm_workflow/PangopangoF29_HYP01-10_S1244 /tmp/${env.JOB_NAME}/sample0 
+		cd /tmp/${env.JOB_NAME}/sample0
+		cp -r $HOME/data/testing/slurm_gm_workflow/PangopangoF29_HYP01-10_S1244/* . 
 		
 		"""
 	    }
