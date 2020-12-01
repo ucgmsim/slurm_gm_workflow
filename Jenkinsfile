@@ -30,11 +30,10 @@ pipeline {
 		docker run --rm  -v /tmp/${env.JOB_NAME}/qcore:/home/jenkins/qcore -v ${env.WORKSPACE}:/home/jenkins/slurm_gm_workflow -v /tmp/${env.JOB_NAME}/build/bins:/home/jenkins/bins -v /tmp/${env.JOB_NAME}/build/usr_lib:/home/jenkins/lib --user `id -u`:`id -g` sungeunbae/qcore-ubuntu-tiny bash -c "
 		cp -rf /home/root/bins/* /;
 		export PATH=/home/jenkins/bins/usr/bin:/home/jenkins/bins/usr/local/bin:$PATH
-		export PYTHONPATH=/home/jenkins/lib/python3.6/dist-packages:$PYTHONPATH
+		export PYTHONPATH=/home/jenkins/lib/python3.6/dist-packages:/home/jenkins/slurm_gm_workflow
 		cd /home/jenkins/qcore;
 		python setup.py install;
 		cd  /home/jenkins/slurm_gm_workflow;
-		export PYTHONPATH=/home/root/test/slurm_gm_workflow:$PYTHONPATH;
 		pytest -vs --ignore testing/test_manual_install &&
 		pytest --black --ignore=testing;"
 		"""
