@@ -17,7 +17,7 @@ pipeline {
                 rm -rf qcore
                 git clone https://github.com/ucgmsim/qcore.git
 
-		ln -s $HOME/s3-test/testing/slurm_gm_workflow/SGMW /tmp${env.JOB_NAME}/build
+		ln -s $HOME/s3-test/testing/slurm_gm_workflow/SGMW /tmp/${env.JOB_NAME}/build
 		ln -s $HOME/s3-test/testing/slurm_gm_workflow/PangopangoF29_HYP01-10_S1244 ${env.WORKSPACE}/sample0 
 		
 		"""
