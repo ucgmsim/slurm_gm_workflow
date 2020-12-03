@@ -16,6 +16,8 @@ pipeline {
                 cd /tmp/${env.JOB_NAME}
                 rm -rf qcore
                 git clone https://github.com/ucgmsim/qcore.git
+		cd qcore
+		git checkout rmtree_ignore_error
 
 		ln -s $HOME/s3-test/testing/slurm_gm_workflow/SGMW /tmp/${env.JOB_NAME}/build
 		ln -s $HOME/s3-test/testing/slurm_gm_workflow/PangopangoF29_HYP01-10_S1244 ${env.WORKSPACE}/sample0 
