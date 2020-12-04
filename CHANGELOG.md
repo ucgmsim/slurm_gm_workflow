@@ -2,6 +2,16 @@ Slurm Ground Motion Workflow
 # Changelog
 (Based on https://wiki.canterbury.ac.nz/download/attachments/58458136/CodeVersioning_v18p2.pdf?version=1&modificationDate=1519269238437&api=v2 )
 
+## [19.6.26] -  2020-12-04 -- Migrated to Jenkins CI
+### Changed
+    - Removed .travis.yml
+    - Removed Travis-CI Webhooks from the repository setting
+    - Removed the repository link from Travis-CI web. 
+    - Jenkinsfile now controls the workflow of auto-testing
+    - Added "jenkins" user and group to Docker image, so that the Docker image can be run not as root - preventing lots of files with root permission that need sudo to be cleaned up after testing
+    - Can be manually kicked off testing.
+    - Replaced build status badge
+
 ## [19.6.25] -  2020-03-16 -- Enabled automated Empirical calculation
 ### Added
     - Added Empirical calculation as a part of automated workflow

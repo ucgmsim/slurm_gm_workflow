@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/ucgmsim/slurm_gm_workflow.svg?branch=master)](https://travis-ci.org/ucgmsim/slurm_gm_workflow)
+[![Build Status](http://13.238.107.244:8080/job/slurm_gm_workflow/badge/icon)](http://13.238.107.244:8080/job/slurm_gm_workflow)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## Slurm GM Simulation Workflow
