@@ -414,7 +414,7 @@ if __name__ == "__main__":
         else:
             seed = random_seed()
 
-        logger.debug(
+        logger.info(
             "run_hf({}, {}, {}) seed: {}".format(local_statfile, n_stat, idx_0, seed)
         )
 
