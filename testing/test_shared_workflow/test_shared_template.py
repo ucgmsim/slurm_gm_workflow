@@ -40,14 +40,9 @@ def test_write_sl_script(set_up, mocker):
         test_output = [
             "{}\n".format(line) for line in slurm_script.getvalue().split("\n")
         ]
-
-        bench_output = open(
-            os.path.join(root_path, OUTPUT, "write_sl_script.sl")
-        ).readlines()
-
-        # Check that the number of lines in each output are the same. If the data is updated in the future, causing this
-        # to fail, then the test can be changes to 'assert test_output' in line with test_generate_context
-        assert len(bench_output) == len(test_output)
+        
+        #testing if the test_output is non-zero output. it doesn't check whether this .sl script makes sense (it will be covered by end-to-end test)
+        assert len(test_output) > 0
 
 
 def test_generate_command(set_up):
