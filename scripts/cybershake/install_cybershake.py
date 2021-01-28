@@ -64,8 +64,23 @@ def main():
         action="store_true",
         help="Keep stations if they snap to the same grid-point",
     )
+    parser.add_argument(
+        "--vm_perturbations",
+        action="store_true",
+        help="Use velocity model perturbations. If this is selected all realisations must have a perturbation file.",
+    )
+    parser.add_argument(
+        "--ignore_vm_perturbations",
+        action="store_true",
+        help="Don't use velocity model perturbations. If this is selected any perturbation files will be ignored.",
+    )
 
     args = parser.parse_args()
+
+    if args.vm_perturbations and args.ignore_vm_perturbations:
+        parser.error(
+            "Both --vm_perturbations and --ignore_vm_perturbations cannot be set at the same time."
+        )
 
     path_cybershake = os.path.abspath(args.path_cybershake)
 
@@ -151,6 +166,8 @@ def main():
             args.stat_file_path,
             args.seed,
             args.extended_period,
+            vm_perturbations=args.vm_perturbations,
+            ignore_vm_perturbations=args.ignore_vm_perturbations,
             keep_dup_station=args.keep_dup_station,
             logger=qclogging.get_realisation_logger(logger, fault),
         )
