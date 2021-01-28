@@ -16,7 +16,8 @@ def test_install_simulation(set_up):
                 ("CSRoot", "AdditionalData", "PangopangoF29/")
             ):
                 input_params[i] = os.path.join(root_path, input_params[i])
-
+        # Run/fault name was missing for some reason?
+        input_params.insert(2, "PangopangoF29")
         test_output = install_shared.install_simulation(*input_params)
         root_params_dict = test_output[0]
 
