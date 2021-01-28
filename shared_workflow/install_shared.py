@@ -49,10 +49,10 @@ def install_simulation(
     hf_stat_vs_ref=None,
     sim_params_file=None,
     seed=HF_DEFAULT_SEED,
-    vm_perturbations=False,
-    ignore_vm_perturbations=False,
     logger: Logger = get_basic_logger(),
     extended_period=False,
+    vm_perturbations=False,
+    ignore_vm_perturbations=False,
 ):
     """Installs a single simulation"""
     run_name = simulation_structure.get_fault_from_realisation(rel_name)

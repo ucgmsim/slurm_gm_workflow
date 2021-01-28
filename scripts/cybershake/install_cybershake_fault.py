@@ -219,10 +219,10 @@ def install_fault(
             v1d_full_path=v1d_full_path,
             sim_params_file=sim_params_file,
             seed=seed,
-            vm_perturbations=vm_perturbations,
-            ignore_vm_perturbations=ignore_vm_perturbations,
             logger=logger,
             extended_period=extended_period,
+            vm_perturbations=vm_perturbations,
+            ignore_vm_perturbations=ignore_vm_perturbations,
         )
 
         if root_params_dict is not None and not isclose(
