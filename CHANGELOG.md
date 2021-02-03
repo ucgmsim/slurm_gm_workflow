@@ -2,6 +2,11 @@ Slurm Ground Motion Workflow
 # Changelog
 (Based on https://wiki.canterbury.ac.nz/download/attachments/58458136/CodeVersioning_v18p2.pdf?version=1&modificationDate=1519269238437&api=v2 )
 
+## [19.6.27] - 2021-01-28 -- Added VM perturbations on install
+### Added
+    - Flags --vm_perturbations and --ignore_vm_perturbations for use with velocity model perturbations
+    - If used the sim_params and root_params files will be updated for emod3d to use the relevant perturbation file
+
 ## [19.6.26] -  2020-12-04 -- Migrated to Jenkins CI
 ### Changed
     - Removed .travis.yml

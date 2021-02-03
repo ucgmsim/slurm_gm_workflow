@@ -26,7 +26,7 @@ HF_VEL_MOD_1D = "hf_vel_mod_1d"
 def install_simulation(
     version,
     sim_dir,
-    run_name,
+    rel_name,
     run_dir,
     vel_mod_dir,
     srf_file,
@@ -43,7 +43,7 @@ def install_simulation(
     fault_yaml_path,
     root_yaml_path,
     v1d_full_path,
-    user_root,
+    cybershake_root,
     v1d_dir=platform_config[PLATFORM_CONFIG.VELOCITY_MODEL_DIR.name],
     site_v1d_dir=None,
     hf_stat_vs_ref=None,
@@ -51,8 +51,12 @@ def install_simulation(
     seed=HF_DEFAULT_SEED,
     logger: Logger = get_basic_logger(),
     extended_period=False,
+    vm_perturbations=False,
+    ignore_vm_perturbations=False,
 ):
     """Installs a single simulation"""
+    run_name = simulation_structure.get_fault_from_realisation(rel_name)
+
     lf_sim_root_dir = simulation_structure.get_lf_dir(sim_dir)
     hf_dir = simulation_structure.get_hf_dir(sim_dir)
     bb_dir = simulation_structure.get_bb_dir(sim_dir)
@@ -60,8 +64,8 @@ def install_simulation(
 
     dir_list = [sim_dir, lf_sim_root_dir, hf_dir, bb_dir, im_calc_dir]
     version = str(version)
-    if not os.path.isdir(user_root):
-        dir_list.insert(0, user_root)
+    if not os.path.isdir(cybershake_root):
+        dir_list.insert(0, cybershake_root)
 
     shared.verify_user_dirs(dir_list)
 
@@ -115,7 +119,7 @@ def install_simulation(
     sim_params_dict = {
         SimParams.fault_yaml_path.value: fault_yaml_path,
         SimParams.run_name.value: run_name,
-        SimParams.user_root.value: user_root,
+        SimParams.user_root.value: cybershake_root,
         SimParams.run_dir.value: run_dir,
         SimParams.sim_dir.value: sim_dir,
         SimParams.srf_file.value: srf_file,
@@ -136,6 +140,30 @@ def install_simulation(
         return None, None, None, None
 
     sim_params_dict["emod3d"] = {}
+    vm_pert_file = simulation_structure.get_realisation_VM_pert_file(
+        cybershake_root, rel_name
+    )
+    if vm_perturbations:
+        # We want to use the perturbation file
+        if os.path.exists(vm_pert_file):
+            # The perturbation file exists, use it
+            root_params_dict["emod3d"]["model_style"] = 3
+            sim_params_dict["emod3d"]["pertb_file"] = vm_pert_file
+        else:
+            # The perturbation file does not exist. Raise an exception
+            raise FileNotFoundError(
+                f"The expected perturbation file {vm_pert_file} does not exist. Generate or move this file to the given location."
+            )
+    elif not ignore_vm_perturbations:
+        # We haven't used either flag so if the perturbation file exists we don't know what to do with it
+        if os.path.exists(vm_pert_file):
+            # It exists. Raise an error and make the user deal with it
+            raise FileExistsError(
+                f"The perturbation file {vm_pert_file} exists. Reset and run installation with the --ignore_vm_perturbations flag if you do not wish to use it."
+            )
+    else:
+        # Ignore the perturbation file
+        pass
 
     sim_params_dict["hf"] = {SimParams.slip.value: stoch_file}
 
