@@ -10,6 +10,8 @@
 #PBS -l select=1:ncpus=36
 #PBS -l walltime=00:15:00
 
+export SLURM_JOB_ID="${PBS_JOBID/.pbs/}"
+
 if [[ ! -z ${CUR_ENV} && ${CUR_HPC} != "mahuika" ]]; then
     source $CUR_ENV/workflow/install_workflow/helper_functions/activate_env.sh $CUR_ENV "mahuika"
 fi
@@ -61,7 +63,7 @@ if [[ $? == 0 ]]; then
     fd_count=`cat $fd_name | wc -l`
     
     # save meta data
-    python $gmsim/workflow/metadata/log_metadata.py $REL_LOC HF2BB cores=$SLURM_NTASKS fd_count=$fd_count start_time=$start_time end_time=$end_time
+    python $gmsim/workflow/metadata/log_metadata.py $REL_LOC HF2BB cores=$PBS_TASKNUM fd_count=$fd_count start_time=$start_time end_time=$end_time
 else
     #reformat $res to remove '\n'
     res=`echo $res | tr -d '\n'`
