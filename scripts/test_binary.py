@@ -65,19 +65,20 @@ if __name__ == "__main__":
 
     # binary zero check
     # Checks 10 random stations for any occurances of 0 in the output (aka results have not been written)
+    # Removes leading 0s from the test as there may be some time at the start before the waveform starts.
     for stat_name in np.random.choice(
         bin.stations.name, replace=False, size=min(10, bin.stations.shape[0])
     ):
 
         acc = bin.acc(stat_name)
-
-        if np.any(acc == 0):
-            if args.verbose:
-                print(
-                    f"The velocities for station {stat_name} contains zero/s, please investigate. This "
-                    f"is most likely due to crashes during HF or BB resulting in no written output."
-                )
-            sys.exit(1)
+        for comp in acc.T:
+            if len(comp) == 0 or np.any(np.trim_zeros(comp) == 0):
+                if args.verbose:
+                    print(
+                        f"The velocities for station {stat_name} contains zero/s, please investigate. This "
+                        f"is most likely due to crashes during HF or BB resulting in no written output."
+                    )
+                sys.exit(1)
 
     # pass both check
     if args.verbose:

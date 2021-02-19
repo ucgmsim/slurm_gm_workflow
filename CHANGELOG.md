@@ -2,6 +2,21 @@ Slurm Ground Motion Workflow
 # Changelog
 (Based on https://wiki.canterbury.ac.nz/download/attachments/58458136/CodeVersioning_v18p2.pdf?version=1&modificationDate=1519269238437&api=v2 )
 
+## [19.6.27] - 2021-01-28 -- Added VM perturbations on install
+### Added
+    - Flags --vm_perturbations and --ignore_vm_perturbations for use with velocity model perturbations
+    - If used the sim_params and root_params files will be updated for emod3d to use the relevant perturbation file
+
+## [19.6.26] -  2020-12-04 -- Migrated to Jenkins CI
+### Changed
+    - Removed .travis.yml
+    - Removed Travis-CI Webhooks from the repository setting
+    - Removed the repository link from Travis-CI web. 
+    - Jenkinsfile now controls the workflow of auto-testing
+    - Added "jenkins" user and group to Docker image, so that the Docker image can be run not as root - preventing lots of files with root permission that need sudo to be cleaned up after testing
+    - Can be manually kicked off testing.
+    - Replaced build status badge
+
 ## [19.6.25] -  2020-03-16 -- Enabled automated Empirical calculation
 ### Added
     - Added Empirical calculation as a part of automated workflow
@@ -15,6 +30,7 @@ Slurm Ground Motion Workflow
     - Does not create new tasks for faults that are re-installed
     - When marking a task as failed it will mark that tasks depedencies as failed too. The output files are not touched
     - Removed default partition on slurm scripts for Mahuika as they aren't necessary anymore
+    - Querymgmtdb now accepts lists as part of the task_config yaml entries.
 ### Updated
     - E2E tests bugs fixed
 
