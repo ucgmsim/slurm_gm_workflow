@@ -62,22 +62,26 @@ def load_args(logger):
         action="store_true",
         help="Keep stations if they snap to the same grid-point",
     )
-    parser.add_argument(
+    
+    vm_pert = parser.add_mutually_exclusive_group()
+    vm_pert.add_argument(
         "--vm_perturbations",
         action="store_true",
         help="Use velocity model perturbations. If this is selected all realisations must have a perturbation file.",
     )
-    parser.add_argument(
+    vm_pert.add_argument(
         "--ignore_vm_perturbations",
         action="store_true",
         help="Don't use velocity model perturbations. If this is selected any perturbation files will be ignored.",
     )
-    parser.add_argument(
+    
+    qp_qs = parser.add_mutually_exclusive_group()
+    qp_qs.add_argument(
         "--vm_qpqs_files",
         action="store_true",
         help="Use generated Qp/Qs files. If this is selected all events/faults must have Qp and Qs files.",
     )
-    parser.add_argument(
+    qp_qs.add_argument(
         "--ignore_vm_qpqs_files",
         action="store_true",
         help="Don't use generated Qp/Qs files. If this is selected any Qp/Qs files will be ignored.",
@@ -102,17 +106,6 @@ def load_args(logger):
     logger.debug(f"Arguments are as follows: {args}")
 
     messages = []
-
-    if args.vm_perturbations and args.ignore_vm_perturbations:
-        # Ensure that only one flag is set. If neither is set and perturbation files exist then raise an error later
-        messages.append(
-            "Both --vm_perturbations and --ignore_vm_perturbations cannot be set at the same time."
-        )
-    if args.vm_qpqs_files and args.ignore_vm_qpqs_files:
-        # Ensure that only one flag is set. If neither is set and Qp/Qs files exist then raise an error later
-        messages.append(
-            "Both --vm_qpqs_files and --ignore_vm_qpqs_files cannot be set at the same time."
-        )
 
     gmsim_version_path = path.join(
         platform_config[PLATFORM_CONFIG.TEMPLATES_DIR.name], "gmsim", args.version
