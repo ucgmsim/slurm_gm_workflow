@@ -11,7 +11,7 @@ import scripts.management.db_helper as db_helper
 
 from shared_workflow.shared_automated_workflow import parse_config_file
 
-PATTERN_FORMATTER = "{:>25}, {:>15}: created: {:>5}, queued: {:>5}, running: {:>5}, completed: {:>5}, failed: {:>5}, other: {:>5}, total: {:>6}"
+PATTERN_FORMATTER = "{:>25}, {:>15}: created: {:>5}, queued: {:>5}, running: {:>5}, other: {:>5}, completed: {:>5}, failed: {:>5}, total: {:>6}"
 PATTERN_TODO_FORMATTER = "{:>25}, {:>15}: created: {:>5}"
 RETRY_MAX_FILTER = """AND (SELECT count(*) 
                     FROM state as state2, status_enum as status_enum2 
