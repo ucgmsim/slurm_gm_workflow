@@ -35,7 +35,7 @@ pipeline {
 		cd /home/jenkins/qcore;
 		python setup.py install --user;
 		cd  /home/jenkins/slurm_gm_workflow;
-		pytest -vs --ignore testing/test_manual_install &&
+		pytest -vs --ignore testing/test_manual_install --ignore scripts/ &&
 		pytest --black --ignore=testing;"
 		"""
             }
