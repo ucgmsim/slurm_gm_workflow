@@ -16,7 +16,6 @@ from qcore.simulation_structure import get_im_calc_dir
 from IM_calculation.Advanced_IM.runlibs_2d import check_status
 
 
-
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument(
