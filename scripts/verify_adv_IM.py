@@ -62,7 +62,7 @@ def check_log(list_folders, model, csv_stations, components):
     return failed_stations
 
 
-def main(sim_dir, adv_im_model, components, exit=True):
+def main(sim_dir, adv_im_model, components):
 
     failed = []
 
@@ -100,14 +100,13 @@ def main(sim_dir, adv_im_model, components, exit=True):
             failed.append((model, "Crashed", failed_stations))
     if len(failed) != 0:
         print("some runs have failed. models: {}".format(failed))
-        if exit:
-            sys.exit(1)
+        return 1
     else:
         print("check passed")
-        if exit:
-            sys.exit(0)
+        return 0
 
 
 if __name__ == "__main__":
     args = parse_args()
-    main(args.sim_dir, args.adv_im_model, args.components)
+    res = main(args.sim_dir, args.adv_im_model, args.components)
+    sys.exit(res)
