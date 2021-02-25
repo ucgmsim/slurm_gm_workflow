@@ -180,7 +180,9 @@ def install_simulation(
             message = f"The expected Qp/Qs files {qpfile} and/or {qsfile} do not exist. Generate or move these files to the given location."
             logger.error(message)
             raise FileExistsError(message)
-    elif not ignore_vm_qpqs_files and os.path.exists(vm_pert_file):
+    elif not ignore_vm_qpqs_files and (
+        os.path.exists(qsfile) or os.path.exists(qpfile)
+    ):
         # We haven't used either flag but the Qp/Qs files exist. Raise an error and make the user deal with it
         message = f"The Qp/Qs files {qpfile}, {qsfile}  exist. Reset and run installation with the --ignore_vm_qpqs_files flag if you do not wish to use them."
         logger.error(message)

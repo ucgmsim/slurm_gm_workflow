@@ -123,12 +123,7 @@ def load_args(logger):
         )
     else:
         for f_name in [ROOT_DEFAULTS_FILE_NAME, "emod3d_defaults.yaml"]:
-            if not path.exists(
-                path.join(
-                    gmsim_version_path,
-                    f_name,
-                )
-            ):
+            if not path.exists(path.join(gmsim_version_path, f_name)):
                 messages.append(
                     "Version {} does not have a required {} file in the directory {}".format(
                         args.version,
