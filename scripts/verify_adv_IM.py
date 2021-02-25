@@ -42,6 +42,7 @@ def check_log(list_folders, model, csv_stations, components):
     no "Failed" in all Analysis*.txt == crashed
     "Failed" in all Analysis*.txt == failed to converge (normal)
     """
+    failed_stations = []
     for station_dir in list_folders:
         # check if folder is a station run folder
         station_model_dir = os.path.join(station_dir, model)
@@ -51,18 +52,15 @@ def check_log(list_folders, model, csv_stations, components):
         ):
             # does not match naming for a station run, possibly created by something else, skipping
             continue
-        result = True
         for comp in components:
             component_outdir = os.path.join(station_model_dir, comp)
-            result = (
-                check_status(component_outdir, check_fail=True)
-                and result
-            )
-            # logs shows not all analysis failed to converge, but station failed to create csv
-            print(f"{station_dir} failed to run on {model}")
-            # break the loop as soon as one component fail the verification
-            if not result: return False
-    return result
+            if not check_status(component_outdir, check_fail=True):
+                failed_stations.append(station_name)
+                # logs shows not all analysis failed to converge, but station failed to create csv
+                print(f"{station_dir} failed to run on {model}")
+                # break the loop as soon as one component fail the verification
+                break
+    return failed_stations
     
 def main(sim_dir, adv_im_model, components, exit=True):
 
@@ -76,12 +74,12 @@ def main(sim_dir, adv_im_model, components, exit=True):
         try:
             df = pd.read_csv(csv_path)
         except FileNotFoundError:
-            failed.append(model)
+            failed.append((model,"NoCSV",None))
             print("csv for {} does not exist".format(model))
             continue
         # check for null/nan
         if df.isnull().values.any():
-            failed.append(model)
+            failed.append( (model,"NullValue", df[df.isnull().values].station.to_list()) )
 
         # check station count, if match, skip rest of checks
         csv_stations = df.station.unique()
@@ -91,9 +89,9 @@ def main(sim_dir, adv_im_model, components, exit=True):
             # station folder count matches csv.station.count
             continue
         # check for logs 
-        res = check_log(list_folders, model, csv_stations, components)
-        if res != True:
-            failed.append(model)
+        failed_stations = check_log(list_folders, model, csv_stations, components)
+        if len(failed_stations) != 0:
+            failed.append((model,"Crashed",failed_stations))
     if len(failed) != 0:
         print("some runs have failed. models: {}".format(failed))
         if exit:
