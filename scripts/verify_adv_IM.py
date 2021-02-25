@@ -1,18 +1,20 @@
-# script to quickly check the status of adv_im for a event
-# checks for existance of aggregated csv
-# checks for nan/null in the csv
-# checks station in csv matches stations ran
+"""script to quickly check the status of adv_im for a event
+checks for existance of aggregated csv
+checks for nan/null in the csv
+checks station in csv matches stations ran
+"""
 
 
 import argparse
+import os
+import sys
+
 import pandas as pd
 
 from qcore import constants as const
 from qcore.simulation_structure import get_im_calc_dir
 from IM_calculation.Advanced_IM.runlibs_2d import check_status
 
-import os
-import sys
 
 
 def parse_args():
