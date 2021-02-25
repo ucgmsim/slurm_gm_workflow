@@ -106,6 +106,8 @@ def install_fault(
     extended_period=False,
     vm_perturbations=False,
     ignore_vm_perturbations=False,
+    vm_qpqs_files=False,
+    ignore_vm_qpqs_files=False,
     keep_dup_station=True,
     logger: Logger = get_basic_logger(),
 ):
@@ -223,6 +225,8 @@ def install_fault(
             extended_period=extended_period,
             vm_perturbations=vm_perturbations,
             ignore_vm_perturbations=ignore_vm_perturbations,
+            vm_qpqs_files=vm_qpqs_files,
+            ignore_vm_qpqs_files=ignore_vm_qpqs_files,
         )
 
         if root_params_dict is not None and not isclose(
