@@ -36,6 +36,7 @@ def parse_args():
 
     return args
 
+
 def check_log(list_folders, model, csv_stations, components):
     """
     check of "Failed" msg in logs
@@ -47,9 +48,7 @@ def check_log(list_folders, model, csv_stations, components):
         # check if folder is a station run folder
         station_model_dir = os.path.join(station_dir, model)
         station_name = os.path.basename(station_dir)
-        if not os.path.isdir(station_model_dir) or (
-            station_name in csv_stations
-        ):
+        if not os.path.isdir(station_model_dir) or (station_name in csv_stations):
             # does not match naming for a station run, possibly created by something else, skipping
             continue
         for comp in components:
@@ -61,7 +60,8 @@ def check_log(list_folders, model, csv_stations, components):
                 # break the loop as soon as one component fail the verification
                 break
     return failed_stations
-    
+
+
 def main(sim_dir, adv_im_model, components, exit=True):
 
     failed = []
@@ -74,24 +74,30 @@ def main(sim_dir, adv_im_model, components, exit=True):
         try:
             df = pd.read_csv(csv_path)
         except FileNotFoundError:
-            failed.append((model,"NoCSV",None))
+            failed.append((model, "NoCSV", None))
             print("csv for {} does not exist".format(model))
             continue
         # check for null/nan
         if df.isnull().values.any():
-            failed.append( (model,"NullValue", df[df.isnull().values].station.to_list()) )
+            failed.append(
+                (model, "NullValue", df[df.isnull().values].station.to_list())
+            )
 
         # check station count, if match, skip rest of checks
         csv_stations = df.station.unique()
         # glob for station folders
-        list_folders = [ y for y in [ os.path.join(im_dir,x) for x in os.listdir(im_dir)] if os.path.isdir(y)]
+        list_folders = [
+            y
+            for y in [os.path.join(im_dir, x) for x in os.listdir(im_dir)]
+            if os.path.isdir(y)
+        ]
         if len(csv_stations) == len(list_folders):
             # station folder count matches csv.station.count
             continue
-        # check for logs 
+        # check for logs
         failed_stations = check_log(list_folders, model, csv_stations, components)
         if len(failed_stations) != 0:
-            failed.append((model,"Crashed",failed_stations))
+            failed.append((model, "Crashed", failed_stations))
     if len(failed) != 0:
         print("some runs have failed. models: {}".format(failed))
         if exit:
