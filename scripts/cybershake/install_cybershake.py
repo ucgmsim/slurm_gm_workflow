@@ -62,7 +62,7 @@ def load_args(logger):
         action="store_true",
         help="Keep stations if they snap to the same grid-point",
     )
-    
+
     vm_pert = parser.add_mutually_exclusive_group()
     vm_pert.add_argument(
         "--vm_perturbations",
@@ -74,7 +74,7 @@ def load_args(logger):
         action="store_true",
         help="Don't use velocity model perturbations. If this is selected any perturbation files will be ignored.",
     )
-    
+
     qp_qs = parser.add_mutually_exclusive_group()
     qp_qs.add_argument(
         "--vm_qpqs_files",
