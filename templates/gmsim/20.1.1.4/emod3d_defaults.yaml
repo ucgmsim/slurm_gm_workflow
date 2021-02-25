@@ -39,8 +39,10 @@ order: 4
 pmodfile: vp3dfile.p
 pointmt: 0
 qbndmax: 100.0
+qpfile: qp.qp
 qpfrac: 100
 qpqs_factor: 2.0
+qsfile: qs.qs
 qsfrac: 50
 read_restart: 0
 report: 100
@@ -57,7 +59,5 @@ ts_xy: 1
 ts_xz: 0
 ts_yz: 0
 tzero: 0.6
+use_qpqs: 0
 vmodel_swapb: 0
-xseis: 0
-yseis: 0
-zseis: 0
