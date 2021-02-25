@@ -166,12 +166,8 @@ def install_simulation(
         # The perturbation file doesn't exist or we are explicitly ignoring it. Keep going
         pass
 
-    qsfile = simulation_structure.get_fault_qs_file(
-        cybershake_root, rel_name
-    )
-    qpfile = simulation_structure.get_fault_qp_file(
-        cybershake_root, rel_name
-    )
+    qsfile = simulation_structure.get_fault_qs_file(cybershake_root, rel_name)
+    qpfile = simulation_structure.get_fault_qp_file(cybershake_root, rel_name)
     if vm_qpqs_files:
         # We want to use the Qp/Qs files
         if os.path.exists(qsfile) and os.path.exists(qpfile):
