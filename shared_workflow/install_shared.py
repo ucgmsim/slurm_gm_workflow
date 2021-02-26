@@ -97,7 +97,8 @@ def install_simulation(
         FaultParams.root_yaml_path.value: root_yaml_path,
         FaultParams.vel_mod_dir.value: vel_mod_dir,
     }
-
+    # read VM params
+    vm_params_dict = load_yaml(vm_params_path) 
     # Sim Params
     sim_params_dict = {
         SimParams.fault_yaml_path.value: fault_yaml_path,
@@ -292,7 +293,7 @@ def q_site_specific():
 
 
 def dump_all_yamls(
-    sim_dir, root_params_dict, fault_params_dict, sim_params_dict, vm_params_dict
+    sim_dir, root_params_dict, fault_params_dict, sim_params_dict
 ):
     """Saves the yaml files at the specified locations"""
     utils.dump_yaml(sim_params_dict, os.path.join(sim_dir, "sim_params.yaml"))
