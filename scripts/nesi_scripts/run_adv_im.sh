@@ -12,21 +12,15 @@ if [[ $# -lt 2 ]];then
     echo "please provide 1. model name 2. list of events"
     exit 1
 fi
-ADV_IM_NAME=$1
-LIST_EVENTS_F=$2
+ADV_IM_NAME=${1:?please provide the name of a advanced IM model}
+LIST_EVENTS_F=${2:?please provide a file that contains a list of events}
+BBbin_root_dir=${3:?please provide the path to simulation root folder that contains BBbin}
+OBS_DATA_DIR=${4:?please provide the path to ObservedData}
 
-# some constant variables, only update these when version changes
-BBbin_root_dir=${3:-/nesi/project/nesi00213/RunFolder/ykh22/Adv_IM/v20p5p8}
-OBS_DATA_DIR=${4:-/nesi/project/nesi00213/RunFolder/ykh22/Adv_IM/ObservedGroundMotions}
 VALIDATION_VERSION=`basename $BBbin_root_dir`
 validation_root_params_yaml=$BBbin_root_dir/Runs/root_params.yaml
 
-# no specifc version supplied use default
-if [[ -z "$3" ]];then
-    gmsim_version=18.5.3.1.a
-else
-    gmsim_version=`python -c "from qcore.utils import load_yaml,DotDictify; p=DotDictify(load_yaml(\"$validation_root_params_yaml\"));print(p.version)"`.a
-fi
+gmsim_version=`python -c "from qcore.utils import load_yaml,DotDictify; p=DotDictify(load_yaml(\"$validation_root_params_yaml\"));print(p.version)"`.a
 gmsim_version_dir=$gmsim/workflow/templates/gmsim/$gmsim_version/
 TASK_CONFIG_TEMPLATE=$gmsim/workflow/templates/gmsim/18.5.3.1.a/task_config.yaml
 
