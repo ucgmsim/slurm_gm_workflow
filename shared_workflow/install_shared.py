@@ -98,7 +98,7 @@ def install_simulation(
         FaultParams.vel_mod_dir.value: vel_mod_dir,
     }
     # read VM params
-    vm_params_dict = utils.load_yaml(vm_params_path) 
+    vm_params_dict = utils.load_yaml(simulation_structure.get_vm_params_yaml(vm_params_path) )
     # Sim Params
     sim_params_dict = {
         SimParams.fault_yaml_path.value: fault_yaml_path,
