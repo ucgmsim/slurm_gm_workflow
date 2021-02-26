@@ -6,12 +6,6 @@
 #   3. the path pointing to a simulation's root folder that contains (Runs, Data folder)
 #   4. the path pointing to a directory containing observed data
 # To avoid complexisity this script will only run one Adv_IM model at a time
-if [[ $# -lt 2 ]];then
-    # more than one args are provided, exit and warn user
-    #echo "this script only runs on one Adv_IM model, please make sure only one is provided"
-    echo "please provide 1. model name 2. list of events"
-    exit 1
-fi
 ADV_IM_NAME=${1:?please provide the name of a advanced IM model}
 LIST_EVENTS_F=${2:?please provide a file that contains a list of events}
 BBbin_root_dir=${3:?please provide the path to simulation root folder that contains BBbin}
