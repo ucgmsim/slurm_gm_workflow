@@ -53,6 +53,8 @@ def install_simulation(
     extended_period=False,
     vm_perturbations=False,
     ignore_vm_perturbations=False,
+    vm_qpqs_files=False,
+    ignore_vm_qpqs_files=False,
 ):
     """Installs a single simulation"""
     run_name = simulation_structure.get_fault_from_realisation(rel_name)
@@ -121,6 +123,7 @@ def install_simulation(
         return None, None, None, None
 
     sim_params_dict["emod3d"] = {}
+
     vm_pert_file = simulation_structure.get_realisation_VM_pert_file(
         cybershake_root, rel_name
     )
@@ -132,18 +135,41 @@ def install_simulation(
             sim_params_dict["emod3d"]["pertb_file"] = vm_pert_file
         else:
             # The perturbation file does not exist. Raise an exception
-            raise FileNotFoundError(
-                f"The expected perturbation file {vm_pert_file} does not exist. Generate or move this file to the given location."
-            )
-    elif not ignore_vm_perturbations:
-        # We haven't used either flag so if the perturbation file exists we don't know what to do with it
-        if os.path.exists(vm_pert_file):
-            # It exists. Raise an error and make the user deal with it
-            raise FileExistsError(
-                f"The perturbation file {vm_pert_file} exists. Reset and run installation with the --ignore_vm_perturbations flag if you do not wish to use it."
-            )
+            message = f"The expected perturbation file {vm_pert_file} does not exist. Generate or move this file to the given location."
+            logger.error(message)
+            raise FileNotFoundError(message)
+    elif not ignore_vm_perturbations and os.path.exists(vm_pert_file):
+        # We haven't used either flag and the perturbation file exists. Raise an error and make the user deal with it
+        message = f"The perturbation file {vm_pert_file} exists. Reset and run installation with the --ignore_vm_perturbations flag if you do not wish to use it."
+        logger.error(message)
+        raise FileExistsError(message)
     else:
-        # Ignore the perturbation file
+        # The perturbation file doesn't exist or we are explicitly ignoring it. Keep going
+        pass
+
+    qsfile = simulation_structure.get_fault_qs_file(cybershake_root, rel_name)
+    qpfile = simulation_structure.get_fault_qp_file(cybershake_root, rel_name)
+    if vm_qpqs_files:
+        # We want to use the Qp/Qs files
+        if os.path.exists(qsfile) and os.path.exists(qpfile):
+            # The Qp/Qs files exist, use them
+            root_params_dict["emod3d"]["use_qpqs"] = 1
+            sim_params_dict["emod3d"]["qsfile"] = qsfile
+            sim_params_dict["emod3d"]["qpfile"] = qpfile
+        else:
+            # At least one of the Qp/Qs files do not exist. Raise an exception
+            message = f"The expected Qp/Qs files {qpfile} and/or {qsfile} do not exist. Generate or move these files to the given location."
+            logger.error(message)
+            raise FileExistsError(message)
+    elif not ignore_vm_qpqs_files and (
+        os.path.exists(qsfile) or os.path.exists(qpfile)
+    ):
+        # We haven't used either flag but the Qp/Qs files exist. Raise an error and make the user deal with it
+        message = f"The Qp/Qs files {qpfile}, {qsfile}  exist. Reset and run installation with the --ignore_vm_qpqs_files flag if you do not wish to use them."
+        logger.error(message)
+        raise FileExistsError(message)
+    else:
+        # Either the Qp/Qs files don't exist, or we are explicitly ignoring them. Keep going
         pass
 
     sim_params_dict["hf"] = {SimParams.slip.value: stoch_file}
