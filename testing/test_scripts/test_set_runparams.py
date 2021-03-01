@@ -49,6 +49,7 @@ maxmem=1500
 model_style=1
 nseis=1
 order=4
+pertbfile="none.pertb"
 pmodfile="vp3dfile.p"
 pointmt=0
 qbndmax=100.0
