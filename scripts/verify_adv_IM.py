@@ -12,14 +12,13 @@ import sys
 import pandas as pd
 
 from qcore import constants as const
-from qcore.simulation_structure import get_im_calc_dir
 from IM_calculation.Advanced_IM.runlibs_2d import check_status
 
 
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "sim_dir", type=str, help="The path to the realisation directory"
+        "im_calc_dir", type=str, help="The path to the realisation directory"
     )
     parser.add_argument(
         "adv_im_model", nargs="+", type=str, help="list of adv_IM models that ran"
@@ -63,15 +62,13 @@ def check_log(list_folders, model, csv_stations, components):
     return failed_stations
 
 
-def main(sim_dir, adv_im_model, components):
+def main(im_calc_dir, adv_im_model, components):
 
     failed = []
 
     for model in adv_im_model:
-        # check if csv exist
-        csv_path = os.path.join(sim_dir, "IM_calc/{}.csv".format(model))
-        im_dir = get_im_calc_dir(sim_dir)
-        # check file exist first to prevent crash
+        csv_path = os.path.join(im_calc_dir, "{}.csv".format(model))
+        # using try/except to prevent crash
         try:
             df = pd.read_csv(csv_path)
         except FileNotFoundError:
@@ -89,7 +86,7 @@ def main(sim_dir, adv_im_model, components):
         # glob for station folders
         list_folders = [
             y
-            for y in [os.path.join(im_dir, x) for x in os.listdir(im_dir)]
+            for y in [os.path.join(im_calc_dir, x) for x in os.listdir(im_calc_dir)]
             if os.path.isdir(y)
         ]
         if len(csv_stations) == len(list_folders):
@@ -109,5 +106,5 @@ def main(sim_dir, adv_im_model, components):
 
 if __name__ == "__main__":
     args = parse_args()
-    res = main(args.sim_dir, args.adv_im_model, args.components)
+    res = main(args.im_calc_dir, args.adv_im_model, args.components)
     sys.exit(res)
