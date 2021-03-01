@@ -135,7 +135,7 @@ def install_simulation(
         if os.path.exists(vm_pert_file):
             # The perturbation file exists, use it
             root_params_dict["emod3d"]["model_style"] = 3
-            sim_params_dict["emod3d"]["pertb_file"] = vm_pert_file
+            sim_params_dict["emod3d"]["pertbfile"] = vm_pert_file
         else:
             # The perturbation file does not exist. Raise an exception
             message = f"The expected perturbation file {vm_pert_file} does not exist. Generate or move this file to the given location."
