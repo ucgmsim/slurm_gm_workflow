@@ -15,21 +15,22 @@ def parse_args():
 
     return args
 
-def main(args):
+def main(path_rootyaml, models):
     
-    root_params = load_yaml(args.path_rootyaml)
+    root_params = load_yaml(path_rootyaml)
     
+    # create key with empty value if key no exist
     if not (const.ProcessType.advanced_IM.str_value in root_params.keys()):
         root_params[const.ProcessType.advanced_IM.str_value] = {}
-    
-    root_params[const.ProcessType.advanced_IM.str_value]['models'] = args.models
-
+    # update value for models
+    root_params[const.ProcessType.advanced_IM.str_value]['models'] = models
+    # extra options for advanced_IM
     if not ('match_obs_stations' in root_params[const.ProcessType.advanced_IM.str_value]):
         root_params[const.ProcessType.advanced_IM.str_value]['match_obs_stations'] = True
-        
-    dump_yaml(root_params,args.path_rootyaml)    
+    # dump updated dictionary, overwrites original    
+    dump_yaml(root_params,path_rootyaml)    
     
 
 if __name__ == "__main__":
     args = parse_args()
-    main(args)
+    main(args.path_rootyaml, args.models)
