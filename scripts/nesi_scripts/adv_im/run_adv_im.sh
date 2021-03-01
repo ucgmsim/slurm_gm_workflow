@@ -6,6 +6,17 @@
 #   3. the path pointing to a simulation's root folder that contains (Runs, Data folder)
 #   4. the path pointing to a directory containing observed data
 # To avoid complexisity this script will only run one Adv_IM model at a time
+
+# exit codes:
+#    2: input errors
+#    3: File/Directory exist error
+#    5: failed to create screen socket
+#   10: install_cybershake failed
+#   11: failed to update root_params.yaml
+#   12: failed to link BB
+#   13: failed to link ObservedData
+#   14: non-zero exit on test run
+
 ADV_IM_NAME=${1:?please provide the name of a advanced IM model}
 LIST_EVENTS_F=${2:?please provide a file that contains a list of events}
 BBbin_root_dir=${3:?please provide the path to simulation root folder that contains BBbin}
@@ -14,17 +25,50 @@ OBS_DATA_DIR=${4:?please provide the path to ObservedData}
 VALIDATION_VERSION=`basename $BBbin_root_dir`
 validation_root_params_yaml=$BBbin_root_dir/Runs/root_params.yaml
 
-gmsim_version=`python -c "from qcore.utils import load_yaml,DotDictify; p=DotDictify(load_yaml(\"$validation_root_params_yaml\"));print(p.version)"`.a
+# read gmsim version from source run. although its not being used by adv_im at the moment, the install script needs it
+gmsim_version=`python -c "from qcore.utils import load_yaml,DotDictify; p=DotDictify(load_yaml(\"$validation_root_params_yaml\"));print(p.version)"`
+if [[ $? != 0 ]];then
+    echo "failed to read gmsim_version from $validation_root_params_yaml"
+    exit 2
+fi
 gmsim_version_dir=$gmsim/workflow/templates/gmsim/$gmsim_version/
-TASK_CONFIG_TEMPLATE=$gmsim/workflow/templates/gmsim/18.5.3.1.a/task_config.yaml
+# a template config to run only adv_im
+TASK_CONFIG_TEMPLATE=$gmsim/workflow/scripts/nesi_scripts/adv_im/task_config.yaml
 
 SIM_DATA_DIR=$BBbin_root_dir/Data/
 
 FAKE_STATION_LIST=/nesi/project/nesi00213/StationInfo/cantstations.ll #this list is used for install.py not actually used since BB has already ran
-WCT_BENCHMARK_MINSEC=1477 # seconds used to run a ATC12 model on single waveform
+WCT_BENCHMARK_MINSEC=1500 # seconds used to run a ATC12 model on single waveform
 WCT_BENCHMARK_MAXHOUR=6 # the wct for ATC12
 BENCHMARK_OBS_SIZE=30 # the size for submitting obs
 SPLIT_LINE='#####################################'
+##### functions #####
+
+# create screen socket and run automated workflow
+create_runsocket () {
+    screen -d -m -S run_$ADV_IM_NAME bash -c "python $gmsim/workflow/scripts/cybershake/run_cybershake.py $root_dir $USERNAME $TASK_CONFIG --n_max_retries 1"
+}
+
+# ask user for yes/no
+ask_yn () {
+    # $1: msg to display
+    # $2: action/command to run if Yes
+    # $3: action/command to run if No
+    msg=${1}
+    yes_action=${2}
+    no_action=${3}
+    echo $msg 'choose 1 or 2'
+    select yn in "Yes" "No"; do
+    case $yn in
+        Yes )
+            eval $yes_action
+            break;;
+        No )
+            eval $no_action
+            break;;
+    esac
+done
+}
 
 #############  some tests before running anything ###############
 # quick test to see if model exist
@@ -50,11 +94,13 @@ if [[ ! -f $ADV_IM_MODEL_DIR/run.py ]];then
     exit 2
 fi
 
+
+##### checks that can use default values that wont affect adv_im runs #####
 STATION_LIST=`python -c "from qcore.utils import load_yaml,DotDictify; p=DotDictify(load_yaml(\"$validation_root_params_yaml\"));print(p.stat_file)"`
 
 if [[ ! -f $STATION_LIST ]];then
     echo "station list for validation run cannot be found on $STATION_LIST"
-    exit 2
+    ask_yn "use a fake station list?" 'STATION_LIST=$FAKE_STATION_LIST' 'exit 2'
 fi
 
 
@@ -113,7 +159,7 @@ echo "installing simulation folder"
 echo $SPLIT_LINE
 python $gmsim/workflow/scripts/cybershake/install_cybershake.py $root_dir $LIST_EVENTS_F $gmsim_version --stat_file_path $STATION_LIST
 if [[ $? != 0 ]];then
-    exit
+    exit 10
 fi
 echo $SPLIT_LINE
 
@@ -122,7 +168,8 @@ echo $SPLIT_LINE
 python $gmsim/workflow/scripts/update_root_yaml.py $root_dir/Runs/root_params.yaml $ADV_IM_NAME
 
 if [[ $? != 0 ]];then
-    exit 5
+    echo "failed to update root_params.yaml: $root_dir/Runs/root_params.yaml"
+    exit 11
 fi
 ################################################################
 
@@ -132,7 +179,8 @@ echo "linking BB"
 bash $gmsim/workflow/scripts/link_bb.sh $BBbin_root_dir $root_dir $LIST_EVENTS_F
 
 if [[ $? != 0 ]];then
-    exit 
+    echo "failed to link BBs from $BBbin_root_dir to $root_dir"
+    exit 12
 fi
 
 # link observed data
@@ -141,7 +189,7 @@ echo "linking ObservedData"
 bash $gmsim/workflow/scripts/link_obs.sh $OBS_DATA_DIR $root_dir $LIST_EVENTS_F
 
 if [[ $? != 0 ]];then
-    exit 
+    exit 13
 fi
 
 # cp task_config.yaml
@@ -150,8 +198,8 @@ if [[ -f $TASK_CONFIG ]];then
 fi
 cp $TASK_CONFIG_TEMPLATE $TASK_CONFIG
 
-# run a test run on HALS station to get the time ratio for estimating WCT
-# comparing to ATC12_story
+# run a test run on one waveform to get the time ratio for estimating WCT
+# baseline number were using ATC12_story
 echo $SPLIT_LINE
 echo "Running test station to estimate WCT"
 echo "using waveform from $mag_category event"
@@ -162,7 +210,7 @@ fi
 TIMEFORMAT='%R'
 used_time="$(time (bash $gmsim/test_station/test_runpy.sh $ADV_IM_NAME $mag_category $tmp_test_dir) 2>&1 1>/dev/null)"
 if [[ $? != 0 ]];then
-    exit 10
+    exit 14
 fi
 echo "used time: $used_time"
 rm -r $tmp_test_dir
@@ -177,18 +225,14 @@ else
 fi
 
 
-# create screen socket and run automated workflow
-function create_runsocket {
-    screen -d -m -S run_$ADV_IM_NAME bash -c "python $gmsim/workflow/scripts/cybershake/run_cybershake.py $root_dir $USERNAME $TASK_CONFIG --n_max_retries 1"
-}
 create_runsocket
 while [[ $? != 0 ]]; 
 do
-    echo "failed to start up screen socket, waiting 5 sec to attemp again"
-    sleep 5
-    create_runsocket
+    echo "failed to start up screen socket for automated submission"
+    ask_yn "re-attempt to create screen in 5 seconds?" 'sleep 5;eval create_runsocketi;' 'exit 5;'
 done
-# Observed related steps
+
+###### Observed related steps ######
 
 # split list into portions base on ratio of runtime (compared to ATC12)
 batch_size=`echo $BENCHMARK_OBS_SIZE / $est_ratio | bc`
