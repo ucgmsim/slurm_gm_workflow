@@ -15,7 +15,7 @@ if [[ $# -lt 3 ]];then
 fi
 
 src_dir=$1
-des_dir=$2/ObservedGroundMotions
+des_dir=$2
 list_r=$3
 
 #check if obs director is there in des

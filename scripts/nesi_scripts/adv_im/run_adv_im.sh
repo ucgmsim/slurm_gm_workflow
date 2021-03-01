@@ -42,7 +42,10 @@ WCT_BENCHMARK_MINSEC=1500 # seconds used to run a ATC12 model on single waveform
 WCT_BENCHMARK_MAXHOUR=6 # the wct for ATC12
 BENCHMARK_OBS_SIZE=30 # the size for submitting obs
 SPLIT_LINE='#####################################'
-##### functions #####
+
+#################################################################
+# functions 
+#################################################################
 
 # create screen socket and run automated workflow
 create_runsocket () {
@@ -69,8 +72,9 @@ ask_yn () {
     esac
 done
 }
-
-#############  some tests before running anything ###############
+#################################################################
+# some tests before running anything 
+#################################################################
 # quick test to see if model exist
 ADV_IM_MODEL_DIR=$gmsim/IM_calculation/IM_calculation/Advanced_IM/Models/$ADV_IM_NAME
 if [[ ! -d $ADV_IM_MODEL_DIR ]];then
@@ -94,8 +98,9 @@ if [[ ! -f $ADV_IM_MODEL_DIR/run.py ]];then
     exit 2
 fi
 
-
-##### checks that can use default values that wont affect adv_im runs #####
+#################################################################
+# checks that can use default values that wont affect adv_im runs 
+#################################################################
 STATION_LIST=`python -c "from qcore.utils import load_yaml,DotDictify; p=DotDictify(load_yaml(\"$validation_root_params_yaml\"));print(p.stat_file)"`
 
 if [[ ! -f $STATION_LIST ]];then
@@ -118,32 +123,35 @@ else
 fi
 
 #################################################################
-# OBS related folders
+# Observed data related folders
+#################################################################
 
+# folder that will contain linked data from $OBS_DATA_DIR
 obs_linked_folder=$root_dir/ObservedGroundMotions
 if [[ -e $obs_linked_folder ]];then
     echo "$obs_linked_folder exist, please remove/rename the old folder"
     exit 3
 fi
 
-obs_input_dir=$root_dir/obs_input_tmp
-if [[ -e $obs_input_dir ]];then
-    echo "$obs_input_dir exist, please remove/rename the old folder"
+# temporary folder to store the splitted list of events
+obs_list_input_dir=$root_dir/obs_list_input_tmp
+if [[ -e $obs_list_input_dir ]];then
+    echo "$obs_list_input_dir exist, please remove/rename the old folder"
     exit 3
 else
-    mkdir -p $root_dir/obs_input_tmp
+    mkdir -p $root_dir/obs_list_input_tmp
 fi
 
-################################################################
-
+#################################################################
 # link Data folder
+#################################################################
 echo $SPLIT_LINE
 echo "linking Data folder"
 ln -s $SIM_DATA_DIR $root_dir
 
-################################################################
+#################################################################
 #   determine mag catagory
-################################################################
+#################################################################
 max_mag=`grep mag $root_dir/Data/VMs/*/vm_params.yaml | awk '{print $2}' | sort -unr | head -n 1`
 if (( $(echo "$max_mag > 7.0" | bc -l) ));then
     mag_category=large
@@ -171,7 +179,8 @@ if [[ $? != 0 ]];then
     echo "failed to update root_params.yaml: $root_dir/Runs/root_params.yaml"
     exit 11
 fi
-################################################################
+
+###### linking data from previous runs ######
 
 # link BB
 echo $SPLIT_LINE
@@ -186,7 +195,7 @@ fi
 # link observed data
 echo $SPLIT_LINE
 echo "linking ObservedData"
-bash $gmsim/workflow/scripts/link_obs.sh $OBS_DATA_DIR $root_dir $LIST_EVENTS_F
+bash $gmsim/workflow/scripts/link_obs.sh $OBS_DATA_DIR $obs_linked_folder $LIST_EVENTS_F
 
 if [[ $? != 0 ]];then
     exit 13
@@ -197,6 +206,8 @@ if [[ -f $TASK_CONFIG ]];then
     rm $TASK_CONFIG
 fi
 cp $TASK_CONFIG_TEMPLATE $TASK_CONFIG
+
+###### test run ######
 
 # run a test run on one waveform to get the time ratio for estimating WCT
 # baseline number were using ATC12_story
@@ -229,18 +240,18 @@ create_runsocket
 while [[ $? != 0 ]]; 
 do
     echo "failed to start up screen socket for automated submission"
-    ask_yn "re-attempt to create screen in 5 seconds?" 'sleep 5;eval create_runsocketi;' 'exit 5;'
+    ask_yn "re-attempt to create screen in 5 seconds?" 'sleep 5;create_runsocket;' 'exit 5;'
 done
 
 ###### Observed related steps ######
 
 # split list into portions base on ratio of runtime (compared to ATC12)
 batch_size=`echo $BENCHMARK_OBS_SIZE / $est_ratio | bc`
-bash $gmsim/workflow/scripts/split_list.sh $LIST_EVENTS_F $batch_size $obs_input_dir
+bash $gmsim/workflow/scripts/split_list.sh $LIST_EVENTS_F $batch_size $obs_list_input_dir
 
 if [[ $? == 0 ]];then
     # submit each list
-    for obs_list in $obs_input_dir/*;
+    for obs_list in $obs_list_input_dir/*;
     do
         sbatch --job-name=`basename $obs_list` $gmsim/workflow/scripts/nesi_scripts/run_adv_im_obs_maui.sl $obs_linked_folder $obs_list 
     done
