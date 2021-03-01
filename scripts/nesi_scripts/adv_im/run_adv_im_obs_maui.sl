@@ -24,6 +24,7 @@ fi
 
 obs_dir=$1
 list_event=$2
+# use default binary if not given
 opensees_bin=${3:-/nesi/project/nesi00213/opt/maui/tmp/OpenSees}
 
 for event in `cat $list_event | awk '{print $1}'`;
@@ -54,30 +55,26 @@ do
         run_im=0
         # check if csv pre-exist
         # skip if exist
-        # python $gmsim/workflow/scripts/im_calc_checkpoint.py $path_IM_calc $station_count --event_name $event --observed
         adv_IM_csv=$path_event_out/$adv_IM_model\.csv
         if [[ -f $adv_IM_csv ]]; then
-            #check for station count
-            csv_station_count=`python -c "import pandas as pd; df = pd.read_csv('$adv_IM_csv'); print(len(sorted(set(df.station))))"`
-            if [[ $csv_station_count != station_count ]];then
-                # previous run may be corrupted, remove the old csv.
-                rm $adv_IM_csv
-                run_im=1
-            fi
-        else
-            run_im=1
-        fi
-        if [[ $run_im == 1 ]]; then
-            time python $IMPATH/calculate_ims.py $path_eventBB a -o $path_event_out -np 40 -i $event -r $event -t  o -e -a $adv_IM_model --OpenSees_path $opensees_bin 
-            python $gmsim/workflow/scripts/verify_adv_IM.py $path_event_out $adv_IM_model  
+            # csv exist, test for completion
+            python $gmsim/workflow/scripts/verify_adv_IM.py $path_event_out $adv_IM_model
             res=$?
-            if [[ res != 0 ]];then
-                # tes failed
-                echo $event >> $obs_dir/../list_done_$adv_IM_model
-            else
-                echo "something went wrong, stopping the job, check logs for $path_event_out for $adv_IM_model"
-                exit 3
+            if [[ res == 0 ]];then
+                # test successful, skip this model
+                continue
             fi
+        fi
+        time python $IMPATH/calculate_ims.py $path_eventBB a -o $path_event_out -np 40 -i $event -r $event -t  o -e -a $adv_IM_model --OpenSees_path $opensees_bin
+        # test for completion 
+        python $gmsim/workflow/scripts/verify_adv_IM.py $path_event_out $adv_IM_model  
+        res=$?
+        if [[ res != 0 ]];then
+            # test failed
+            echo $event >> $obs_dir/../list_done_$adv_IM_model
+        else
+            echo "something went wrong, stopping the job, check logs for $path_event_out for $adv_IM_model"
+            exit 3
         fi
     done
 done
