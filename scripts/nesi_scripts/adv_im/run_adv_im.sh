@@ -174,7 +174,7 @@ echo $SPLIT_LINE
 ################################################################
 # add/update the adv_im models in root_params.yaml
 #################################################################
-python $gmsim/workflow/scripts/update_root_yaml.py $root_dir/Runs/root_params.yaml $ADV_IM_NAME
+python $gmsim/workflow/scripts/nesi_scripts/adv_im/update_root_yaml.py $root_dir/Runs/root_params.yaml $ADV_IM_NAME
 
 if [[ $? != 0 ]];then
     echo "failed to update root_params.yaml: $root_dir/Runs/root_params.yaml"
@@ -187,7 +187,7 @@ fi
 # link BB
 echo $SPLIT_LINE
 echo "linking BB"
-bash $gmsim/workflow/scripts/link_bb.sh $BBbin_root_dir $root_dir $LIST_EVENTS_F
+bash $gmsim/workflow/scripts/nesi_scripts/adv_im/link_bb.sh $BBbin_root_dir $root_dir $LIST_EVENTS_F
 
 if [[ $? != 0 ]];then
     echo "failed to link BBs from $BBbin_root_dir to $root_dir"
@@ -197,7 +197,7 @@ fi
 # link observed data
 echo $SPLIT_LINE
 echo "linking ObservedData"
-bash $gmsim/workflow/scripts/link_obs.sh $OBS_DATA_DIR $obs_linked_folder $LIST_EVENTS_F
+bash $gmsim/workflow/scripts/nesi_scripts/adv_im/link_obs.sh $OBS_DATA_DIR $obs_linked_folder $LIST_EVENTS_F
 
 if [[ $? != 0 ]];then
     exit 13
@@ -223,7 +223,7 @@ if [[ ! -d $tmp_test_dir ]]; then
     mkdir -p $tmp_test_dir
 fi
 TIMEFORMAT='%R'
-used_time="$(time (bash $gmsim/test_station/test_runpy.sh $ADV_IM_NAME $mag_category $tmp_test_dir) 2>&1 1>/dev/null)"
+used_time="$(time (bash $gmsim/IM_calculation/IM_calculation/Advanced_IM/tests/test_runpy.sh $ADV_IM_NAME $mag_category $tmp_test_dir) 2>&1 1>/dev/null)"
 if [[ $? != 0 ]];then
     exit 14
 fi
@@ -254,12 +254,12 @@ done
 #################################################################
 # split list into portions base on ratio of runtime (compared to ATC12)
 batch_size=`echo $BENCHMARK_OBS_SIZE / $est_ratio | bc`
-bash $gmsim/workflow/scripts/split_list.sh $LIST_EVENTS_F $batch_size $obs_list_input_dir
+bash $gmsim/workflow/scripts/nesi_scripts/adv_im/split_list.sh $LIST_EVENTS_F $batch_size $obs_list_input_dir
 
 if [[ $? == 0 ]];then
     # submit each list
     for obs_list in $obs_list_input_dir/*;
     do
-        sbatch --job-name=`basename $obs_list` $gmsim/workflow/scripts/nesi_scripts/run_adv_im_obs_maui.sl $obs_linked_folder $obs_list 
+        sbatch --job-name=`basename $obs_list` $gmsim/workflow/scripts/nesi_scripts/adv_im/run_adv_im_obs_maui.sl $obs_linked_folder $obs_list 
     done
 fi
