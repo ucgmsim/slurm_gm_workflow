@@ -173,14 +173,16 @@ echo $SPLIT_LINE
 
 ################################################################
 # add/update the adv_im models in root_params.yaml
+#################################################################
 python $gmsim/workflow/scripts/update_root_yaml.py $root_dir/Runs/root_params.yaml $ADV_IM_NAME
 
 if [[ $? != 0 ]];then
     echo "failed to update root_params.yaml: $root_dir/Runs/root_params.yaml"
     exit 11
 fi
-
-###### linking data from previous runs ######
+#################################################################
+# linking data from previous runs 
+#################################################################
 
 # link BB
 echo $SPLIT_LINE
@@ -207,7 +209,9 @@ if [[ -f $TASK_CONFIG ]];then
 fi
 cp $TASK_CONFIG_TEMPLATE $TASK_CONFIG
 
-###### test run ######
+#################################################################
+# test run 
+#################################################################
 
 # run a test run on one waveform to get the time ratio for estimating WCT
 # baseline number were using ATC12_story
@@ -235,7 +239,9 @@ else
     sed -i "/threshold_time = /c\    threshold_time = $WCT_BENCHMARK_MAXHOUR" $gmsim/workflow/estimation/estimate_wct.py
 fi
 
-
+#################################################################
+# create automated submission socket
+#################################################################
 create_runsocket
 while [[ $? != 0 ]]; 
 do
@@ -243,8 +249,9 @@ do
     ask_yn "re-attempt to create screen in 5 seconds?" 'sleep 5;create_runsocket;' 'exit 5;'
 done
 
-###### Observed related steps ######
-
+#################################################################
+# Observed related steps 
+#################################################################
 # split list into portions base on ratio of runtime (compared to ATC12)
 batch_size=`echo $BENCHMARK_OBS_SIZE / $est_ratio | bc`
 bash $gmsim/workflow/scripts/split_list.sh $LIST_EVENTS_F $batch_size $obs_list_input_dir
