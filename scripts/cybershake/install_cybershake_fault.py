@@ -104,6 +104,10 @@ def install_fault(
     stat_file_path,
     seed=HF_DEFAULT_SEED,
     extended_period=False,
+    vm_perturbations=False,
+    ignore_vm_perturbations=False,
+    vm_qpqs_files=False,
+    ignore_vm_qpqs_files=False,
     keep_dup_station=True,
     logger: Logger = get_basic_logger(),
 ):
@@ -169,10 +173,12 @@ def install_fault(
     for srf in list_srf:
         logger.info("Installing {}".format(srf))
         # try to match find the stoch with same basename
-        srf_name = os.path.splitext(os.path.basename(srf))[0]
-        stoch_file_path = simulation_structure.get_stoch_path(root_folder, srf_name)
+        realisation_name = os.path.splitext(os.path.basename(srf))[0]
+        stoch_file_path = simulation_structure.get_stoch_path(
+            root_folder, realisation_name
+        )
         sim_params_file = simulation_structure.get_source_params_path(
-            root_folder, srf_name
+            root_folder, realisation_name
         )
 
         if not os.path.isfile(stoch_file_path):
@@ -183,7 +189,8 @@ def install_fault(
             raise RuntimeError(message)
 
         # install pairs one by one to fit the new structure
-        sim_dir = simulation_structure.get_sim_dir(root_folder, srf_name)
+        sim_dir = simulation_structure.get_sim_dir(root_folder, realisation_name)
+
         (
             root_params_dict,
             fault_params_dict,
@@ -192,7 +199,7 @@ def install_fault(
         ) = install_simulation(
             version=version,
             sim_dir=sim_dir,
-            run_name=fault_name,
+            rel_name=realisation_name,
             run_dir=sim_root_dir,
             vel_mod_dir=vel_mod_dir,
             srf_file=srf,
@@ -208,7 +215,7 @@ def install_fault(
             yes_model_params=yes_model_params,
             fault_yaml_path=fault_yaml_path,
             root_yaml_path=root_yaml_path,
-            user_root=root_folder,
+            cybershake_root=root_folder,
             site_v1d_dir=site_v1d_dir,
             hf_stat_vs_ref=hf_stat_vs_ref,
             v1d_full_path=v1d_full_path,
@@ -216,13 +223,17 @@ def install_fault(
             seed=seed,
             logger=logger,
             extended_period=extended_period,
+            vm_perturbations=vm_perturbations,
+            ignore_vm_perturbations=ignore_vm_perturbations,
+            vm_qpqs_files=vm_qpqs_files,
+            ignore_vm_qpqs_files=ignore_vm_qpqs_files,
         )
 
         if root_params_dict is not None and not isclose(
             vm_params_dict["flo"], root_params_dict["flo"]
         ):
             logger.critical(
-                "The parameter 'flo' doe not match in the VM params and root params files. "
+                "The parameter 'flo' does not match in the VM params and root params files. "
                 "Please ensure you are installing the correct gmsim version"
             )
             root_params_dict, fault_params_dict, sim_params_dict, vm_add_params_dict = (

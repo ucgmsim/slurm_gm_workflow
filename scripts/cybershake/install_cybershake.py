@@ -1,6 +1,6 @@
 import argparse
 from datetime import datetime
-import os
+from os import path
 
 from qcore.constants import (
     TIMESTAMP_FORMAT,
@@ -16,13 +16,11 @@ from shared_workflow.platform_config import platform_config
 AUTO_SUBMIT_LOG_FILE_NAME = "install_cybershake_log_{}.txt"
 
 
-def main():
-    logger = qclogging.get_logger()
-
+def load_args(logger):
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "path_cybershake",
-        type=str,
+        type=path.abspath,
         help="the path to the root of a specific version cybershake.",
     )
     parser.add_argument(
@@ -65,15 +63,36 @@ def main():
         help="Keep stations if they snap to the same grid-point",
     )
 
-    args = parser.parse_args()
+    vm_pert = parser.add_mutually_exclusive_group()
+    vm_pert.add_argument(
+        "--vm_perturbations",
+        action="store_true",
+        help="Use velocity model perturbations. If this is selected all realisations must have a perturbation file.",
+    )
+    vm_pert.add_argument(
+        "--ignore_vm_perturbations",
+        action="store_true",
+        help="Don't use velocity model perturbations. If this is selected any perturbation files will be ignored.",
+    )
 
-    path_cybershake = os.path.abspath(args.path_cybershake)
+    qp_qs = parser.add_mutually_exclusive_group()
+    qp_qs.add_argument(
+        "--vm_qpqs_files",
+        action="store_true",
+        help="Use generated Qp/Qs files. If this is selected all events/faults must have Qp and Qs files.",
+    )
+    qp_qs.add_argument(
+        "--ignore_vm_qpqs_files",
+        action="store_true",
+        help="Don't use generated Qp/Qs files. If this is selected any Qp/Qs files will be ignored.",
+    )
+    args = parser.parse_args()
 
     if args.log_file is None:
         qclogging.add_general_file_handler(
             logger,
-            os.path.join(
-                path_cybershake,
+            path.join(
+                args.path_cybershake,
                 AUTO_SUBMIT_LOG_FILE_NAME.format(
                     datetime.now().strftime(TIMESTAMP_FORMAT)
                 ),
@@ -81,59 +100,53 @@ def main():
         )
     else:
         qclogging.add_general_file_handler(
-            logger, os.path.join(path_cybershake, args.log_file)
+            logger, path.join(args.path_cybershake, args.log_file)
         )
     logger.debug("Added file handler to the logger")
     logger.debug(f"Arguments are as follows: {args}")
 
-    if not os.path.exists(
-        os.path.join(
-            platform_config[PLATFORM_CONFIG.TEMPLATES_DIR.name], "gmsim", args.version
-        )
-    ) or os.path.isfile(
-        os.path.join(
-            platform_config[PLATFORM_CONFIG.TEMPLATES_DIR.name], "gmsim", args.version
-        )
-    ):
-        logger.critical(
-            "Version {} does not exist in templates/gmsim directory.".format(
-                args.version
-            )
-        )
-        parser.error(
+    messages = []
+
+    gmsim_version_path = path.join(
+        platform_config[PLATFORM_CONFIG.TEMPLATES_DIR.name], "gmsim", args.version
+    )
+
+    if not path.exists(gmsim_version_path) or path.isfile(gmsim_version_path):
+        messages.append(
             "Version {} does not exist, place a directory with that name into {}\n"
             "Also ensure it has contents of {} and {}".format(
                 args.version,
-                os.path.join(
-                    platform_config[PLATFORM_CONFIG.TEMPLATES_DIR.name], "gmsim"
-                ),
+                path.join(platform_config[PLATFORM_CONFIG.TEMPLATES_DIR.name], "gmsim"),
                 ROOT_DEFAULTS_FILE_NAME,
                 "emod3d_defaults.yaml",
             )
         )
-    for f_name in [ROOT_DEFAULTS_FILE_NAME, "emod3d_defaults.yaml"]:
-        if not os.path.exists(
-            os.path.join(
-                platform_config[PLATFORM_CONFIG.TEMPLATES_DIR.name],
-                "gmsim",
-                args.version,
-                f_name,
-            )
-        ):
-            logger.critical(
-                "Version {} does not have the file {}".format(args.version, f_name)
-            )
-            parser.error(
-                "Version {} does not have a required {} file in the directory {}".format(
-                    args.version,
-                    f_name,
-                    os.path.join(
-                        platform_config[PLATFORM_CONFIG.TEMPLATES_DIR.name],
-                        "gmsim",
+    else:
+        for f_name in [ROOT_DEFAULTS_FILE_NAME, "emod3d_defaults.yaml"]:
+            if not path.exists(path.join(gmsim_version_path, f_name)):
+                messages.append(
+                    "Version {} does not have a required {} file in the directory {}".format(
                         args.version,
-                    ),
+                        f_name,
+                        path.join(
+                            platform_config[PLATFORM_CONFIG.TEMPLATES_DIR.name],
+                            "gmsim",
+                            args.version,
+                        ),
+                    )
                 )
-            )
+
+    if len(messages) > 0:
+        message = "\n".join(messages)
+        logger.error(message)
+        parser.error(message)
+
+    return args
+
+
+def main():
+    logger = qclogging.get_logger()
+    args = load_args(logger)
 
     faults = {}
     with open(args.fault_selection_list) as fault_file:
@@ -146,11 +159,15 @@ def main():
         install_fault(
             fault,
             count,
-            path_cybershake,
+            args.path_cybershake,
             args.version,
             args.stat_file_path,
             args.seed,
             args.extended_period,
+            vm_perturbations=args.vm_perturbations,
+            ignore_vm_perturbations=args.ignore_vm_perturbations,
+            vm_qpqs_files=args.vm_qpqs_files,
+            ignore_vm_qpqs_files=args.ignore_vm_qpqs_files,
             keep_dup_station=args.keep_dup_station,
             logger=qclogging.get_realisation_logger(logger, fault),
         )

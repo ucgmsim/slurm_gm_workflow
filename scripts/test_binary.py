@@ -28,7 +28,7 @@ if __name__ == "__main__":
         bin = bin_class(args.bin)
     except ValueError as ex:
         if args.verbose:
-            print("Cannot read binary file {} ".format(args.bin))
+            print("Cannot read binary file {} {}".format(args.bin, ex))
         sys.exit(1)
 
     try:

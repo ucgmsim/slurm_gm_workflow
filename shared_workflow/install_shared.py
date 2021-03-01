@@ -26,7 +26,7 @@ HF_VEL_MOD_1D = "hf_vel_mod_1d"
 def install_simulation(
     version,
     sim_dir,
-    run_name,
+    rel_name,
     run_dir,
     vel_mod_dir,
     srf_file,
@@ -43,7 +43,7 @@ def install_simulation(
     fault_yaml_path,
     root_yaml_path,
     v1d_full_path,
-    user_root,
+    cybershake_root,
     v1d_dir=platform_config[PLATFORM_CONFIG.VELOCITY_MODEL_DIR.name],
     site_v1d_dir=None,
     hf_stat_vs_ref=None,
@@ -51,8 +51,14 @@ def install_simulation(
     seed=HF_DEFAULT_SEED,
     logger: Logger = get_basic_logger(),
     extended_period=False,
+    vm_perturbations=False,
+    ignore_vm_perturbations=False,
+    vm_qpqs_files=False,
+    ignore_vm_qpqs_files=False,
 ):
     """Installs a single simulation"""
+    run_name = simulation_structure.get_fault_from_realisation(rel_name)
+
     lf_sim_root_dir = simulation_structure.get_lf_dir(sim_dir)
     hf_dir = simulation_structure.get_hf_dir(sim_dir)
     bb_dir = simulation_structure.get_bb_dir(sim_dir)
@@ -60,8 +66,8 @@ def install_simulation(
 
     dir_list = [sim_dir, lf_sim_root_dir, hf_dir, bb_dir, im_calc_dir]
     version = str(version)
-    if not os.path.isdir(user_root):
-        dir_list.insert(0, user_root)
+    if not os.path.isdir(cybershake_root):
+        dir_list.insert(0, cybershake_root)
 
     shared.verify_user_dirs(dir_list)
 
@@ -115,7 +121,7 @@ def install_simulation(
     sim_params_dict = {
         SimParams.fault_yaml_path.value: fault_yaml_path,
         SimParams.run_name.value: run_name,
-        SimParams.user_root.value: user_root,
+        SimParams.user_root.value: cybershake_root,
         SimParams.run_dir.value: run_dir,
         SimParams.sim_dir.value: sim_dir,
         SimParams.srf_file.value: srf_file,
@@ -136,6 +142,54 @@ def install_simulation(
         return None, None, None, None
 
     sim_params_dict["emod3d"] = {}
+
+    vm_pert_file = simulation_structure.get_realisation_VM_pert_file(
+        cybershake_root, rel_name
+    )
+    if vm_perturbations:
+        # We want to use the perturbation file
+        if os.path.exists(vm_pert_file):
+            # The perturbation file exists, use it
+            root_params_dict["emod3d"]["model_style"] = 3
+            sim_params_dict["emod3d"]["pertbfile"] = vm_pert_file
+        else:
+            # The perturbation file does not exist. Raise an exception
+            message = f"The expected perturbation file {vm_pert_file} does not exist. Generate or move this file to the given location."
+            logger.error(message)
+            raise FileNotFoundError(message)
+    elif not ignore_vm_perturbations and os.path.exists(vm_pert_file):
+        # We haven't used either flag and the perturbation file exists. Raise an error and make the user deal with it
+        message = f"The perturbation file {vm_pert_file} exists. Reset and run installation with the --ignore_vm_perturbations flag if you do not wish to use it."
+        logger.error(message)
+        raise FileExistsError(message)
+    else:
+        # The perturbation file doesn't exist or we are explicitly ignoring it. Keep going
+        pass
+
+    qsfile = simulation_structure.get_fault_qs_file(cybershake_root, rel_name)
+    qpfile = simulation_structure.get_fault_qp_file(cybershake_root, rel_name)
+    if vm_qpqs_files:
+        # We want to use the Qp/Qs files
+        if os.path.exists(qsfile) and os.path.exists(qpfile):
+            # The Qp/Qs files exist, use them
+            root_params_dict["emod3d"]["use_qpqs"] = 1
+            sim_params_dict["emod3d"]["qsfile"] = qsfile
+            sim_params_dict["emod3d"]["qpfile"] = qpfile
+        else:
+            # At least one of the Qp/Qs files do not exist. Raise an exception
+            message = f"The expected Qp/Qs files {qpfile} and/or {qsfile} do not exist. Generate or move these files to the given location."
+            logger.error(message)
+            raise FileExistsError(message)
+    elif not ignore_vm_qpqs_files and (
+        os.path.exists(qsfile) or os.path.exists(qpfile)
+    ):
+        # We haven't used either flag but the Qp/Qs files exist. Raise an error and make the user deal with it
+        message = f"The Qp/Qs files {qpfile}, {qsfile}  exist. Reset and run installation with the --ignore_vm_qpqs_files flag if you do not wish to use them."
+        logger.error(message)
+        raise FileExistsError(message)
+    else:
+        # Either the Qp/Qs files don't exist, or we are explicitly ignoring them. Keep going
+        pass
 
     sim_params_dict["hf"] = {SimParams.slip.value: stoch_file}
 
