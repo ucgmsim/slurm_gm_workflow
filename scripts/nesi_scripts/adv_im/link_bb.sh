@@ -1,5 +1,12 @@
 #!/bin/bash
-#IMPORTANT: this is used for validation run only
+
+# link BB.bin from a previously completed runs
+# $1 src_root_dir: the root directory of a previous automated simulation runs
+# $2 des_root_dir: the root directory of a clean install of simultion runs
+# $3 list_fault: a list to events to link
+
+# IMPORTANT: structure is for validation runs only.
+# TODO: translate into python and incorporate qcore.simluated_structure for flexibility
 
 if [[ $# -lt 3 ]];then
     echo "pleave provide 1. source root_dir 2.destination root_dir 3. list of fault"
@@ -22,4 +29,3 @@ do
     python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py $des_root_dir/mgmt_db_queue $fault BB completed
 done
 
-#run queue_monitor to update the DB
