@@ -99,7 +99,7 @@ def submit_im_calc_slurm(
         options_dict["write_directory"] = sim_dir
     if options_dict[SlBodyOptConsts.advanced_IM.value]:
         # TODO: update this to use number from adv_im estmation model after it exist
-        options_dict[SlBodyOptConsts.n_procs.value] = 40
+        options_dict[SlBodyOptConsts.n_procs.value] = DEFAULT_OPTIONS[SlBodyOptConsts.n_procs.value]
         options_dict[SlHdrOptConsts.n_tasks.value] = options_dict[
             SlBodyOptConsts.n_procs.value
         ]
