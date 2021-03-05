@@ -203,8 +203,8 @@ if __name__ == "__main__":
             # invalid arguments or -h
             comm.Abort()
 
-    if args.sim_bin is None:
-        args.sim_bin = binary_version.get_hf_binmod(args.version)
+        if args.sim_bin is None:
+            args.sim_bin = binary_version.get_hf_binmod(args.version)
 
     if is_master:
         logger.debug("=" * 50)
