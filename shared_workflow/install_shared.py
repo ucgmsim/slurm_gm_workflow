@@ -172,7 +172,7 @@ def install_simulation(
         # We want to use the Qp/Qs files
         if os.path.exists(qsfile) and os.path.exists(qpfile):
             # The Qp/Qs files exist, use them
-            root_params_dict["emod3d"]["use_qpqs"] = 1
+            root_params_dict["emod3d"]["useqsqp"] = 1
             sim_params_dict["emod3d"]["qsfile"] = qsfile
             sim_params_dict["emod3d"]["qpfile"] = qpfile
         else:
