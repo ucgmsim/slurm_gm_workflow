@@ -294,12 +294,7 @@ def q_site_specific():
     return shared.show_yes_no_question()
 
 
-def dump_all_yamls(
-    sim_dir,
-    root_params_dict,
-    fault_params_dict,
-    sim_params_dict,
-):
+def dump_all_yamls(sim_dir, root_params_dict, fault_params_dict, sim_params_dict):
     """Saves the yaml files at the specified locations"""
     utils.dump_yaml(sim_params_dict, os.path.join(sim_dir, "sim_params.yaml"))
     utils.dump_yaml(fault_params_dict, sim_params_dict["fault_yaml_path"])
