@@ -21,7 +21,6 @@ from qcore import utils, validate_vm, simulation_structure
 from qcore.constants import (
     FaultParams,
     ROOT_DEFAULTS_FILE_NAME,
-    VM_PARAMS_FILE_NAME,
     ProcessType,
     PLATFORM_CONFIG,
     HF_DEFAULT_SEED,
@@ -195,7 +194,7 @@ def install_fault(
             root_params_dict,
             fault_params_dict,
             sim_params_dict,
-            vm_add_params_dict,
+            vm_params_dict,
         ) = install_simulation(
             version=version,
             sim_dir=sim_dir,
@@ -204,15 +203,10 @@ def install_fault(
             vel_mod_dir=vel_mod_dir,
             srf_file=srf,
             stoch_file=stoch_file_path,
-            vm_params_path=vm_params_path,
             stat_file_path=stat_file_path,
             vs30_file_path=vs30_file_path,
             vs30ref_file_path=vs30ref_file_path,
-            sufx=vm_params_dict["sufx"],
-            sim_duration=vm_params_dict["sim_duration"],
-            vel_mod_params_dir=vel_mod_dir,
             yes_statcords=False,
-            yes_model_params=yes_model_params,
             fault_yaml_path=fault_yaml_path,
             root_yaml_path=root_yaml_path,
             cybershake_root=root_folder,
@@ -229,6 +223,16 @@ def install_fault(
             ignore_vm_qpqs_files=ignore_vm_qpqs_files,
         )
 
+        if (
+            root_params_dict is None
+            or fault_params_dict is None
+            or sim_params_dict is None
+            or vm_params_dict is None
+        ):
+            # Something has gone wrong, returning without saving anything
+            logger.critical(f"Critical Error some params dictionary are None")
+            return
+
         if root_params_dict is not None and not isclose(
             vm_params_dict["flo"], root_params_dict["flo"]
         ):
@@ -236,23 +240,7 @@ def install_fault(
                 "The parameter 'flo' does not match in the VM params and root params files. "
                 "Please ensure you are installing the correct gmsim version"
             )
-            root_params_dict, fault_params_dict, sim_params_dict, vm_add_params_dict = (
-                None,
-                None,
-                None,
-                None,
-            )
-
-        if (
-            root_params_dict is None
-            and fault_params_dict is None
-            and sim_params_dict is None
-            and vm_add_params_dict is None
-        ):
-            # Something has gone wrong, returning without saving anything
             return
-
-        vm_params_dict.update(vm_add_params_dict)
 
         create_mgmt_db.create_mgmt_db(
             [], simulation_structure.get_mgmt_db(root_folder), srf_files=srf
@@ -273,13 +261,7 @@ def install_fault(
         fault_params_dict[FaultParams.FD_STATLIST.value] = fd_statlist
 
         #     root_params_dict['hf_stat_vs_ref'] = cybershake_cfg['hf_stat_vs_ref']
-        dump_all_yamls(
-            sim_dir,
-            root_params_dict,
-            fault_params_dict,
-            sim_params_dict,
-            vm_params_dict,
-        )
+        dump_all_yamls(sim_dir, root_params_dict, fault_params_dict, sim_params_dict)
 
         # test if the params are accepted by steps HF and BB
         sim_params = utils.load_sim_params(os.path.join(sim_dir, "sim_params.yaml"))

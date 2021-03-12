@@ -30,15 +30,10 @@ def install_simulation(
     vel_mod_dir,
     srf_file,
     stoch_file,
-    vm_params_path,
     stat_file_path,
     vs30_file_path,
     vs30ref_file_path,
-    sufx,
-    sim_duration,
-    vel_mod_params_dir,
     yes_statcords,
-    yes_model_params,
     fault_yaml_path,
     root_yaml_path,
     v1d_full_path,
@@ -70,14 +65,6 @@ def install_simulation(
 
     shared.verify_user_dirs(dir_list)
 
-    if not yes_model_params:
-        logger.info(
-            "Generation of model params has been skipped. Re-directing related params to files under {}".format(
-                vel_mod_dir
-            )
-        )
-        vel_mod_params_dir = vel_mod_dir
-
     template_path = os.path.join(
         platform_config[PLATFORM_CONFIG.TEMPLATES_DIR.name], "gmsim", version
     )
@@ -98,9 +85,8 @@ def install_simulation(
     }
 
     # VM params
-    vm_params_dict = utils.load_yaml(
-        simulation_structure.get_vm_params_yaml(vel_mod_dir)
-    )
+    vm_params_path = simulation_structure.get_vm_params_yaml(vel_mod_dir)
+    vm_params_dict = utils.load_yaml(vm_params_path)
     # Sim Params
     sim_params_dict = {
         SimParams.fault_yaml_path.value: fault_yaml_path,
@@ -110,7 +96,7 @@ def install_simulation(
         SimParams.sim_dir.value: sim_dir,
         SimParams.srf_file.value: srf_file,
         SimParams.vm_params.value: vm_params_path,
-        SimParams.sim_duration.value: sim_duration,
+        SimParams.sim_duration.value: vm_params_dict[SimParams.sim_duration.value],
     }
     if stat_file_path is not None:
         sim_params_dict[SimParams.stat_file.value] = stat_file_path
