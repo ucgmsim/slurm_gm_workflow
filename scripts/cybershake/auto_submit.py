@@ -26,7 +26,7 @@ from scripts.submit_empirical import generate_empirical_script
 from scripts.submit_post_emod3d import main as submit_post_lf_main
 from scripts.submit_hf import main as submit_hf_main
 from scripts.submit_bb import main as submit_bb_main
-from scripts.submit_sim_imcalc import submit_im_calc_slurm, SlBodyOptConsts
+from scripts.submit_sim_imcalc import submit_im_calc_slurm
 from shared_workflow import shared_automated_workflow
 from shared_workflow.platform_config import (
     HPC,
@@ -46,7 +46,6 @@ def submit_task(
     parent_logger,
     retries=None,
     hf_seed=const.HF_DEFAULT_SEED,
-    extended_period=False,
     models=None,
 ):
     task_logger = qclogging.get_task_logger(parent_logger, run_name, proc_type)
@@ -55,6 +54,8 @@ def submit_task(
     ch_log_dir = os.path.abspath(os.path.join(sim_dir, "ch_log"))
     if not os.path.isdir(ch_log_dir):
         os.mkdir(ch_log_dir)
+
+    params = utils.load_sim_params(os.path.join(sim_dir, "sim_params.yaml"))
 
     submitted_time = datetime.now().strftime(const.METADATA_TIMESTAMP_FMT)
     log_file = os.path.join(sim_dir, "ch_log", const.METADATA_LOG_FILENAME)
@@ -174,20 +175,14 @@ def submit_task(
             logger=task_logger,
         )
     elif proc_type == const.ProcessType.IM_calculation.value:
-        options_dict = {
-            SlBodyOptConsts.extended.value: True if extended_period else False,
-            SlBodyOptConsts.simple_out.value: True,
-            "auto": True,
-            "machine": get_target_machine(const.ProcessType.IM_calculation).name,
-            "write_directory": sim_dir,
-        }
         submit_im_calc_slurm(
             sim_dir=sim_dir,
-            options_dict=options_dict,
+            simple_out=True,
+            target_machine=get_target_machine(const.ProcessType.IM_calculation).name,
             est_model=models[3],
             logger=task_logger,
         )
-        task_logger.debug("Submit IM calc arguments: {}".format(options_dict))
+        task_logger.debug(f"Submit IM calc arguments: sim_dir: {sim_dir}, simple_out: True, target_machine: {get_target_machine(const.ProcessType.IM_calculation).name}")
         store_metadata(
             log_file,
             const.ProcessType.IM_calculation.str_value,
@@ -196,7 +191,7 @@ def submit_task(
         )
     elif proc_type == const.ProcessType.IM_plot.value:
         im_plot_template = "{script_location} {csv_path} {station_file_path} {output_xyz_dir} {srf_path} {model_params_path} {mgmt_db_loc} {run_name}"
-        params = utils.load_sim_params(os.path.join(sim_dir, "sim_params.yaml"))
+
         script = im_plot_template.format(
             csv_path=os.path.join(sim_struct.get_IM_csv(sim_dir)),
             station_file_path=params.stat_file,
@@ -219,7 +214,7 @@ def submit_task(
             target_machine=get_target_machine(const.ProcessType.rrup).name,
         )
     elif proc_type == const.ProcessType.Empirical.value:
-        extended_period_switch = "-e" if extended_period else ""
+        extended_period_switch = "-e" if params["ims"]["extended_period"] else ""
         sl_script = generate_empirical_script(
             1, extended_period_switch, root_folder, [run_name], sim_dir
         )
@@ -244,7 +239,6 @@ def submit_task(
             target_machine=get_target_machine(const.ProcessType.clean_up).name,
         )
     elif proc_type == const.ProcessType.LF2BB.value:
-        params = utils.load_sim_params(os.path.join(sim_dir, "sim_params.yaml"))
         submit_script_to_scheduler(
             get_platform_specific_script(
                 const.ProcessType.LF2BB,
@@ -267,7 +261,6 @@ def submit_task(
             target_machine=get_target_machine(const.ProcessType.LF2BB).name,
         )
     elif proc_type == const.ProcessType.HF2BB.value:
-        params = utils.load_sim_params(os.path.join(sim_dir, "sim_params.yaml"))
         submit_script_to_scheduler(
             get_platform_specific_script(
                 const.ProcessType.HF2BB,
@@ -306,26 +299,15 @@ def submit_task(
             target_machine=get_target_machine(const.ProcessType.plot_srf).name,
         )
     elif proc_type == const.ProcessType.advanced_IM.value:
-        params = utils.load_sim_params(
-            os.path.join(sim_dir, "sim_params.yaml"), load_vm=False
-        )
-        options_dict = {
-            "auto": True,
-            "machine": get_target_machine(const.ProcessType.advanced_IM).name,
-            "write_directory": sim_dir,
-            const.ProcessType.advanced_IM.str_value: params[
-                const.ProcessType.advanced_IM.str_value
-            ].models,
-        }
-
         submit_im_calc_slurm(
             sim_dir=sim_dir,
-            options_dict=options_dict,
+            adv_ims=True,
+            target_machine=get_target_machine(const.ProcessType.IM_calculation).name,
             est_model=models[3],
             logger=task_logger,
         )
 
-        task_logger.debug("Submit Advanced_IM calc arguments: {}".format(options_dict))
+        task_logger.debug(f"Submit Advanced_IM calc arguments:sim_dir: {sim_dir}, adv_im: True, target_machine: {get_target_machine(const.ProcessType.IM_calculation).name}")
         store_metadata(
             log_file,
             const.ProcessType.advanced_IM.str_value,
@@ -354,15 +336,11 @@ def run_main_submit_loop(
     config = utils.load_yaml(root_params_file)
     main_logger.info("Loaded root params file: {}".format(root_params_file))
     # Default values
-    hf_seed, extended_period = (const.HF_DEFAULT_SEED, False)
 
-    if const.RootParams.seed.value in config["hf"]:
-        hf_seed = config["hf"][const.RootParams.seed.value]
+    hf_seed = config["hf"].get(const.RootParams.seed.value, const.HF_DEFAULT_SEED)
     main_logger.debug("hf_seed set to {}".format(hf_seed))
 
-    if "extended_period" in config:
-        extended_period = config["extended_period"]
-    main_logger.debug("extended_period set to {}".format(extended_period))
+    main_logger.debug(f"extended_period set to {config['ims']['extended_period']}")
 
     time_since_something_happened = cycle_timeout
 
@@ -483,7 +461,6 @@ def run_main_submit_loop(
                 main_logger,
                 retries=retries,
                 hf_seed=hf_seed,
-                extended_period=extended_period,
                 models=models_tuple,
             )
         main_logger.debug("Sleeping for {} second(s)".format(sleep_time))
