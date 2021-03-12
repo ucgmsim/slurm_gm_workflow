@@ -12,7 +12,6 @@ from qcore.constants import (
     SimParams,
     FaultParams,
     RootParams,
-    VMParams,
     ROOT_DEFAULTS_FILE_NAME,
     PLATFORM_CONFIG,
     HF_DEFAULT_SEED,
@@ -99,24 +98,7 @@ def install_simulation(
     }
 
     # VM params
-    vm_params_dict = {
-        VMParams.gridfile.value: os.path.join(
-            vel_mod_params_dir, "gridfile{}".format(sufx)
-        ),
-        VMParams.gridout.value: os.path.join(
-            vel_mod_params_dir, "gridout{}".format(sufx)
-        ),
-        VMParams.model_coords.value: os.path.join(
-            vel_mod_params_dir, "model_coords{}".format(sufx)
-        ),
-        VMParams.model_params.value: os.path.join(
-            vel_mod_params_dir, "model_params{}".format(sufx)
-        ),
-        VMParams.model_bounds.value: os.path.join(
-            vel_mod_params_dir, "model_bounds{}".format(sufx)
-        ),
-    }
-
+    vm_params_dict = utils.load_yaml(vm_params_path)
     # Sim Params
     sim_params_dict = {
         SimParams.fault_yaml_path.value: fault_yaml_path,
@@ -311,15 +293,15 @@ def q_site_specific():
 
 
 def dump_all_yamls(
-    sim_dir, root_params_dict, fault_params_dict, sim_params_dict, vm_params_dict
+    sim_dir,
+    root_params_dict,
+    fault_params_dict,
+    sim_params_dict,
 ):
     """Saves the yaml files at the specified locations"""
     utils.dump_yaml(sim_params_dict, os.path.join(sim_dir, "sim_params.yaml"))
     utils.dump_yaml(fault_params_dict, sim_params_dict["fault_yaml_path"])
     utils.dump_yaml(root_params_dict, fault_params_dict["root_yaml_path"])
-    utils.dump_yaml(
-        vm_params_dict, os.path.join(fault_params_dict["vel_mod_dir"], "vm_params.yaml")
-    )
 
 
 def generate_fd_files(
