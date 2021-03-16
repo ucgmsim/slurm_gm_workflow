@@ -117,9 +117,9 @@ def submit_im_calc_slurm(
 
         if params["ims"][const.RootParams.extended_period.name]:
             command_options[const.SlBodyOptConsts.extended.value] = "-e"
-            period_count = 100
+            period_count = len(np.unique(np.append(params['ims']['pSA_periods'], const.EXT_PERIOD)))
         else:
-            period_count = 15
+            period_count = len(params['ims']['pSA_periods'])
 
         if "pSA_periods" in params["ims"]:
             command_options[
