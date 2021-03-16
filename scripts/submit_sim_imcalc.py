@@ -55,14 +55,17 @@ def submit_im_calc_slurm(
         "exe_time": const.timestamp,
     }
 
+
     body_options = {
-        "component": "",
+        const.SlBodyOptConsts.component.value: "",
         "realisation_name": realisation_name,
-        "fault_name": fault_name,
+        const.SlBodyOptConsts.fault_name.value: fault_name,
         "np": platform_config[const.PLATFORM_CONFIG.IM_CALC_DEFAULT_N_CORES.name],
         "output_csv": sim_struct.get_IM_csv(sim_dir),
         "output_info": sim_struct.get_IM_info(sim_dir),
         "models": "",
+        const.SlBodyOptConsts.mgmt_db.value: "",
+        "n_components": "",
     }
 
     command_options = {
@@ -126,7 +129,8 @@ def submit_im_calc_slurm(
                 "pSA_periods"
             ] = f"-p {' '.join(str(p) for p in params['ims']['pSA_periods'])}"
 
-        body_options["component"] = params["ims"][const.SlBodyOptConsts.component.value]
+        body_options[const.SlBodyOptConsts.component.value] = params["ims"][const.SlBodyOptConsts.component.value]
+        body_options["n_component"] = len(params["ims"][const.SlBodyOptConsts.component.value])
 
         # Get wall clock estimation
         logger.info(
