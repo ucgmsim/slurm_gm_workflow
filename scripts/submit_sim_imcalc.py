@@ -55,7 +55,6 @@ def submit_im_calc_slurm(
         "exe_time": const.timestamp,
     }
 
-
     body_options = {
         const.SlBodyOptConsts.component.value: "",
         "realisation_name": realisation_name,
@@ -120,17 +119,23 @@ def submit_im_calc_slurm(
 
         if params["ims"][const.RootParams.extended_period.name]:
             command_options[const.SlBodyOptConsts.extended.value] = "-e"
-            period_count = len(np.unique(np.append(params['ims']['pSA_periods'], const.EXT_PERIOD)))
+            period_count = len(
+                np.unique(np.append(params["ims"]["pSA_periods"], const.EXT_PERIOD))
+            )
         else:
-            period_count = len(params['ims']['pSA_periods'])
+            period_count = len(params["ims"]["pSA_periods"])
 
         if "pSA_periods" in params["ims"]:
             command_options[
                 "pSA_periods"
             ] = f"-p {' '.join(str(p) for p in params['ims']['pSA_periods'])}"
 
-        body_options[const.SlBodyOptConsts.component.value] = params["ims"][const.SlBodyOptConsts.component.value]
-        body_options["n_component"] = len(params["ims"][const.SlBodyOptConsts.component.value])
+        body_options[const.SlBodyOptConsts.component.value] = params["ims"][
+            const.SlBodyOptConsts.component.value
+        ]
+        body_options["n_component"] = len(
+            params["ims"][const.SlBodyOptConsts.component.value]
+        )
 
         # Get wall clock estimation
         logger.info(

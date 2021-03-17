@@ -182,7 +182,9 @@ def submit_task(
             est_model=models[3],
             logger=task_logger,
         )
-        task_logger.debug(f"Submit IM calc arguments: sim_dir: {sim_dir}, simple_out: True, target_machine: {get_target_machine(const.ProcessType.IM_calculation).name}")
+        task_logger.debug(
+            f"Submit IM calc arguments: sim_dir: {sim_dir}, simple_out: True, target_machine: {get_target_machine(const.ProcessType.IM_calculation).name}"
+        )
         store_metadata(
             log_file,
             const.ProcessType.IM_calculation.str_value,
@@ -307,7 +309,9 @@ def submit_task(
             logger=task_logger,
         )
 
-        task_logger.debug(f"Submit Advanced_IM calc arguments:sim_dir: {sim_dir}, adv_im: True, target_machine: {get_target_machine(const.ProcessType.IM_calculation).name}")
+        task_logger.debug(
+            f"Submit Advanced_IM calc arguments:sim_dir: {sim_dir}, adv_im: True, target_machine: {get_target_machine(const.ProcessType.IM_calculation).name}"
+        )
         store_metadata(
             log_file,
             const.ProcessType.advanced_IM.str_value,
