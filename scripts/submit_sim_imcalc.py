@@ -153,15 +153,8 @@ def submit_im_calc_slurm(
         )
 
     # Header options requiring upstream settings
-    header_options["wallclock"] = set_wct(
-        est_run_time,
-        body_options["np"],
-        True,
-    )
-    header_options["job_name"] = "{}_{}".format(
-        proc_type.str_value,
-        fault_name,
-    )
+    header_options["wallclock"] = set_wct(est_run_time, body_options["np"], True)
+    header_options["job_name"] = "{}_{}".format(proc_type.str_value, fault_name)
     header_options["platform_specific_args"]: get_platform_node_requirements(
         header_options[const.SlHdrOptConsts.n_tasks.value]
     )
@@ -172,10 +165,7 @@ def submit_im_calc_slurm(
         proc_type,
         script_prefix,
         header_options,
-        (
-            sl_template,
-            body_options,
-        ),
+        (sl_template, body_options),
         command_options,
     )
 
