@@ -12,7 +12,7 @@ def test_install_simulation(set_up):
         input_params = get_input_params(root_path, func_name, params)
 
         # Set to a directory that will definitely exist
-        input_params[18] = '/etc'
+        input_params[18] = "/etc"
         for i in range(len(input_params)):
             if isinstance(input_params[i], str) and input_params[i].startswith(
                 ("CSRoot", "AdditionalData", "PangopangoF29/")
@@ -25,12 +25,37 @@ def test_install_simulation(set_up):
 
         # Accounting for removed parameters
         # Simpler solution than downloading, editing and re-uploading the test data
-        root_params_dict['global_root'] = '/nesi/project/nesi00213'
-        root_params_dict['v_1d_mod'] = '/nesi/project/nesi00213/VelocityModel/Mod-1D/Cant1D_v3-midQ_OneRay.1d'
-        root_params_dict['bb']['version'] = "3.0.4"
-        root_params_dict['bb']['site_specific'] = False
-        del root_params_dict['hf']['hf_vel_mod_1d']
-        root_params_dict['v_mod_1d_name'] = '/nesi/project/nesi00213/VelocityModel/Mod-1D/Cant1D_v2-midQ_leer.1d'
+        root_params_dict["global_root"] = "/nesi/project/nesi00213"
+        root_params_dict[
+            "v_1d_mod"
+        ] = "/nesi/project/nesi00213/VelocityModel/Mod-1D/Cant1D_v3-midQ_OneRay.1d"
+        root_params_dict["bb"]["version"] = "3.0.4"
+        root_params_dict["bb"]["site_specific"] = False
+        del root_params_dict["hf"]["hf_vel_mod_1d"]
+        root_params_dict[
+            "v_mod_1d_name"
+        ] = "/nesi/project/nesi00213/VelocityModel/Mod-1D/Cant1D_v2-midQ_leer.1d"
 
-        bench_output = get_bench_output(root_path, func_name)
-        assert root_params_dict == bench_output[0]
+        bench_output = get_bench_output(root_path, func_name)[0]
+        bench_output["ims"] = {
+            "component": ["comp"],
+            "extended_period": False,
+            "pSA_periods": [
+                0.02,
+                0.05,
+                0.1,
+                0.2,
+                0.3,
+                0.4,
+                0.5,
+                0.75,
+                1.0,
+                2.0,
+                3.0,
+                4.0,
+                5.0,
+                7.5,
+                10.0,
+            ],
+        }
+        assert root_params_dict == bench_output
