@@ -55,7 +55,7 @@ def submit_task(
     if not os.path.isdir(ch_log_dir):
         os.mkdir(ch_log_dir)
 
-    params = utils.load_sim_params(os.path.join(sim_dir, "sim_params.yaml"))
+    params = utils.load_sim_params(sim_struct.get_sim_params_yaml_path(sim_dir))
 
     submitted_time = datetime.now().strftime(const.METADATA_TIMESTAMP_FMT)
     log_file = os.path.join(sim_dir, "ch_log", const.METADATA_LOG_FILENAME)
