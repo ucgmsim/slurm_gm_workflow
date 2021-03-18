@@ -14,7 +14,7 @@ emod3d:
 ims:
   extended_period: False
   component:
-    - comp
+    - geom
   pSA_periods: [0.02, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.75, 1.0, 2.0, 3.0, 4.0, 5.0, 7.5, 10.0]
 flo: 1.0
 dt: 0.005

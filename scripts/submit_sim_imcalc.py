@@ -40,7 +40,7 @@ def submit_im_calc_slurm(
     params = utils.load_sim_params(path.join(sim_dir, "sim_params.yaml"), load_vm=False)
     realisation_name = params["name"]
     fault_name = sim_struct.get_fault_from_realisation(realisation_name)
-    station_count = len(load_station_file(params["stat_coords"]).index)
+    station_count = len(load_station_file(params["FD_STATLIST"]).index)
 
     header_options = {
         const.SlHdrOptConsts.job_name_prefix.value: "sim_im_calc",
@@ -50,7 +50,6 @@ def submit_im_calc_slurm(
         ],
         const.SlHdrOptConsts.additional.value: ["#SBATCH --hint=nomultithread"],
         const.SlHdrOptConsts.memory.value: "2G",
-        const.SlHdrOptConsts.n_tasks.value: 1,
         const.SlHdrOptConsts.version.value: "slurm",
         "exe_time": const.timestamp,
     }
@@ -130,12 +129,11 @@ def submit_im_calc_slurm(
                 "pSA_periods"
             ] = f"-p {' '.join(str(p) for p in params['ims']['pSA_periods'])}"
 
-        body_options[const.SlBodyOptConsts.component.value] = params["ims"][
-            const.SlBodyOptConsts.component.value
-        ]
-        body_options["n_component"] = len(
-            params["ims"][const.SlBodyOptConsts.component.value]
+        comps_to_store = params["ims"][const.SlBodyOptConsts.component.value]
+        command_options[const.SlBodyOptConsts.component.value] = "-c " + " ".join(
+            comps_to_store
         )
+        body_options["n_component"] = len(comps_to_store)
 
         # Get wall clock estimation
         logger.info(
@@ -146,18 +144,16 @@ def submit_im_calc_slurm(
         _, est_run_time = est_IM_chours_single(
             station_count,
             int(float(params["sim_duration"]) / float(params["bb"]["dt"])),
-            command_options[const.SlBodyOptConsts.component.value],
+            comps_to_store,
             period_count,
             body_options["np"],
             est_model,
         )
 
     # Header options requiring upstream settings
-    header_options["wallclock"] = set_wct(est_run_time, body_options["np"], True)
+    header_options["wallclock_limit"] = set_wct(est_run_time, body_options["np"], True)
     header_options["job_name"] = "{}_{}".format(proc_type.str_value, fault_name)
-    header_options["platform_specific_args"]: get_platform_node_requirements(
-        header_options[const.SlHdrOptConsts.n_tasks.value]
-    )
+    header_options["platform_specific_args"] = get_platform_node_requirements(1)
 
     script_file_path = write_sl_script(
         write_dir,
