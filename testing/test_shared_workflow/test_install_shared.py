@@ -38,7 +38,7 @@ def test_install_simulation(set_up):
 
         bench_output = get_bench_output(root_path, func_name)[0]
         bench_output["ims"] = {
-            "component": ["comp"],
+            "component": ["geom"],
             "extended_period": False,
             "pSA_periods": [
                 0.02,

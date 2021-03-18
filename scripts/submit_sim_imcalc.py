@@ -43,11 +43,7 @@ def submit_im_calc_slurm(
     station_count = len(load_station_file(params["FD_STATLIST"]).index)
 
     header_options = {
-        const.SlHdrOptConsts.job_name_prefix.value: "sim_im_calc",
         const.SlHdrOptConsts.description.value: "Calculates intensity measures.",
-        const.SlHdrOptConsts.account.value: platform_config[
-            const.PLATFORM_CONFIG.DEFAULT_ACCOUNT.name
-        ],
         const.SlHdrOptConsts.additional.value: ["#SBATCH --hint=nomultithread"],
         const.SlHdrOptConsts.memory.value: "2G",
         const.SlHdrOptConsts.version.value: "slurm",
