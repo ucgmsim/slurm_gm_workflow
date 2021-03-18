@@ -129,7 +129,7 @@ def submit_im_calc_slurm(
         command_options[const.SlBodyOptConsts.component.value] = "-c " + " ".join(
             comps_to_store
         )
-        body_options["n_component"] = len(comps_to_store)
+        body_options["n_components"] = len(comps_to_store)
 
         # Get wall clock estimation
         logger.info(
