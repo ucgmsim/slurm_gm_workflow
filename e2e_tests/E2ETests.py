@@ -18,7 +18,7 @@ import sqlite3 as sql
 from pandas.testing import assert_frame_equal
 
 from scripts.management.db_helper import connect_db_ctx
-from scripts.management.MgmtDB import SchedulerTask
+from scripts.management.MgmtDB import SchedulerTask, MgmtDB
 import qcore.constants as const
 import qcore.simulation_structure as sim_struct
 from qcore.shared import non_blocking_exe, exe
@@ -471,61 +471,58 @@ class E2ETests(object):
         and attempts to cancel one of each.
         """
         # Get all running jobs in the mgmt db
-        proc_types_int = [proc_type.value for proc_type in proc_types]
-        with connect_db_ctx(sim_struct.get_mgmt_db(self.stage_dir)) as cur:
-            entries = cur.execute(
-                "SELECT proc_type, job_id, run_name  FROM state "
-                "WHERE status == 3 AND proc_type IN ({}?)".format(
-                    "?," * (len(proc_types_int) - 1)
-                ),
-                (*proc_types_int,),
-            ).fetchall()
+        db = MgmtDB(sim_struct.get_mgmt_db(self.stage_dir))
+        entries = db.get_submitted_tasks(proc_types)
 
         # Cancel one for each process type
         for entry in entries:
-            if entry[0] in proc_types_int:
+            if entry.status != 3:
+                continue
+            if entry.proc_type in proc_types:
                 print(
-                    "Checkpoint testing: Cancelling job-id {} "
-                    "for {} and process type {}".format(entry[1], entry[2], entry[0])
+                    f"Checkpoint testing: Cancelling job-id {entry.job_id} "
+                    "for {entry.run_name} and process type {entry.proc_type}"
                 )
-                self.canceled_running.append(str(entry[1]))
-                out, err = Scheduler.get_scheduler().cancel_job(entry[1])
+
+                out, err = Scheduler.get_scheduler().cancel_job(entry.job_id)
 
                 print("Scancel out: ", out, err)
                 if "error" not in out.lower() and "error" not in err.lower():
-                    proc_types.remove(const.ProcessType(entry[0]))
-                    proc_types_int.remove(entry[0])
-                    print("Cancelled job-id {}".format(entry[1]))
+                    self.canceled_running.append(str(entry.job_id))
+                    proc_types.remove(entry.proc_type)
+                    print("Cancelled job-id {}".format(entry.job_id))
 
         return proc_types
 
     def check_mgmt_db(self):
         """Create errors for all entries in management db that did not complete"""
-        with connect_db_ctx(sim_struct.get_mgmt_db(self.stage_dir)) as cur:
-            entries = cur.execute(
-                "SELECT run_name, proc_type, status, job_id FROM state "
-                "WHERE proc_type <=6 AND proc_type <> 2 AND proc_type <> 3 AND status != 4"
-            ).fetchall()
+        base_proc_types = [
+            const.ProcessType.EMOD3D,
+            const.ProcessType.HF,
+            const.ProcessType.BB,
+            const.ProcessType.IM_calculation,
+        ]
+        db = MgmtDB(sim_struct.get_mgmt_db(self.stage_dir))
 
-        entries = [SchedulerTask(*entry) for entry in entries]
+        entries = db.command_builder(
+            allowed_tasks=base_proc_types,
+            allowed_states=[const.Status.unknown, const.Status.failed],
+            blocked_ids=self.canceled_running,
+        )
 
         for entry in entries:
-            if (
-                entry.status != const.Status.completed.value
-                and str(entry.job_id) not in self.canceled_running
-            ):
-                self.errors.append(
-                    Error(
-                        "Slurm task",
-                        "Run {} did not complete task {} "
-                        "(Status {}, JobId {}".format(
-                            entry.run_name,
-                            const.ProcessType(entry.proc_type),
-                            const.Status(entry.status),
-                            entry.job_id,
-                        ),
-                    )
+            self.errors.append(
+                Error(
+                    "Slurm task",
+                    "Run {} did not complete task {} "
+                    "(Status {}, JobId {}".format(
+                        entry.run_name,
+                        const.ProcessType(entry.proc_type),
+                        const.Status(entry.status),
+                        entry.job_id,
+                    ),
                 )
+            )
 
     def check_sim_result(self, sim_dir: str):
         """Checks that all the LF, HF and BB binaries are there and that the
@@ -583,47 +580,42 @@ class E2ETests(object):
 
     def check_mgmt_db_progress(self):
         """Checks auto submit progress in the management db"""
-        with connect_db_ctx(sim_struct.get_mgmt_db(self.stage_dir)) as cur:
-            comp_count = cur.execute(
-                "SELECT COUNT(*) FROM state WHERE status == 4 AND proc_type <= 6"
-            ).fetchone()[0]
-            if len(self.canceled_running) > 0:
-                total_count = cur.execute(
-                    "SELECT COUNT(*) FROM state "
-                    "WHERE proc_type <= 6 "
-                    "AND proc_type <> 2 "
-                    "AND proc_type <> 3 "
-                    "AND (job_id IS NULL OR job_id NOT IN (?{}))".format(
-                        ",?" * (len(self.canceled_running) - 1)
-                    ),
-                    (*self.canceled_running,),
-                ).fetchone()[0]
-                failed_count = cur.execute(
-                    "SELECT COUNT(*) FROM state "
-                    "WHERE status == 5 "
-                    "AND proc_type <= 6 "
-                    "AND (job_id IS NULL OR job_id NOT IN (?{}))".format(
-                        ",?" * (len(self.canceled_running) - 1)
-                    ),
-                    (*self.canceled_running,),
-                ).fetchone()[0]
-            else:
-                total_count = cur.execute(
-                    "SELECT COUNT(*) FROM state WHERE proc_type <= 6 AND proc_type <> 2 AND proc_type <> 3"
-                ).fetchone()[0]
-                failed_count = cur.execute(
-                    "SELECT COUNT(*) FROM state WHERE status == 5 AND proc_type <= 6"
-                ).fetchone()[0]
+        base_proc_types = [
+            const.ProcessType.EMOD3D,
+            const.ProcessType.HF,
+            const.ProcessType.BB,
+            const.ProcessType.IM_calculation,
+        ]
+        db = MgmtDB(sim_struct.get_mgmt_db(self.stage_dir))
+
+        total_count = len(db.command_builder(allowed_tasks=base_proc_types))
+
+        comp_count = len(
+            db.command_builder(
+                allowed_tasks=base_proc_types, allowed_states=[const.Status.completed]
+            )
+        )
+
+        failed_count = len(
+            db.command_builder(
+                allowed_tasks=base_proc_types,
+                allowed_states=[const.Status.failed, const.Status.unknown],
+            )
+        )
 
         return total_count, comp_count, failed_count
 
     def check_completed(self):
         """Checks all simulations that have completed"""
-        with connect_db_ctx(sim_struct.get_mgmt_db(self.stage_dir)) as cur:
-            completed_sims = cur.execute(
-                "SELECT run_name FROM state WHERE proc_type == 6 AND status = 4"
-            ).fetchall()
-        completed_sims = [sim_t[0] for sim_t in completed_sims]
+        base_proc_types = [
+            const.ProcessType.IM_calculation,
+        ]
+        db = MgmtDB(sim_struct.get_mgmt_db(self.stage_dir))
+        entries = db.command_builder(
+            allowed_tasks=base_proc_types, allowed_states=[const.Status.completed]
+        )
+
+        completed_sims = [sim_t.run_name for sim_t in entries]
 
         # Only check the ones that haven't been checked already
         completed_new = set(completed_sims) - (self._sim_passed | self._sim_failed)
