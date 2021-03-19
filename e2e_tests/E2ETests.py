@@ -607,9 +607,7 @@ class E2ETests(object):
 
     def check_completed(self):
         """Checks all simulations that have completed"""
-        base_proc_types = [
-            const.ProcessType.IM_calculation,
-        ]
+        base_proc_types = [const.ProcessType.IM_calculation]
         db = MgmtDB(sim_struct.get_mgmt_db(self.stage_dir))
         entries = db.command_builder(
             allowed_tasks=base_proc_types, allowed_states=[const.Status.completed]
