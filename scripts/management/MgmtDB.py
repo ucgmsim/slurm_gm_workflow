@@ -501,6 +501,6 @@ class MgmtDB:
             arguments.extend(blocked_ids)
 
         with connect_db_ctx(self._db_file) as cur:
-            result = cur.execute(base_command, *arguments).fetchall()
+            result = cur.execute(base_command, arguments).fetchall()
 
         return [SchedulerTask(*entry) for entry in result]
