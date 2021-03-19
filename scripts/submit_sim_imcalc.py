@@ -37,7 +37,9 @@ def submit_im_calc_slurm(
     two dictionaries, the passed in one has higher priority.
     """
     # Load the yaml params
-    params = utils.load_sim_params(sim_struct.get_sim_params_yaml_path(sim_dir), load_vm=False)
+    params = utils.load_sim_params(
+        sim_struct.get_sim_params_yaml_path(sim_dir), load_vm=False
+    )
     realisation_name = params["name"]
     fault_name = sim_struct.get_fault_from_realisation(realisation_name)
     station_count = len(load_station_file(params["FD_STATLIST"]).index)
