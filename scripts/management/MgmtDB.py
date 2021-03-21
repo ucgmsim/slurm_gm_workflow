@@ -466,7 +466,7 @@ class MgmtDB:
             base_command += " AND proc_type IN ({})".format(
                 ",".join("?" * len(allowed_tasks))
             )
-            arguments.append(allowed_tasks)
+            arguments.extend(allowed_tasks)
         elif blocked_tasks is not None and len(blocked_tasks) > 0:
             blocked_tasks = [str(task.value) for task in blocked_tasks]
             base_command += " AND proc_type NOT IN ({})".format(
