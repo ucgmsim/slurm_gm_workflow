@@ -472,12 +472,12 @@ class E2ETests(object):
         """
         # Get all running jobs in the mgmt db
         db = MgmtDB(sim_struct.get_mgmt_db(self.stage_dir))
-        entries = db.get_submitted_tasks(proc_types)
+        entries = db.command_builder(
+            allowed_tasks=proc_types, allowed_states=[const.Status.running]
+        )
 
         # Cancel one for each process type
         for entry in entries:
-            if entry.status != 3:
-                continue
             if entry.proc_type in proc_types:
                 print(
                     f"Checkpoint testing: Cancelling job-id {entry.job_id} "
