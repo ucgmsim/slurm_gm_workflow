@@ -203,18 +203,10 @@ class MgmtDB:
 
     def get_submitted_tasks(self, allowed_tasks=tuple(const.ProcessType)):
         """Gets all in progress tasks i.e. (running or queued)"""
-        allowed_tasks = [str(task.value) for task in allowed_tasks]
-        with connect_db_ctx(self._db_file) as cur:
-            result = cur.execute(
-                "SELECT run_name, proc_type, state.status, job_id "
-                "FROM state, status_enum "
-                "WHERE state.status = status_enum.id "
-                "AND status_enum.state IN ('queued', 'running') "
-                "AND proc_type IN (?{})".format(",?" * (len(allowed_tasks) - 1)),
-                allowed_tasks,
-            ).fetchall()
-
-        return [SchedulerTask(*entry) for entry in result]
+        return self.command_builder(
+            allowed_tasks=allowed_tasks,
+            allowed_states=[const.Status.queued, const.Status.running],
+        )
 
     def get_runnable_tasks(
         self,
@@ -442,3 +434,73 @@ class MgmtDB:
     def __del__(self):
         if self._conn is not None:
             self._conn.close()
+
+    def command_builder(
+        self,
+        allowed_tasks: List[const.ProcessType] = None,
+        blocked_tasks: List[const.ProcessType] = None,
+        allowed_states: List[const.Status] = None,
+        blocked_states: List[const.Status] = None,
+        allowed_ids: List[int] = None,
+        blocked_ids: List[int] = None,
+    ):
+        """
+        Allows for retrieving custom collections of database entries
+        Allowed and blocked are mutually exclusive with allowed being used first. No error is raised if both are present
+        If any list is empty this is treated as if it were None
+        :param allowed_tasks, blocked_tasks: a list of process types to either block or exclusively allow
+        :param allowed_states, blocked_states: a list of states to either block or exclusively allow
+        :param allowed_ids, blocked_ids: a list of job ids to either block or exclusively allow
+        :return: A list of Entry objects
+        """
+
+        base_command = (
+            "SELECT run_name, proc_type, state.status, job_id "
+            "FROM state, status_enum "
+            "WHERE state.status = status_enum.id "
+        )
+        arguments = []
+
+        if allowed_tasks is not None and len(allowed_tasks) > 0:
+            allowed_tasks = [str(task.value) for task in allowed_tasks]
+            base_command += " AND proc_type IN ({})".format(
+                ",".join("?" * len(allowed_tasks))
+            )
+            arguments.extend(allowed_tasks)
+        elif blocked_tasks is not None and len(blocked_tasks) > 0:
+            blocked_tasks = [str(task.value) for task in blocked_tasks]
+            base_command += " AND proc_type NOT IN ({})".format(
+                ",".join("?" * len(blocked_tasks))
+            )
+            arguments.extend(blocked_tasks)
+
+        if allowed_states is not None and len(allowed_states) > 0:
+            allowed_states = [str(state.str_value) for state in allowed_states]
+            base_command += " AND status_enum.state IN ({})".format(
+                ",".join("?" * len(allowed_states))
+            )
+            arguments.extend(allowed_states)
+        elif blocked_states is not None and len(blocked_states) > 0:
+            blocked_states = [str(state.str_value) for state in blocked_states]
+            base_command += " AND status_enum.state NOT IN ({})".format(
+                ",".join("?" * len(blocked_states))
+            )
+            arguments.extend(blocked_states)
+
+        if allowed_ids is not None and len(allowed_ids) > 0:
+            allowed_ids = [str(state) for state in allowed_ids]
+            base_command += " AND job_id IN ({})".format(
+                ",".join("?" * len(allowed_ids))
+            )
+            arguments.extend(allowed_ids)
+        elif blocked_ids is not None and len(blocked_ids) > 0:
+            blocked_ids = [str(state) for state in blocked_ids]
+            base_command += " AND job_id NOT IN ({})".format(
+                ",".join("?" * len(blocked_ids))
+            )
+            arguments.extend(blocked_ids)
+
+        with connect_db_ctx(self._db_file) as cur:
+            result = cur.execute(base_command, arguments).fetchall()
+
+        return [SchedulerTask(*entry) for entry in result]

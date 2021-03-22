@@ -40,7 +40,7 @@ def submit_im_calc_slurm(
     params = utils.load_sim_params(
         sim_struct.get_sim_params_yaml_path(sim_dir), load_vm=False
     )
-    realisation_name = params["name"]
+    realisation_name = params[const.SimParams.run_name.value]
     fault_name = sim_struct.get_fault_from_realisation(realisation_name)
     station_count = len(load_station_file(params["FD_STATLIST"]).index)
 
@@ -141,7 +141,7 @@ def submit_im_calc_slurm(
         )
         _, est_run_time = est_IM_chours_single(
             station_count,
-            int(float(params["sim_duration"]) / float(params["bb"]["dt"])),
+            int(float(params["sim_duration"]) / float(params["dt"])),
             comps_to_store,
             period_count,
             body_options["np"],
