@@ -32,7 +32,7 @@ LF_FILES = ["Rlog", "Restart", "SlipOut"]
 
 def tar_files(directory_to_tar, archive_name):
     """params: directory_to_tar:source dir of all files to tar
-               archive_name: output dir for the tar.gz
+    archive_name: output dir for the tar.gz
     """
     if os.path.isfile(archive_name):
         open_type = "a"

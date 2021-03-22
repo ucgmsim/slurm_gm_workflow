@@ -3,7 +3,7 @@
 Checks that a given IM_calc folder has all csv files expected after IM_calculation has run for a simulated or observed
 event.
 Example usage:
-python im_calc_checkpoint.py /nesi/nobackup/nesi00213/RunFolder/Cybershake/v18p6_rerun/Runs/Kelly/Kelly_HYP01-29_S1244/IM_calc 5302
+python im_calc_checkpoint.py /nesi/nobackup/nesi00213/RunFolder/Cybershake/v18p6_rerun/Runs/Kelly/Kelly_HYP01-29_S1244/IM_calc 5302 1
 """
 
 import os
@@ -30,7 +30,12 @@ def print_verbose(message, verbose):
 
 
 def check_im_calc_completion(
-    output_dir, station_count, verbose=False, observed=False, event_name=None
+    output_dir,
+    station_count,
+    components,
+    verbose=False,
+    observed=False,
+    event_name=None,
 ):
     """
     Check for any csv files in the given folder, or stations folder inside.
@@ -62,7 +67,7 @@ def check_im_calc_completion(
     csv_file_name = sum_csv[0]
 
     with open(os.path.join(output_dir, csv_file_name)) as csv_file:
-        if station_count != (len(csv_file.readlines()) - 1):
+        if station_count * components != (len(csv_file.readlines()) - 1):
             print_verbose("CSV file does not have enough lines in it", verbose)
             return False
 
@@ -92,6 +97,9 @@ if __name__ == "__main__":
         "station_count", type=int, help="The number of stations in the realisation"
     )
     parser.add_argument(
+        "components", type=int, help="The number of components in the realisation"
+    )
+    parser.add_argument(
         "-v", "--verbose", action="store_true", help="flag to echo messages"
     )
     parser.add_argument(
@@ -117,10 +125,17 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.observed and args.event_name is None:
-        parser.error("If the event was observed the name of the even must be specified")
+        parser.error(
+            "If the event was observed the name of the event must be specified"
+        )
 
     res = check_im_calc_completion(
-        args.run_dir, args.station_count, args.verbose, args.observed, args.event_name
+        args.run_dir,
+        args.station_count,
+        args.components,
+        args.verbose,
+        args.observed,
+        args.event_name,
     )
     if res:
         print_verbose(
