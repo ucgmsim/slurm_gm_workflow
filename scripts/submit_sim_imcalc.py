@@ -141,7 +141,7 @@ def submit_im_calc_slurm(
         )
         _, est_run_time = est_IM_chours_single(
             station_count,
-            int(float(params["sim_duration"]) / float(params["hf"]["dt"])),
+            int(float(params["sim_duration"]) / float(params["dt"])),
             comps_to_store,
             period_count,
             body_options["np"],
