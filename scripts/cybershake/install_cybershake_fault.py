@@ -190,12 +190,7 @@ def install_fault(
         # install pairs one by one to fit the new structure
         sim_dir = simulation_structure.get_sim_dir(root_folder, realisation_name)
 
-        (
-            root_params_dict,
-            fault_params_dict,
-            sim_params_dict,
-            vm_params_dict,
-        ) = install_simulation(
+        (root_params_dict, fault_params_dict, sim_params_dict) = install_simulation(
             version=version,
             sim_dir=sim_dir,
             rel_name=realisation_name,
@@ -227,7 +222,6 @@ def install_fault(
             root_params_dict is None
             or fault_params_dict is None
             or sim_params_dict is None
-            or vm_params_dict is None
         ):
             # Something has gone wrong, returning without saving anything
             logger.critical(f"Critical Error some params dictionary are None")

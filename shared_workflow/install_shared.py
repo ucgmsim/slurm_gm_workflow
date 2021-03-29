@@ -96,7 +96,6 @@ def install_simulation(
         SimParams.sim_dir.value: sim_dir,
         SimParams.srf_file.value: srf_file,
         SimParams.vm_params.value: vm_params_path,
-        SimParams.sim_duration.value: vm_params_dict[SimParams.sim_duration.value],
     }
     if stat_file_path is not None:
         sim_params_dict[SimParams.stat_file.value] = stat_file_path
@@ -206,7 +205,7 @@ def install_simulation(
             else:
                 sim_params_dict.update({key: value})
 
-    return root_params_dict, fault_params_dict, sim_params_dict, vm_params_dict
+    return root_params_dict, fault_params_dict, sim_params_dict
 
 
 def install_bb(
