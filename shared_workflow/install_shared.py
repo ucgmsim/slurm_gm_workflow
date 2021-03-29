@@ -90,7 +90,7 @@ def install_simulation(
     # Sim Params
     sim_params_dict = {
         SimParams.fault_yaml_path.value: fault_yaml_path,
-        SimParams.run_name.value: run_name,
+        SimParams.run_name.value: rel_name,
         SimParams.user_root.value: cybershake_root,
         SimParams.run_dir.value: run_dir,
         SimParams.sim_dir.value: sim_dir,
