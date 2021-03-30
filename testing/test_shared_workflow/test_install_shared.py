@@ -11,6 +11,7 @@ def test_install_simulation(set_up):
     for root_path, _ in set_up:
         input_params = get_input_params(root_path, func_name, params)
 
+        print(f" input_params {input_params}")
         # Set to a directory that will definitely exist
         input_params[18] = "/etc"
         for i in range(len(input_params)):
