@@ -11,15 +11,11 @@ def test_install_simulation(set_up):
     for root_path, _ in set_up:
         input_params = get_input_params(root_path, func_name, params)
 
-        # Set to a directory that will definitely exist
-        # input_params[18] = "/etc"
         for i in range(len(input_params)):
             if isinstance(input_params[i], str) and input_params[i].startswith(
                 ("CSRoot", "AdditionalData", "PangopangoF29/")
             ):
                 input_params[i] = os.path.join(root_path, input_params[i])
-        # Run/fault name was missing for some reason?
-        # input_params.insert(2, "PangopangoF29")
         test_output = install_shared.install_simulation(*input_params)
         root_params_dict = test_output[0]
 
