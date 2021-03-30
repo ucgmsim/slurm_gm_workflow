@@ -108,7 +108,7 @@ def install_simulation(
                 sim_duration, root_params_dict["dt"]
             )
         )
-        return None, None, None, None
+        return None, None, None
 
     sim_params_dict["emod3d"] = {}
 
