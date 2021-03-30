@@ -100,7 +100,7 @@ def install_simulation(
     if stat_file_path is not None:
         sim_params_dict[SimParams.stat_file.value] = stat_file_path
 
-    nt = float(sim_duration) / root_params_dict["dt"]
+    nt = float(vm_params_dict["sim_duration"]) / root_params_dict["dt"]
     if not isclose(nt, round(nt)):
         logger.critical(
             "Simulation dt does not match sim duration. This will result in errors during BB. Simulation duration must "
