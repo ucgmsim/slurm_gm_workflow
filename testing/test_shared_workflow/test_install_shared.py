@@ -12,7 +12,7 @@ def test_install_simulation(set_up):
         input_params = get_input_params(root_path, func_name, params)
 
         # Set to a directory that will definitely exist
-        input_params[18] = "/etc"
+        # input_params[18] = "/etc"
         for i in range(len(input_params)):
             if isinstance(input_params[i], str) and input_params[i].startswith(
                 ("CSRoot", "AdditionalData", "PangopangoF29/")
