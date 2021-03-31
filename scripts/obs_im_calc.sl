@@ -7,7 +7,7 @@
 #SBATCH --time=01:00:00
 #SBATCH --cpus-per-task=40
 
-export IMPATH=${gmsim}/IM_calculation
+export IMPATH=$gmsim/IM_calculation/IM_calculation/scripts
 export PYTHONPATH=${gmsim}/qcore:/${PYTHONPATH}:${IMPATH}
 
 script_start=`date`
