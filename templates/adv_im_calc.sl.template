@@ -27,7 +27,7 @@ start_time=`date +$runtime_fmt`
 end_time=`date +$runtime_fmt`
 
 # Check that the result files exist
-res=`python $gmsim/workflow/scripts/test_adv_IM.py {{sim_dir}} {{models}}`
+res=`python $gmsim/workflow/scripts/verify_adv_IM.py {{sim_dir}} {{models}}`
 success=$?
 
 # Update mgmt_db
