@@ -69,7 +69,7 @@ do
         # test for completion 
         python $gmsim/workflow/scripts/verify_adv_IM.py $path_event_out $adv_IM_model  
         res=$?
-        if [[ res != 0 ]];then
+        if [[ $res != 0 ]];then
             # test failed
             echo $event >> $obs_dir/../list_done_$adv_IM_model
         else
