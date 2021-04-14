@@ -57,6 +57,7 @@ def submit_im_calc_slurm(
         "realisation_name": realisation_name,
         const.SlBodyOptConsts.fault_name.value: fault_name,
         "np": platform_config[const.PLATFORM_CONFIG.IM_CALC_DEFAULT_N_CORES.name],
+        "sim_IM_calc_dir": sim_struct.get_im_calc_dir(sim_dir),
         "output_csv": sim_struct.get_IM_csv(sim_dir),
         "output_info": sim_struct.get_IM_info(sim_dir),
         "models": "",
