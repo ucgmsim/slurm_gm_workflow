@@ -103,7 +103,7 @@ def submit_im_calc_slurm(
 
         # Time for one station to run in hours
         # This should be a machine property. Or take the largest across all machines used
-        time_for_one_station = 12 / 60
+        time_for_one_station = 8
         est_run_time = np.ceil(station_count / 40) * 2 * time_for_one_station
 
     else:
