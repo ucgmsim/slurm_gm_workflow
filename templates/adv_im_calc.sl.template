@@ -50,7 +50,7 @@ if [[ $success == 0 ]]; then
     fd_count=`cat $fd_name | wc -l`
 
     # log metadata
-    python $gmsim/workflow/metadata/log_metadata.py {{sim_dir}} $step_name cores={{np}} fd_count=$fd_count models="{{models}}"start_time=$start_time end_time=$end_time status="COMPLETED"
+    python $gmsim/workflow/metadata/log_metadata.py {{sim_dir}} $step_name cores={{np}} fd_count=$fd_count models="{{models}}" start_time=$start_time end_time=$end_time status="COMPLETED"
     # tar the temporary outputs from analysis
     python $gmsim/workflow/scripts/adv_im/tar_tmps.py {{sim_dir}} {{models}}
 else
