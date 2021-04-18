@@ -134,7 +134,7 @@ def submit_im_calc_slurm(
             tmp_station_file = path.join(sim_dir, "tmp_station_file")
             with open(tmp_station_file, "w") as f:
                 for station in station_names_tmp:
-                    f.write(f"{station}\n")
+                    f.write(f"{station} ")
             command_options[const.SlBodyOptConsts.advanced_IM.value] = (
                 command_options[const.SlBodyOptConsts.advanced_IM.value]
                 + f"--station_names `cat {tmp_station_file}`"
