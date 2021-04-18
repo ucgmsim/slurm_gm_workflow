@@ -1,6 +1,8 @@
+import glob
 from logging import Logger
 import numpy as np
 from os import path
+import sys
 
 from qcore import constants as const
 from qcore import utils
@@ -8,6 +10,7 @@ from qcore.formats import load_station_file
 from qcore.qclogging import get_basic_logger
 from qcore import simulation_structure as sim_struct
 from qcore.config import qconfig
+import IM_calculation.IM.im_calculation as calc
 
 from estimation.estimate_wct import (
     EstModel,
@@ -71,6 +74,7 @@ def submit_im_calc_slurm(
         "models": "",
         const.SlBodyOptConsts.mgmt_db.value: "",
         "n_components": "",
+        "match_obs_stations": False,
     }
 
     command_options = {
@@ -103,8 +107,38 @@ def submit_im_calc_slurm(
         )
         command_options[
             const.SlBodyOptConsts.advanced_IM.value
-        ] = f"-a {body_options['models']} --OpenSees {qconfig['OpenSees']}"
+        ] = f"-a {body_options['models']} --OpenSees {qconfig['OpenSees']} "
 
+        print(
+            f"test {params[const.SlBodyOptConsts.advanced_IM.value]['match_obs_stations']}"
+        )
+        # create temporary station list if "match_obs_stations" is directory
+        if path.isdir(
+            params[const.SlBodyOptConsts.advanced_IM.value]["match_obs_stations"]
+        ):
+            # retreived station list from observed/fault(eventname)/Vol*/data/accBB/station.
+            obs_accBB_dir_glob = path.join(
+                params[const.SlBodyOptConsts.advanced_IM.value]["match_obs_stations"],
+                f"{fault_name}/*/*/accBB",
+            )
+            obs_accBB_dir = glob.glob(obs_accBB_dir_glob)
+            if len(obs_accBB_dir) > 1:
+                logger.error(
+                    "got more than one folder globbed. please double check the path to the match_obs_stations is correct."
+                )
+                sys.exit()
+            _, station_names_tmp = calc.get_bbseis(
+                obs_accBB_dir[0], calc.FILE_TYPE_DICT["a"], None
+            )
+            # write to a tmp file
+            tmp_station_file = path.join(sim_dir, "tmp_station_file")
+            with open(tmp_station_file, "w") as f:
+                for station in station_names_tmp:
+                    f.write(f"{station}\n")
+            command_options[const.SlBodyOptConsts.advanced_IM.value] = (
+                command_options[const.SlBodyOptConsts.advanced_IM.value]
+                + f"--station_names `cat {tmp_station_file}`"
+            )
         #        header_options[const.SlHdrOptConsts.n_tasks.value] = body_options["np"] = qconfig["cores_per_node"]
 
         # Time for one station to run in hours
