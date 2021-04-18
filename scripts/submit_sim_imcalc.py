@@ -109,9 +109,6 @@ def submit_im_calc_slurm(
             const.SlBodyOptConsts.advanced_IM.value
         ] = f"-a {body_options['models']} --OpenSees {qconfig['OpenSees']} "
 
-        print(
-            f"test {params[const.SlBodyOptConsts.advanced_IM.value]['match_obs_stations']}"
-        )
         # create temporary station list if "match_obs_stations" is directory
         if path.isdir(
             params[const.SlBodyOptConsts.advanced_IM.value]["match_obs_stations"]
@@ -199,7 +196,6 @@ def submit_im_calc_slurm(
     # set ch_safety_factor=1 as we scale it already.
     header_options["wallclock_limit"] = get_wct(est_run_time, ch_safety_factor=1)
 
-    print(f" wallclock_limit {header_options['wallclock_limit']}")
     header_options["job_name"] = "{}_{}".format(proc_type.str_value, fault_name)
     header_options["platform_specific_args"] = get_platform_node_requirements(
         body_options["np"]
