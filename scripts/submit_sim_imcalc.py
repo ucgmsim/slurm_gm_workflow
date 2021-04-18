@@ -7,8 +7,14 @@ from qcore import utils
 from qcore.formats import load_station_file
 from qcore.qclogging import get_basic_logger
 from qcore import simulation_structure as sim_struct
+from qcore.config import qconfig
 
-from estimation.estimate_wct import EstModel, est_IM_chours_single
+from estimation.estimate_wct import (
+    EstModel,
+    est_IM_chours_single,
+    get_wct,
+    CH_SAFETY_FACTOR,
+)
 from shared_workflow.platform_config import (
     platform_config,
     get_platform_node_requirements,
@@ -46,10 +52,12 @@ def submit_im_calc_slurm(
 
     header_options = {
         const.SlHdrOptConsts.description.value: "Calculates intensity measures.",
-        const.SlHdrOptConsts.additional.value: ["#SBATCH --hint=nomultithread"],
         const.SlHdrOptConsts.memory.value: "2G",
         const.SlHdrOptConsts.version.value: "slurm",
         "exe_time": const.timestamp,
+        const.SlHdrOptConsts.additional.value: "#SBATCH --hint=nomultithread"
+        if platform_config[const.PLATFORM_CONFIG.SCHEDULER.name] == "slurm"
+        else [""],
     }
 
     body_options = {
@@ -95,17 +103,18 @@ def submit_im_calc_slurm(
         )
         command_options[
             const.SlBodyOptConsts.advanced_IM.value
-        ] = f"-a {body_options['models']}"
+        ] = f"-a {body_options['models']} --OpenSees {qconfig['OpenSees']}"
 
-        header_options[const.SlHdrOptConsts.additional.value].append(
-            "#SBATCH --nodes=1"
-        )
-        header_options[const.SlHdrOptConsts.n_tasks.value] = body_options["np"] = 18
+        #        header_options[const.SlHdrOptConsts.n_tasks.value] = body_options["np"] = qconfig["cores_per_node"]
 
         # Time for one station to run in hours
         # This should be a machine property. Or take the largest across all machines used
-        time_for_one_station = 8
-        est_run_time = np.ceil(station_count / 40) * 2 * time_for_one_station
+        time_for_one_station = 0.5
+        est_run_time = (
+            np.ceil(station_count / qconfig["cores_per_node"])
+            * 2
+            * time_for_one_station
+        )
 
     else:
         proc_type = const.ProcessType.IM_calculation
@@ -150,9 +159,17 @@ def submit_im_calc_slurm(
         )
 
     # Header options requiring upstream settings
-    header_options["wallclock_limit"] = set_wct(est_run_time, body_options["np"], True)
+    # special treatment for im_calc, as the scaling feature in estimation is not suitable
+    # cap the wct, otherwise cannot submit
+    est_run_time = min(est_run_time * CH_SAFETY_FACTOR, qconfig["MAX_JOB_WCT"])
+    # set ch_safety_factor=1 as we scale it already.
+    header_options["wallclock_limit"] = get_wct(est_run_time, ch_safety_factor=1)
+
+    print(f" wallclock_limit {header_options['wallclock_limit']}")
     header_options["job_name"] = "{}_{}".format(proc_type.str_value, fault_name)
-    header_options["platform_specific_args"] = get_platform_node_requirements(1)
+    header_options["platform_specific_args"] = get_platform_node_requirements(
+        body_options["np"]
+    )
 
     script_file_path = write_sl_script(
         write_dir,
