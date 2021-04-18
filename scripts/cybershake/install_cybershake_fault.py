@@ -24,6 +24,7 @@ from qcore.constants import (
     ProcessType,
     PLATFORM_CONFIG,
     HF_DEFAULT_SEED,
+    VM_PARAMS_FILE_NAME,
 )
 from qcore.qclogging import get_basic_logger, NOPRINTCRITICAL
 
