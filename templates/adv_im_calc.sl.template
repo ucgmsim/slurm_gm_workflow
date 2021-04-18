@@ -1,12 +1,6 @@
 # prompt error when a variable is not set
 set -u
 
-if [[ ! -z ${CUR_ENV} && ${CUR_HPC} != "mahuika" ]]; then
-    source $CUR_ENV/workflow/install_workflow/helper_functions/activate_env.sh $CUR_ENV "mahuika"
-fi
-
-module load OpenSees/3.0.0-gimkl-2017a
-
 step_name=advanced_IM
 
 export IMPATH=$gmsim/IM_calculation/IM_calculation/scripts
