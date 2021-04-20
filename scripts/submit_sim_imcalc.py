@@ -9,8 +9,8 @@ from qcore import utils
 from qcore.formats import load_station_file
 from qcore.qclogging import get_basic_logger
 from qcore import simulation_structure as sim_struct
+from qcore.timeseries import get_observed_stations
 from qcore.config import qconfig
-import IM_calculation.IM.im_calculation as calc
 
 from estimation.estimate_wct import (
     EstModel,
@@ -113,6 +113,9 @@ def submit_im_calc_slurm(
         if path.isdir(
             params[const.SlBodyOptConsts.advanced_IM.value]["match_obs_stations"]
         ):
+            logger.debug(
+                "match_obs_station specificed: {params[const.SlBodyOptConsts.advanced_IM.value]['match_obs_stations']}"
+            )
             # retreived station list from observed/fault(eventname)/Vol*/data/accBB/station.
             obs_accBB_dir_glob = path.join(
                 params[const.SlBodyOptConsts.advanced_IM.value]["match_obs_stations"],
@@ -124,9 +127,7 @@ def submit_im_calc_slurm(
                     "got more than one folder globbed. please double check the path to the match_obs_stations is correct."
                 )
                 sys.exit()
-            _, station_names_tmp = calc.get_bbseis(
-                obs_accBB_dir[0], calc.FILE_TYPE_DICT["a"], None
-            )
+            station_names_tmp = get_observed_stations(obs_accBB_dir[0])
             # write to a tmp file
             tmp_station_file = path.join(sim_dir, "tmp_station_file")
             with open(tmp_station_file, "w") as f:
@@ -195,7 +196,7 @@ def submit_im_calc_slurm(
     est_run_time = min(est_run_time * CH_SAFETY_FACTOR, qconfig["MAX_JOB_WCT"])
     # set ch_safety_factor=1 as we scale it already.
     header_options["wallclock_limit"] = get_wct(est_run_time, ch_safety_factor=1)
-
+    logger.debug("Using WCT for IM_calc: {header_options['wallclock_limit']}")
     header_options["job_name"] = "{}_{}".format(proc_type.str_value, fault_name)
     header_options["platform_specific_args"] = get_platform_node_requirements(
         body_options["np"]
