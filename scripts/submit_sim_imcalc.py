@@ -47,7 +47,7 @@ def submit_im_calc_slurm(
     """
     # Load the yaml params
     params = utils.load_sim_params(
-        sim_struct.get_sim_params_yaml_path(sim_dir), load_vm=False
+        sim_struct.get_sim_params_yaml_path(sim_dir), load_vm=True
     )
     realisation_name = params[const.SimParams.run_name.value]
     fault_name = sim_struct.get_fault_from_realisation(realisation_name)
