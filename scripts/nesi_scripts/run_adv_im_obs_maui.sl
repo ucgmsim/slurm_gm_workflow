@@ -62,12 +62,13 @@ do
         time python $IMPATH/calculate_ims.py $path_eventBB a -o $path_event_out -np 40 -i $event -r $event -t  o -e -a $adv_IM_model --OpenSees_path $opensees_bin
         # test for completion 
         res=`python $gmsim/workflow/scripts/verify_adv_IM.py $path_event_out $adv_IM_model`
-        exit 
         if [[ $? == 0 ]];then
             # completed
             echo $event >> $obs_dir/../list_done_$adv_IM_model
         else
+            echo "completion test failed after running $adv_IM_model on $path_event_out"
             echo "something went wrong, stopping the job, check logs for $path_event_out for $adv_IM_model"
+            echo "$res"
             exit 3
         fi
     done
