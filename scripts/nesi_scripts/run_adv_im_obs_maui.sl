@@ -25,7 +25,7 @@ fi
 obs_dir=$1
 list_event=$2
 # use default binary if not given
-opensees_bin=${3:-/nesi/project/nesi00213/opt/maui/tmp/OpenSees}
+opensees_bin=${3:-`python -c "from qcore.config import qconfig; print(qconfig['OpenSees'])"`}
 
 for event in `cat $list_event | awk '{print $1}'`;
 do 
@@ -33,10 +33,9 @@ do
     path_eventBB=$obs_dir/$event/*/*/accBB
     path_IM_calc=$obs_dir/IM_calc
     path_event_out=$path_IM_calc/$event
-    # tests before starting analysis if the csv is already there
     # get station count
     station_count=`ls $path_eventBB | cut -d. -f1 | sort -u | wc -l`
-    if [[ $station_count -lt 0 ]]; then
+    if [[ $station_count -le 0 ]]; then
         echo failed to get the station count in $path_eventBB
         exit 2
     fi
@@ -46,13 +45,11 @@ do
         adv_IM_models=`python -c "from qcore.utils import load_yaml; params=load_yaml('$root_params'); print(' '.join(params['advanced_IM']['models']));"`
     else
     #failed to find a model from config/yaml
-        continue
+        exit 2
     fi
     # run for all Models
     for adv_IM_model in $adv_IM_models;
     do
-        # re-initialize flag
-        run_im=0
         # check for status
         # skip if completed
         res=`python $gmsim/workflow/scripts/verify_adv_IM.py $path_event_out $adv_IM_model`
