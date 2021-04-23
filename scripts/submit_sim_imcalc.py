@@ -111,7 +111,7 @@ def submit_im_calc_slurm(
 
         # create temporary station list if "match_obs_stations" is directory
         if path.isdir(
-            params[const.SlBodyOptConsts.advanced_IM.value]["match_obs_stations"]
+            str(params[const.SlBodyOptConsts.advanced_IM.value]["match_obs_stations"])
         ):
             logger.debug(
                 "match_obs_station specificed: {params[const.SlBodyOptConsts.advanced_IM.value]['match_obs_stations']}"
