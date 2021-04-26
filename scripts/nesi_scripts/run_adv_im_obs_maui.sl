@@ -55,10 +55,10 @@ do
         res=`python $gmsim/workflow/scripts/verify_adv_IM.py $path_event_out $adv_IM_model`; res_return_code=$?
 
         # return code from verify_adv_IM is used to determine status.
-        if [[ $res_return_code == 0 ]];then
-            continue
-        fi
-        time python $IMPATH/calculate_ims.py $path_eventBB a -o $path_event_out -np 40 -i $event -r $event -t  o -e -a $adv_IM_model --OpenSees_path $opensees_bin
+        #if [[ $res_return_code == 0 ]];then
+        #    continue
+        #fi
+        #time python $IMPATH/calculate_ims.py $path_eventBB a -o $path_event_out -np 40 -i $event -r $event -t  o -e -a $adv_IM_model --OpenSees_path $opensees_bin
         # test for completion 
         res=`python $gmsim/workflow/scripts/verify_adv_IM.py $path_event_out $adv_IM_model`; res_return_code=$?
 
@@ -66,7 +66,7 @@ do
         if [[ $res_return_code == 0 ]];then
             # completed
             echo $event >> $obs_dir/../list_done_$adv_IM_model
-            find $path_event_out/*/$adv_IM_model/ -mindepth 1 -maxdepth 1 -type d -exec tar --remove-files -uvf $path_event_out/${adv_IM_model}_out.tar -C $path_event_out {} \;
+            find $path_event_out/*/$adv_IM_model/ -mindepth 1 -maxdepth 1 -type d -exec bash -c "f_path={}; tar --remove-files -uvf $path_event_out/${adv_IM_model}_out.tar -C $path_event_out \${f_path#$path_event_out/}" \;
             gzip $path_event_out/${adv_IM_model}_out.tar
         else
             echo "completion test failed after running $adv_IM_model on $path_event_out"
