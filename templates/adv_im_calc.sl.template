@@ -51,7 +51,7 @@ if [[ $success == 0 ]]; then
     # tar the temporary outputs from analysis
     # following IM_calc_dir/station/model/component_dir
     # using \; instead of + to avoid extra long exec bash command. (this will result in a exec for every file found
-    find {{sim_IM_calc_dir}}/*/*/ -mindepth 1 -maxdepth 1 -type d -exec bash -c "f_path={}; tar --remove-files -uvf {{sim_IM_calc_dir}}/adv_im_out.tar -C {{sim_IM_calc_dir}} \${f_path#{{sim_IM_calc_dir}}/}" \;
+    find {{sim_IM_calc_dir}}/*/*/ -mindepth 1 -maxdepth 1 -type d -exec bash -c "f_path={}; relative_path=\${f_path#{{sim_IM_calc_dir}}/}; tar --remove-files -uvf {{sim_IM_calc_dir}}/adv_im_out.tar -C {{sim_IM_calc_dir}} \$relative_path" \;
     gzip {{sim_IM_calc_dir}}/adv_im_out.tar
 else
     #failed
