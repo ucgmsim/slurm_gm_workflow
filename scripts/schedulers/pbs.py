@@ -36,7 +36,7 @@ class Pbs(AbstractScheduler):
 
         tasks_dict = json_dict["Jobs"]
         assert (
-                len(tasks_dict.keys()) == 1
+            len(tasks_dict.keys()) == 1
         ), f"Too many tasks returned by qstat: {tasks_dict.keys()}"
 
         task_name = list(tasks_dict.keys()[0])
