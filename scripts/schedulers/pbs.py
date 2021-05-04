@@ -18,33 +18,39 @@ class Pbs(AbstractScheduler):
         :return: A tuple containing the expected metadata
         """
         cmd = f"qstat -f -F json -x {db_running_task.job_id}"
-        out, err = self._run_command_and_wait(cmd, shell=True)
-        tasks_dict = json.loads(out)["Jobs"]
-        assert (
-            len(tasks_dict.keys()) == 1
-        ), f"Too many tasks returned by qstat: {tasks_dict.keys()}"
-        task_name = list(tasks_dict.keys()[0])
-        task_dict = tasks_dict[task_name]
-        try:
-            submit_time = task_dict["ctime"].replace(" ", "_")
-            start_time = task_dict["stime"].replace(" ", "_")
-            # Last modified time. There isn't an explicit end time,
-            # so only other option would be to add walltime to start time
-            end_time = task_dict["mtime"].replace(" ", "_")
-            n_cores = float(task_dict["resources_used"]["ncpus"])
-            run_time = float(task_dict["resources_used"]["walltime"])
-            # status uses the same states as the queue monitor, rather than full words like sacct
-            status = task_dict["job_state"]
 
-        except Exception:
+        out, err = self._run_command_and_wait(cmd, shell=True)
+        json_dict = json.loads(out)
+        if "Jobs" not in json_dict:
             # a special case when a job is cancelled before getting logged in the scheduler
             task_logger.warning(
-                "job data cannot be retrieved from qstat. likely the job is cancelled before recording. setting job status to CANCELLED"
+                "job data cannot be retrieved from qstat."
+                " likely the job is cancelled before recording."
+                " setting job status to CANCELLED"
             )
             submit_time, start_time, end_time = [0] * 3
             n_cores = 0.0
             run_time = 0
             status = "CANCELLED"
+            return start_time, end_time, run_time, n_cores, status
+
+        tasks_dict = json_dict["Jobs"]
+        assert (
+            len(tasks_dict.keys()) == 1
+        ), f"Too many tasks returned by qstat: {tasks_dict.keys()}"
+
+        task_name = list(tasks_dict.keys()[0])
+        task_dict = tasks_dict[task_name]
+        submit_time = task_dict["ctime"].replace(" ", "_")
+        start_time = task_dict["stime"].replace(" ", "_")
+        # Last modified time. There isn't an explicit end time,
+        # so only other option would be to add walltime to start time
+        end_time = task_dict["mtime"].replace(" ", "_")
+        n_cores = float(task_dict["resources_used"]["ncpus"])
+        run_time = float(task_dict["resources_used"]["walltime"])
+
+        # status uses the same states as the queue monitor, rather than full words like sacct
+        status = task_dict["job_state"]
 
         return start_time, end_time, run_time, n_cores, status
 
