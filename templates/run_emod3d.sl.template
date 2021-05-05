@@ -6,7 +6,7 @@ fi
 
 SUCCESS_CODE=0
 
-python $gmsim/workflow/scripts/check_emod_subdomains.py $SLURM_CPUS_PER_TASK {{sim_dir}}/LF/e3d.par
+python $gmsim/workflow/scripts/check_emod3d_subdomains_e3d_par.py $SLURM_CPUS_PER_TASK {{sim_dir}}/LF/e3d.par
 if [[ $? -ne 0 ]]; then
     echo "There was a problem with potentially orphaned stations. Check and resubmit."
     exit 1

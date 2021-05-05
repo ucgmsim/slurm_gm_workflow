@@ -16,7 +16,7 @@ import qcore.simulation_structure as sim_struct
 
 import estimation.estimate_wct as est
 import scripts.set_runparams as set_runparams
-from scripts.check_emod3d_domains import test_domain
+from scripts.check_emod3d_subdomains import test_domain
 from scripts.schedulers.scheduler_factory import Scheduler
 from shared_workflow.platform_config import (
     platform_config,
@@ -75,7 +75,12 @@ def main(
 
         target_qconfig = get_machine_config(args.machine)
 
-        while hstack(test_domain(params["nx"], params["ny"], params["nz"], est_cores)).size > 0:
+        while (
+            hstack(
+                test_domain(params["nx"], params["ny"], params["nz"], est_cores)
+            ).size
+            > 0
+        ):
             est_cores += target_qconfig["cores_per_node"]
 
         wct = set_wct(est_run_time_scaled, est_cores, args.auto)

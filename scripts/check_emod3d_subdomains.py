@@ -21,7 +21,9 @@ def get_start_boundary(n_grid_points, n_subdomains, index_subdomain):
     :return: The first grid point(s) covered by the given subdomain index(cies)
     """
     fslice = np.float32(
-        np.float32(n_grid_points + (n_subdomains - 1.0) * 4.0) / np.float32(n_subdomains) - 1.0
+        np.float32(n_grid_points + (n_subdomains - 1.0) * 4.0)
+        / np.float32(n_subdomains)
+        - 1.0
     )
     fn1 = np.float32(index_subdomain * (fslice - 3.0))
     nx1 = np.int32(fn1 + 0.5)
@@ -39,7 +41,9 @@ def get_end_boundary(n_grid_points, n_subdomains, index_subdomain):
     :return: The last grid point(s) covered by the given subdomain index(cies)
     """
     fslice = np.float32(
-        np.float32(n_grid_points + (n_subdomains - 1.0) * 4.0) / np.float32(n_subdomains) - 1.0
+        np.float32(n_grid_points + (n_subdomains - 1.0) * 4.0)
+        / np.float32(n_subdomains)
+        - 1.0
     )
     fn1 = np.float32(index_subdomain * (fslice - 3.0))
     fn1 = np.float32(fn1 + fslice)
