@@ -6,6 +6,8 @@ import os
 import argparse
 from logging import Logger
 
+from numpy import hstack
+
 from qcore import utils, binary_version
 from qcore.config import get_machine_config, host
 from qcore.qclogging import get_basic_logger
@@ -14,6 +16,7 @@ import qcore.simulation_structure as sim_struct
 
 import estimation.estimate_wct as est
 import scripts.set_runparams as set_runparams
+from scripts.check_emod3d_domains import test_domain
 from scripts.schedulers.scheduler_factory import Scheduler
 from shared_workflow.platform_config import (
     platform_config,
@@ -70,9 +73,12 @@ def main(
                     "retries has been set, but no check-pointing files exist. not scaling wct"
                 )
 
-        wct = set_wct(est_run_time_scaled, est_cores, args.auto)
-
         target_qconfig = get_machine_config(args.machine)
+
+        while hstack(test_domain(params["nx"], params["ny"], params["nz"], est_cores)).size > 0:
+            est_cores += target_qconfig["cores_per_node"]
+
+        wct = set_wct(est_run_time_scaled, est_cores, args.auto)
 
         binary_path = binary_version.get_lf_bin(
             params.emod3d.emod3d_version, target_qconfig["tools_dir"]
