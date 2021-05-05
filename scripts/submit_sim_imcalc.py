@@ -1,14 +1,23 @@
+import glob
 from logging import Logger
 import numpy as np
 from os import path
+import sys
 
 from qcore import constants as const
 from qcore import utils
 from qcore.formats import load_station_file
 from qcore.qclogging import get_basic_logger
 from qcore import simulation_structure as sim_struct
+from qcore.timeseries import get_observed_stations
+from qcore.config import qconfig
 
-from estimation.estimate_wct import EstModel, est_IM_chours_single
+from estimation.estimate_wct import (
+    EstModel,
+    est_IM_chours_single,
+    get_wct,
+    CH_SAFETY_FACTOR,
+)
 from shared_workflow.platform_config import (
     platform_config,
     get_platform_node_requirements,
@@ -38,7 +47,7 @@ def submit_im_calc_slurm(
     """
     # Load the yaml params
     params = utils.load_sim_params(
-        sim_struct.get_sim_params_yaml_path(sim_dir), load_vm=False
+        sim_struct.get_sim_params_yaml_path(sim_dir), load_vm=True
     )
     realisation_name = params[const.SimParams.run_name.value]
     fault_name = sim_struct.get_fault_from_realisation(realisation_name)
@@ -46,10 +55,12 @@ def submit_im_calc_slurm(
 
     header_options = {
         const.SlHdrOptConsts.description.value: "Calculates intensity measures.",
-        const.SlHdrOptConsts.additional.value: ["#SBATCH --hint=nomultithread"],
         const.SlHdrOptConsts.memory.value: "2G",
         const.SlHdrOptConsts.version.value: "slurm",
         "exe_time": const.timestamp,
+        const.SlHdrOptConsts.additional.value: "#SBATCH --hint=nomultithread"
+        if platform_config[const.PLATFORM_CONFIG.SCHEDULER.name] == "slurm"
+        else [""],
     }
 
     body_options = {
@@ -57,11 +68,13 @@ def submit_im_calc_slurm(
         "realisation_name": realisation_name,
         const.SlBodyOptConsts.fault_name.value: fault_name,
         "np": platform_config[const.PLATFORM_CONFIG.IM_CALC_DEFAULT_N_CORES.name],
+        "sim_IM_calc_dir": sim_struct.get_im_calc_dir(sim_dir),
         "output_csv": sim_struct.get_IM_csv(sim_dir),
         "output_info": sim_struct.get_IM_info(sim_dir),
         "models": "",
         const.SlBodyOptConsts.mgmt_db.value: "",
         "n_components": "",
+        "match_obs_stations": False,
     }
 
     command_options = {
@@ -94,17 +107,46 @@ def submit_im_calc_slurm(
         )
         command_options[
             const.SlBodyOptConsts.advanced_IM.value
-        ] = f"-a {body_options['models']}"
+        ] = f"-a {body_options['models']} --OpenSees {qconfig['OpenSees']} "
 
-        header_options[const.SlHdrOptConsts.additional.value].append(
-            "#SBATCH --nodes=1"
-        )
-        header_options[const.SlHdrOptConsts.n_tasks.value] = body_options["np"] = 18
+        # create temporary station list if "match_obs_stations" is directory
+        if path.isdir(
+            str(params[const.SlBodyOptConsts.advanced_IM.value]["match_obs_stations"])
+        ):
+            logger.debug(
+                "match_obs_station specificed: {params[const.SlBodyOptConsts.advanced_IM.value]['match_obs_stations']}"
+            )
+            # retreived station list from observed/fault(eventname)/Vol*/data/accBB/station.
+            obs_accBB_dir_glob = path.join(
+                params[const.SlBodyOptConsts.advanced_IM.value]["match_obs_stations"],
+                f"{fault_name}/*/*/accBB",
+            )
+            obs_accBB_dir = glob.glob(obs_accBB_dir_glob)
+            if len(obs_accBB_dir) > 1:
+                logger.error(
+                    "got more than one folder globbed. please double check the path to the match_obs_stations is correct."
+                )
+                sys.exit()
+            station_names_tmp = get_observed_stations(obs_accBB_dir[0])
+            # write to a tmp file
+            tmp_station_file = path.join(sim_dir, "tmp_station_file")
+            with open(tmp_station_file, "w") as f:
+                for station in station_names_tmp:
+                    f.write(f"{station} ")
+            command_options[const.SlBodyOptConsts.advanced_IM.value] = (
+                command_options[const.SlBodyOptConsts.advanced_IM.value]
+                + f"--station_names `cat {tmp_station_file}`"
+            )
+        #        header_options[const.SlHdrOptConsts.n_tasks.value] = body_options["np"] = qconfig["cores_per_node"]
 
         # Time for one station to run in hours
         # This should be a machine property. Or take the largest across all machines used
-        time_for_one_station = 12 / 60
-        est_run_time = np.ceil(station_count / 40) * 2 * time_for_one_station
+        time_for_one_station = 0.5
+        est_run_time = (
+            np.ceil(station_count / qconfig["cores_per_node"])
+            * 2
+            * time_for_one_station
+        )
 
     else:
         proc_type = const.ProcessType.IM_calculation
@@ -149,9 +191,16 @@ def submit_im_calc_slurm(
         )
 
     # Header options requiring upstream settings
-    header_options["wallclock_limit"] = set_wct(est_run_time, body_options["np"], True)
+    # special treatment for im_calc, as the scaling feature in estimation is not suitable
+    # cap the wct, otherwise cannot submit
+    est_run_time = min(est_run_time * CH_SAFETY_FACTOR, qconfig["MAX_JOB_WCT"])
+    # set ch_safety_factor=1 as we scale it already.
+    header_options["wallclock_limit"] = get_wct(est_run_time, ch_safety_factor=1)
+    logger.debug("Using WCT for IM_calc: {header_options['wallclock_limit']}")
     header_options["job_name"] = "{}_{}".format(proc_type.str_value, fault_name)
-    header_options["platform_specific_args"] = get_platform_node_requirements(1)
+    header_options["platform_specific_args"] = get_platform_node_requirements(
+        body_options["np"]
+    )
 
     script_file_path = write_sl_script(
         write_dir,
