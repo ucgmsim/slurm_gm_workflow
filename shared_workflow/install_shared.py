@@ -113,7 +113,7 @@ def install_simulation(
         logger.critical(
             "Simulation dt does not match sim duration. This will result in errors during BB. Simulation duration must "
             "be a multiple of dt. Ignoring fault. Simulation_duration: {}. dt: {}.".format(
-                sim_duration, root_params_dict["dt"]
+                vm_params_dict["sim_duration"], root_params_dict["dt"]
             )
         )
         return None, None, None
