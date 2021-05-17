@@ -109,6 +109,7 @@ def install_fault(
     vm_qpqs_files=False,
     ignore_vm_qpqs_files=False,
     keep_dup_station=True,
+    components=None,
     logger: Logger = get_basic_logger(),
 ):
 
@@ -217,6 +218,7 @@ def install_fault(
             ignore_vm_perturbations=ignore_vm_perturbations,
             vm_qpqs_files=vm_qpqs_files,
             ignore_vm_qpqs_files=ignore_vm_qpqs_files,
+            components=components,
         )
 
         if (
