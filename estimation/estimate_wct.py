@@ -18,19 +18,15 @@ import numpy as np
 from qcore import config
 import qcore.constants as const
 from qcore.qclogging import get_basic_logger, NOPRINTCRITICAL
-from estimation.model import CombinedModel, WCEstModel, NNWcEstModel, SVRModel
 from shared_workflow.platform_config import platform_config
-
-SCALER_PREFIX = "scaler_{}"
 
 MAX_JOB_WCT = config.qconfig[config.ConfigKeys.MAX_JOB_WCT.name]
 MAX_NODES_PER_JOB = config.qconfig[config.ConfigKeys.MAX_NODES_PER_JOB.name]
 PHYSICAL_NCORES_PER_NODE = config.qconfig[config.ConfigKeys.cores_per_node.name]
 
 CH_SAFETY_FACTOR = 1.5
-DEFAULT_MODEL_TYPE = const.EstModelType.NN_SVR
 
-EstModel = namedtuple("EstModel", ["nn_model", "nn_scaler", "svr_model", "svr_scaler"])
+DEFAULT_MODEL_TYPE = const.EstModelType.NN_SVR
 
 
 def get_wct(run_time, ch_safety_factor=CH_SAFETY_FACTOR):
@@ -56,11 +52,11 @@ def est_LF_chours_single(
     ny: int,
     nz: int,
     nt: int,
+    fd_count: int,
+    mag: float,
     ncores: int,
-    model: Union[str, EstModel],
     scale_ncores: bool,
     node_time_th_factor: float = 0.25,
-    model_type: const.EstModelType = DEFAULT_MODEL_TYPE,
 ):
     """Convenience function to make a single estimation
 
@@ -69,13 +65,11 @@ def est_LF_chours_single(
 
     Params
     ------
-    nx, ny, nz, nt, n_cores : float, int
+    nx, ny, nz, nt, fd_count, mag : float, int
         Input features for the model
     scale_ncores : bool
         If True then the number of cores is adjusted until
         n_nodes * node_time_th == run_time
-    model : str or EstModel
-        Either the path to the model directory, or the loaded model.
     node_time_th : float
         Node time threshold factor, does nothing if scale_ncores is not set
 
@@ -89,29 +83,18 @@ def est_LF_chours_single(
         The number of cores to use, returns the argument n_cores
         if scale_ncores is not set. Otherwise returns the updated ncores.
     """
-    # Make a numpy array of the input data in the right shape.
     # The order of the features has to the same as for training!!
-    data = np.array(
-        [float(nx), float(ny), float(nz), float(nt), float(ncores)]
-    ).reshape(1, 5)
+    data = np.array([nx, ny, nz, nt, fd_count, mag, ncores]).reshape(1, 7)
 
     core_hours, run_time, ncores = estimate_LF_chours(
-        data,
-        model,
-        scale_ncores,
-        node_time_th_factor=node_time_th_factor,
-        model_type=model_type,
+        data, scale_ncores, node_time_th_factor=node_time_th_factor
     )
 
     return core_hours[0], run_time[0], int(ncores[0])
 
 
 def estimate_LF_chours(
-    data: np.ndarray,
-    model: Union[str, EstModel],
-    scale_ncores: bool,
-    node_time_th_factor: float = 0.25,
-    model_type: const.EstModelType = DEFAULT_MODEL_TYPE,
+    data: np.ndarray, scale_ncores: bool, node_time_th_factor: float = 0.25
 ):
     """
     Make bulk LF estimations, requires the input data to be in the right
@@ -140,22 +123,47 @@ def estimate_LF_chours(
         The number of cores to use, returns the argument n_cores
         if scale_ncores is not set. Otherwise returns the updated ncores.
     """
-    if data.shape[1] != 5:
-        raise Exception("Invalid input data, has to 5 columns. One for each feature.")
+    if data.shape[1] != 7:
+        raise Exception("Invalid input data, has to 6 columns. One for each feature.")
 
     # Use number of steps (i.e. nx * ny * nz) and nt for LF SVR
-    svr_data = np.concatenate(
-        ((data[:, 0] * data[:, 1] * data[:, 2])[:, None], data[:, -2][:, None]), axis=1
+    #    svr_data = np.concatenate(
+    #        ((data[:, 0] * data[:, 1] * data[:, 2])[:, None], data[:, -2][:, None]), axis=1
+    #    )
+    coefficients = {
+        "a": 0.804_038_96,
+        "b": 0.090_770_8,
+        "c": -18.992_825_379_162_817,
+        "d": 0.282_455_29,
+    }
+    n_grid = data[:, 0] * data[:, 1] * data[:, 2]
+    nt = data[:, 3]
+    fd_count = data[:, 4]
+    mag = data[:, 5]
+
+    core_hours = np.exp(
+        (coefficients["a"] * np.log(n_grid * nt))
+        + (coefficients["b"] * np.log(fd_count))
+        + coefficients["c"]
+        + np.where(
+            (coefficients["d"] * np.log(n_grid * nt)) > 6.5,
+            (coefficients["d"] * np.log(n_grid * nt)) - 6.5,
+            #            (coefficients["a"] * np.log(n_grid * nt)) > 6.5,
+            #            ((coefficients["a"] * np.log(n_grid * nt)) - 6.5) / coefficients["a"] * coefficients["d"],
+            #            (coefficients["d"] * (np.log(n_grid * nt) - 6.5)),
+            0,
+        )
     )
 
-    core_hours = estimate(
-        data,
-        model,
-        model_type,
-        platform_config[const.PLATFORM_CONFIG.LF_DEFAULT_NCORES.name],
-        lf_svr_input_data=svr_data,
+    print(f"{nt} {fd_count}")
+    print(
+        f"test : {np.log(n_grid * nt)}  n_grid: {n_grid} nt: {nt} coefficients['d'] :{coefficients['d']}"
     )
 
+    print(
+        f"test2: {(coefficients['a'] * np.log(n_grid * nt))}  {(coefficients['b'] * np.log(fd_count))}, {coefficients['d'] * (np.log(n_grid * nt) - 6.5)}"
+    )
+    print(f"estimated core_hours : {core_hours}")
     # data[:, -1] represents the last column of the ndarray data, which contains the number of cores for each task
     wct = core_hours / data[:, -1]
 
@@ -173,7 +181,6 @@ def est_HF_chours_single(
     nsub_stoch: float,
     nt: int,
     n_logical_cores: int,
-    model: Union[str, EstModel],
     scale_ncores: bool,
     node_time_th_factor: float = 1.0,
     model_type: const.EstModelType = DEFAULT_MODEL_TYPE,
@@ -216,7 +223,6 @@ def est_HF_chours_single(
 
 def estimate_HF_chours(
     data: np.ndarray,
-    model: Union[str, EstModel],
     scale_ncores: bool,
     node_time_th_factor: float = 1.0,
     model_type: const.EstModelType = DEFAULT_MODEL_TYPE,
@@ -335,7 +341,6 @@ def est_BB_chours_single(
     fd_count: int,
     nt: int,
     n_logical_cores: int,
-    model: Union[str, EstModel],
     model_type: const.EstModelType = DEFAULT_MODEL_TYPE,
 ):
     """Convenience function to make a single estimation
@@ -366,9 +371,7 @@ def est_BB_chours_single(
 
 
 def estimate_BB_chours(
-    data: np.ndarray,
-    model: Union[str, EstModel],
-    model_type: const.EstModelType = DEFAULT_MODEL_TYPE,
+    data: np.ndarray, model_type: const.EstModelType = DEFAULT_MODEL_TYPE
 ):
     """Make bulk BB estimations, requires data to be
     in the correct order (see above)
@@ -412,7 +415,6 @@ def est_IM_chours_single(
     comp: Union[List[str], int],
     pSA_count: int,
     n_cores: int,
-    model: Union[str, EstModel],
     model_type: const.EstModelType = DEFAULT_MODEL_TYPE,
 ):
     """Convenience function to make a single estimation
@@ -485,7 +487,6 @@ def get_IM_comp_count(comp: List[str]):
 
 def estimate(
     input_data: np.ndarray,
-    model: Union[str, EstModel],
     model_type: const.EstModelType,
     default_ncores: int,
     lf_svr_input_data: np.ndarray = None,
@@ -551,41 +552,6 @@ def estimate(
     return core_hours
 
 
-def load_full_model(
-    dir: str,
-    model_type: const.EstModelType = DEFAULT_MODEL_TYPE,
-    logger: Logger = get_basic_logger(),
-):
-    """Loads the full model, i.e. the estimation model(s) and their associated scaler.
-
-    Returns an EstModel object.
-    """
-    # Load just NN
-    if model_type is const.EstModelType.NN:
-        return EstModel(
-            load_model(dir, const.EST_MODEL_NN_PREFIX, "h5", NNWcEstModel, logger),
-            load_scaler(dir, SCALER_PREFIX.format("NN"), logger),
-            None,
-            None,
-        )
-    # Load just SVR
-    elif model_type is const.EstModelType.SVR:
-        return EstModel(
-            None,
-            None,
-            load_model(dir, const.EST_MODEL_SVR_PREFIX, "pickle", SVRModel, logger),
-            load_scaler(dir, SCALER_PREFIX.format("SVR"), logger),
-        )
-    # Load both
-    elif model_type is const.EstModelType.NN_SVR:
-        return EstModel(
-            load_model(dir, const.EST_MODEL_NN_PREFIX, "h5", NNWcEstModel, logger),
-            load_scaler(dir, SCALER_PREFIX.format("NN"), logger),
-            load_model(dir, const.EST_MODEL_SVR_PREFIX, "pickle", SVRModel, logger),
-            load_scaler(dir, SCALER_PREFIX.format("SVR"), logger),
-        )
-
-
 def load_scaler(dir: str, scaler_prefix: str, logger: Logger = get_basic_logger()):
     """Loads the latest scaler
     """
@@ -619,11 +585,7 @@ def load_scaler(dir: str, scaler_prefix: str, logger: Logger = get_basic_logger(
 
 
 def load_model(
-    dir: str,
-    model_prefix: str,
-    model_ext: str,
-    model_cls: WCEstModel,
-    logger: Logger = get_basic_logger(),
+    dir: str, model_prefix: str, model_ext: str, logger: Logger = get_basic_logger()
 ):
     """Loads a model
 

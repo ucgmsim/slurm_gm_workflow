@@ -6,7 +6,7 @@ import os
 import argparse
 from logging import Logger
 
-from qcore import utils, binary_version
+from qcore import utils, shared, binary_version
 from qcore.config import get_machine_config, host
 from qcore.qclogging import get_basic_logger
 import qcore.constants as const
@@ -24,11 +24,7 @@ from shared_workflow.shared_automated_workflow import submit_script_to_scheduler
 from shared_workflow.shared_template import write_sl_script
 
 
-def main(
-    args: argparse.Namespace,
-    est_model: est.EstModel = None,
-    logger: Logger = get_basic_logger(),
-):
+def main(args: argparse.Namespace, logger: Logger = get_basic_logger()):
     params = utils.load_sim_params(os.path.join(args.rel_dir, "sim_params.yaml"))
 
     submit_yes = True if args.auto else confirm("Also submit the job for you?")
@@ -36,6 +32,7 @@ def main(
     logger.debug("params.srf_file {}".format(params.srf_file))
     # Get the srf(rup) name without extensions
     srf_name = os.path.splitext(os.path.basename(params.srf_file))[0]
+    fd_count = len(shared.get_stations(params.FD_STATLIST))
     if args.srf is None or srf_name == args.srf:
         logger.debug("not set_params_only")
         # get lf_sim_dir
@@ -44,15 +41,15 @@ def main(
 
         # default_core will be changed is user passes ncore
         nt = int(float(params.sim_duration) / float(params.dt))
-        model = (
-            est_model
-            if est_model is not None
-            else os.path.join(
-                platform_config[const.PLATFORM_CONFIG.ESTIMATION_MODELS_DIR.name], "LF"
-            )
-        )
         est_core_hours, est_run_time, est_cores = est.est_LF_chours_single(
-            int(params.nx), int(params.ny), int(params.nz), nt, args.ncore, model, True
+            int(params.nx),
+            int(params.ny),
+            int(params.nz),
+            nt,
+            fd_count,
+            params.mag,
+            args.ncore,
+            True,
         )
         # scale up the est_run_time if it is a re-run (with check-pointing)
         # otherwise do nothing
