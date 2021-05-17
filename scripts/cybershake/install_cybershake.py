@@ -49,6 +49,7 @@ def load_args(logger):
     parser.add_argument(
         "--components",
         choices=list(Components.iterate_str_values()),
+        nargs="+",
         default=None,
         help="list of components to run IM_calcs, overwrites value in selected gmsim version template",
     )
@@ -176,7 +177,7 @@ def main():
             vm_qpqs_files=args.vm_qpqs_files,
             ignore_vm_qpqs_files=args.ignore_vm_qpqs_files,
             keep_dup_station=args.keep_dup_station,
-            components=components,
+            components=args.components,
             logger=qclogging.get_realisation_logger(logger, fault),
         )
 

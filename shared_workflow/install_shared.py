@@ -15,6 +15,7 @@ from qcore.constants import (
     ROOT_DEFAULTS_FILE_NAME,
     PLATFORM_CONFIG,
     HF_DEFAULT_SEED,
+    Components,
 )
 from shared_workflow import shared
 from shared_workflow.platform_config import platform_config
@@ -79,6 +80,10 @@ def install_simulation(
     root_params_dict[RootParams.stat_vs_ref.value] = vs30ref_file_path
     root_params_dict["hf"][RootParams.seed.value] = seed
     if components != None:
+        if not set(components).issubset(set(Components.iterate_str_values())):
+            message = f"{components} are not all in {Components}"
+            logger.critical(message)
+            raise ValueError(message)
         root_params_dict["ims"][RootParams.component.value] = components
 
     # Fault params
