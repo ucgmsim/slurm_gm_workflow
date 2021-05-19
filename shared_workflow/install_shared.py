@@ -79,7 +79,7 @@ def install_simulation(
     root_params_dict[RootParams.stat_vs_est.value] = vs30_file_path
     root_params_dict[RootParams.stat_vs_ref.value] = vs30ref_file_path
     root_params_dict["hf"][RootParams.seed.value] = seed
-    if components != None:
+    if components is not None:
         if not set(components).issubset(set(Components.iterate_str_values())):
             message = f"{components} are not all in {Components}"
             logger.critical(message)
