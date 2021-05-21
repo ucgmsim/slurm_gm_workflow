@@ -77,7 +77,7 @@ def main(
 
         while (
             hstack(
-                test_domain(params["nx"], params["ny"], params["nz"], est_cores)
+                test_domain(int(params["nx"]), int(params["ny"]), int(params["nz"]), est_cores)
             ).size
             > 0
         ):
