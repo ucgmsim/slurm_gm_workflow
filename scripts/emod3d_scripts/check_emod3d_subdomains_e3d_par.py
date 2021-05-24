@@ -1,6 +1,6 @@
 import argparse
 
-from scripts.check_emod3d_subdomains import test_domain
+from scripts.emod3d_scripts.check_emod3d_subdomains import test_domain
 from utils import load_yaml
 
 parser = argparse.ArgumentParser(allow_abbrev=False)
