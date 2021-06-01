@@ -122,7 +122,7 @@ def run_estimations(
     """
     print("Running estimation for LF")
     lf_core_hours, lf_run_time, lf_ncores = estimate_wct.estimate_LF_chours(
-        lf_input_data, model_dirs_dict["LF"], True
+        lf_input_data, True
     )
     lf_result_data = np.concatenate(
         (lf_core_hours[:, None], lf_run_time[:, None], lf_ncores[:, None]), axis=1
@@ -156,7 +156,7 @@ def run_estimations(
     if hf_input_data is not None:
         print("Running HF estimation")
         hf_core_hours, hf_run_time, hf_cores = estimate_wct.estimate_HF_chours(
-            hf_input_data, model_dirs_dict["HF"], True
+            hf_input_data, True
         )
     else:
         hf_core_hours, hf_run_time, hf_cores = np.nan, np.nan, np.nan
@@ -173,9 +173,7 @@ def run_estimations(
 
     if bb_input_data is not None:
         print("Running BB estimation")
-        bb_core_hours, bb_run_time = estimate_wct.estimate_BB_chours(
-            bb_input_data, model_dirs_dict["BB"]
-        )
+        bb_core_hours, bb_run_time = estimate_wct.estimate_BB_chours(bb_input_data)
         bb_cores = bb_input_data[:, -1]
     else:
         bb_core_hours, bb_run_time, bb_cores = np.nan, np.nan, np.nan
@@ -398,77 +396,75 @@ def main(args):
         np.ones(fault_names.shape[0], dtype=np.float32)
         * platform_config[const.PLATFORM_CONFIG.LF_DEFAULT_NCORES.name]
     )
+
+    # Get fd_count for each fault
+    fd_counts = np.asarray(
+        [
+            len(shared.get_stations(fd_statlist))
+            for fd_statlist in runs_params.fd_statlist
+        ]
+    )
+    r_counts = [len(cur_r_list) for cur_r_list in realisations]
     lf_input_data = np.concatenate(
-        (vm_params[:, :3], nt.reshape(-1, 1), lf_ncores.reshape(-1, 1)), axis=1
+        (
+            vm_params[:, :3],
+            nt.reshape(-1, 1),
+            fd_counts.reshape(-1, 1),
+            lf_ncores.reshape(-1, 1),
+        ),
+        axis=1,
     )
 
-    r_counts = [len(cur_r_list) for cur_r_list in realisations]
+    print("Preparing HF estimation input data")
+    # Have to repeat/extend the fault sim_durations to per realisation
+    r_hf_ncores = np.repeat(
+        np.ones(realisations.shape[0], dtype=np.float32)
+        * platform_config[const.PLATFORM_CONFIG.HF_DEFAULT_NCORES.name],
+        r_counts,
+    )
 
-    # Estimate HF/BB if a runs directory is specified
-    if args.runs_dir is not None:
-        print("Preparing HF estimation input data")
-        # Have to repeat/extend the fault sim_durations to per realisation
-        r_hf_ncores = np.repeat(
-            np.ones(realisations.shape[0], dtype=np.float32)
-            * platform_config[const.PLATFORM_CONFIG.HF_DEFAULT_NCORES.name],
-            r_counts,
-        )
+    # Get fd_count and nsub_stoch for each realization
+    r_fd_counts = np.repeat(fd_counts, r_counts)
+    r_nsub_stochs = np.repeat(
+        np.asarray(
+            [srf.get_nsub_stoch(slip, get_area=False) for slip in runs_params.slip]
+        ),
+        r_counts,
+    )
 
-        # Get fd_count and nsub_stoch for each fault
-        r_fd_counts = np.repeat(
-            np.asarray(
-                [
-                    len(shared.get_stations(fd_statlist))
-                    for fd_statlist in runs_params.fd_statlist
-                ]
-            ),
-            r_counts,
-        )
+    # Calculate nt
+    r_hf_nt = np.repeat(fault_sim_durations / runs_params.hf_dt, r_counts)
 
-        r_nsub_stochs = np.repeat(
-            np.asarray(
-                [srf.get_nsub_stoch(slip, get_area=False) for slip in runs_params.slip]
-            ),
-            r_counts,
-        )
+    hf_input_data = np.concatenate(
+        (
+            r_fd_counts[:, None],
+            r_nsub_stochs[:, None],
+            r_hf_nt[:, None],
+            r_hf_ncores[:, None],
+        ),
+        axis=1,
+    )
 
-        # Calculate nt
-        r_hf_nt = np.repeat(fault_sim_durations / runs_params.hf_dt, r_counts)
+    print("Preparing BB estimation input data")
+    r_bb_ncores = np.repeat(
+        np.ones(realisations.shape[0], dtype=np.float32)
+        * platform_config[const.PLATFORM_CONFIG.BB_DEFAULT_NCORES.name],
+        r_counts,
+    )
 
-        hf_input_data = np.concatenate(
-            (
-                r_fd_counts[:, None],
-                r_nsub_stochs[:, None],
-                r_hf_nt[:, None],
-                r_hf_ncores[:, None],
-            ),
-            axis=1,
-        )
+    bb_input_data = np.concatenate(
+        (r_fd_counts[:, None], r_hf_nt[:, None], r_bb_ncores[:, None]), axis=1
+    )
 
-        print("Preparing BB estimation input data")
-        r_bb_ncores = np.repeat(
-            np.ones(realisations.shape[0], dtype=np.float32)
-            * platform_config[const.PLATFORM_CONFIG.BB_DEFAULT_NCORES.name],
-            r_counts,
-        )
-
-        bb_input_data = np.concatenate(
-            (r_fd_counts[:, None], r_hf_nt[:, None], r_bb_ncores[:, None]), axis=1
-        )
-
-        results_df = run_estimations(
-            fault_names,
-            realisations,
-            r_counts,
-            model_dir_dict,
-            lf_input_data,
-            hf_input_data,
-            bb_input_data,
-        )
-    else:
-        results_df = run_estimations(
-            fault_names, realisations, r_counts, model_dir_dict, lf_input_data
-        )
+    results_df = run_estimations(
+        fault_names,
+        realisations,
+        r_counts,
+        model_dir_dict,
+        lf_input_data,
+        hf_input_data,
+        bb_input_data,
+    )
 
     results_df["fault_name"] = np.repeat(fault_names, r_counts)
     return results_df
@@ -484,9 +480,8 @@ if __name__ == "__main__":
         "sources_dir", type=str, help="The absolute path to the Sources directory."
     )
     parser.add_argument(
-        "--runs_dir",
+        "runs_dir",
         type=str,
-        default=None,
         help="The absolute path to the Runs directory."
         "Specifying this allows estimation of HF and BB.",
     )
