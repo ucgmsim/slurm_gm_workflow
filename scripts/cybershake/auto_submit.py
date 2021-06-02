@@ -16,7 +16,7 @@ from qcore import utils, qclogging
 import qcore.constants as const
 import qcore.simulation_structure as sim_struct
 
-import estimation.estimate_wct as est
+# import estimation.estimate_wct as est
 from metadata.log_metadata import store_metadata
 
 from scripts.management.MgmtDB import MgmtDB
@@ -46,7 +46,6 @@ def submit_task(
     parent_logger,
     retries=None,
     hf_seed=const.HF_DEFAULT_SEED,
-    models=None,
 ):
     task_logger = qclogging.get_task_logger(parent_logger, run_name, proc_type)
     verification_dir = sim_struct.get_verification_dir(sim_dir)
@@ -84,7 +83,7 @@ def submit_task(
             retries=retries,
         )
         task_logger.debug("Submit EMOD3D arguments: {}".format(args))
-        submit_lf_main(args, est_model=models[0], logger=task_logger)
+        submit_lf_main(args, logger=task_logger)
         store_metadata(
             log_file,
             const.ProcessType.EMOD3D.str_value,
@@ -148,7 +147,7 @@ def submit_task(
             retries=retries,
         )
         task_logger.debug("Submit HF arguments: {}".format(args))
-        submit_hf_main(args, models[1], task_logger)
+        submit_hf_main(args, task_logger)
         store_metadata(
             log_file,
             const.ProcessType.HF.str_value,
@@ -167,7 +166,7 @@ def submit_task(
             retries=retries,
         )
         task_logger.debug("Submit BB arguments: {}".format(args))
-        submit_bb_main(args, models[2], task_logger)
+        submit_bb_main(args, task_logger)
         store_metadata(
             log_file,
             const.ProcessType.BB.str_value,
@@ -179,7 +178,6 @@ def submit_task(
             sim_dir=sim_dir,
             simple_out=True,
             target_machine=get_target_machine(const.ProcessType.IM_calculation).name,
-            est_model=models[3],
             logger=task_logger,
         )
         task_logger.debug(
@@ -305,7 +303,6 @@ def submit_task(
             sim_dir=sim_dir,
             adv_ims=True,
             target_machine=get_target_machine(const.ProcessType.IM_calculation).name,
-            est_model=models[3],
             logger=task_logger,
         )
 
@@ -328,7 +325,6 @@ def run_main_submit_loop(
     rels_to_run: str,
     given_tasks_to_run: List[const.ProcessType],
     sleep_time: int,
-    models_tuple: Tuple[est.EstModel],
     main_logger: Logger = qclogging.get_basic_logger(),
     cycle_timeout=1,
 ):
@@ -465,7 +461,6 @@ def run_main_submit_loop(
                 main_logger,
                 retries=retries,
                 hf_seed=hf_seed,
-                models=models_tuple,
             )
         main_logger.debug("Sleeping for {} second(s)".format(sleep_time))
         time.sleep(sleep_time)
@@ -606,39 +601,12 @@ def main():
     scheduler_logger = qclogging.get_logger(name=f"{logger.name}.scheduler")
     Scheduler.initialise_scheduler(user=args.user, logger=scheduler_logger)
 
-    logger.info("Loading estimation models")
-    lf_est_model = est.load_full_model(
-        os.path.join(
-            platform_config[const.PLATFORM_CONFIG.ESTIMATION_MODELS_DIR.name], "LF"
-        ),
-        logger=logger,
-    )
-    hf_est_model = est.load_full_model(
-        os.path.join(
-            platform_config[const.PLATFORM_CONFIG.ESTIMATION_MODELS_DIR.name], "HF"
-        ),
-        logger=logger,
-    )
-    bb_est_model = est.load_full_model(
-        os.path.join(
-            platform_config[const.PLATFORM_CONFIG.ESTIMATION_MODELS_DIR.name], "BB"
-        ),
-        logger=logger,
-    )
-    im_est_model = est.load_full_model(
-        os.path.join(
-            platform_config[const.PLATFORM_CONFIG.ESTIMATION_MODELS_DIR.name], "IM"
-        ),
-        logger=logger,
-    )
-
     run_main_submit_loop(
         root_folder,
         n_runs,
         args.rels_to_run,
         task_types_to_run,
         args.sleep_time,
-        (lf_est_model, hf_est_model, bb_est_model, im_est_model),
         main_logger=logger,
     )
 
