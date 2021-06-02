@@ -47,7 +47,6 @@ def main(args: argparse.Namespace, logger: Logger = get_basic_logger()):
             int(params.nz),
             nt,
             fd_count,
-            params.mag,
             args.ncore,
             True,
         )

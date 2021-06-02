@@ -36,11 +36,7 @@ def gen_command_template(params):
     return command_template_parameters, params.bb
 
 
-def main(
-    args: argparse.Namespace,
-    est_model: est.EstModel = None,
-    logger: Logger = get_basic_logger(),
-):
+def main(args: argparse.Namespace, logger: Logger = get_basic_logger()):
     params = utils.load_sim_params(os.path.join(args.rel_dir, "sim_params.yaml"))
     ncores = platform_config[const.PLATFORM_CONFIG.BB_DEFAULT_NCORES.name]
 
@@ -66,14 +62,7 @@ def main(
         nt = get_hf_nt(params)
         fd_count = len(shared.get_stations(params.FD_STATLIST))
 
-        if est_model is None:
-            est_model = os.path.join(
-                platform_config[const.PLATFORM_CONFIG.ESTIMATION_MODELS_DIR.name], "BB"
-            )
-
-        est_core_hours, est_run_time = est.est_BB_chours_single(
-            fd_count, nt, ncores, est_model
-        )
+        est_core_hours, est_run_time = est.est_BB_chours_single(fd_count, nt, ncores)
 
         # creates and extra variable so we keep the original estimated run time for other purpos
         est_run_time_scaled = est_run_time
