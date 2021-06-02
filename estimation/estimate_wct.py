@@ -26,8 +26,6 @@ PHYSICAL_NCORES_PER_NODE = config.qconfig[config.ConfigKeys.cores_per_node.name]
 
 CH_SAFETY_FACTOR = 1.5
 
-DEFAULT_MODEL_TYPE = const.EstModelType.NN_SVR
-
 
 def get_wct(run_time, ch_safety_factor=CH_SAFETY_FACTOR):
     """Pad the run time (in hours) by the specified factor.
@@ -53,7 +51,6 @@ def est_LF_chours_single(
     nz: int,
     nt: int,
     fd_count: int,
-    mag: float,
     ncores: int,
     scale_ncores: bool,
     node_time_th_factor: float = 0.25,
@@ -65,7 +62,7 @@ def est_LF_chours_single(
 
     Params
     ------
-    nx, ny, nz, nt, fd_count, mag : float, int
+    nx, ny, nz, nt, fd_count : float, int
         Input features for the model
     scale_ncores : bool
         If True then the number of cores is adjusted until
@@ -84,7 +81,7 @@ def est_LF_chours_single(
         if scale_ncores is not set. Otherwise returns the updated ncores.
     """
     # The order of the features has to the same as for training!!
-    data = np.array([nx, ny, nz, nt, fd_count, mag, ncores]).reshape(1, 7)
+    data = np.array([nx, ny, nz, nt, fd_count, ncores]).reshape(1, 6)
 
     core_hours, run_time, ncores = estimate_LF_chours(
         data, scale_ncores, node_time_th_factor=node_time_th_factor
@@ -123,47 +120,31 @@ def estimate_LF_chours(
         The number of cores to use, returns the argument n_cores
         if scale_ncores is not set. Otherwise returns the updated ncores.
     """
-    if data.shape[1] != 7:
+    if data.shape[1] != 6:
         raise Exception("Invalid input data, has to 6 columns. One for each feature.")
-
-    # Use number of steps (i.e. nx * ny * nz) and nt for LF SVR
-    #    svr_data = np.concatenate(
-    #        ((data[:, 0] * data[:, 1] * data[:, 2])[:, None], data[:, -2][:, None]), axis=1
-    #    )
+    #
     coefficients = {
         "a": 0.804_038_96,
         "b": 0.090_770_8,
         "c": -18.992_825_379_162_817,
         "d": 0.282_455_29,
     }
+
     n_grid = data[:, 0] * data[:, 1] * data[:, 2]
     nt = data[:, 3]
     fd_count = data[:, 4]
-    mag = data[:, 5]
 
     core_hours = np.exp(
         (coefficients["a"] * np.log(n_grid * nt))
-        + (coefficients["b"] * np.log(fd_count))
         + coefficients["c"]
         + np.where(
-            (coefficients["d"] * np.log(n_grid * nt)) > 6.5,
-            (coefficients["d"] * np.log(n_grid * nt)) - 6.5,
-            #            (coefficients["a"] * np.log(n_grid * nt)) > 6.5,
-            #            ((coefficients["a"] * np.log(n_grid * nt)) - 6.5) / coefficients["a"] * coefficients["d"],
-            #            (coefficients["d"] * (np.log(n_grid * nt) - 6.5)),
-            0,
+            (np.log(fd_count)) > 6.5,
+            (coefficients["b"] * np.log(fd_count))
+            + (coefficients["d"] * (np.log(fd_count) - 6.5)),
+            coefficients["b"] * np.log(fd_count),
         )
     )
 
-    print(f"{nt} {fd_count}")
-    print(
-        f"test : {np.log(n_grid * nt)}  n_grid: {n_grid} nt: {nt} coefficients['d'] :{coefficients['d']}"
-    )
-
-    print(
-        f"test2: {(coefficients['a'] * np.log(n_grid * nt))}  {(coefficients['b'] * np.log(fd_count))}, {coefficients['d'] * (np.log(n_grid * nt) - 6.5)}"
-    )
-    print(f"estimated core_hours : {core_hours}")
     # data[:, -1] represents the last column of the ndarray data, which contains the number of cores for each task
     wct = core_hours / data[:, -1]
 
@@ -183,7 +164,6 @@ def est_HF_chours_single(
     n_logical_cores: int,
     scale_ncores: bool,
     node_time_th_factor: float = 1.0,
-    model_type: const.EstModelType = DEFAULT_MODEL_TYPE,
     logger: Logger = get_basic_logger(),
 ):
     """Convenience function to make a single estimation
@@ -210,12 +190,7 @@ def est_HF_chours_single(
     ).reshape(1, 4)
 
     core_hours, run_time, n_cpus = estimate_HF_chours(
-        data,
-        model,
-        scale_ncores,
-        node_time_th_factor=node_time_th_factor,
-        model_type=model_type,
-        logger=logger,
+        data, scale_ncores, node_time_th_factor=node_time_th_factor, logger=logger
     )
 
     return core_hours[0], run_time[0], int(n_cpus[0])
@@ -225,7 +200,6 @@ def estimate_HF_chours(
     data: np.ndarray,
     scale_ncores: bool,
     node_time_th_factor: float = 1.0,
-    model_type: const.EstModelType = DEFAULT_MODEL_TYPE,
     logger: Logger = get_basic_logger(),
 ):
     """Make bulk HF estimations, requires data to be in the correct
@@ -261,13 +235,23 @@ def estimate_HF_chours(
 
     # Adjust the number of cores to estimate physical core hours
     data[:, -1] = data[:, -1] / hyperthreading_factor
-    core_hours = estimate(
-        data,
-        model,
-        model_type,
-        platform_config[const.PLATFORM_CONFIG.HF_DEFAULT_NCORES.name]
-        / hyperthreading_factor,
-        logger=logger,
+
+    coefficients = {
+        "a": 7.430_968_49e-02,
+        "b": 8.759_856_31e-01,
+        "c": 1.274_082_95e-04,
+        "d": -4.780_071_093_040_33,
+    }
+
+    fd_count = data[:, 0]
+    nsub_stoch = data[:, 1]
+    nt = data[:, 2]
+
+    core_hours = np.exp(
+        (coefficients["a"] * np.log(nt * np.log(nt)))
+        + (coefficients["b"] * np.log(nsub_stoch))
+        + (coefficients["c"] * fd_count)
+        + coefficients["d"]
     )
 
     wct = core_hours / data[:, -1]
@@ -337,12 +321,7 @@ def scale_core_hours(
     return core_hours, core_hours / n_cpus, n_cpus
 
 
-def est_BB_chours_single(
-    fd_count: int,
-    nt: int,
-    n_logical_cores: int,
-    model_type: const.EstModelType = DEFAULT_MODEL_TYPE,
-):
+def est_BB_chours_single(fd_count: int, nt: int, n_logical_cores: int):
     """Convenience function to make a single estimation
 
     If the input parameters (or even just the order) of the model
@@ -365,14 +344,12 @@ def est_BB_chours_single(
     # The order of the features has to the same as for training!!
     data = np.array([float(fd_count), float(nt), float(n_logical_cores)]).reshape(1, 3)
 
-    core_hours, run_time = estimate_BB_chours(data, model, model_type=model_type)
+    core_hours, run_time = estimate_BB_chours(data)
 
     return core_hours[0], run_time[0]
 
 
-def estimate_BB_chours(
-    data: np.ndarray, model_type: const.EstModelType = DEFAULT_MODEL_TYPE
-):
+def estimate_BB_chours(data: np.ndarray,):
     """Make bulk BB estimations, requires data to be
     in the correct order (see above)
 
@@ -396,26 +373,27 @@ def estimate_BB_chours(
 
     # Adjust the number of cores to estimate physical core hours
     data[:, -1] = data[:, -1] / 2.0 if const.ProcessType.BB.is_hyperth else data[:, -1]
-    core_hours = estimate(
-        data,
-        model=model,
-        model_type=model_type,
-        default_ncores=platform_config[const.PLATFORM_CONFIG.BB_DEFAULT_NCORES.name]
-        / 2.0
-        if const.ProcessType.BB.is_hyperth
-        else platform_config[const.PLATFORM_CONFIG.BB_DEFAULT_NCORES.name],
+
+    coefficients = {
+        "a": 1.992_685_67e-01,
+        "b": 8.158_222_65e-05,
+        "c": -1.793_602_084_907_300_4,
+    }
+
+    fd_count = data[:, 0]
+    nt = data[:, 1]
+
+    core_hours = np.exp(
+        (coefficients["a"] * np.log(nt * np.log(nt)))
+        + (coefficients["b"] * fd_count)
+        + coefficients["c"]
     )
 
     return core_hours, core_hours / data[:, -1]
 
 
 def est_IM_chours_single(
-    fd_count: int,
-    nt: int,
-    comp: Union[List[str], int],
-    pSA_count: int,
-    n_cores: int,
-    model_type: const.EstModelType = DEFAULT_MODEL_TYPE,
+    fd_count: int, nt: int, comp: Union[List[str], int], pSA_count: int, n_cores: int
 ):
     """Convenience function to make a single estimation
 
@@ -439,19 +417,21 @@ def est_IM_chours_single(
         Estimated run time (hours)
     """
     if isinstance(comp, list):
-        comp = get_IM_comp_count(comp)
+        comp_count = get_IM_comp_count(comp)
 
     # Make a numpy array of the input data in the right shape
     # The order of the features has to the same as for training!!
     data = np.array(
-        [float(fd_count), float(nt), comp, float(pSA_count), float(n_cores)]
+        [float(fd_count), float(nt), comp_count, float(pSA_count), float(n_cores)]
     ).reshape(1, 5)
 
-    core_hours = estimate(
-        data,
-        model,
-        model_type,
-        platform_config[const.PLATFORM_CONFIG.IM_CALC_DEFAULT_N_CORES.name],
+    coefficients = {"a": 0.660_447_17, "b": -11.301_499_255_786_645}
+
+    fd_count = data[:, 0]
+    nt = data[:, 1]
+
+    core_hours = np.exp(
+        (coefficients["a"] * np.log(nt * fd_count * comp_count)) + coefficients["b"]
     )[0]
 
     return core_hours, core_hours / n_cores
@@ -483,132 +463,3 @@ def get_IM_comp_count(comp: List[str]):
             + len([1 for geom_comp in ["000", "090"] if geom_comp not in comp])
         )
     return count
-
-
-def estimate(
-    input_data: np.ndarray,
-    model_type: const.EstModelType,
-    default_ncores: int,
-    lf_svr_input_data: np.ndarray = None,
-    logger: Logger = get_basic_logger(),
-):
-    """Function to use for making estimations using a pre-trained model
-
-    Scales the input data and then returns the estimations
-    from the loaded model.
-
-    Params
-    ------
-    input_data: np.ndarray
-        Numpy array with shape [n_samples, n_features], where the features
-        have to be the same (and in the same order) as when the model
-        was trained)
-        Last column has to be the number of cores
-    model: str or EstModel
-        Either the path to the model directory, or the loaded model.
-    default_ncores: int
-        The default number of cores for the process type
-    lf_svr_input_data: np.ndarray
-        Input data for the LF SVR as it uses a feature that is a combination of the
-        of the other input features. Should only ever be set when estimating LF/EMOD3D!!
-
-    Returns
-    -------
-    wc: np.ndarray
-        Estimated wall clock time
-    """
-    if isinstance(model, str):
-        model = load_full_model(model, model_type)
-
-    if model_type is const.EstModelType.NN:
-        scaler, nn_model = model.nn_scaler, model.nn_model
-        X = scaler.transform(input_data)
-        core_hours = nn_model.predict(X)
-    elif model_type is const.EstModelType.SVR:
-        scaler, svr_model = model.svr_scaler, model.svr_model
-        if lf_svr_input_data is not None:
-            X = scaler.transform(lf_svr_input_data)
-        else:
-            X = scaler.transform(input_data[:, :-1])
-        core_hours = svr_model.predict(X)
-    else:
-        comb_model = CombinedModel(model.nn_model, model.svr_model)
-        scaler_nn, scaler_svr = model.nn_scaler, model.svr_scaler
-
-        X_nn = scaler_nn.transform(input_data)
-        if lf_svr_input_data is not None:
-            X_svr = scaler_svr.transform(lf_svr_input_data)
-        else:
-            X_svr = scaler_svr.transform(input_data[:, :-1])
-
-        core_hours = comb_model.predict(
-            X_nn,
-            X_svr,
-            n_cores=input_data[:, -1],
-            default_n_cores=default_ncores,
-            logger=logger,
-        )
-
-    return core_hours
-
-
-def load_scaler(dir: str, scaler_prefix: str, logger: Logger = get_basic_logger()):
-    """Loads the latest scaler
-    """
-    file_pattern = os.path.join(dir, "{}{}".format(scaler_prefix, "*.pickle"))
-    scaler = glob.glob(file_pattern)
-
-    if len(scaler) == 0:
-        logger.log(
-            NOPRINTCRITICAL,
-            "No valid model was found with file pattern {}".format(file_pattern),
-        )
-        raise Exception(
-            "No valid model was found with file pattern {}".format(file_pattern)
-        )
-
-    scaler.sort()
-    scaler_file = scaler[-1]
-
-    if not os.path.isfile(scaler_file):
-        logger.log(
-            NOPRINTCRITICAL,
-            "No matching scaler was found for model {}".format(scaler_file),
-        )
-        raise Exception("No matching scaler was found for model {}".format(scaler_file))
-
-    with open(scaler_file, "rb") as f:
-        scaler = pickle.load(f)
-
-    logger.debug("Loaded scaler {}".format(scaler_file))
-    return scaler
-
-
-def load_model(
-    dir: str, model_prefix: str, model_ext: str, logger: Logger = get_basic_logger()
-):
-    """Loads a model
-
-    If there are several models in the specified directory, then the latest
-    one is loaded (based on its timestamp)
-    """
-    file_pattern = os.path.join(dir, "{}*.{}".format(model_prefix, model_ext))
-    model_files = glob.glob(file_pattern)
-
-    if len(model_files) == 0:
-        logger.log(
-            NOPRINTCRITICAL,
-            "No valid model was found with file pattern {}".format(file_pattern),
-        )
-        raise Exception(
-            "No valid model was found with file pattern {}".format(file_pattern)
-        )
-
-    # Grab the newest model
-    model_files.sort()
-    model_file = model_files[-1]
-
-    model = model_cls.from_saved_model(model_file)
-
-    logger.debug("Loaded model {}".format(model_file))
-    return model
