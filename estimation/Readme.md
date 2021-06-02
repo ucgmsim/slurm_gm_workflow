@@ -3,13 +3,8 @@
 write_jsons.py script used for metadata collection
 
 ### Usage
-Estimation is done using the functions inside estimate_WC.py, which load the 
-pre-trained neural network and then run the estimation.  
+Estimation is done using the functions inside estimate_WC.py, which use fomulas based on emperical data.  
   
-A model has to either exist in the  default model 
-location ./estimation/models/(LF/HF or BB)/model_xxx.h5 along with 
-pickled StandardScaler (sklearn) scaler_xxx.pickle, 
-or a model directory has to be specified manually
 
 Estimation of wall clock is already included in the 
 slurm script creation for simulation  
@@ -17,8 +12,8 @@ slurm script creation for simulation
 For one off estimation the *est_LF_chours_single*, *est_HF_chours_single*, *est_BB_chours_single* 
 and *est_IM_chours_single* functions from estimate_WC.py can be used  
 ```
-import estimation.estimate_WC as wc
-print(wc.est_LF_chours_single(1000, 1000, 100, 2500, 160))
+import estimation.estimate_wct as est
+print(est.est_LF_chours_single(nx, ny, nz, nt, fd_count , n_cores))
 ```
 
 The signatures for the estimation functions are:
