@@ -29,10 +29,8 @@ def est_LF_chours_single(
     ny: int,
     nz: int,
     nt: int,
+    fd_count, int,
     n_cores: int,
-    model_dir: str = LF_MODEL_DIR,
-    model_prefix: str = MODEL_PREFIX,
-    scaler_prefix: str = SCALER_PREFIX,
 ):
         pass
         
@@ -41,9 +39,6 @@ def est_HF_chours_single(
     nsub_stoch: float,
     nt: int,
     n_cores: int,
-    model_dir: str = HF_MODEL_DIR,
-    model_prefix: str = MODEL_PREFIX,
-    scaler_prefix: str = SCALER_PREFIX,
 ):
         pass
         
@@ -51,9 +46,6 @@ def est_BB_chours_single(
     fd_count: int,
     nt: int,
     n_cores: int,
-    model_dir: str = BB_MODEL_DIR,
-    model_prefix: str = MODEL_PREFIX,
-    scaler_prefix: str = SCALER_PREFIX,
 ):
         pass
 
@@ -63,9 +55,6 @@ def est_IM_chours_single(
     comp: List[str],
     pSA_count: int,
     n_cores: int,
-    model_dir: str = IM_MODEL_DIR,
-    model_prefix: str = MODEL_PREFIX,
-    scaler_prefix: str = SCALER_PREFIX,
 ):
     pass
 ```
