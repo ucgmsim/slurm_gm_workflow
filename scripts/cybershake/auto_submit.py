@@ -16,7 +16,6 @@ from qcore import utils, qclogging
 import qcore.constants as const
 import qcore.simulation_structure as sim_struct
 
-# import estimation.estimate_wct as est
 from metadata.log_metadata import store_metadata
 
 from scripts.management.MgmtDB import MgmtDB
