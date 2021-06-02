@@ -15,6 +15,7 @@ from qcore.constants import (
     ROOT_DEFAULTS_FILE_NAME,
     PLATFORM_CONFIG,
     HF_DEFAULT_SEED,
+    Components,
 )
 from shared_workflow import shared
 from shared_workflow.platform_config import platform_config
@@ -49,6 +50,7 @@ def install_simulation(
     ignore_vm_perturbations=False,
     vm_qpqs_files=False,
     ignore_vm_qpqs_files=False,
+    components=None,
 ):
     """Installs a single simulation"""
     run_name = simulation_structure.get_fault_from_realisation(rel_name)
@@ -77,6 +79,12 @@ def install_simulation(
     root_params_dict[RootParams.stat_vs_est.value] = vs30_file_path
     root_params_dict[RootParams.stat_vs_ref.value] = vs30ref_file_path
     root_params_dict["hf"][RootParams.seed.value] = seed
+    if components is not None:
+        if not set(components).issubset(set(Components.iterate_str_values())):
+            message = f"{components} are not all in {Components}"
+            logger.critical(message)
+            raise ValueError(message)
+        root_params_dict["ims"][RootParams.component.value] = components
 
     # Fault params
     fault_params_dict = {
@@ -105,7 +113,7 @@ def install_simulation(
         logger.critical(
             "Simulation dt does not match sim duration. This will result in errors during BB. Simulation duration must "
             "be a multiple of dt. Ignoring fault. Simulation_duration: {}. dt: {}.".format(
-                sim_duration, root_params_dict["dt"]
+                vm_params_dict["sim_duration"], root_params_dict["dt"]
             )
         )
         return None, None, None
