@@ -44,6 +44,7 @@ def check_log(list_folders, model, csv_stations, components):
     "Failed" in all Analysis*.txt == failed to converge (normal)
     """
     failed_stations = []
+    crashed_stations = []
     for station_dir in list_folders:
         # check if folder is a station run folder
         station_model_dir = os.path.join(station_dir, model)
@@ -53,18 +54,28 @@ def check_log(list_folders, model, csv_stations, components):
             continue
         for comp in components:
             component_outdir = os.path.join(station_model_dir, comp)
+            if check_status(component_outdir):
+                continue
+            # no successful msg
             if not check_status(component_outdir, check_fail=True):
-                failed_stations.append(station_name)
+                crashed_stations.append(station_name)
                 # logs shows not all analysis failed to converge, but station failed to create csv
-                print(f"{station_dir} failed to run on {model}")
+                print(f"{component_outdir} crashed on {model}")
                 # break the loop as soon as one component fail the verification
                 break
-    return failed_stations
+            else:
+                failed_stations.append(station_name)
+                print(f"{component_outdir} failed to converge on {model}")
+    return failed_stations, crashed_stations
 
 
 def main(im_calc_dir, adv_im_model, components):
 
+    # list of models that contains failed to converge stations
     failed = []
+    failed_msg = ""
+    # list of models that has crashed opensees that needs attention
+    crashed = []
 
     for model in adv_im_model:
         csv_path = os.path.join(im_calc_dir, "{}.csv".format(model))
@@ -93,14 +104,19 @@ def main(im_calc_dir, adv_im_model, components):
             # station folder count matches csv.station.count
             continue
         # check for logs
-        failed_stations = check_log(list_folders, model, csv_stations, components)
+        failed_stations, crashed_stations = check_log(
+            list_folders, model, csv_stations, components
+        )
         if len(failed_stations) != 0:
-            failed.append((model, "Crashed", failed_stations))
-    if len(failed) != 0:
-        print("some runs have failed. models: {}".format(failed))
+            failed.append((model, "failed to converge", failed_stations))
+            failed_msg = f"some stations failed to converge {failed}"
+        if len(crashed_stations) != 0:
+            crashed.append((model, "crashed", crashed_stations))
+    if len(crashed) != 0:
+        print(f"some runs have crashed. models: {crashed}")
         return 1
     else:
-        print("check passed")
+        print(f"check passed. {failed_msg}")
         return 0
 
 
