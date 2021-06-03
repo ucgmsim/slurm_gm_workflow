@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Functions for easy estimation of WC, uses pre-trained models.
+Functions for easy estimation of WCT, uses fomulas based on regression of data.
 
 Note: The n_cores argument that most of these functions take, should be
 the number of cores specified in the slurm script of the process type. So
@@ -80,7 +80,7 @@ def est_LF_chours_single(
         The number of cores to use, returns the argument n_cores
         if scale_ncores is not set. Otherwise returns the updated ncores.
     """
-    # The order of the features has to the same as for training!!
+    # Make a numpy array of the input data in the right shape.
     data = np.array([nx, ny, nz, nt, fd_count, ncores]).reshape(1, 6)
 
     core_hours, run_time, ncores = estimate_LF_chours(
@@ -100,10 +100,8 @@ def estimate_LF_chours(
     Params
     ------
     data: np.ndarray of float, int
-        Input data for the model in the order nx, ny, nz, nt, n_cores
-        Has to have a shape of [-1, 5]
-    model: str or EstModel
-        Either the path to the model directory, or the loaded model.
+        Input data in the order nx, ny, nz, nt, fd_count, n_cores
+        Has to have a shape of [-1, 6]
     scale_ncores: bool
         If True then the number of cores is adjusted until
         n_nodes * node_time_th >= run_time
@@ -184,7 +182,6 @@ def est_HF_chours_single(
         Estimated run time (hours)
     """
     # Make a numpy array of the input data in the right shape
-    # The order of the features has to the same as for training!!
     data = np.array(
         [float(fd_count), float(nsub_stoch), float(nt), float(n_logical_cores)]
     ).reshape(1, 4)
@@ -341,7 +338,6 @@ def est_BB_chours_single(fd_count: int, nt: int, n_logical_cores: int):
         Estimated run time (hours)
     """
     # Make a numpy array of the input data in the right shape
-    # The order of the features has to the same as for training!!
     data = np.array([float(fd_count), float(nt), float(n_logical_cores)]).reshape(1, 3)
 
     core_hours, run_time = estimate_BB_chours(data)
@@ -420,7 +416,6 @@ def est_IM_chours_single(
         comp_count = get_IM_comp_count(comp)
 
     # Make a numpy array of the input data in the right shape
-    # The order of the features has to the same as for training!!
     data = np.array(
         [float(fd_count), float(nt), comp_count, float(pSA_count), float(n_cores)]
     ).reshape(1, 5)
