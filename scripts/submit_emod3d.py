@@ -59,7 +59,7 @@ def main(
             srf_name,
             target_qconfig,
             args.ncore,
-            args.get("retries"),
+            args.retries,
         )
 
         binary_path = binary_version.get_lf_bin(
