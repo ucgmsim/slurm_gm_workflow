@@ -6,11 +6,6 @@ fi
 
 SUCCESS_CODE=0
 
-python $gmsim/workflow/scripts/emod3d_scripts/check_emod3d_subdomains_e3d_par.py $SLURM_CPUS_PER_TASK {{sim_dir}}/LF/e3d.par
-if [[ $? -ne 0 ]]; then
-    echo "There was a problem with potentially orphaned stations. Check and resubmit."
-    exit 1
-
 if [[ -d "{{sim_dir}}/LF/Restart" ]] && [[ `ls -1 {{sim_dir}}/LF/Restart | wc -l` != $SUCCESS_CODE ]]; then
     echo "Checkpointed run found, attempting to resume from checkpoint"
     sed -i 's/read_restart=.*/read_restart="1"/' {{sim_dir}}/LF/e3d.par
