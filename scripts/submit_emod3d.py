@@ -49,6 +49,8 @@ def main(
         nt = int(float(params.sim_duration) / float(params.dt))
 
         target_qconfig = get_machine_config(args.machine)
+        
+        retries = args.retries if hasattr(args, "retries") else None
 
         est_cores, est_run_time, wct = get_lf_cores_and_wct(
             est_model,
@@ -59,7 +61,7 @@ def main(
             srf_name,
             target_qconfig,
             args.ncore,
-            args.retries,
+            retries,
         )
 
         binary_path = binary_version.get_lf_bin(
