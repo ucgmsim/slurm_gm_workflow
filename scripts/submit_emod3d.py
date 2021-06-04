@@ -49,7 +49,7 @@ def main(
         nt = int(float(params.sim_duration) / float(params.dt))
 
         target_qconfig = get_machine_config(args.machine)
-        
+
         retries = args.retries if hasattr(args, "retries") else None
 
         est_cores, est_run_time, wct = get_lf_cores_and_wct(
