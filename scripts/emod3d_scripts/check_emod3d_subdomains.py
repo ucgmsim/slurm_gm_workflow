@@ -3,6 +3,7 @@ Contains functions related to the calculation of emod3d subdomain boundaries.
 Functions ported from C contain a number of calls to np.int32 and np.float32 calls to emulate single precision integer and floating point behaviour.
 Code ported from emod3d v3.0.8 misc.c. This is consistent with v3.0.7. 
 While v3.0.4 uses long doubles in place of floats, this does not seem to practically increase the accuracy of calculation.
+This check is stricter than necessary as only on rows/columns with stations missing will cause issues when extracting the station waveforms.
 """
 
 import argparse
@@ -70,7 +71,7 @@ def get_nproc(
     :param globnx: The number of velocity model grid points along the x axis.
     :param globny: The number of velocity model grid points along the y axis.
     :param globnz: The number of velocity model grid points along the z axis.
-    :param min_nproc: Multiplyer to perform calculations using cubes of min_nproc, defaults to 1.
+    :param min_nproc: Multiplier to perform calculations using cubes of min_nproc, defaults to 1.
     :param nproc_x: The number of processes to use in the x direction. Set value above -1 to specify the number to use. Defaults to -1.
     :param nproc_z: The number of processes to use in the y direction. Set value above -1 to specify the number to use. Defaults to -1.
     :return: A tuple containing:
@@ -182,13 +183,15 @@ def load_args():
 def main():
     """
     Uses the command line arguments provided to determine if the simulation will have any grid lines that are not associated with a subdomain.
-    If any are not associated they are printed to stdout, and the script exits with an exit code of 1
+    If any x or y girdlines are not associated they are printed to stdout, and the script exits with an exit code of 1
     Otherwise the script exits with an exit code of 0
+    z gridlines are presented if any x or y gridlines are not associated, however alone they are not enough to cause failure
     """
     args = load_args()
     x, y, z = test_domain(args.nx, args.ny, args.nz, args.n_cores)
 
-    if x.size + y.size + z.size > 0:
+    if x.size + y.size > 0:
+        # We only care if there are issues on the surface layer
         message_parts = []
         if x.size > 0:
             message_parts.append("Missed x axis indicies:")
