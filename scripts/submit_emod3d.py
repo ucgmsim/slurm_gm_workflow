@@ -6,6 +6,8 @@ import os
 import argparse
 from logging import Logger
 
+from numpy import hstack
+
 from qcore import utils, binary_version
 from qcore.config import get_machine_config, host
 from qcore.qclogging import get_basic_logger
@@ -14,6 +16,7 @@ import qcore.simulation_structure as sim_struct
 
 import estimation.estimate_wct as est
 import scripts.set_runparams as set_runparams
+from scripts.emod3d_scripts.check_emod3d_subdomains import test_domain
 from scripts.schedulers.scheduler_factory import Scheduler
 from shared_workflow.platform_config import (
     platform_config,
@@ -44,35 +47,22 @@ def main(
 
         # default_core will be changed is user passes ncore
         nt = int(float(params.sim_duration) / float(params.dt))
-        model = (
-            est_model
-            if est_model is not None
-            else os.path.join(
-                platform_config[const.PLATFORM_CONFIG.ESTIMATION_MODELS_DIR.name], "LF"
-            )
-        )
-        est_core_hours, est_run_time, est_cores = est.est_LF_chours_single(
-            int(params.nx), int(params.ny), int(params.nz), nt, args.ncore, model, True
-        )
-        # scale up the est_run_time if it is a re-run (with check-pointing)
-        # otherwise do nothing
-        est_run_time_scaled = est_run_time
-        if hasattr(args, "retries"):
-            # quick sanity check
-            # TODO: combine this function with 'restart' check in run_emod3d.sl.template
-            lf_restart_dir = sim_struct.get_lf_restart_dir(sim_dir)
-            # check if the restart folder exist and has checkpointing files in it
-            if os.path.isdir(lf_restart_dir) and (len(os.listdir(lf_restart_dir)) > 0):
-                # scale up the wct with retried count
-                est_run_time_scaled = est_run_time * (int(args.retries) + 1)
-            else:
-                logger.debug(
-                    "retries has been set, but no check-pointing files exist. not scaling wct"
-                )
-
-        wct = set_wct(est_run_time_scaled, est_cores, args.auto)
 
         target_qconfig = get_machine_config(args.machine)
+
+        retries = args.retries if hasattr(args, "retries") else None
+
+        est_cores, est_run_time, wct = get_lf_cores_and_wct(
+            est_model,
+            logger,
+            nt,
+            params,
+            sim_dir,
+            srf_name,
+            target_qconfig,
+            args.ncore,
+            retries,
+        )
 
         binary_path = binary_version.get_lf_bin(
             params.emod3d.emod3d_version, target_qconfig["tools_dir"]
@@ -91,7 +81,7 @@ def main(
 
         header_dict = {
             "wallclock_limit": wct,
-            "job_name": "run_emod3d.{}".format(srf_name),
+            "job_name": "emod3d.{}".format(srf_name),
             "job_description": "emod3d slurm script",
             "additional_lines": "#SBATCH --hint=nomultithread",
             "platform_specific_args": get_platform_node_requirements(est_cores),
@@ -125,6 +115,66 @@ def main(
                 target_machine=args.machine,
                 logger=logger,
             )
+
+
+def get_lf_cores_and_wct(
+    est_model,
+    logger,
+    nt,
+    params,
+    sim_dir,
+    srf_name,
+    target_qconfig,
+    ncore,
+    retries=None,
+):
+    model = (
+        est_model
+        if est_model is not None
+        else os.path.join(
+            platform_config[const.PLATFORM_CONFIG.ESTIMATION_MODELS_DIR.name], "LF"
+        )
+    )
+    est_core_hours, est_run_time, est_cores = est.est_LF_chours_single(
+        int(params.nx), int(params.ny), int(params.nz), nt, ncore, model, True
+    )
+    # scale up the est_run_time if it is a re-run (with check-pointing)
+    # otherwise do nothing
+    est_run_time_scaled = est_run_time
+
+    if retries is not None:
+        # quick sanity check
+        # TODO: combine this function with 'restart' check in run_emod3d.sl.template
+        lf_restart_dir = sim_struct.get_lf_restart_dir(sim_dir)
+        # check if the restart folder exist and has checkpointing files in it
+        if os.path.isdir(lf_restart_dir) and (len(os.listdir(lf_restart_dir)) > 0):
+            # scale up the wct with retried count
+            est_run_time_scaled = est_run_time * (int(retries) + 1)
+        else:
+            logger.debug(
+                "retries has been set, but no check-pointing files exist. not scaling wct"
+            )
+
+    extra_nodes = 0
+    while (
+        hstack(
+            test_domain(
+                int(params["nx"]), int(params["ny"]), int(params["nz"]), est_cores
+            )
+        ).size
+        > 0
+    ):
+        # TODO: Make sure we don't go over our queue limits
+        est_cores += target_qconfig["cores_per_node"]
+        extra_nodes += 1
+    if extra_nodes >= 10:
+        # Arbitrary threshold
+        logger.info(
+            f"Event {srf_name} needed {extra_nodes} extra nodes assigned in order to prevent station(s) "
+            f"not being assigned to a sub domain."
+        )
+    wct = set_wct(est_run_time_scaled, est_cores, False)
+    return est_cores, est_run_time, wct
 
 
 if __name__ == "__main__":
