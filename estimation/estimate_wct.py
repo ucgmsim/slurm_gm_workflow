@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Functions for easy estimation of WCT, uses fomulas based on regression of data.
+Functions for easy estimation of WCT, uses formulas based on regression of prior core hour usage.
 
 Note: The n_cores argument that most of these functions take, should be
 the number of cores specified in the slurm script of the process type. So
