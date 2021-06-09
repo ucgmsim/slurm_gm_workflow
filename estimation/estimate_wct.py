@@ -414,7 +414,8 @@ def est_IM_chours_single(
     """
     if isinstance(comp, list):
         comp_count = get_IM_comp_count(comp)
-
+    else:
+        comp_count = comp
     # Make a numpy array of the input data in the right shape
     data = np.array(
         [float(fd_count), float(nt), comp_count, float(pSA_count), float(n_cores)]
