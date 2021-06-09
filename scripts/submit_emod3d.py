@@ -35,7 +35,7 @@ def main(args: argparse.Namespace, logger: Logger = get_basic_logger()):
     logger.debug("params.srf_file {}".format(params.srf_file))
     # Get the srf(rup) name without extensions
     srf_name = os.path.splitext(os.path.basename(params.srf_file))[0]
-    
+
     if args.srf is None or srf_name == args.srf:
         logger.debug("not set_params_only")
         # get lf_sim_dir
@@ -49,15 +49,8 @@ def main(args: argparse.Namespace, logger: Logger = get_basic_logger()):
 
         retries = args.retries if hasattr(args, "retries") else None
 
-        est_cores, est_run_time, wct = get_lf_cores_and_wct(            
-            logger,
-            nt,
-            params,
-            sim_dir,
-            srf_name,
-            target_qconfig,
-            args.ncore,
-            retries,
+        est_cores, est_run_time, wct = get_lf_cores_and_wct(
+            logger, nt, params, sim_dir, srf_name, target_qconfig, args.ncore, retries
         )
 
         binary_path = binary_version.get_lf_bin(
@@ -114,14 +107,7 @@ def main(args: argparse.Namespace, logger: Logger = get_basic_logger()):
 
 
 def get_lf_cores_and_wct(
-    logger,
-    nt,
-    params,
-    sim_dir,
-    srf_name,
-    target_qconfig,
-    ncore,
-    retries=None,
+    logger, nt, params, sim_dir, srf_name, target_qconfig, ncore, retries=None
 ):
     fd_count = len(shared.get_stations(params.FD_STATLIST))
     est_core_hours, est_run_time, est_cores = est.est_LF_chours_single(
