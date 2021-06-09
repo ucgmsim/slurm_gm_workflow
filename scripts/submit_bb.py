@@ -85,7 +85,7 @@ def main(args: argparse.Namespace, logger: Logger = get_basic_logger()):
 
         header_dict = {
             "wallclock_limit": wct,
-            "job_name": "sim_bb.{}".format(underscored_srf),
+            "job_name": "bb.{}".format(underscored_srf),
             "job_description": "BB calculation",
             "additional_lines": "###SBATCH -C avx",
             "platform_specific_args": get_platform_node_requirements(ncores),
