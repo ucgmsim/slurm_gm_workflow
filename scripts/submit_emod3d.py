@@ -173,7 +173,7 @@ def get_lf_cores_and_wct(
             f"Event {srf_name} needed {extra_nodes} extra nodes assigned in order to prevent station(s) "
             f"not being assigned to a sub domain."
         )
-    wct = set_wct(est_run_time_scaled, est_cores, False)
+    wct = set_wct(est_run_time_scaled, est_cores, True)
     return est_cores, est_run_time, wct
 
 
