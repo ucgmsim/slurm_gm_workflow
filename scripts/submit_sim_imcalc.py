@@ -12,12 +12,7 @@ from qcore import simulation_structure as sim_struct
 from qcore.timeseries import get_observed_stations
 from qcore.config import qconfig
 
-from estimation.estimate_wct import (
-    EstModel,
-    est_IM_chours_single,
-    get_wct,
-    CH_SAFETY_FACTOR,
-)
+from estimation.estimate_wct import est_IM_chours_single, get_wct, CH_SAFETY_FACTOR
 from shared_workflow.platform_config import (
     platform_config,
     get_platform_node_requirements,
@@ -34,9 +29,6 @@ def submit_im_calc_slurm(
     simple_out: bool = True,
     adv_ims: bool = False,
     target_machine: str = get_target_machine(const.ProcessType.IM_calculation).name,
-    est_model: EstModel = path.join(
-        platform_config[const.PLATFORM_CONFIG.ESTIMATION_MODELS_DIR.name], "IM"
-    ),
     logger: Logger = get_basic_logger(),
 ):
     """Creates the IM calc slurm scrip, also submits if specified
@@ -187,7 +179,6 @@ def submit_im_calc_slurm(
             comps_to_store,
             period_count,
             body_options["np"],
-            est_model,
         )
 
     # Header options requiring upstream settings
