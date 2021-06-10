@@ -9,7 +9,6 @@ from qcore import constants as const
 from qcore import qclogging
 from qcore.utils import load_yaml
 
-import estimation.estimate_wct as est
 from scripts.cybershake import queue_monitor
 from scripts.cybershake.auto_submit import run_main_submit_loop
 from scripts.schedulers.scheduler_factory import Scheduler
@@ -57,24 +56,6 @@ def run_automated_workflow(
     already added.
     :param wrapper_logger: The logger to use for wrapper messages
     """
-
-    wrapper_logger.info("Loading estimation models")
-    lf_est_model = est.load_full_model(
-        join(platform_config[const.PLATFORM_CONFIG.ESTIMATION_MODELS_DIR.name], "LF"),
-        logger=wrapper_logger,
-    )
-    hf_est_model = est.load_full_model(
-        join(platform_config[const.PLATFORM_CONFIG.ESTIMATION_MODELS_DIR.name], "HF"),
-        logger=wrapper_logger,
-    )
-    bb_est_model = est.load_full_model(
-        join(platform_config[const.PLATFORM_CONFIG.ESTIMATION_MODELS_DIR.name], "BB"),
-        logger=wrapper_logger,
-    )
-    im_est_model = est.load_full_model(
-        join(platform_config[const.PLATFORM_CONFIG.ESTIMATION_MODELS_DIR.name], "IM"),
-        logger=wrapper_logger,
-    )
 
     bulk_logger = qclogging.get_logger(name="auto_submit_main", threaded=True)
     if debug:
@@ -140,14 +121,7 @@ def run_automated_workflow(
         name="main auto submit",
         daemon=True,
         target=run_main_submit_loop,
-        args=(
-            root_folder,
-            n_runs,
-            "%",
-            tasks_to_run,
-            sleep_time,
-            (lf_est_model, hf_est_model, bb_est_model, im_est_model),
-        ),
+        args=(root_folder, n_runs, "%", tasks_to_run, sleep_time),
         kwargs={
             "main_logger": bulk_logger,
             "cycle_timeout": 2 * len(tasks_to_run_with_pattern_and_logger) + 2,
@@ -185,7 +159,6 @@ def run_automated_workflow(
                 pattern,
                 tasks,
                 sleep_time,
-                (lf_est_model, hf_est_model, bb_est_model, im_est_model),
                 main_logger=pattern_logger,
                 cycle_timeout=1,
             )
