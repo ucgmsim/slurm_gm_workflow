@@ -34,7 +34,7 @@ def gen_command_template(params, machine, seed=const.HF_DEFAULT_SEED):
         "fd_statlist": params.FD_STATLIST,
         "hf_bin_path": sim_struct.get_hf_bin_path(params.sim_dir),
         HF_VEL_MOD_1D: params["hf"][HF_VEL_MOD_1D],
-        "duration": params.sim_duration,
+        "duration": params.get("sim_duration", 0),
         "dt": params.hf.dt,
         "version": params.hf.version,
         "sim_bin_path": binary_version.get_hf_binmod(

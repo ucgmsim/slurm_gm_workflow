@@ -156,17 +156,17 @@ def install_fault(
 
     # Get & validate velocity model directory
     vel_mod_dir = simulation_structure.get_fault_VM_dir(root_folder, fault_name)
-    valid_vm, message = validate_vm.validate_vm(vel_mod_dir, srf=list_srf[0])
-    if not valid_vm:
-        message = "Error: VM {} failed {}".format(fault_name, message)
-        logger.log(NOPRINTCRITICAL, message)
-        raise RuntimeError(message)
-    # Load the variables from vm_params.yaml
+    # valid_vm, message = validate_vm.validate_vm(vel_mod_dir, srf=list_srf[0])
+    # if not valid_vm:
+    #     message = "Error: VM {} failed {}".format(fault_name, message)
+    #     logger.log(NOPRINTCRITICAL, message)
+    #     raise RuntimeError(message)
+    # # Load the variables from vm_params.yaml
     vm_params_path = os.path.join(vel_mod_dir, VM_PARAMS_FILE_NAME)
-    vm_params_dict = utils.load_yaml(vm_params_path)
-    yes_model_params = (
-        False  # statgrid should normally be already generated with Velocity Model
-    )
+    # vm_params_dict = utils.load_yaml(vm_params_path)
+    # yes_model_params = (
+    #     False  # statgrid should normally be already generated with Velocity Model
+    # )
 
     sim_root_dir = simulation_structure.get_runs_dir(root_folder)
     fault_yaml_path = simulation_structure.get_fault_yaml_path(sim_root_dir, fault_name)
@@ -230,14 +230,14 @@ def install_fault(
             logger.critical(f"Critical Error some params dictionary are None")
             return
 
-        if root_params_dict is not None and not isclose(
-            vm_params_dict["flo"], root_params_dict["flo"]
-        ):
-            logger.critical(
-                "The parameter 'flo' does not match in the VM params and root params files. "
-                "Please ensure you are installing the correct gmsim version"
-            )
-            return
+        # if root_params_dict is not None and not isclose(
+        #     vm_params_dict["flo"], root_params_dict["flo"]
+        # ):
+        #     logger.critical(
+        #         "The parameter 'flo' does not match in the VM params and root params files. "
+        #         "Please ensure you are installing the correct gmsim version"
+        #     )
+        #     return
 
         create_mgmt_db.create_mgmt_db(
             [], simulation_structure.get_mgmt_db(root_folder), srf_files=srf
@@ -246,22 +246,22 @@ def install_fault(
         root_params_dict["mgmt_db_location"] = root_folder
 
         # Generate the fd files, create these at the fault level
-        fd_statcords, fd_statlist = generate_fd_files(
-            simulation_structure.get_fault_dir(root_folder, fault_name),
-            vm_params_dict,
-            stat_file=stat_file_path,
-            logger=logger,
-            keep_dup_station=keep_dup_station,
-        )
+        # fd_statcords, fd_statlist = generate_fd_files(
+        #     simulation_structure.get_fault_dir(root_folder, fault_name),
+        #     vm_params_dict,
+        #     stat_file=stat_file_path,
+        #     logger=logger,
+        #     keep_dup_station=keep_dup_station,
+        # )
 
-        fault_params_dict[FaultParams.stat_coords.value] = fd_statcords
-        fault_params_dict[FaultParams.FD_STATLIST.value] = fd_statlist
+        fault_params_dict[FaultParams.stat_coords.value] = os.path.join(simulation_structure.get_fault_dir(root_folder, fault_name), "fd_list.statcords")
+        fault_params_dict[FaultParams.FD_STATLIST.value] = os.path.join(simulation_structure.get_fault_dir(root_folder, fault_name), "fd_list.ll")
 
         #     root_params_dict['hf_stat_vs_ref'] = cybershake_cfg['hf_stat_vs_ref']
         dump_all_yamls(sim_dir, root_params_dict, fault_params_dict, sim_params_dict)
 
         # test if the params are accepted by steps HF and BB
-        sim_params = utils.load_sim_params(os.path.join(sim_dir, "sim_params.yaml"))
+        sim_params = utils.load_sim_params(os.path.join(sim_dir, "sim_params.yaml"), load_vm=False)
         # check hf
 
         # temporary change the script name to hf_sim, due to how error message are shown

@@ -94,7 +94,7 @@ def install_simulation(
 
     # VM params
     vm_params_path = simulation_structure.get_vm_params_yaml(vel_mod_dir)
-    vm_params_dict = utils.load_yaml(vm_params_path)
+    #vm_params_dict = utils.load_yaml(vm_params_path)
     # Sim Params
     sim_params_dict = {
         SimParams.fault_yaml_path.value: fault_yaml_path,
@@ -108,15 +108,15 @@ def install_simulation(
     if stat_file_path is not None:
         sim_params_dict[SimParams.stat_file.value] = stat_file_path
 
-    nt = float(vm_params_dict["sim_duration"]) / root_params_dict["dt"]
-    if not isclose(nt, round(nt)):
-        logger.critical(
-            "Simulation dt does not match sim duration. This will result in errors during BB. Simulation duration must "
-            "be a multiple of dt. Ignoring fault. Simulation_duration: {}. dt: {}.".format(
-                vm_params_dict["sim_duration"], root_params_dict["dt"]
-            )
-        )
-        return None, None, None
+    # nt = float(vm_params_dict["sim_duration"]) / root_params_dict["dt"]
+    # if not isclose(nt, round(nt)):
+    #     logger.critical(
+    #         "Simulation dt does not match sim duration. This will result in errors during BB. Simulation duration"
+    #         " must be a multiple of dt. Ignoring fault. Simulation_duration: {}. dt: {}.".format(
+    #             vm_params_dict["sim_duration"], root_params_dict["dt"]
+    #         )
+    #     )
+    #     return None, None, None
 
     sim_params_dict["emod3d"] = {}
 
@@ -174,18 +174,18 @@ def install_simulation(
 
     shared.show_horizontal_line(c="*")
 
-    if yes_statcords:
-        logger.info("Producing statcords and FD_STATLIST. It may take a minute or two")
-
-        fd_statcords, fd_statlist = generate_fd_files(
-            sim_params_dict["sim_dir"],
-            vm_params_dict,
-            stat_file=stat_file_path,
-            logger=logger,
-        )
-        logger.info("statcords and FD_STATLIST produced")
-        fault_params_dict[FaultParams.stat_coords.value] = fd_statcords
-        fault_params_dict[FaultParams.FD_STATLIST.value] = fd_statlist
+    # if yes_statcords:
+    #     logger.info("Producing statcords and FD_STATLIST. It may take a minute or two")
+    #
+    #     fd_statcords, fd_statlist = generate_fd_files(
+    #         sim_params_dict["sim_dir"],
+    #         vm_params_dict,
+    #         stat_file=stat_file_path,
+    #         logger=logger,
+    #     )
+    #     logger.info("statcords and FD_STATLIST produced")
+    # fault_params_dict[FaultParams.stat_coords.value] = fd_statcords
+    # fault_params_dict[FaultParams.FD_STATLIST.value] = fd_statlist
 
     logger.info("installing bb")
     install_bb(
