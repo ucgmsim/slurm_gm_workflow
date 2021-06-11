@@ -31,7 +31,6 @@ from qcore.qclogging import get_basic_logger, NOPRINTCRITICAL
 from scripts.management import create_mgmt_db
 from shared_workflow.install_shared import (
     install_simulation,
-    generate_fd_files,
     dump_all_yamls,
 )
 
