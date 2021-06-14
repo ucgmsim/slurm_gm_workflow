@@ -56,7 +56,7 @@ if [[ $? == 0 ]]; then
     fi
 
     # save meta data
-    python $gmsim/workflow/metadata/log_metadata.py $REL_LOC VM_GEN cores=$SLURM_NTASKS start_time=$start_time end_time=$end_time
+    python $gmsim/workflow/metadata/log_metadata.py $REL_LOC VM_GEN cores=$((SLURM_NTASKS * SLURM_CPUS_PER_TASK)) start_time=$start_time end_time=$end_time
 else
     #reformat $res to remove '\n'
     res=`echo $res | tr -d '\n'`
