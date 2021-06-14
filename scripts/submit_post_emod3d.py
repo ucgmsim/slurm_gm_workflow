@@ -56,7 +56,7 @@ def main(args, logger: Logger = get_basic_logger()):
             platform_config[const.PLATFORM_CONFIG.MERGE_TS_DEFAULT_NCORES.name]
         ),
         "wallclock_limit": default_run_time_merge_ts,
-        "job_name": "post_emod3d.merge_ts.{}".format(srf_name),
+        "job_name": "merge_ts.{}".format(srf_name),
         "job_description": "post emod3d: merge_ts",
         "additional_lines": "###SBATCH -C avx",
     }

@@ -7,6 +7,7 @@ from qcore.constants import (
     ROOT_DEFAULTS_FILE_NAME,
     PLATFORM_CONFIG,
     HF_DEFAULT_SEED,
+    Components,
 )
 from qcore import qclogging
 
@@ -44,6 +45,13 @@ def load_args(logger):
         type=str,
         default="/nesi/project/nesi00213/StationInfo/non_uniform_whole_nz_with_real_stations-hh400_v20p3_land.ll",
         help="The path to the station info file path.",
+    )
+    parser.add_argument(
+        "--components",
+        choices=list(Components.iterate_str_values()),
+        nargs="+",
+        default=None,
+        help="list of components to run IM_calcs, overwrites value in selected gmsim version template",
     )
     parser.add_argument(
         "--extended_period",
@@ -169,6 +177,7 @@ def main():
             vm_qpqs_files=args.vm_qpqs_files,
             ignore_vm_qpqs_files=args.ignore_vm_qpqs_files,
             keep_dup_station=args.keep_dup_station,
+            components=args.components,
             logger=qclogging.get_realisation_logger(logger, fault),
         )
 

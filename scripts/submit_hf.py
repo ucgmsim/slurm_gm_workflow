@@ -118,7 +118,7 @@ def main(args: argparse.Namespace, logger: Logger = get_basic_logger()):
         header_dict = {
             "platform_specific_args": get_platform_node_requirements(est_cores),
             "wallclock_limit": wct,
-            "job_name": "sim_hf.{}".format(underscored_srf),
+            "job_name": "hf.{}".format(underscored_srf),
             "job_description": "HF calculation",
             "additional_lines": "###SBATCH -C avx",
         }

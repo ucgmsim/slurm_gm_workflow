@@ -3,7 +3,7 @@
 write_jsons.py script used for metadata collection
 
 ### Usage
-Estimation is done using the functions inside estimate_wct.py, which use fomulas based on emperical data.  
+Estimation is done using the functions inside estimate_wct.py, which use fomulas based on regression data.  
   
 
 Estimation of wall clock is already included in the 
