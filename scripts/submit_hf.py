@@ -134,6 +134,7 @@ def main(
         command_template_parameters, add_args = gen_command_template(
             params, args.machine, seed=args.seed
         )
+        assert command_template_parameters["duration"] != 0
 
         body_template_params = (
             "{}.sl.template".format(ll_name_prefix),

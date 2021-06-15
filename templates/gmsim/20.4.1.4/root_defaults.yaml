@@ -30,6 +30,7 @@ VM:
   VM_Version: 2.06
   VM_Topo: BULLDOZED
   PGV_Threshold: 2
+  Ds_Multiplier: 0.75
 v_1d_mod: Cant1D_v3-midQ_OneRay.1d
 advanced_IM:
   models: [ATC_Steel_SCBF_3Story, SAC_Steel_MF_3Story]
