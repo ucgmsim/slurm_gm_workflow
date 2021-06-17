@@ -377,7 +377,9 @@ if __name__ == "__main__":
     t0 = MPI.Wtime()
     bb_acc = np.empty((bb_nt, N_COMP), dtype="f4")
     for i, stat in enumerate(stations_todo):
-        logger.debug(f"Working on {stat.name}, number {100*i/len(stations_todo)}")
+        logger.debug(
+            f"Working on {stat.name}, {100*i/len(stations_todo):.2f}% complete"
+        )
         vs30 = vs30s[stations_todo_idx[i]]
         lfvs30ref = lfvs30refs[stations_todo_idx[i]]
         lf_acc = np.copy(lf.acc(stat.name, dt=bb_dt))
