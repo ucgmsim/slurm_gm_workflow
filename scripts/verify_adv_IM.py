@@ -200,11 +200,11 @@ def main(im_calc_dir, adv_im_model, components, simple_check=False, station_file
     for df, model_name in df_dict:
         # check if any status >= 3 or != 0
         if df["status"].ge(run_status.not_finished.value).any():
-            print(f"{model_name} have errors please check the status.csv")
+            print(f"{model_name} have errors. Please check the status.csv")
             result_code += 1
         if df["status"].eq(run_status.not_started.value).any():
             print(
-                f"{model_name} has some stations that havent been analysised. please check status.csv"
+                f"{model_name} has some stations that havent been analysed. Please check status.csv"
             )
             result_code += 2
         # sort index by status
