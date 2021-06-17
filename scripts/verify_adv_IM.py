@@ -142,7 +142,11 @@ def main(im_calc_dir, adv_im_model, components, simple_check=False, station_file
         else:
             # glob for station folders
             # station_list = [ y for y in [os.path.join(im_calc_dir, x) for x in os.listdir(im_calc_dir)] if os.path.isdir(y) ]
-            station_list = [x for x in os.listdir(im_calc_dir) if os.path.isdir(x)]
+            station_list = [
+                x
+                for x in os.listdir(im_calc_dir)
+                if os.path.isdir(os.path.join(im_calc_dir, x))
+            ]
         list_folders = [os.path.join(im_calc_dir, x) for x in station_list]
 
         # initialize df with empty value with not started
