@@ -27,7 +27,7 @@ class run_status(Enum):
     unknown = 5
 
 
-column_names = [
+COLUMN_NAMES = [
     "station",
     "model",
     "component",
@@ -110,11 +110,18 @@ def check_log(list_folders, model, components, df_model, break_on_fail=False):
             elif time_list.count(None) == 0:
                 # if start and end are there, but no data = crashed
                 station_component_status = run_status.crashed.value
-            elif time_list.count(None) == 1:
-                # only starttime exist = wct timed out
+            elif (time_list.count(None) == 1) and (
+                time_list[time_type.start_time.value] is not None
+            ):
+                # only start_time exist = wct timed out
                 station_component_status = run_status.not_finished.value
-                # else not started
+            elif (time_list.count(None) == 1) and (
+                time_list[time_type.start_time.value] is None
+            ):
+                # something went wrong, only end_time was found
+                station_component_status = run_status.unknown.value
             else:
+                # else not started
                 station_component_status = run_status.not_started.value
             comp_mask = (df_model["station"] == station_name) & (
                 df_model["component"] == comp
@@ -132,8 +139,7 @@ def check_log(list_folders, model, components, df_model, break_on_fail=False):
 
 def main(im_calc_dir, adv_im_model, components, simple_check=False, station_file=None):
 
-    #    df_station_status = pd.DataFrame(columns = column_names)
-    df_dict = []
+    df_list = []
     for model in adv_im_model:
         csv_path = os.path.join(im_calc_dir, "{}.csv".format(model))
 
@@ -150,23 +156,21 @@ def main(im_calc_dir, adv_im_model, components, simple_check=False, station_file
         list_folders = [os.path.join(im_calc_dir, x) for x in station_list]
 
         # initialize df with empty value with not started
-        df_model = pd.DataFrame(columns=column_names)
-        for component in components:
-            df_model = pd.concat(
-                [
-                    df_model,
-                    pd.DataFrame(
-                        {
-                            "station": station_list,
-                            "model": model,
-                            "component": component,
-                            "status": run_status.not_started.value,
-                        },
-                        columns=column_names,
-                    ),
-                ],
-                ignore_index=True,
-            )
+        df_model = pd.concat(
+            [
+                pd.DataFrame(
+                    {
+                        "station": station_list,
+                        "model": model,
+                        "component": component,
+                        "status": run_status.not_started.value,
+                    },
+                    columns=COLUMN_NAMES,
+                )
+                for component in components
+            ],
+            ignore_index=True,
+        )
 
         # a quick check to compare station count, will skip all other checks if successful.
         if simple_check:
@@ -193,11 +197,11 @@ def main(im_calc_dir, adv_im_model, components, simple_check=False, station_file
         # check for logs
         check_log(list_folders, model, components, df_model, break_on_fail=True)
         print(model)
-        df_dict.append((df_model, model))
+        df_list.append((df_model, model))
 
     #
     result_code = 0
-    for df, model_name in df_dict:
+    for df, model_name in df_list:
         # check if any status >= 3 or != 0
         if df["status"].ge(run_status.not_finished.value).any():
             print(f"{model_name} have errors. Please check the status.csv")
