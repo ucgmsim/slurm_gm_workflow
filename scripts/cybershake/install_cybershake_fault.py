@@ -29,10 +29,7 @@ from qcore.constants import (
 from qcore.qclogging import get_basic_logger, NOPRINTCRITICAL
 
 from scripts.management import create_mgmt_db
-from shared_workflow.install_shared import (
-    install_simulation,
-    dump_all_yamls,
-)
+from shared_workflow.install_shared import install_simulation, dump_all_yamls
 
 # from shared_workflow.shared_template import generate_command
 from shared_workflow.platform_config import platform_config, HPC
@@ -253,14 +250,21 @@ def install_fault(
         #     keep_dup_station=keep_dup_station,
         # )
 
-        fault_params_dict[FaultParams.stat_coords.value] = os.path.join(simulation_structure.get_fault_dir(root_folder, fault_name), "fd_list.statcords")
-        fault_params_dict[FaultParams.FD_STATLIST.value] = os.path.join(simulation_structure.get_fault_dir(root_folder, fault_name), "fd_list.ll")
+        fault_params_dict[FaultParams.stat_coords.value] = os.path.join(
+            simulation_structure.get_fault_dir(root_folder, fault_name),
+            "fd_list.statcords",
+        )
+        fault_params_dict[FaultParams.FD_STATLIST.value] = os.path.join(
+            simulation_structure.get_fault_dir(root_folder, fault_name), "fd_list.ll"
+        )
 
         #     root_params_dict['hf_stat_vs_ref'] = cybershake_cfg['hf_stat_vs_ref']
         dump_all_yamls(sim_dir, root_params_dict, fault_params_dict, sim_params_dict)
 
         # test if the params are accepted by steps HF and BB
-        sim_params = utils.load_sim_params(os.path.join(sim_dir, "sim_params.yaml"), load_vm=False)
+        sim_params = utils.load_sim_params(
+            os.path.join(sim_dir, "sim_params.yaml"), load_vm=False
+        )
         # check hf
 
         # temporary change the script name to hf_sim, due to how error message are shown
