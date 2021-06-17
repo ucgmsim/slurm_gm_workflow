@@ -187,7 +187,6 @@ def main(im_calc_dir, adv_im_model, components, simple_check=False, station_file
                 print("test")
                 df_model.loc["status"] = run_status.finished.value
                 continue
-            # not matched, will continue rest of the test to scan logs for each station
         # check for logs
         check_log(list_folders, model, components, df_model, break_on_fail=True)
         print(model)
