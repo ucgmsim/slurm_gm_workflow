@@ -200,17 +200,17 @@ def main(im_calc_dir, adv_im_model, components, simple_check=False, station_file
         df_list.append((df_model, model))
 
     #
-    result_code = 0
+    result_code = 0b00
     for df, model_name in df_list:
         # check if any status >= 3 or != 0
         if df["status"].ge(run_status.not_finished.value).any():
             print(f"{model_name} have errors. Please check the status.csv")
-            result_code += 1
+            result_code = result_code | 0b01
         if df["status"].eq(run_status.not_started.value).any():
             print(
                 f"{model_name} has some stations that havent been analysed. Please check status.csv"
             )
-            result_code += 2
+            result_code = result_code | 0b10
         # sort index by status
         df.sort_values("status", inplace=True, ascending=False)
         # map status(int) to string before saving as csv
