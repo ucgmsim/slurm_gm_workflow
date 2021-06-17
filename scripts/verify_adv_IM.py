@@ -136,7 +136,6 @@ def main(im_calc_dir, adv_im_model, components, simple_check=False, station_file
     df_dict = []
     for model in adv_im_model:
         csv_path = os.path.join(im_calc_dir, "{}.csv".format(model))
-        status_csv_path = os.path.join(im_calc_dir, "{}_status.csv".format(model))
 
         if station_file is not None:
             station_list = load_station_file(station_file).index.tolist()
