@@ -165,7 +165,6 @@ def main(im_calc_dir, adv_im_model, components, simple_check=False, station_file
             )
 
         # a quick check to compare station count, will skip all other checks if successful.
-        # skip this step if 'save_status' is set
         if simple_check:
             # using try/except to prevent crash
             try:
