@@ -188,7 +188,6 @@ def main(im_calc_dir, adv_im_model, components, simple_check=False, station_file
             csv_stations = df_csv.station.unique()
             if len(csv_stations) == len(station_list):
                 # station folder count matches csv.station.count
-                print("test")
                 df_model.loc["status"] = run_status.finished.value
                 continue
         # check for logs
