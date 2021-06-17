@@ -75,11 +75,10 @@ def parse_args():
 
     # saves output
     parser.add_argument(
-        "--save_status",
+        "--simple_check",
         default=None,
-        #        action="store_true",
-        type=str,
-        help="will override the 'skip' behavior",
+        action="store_true",
+        help="a quick comparison of station list, will not generate status.csv",
     )
 
     args = parser.parse_args()
@@ -104,8 +103,6 @@ def check_log(list_folders, model, components, df_model, break_on_fail=False):
             if check_status(component_outdir):
                 # successed
                 station_component_status = run_status.finished.value
-                test = read_timelog(component_outdir)
-                # update df and scan for datetime
             # check for 'Failed' keyword
             elif check_status(component_outdir, check_fail=True):
                 # all logs showed "Failed", analysis was unable to converge
@@ -117,6 +114,8 @@ def check_log(list_folders, model, components, df_model, break_on_fail=False):
                 # only starttime exist = wct timed out
                 station_component_status = run_status.not_finished.value
                 # else not started
+            else:
+                station_component_status = run_status.not_started.value
             comp_mask = (df_model["station"] == station_name) & (
                 df_model["component"] == comp
             )
@@ -131,10 +130,10 @@ def check_log(list_folders, model, components, df_model, break_on_fail=False):
     return df_model
 
 
-def main(im_calc_dir, adv_im_model, components, save_status=False, station_file=None):
+def main(im_calc_dir, adv_im_model, components, simple_check=False, station_file=None):
 
     #    df_station_status = pd.DataFrame(columns = column_names)
-    df_dict = {}
+    df_dict = []
     for model in adv_im_model:
         csv_path = os.path.join(im_calc_dir, "{}.csv".format(model))
         status_csv_path = os.path.join(im_calc_dir, "{}_status.csv".format(model))
@@ -165,12 +164,10 @@ def main(im_calc_dir, adv_im_model, components, save_status=False, station_file=
                 ],
                 ignore_index=True,
             )
-        #            df_model = pd.concat([df_model,df_test],ignore_index=True)
-        #            print(f"{df_model}")
 
         # a quick check to compare station count, will skip all other checks if successful.
         # skip this step if 'save_status' is set
-        if not bool(save_status):
+        if simple_check:
             # using try/except to prevent crash
             try:
                 df_csv = pd.read_csv(csv_path)
@@ -180,7 +177,7 @@ def main(im_calc_dir, adv_im_model, components, save_status=False, station_file=
                 continue
             # check for null/nan
             if df_csv.isnull().values.any():
-                # agg csv is there, but value has errors
+                # agg csv is there, but value has NaN
                 # change all status to unknown
                 df_model.loc["status"] = run_status.unknown.value
                 continue
@@ -189,51 +186,34 @@ def main(im_calc_dir, adv_im_model, components, save_status=False, station_file=
             csv_stations = df_csv.station.unique()
             if len(csv_stations) == len(station_list):
                 # station folder count matches csv.station.count
+                print("test")
                 df_model.loc["status"] = run_status.finished.value
                 continue
             # not matched, will continue rest of the test to scan logs for each station
         # check for logs
         check_log(list_folders, model, components, df_model, break_on_fail=True)
-        df_dict[model] = df_model
+        print(model)
+        df_dict.append((df_model, model))
 
+    #
+    result_code = 0
+    for df, model_name in df_dict:
+        # check if any status >= 3 or != 0
+        if df["status"].ge(run_status.not_finished.value).any():
+            print(f"{model_name} have errors please check the status.csv")
+            result_code += 1
+        if df["status"].eq(run_status.not_started.value).any():
+            print(
+                f"{model_name} has some stations that havent been analysised. please check status.csv"
+            )
+            result_code += 2
         # sort index by status
-        #        df_model['sort'] = df[]
-        df_model.sort_values("status", inplace=True, ascending=False)
-        print(f"{df_model}")
+        df.sort_values("status", inplace=True, ascending=False)
         # map status(int) to string before saving as csv
-        df_model["status"] = df_model["status"].map(lambda x: run_status(x).name)
-        #        df_model.set_index(pd.Index)
-        print(f"{df_model}")
-        df_model.to_csv(status_csv_path, header=True, index=True)
-
-
-#        df_station_status = pd.concat([df_station_status,df_model],ignore_index=True)
-#        print(f"{df_station_status}")
-
-
-#        if len(failed_stations) != 0:
-#            failed.append((model, "failed to converge", failed_stations))
-#            failed_msg = f"some stations failed to converge {failed}"
-#        if len(crashed_stations) != 0:
-#            crashed.append((model, "crashed", crashed_stations))
-
-#    print(f"{df_station_status}")
-# save df if option set
-#    if save_status:
-#        out_file = save_status
-#    else:
-#        out_file = os.path.join(im_calc_dir,'station_status.csv')
-
-# or print out all status > 2
-
-#    time_type[df.status].value > time_type.finished.value
-#
-#    if len(crashed) != 0:
-#        print(f"some runs have crashed. models: {crashed}")
-#        return 1
-#    else:
-#        print(f"check passed. {failed_msg}")
-#        return 0
+        df["status"] = df["status"].map(lambda x: run_status(x).name)
+        status_csv_path = os.path.join(im_calc_dir, "{}_status.csv".format(model_name))
+        df.to_csv(status_csv_path, header=True, index=True)
+    return result_code
 
 
 if __name__ == "__main__":
@@ -242,7 +222,7 @@ if __name__ == "__main__":
         args.im_calc_dir,
         args.adv_im_model,
         args.components,
-        save_status=args.save_status,
+        simple_check=args.simple_check,
         station_file=args.station_file,
     )
     sys.exit(res)
