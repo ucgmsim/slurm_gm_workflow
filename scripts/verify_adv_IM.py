@@ -92,7 +92,6 @@ def check_log(list_folders, model, components, df_model, break_on_fail=False):
     no "Failed" in all Analysis*.txt == crashed
     "Failed" in all Analysis*.txt == failed to converge (normal)
     """
-    #    print(f"{df_model}")
     for station_dir in list_folders:
         # check if folder is a station run folder
         station_model_dir = os.path.join(station_dir, model)
