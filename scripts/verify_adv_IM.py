@@ -18,7 +18,7 @@ from qcore.formats import load_station_file
 from IM_calculation.Advanced_IM.runlibs_2d import check_status, TIME_FORMAT, time_type
 
 
-class run_status(Enum):
+class analysis_status(Enum):
     not_started = 0
     finished = 1
     not_converged = 2
@@ -101,26 +101,26 @@ def check_log(list_folders, model, components, df_model, break_on_fail=False):
             time_list = read_timelog(component_outdir)
             if check_status(component_outdir):
                 # success
-                station_component_status = run_status.finished.value
+                station_component_status = analysis_status.finished.value
             elif check_status(component_outdir, check_fail=True):
                 # all logs showed "Failed", analysis was unable to converge
-                station_component_status = run_status.not_converged.value
+                station_component_status = analysis_status.not_converged.value
             elif time_list.count(None) == 0:
                 # if start and end are there, but no data = crashed
-                station_component_status = run_status.crashed.value
+                station_component_status = analysis_status.crashed.value
             elif (time_list.count(None) == 1) and (
                 time_list[time_type.start_time.value] is not None
             ):
                 # only start_time exist = wct timed out
-                station_component_status = run_status.not_finished.value
+                station_component_status = analysis_status.not_finished.value
             elif (time_list.count(None) == 1) and (
                 time_list[time_type.start_time.value] is None
             ):
                 # something went wrong, only end_time was found
-                station_component_status = run_status.unknown.value
+                station_component_status = analysis_status.unknown.value
             else:
                 # else not started
-                station_component_status = run_status.not_started.value
+                station_component_status = analysis_status.not_started.value
             comp_mask = (df_model["station"] == station_name) & (
                 df_model["component"] == comp
             )
@@ -161,7 +161,7 @@ def main(im_calc_dir, adv_im_model, components, simple_check=False, station_file
                         "station": station_list,
                         "model": model,
                         "component": component,
-                        "status": run_status.not_started.value,
+                        "status": analysis_status.not_started.value,
                     },
                     columns=COLUMN_NAMES,
                 )
@@ -183,14 +183,14 @@ def main(im_calc_dir, adv_im_model, components, simple_check=False, station_file
             if df_csv.isnull().values.any():
                 # agg csv is there, but value has NaN
                 # change all status to unknown
-                df_model.loc["status"] = run_status.unknown.value
+                df_model.loc["status"] = analysis_status.unknown.value
                 continue
 
             # check station count, if match, skip rest of checks
             csv_stations = df_csv.station.unique()
             if len(csv_stations) == len(station_list):
                 # station folder count matches csv.station.count
-                df_model.loc["status"] = run_status.finished.value
+                df_model.loc["status"] = analysis_status.finished.value
                 continue
         # check for logs
         check_log(list_folders, model, components, df_model, break_on_fail=True)
@@ -201,10 +201,10 @@ def main(im_calc_dir, adv_im_model, components, simple_check=False, station_file
     result_code = 0b00
     for df, model_name in df_list:
         # check if any status >= 3 or != 0
-        if df["status"].ge(run_status.not_finished.value).any():
+        if df["status"].ge(analysis_status.not_finished.value).any():
             print(f"{model_name} have errors. Please check the status.csv")
             result_code = result_code | 0b01
-        if df["status"].eq(run_status.not_started.value).any():
+        if df["status"].eq(analysis_status.not_started.value).any():
             print(
                 f"{model_name} has some stations that havent been analysed. Please check status.csv"
             )
@@ -212,7 +212,7 @@ def main(im_calc_dir, adv_im_model, components, simple_check=False, station_file
         # sort index by status
         df.sort_values("status", inplace=True, ascending=False)
         # map status(int) to string before saving as csv
-        df["status"] = df["status"].map(lambda x: run_status(x).name)
+        df["status"] = df["status"].map(lambda x: analysis_status(x).name)
         status_csv_path = os.path.join(im_calc_dir, "{}_status.csv".format(model_name))
         df.to_csv(status_csv_path, header=True, index=True)
     return result_code
