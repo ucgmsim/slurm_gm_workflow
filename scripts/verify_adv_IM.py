@@ -100,9 +100,8 @@ def check_log(list_folders, model, components, df_model, break_on_fail=False):
             component_outdir = os.path.join(station_model_dir, comp)
             time_list = read_timelog(component_outdir)
             if check_status(component_outdir):
-                # successed
+                # success
                 station_component_status = run_status.finished.value
-            # check for 'Failed' keyword
             elif check_status(component_outdir, check_fail=True):
                 # all logs showed "Failed", analysis was unable to converge
                 station_component_status = run_status.not_converged.value
