@@ -40,6 +40,9 @@ echo $start_time
 echo "python $gmsim/Pre-processing/VM/vm_params2vm.py -t 18 --vm-version $VM_VERSION --vm-topo $VM_TOPO $REL_NAME $VM_PARAMS_YAML $OUT_DIR"
 python $gmsim/Pre-processing/VM/vm_params2vm.py -t 18 --vm-version $VM_VERSION --vm-topo $VM_TOPO $REL_NAME  $VM_PARAMS_YAML $OUT_DIR
 
+chmod g+rwXs -R $OUT_DIR
+chgrp nesi00213 -R $OUT_DIR
+
 end_time=`date +$runtime_fmt`
 echo $end_time
 
