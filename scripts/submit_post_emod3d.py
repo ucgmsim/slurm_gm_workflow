@@ -4,6 +4,7 @@ import os
 import glob
 import argparse
 from logging import Logger
+from pathlib import Path
 
 from qcore import utils, binary_version
 from qcore.config import get_machine_config, host
@@ -33,20 +34,41 @@ def get_seis_len(seis_path):
     return len(seis_file_list)
 
 
-def main(args, logger: Logger = get_basic_logger()):
-    params = utils.load_sim_params(os.path.join(args.rel_dir, "sim_params.yaml"))
+def main(
+    account: str = platform_config[const.PLATFORM_CONFIG.DEFAULT_ACCOUNT.name],
+    auto: bool = False,
+    machine: str = host,
+    rel_dir: Path = Path("."),
+    srf: str = None,
+    write_directory: Path = None,
+    logger: Logger = get_basic_logger(),
+):
+    rel_dir = rel_dir.resolve()
+    try:
+        params = utils.load_sim_params(rel_dir / "sim_params.yaml")
+    except FileNotFoundError:
+        logger.error(f"Error: sim_params.yaml doesn't exist in {rel_dir}")
+        raise
+
+    params.sim_dir = Path(params.sim_dir).resolve()
     sim_dir = params.sim_dir
+
     mgmt_db_loc = params.mgmt_db_location
-    submit_yes = True if args.auto else confirm("Also submit the job for you?")
+
+    # The name parameter is only used to check user tasks in the queue monitor
+    Scheduler.initialise_scheduler("", account)
+
+    submit_yes = True if auto else confirm("Also submit the job for you?")
 
     # get the srf(rup) name without extensions
-    srf_name = os.path.splitext(os.path.basename(params.srf_file))[0]
-    # if srf(variation) is provided as args, only create the slurm
+    srf_name = Path(params.srf_file).stem
+    # if srf(variation) is provided, only create the slurm
     # with same name provided
-    if args.srf is not None and srf_name != args.srf:
+    if srf is not None and srf_name != srf:
         return
 
-    write_directory = args.write_directory if args.write_directory else sim_dir
+    if write_directory is None:
+        write_directory = params.sim_dir
 
     # get lf_sim_dir
     lf_sim_dir = os.path.join(sim_dir, "LF")
@@ -64,7 +86,7 @@ def main(args, logger: Logger = get_basic_logger()):
     command_template_parameters = {
         "run_command": platform_config[const.PLATFORM_CONFIG.RUN_COMMAND.name],
         "merge_ts_path": binary_version.get_unversioned_bin(
-            "merge_tsP3_par", get_machine_config(args.machine)["tools_dir"]
+            "merge_tsP3_par", get_machine_config(machine)["tools_dir"]
         ),
     }
 
@@ -90,12 +112,11 @@ def main(args, logger: Logger = get_basic_logger()):
             sim_struct.get_mgmt_db_queue(mgmt_db_loc),
             sim_dir,
             srf_name,
-            target_machine=args.machine,
+            target_machine=machine,
             logger=logger,
         )
 
-
-if __name__ == "__main__":
+def load_args():
     parser = argparse.ArgumentParser(
         description="Create (and submit if specified) the slurm script for HF"
     )
@@ -123,8 +144,10 @@ if __name__ == "__main__":
     )
 
     args = parser.parse_args()
+    return args
 
-    # The name parameter is only used to check user tasks in the queue monitor
-    Scheduler.initialise_scheduler("", args.account)
+if __name__ == "__main__":
 
-    main(args)
+    args = load_args()
+
+    main(args.account,args.auto,args.machine,args.rel_dir,args.srf,args.write_directory)
