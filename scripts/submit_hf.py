@@ -34,7 +34,7 @@ def gen_command_template(params, machine, seed=const.HF_DEFAULT_SEED):
         "fd_statlist": params.FD_STATLIST,
         "hf_bin_path": sim_struct.get_hf_bin_path(params.sim_dir),
         HF_VEL_MOD_1D: params["hf"][HF_VEL_MOD_1D],
-        "duration": params.sim_duration,
+        "duration": params.get("sim_duration", 0),
         "dt": params.hf.dt,
         "version": params.hf.version,
         "sim_bin_path": binary_version.get_hf_binmod(
@@ -50,11 +50,7 @@ def gen_command_template(params, machine, seed=const.HF_DEFAULT_SEED):
     return command_template_parameters, add_args
 
 
-def main(
-    args: argparse.Namespace,
-    est_model: est.EstModel = None,
-    logger: Logger = get_basic_logger(),
-):
+def main(args: argparse.Namespace, logger: Logger = get_basic_logger()):
     params = utils.load_sim_params(os.path.join(args.rel_dir, "sim_params.yaml"))
 
     # check if the args is none, if not, change the version
@@ -89,16 +85,11 @@ def main(
         #  instead of assuming every stoch has same size
         nsub_stoch, sub_fault_area = srf.get_nsub_stoch(params.hf.slip, get_area=True)
 
-        if est_model is None:
-            est_model = os.path.join(
-                platform_config[const.PLATFORM_CONFIG.ESTIMATION_MODELS_DIR.name], "HF"
-            )
         est_core_hours, est_run_time, est_cores = est.est_HF_chours_single(
             fd_count,
             nsub_stoch,
             nt,
             args.ncore,
-            est_model,
             scale_ncores=SCALE_NCORES,
             logger=logger,
         )
@@ -134,6 +125,7 @@ def main(
         command_template_parameters, add_args = gen_command_template(
             params, args.machine, seed=args.seed
         )
+        assert command_template_parameters["duration"] != 0
 
         body_template_params = (
             "{}.sl.template".format(ll_name_prefix),
