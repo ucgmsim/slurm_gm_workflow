@@ -79,9 +79,9 @@ def submit_task(
             ncores=platform_config[const.PLATFORM_CONFIG.LF_DEFAULT_NCORES.name],
             rel_dir=sim_dir,
             retries=retries,
-            srf=run_name,
             write_directory=sim_dir,
-            logger=task_logger)
+            logger=task_logger,
+        )
         store_metadata(
             log_file,
             const.ProcessType.EMOD3D.str_value,
@@ -89,13 +89,14 @@ def submit_task(
             logger=task_logger,
         )
     elif proc_type == const.ProcessType.merge_ts.value:
-        task_logger.debug("Submit post EMOD3D (merge_ts) arguments: {}".format(run_name))
+        task_logger.debug(
+            "Submit post EMOD3D (merge_ts) arguments: {}".format(run_name)
+        )
         submit_post_lf_main(
             account=platform_config[const.PLATFORM_CONFIG.DEFAULT_ACCOUNT.name],
             auto=True,
             machine=get_target_machine(const.ProcessType.merge_ts).name,
             rel_dir=sim_dir,
-            srf=run_name,
             write_directory=sim_dir,
             logger=task_logger,
         )
@@ -139,11 +140,11 @@ def submit_task(
             rel_dir=sim_dir,
             retries=retries,
             seed=hf_seed,
-            #site_specific=None,
-            srf=run_name,
+            # site_specific=None,
             version=platform_config[const.PLATFORM_CONFIG.HF_DEFAULT_VERSION.name],
             write_directory=sim_dir,
-            logger=task_logger)
+            logger=task_logger,
+        )
         store_metadata(
             log_file,
             const.ProcessType.HF.str_value,
@@ -158,7 +159,6 @@ def submit_task(
             machine=get_target_machine(const.ProcessType.BB).name,
             rel_dir=sim_dir,
             retries=retries,
-            srf=run_name,
             version=platform_config[const.PLATFORM_CONFIG.BB_DEFAULT_VERSION.name],
             write_directory=sim_dir,
             logger=task_logger,

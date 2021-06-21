@@ -59,7 +59,6 @@ def main(
     rel_dir: Path = Path("."),
     retries: int = 0,
     seed: int = const.HF_DEFAULT_SEED,
-    srf: str = None,
     version: str = None,
     write_directory: Path = None,
     logger: Logger = get_basic_logger(),
@@ -82,7 +81,9 @@ def main(
         ll_name_prefix = "run_hf_mpi"
     else:
         if version is not None:
-            version_default = platform_config[const.PLATFORM_CONFIG.HF_DEFAULT_VERSION.name]
+            version_default = platform_config[
+                const.PLATFORM_CONFIG.HF_DEFAULT_VERSION.name
+            ]
             logger.error(
                 f"{version} cannot be recognize as a valid version option. version is set to default: {version_default}"
             )
@@ -98,83 +99,83 @@ def main(
     srf_name = Path(params.srf_file).stem
     # if srf(variation) is provided as args, only create
     # the slurm with same name provided
-    if srf is None or srf_name == srf:
-        nt = get_hf_nt(params)
-        fd_count = len(shared.get_stations(params.FD_STATLIST))
-        # TODO:make it read through the whole list
-        #  instead of assuming every stoch has same size
-        nsub_stoch, sub_fault_area = srf.get_nsub_stoch(params.hf.slip, get_area=True)
 
-        est_core_hours, est_run_time, est_cores = est.est_HF_chours_single(
-            fd_count,
-            nsub_stoch,
-            nt,
-            ncores,
-            scale_ncores=SCALE_NCORES,
+    nt = get_hf_nt(params)
+    fd_count = len(shared.get_stations(params.FD_STATLIST))
+    # TODO:make it read through the whole list
+    #  instead of assuming every stoch has same size
+    nsub_stoch, sub_fault_area = srf.get_nsub_stoch(params.hf.slip, get_area=True)
+
+    est_core_hours, est_run_time, est_cores = est.est_HF_chours_single(
+        fd_count,
+        nsub_stoch,
+        nt,
+        ncores,
+        scale_ncores=SCALE_NCORES,
+        logger=logger,
+    )
+
+    # scale up the est_run_time if it is a re-run (with check-pointing)
+    # creates and extra variable so we keep the orignial estimated run time for other purpose
+    est_run_time_scaled = est_run_time
+    if retries > 0:
+        # check if HF.bin is read-able = restart-able
+        try:
+            from qcore.timeseries import HFSeis
+
+            bin = HFSeis(sim_struct.get_hf_bin_path(params.sim_dir))
+        except:
+            logger.debug("Retried count > 0 but HF.bin is not readable")
+        else:
+            est_run_time_scaled = est_run_time * (retries + 1)
+
+    wct = set_wct(est_run_time_scaled, est_cores, auto)
+    hf_sim_dir = sim_struct.get_hf_dir(params.sim_dir)
+    if write_directory is None:
+        write_directory = params.sim_dir
+
+    underscored_srf = srf_name.replace("/", "__")
+
+    header_dict = {
+        "platform_specific_args": get_platform_node_requirements(est_cores),
+        "wallclock_limit": wct,
+        "job_name": f"hf.{underscored_srf}",
+        "job_description": "HF calculation",
+        "additional_lines": "###SBATCH -C avx",
+    }
+    command_template_parameters, add_args = gen_command_template(
+        params, machine, seed=seed
+    )
+
+    body_template_params = (
+        f"{ll_name_prefix}.sl.template",
+        {"hf_sim_dir": hf_sim_dir, "test_hf_script": "test_hf.sh"},
+    )
+
+    script_prefix = f"{ll_name_prefix}_{underscored_srf}"
+    script_file_path = write_sl_script(
+        write_directory,
+        params.sim_dir,
+        const.ProcessType.HF,
+        script_prefix,
+        header_dict,
+        body_template_params,
+        command_template_parameters,
+        add_args,
+    )
+
+    # Submit the script
+    submit_yes = True if auto else confirm("Also submit the job for you?")
+    if submit_yes:
+        submit_script_to_scheduler(
+            script_file_path,
+            const.ProcessType.HF.value,
+            sim_struct.get_mgmt_db_queue(params.mgmt_db_location),
+            params.sim_dir,
+            srf_name,
+            target_machine=machine,
             logger=logger,
         )
-
-        # scale up the est_run_time if it is a re-run (with check-pointing)
-        # creates and extra variable so we keep the orignial estimated run time for other purpose
-        est_run_time_scaled = est_run_time
-        if retries > 0:
-            # check if HF.bin is read-able = restart-able
-            try:
-                from qcore.timeseries import HFSeis
-
-                bin = HFSeis(sim_struct.get_hf_bin_path(params.sim_dir))
-            except:
-                logger.debug("Retried count > 0 but HF.bin is not readable")
-            else:
-                est_run_time_scaled = est_run_time * (retries + 1)
-
-        wct = set_wct(est_run_time_scaled, est_cores, auto)
-        hf_sim_dir = sim_struct.get_hf_dir(params.sim_dir)
-        if write_directory is None:
-            write_directory = params.sim_dir
-
-        underscored_srf = srf_name.replace("/", "__")
-
-        header_dict = {
-            "platform_specific_args": get_platform_node_requirements(est_cores),
-            "wallclock_limit": wct,
-            "job_name": f"hf.{underscored_srf}",
-            "job_description": "HF calculation",
-            "additional_lines": "###SBATCH -C avx",
-        }
-        command_template_parameters, add_args = gen_command_template(
-            params, machine, seed=seed
-        )
-
-        body_template_params = (
-            f"{ll_name_prefix}.sl.template",
-            {"hf_sim_dir": hf_sim_dir, "test_hf_script": "test_hf.sh"},
-        )
-
-        script_prefix = f"{ll_name_prefix}_{underscored_srf}"
-        script_file_path = write_sl_script(
-            write_directory,
-            params.sim_dir,
-            const.ProcessType.HF,
-            script_prefix,
-            header_dict,
-            body_template_params,
-            command_template_parameters,
-            add_args,
-        )
-
-        # Submit the script
-        submit_yes = True if auto else confirm("Also submit the job for you?")
-        if submit_yes:
-            submit_script_to_scheduler(
-                script_file_path,
-                const.ProcessType.HF.value,
-                sim_struct.get_mgmt_db_queue(params.mgmt_db_location),
-                params.sim_dir,
-                srf_name,
-                target_machine=machine,
-                logger=logger,
-            )
 
 
 def load_args():
@@ -252,7 +253,6 @@ if __name__ == "__main__":
 
     args = load_args()
 
-
     main(
         args.account,
         args.auto,
@@ -261,7 +261,6 @@ if __name__ == "__main__":
         args.rel_dir,
         args.retries,
         args.seed,
-        args.srf,
         args.version,
         args.write_directory,
     )

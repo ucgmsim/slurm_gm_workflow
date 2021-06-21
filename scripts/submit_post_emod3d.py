@@ -39,7 +39,6 @@ def main(
     auto: bool = False,
     machine: str = host,
     rel_dir: Path = Path("."),
-    srf: str = None,
     write_directory: Path = None,
     logger: Logger = get_basic_logger(),
 ):
@@ -64,8 +63,6 @@ def main(
     srf_name = Path(params.srf_file).stem
     # if srf(variation) is provided, only create the slurm
     # with same name provided
-    if srf is not None and srf_name != srf:
-        return
 
     if write_directory is None:
         write_directory = params.sim_dir
@@ -116,6 +113,7 @@ def main(
             logger=logger,
         )
 
+
 def load_args():
     parser = argparse.ArgumentParser(
         description="Create (and submit if specified) the slurm script for HF"
@@ -126,7 +124,7 @@ def load_args():
         type=str,
         default=platform_config[const.PLATFORM_CONFIG.DEFAULT_ACCOUNT.name],
     )
-    parser.add_argument("--srf", type=str, default=None)
+
     parser.add_argument(
         "--machine",
         type=str,
@@ -146,8 +144,16 @@ def load_args():
     args = parser.parse_args()
     return args
 
+
 if __name__ == "__main__":
 
     args = load_args()
 
-    main(args.account,args.auto,args.machine,args.rel_dir,args.srf,args.write_directory)
+    main(
+        args.account,
+        args.auto,
+        args.machine,
+        args.rel_dir,
+        args.srf,
+        args.write_directory,
+    )

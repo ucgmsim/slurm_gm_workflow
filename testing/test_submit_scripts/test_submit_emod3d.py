@@ -8,6 +8,7 @@ from qcore.utils import load_yaml as mocked_load_yaml
 from shared_workflow.shared import set_wct as mocked_set_wct
 
 from testing.test_common_set_up import set_up, get_input_params, get_fault_from_rel
+
 # from testing.conftest import init_scheduler
 
 import scripts.submit_emod3d
@@ -16,8 +17,6 @@ import scripts.submit_emod3d
 @pytest.mark.usefixtures("init_scheduler")
 def test_main(set_up, mocker):
     """No return value. Just check that it runs without crashing"""
-    function = "main"
-    params = inspect.getfullargspec(scripts.submit_emod3d.main).args
 
     mocker.patch(
         "scripts.submit_emod3d.set_wct", lambda x, y, z: mocked_set_wct(x, y, True)
@@ -45,9 +44,6 @@ def test_main(set_up, mocker):
     )
 
     for root_path, realisation in set_up:
-        args = get_input_params(
-            root_path, "{}_{}".format("submit_emod3d.py", function), params
-        )
 
         # Fault will probably change on each set of data, so reset these every time
         mocker.patch(
@@ -64,4 +60,12 @@ def test_main(set_up, mocker):
             ),
         )
 
-        scripts.submit_emod3d.main(*args)
+        scripts.submit_emod3d.main(
+            account="nesi00213",
+            auto=None,
+            machine="default",
+            ncores=160,
+            rel_dir=".",
+            retries=0,
+            write_directory=None,
+        )

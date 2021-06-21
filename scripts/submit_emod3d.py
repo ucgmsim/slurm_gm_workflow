@@ -34,7 +34,6 @@ def main(
     ncores: int = platform_config[const.PLATFORM_CONFIG.HF_DEFAULT_NCORES.name],
     rel_dir: Path = Path("."),
     retries: int = 0,
-    srf: str = None,
     write_directory: Path = None,
     logger: Logger = get_basic_logger(),
 ):
@@ -56,71 +55,71 @@ def main(
     # Get the srf(rup) name without extensions
 
     srf_name = Path(params.srf_file).stem
-    if srf is None or srf_name == srf:
-        logger.debug("not set_params_only")
-        # get lf_sim_dir
-        sim_dir = params.sim_dir
-        lf_sim_dir = sim_struct.get_lf_dir(sim_dir)
 
-        # default_core will be changed is user passes ncores
-        nt = int(float(params.sim_duration) / float(params.dt))
+    logger.debug("not set_params_only")
+    # get lf_sim_dir
+    sim_dir = params.sim_dir
+    lf_sim_dir = sim_struct.get_lf_dir(sim_dir)
 
-        target_qconfig = get_machine_config(machine)
+    # default_core will be changed is user passes ncores
+    nt = int(float(params.sim_duration) / float(params.dt))
 
-        est_cores, est_run_time, wct = get_lf_cores_and_wct(
-            logger, nt, params, sim_dir, srf_name, target_qconfig, ncores, retries
-        )
+    target_qconfig = get_machine_config(machine)
 
-        binary_path = binary_version.get_lf_bin(
-            params.emod3d.emod3d_version, target_qconfig["tools_dir"]
-        )
-        # use the original estimated run time for determining the checkpoint, or uses a minimum of 3 checkpoints
-        steps_per_checkpoint = int(
-            min(nt / (60.0 * est_run_time) * const.CHECKPOINT_DURATION, nt // 3)
-        )
-        if write_directory is None:
-            write_directory = params.sim_dir
+    est_cores, est_run_time, wct = get_lf_cores_and_wct(
+        logger, nt, params, sim_dir, srf_name, target_qconfig, ncores, retries
+    )
 
-        set_runparams.create_run_params(
-            sim_dir, steps_per_checkpoint=steps_per_checkpoint, logger=logger
-        )
+    binary_path = binary_version.get_lf_bin(
+        params.emod3d.emod3d_version, target_qconfig["tools_dir"]
+    )
+    # use the original estimated run time for determining the checkpoint, or uses a minimum of 3 checkpoints
+    steps_per_checkpoint = int(
+        min(nt / (60.0 * est_run_time) * const.CHECKPOINT_DURATION, nt // 3)
+    )
+    if write_directory is None:
+        write_directory = params.sim_dir
 
-        header_dict = {
-            "wallclock_limit": wct,
-            "job_name": "emod3d.{}".format(srf_name),
-            "job_description": "emod3d slurm script",
-            "additional_lines": "#SBATCH --hint=nomultithread",
-            "platform_specific_args": get_platform_node_requirements(est_cores),
-        }
+    set_runparams.create_run_params(
+        sim_dir, steps_per_checkpoint=steps_per_checkpoint, logger=logger
+    )
 
-        command_template_parameters = {
-            "run_command": platform_config[const.PLATFORM_CONFIG.RUN_COMMAND.name],
-            "emod3d_bin": binary_path,
-            "lf_sim_dir": lf_sim_dir,
-        }
+    header_dict = {
+        "wallclock_limit": wct,
+        "job_name": "emod3d.{}".format(srf_name),
+        "job_description": "emod3d slurm script",
+        "additional_lines": "#SBATCH --hint=nomultithread",
+        "platform_specific_args": get_platform_node_requirements(est_cores),
+    }
 
-        body_template_params = ("run_emod3d.sl.template", {})
+    command_template_parameters = {
+        "run_command": platform_config[const.PLATFORM_CONFIG.RUN_COMMAND.name],
+        "emod3d_bin": binary_path,
+        "lf_sim_dir": lf_sim_dir,
+    }
 
-        script_prefix = f"run_emod3d_{srf_name}"
-        script_file_path = write_sl_script(
-            write_directory,
+    body_template_params = ("run_emod3d.sl.template", {})
+
+    script_prefix = f"run_emod3d_{srf_name}"
+    script_file_path = write_sl_script(
+        write_directory,
+        params.sim_dir,
+        const.ProcessType.EMOD3D,
+        script_prefix,
+        header_dict,
+        body_template_params,
+        command_template_parameters,
+    )
+    if submit_yes:
+        submit_script_to_scheduler(
+            script_file_path,
+            const.ProcessType.EMOD3D.value,
+            sim_struct.get_mgmt_db_queue(params.mgmt_db_location),
             params.sim_dir,
-            const.ProcessType.EMOD3D,
-            script_prefix,
-            header_dict,
-            body_template_params,
-            command_template_parameters,
+            srf_name,
+            target_machine=machine,
+            logger=logger,
         )
-        if submit_yes:
-            submit_script_to_scheduler(
-                script_file_path,
-                const.ProcessType.EMOD3D.value,
-                sim_struct.get_mgmt_db_queue(params.mgmt_db_location),
-                params.sim_dir,
-                srf_name,
-                target_machine=machine,
-                logger=logger,
-            )
 
 
 def get_lf_cores_and_wct(
@@ -183,7 +182,7 @@ def load_args():
         type=str,
         default=platform_config[const.PLATFORM_CONFIG.DEFAULT_ACCOUNT.name],
     )
-    parser.add_argument("--srf", type=str, default=None)
+
     parser.add_argument(
         "--machine",
         type=str,

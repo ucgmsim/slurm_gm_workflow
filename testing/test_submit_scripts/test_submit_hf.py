@@ -14,8 +14,6 @@ import scripts.submit_hf
 @pytest.mark.usefixtures("init_scheduler")
 def test_main(set_up, mocker):
     """No return value. Just check that it runs without crashing"""
-    function = "main"
-    params = inspect.getfullargspec(scripts.submit_hf.main).args
 
     mocker.patch(
         "scripts.submit_hf.set_wct", lambda x, y, z: mocked_set_wct(x, y, True)
@@ -27,9 +25,6 @@ def test_main(set_up, mocker):
     )
 
     for root_path, realisation in set_up:
-        args = get_input_params(
-            root_path, "{}_{}".format("submit_hf.py", function), params
-        )
 
         # Fault will probably change on each set of data, so reset this every time
         mocker.patch(
@@ -46,4 +41,14 @@ def test_main(set_up, mocker):
             ),
         )
 
-        scripts.submit_hf.main(*args)
+        scripts.submit_hf.main(
+            account="nesi00213",
+            auto=None,
+            machine="default",
+            ncores=80,
+            rel_dir=".",
+            retries=0,
+            seed=None,
+            version=None,
+            write_directory=None,
+        )
