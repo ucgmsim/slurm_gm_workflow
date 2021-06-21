@@ -6,7 +6,7 @@ import pytest
 from qcore.utils import load_sim_params as mocked_load_sim_params
 from shared_workflow.shared import set_wct as mocked_set_wct
 
-from testing.test_common_set_up import get_fault_from_rel
+from testing.test_common_set_up import set_up, get_fault_from_rel
 
 import scripts.submit_hf
 
