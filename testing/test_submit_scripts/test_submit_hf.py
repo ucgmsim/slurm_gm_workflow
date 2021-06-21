@@ -1,5 +1,4 @@
-import inspect
-import os
+
 from pathlib import Path
 import pytest
 
@@ -7,7 +6,7 @@ import pytest
 from qcore.utils import load_sim_params as mocked_load_sim_params
 from shared_workflow.shared import set_wct as mocked_set_wct
 
-from testing.test_common_set_up import set_up, get_input_params, get_fault_from_rel
+from testing.test_common_set_up import get_fault_from_rel
 
 import scripts.submit_hf
 
@@ -27,18 +26,12 @@ def test_main(set_up, mocker):
 
     for root_path, realisation in set_up:
 
+        rel_dir = Path(root_path)/f"CSRoot/Runs/{get_fault_from_rel(realisation)}/{realisation}"
         # Fault will probably change on each set of data, so reset this every time
         mocker.patch(
             "scripts.submit_hf.utils.load_sim_params",
             lambda x: mocked_load_sim_params(
-                os.path.join(
-                    root_path,
-                    "CSRoot",
-                    "Runs",
-                    get_fault_from_rel(realisation),
-                    realisation,
-                    x,
-                )
+                rel_dir / x
             ),
         )
 
@@ -47,7 +40,7 @@ def test_main(set_up, mocker):
             auto=None,
             machine="default",
             ncores=80,
-            rel_dir=Path("."),
+            rel_dir=rel_dir,
             retries=0,
             seed=None,
             version=None,
