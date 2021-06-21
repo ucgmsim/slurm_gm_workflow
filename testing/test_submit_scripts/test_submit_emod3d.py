@@ -14,7 +14,7 @@ from testing.test_common_set_up import set_up, get_fault_from_rel
 import scripts.submit_emod3d
 
 
-@pytest.mark.usefixtures("init_scheduler")
+#@pytest.mark.usefixtures("init_scheduler")
 def test_main(set_up, mocker):
     """No return value. Just check that it runs without crashing"""
 
