@@ -31,7 +31,7 @@ def test_main(set_up, mocker):
         lambda x: mocked_load_yaml(
             Path(__file__).resolve().parent / ".." / ".." /"templates"/"gmsim"/"16.1"/"emod3d_defaults.yaml"
         )
-        if "emod3d_defaults.yaml" in x
+        if str(x).find("emod3d_defaults.yaml") != -1
         else mocked_load_yaml(x),
     )
 
