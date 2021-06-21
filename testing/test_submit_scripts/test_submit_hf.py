@@ -1,7 +1,8 @@
 import inspect
 import os
-
+from pathlib import Path
 import pytest
+
 
 from qcore.utils import load_sim_params as mocked_load_sim_params
 from shared_workflow.shared import set_wct as mocked_set_wct
@@ -46,7 +47,7 @@ def test_main(set_up, mocker):
             auto=None,
             machine="default",
             ncores=80,
-            rel_dir=".",
+            rel_dir=Path("."),
             retries=0,
             seed=None,
             version=None,

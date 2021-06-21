@@ -1,7 +1,8 @@
 import inspect
 import os
-
+from pathlib import Path
 import pytest
+
 
 from qcore.utils import load_sim_params as mocked_load_sim_params
 from qcore.utils import load_yaml as mocked_load_yaml
@@ -65,7 +66,7 @@ def test_main(set_up, mocker):
             auto=None,
             machine="default",
             ncores=160,
-            rel_dir=".",
+            rel_dir=Path("."),
             retries=0,
             write_directory=None,
         )
