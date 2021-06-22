@@ -41,13 +41,13 @@ def main(
     auto: bool = False,
     machine: str = host,
     ncores: int = platform_config[const.PLATFORM_CONFIG.BB_DEFAULT_NCORES.name],
-    rel_dir: Path = Path("."),
+    rel_dir: str = ".",
     retries: int = 0,
     version: str = None,
-    write_directory: Path = None,
+    write_directory: str = None,
     logger: Logger = get_basic_logger(),
 ):
-    rel_dir = rel_dir.resolve()
+    rel_dir = Path(rel_dir).resolve()
     try:
         params = utils.load_sim_params(rel_dir / "sim_params.yaml")
     except FileNotFoundError:
@@ -93,7 +93,7 @@ def main(
             est_run_time_scaled = est_run_time * (retries + 1)
 
     wct = set_wct(est_run_time_scaled, ncores, auto)
-    write_directory = write_directory if write_directory else params.sim_dir
+
     if write_directory is None:
         write_directory = params.sim_dir
 

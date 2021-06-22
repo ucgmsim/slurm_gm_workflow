@@ -55,14 +55,15 @@ def main(
     auto: bool = False,
     machine: str = host,
     ncores: int = platform_config[const.PLATFORM_CONFIG.HF_DEFAULT_NCORES.name],
-    rel_dir: Path = Path("."),
+    rel_dir: str = ".",
     retries: int = 0,
     seed: int = const.HF_DEFAULT_SEED,
     version: str = None,
-    write_directory: Path = None,
+    write_directory: str = None,
     logger: Logger = get_basic_logger(),
 ):
-    rel_dir = rel_dir.resolve()
+    rel_dir = Path(rel_dir).resolve()
+
     try:
         params = utils.load_sim_params(rel_dir / "sim_params.yaml")
     except FileNotFoundError:

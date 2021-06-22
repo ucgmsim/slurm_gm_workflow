@@ -1,4 +1,4 @@
-from pathlib import Path
+import os
 import pytest
 
 
@@ -25,14 +25,13 @@ def test_main(set_up, mocker):
 
     for root_path, realisation in set_up:
 
-        rel_dir = (
-            Path(root_path)
-            / f"CSRoot/Runs/{get_fault_from_rel(realisation)}/{realisation}"
+        rel_dir = os.path.join(
+            root_path, "CSRoot", "Runs", get_fault_from_rel(realisation), realisation
         )
         # Fault will probably change on each set of data, so reset this every time
         mocker.patch(
             "scripts.submit_hf.utils.load_sim_params",
-            lambda x: mocked_load_sim_params(rel_dir / x),
+            lambda x: mocked_load_sim_params(os.path.join(rel_dir, x)),
         )
 
         scripts.submit_hf.main(

@@ -1,4 +1,4 @@
-from pathlib import Path
+import os
 import pytest
 
 
@@ -28,27 +28,28 @@ def test_main(set_up, mocker):
     mocker.patch(
         "scripts.set_runparams.utils.load_yaml",
         lambda x: mocked_load_yaml(
-            Path(__file__).resolve().parent
-            / ".."
-            / ".."
-            / "templates"
-            / "gmsim"
-            / "16.1"
-            / "emod3d_defaults.yaml"
-        )
-        if str(x).find("emod3d_defaults.yaml") != -1
-        else mocked_load_yaml(x),
+            os.path.join(
+                os.path.dirname(os.path.realpath(__file__)),
+                "..",
+                "..",
+                "templates",
+                "gmsim",
+                "16.1",
+                "emod3d_defaults.yaml",
+            )
+            if "emod3d_defaults.yaml" in x
+            else mocked_load_yaml(x)
+        ),
     )
 
     for root_path, realisation in set_up:
-        rel_dir = (
-            Path(root_path)
-            / f"CSRoot/Runs/{get_fault_from_rel(realisation)}/{realisation}"
+        rel_dir = os.path.join(
+            root_path, "CSRoot", "Runs", get_fault_from_rel(realisation), realisation
         )
         # Fault will probably change on each set of data, so reset these every time
         mocker.patch(
             "scripts.submit_emod3d.utils.load_sim_params",
-            lambda x: mocked_load_sim_params(rel_dir / x),
+            lambda x: mocked_load_sim_params(os.path.join(rel_dir, x)),
         )
 
         scripts.submit_emod3d.main(

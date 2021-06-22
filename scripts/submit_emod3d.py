@@ -31,12 +31,13 @@ def main(
     auto: bool = False,
     machine: str = host,
     ncores: int = platform_config[const.PLATFORM_CONFIG.HF_DEFAULT_NCORES.name],
-    rel_dir: Path = Path("."),
+    rel_dir: str = ".",
     retries: int = 0,
-    write_directory: Path = None,
+    write_directory: str = None,
     logger: Logger = get_basic_logger(),
 ):
-    rel_dir = rel_dir.resolve()
+    rel_dir = Path(rel_dir).resolve()
+
     try:
         params = utils.load_sim_params(rel_dir / "sim_params.yaml")
     except FileNotFoundError:
@@ -57,7 +58,6 @@ def main(
     sim_dir = params.sim_dir
     lf_sim_dir = sim_struct.get_lf_dir(sim_dir)
 
-    # default_core will be changed is user passes ncores
     nt = int(float(params.sim_duration) / float(params.dt))
 
     target_qconfig = get_machine_config(machine)

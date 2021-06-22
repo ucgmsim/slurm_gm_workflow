@@ -37,11 +37,11 @@ def get_seis_len(seis_path):
 def main(
     auto: bool = False,
     machine: str = host,
-    rel_dir: Path = Path("."),
-    write_directory: Path = None,
+    rel_dir: str = ".",
+    write_directory: str = None,
     logger: Logger = get_basic_logger(),
 ):
-    rel_dir = rel_dir.resolve()
+    rel_dir = Path(rel_dir).resolve()
     try:
         params = utils.load_sim_params(rel_dir / "sim_params.yaml")
     except FileNotFoundError:
@@ -62,7 +62,7 @@ def main(
         write_directory = params.sim_dir
 
     # get lf_sim_dir
-    lf_sim_dir = os.path.join(sim_dir, "LF")
+    lf_sim_dir = sim_dir / "LF"
 
     header_dict = {
         "platform_specific_args": get_platform_node_requirements(
