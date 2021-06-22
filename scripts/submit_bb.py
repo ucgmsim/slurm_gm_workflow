@@ -38,7 +38,6 @@ def gen_command_template(params):
 
 
 def main(
-    account: str = platform_config[const.PLATFORM_CONFIG.DEFAULT_ACCOUNT.name],
     auto: bool = False,
     machine: str = host,
     ncores: int = platform_config[const.PLATFORM_CONFIG.BB_DEFAULT_NCORES.name],
@@ -56,9 +55,6 @@ def main(
         raise
 
     params.sim_dir = Path(params.sim_dir).resolve()
-
-    # The name parameter is only used to check user tasks in the queue monitor
-    Scheduler.initialise_scheduler("", account)
 
     if version in ["mpi", "run_bb_mpi"]:
         sl_name_prefix = "run_bb_mpi"

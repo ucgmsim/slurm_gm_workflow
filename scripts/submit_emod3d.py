@@ -28,7 +28,6 @@ from shared_workflow.shared_template import write_sl_script
 
 
 def main(
-    account: str = platform_config[const.PLATFORM_CONFIG.DEFAULT_ACCOUNT.name],
     auto: bool = False,
     machine: str = host,
     ncores: int = platform_config[const.PLATFORM_CONFIG.HF_DEFAULT_NCORES.name],
@@ -45,9 +44,6 @@ def main(
         raise
 
     params.sim_dir = Path(params.sim_dir).resolve()
-
-    # The name parameter is only used to check user tasks in the queue monitor
-    Scheduler.initialise_scheduler("", account)
 
     submit_yes = True if auto else confirm("Also submit the job for you?")
 
@@ -215,9 +211,10 @@ def load_args():
 if __name__ == "__main__":
 
     args = load_args()
+    # The name parameter is only used to check user tasks in the queue monitor
+    Scheduler.initialise_scheduler("", args.account)
 
     main(
-        args.account,
         args.auto,
         args.machine,
         args.ncores,

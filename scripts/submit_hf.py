@@ -72,9 +72,6 @@ def main(
 
     params.sim_dir = Path(params.sim_dir).resolve()
 
-    # The name parameter is only used to check user tasks in the queue monitor
-    Scheduler.initialise_scheduler("", account)
-
     # check if the args is none, if not, change the version
 
     if version in ["mpi", "run_hf_mpi"]:
@@ -252,6 +249,8 @@ def load_args():
 if __name__ == "__main__":
 
     args = load_args()
+    # The name parameter is only used to check user tasks in the queue monitor
+    Scheduler.initialise_scheduler("", args.account)
 
     main(
         args.account,

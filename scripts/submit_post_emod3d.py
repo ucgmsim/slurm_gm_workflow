@@ -35,7 +35,6 @@ def get_seis_len(seis_path):
 
 
 def main(
-    account: str = platform_config[const.PLATFORM_CONFIG.DEFAULT_ACCOUNT.name],
     auto: bool = False,
     machine: str = host,
     rel_dir: Path = Path("."),
@@ -53,9 +52,6 @@ def main(
     sim_dir = params.sim_dir
 
     mgmt_db_loc = params.mgmt_db_location
-
-    # The name parameter is only used to check user tasks in the queue monitor
-    Scheduler.initialise_scheduler("", account)
 
     submit_yes = True if auto else confirm("Also submit the job for you?")
 
@@ -148,9 +144,10 @@ def load_args():
 if __name__ == "__main__":
 
     args = load_args()
+    # The name parameter is only used to check user tasks in the queue monitor
+    Scheduler.initialise_scheduler("", args.account)
 
     main(
-        args.account,
         args.auto,
         args.machine,
         args.rel_dir,

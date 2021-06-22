@@ -73,7 +73,6 @@ def submit_task(
         # These have to include the default values (same for all other process types)!
         task_logger.debug("Submit EMOD3D arguments: {}".format(run_name))
         submit_lf_main(
-            account=platform_config[const.PLATFORM_CONFIG.DEFAULT_ACCOUNT.name],
             auto=True,
             machine=get_target_machine(const.ProcessType.EMOD3D).name,
             ncores=platform_config[const.PLATFORM_CONFIG.LF_DEFAULT_NCORES.name],
@@ -93,7 +92,6 @@ def submit_task(
             "Submit post EMOD3D (merge_ts) arguments: {}".format(run_name)
         )
         submit_post_lf_main(
-            account=platform_config[const.PLATFORM_CONFIG.DEFAULT_ACCOUNT.name],
             auto=True,
             machine=get_target_machine(const.ProcessType.merge_ts).name,
             rel_dir=sim_dir,
@@ -133,7 +131,6 @@ def submit_task(
     elif proc_type == const.ProcessType.HF.value:
         task_logger.debug("Submit HF arguments: {}".format(run_name))
         submit_hf_main(
-            account=platform_config[const.PLATFORM_CONFIG.DEFAULT_ACCOUNT.name],
             auto=True,
             machine=get_target_machine(const.ProcessType.HF).name,
             ncores=platform_config[const.PLATFORM_CONFIG.HF_DEFAULT_NCORES.name],
@@ -154,7 +151,6 @@ def submit_task(
     elif proc_type == const.ProcessType.BB.value:
         task_logger.debug("Submit BB arguments: {}".format(run_name))
         submit_bb_main(
-            account=platform_config[const.PLATFORM_CONFIG.DEFAULT_ACCOUNT.name],
             auto=True,
             machine=get_target_machine(const.ProcessType.BB).name,
             rel_dir=sim_dir,
