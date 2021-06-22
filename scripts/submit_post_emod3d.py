@@ -57,8 +57,6 @@ def main(
 
     # get the srf(rup) name without extensions
     srf_name = Path(params.srf_file).stem
-    # if srf(variation) is provided, only create the slurm
-    # with same name provided
 
     if write_directory is None:
         write_directory = params.sim_dir

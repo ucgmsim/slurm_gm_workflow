@@ -48,8 +48,8 @@ def main(
     submit_yes = True if auto else confirm("Also submit the job for you?")
 
     logger.debug(f"params.srf_file {params.srf_file}")
-    # Get the srf(rup) name without extensions
 
+    # Get the srf(rup) name without extensions
     srf_name = Path(params.srf_file).stem
 
     logger.debug("not set_params_only")

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Script to create and submit a slurm script for BB"""
-import os
+
 import argparse
 from logging import Logger
 from pathlib import Path

@@ -52,7 +52,6 @@ def gen_command_template(params, machine, seed=const.HF_DEFAULT_SEED):
 
 
 def main(
-    account: str = platform_config[const.PLATFORM_CONFIG.DEFAULT_ACCOUNT.name],
     auto: bool = False,
     machine: str = host,
     ncores: int = platform_config[const.PLATFORM_CONFIG.HF_DEFAULT_NCORES.name],
@@ -72,8 +71,6 @@ def main(
 
     params.sim_dir = Path(params.sim_dir).resolve()
 
-    # check if the args is none, if not, change the version
-
     if version in ["mpi", "run_hf_mpi"]:
         ll_name_prefix = "run_hf_mpi"
     else:
@@ -88,14 +85,7 @@ def main(
         ll_name_prefix = version_default
     logger.debug(f"version: {version}")
 
-    # modify the logic to use the same as in install_bb:
-    # sniff through params_base to get the names of srf,
-    # instead of running through file directories.
-
-    # loop through all srf file to generate related slurm scripts
     srf_name = Path(params.srf_file).stem
-    # if srf(variation) is provided as args, only create
-    # the slurm with same name provided
 
     nt = get_hf_nt(params)
     fd_count = len(shared.get_stations(params.FD_STATLIST))
