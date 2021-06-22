@@ -104,12 +104,7 @@ def main(
     nsub_stoch, sub_fault_area = srf.get_nsub_stoch(params.hf.slip, get_area=True)
 
     est_core_hours, est_run_time, est_cores = est.est_HF_chours_single(
-        fd_count,
-        nsub_stoch,
-        nt,
-        ncores,
-        scale_ncores=SCALE_NCORES,
-        logger=logger,
+        fd_count, nsub_stoch, nt, ncores, scale_ncores=SCALE_NCORES, logger=logger
     )
 
     # scale up the est_run_time if it is a re-run (with check-pointing)

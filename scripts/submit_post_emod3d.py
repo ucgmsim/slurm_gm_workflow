@@ -147,10 +147,4 @@ if __name__ == "__main__":
     # The name parameter is only used to check user tasks in the queue monitor
     Scheduler.initialise_scheduler("", args.account)
 
-    main(
-        args.auto,
-        args.machine,
-        args.rel_dir,
-        args.srf,
-        args.write_directory,
-    )
+    main(args.auto, args.machine, args.rel_dir, args.srf, args.write_directory)
