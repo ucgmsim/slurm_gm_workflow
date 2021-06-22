@@ -224,8 +224,6 @@ def load_args():
     #     "--site_specific", type=int, nargs="?", default=None, const=True
     # )
 
-    parser.add_argument("--srf", type=str, default=None)
-
     parser.add_argument("--version", type=str, default=None, const=None)
 
     parser.add_argument(
