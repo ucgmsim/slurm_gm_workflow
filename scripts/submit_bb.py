@@ -59,10 +59,10 @@ def main(
     if version in ["mpi", "run_bb_mpi"]:
         sl_name_prefix = "run_bb_mpi"
     else:
-        if version is not None:
-            version_default = platform_config[
-                const.PLATFORM_CONFIG.BB_DEFAULT_VERSION.name
-            ]
+        version_default = platform_config[const.PLATFORM_CONFIG.BB_DEFAULT_VERSION.name]
+        if version is None:
+            logger.debug(f"version is not specified. Set to default: {version_default}")
+        else:
             logger.error(
                 f"{version} cannot be recognized as a valid option. version is set to default: {version_default}"
             )

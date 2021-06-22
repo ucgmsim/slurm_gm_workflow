@@ -52,7 +52,6 @@ def test_main(set_up, mocker):
         )
 
         scripts.submit_emod3d.main(
-            account="nesi00213",
             auto=None,
             machine="default",
             ncores=160,

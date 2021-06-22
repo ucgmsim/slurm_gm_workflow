@@ -77,10 +77,10 @@ def main(
     if version in ["mpi", "run_hf_mpi"]:
         ll_name_prefix = "run_hf_mpi"
     else:
-        if version is not None:
-            version_default = platform_config[
-                const.PLATFORM_CONFIG.HF_DEFAULT_VERSION.name
-            ]
+        version_default = platform_config[const.PLATFORM_CONFIG.HF_DEFAULT_VERSION.name]
+        if version is None:
+            logger.debug(f"version is not specified. Set to default: {version_default}")
+        else:
             logger.error(
                 f"{version} cannot be recognize as a valid version option. version is set to default: {version_default}"
             )
