@@ -25,6 +25,7 @@ def test_main(set_up, mocker):
         "scripts.submit_emod3d.est.est_LF_chours_single",
         lambda a, b, c, d, e, f, g: (2, 0.05, 40),
     )
+
     mocker.patch(
         "scripts.set_runparams.utils.load_yaml",
         lambda x: mocked_load_yaml(
@@ -37,11 +38,10 @@ def test_main(set_up, mocker):
                 "16.1",
                 "emod3d_defaults.yaml",
             )
-            if "emod3d_defaults.yaml" in x
-            else mocked_load_yaml(x)
-        ),
+        )
+        if "emod3d_defaults.yaml" in x
+        else mocked_load_yaml(x),
     )
-
     for root_path, realisation in set_up:
         rel_dir = os.path.join(
             root_path, "CSRoot", "Runs", get_fault_from_rel(realisation), realisation
