@@ -52,7 +52,7 @@ def gen_command_template(params, machine, seed=const.HF_DEFAULT_SEED):
 
 
 def main(
-    auto: bool = False,
+    submit: bool = False,
     machine: str = host,
     ncores: int = platform_config[const.PLATFORM_CONFIG.HF_DEFAULT_NCORES.name],
     rel_dir: str = ".",
@@ -70,7 +70,7 @@ def main(
         logger.error(f"Error: sim_params.yaml doesn't exist in {rel_dir}")
         raise
 
-    params.sim_dir = Path(params.sim_dir).resolve()
+    params_sim_dir = Path(params.sim_dir).resolve()
 
     if version in ["mpi", "run_hf_mpi"]:
         ll_name_prefix = "run_hf_mpi"
@@ -106,16 +106,16 @@ def main(
         try:
             from qcore.timeseries import HFSeis
 
-            bin = HFSeis(sim_struct.get_hf_bin_path(params.sim_dir))
+            bin = HFSeis(sim_struct.get_hf_bin_path(params_sim_dir))
         except:
             logger.debug("Retried count > 0 but HF.bin is not readable")
         else:
             est_run_time_scaled = est_run_time * (retries + 1)
 
-    wct = set_wct(est_run_time_scaled, est_cores, auto)
-    hf_sim_dir = sim_struct.get_hf_dir(params.sim_dir)
+    wct = set_wct(est_run_time_scaled, est_cores, submit)
+    hf_sim_dir = sim_struct.get_hf_dir(params_sim_dir)
     if write_directory is None:
-        write_directory = params.sim_dir
+        write_directory = params_sim_dir
 
     underscored_srf = srf_name.replace("/", "__")
 
@@ -124,7 +124,7 @@ def main(
         "wallclock_limit": wct,
         "job_name": f"hf.{underscored_srf}",
         "job_description": "HF calculation",
-        "additional_lines": "###SBATCH -C avx",
+        "additional_lines": "",
     }
     command_template_parameters, add_args = gen_command_template(
         params, machine, seed=seed
@@ -138,7 +138,7 @@ def main(
     script_prefix = f"{ll_name_prefix}_{underscored_srf}"
     script_file_path = write_sl_script(
         write_directory,
-        params.sim_dir,
+        params_sim_dir,
         const.ProcessType.HF,
         script_prefix,
         header_dict,
@@ -148,13 +148,12 @@ def main(
     )
 
     # Submit the script
-    submit_yes = True if auto else confirm("Also submit the job for you?")
-    if submit_yes:
+    if submit:
         submit_script_to_scheduler(
             script_file_path,
             const.ProcessType.HF.value,
             sim_struct.get_mgmt_db_queue(params.mgmt_db_location),
-            params.sim_dir,
+            params_sim_dir,
             srf_name,
             target_machine=machine,
             logger=logger,
@@ -181,9 +180,9 @@ def load_args():
         default=platform_config[const.PLATFORM_CONFIG.DEFAULT_ACCOUNT.name],
     )
 
-    # if the --auto flag is used, wall clock time will be estimated the job
+    # if the --submit flag is used, wall clock time will be estimated the job
     # submitted automatically
-    parser.add_argument("--auto", action="store_true", default=False)
+    parser.add_argument("--submit", action="store_true", default=False)
 
     parser.add_argument(
         "--machine",
@@ -237,8 +236,7 @@ if __name__ == "__main__":
     Scheduler.initialise_scheduler("", args.account)
 
     main(
-        args.account,
-        args.auto,
+        args.submit,
         args.machine,
         args.ncores,
         args.rel_dir,

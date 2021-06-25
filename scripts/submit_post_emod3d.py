@@ -35,7 +35,7 @@ def get_seis_len(seis_path):
 
 
 def main(
-    auto: bool = False,
+    submit: bool = False,
     machine: str = host,
     rel_dir: str = ".",
     write_directory: str = None,
@@ -48,21 +48,18 @@ def main(
         logger.error(f"Error: sim_params.yaml doesn't exist in {rel_dir}")
         raise
 
-    params.sim_dir = Path(params.sim_dir).resolve()
-    sim_dir = params.sim_dir
+    params_sim_dir = Path(params.sim_dir).resolve()
 
     mgmt_db_loc = params.mgmt_db_location
-
-    submit_yes = True if auto else confirm("Also submit the job for you?")
 
     # get the srf(rup) name without extensions
     srf_name = Path(params.srf_file).stem
 
     if write_directory is None:
-        write_directory = params.sim_dir
+        write_directory = params_sim_dir
 
     # get lf_sim_dir
-    lf_sim_dir = sim_dir / "LF"
+    lf_sim_dir = params_sim_dir / "LF"
 
     header_dict = {
         "platform_specific_args": get_platform_node_requirements(
@@ -71,7 +68,7 @@ def main(
         "wallclock_limit": default_run_time_merge_ts,
         "job_name": "merge_ts.{}".format(srf_name),
         "job_description": "post emod3d: merge_ts",
-        "additional_lines": "###SBATCH -C avx",
+        "additional_lines": "",
     }
 
     command_template_parameters = {
@@ -89,19 +86,19 @@ def main(
     script_prefix = "{}_{}".format(merge_ts_name_prefix, srf_name)
     script_file_path = write_sl_script(
         write_directory,
-        sim_dir,
+        params_sim_dir,
         const.ProcessType.merge_ts,
         script_prefix,
         header_dict,
         body_template_params,
         command_template_parameters,
     )
-    if submit_yes:
+    if submit:
         submit_script_to_scheduler(
             script_file_path,
             const.ProcessType.merge_ts.value,
             sim_struct.get_mgmt_db_queue(mgmt_db_loc),
-            sim_dir,
+            params_sim_dir,
             srf_name,
             target_machine=machine,
             logger=logger,
@@ -112,7 +109,7 @@ def load_args():
     parser = argparse.ArgumentParser(
         description="Create (and submit if specified) the slurm script for HF"
     )
-    parser.add_argument("--auto", nargs="?", type=str, const=True)
+    parser.add_argument("--submit", nargs="?", type=str, const=True)
     parser.add_argument(
         "--account",
         type=str,
@@ -145,4 +142,4 @@ if __name__ == "__main__":
     # The name parameter is only used to check user tasks in the queue monitor
     Scheduler.initialise_scheduler("", args.account)
 
-    main(args.auto, args.machine, args.rel_dir, args.srf, args.write_directory)
+    main(args.submit, args.machine, args.rel_dir, args.srf, args.write_directory)

@@ -28,7 +28,7 @@ from shared_workflow.shared_template import write_sl_script
 
 
 def main(
-    auto: bool = False,
+    submit: bool = False,
     machine: str = host,
     ncores: int = platform_config[const.PLATFORM_CONFIG.HF_DEFAULT_NCORES.name],
     rel_dir: str = ".",
@@ -44,9 +44,7 @@ def main(
         logger.error(f"Error: sim_params.yaml doesn't exist in {rel_dir}")
         raise
 
-    params.sim_dir = Path(params.sim_dir).resolve()
-
-    submit_yes = True if auto else confirm("Also submit the job for you?")
+    params_sim_dir = Path(params.sim_dir).resolve()
 
     logger.debug(f"params.srf_file {params.srf_file}")
 
@@ -55,15 +53,14 @@ def main(
 
     logger.debug("not set_params_only")
     # get lf_sim_dir
-    sim_dir = params.sim_dir
-    lf_sim_dir = sim_struct.get_lf_dir(sim_dir)
+    lf_sim_dir = sim_struct.get_lf_dir(params_sim_dir)
 
     nt = int(float(params.sim_duration) / float(params.dt))
 
     target_qconfig = get_machine_config(machine)
 
     est_cores, est_run_time, wct = get_lf_cores_and_wct(
-        logger, nt, params, sim_dir, srf_name, target_qconfig, ncores, retries
+        logger, nt, params, params_sim_dir, srf_name, target_qconfig, ncores, retries
     )
 
     binary_path = binary_version.get_lf_bin(
@@ -74,10 +71,10 @@ def main(
         min(nt / (60.0 * est_run_time) * const.CHECKPOINT_DURATION, nt // 3)
     )
     if write_directory is None:
-        write_directory = params.sim_dir
+        write_directory = params_sim_dir
 
     set_runparams.create_run_params(
-        sim_dir, steps_per_checkpoint=steps_per_checkpoint, logger=logger
+        params_sim_dir, steps_per_checkpoint=steps_per_checkpoint, logger=logger
     )
 
     header_dict = {
@@ -99,19 +96,19 @@ def main(
     script_prefix = f"run_emod3d_{srf_name}"
     script_file_path = write_sl_script(
         write_directory,
-        params.sim_dir,
+        params_sim_dir,
         const.ProcessType.EMOD3D,
         script_prefix,
         header_dict,
         body_template_params,
         command_template_parameters,
     )
-    if submit_yes:
+    if submit:
         submit_script_to_scheduler(
             script_file_path,
             const.ProcessType.EMOD3D.value,
             sim_struct.get_mgmt_db_queue(params.mgmt_db_location),
-            params.sim_dir,
+            params_sim_dir,
             srf_name,
             target_machine=machine,
             logger=logger,
@@ -169,9 +166,7 @@ def load_args():
         description="Create (and submit if specified) the slurm script for LF"
     )
 
-    # if the --auto flag is used, wall clock time will be estimated the job
-    # submitted automatically
-    parser.add_argument("--auto", action="store_true", default=False)
+    parser.add_argument("--submit", action="store_true", default=False)
 
     parser.add_argument(
         "--account",
@@ -215,7 +210,7 @@ if __name__ == "__main__":
     Scheduler.initialise_scheduler("", args.account)
 
     main(
-        args.auto,
+        args.submit,
         args.machine,
         args.ncores,
         args.rel_dir,

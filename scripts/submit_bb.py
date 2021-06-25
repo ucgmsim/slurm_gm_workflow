@@ -38,7 +38,7 @@ def gen_command_template(params):
 
 
 def main(
-    auto: bool = False,
+    submit: bool = False,
     machine: str = host,
     ncores: int = platform_config[const.PLATFORM_CONFIG.BB_DEFAULT_NCORES.name],
     rel_dir: str = ".",
@@ -54,7 +54,7 @@ def main(
         logger.error(f"Error: sim_params.yaml doesn't exist in {rel_dir}")
         raise
 
-    params.sim_dir = Path(params.sim_dir).resolve()
+    params_sim_dir = Path(params.sim_dir).resolve()
 
     if version in ["mpi", "run_bb_mpi"]:
         sl_name_prefix = "run_bb_mpi"
@@ -86,16 +86,16 @@ def main(
         try:
             from qcore.timeseries import BBSeis
 
-            bin = BBSeis(simulation_structure.get_bb_bin_path(params.sim_dir))
+            bin = BBSeis(simulation_structure.get_bb_bin_path(params_sim_dir))
         except:
             logger.debug("Retried count > 0 but BB.bin is not readable")
         else:
             est_run_time_scaled = est_run_time * (retries + 1)
 
-    wct = set_wct(est_run_time_scaled, ncores, auto)
+    wct = set_wct(est_run_time_scaled, ncores, submit)
 
     if write_directory is None:
-        write_directory = params.sim_dir
+        write_directory = params_sim_dir
 
     underscored_srf = srf_name.replace("/", "__")
 
@@ -103,7 +103,7 @@ def main(
         "wallclock_limit": wct,
         "job_name": f"bb.{underscored_srf}",
         "job_description": "BB calculation",
-        "additional_lines": "###SBATCH -C avx",
+        "additional_lines": "",
         "platform_specific_args": get_platform_node_requirements(ncores),
     }
 
@@ -117,7 +117,7 @@ def main(
     script_prefix = f"{sl_name_prefix}_{underscored_srf}"
     script_file_path = write_sl_script(
         write_directory,
-        params.sim_dir,
+        params_sim_dir,
         const.ProcessType.BB,
         script_prefix,
         header_dict,
@@ -127,13 +127,12 @@ def main(
     )
 
     # Submit the script
-    submit_yes = True if auto else confirm("Also submit the job for you?")
-    if submit_yes:
+    if submit:
         submit_script_to_scheduler(
             script_file_path,
             const.ProcessType.BB.value,
             simulation_structure.get_mgmt_db_queue(params.mgmt_db_location),
-            params.sim_dir,
+            params_sim_dir,
             srf_name,
             target_machine=machine,
             logger=logger,
@@ -153,7 +152,7 @@ def load_args():
         description="Create (and submit if specified) the slurm script for BB"
     )
 
-    parser.add_argument("--auto", action="store_true", default=False)
+    parser.add_argument("--submit", action="store_true", default=False)
 
     parser.add_argument(
         "--account",
@@ -203,7 +202,7 @@ if __name__ == "__main__":
     Scheduler.initialise_scheduler("", args.account)
 
     main(
-        args.auto,
+        args.submit,
         args.machine,
         args.ncores,
         args.rel_dir,
