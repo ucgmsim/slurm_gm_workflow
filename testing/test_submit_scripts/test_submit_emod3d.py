@@ -53,7 +53,7 @@ def test_main(set_up, mocker):
         )
 
         scripts.submit_emod3d.main(
-            auto=None,
+            submit=None,
             machine="default",
             ncores=160,
             rel_dir=rel_dir,

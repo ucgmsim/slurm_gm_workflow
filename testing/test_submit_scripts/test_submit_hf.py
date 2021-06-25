@@ -35,7 +35,7 @@ def test_main(set_up, mocker):
         )
 
         scripts.submit_hf.main(
-            auto=None,
+            submit=None,
             machine="default",
             ncores=80,
             rel_dir=rel_dir,
