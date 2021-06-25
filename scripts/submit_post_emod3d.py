@@ -48,7 +48,7 @@ def main(
         logger.error(f"Error: sim_params.yaml doesn't exist in {rel_dir}")
         raise
 
-    params_sim_dir = Path(params.sim_dir).resolve()
+    sim_dir = Path(params.sim_dir).resolve()
 
     mgmt_db_loc = params.mgmt_db_location
 
@@ -56,10 +56,10 @@ def main(
     srf_name = Path(params.srf_file).stem
 
     if write_directory is None:
-        write_directory = params_sim_dir
+        write_directory = sim_dir
 
     # get lf_sim_dir
-    lf_sim_dir = params_sim_dir / "LF"
+    lf_sim_dir = sim_dir / "LF"
 
     header_dict = {
         "platform_specific_args": get_platform_node_requirements(
@@ -86,7 +86,7 @@ def main(
     script_prefix = "{}_{}".format(merge_ts_name_prefix, srf_name)
     script_file_path = write_sl_script(
         write_directory,
-        params_sim_dir,
+        sim_dir,
         const.ProcessType.merge_ts,
         script_prefix,
         header_dict,
@@ -98,7 +98,7 @@ def main(
             script_file_path,
             const.ProcessType.merge_ts.value,
             sim_struct.get_mgmt_db_queue(mgmt_db_loc),
-            params_sim_dir,
+            sim_dir,
             srf_name,
             target_machine=machine,
             logger=logger,

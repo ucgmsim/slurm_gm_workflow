@@ -44,7 +44,7 @@ def main(
         logger.error(f"Error: sim_params.yaml doesn't exist in {rel_dir}")
         raise
 
-    params_sim_dir = Path(params.sim_dir).resolve()
+    sim_dir = Path(params.sim_dir).resolve()
 
     logger.debug(f"params.srf_file {params.srf_file}")
 
@@ -53,14 +53,14 @@ def main(
 
     logger.debug("not set_params_only")
     # get lf_sim_dir
-    lf_sim_dir = sim_struct.get_lf_dir(params_sim_dir)
+    lf_sim_dir = sim_struct.get_lf_dir(sim_dir)
 
     nt = int(float(params.sim_duration) / float(params.dt))
 
     target_qconfig = get_machine_config(machine)
 
     est_cores, est_run_time, wct = get_lf_cores_and_wct(
-        logger, nt, params, params_sim_dir, srf_name, target_qconfig, ncores, retries
+        logger, nt, params, sim_dir, srf_name, target_qconfig, ncores, retries
     )
 
     binary_path = binary_version.get_lf_bin(
@@ -71,10 +71,10 @@ def main(
         min(nt / (60.0 * est_run_time) * const.CHECKPOINT_DURATION, nt // 3)
     )
     if write_directory is None:
-        write_directory = params_sim_dir
+        write_directory = sim_dir
 
     set_runparams.create_run_params(
-        params_sim_dir, steps_per_checkpoint=steps_per_checkpoint, logger=logger
+        sim_dir, steps_per_checkpoint=steps_per_checkpoint, logger=logger
     )
 
     header_dict = {
@@ -96,7 +96,7 @@ def main(
     script_prefix = f"run_emod3d_{srf_name}"
     script_file_path = write_sl_script(
         write_directory,
-        params_sim_dir,
+        sim_dir,
         const.ProcessType.EMOD3D,
         script_prefix,
         header_dict,
@@ -108,7 +108,7 @@ def main(
             script_file_path,
             const.ProcessType.EMOD3D.value,
             sim_struct.get_mgmt_db_queue(params.mgmt_db_location),
-            params_sim_dir,
+            sim_dir,
             srf_name,
             target_machine=machine,
             logger=logger,

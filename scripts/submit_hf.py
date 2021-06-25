@@ -70,7 +70,7 @@ def main(
         logger.error(f"Error: sim_params.yaml doesn't exist in {rel_dir}")
         raise
 
-    params_sim_dir = Path(params.sim_dir).resolve()
+    sim_dir = Path(params.sim_dir).resolve()
 
     if version in ["mpi", "run_hf_mpi"]:
         ll_name_prefix = "run_hf_mpi"
@@ -106,16 +106,16 @@ def main(
         try:
             from qcore.timeseries import HFSeis
 
-            bin = HFSeis(sim_struct.get_hf_bin_path(params_sim_dir))
+            bin = HFSeis(sim_struct.get_hf_bin_path(sim_dir))
         except:
             logger.debug("Retried count > 0 but HF.bin is not readable")
         else:
             est_run_time_scaled = est_run_time * (retries + 1)
 
     wct = set_wct(est_run_time_scaled, est_cores, submit)
-    hf_sim_dir = sim_struct.get_hf_dir(params_sim_dir)
+    hf_sim_dir = sim_struct.get_hf_dir(sim_dir)
     if write_directory is None:
-        write_directory = params_sim_dir
+        write_directory = sim_dir
 
     underscored_srf = srf_name.replace("/", "__")
 
@@ -138,7 +138,7 @@ def main(
     script_prefix = f"{ll_name_prefix}_{underscored_srf}"
     script_file_path = write_sl_script(
         write_directory,
-        params_sim_dir,
+        sim_dir,
         const.ProcessType.HF,
         script_prefix,
         header_dict,
@@ -153,7 +153,7 @@ def main(
             script_file_path,
             const.ProcessType.HF.value,
             sim_struct.get_mgmt_db_queue(params.mgmt_db_location),
-            params_sim_dir,
+            sim_dir,
             srf_name,
             target_machine=machine,
             logger=logger,

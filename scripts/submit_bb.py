@@ -54,7 +54,7 @@ def main(
         logger.error(f"Error: sim_params.yaml doesn't exist in {rel_dir}")
         raise
 
-    params_sim_dir = Path(params.sim_dir).resolve()
+    sim_dir = Path(params.sim_dir).resolve()
 
     if version in ["mpi", "run_bb_mpi"]:
         sl_name_prefix = "run_bb_mpi"
@@ -86,7 +86,7 @@ def main(
         try:
             from qcore.timeseries import BBSeis
 
-            bin = BBSeis(simulation_structure.get_bb_bin_path(params_sim_dir))
+            bin = BBSeis(simulation_structure.get_bb_bin_path(sim_dir))
         except:
             logger.debug("Retried count > 0 but BB.bin is not readable")
         else:
@@ -95,7 +95,7 @@ def main(
     wct = set_wct(est_run_time_scaled, ncores, submit)
 
     if write_directory is None:
-        write_directory = params_sim_dir
+        write_directory = sim_dir
 
     underscored_srf = srf_name.replace("/", "__")
 
@@ -117,7 +117,7 @@ def main(
     script_prefix = f"{sl_name_prefix}_{underscored_srf}"
     script_file_path = write_sl_script(
         write_directory,
-        params_sim_dir,
+        sim_dir,
         const.ProcessType.BB,
         script_prefix,
         header_dict,
@@ -132,7 +132,7 @@ def main(
             script_file_path,
             const.ProcessType.BB.value,
             simulation_structure.get_mgmt_db_queue(params.mgmt_db_location),
-            params_sim_dir,
+            sim_dir,
             srf_name,
             target_machine=machine,
             logger=logger,
