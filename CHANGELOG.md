@@ -2,6 +2,10 @@ Slurm Ground Motion Workflow
 # Changelog
 (Based on https://wiki.canterbury.ac.nz/download/attachments/58458136/CodeVersioning_v18p2.pdf?version=1&modificationDate=1519269238437&api=v2 )
 
+## [19.6.28] - 2021-06-22 -- Removed use of args from submit scripts' main functions
+### Changed
+    - Replaced the use of direct argparse object with unpacked variables
+    - Updated auto_submit and automated testing to accommodate the change
 ## [19.6.27] - 2021-01-28 -- Added VM perturbations on install
 ### Added
     - Flags --vm_perturbations and --ignore_vm_perturbations for use with velocity model perturbations

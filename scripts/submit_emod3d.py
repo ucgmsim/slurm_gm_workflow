@@ -5,7 +5,7 @@
 import os
 import argparse
 from logging import Logger
-
+from pathlib import Path
 from numpy import hstack
 
 from qcore import utils, shared, binary_version
@@ -27,91 +27,100 @@ from shared_workflow.shared_automated_workflow import submit_script_to_scheduler
 from shared_workflow.shared_template import write_sl_script
 
 
-def main(args: argparse.Namespace, logger: Logger = get_basic_logger()):
-    params = utils.load_sim_params(os.path.join(args.rel_dir, "sim_params.yaml"))
+def main(
+    submit: bool = False,
+    machine: str = host,
+    ncores: int = platform_config[const.PLATFORM_CONFIG.HF_DEFAULT_NCORES.name],
+    rel_dir: str = ".",
+    retries: int = 0,
+    write_directory: str = None,
+    logger: Logger = get_basic_logger(),
+):
+    rel_dir = Path(rel_dir).resolve()
 
-    submit_yes = True if args.auto else confirm("Also submit the job for you?")
+    try:
+        params = utils.load_sim_params(rel_dir / "sim_params.yaml")
+    except FileNotFoundError:
+        logger.error(f"Error: sim_params.yaml doesn't exist in {rel_dir}")
+        raise
 
-    logger.debug("params.srf_file {}".format(params.srf_file))
+    sim_dir = Path(params.sim_dir).resolve()
+
+    logger.debug(f"params.srf_file {params.srf_file}")
+
     # Get the srf(rup) name without extensions
-    srf_name = os.path.splitext(os.path.basename(params.srf_file))[0]
+    srf_name = Path(params.srf_file).stem
 
-    if args.srf is None or srf_name == args.srf:
-        logger.debug("not set_params_only")
-        # get lf_sim_dir
-        sim_dir = os.path.abspath(params.sim_dir)
-        lf_sim_dir = sim_struct.get_lf_dir(sim_dir)
+    logger.debug("not set_params_only")
+    # get lf_sim_dir
+    lf_sim_dir = sim_struct.get_lf_dir(sim_dir)
 
-        # default_core will be changed is user passes ncore
-        nt = int(float(params.sim_duration) / float(params.dt))
+    nt = int(float(params.sim_duration) / float(params.dt))
 
-        target_qconfig = get_machine_config(args.machine)
+    target_qconfig = get_machine_config(machine)
 
-        retries = args.retries if hasattr(args, "retries") else None
+    est_cores, est_run_time, wct = get_lf_cores_and_wct(
+        logger, nt, params, sim_dir, srf_name, target_qconfig, ncores, retries
+    )
 
-        est_cores, est_run_time, wct = get_lf_cores_and_wct(
-            logger, nt, params, sim_dir, srf_name, target_qconfig, args.ncore, retries
+    binary_path = binary_version.get_lf_bin(
+        params.emod3d.emod3d_version, target_qconfig["tools_dir"]
+    )
+    # use the original estimated run time for determining the checkpoint, or uses a minimum of 3 checkpoints
+    steps_per_checkpoint = int(
+        min(nt / (60.0 * est_run_time) * const.CHECKPOINT_DURATION, nt // 3)
+    )
+    if write_directory is None:
+        write_directory = sim_dir
+
+    set_runparams.create_run_params(
+        sim_dir, steps_per_checkpoint=steps_per_checkpoint, logger=logger
+    )
+
+    header_dict = {
+        "wallclock_limit": wct,
+        "job_name": "emod3d.{}".format(srf_name),
+        "job_description": "emod3d slurm script",
+        "additional_lines": "#SBATCH --hint=nomultithread",
+        "platform_specific_args": get_platform_node_requirements(est_cores),
+    }
+
+    command_template_parameters = {
+        "run_command": platform_config[const.PLATFORM_CONFIG.RUN_COMMAND.name],
+        "emod3d_bin": binary_path,
+        "lf_sim_dir": lf_sim_dir,
+    }
+
+    body_template_params = ("run_emod3d.sl.template", {})
+
+    script_prefix = f"run_emod3d_{srf_name}"
+    script_file_path = write_sl_script(
+        write_directory,
+        sim_dir,
+        const.ProcessType.EMOD3D,
+        script_prefix,
+        header_dict,
+        body_template_params,
+        command_template_parameters,
+    )
+    if submit:
+        submit_script_to_scheduler(
+            script_file_path,
+            const.ProcessType.EMOD3D.value,
+            sim_struct.get_mgmt_db_queue(params.mgmt_db_location),
+            sim_dir,
+            srf_name,
+            target_machine=machine,
+            logger=logger,
         )
-
-        binary_path = binary_version.get_lf_bin(
-            params.emod3d.emod3d_version, target_qconfig["tools_dir"]
-        )
-        # use the original estimated run time for determining the checkpoint, or uses a minimum of 3 checkpoints
-        steps_per_checkpoint = int(
-            min(nt / (60.0 * est_run_time) * const.CHECKPOINT_DURATION, nt // 3)
-        )
-        write_directory = (
-            args.write_directory if args.write_directory else params.sim_dir
-        )
-
-        set_runparams.create_run_params(
-            sim_dir, steps_per_checkpoint=steps_per_checkpoint, logger=logger
-        )
-
-        header_dict = {
-            "wallclock_limit": wct,
-            "job_name": "emod3d.{}".format(srf_name),
-            "job_description": "emod3d slurm script",
-            "additional_lines": "#SBATCH --hint=nomultithread",
-            "platform_specific_args": get_platform_node_requirements(est_cores),
-        }
-
-        command_template_parameters = {
-            "run_command": platform_config[const.PLATFORM_CONFIG.RUN_COMMAND.name],
-            "emod3d_bin": binary_path,
-            "lf_sim_dir": lf_sim_dir,
-        }
-
-        body_template_params = ("run_emod3d.sl.template", {})
-
-        script_prefix = "run_emod3d_{}".format(srf_name)
-        script_file_path = write_sl_script(
-            write_directory,
-            params.sim_dir,
-            const.ProcessType.EMOD3D,
-            script_prefix,
-            header_dict,
-            body_template_params,
-            command_template_parameters,
-        )
-        if submit_yes:
-            submit_script_to_scheduler(
-                script_file_path,
-                const.ProcessType.EMOD3D.value,
-                sim_struct.get_mgmt_db_queue(params.mgmt_db_location),
-                params.sim_dir,
-                srf_name,
-                target_machine=args.machine,
-                logger=logger,
-            )
 
 
 def get_lf_cores_and_wct(
-    logger, nt, params, sim_dir, srf_name, target_qconfig, ncore, retries=None
+    logger, nt, params, sim_dir, srf_name, target_qconfig, ncores, retries=None
 ):
     fd_count = len(shared.get_stations(params.FD_STATLIST))
     est_core_hours, est_run_time, est_cores = est.est_LF_chours_single(
-        int(params.nx), int(params.ny), int(params.nz), nt, fd_count, ncore, True
+        int(params.nx), int(params.ny), int(params.nz), nt, fd_count, ncores, True
     )
     # scale up the est_run_time if it is a re-run (with check-pointing)
     # otherwise do nothing
@@ -152,23 +161,19 @@ def get_lf_cores_and_wct(
     return est_cores, est_run_time, wct
 
 
-if __name__ == "__main__":
+def load_args():
     parser = argparse.ArgumentParser(
         description="Create (and submit if specified) the slurm script for LF"
     )
 
-    parser.add_argument(
-        "--ncore",
-        type=int,
-        default=platform_config[const.PLATFORM_CONFIG.LF_DEFAULT_NCORES.name],
-    )
-    parser.add_argument("--auto", nargs="?", type=str, const=True)
+    parser.add_argument("--submit", action="store_true", default=False)
+
     parser.add_argument(
         "--account",
         type=str,
         default=platform_config[const.PLATFORM_CONFIG.DEFAULT_ACCOUNT.name],
     )
-    parser.add_argument("--srf", type=str, default=None)
+
     parser.add_argument(
         "--machine",
         type=str,
@@ -176,17 +181,40 @@ if __name__ == "__main__":
         help="The machine emod3d is to be submitted to.",
     )
     parser.add_argument(
+        "--ncores",
+        type=int,
+        default=platform_config[const.PLATFORM_CONFIG.LF_DEFAULT_NCORES.name],
+    )
+    parser.add_argument(
+        "--rel_dir", default=".", type=str, help="The path to the realisation directory"
+    )
+    parser.add_argument(
+        "--retries", default=0, type=int, help="Number of retries if fails"
+    )
+
+    parser.add_argument(
         "--write_directory",
         type=str,
         help="The directory to write the slurm script to.",
         default=None,
     )
-    parser.add_argument(
-        "--rel_dir", default=".", type=str, help="The path to the realisation directory"
-    )
-    args = parser.parse_args()
 
+    args = parser.parse_args()
+    return args
+
+
+if __name__ == "__main__":
+
+    args = load_args()
     # The name parameter is only used to check user tasks in the queue monitor
     Scheduler.initialise_scheduler("", args.account)
 
-    main(args)
+    main(
+        args.submit,
+        args.machine,
+        args.ncores,
+        args.rel_dir,
+        args.retries,
+        args.srf,
+        args.write_directory,
+    )
