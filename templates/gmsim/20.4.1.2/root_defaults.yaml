@@ -16,8 +16,8 @@ emod3d:
 ims:
   extended_period: False
   component:
-    - 000
-    - 090
+    - "000"
+    - "090"
     - ver
     - geom
     - rotd50
