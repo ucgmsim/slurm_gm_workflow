@@ -4,6 +4,7 @@ import os
 import glob
 import argparse
 from logging import Logger
+from pathlib import Path
 
 from qcore import utils, binary_version
 from qcore.config import get_machine_config, host
@@ -33,23 +34,32 @@ def get_seis_len(seis_path):
     return len(seis_file_list)
 
 
-def main(args, logger: Logger = get_basic_logger()):
-    params = utils.load_sim_params(os.path.join(args.rel_dir, "sim_params.yaml"))
-    sim_dir = params.sim_dir
+def main(
+    submit: bool = False,
+    machine: str = host,
+    rel_dir: str = ".",
+    write_directory: str = None,
+    logger: Logger = get_basic_logger(),
+):
+    rel_dir = Path(rel_dir).resolve()
+    try:
+        params = utils.load_sim_params(rel_dir / "sim_params.yaml")
+    except FileNotFoundError:
+        logger.error(f"Error: sim_params.yaml doesn't exist in {rel_dir}")
+        raise
+
+    sim_dir = Path(params.sim_dir).resolve()
+
     mgmt_db_loc = params.mgmt_db_location
-    submit_yes = True if args.auto else confirm("Also submit the job for you?")
 
     # get the srf(rup) name without extensions
-    srf_name = os.path.splitext(os.path.basename(params.srf_file))[0]
-    # if srf(variation) is provided as args, only create the slurm
-    # with same name provided
-    if args.srf is not None and srf_name != args.srf:
-        return
+    srf_name = Path(params.srf_file).stem
 
-    write_directory = args.write_directory if args.write_directory else sim_dir
+    if write_directory is None:
+        write_directory = sim_dir
 
     # get lf_sim_dir
-    lf_sim_dir = os.path.join(sim_dir, "LF")
+    lf_sim_dir = sim_dir / "LF"
 
     header_dict = {
         "platform_specific_args": get_platform_node_requirements(
@@ -58,13 +68,13 @@ def main(args, logger: Logger = get_basic_logger()):
         "wallclock_limit": default_run_time_merge_ts,
         "job_name": "merge_ts.{}".format(srf_name),
         "job_description": "post emod3d: merge_ts",
-        "additional_lines": "###SBATCH -C avx",
+        "additional_lines": "",
     }
 
     command_template_parameters = {
         "run_command": platform_config[const.PLATFORM_CONFIG.RUN_COMMAND.name],
         "merge_ts_path": binary_version.get_unversioned_bin(
-            "merge_tsP3_par", get_machine_config(args.machine)["tools_dir"]
+            "merge_tsP3_par", get_machine_config(machine)["tools_dir"]
         ),
     }
 
@@ -83,29 +93,29 @@ def main(args, logger: Logger = get_basic_logger()):
         body_template_params,
         command_template_parameters,
     )
-    if submit_yes:
+    if submit:
         submit_script_to_scheduler(
             script_file_path,
             const.ProcessType.merge_ts.value,
             sim_struct.get_mgmt_db_queue(mgmt_db_loc),
             sim_dir,
             srf_name,
-            target_machine=args.machine,
+            target_machine=machine,
             logger=logger,
         )
 
 
-if __name__ == "__main__":
+def load_args():
     parser = argparse.ArgumentParser(
         description="Create (and submit if specified) the slurm script for HF"
     )
-    parser.add_argument("--auto", nargs="?", type=str, const=True)
+    parser.add_argument("--submit", nargs="?", type=str, const=True)
     parser.add_argument(
         "--account",
         type=str,
         default=platform_config[const.PLATFORM_CONFIG.DEFAULT_ACCOUNT.name],
     )
-    parser.add_argument("--srf", type=str, default=None)
+
     parser.add_argument(
         "--machine",
         type=str,
@@ -123,8 +133,13 @@ if __name__ == "__main__":
     )
 
     args = parser.parse_args()
+    return args
 
+
+if __name__ == "__main__":
+
+    args = load_args()
     # The name parameter is only used to check user tasks in the queue monitor
     Scheduler.initialise_scheduler("", args.account)
 
-    main(args)
+    main(args.submit, args.machine, args.rel_dir, args.srf, args.write_directory)

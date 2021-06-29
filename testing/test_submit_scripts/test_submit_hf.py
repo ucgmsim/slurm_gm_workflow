@@ -1,12 +1,11 @@
-import inspect
 import os
-
 import pytest
+
 
 from qcore.utils import load_sim_params as mocked_load_sim_params
 from shared_workflow.shared import set_wct as mocked_set_wct
 
-from testing.test_common_set_up import set_up, get_input_params, get_fault_from_rel
+from testing.test_common_set_up import set_up, get_fault_from_rel
 
 import scripts.submit_hf
 
@@ -14,8 +13,6 @@ import scripts.submit_hf
 @pytest.mark.usefixtures("init_scheduler")
 def test_main(set_up, mocker):
     """No return value. Just check that it runs without crashing"""
-    function = "main"
-    params = inspect.getfullargspec(scripts.submit_hf.main).args
 
     mocker.patch(
         "scripts.submit_hf.set_wct", lambda x, y, z: mocked_set_wct(x, y, True)
@@ -27,23 +24,23 @@ def test_main(set_up, mocker):
     )
 
     for root_path, realisation in set_up:
-        args = get_input_params(
-            root_path, "{}_{}".format("submit_hf.py", function), params
-        )
 
+        rel_dir = os.path.join(
+            root_path, "CSRoot", "Runs", get_fault_from_rel(realisation), realisation
+        )
         # Fault will probably change on each set of data, so reset this every time
         mocker.patch(
             "scripts.submit_hf.utils.load_sim_params",
-            lambda x: mocked_load_sim_params(
-                os.path.join(
-                    root_path,
-                    "CSRoot",
-                    "Runs",
-                    get_fault_from_rel(realisation),
-                    realisation,
-                    x,
-                )
-            ),
+            lambda x: mocked_load_sim_params(os.path.join(rel_dir, x)),
         )
 
-        scripts.submit_hf.main(*args)
+        scripts.submit_hf.main(
+            submit=None,
+            machine="default",
+            ncores=80,
+            rel_dir=rel_dir,
+            retries=0,
+            seed=None,
+            version=None,
+            write_directory=None,
+        )
