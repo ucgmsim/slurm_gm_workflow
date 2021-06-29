@@ -31,7 +31,8 @@ start_time=`date +$runtime_fmt`
 end_time=`date +$runtime_fmt`
 
 # verify the result of the analysis
-res=`python $gmsim/workflow/scripts/verify_adv_IM.py {{sim_IM_calc_dir}} {{models}}`
+fd_name=$(getFromYaml "{{sim_dir}}/sim_params.yaml" FD_STATLIST)
+res=`python $IMPATH/../Advanced_IM/check_adv_IM_status.py {{sim_IM_calc_dir}} {{models}} --station_file $fd_name`
 success=$?
 
 # Update mgmt_db
@@ -43,7 +44,6 @@ if [[ $success == 0 ]]; then
     if [[ ! -d {{sim_dir}}/ch_log ]]; then
         mkdir {{sim_dir}}/ch_log
     fi
-    fd_name=$(getFromYaml "{{sim_dir}}/sim_params.yaml" FD_STATLIST)
     fd_count=`cat $fd_name | wc -l`
 
     # log metadata
