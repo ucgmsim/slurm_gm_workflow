@@ -21,6 +21,7 @@ fi
 
 # update pip. python3 come with a v9.0 which is too old.
 pip install --upgrade pip
+pip install --upgrade setuptools
 
 # Install python packages
 # Using xargs means that each package is installed individually, which
