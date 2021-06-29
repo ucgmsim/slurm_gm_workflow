@@ -46,6 +46,10 @@ INSERT OR IGNORE INTO `proc_type_enum` (id,proc_type) VALUES (12,'LF2BB');
 INSERT OR IGNORE INTO `proc_type_enum` (id,proc_type) VALUES (13,'HF2BB');
 INSERT OR IGNORE INTO `proc_type_enum` (id,proc_type) VALUES (14,'plot_srf');
 INSERT OR IGNORE INTO `proc_type_enum` (id,proc_type) VALUES (15,'advanced_IM');
+INSERT OR IGNORE INTO `proc_type_enum` (id,proc_type) VALUES (16,'VM_PARAMS');
+INSERT OR IGNORE INTO `proc_type_enum` (id,proc_type) VALUES (17,'VM_GEN');
+INSERT OR IGNORE INTO `proc_type_enum` (id,proc_type) VALUES (18,'VM_PERT');
+INSERT OR IGNORE INTO `proc_type_enum` (id,proc_type) VALUES (19,'INSTALL_FAULT');
 CREATE TABLE IF NOT EXISTS `task_time_log` (
 	`id`	INTEGER NOT NULL UNIQUE,
 	`state_id`	INTEGER,

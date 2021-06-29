@@ -1,15 +1,14 @@
 #!/usr/bin/env python3
 """Script for automatic submission of gm simulation jobs"""
-import argparse
 from collections import OrderedDict
-
-import time
+from pathlib import Path
+import argparse
 import os
+import time
 
 from datetime import datetime
 from logging import Logger
 from typing import List, Dict, Tuple
-
 import numpy as np
 
 from qcore import utils, qclogging
@@ -313,6 +312,28 @@ def submit_task(
             const.ProcessType.advanced_IM.str_value,
             {"submit_time": submitted_time},
             logger=task_logger,
+        )
+    elif proc_type == const.ProcessType.VM_PARAMS.value:
+        submit_script_to_scheduler(
+            get_platform_specific_script(
+                const.ProcessType.VM_PARAMS,
+                OrderedDict(
+                    {
+                        "realisationCSV": str(Path(sim_struct.get_srf_dir(root_folder, run_name)) / (run_name + ".csv")),
+                        "OUTPUT_DIR": sim_struct.get_fault_VM_dir(
+                            root_folder, run_name
+                        ),
+                        "VM_VERSION": params.VM.VM_Version,
+                        "VM_TOPO": "",
+                        "HH": "",
+                        "PGV_THRESHOLD": "",
+                        "DS_MULTIPLIER": "",
+                        "MGMT_DB_LOC": root_folder,
+                        "REL_NAME": run_name,
+                    }
+                ),
+            ),
+            target_machine=get_target_machine(const.ProcessType.plot_srf).name,
         )
 
     qclogging.clean_up_logger(task_logger)

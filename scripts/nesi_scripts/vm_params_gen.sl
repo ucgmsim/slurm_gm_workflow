@@ -1,7 +1,7 @@
 #!/bin/bash
 # script version: slurm
 #
-# must be run with sbatch vm_gen.sl [realisationDirectory] [OutputDirectory] [managementDBLocation]
+# must be run with sbatch vm_gen.sl [realisationCSV] [OutputDirectory] [VM_VERSION] [VM_TOPO] [HH] [PGV_THRESHOLD] [DS_MULTIPLIER] [MGMT_DB_LOC] [REL_NAME] [managementDBLocation]
 
 #SBATCH --job-name=VM_GEN
 #SBATCH --time=00:15:00
@@ -16,8 +16,10 @@ OUT_DIR=$2
 VM_VERSION=$3
 VM_TOPO=$4
 HH=$5
-REL_NAME=$6
-MGMT_DB_LOC=$7
+PGV_THRESHOLD=$6
+DS_MULTIPLIER=$7
+REL_NAME=$8
+MGMT_DB_LOC=$9
 
 
 
@@ -37,8 +39,8 @@ runtime_fmt="%Y-%m-%d_%H:%M:%S"
 start_time=`date +$runtime_fmt`
 echo $start_time
 
-echo "python $gmsim/Pre-processing/VM/rel2vm_params.py --hh $HH --vm-version $VM_VERSION --vm-topo  $VM_TOPO --pgv 2.0 --ds-multiplier 0.75 $REL_CSV"
-python $gmsim/Pre-processing/VM/rel2vm_params.py --hh $HH --vm-version $VM_VERSION --vm-topo  $VM_TOPO --pgv 2.0 --ds-multiplier 0.75 $REL_CSV
+echo "python $gmsim/Pre-processing/VM/rel2vm_params.py --hh $HH --vm-version $VM_VERSION --vm-topo  $VM_TOPO --pgv $PGV_THRESHOLD --ds-multiplier $DS_MULTIPLIER $REL_CSV"
+python $gmsim/Pre-processing/VM/rel2vm_params.py --hh $HH --vm-version $VM_VERSION --vm-topo  $VM_TOPO --pgv $PGV_THRESHOLD --ds-multiplier $DS_MULTIPLIER $REL_CSV
 
 end_time=`date +$runtime_fmt`
 echo $end_time
