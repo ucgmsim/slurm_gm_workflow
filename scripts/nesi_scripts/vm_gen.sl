@@ -36,7 +36,7 @@ start_time=`date +$runtime_fmt`
 echo $start_time
 
 echo "python $gmsim/Pre-processing/VM/vm_params2vm.py -t 18 $REL_NAME $VM_PARAMS_YAML -o $OUT_DIR"
-python python $gmsim/Pre-processing/VM/vm_params2vm.py -t 18 $REL_NAME $VM_PARAMS_YAML -o $OUT_DIR
+python $gmsim/Pre-processing/VM/vm_params2vm.py -t 18 $REL_NAME $VM_PARAMS_YAML -o $OUT_DIR
 
 chmod g+rwXs -R $OUT_DIR
 chgrp nesi00213 -R $OUT_DIR
