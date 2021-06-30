@@ -324,8 +324,8 @@ def submit_task(
                         "VM_VERSION": str(params.VM.VM_Version),
                         "VM_TOPO": str(params.VM.VM_Topo),
                         "HH": str(params.VM.hh),
-                        "PGV_THRESHOLD": str(params.VM.PGV_THRESHOLD),
-                        "DS_MULTIPLIER": str(params.VM.DS_Multiplier),
+                        "PGV_THRESHOLD": str(params.VM.PGV_Threshold),
+                        "DS_MULTIPLIER": str(params.VM.Ds_Multiplier),
                         "MGMT_DB_LOC": root_folder,
                         "REL_NAME": run_name,
                     }

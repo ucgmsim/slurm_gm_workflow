@@ -3,7 +3,7 @@
 #
 # must be run with sbatch vm_gen.sl [realisationCSV] [OutputDirectory] [VM_VERSION] [VM_TOPO] [HH] [PGV_THRESHOLD] [DS_MULTIPLIER] [MGMT_DB_LOC] [REL_NAME] [managementDBLocation]
 
-#SBATCH --job-name=VM_GEN
+#SBATCH --job-name=VM_PARAMS
 #SBATCH --time=00:15:00
 #SBATCH --cpus-per-task=1
 
