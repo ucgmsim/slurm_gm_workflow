@@ -321,11 +321,11 @@ def submit_task(
                         "OUTPUT_DIR": sim_struct.get_fault_VM_dir(
                             root_folder, run_name
                         ),
-                        "VM_VERSION": params.VM.VM_Version,
-                        "VM_TOPO": params.VM.VM_Topo,
-                        "HH": params.VM.hh,
-                        "PGV_THRESHOLD": params.VM.PGV_THRESHOLD,
-                        "DS_MULTIPLIER": params.VM.DS_Multiplier,
+                        "VM_VERSION": str(params.VM.VM_Version),
+                        "VM_TOPO": str(params.VM.VM_Topo),
+                        "HH": str(params.VM.hh),
+                        "PGV_THRESHOLD": str(params.VM.PGV_THRESHOLD),
+                        "DS_MULTIPLIER": str(params.VM.DS_Multiplier),
                         "MGMT_DB_LOC": root_folder,
                         "REL_NAME": run_name,
                     }
