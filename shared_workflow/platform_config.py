@@ -122,8 +122,8 @@ def get_platform_specific_script(
         ProcessType.plot_srf: "plot_srf",
         ProcessType.plot_ts: "plot_ts",
         ProcessType.VM_PARAMS: "vm_params_gen",
-        ProcessType.VM: "vm_gen",
-        ProcessType.VM_PERT: "vm_pert",
+        ProcessType.VM_GEN: "vm_gen",
+        #ProcessType.VM_PERT: "vm_pert",
         ProcessType.INSTALL_FAULT: "install_fault",
     }[process]
 
