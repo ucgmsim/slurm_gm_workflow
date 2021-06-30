@@ -39,8 +39,8 @@ runtime_fmt="%Y-%m-%d_%H:%M:%S"
 start_time=`date +$runtime_fmt`
 echo $start_time
 
-echo "python $gmsim/Pre-processing/VM/rel2vm_params.py --hh $HH --vm-version $VM_VERSION --vm-topo  $VM_TOPO --pgv $PGV_THRESHOLD --ds-multiplier $DS_MULTIPLIER $REL_CSV"
-python $gmsim/Pre-processing/VM/rel2vm_params.py --hh $HH --vm-version $VM_VERSION --vm-topo  $VM_TOPO --pgv $PGV_THRESHOLD --ds-multiplier $DS_MULTIPLIER $REL_CSV
+echo "python $gmsim/Pre-processing/VM/rel2vm_params.py -o $OUT_DIR --hh $HH --vm-version $VM_VERSION --vm-topo  $VM_TOPO --pgv $PGV_THRESHOLD --ds-multiplier $DS_MULTIPLIER $REL_CSV"
+python $gmsim/Pre-processing/VM/rel2vm_params.py -o $OUT_DIR --hh $HH --vm-version $VM_VERSION --vm-topo  $VM_TOPO --pgv $PGV_THRESHOLD --ds-multiplier $DS_MULTIPLIER $REL_CSV
 
 end_time=`date +$runtime_fmt`
 echo $end_time
