@@ -39,6 +39,8 @@
     "LF2BB": "mahuika",
     "HF2BB": "mahuika",
     "plot_srf": "mahuika",
-    "advanced_IM": "maui"
+    "advanced_IM": "maui",
+    "VM_PARAMS": "mahuika",
+    "VM_GEN": "mahuika"
   }
 }

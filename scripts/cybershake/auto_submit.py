@@ -229,6 +229,7 @@ def submit_task(
                 OrderedDict(
                     {
                         "SIM_DIR": sim_dir,
+                        "SRF_PATH": sim_struct.get_srf_path(root_folder, run_name),
                         "SRF_NAME": run_name,
                         "MGMT_DB_LOC": root_folder,
                     }
@@ -324,16 +325,36 @@ def submit_task(
                             root_folder, run_name
                         ),
                         "VM_VERSION": params.VM.VM_Version,
-                        "VM_TOPO": "",
-                        "HH": "",
-                        "PGV_THRESHOLD": "",
-                        "DS_MULTIPLIER": "",
+                        "VM_TOPO": params.VM.VM_Topo,
+                        "HH": params.VM.hh,
+                        "PGV_THRESHOLD": params.VM.PGV_THRESHOLD,
+                        "DS_MULTIPLIER": params.VM.DS_Multiplier,
                         "MGMT_DB_LOC": root_folder,
                         "REL_NAME": run_name,
                     }
                 ),
             ),
-            target_machine=get_target_machine(const.ProcessType.plot_srf).name,
+            target_machine=get_target_machine(const.ProcessType.VM_PARAMS).name,
+        )
+    elif proc_type == const.ProcessType.VM_GEN.value:
+        submit_script_to_scheduler(
+            get_platform_specific_script(
+                const.ProcessType.VM_GEN,
+                OrderedDict(
+                    {
+                        "VM_PARAMS_YAML": str(Path(sim_struct.get_fault_VM_dir(
+                            root_folder, run_name
+                        )) / "vm_params.yaml"),
+                        "OUTPUT_DIR": sim_struct.get_fault_VM_dir(
+                            root_folder, run_name
+                        ),
+                        "SRF_PATH": sim_struct.get_srf_path(root_folder, run_name),
+                        "MGMT_DB_LOC": root_folder,
+                        "REL_NAME": run_name,
+                    }
+                ),
+            ),
+            target_machine=get_target_machine(const.ProcessType.VM_GEN).name,
         )
 
     qclogging.clean_up_logger(task_logger)

@@ -13,11 +13,9 @@ fi
 
 VM_PARAMS_YAML=$1
 OUT_DIR=$2
-VM_VERSION=$3
-VM_TOPO=$4
-SRF=$5
-REL_NAME=$6
-MGMT_DB_LOC=$7
+SRF=$3
+MGMT_DB_LOC=$4
+REL_NAME=$5
 
 
 
@@ -37,8 +35,8 @@ runtime_fmt="%Y-%m-%d_%H:%M:%S"
 start_time=`date +$runtime_fmt`
 echo $start_time
 
-echo "python $gmsim/Pre-processing/VM/vm_params2vm.py -t 18 --vm-version $VM_VERSION --vm-topo $VM_TOPO $REL_NAME $VM_PARAMS_YAML $OUT_DIR"
-python $gmsim/Pre-processing/VM/vm_params2vm.py -t 18 --vm-version $VM_VERSION --vm-topo $VM_TOPO $REL_NAME  $VM_PARAMS_YAML $OUT_DIR
+echo "python $gmsim/Pre-processing/VM/vm_params2vm.py -t 18 $REL_NAME $VM_PARAMS_YAML -o $OUT_DIR"
+python python $gmsim/Pre-processing/VM/vm_params2vm.py -t 18 $REL_NAME $VM_PARAMS_YAML -o $OUT_DIR
 
 chmod g+rwXs -R $OUT_DIR
 chgrp nesi00213 -R $OUT_DIR
