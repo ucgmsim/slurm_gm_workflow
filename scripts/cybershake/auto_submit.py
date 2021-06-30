@@ -70,18 +70,16 @@ def submit_task(
 
     if proc_type == const.ProcessType.EMOD3D.value:
         # These have to include the default values (same for all other process types)!
-        args = argparse.Namespace(
-            auto=True,
-            srf=run_name,
-            ncore=platform_config[const.PLATFORM_CONFIG.LF_DEFAULT_NCORES.name],
-            account=platform_config[const.PLATFORM_CONFIG.DEFAULT_ACCOUNT.name],
+        task_logger.debug("Submit EMOD3D arguments: {}".format(run_name))
+        submit_lf_main(
+            submit=True,
             machine=get_target_machine(const.ProcessType.EMOD3D).name,
+            ncores=platform_config[const.PLATFORM_CONFIG.LF_DEFAULT_NCORES.name],
             rel_dir=sim_dir,
-            write_directory=sim_dir,
             retries=retries,
+            write_directory=sim_dir,
+            logger=task_logger,
         )
-        task_logger.debug("Submit EMOD3D arguments: {}".format(args))
-        submit_lf_main(args, logger=task_logger)
         store_metadata(
             log_file,
             const.ProcessType.EMOD3D.str_value,
@@ -89,16 +87,16 @@ def submit_task(
             logger=task_logger,
         )
     elif proc_type == const.ProcessType.merge_ts.value:
-        args = argparse.Namespace(
-            auto=True,
-            srf=run_name,
-            account=platform_config[const.PLATFORM_CONFIG.DEFAULT_ACCOUNT.name],
+        task_logger.debug(
+            "Submit post EMOD3D (merge_ts) arguments: {}".format(run_name)
+        )
+        submit_post_lf_main(
+            submit=True,
             machine=get_target_machine(const.ProcessType.merge_ts).name,
             rel_dir=sim_dir,
             write_directory=sim_dir,
+            logger=task_logger,
         )
-        task_logger.debug("Submit post EMOD3D (merge_ts) arguments: {}".format(args))
-        submit_post_lf_main(args, task_logger)
         store_metadata(
             log_file,
             const.ProcessType.merge_ts.str_value,
@@ -130,22 +128,19 @@ def submit_task(
         )
 
     elif proc_type == const.ProcessType.HF.value:
-        args = argparse.Namespace(
-            auto=True,
-            srf=run_name,
-            seed=hf_seed,
-            ncore=platform_config[const.PLATFORM_CONFIG.HF_DEFAULT_NCORES.name],
-            version=platform_config[const.PLATFORM_CONFIG.HF_DEFAULT_VERSION.name],
-            site_specific=None,
-            account=platform_config[const.PLATFORM_CONFIG.DEFAULT_ACCOUNT.name],
+        task_logger.debug("Submit HF arguments: {}".format(run_name))
+        submit_hf_main(
+            submit=True,
             machine=get_target_machine(const.ProcessType.HF).name,
+            ncores=platform_config[const.PLATFORM_CONFIG.HF_DEFAULT_NCORES.name],
             rel_dir=sim_dir,
-            write_directory=sim_dir,
-            debug=False,
             retries=retries,
+            seed=hf_seed,
+            # site_specific=None,
+            version=platform_config[const.PLATFORM_CONFIG.HF_DEFAULT_VERSION.name],
+            write_directory=sim_dir,
+            logger=task_logger,
         )
-        task_logger.debug("Submit HF arguments: {}".format(args))
-        submit_hf_main(args, task_logger)
         store_metadata(
             log_file,
             const.ProcessType.HF.str_value,
@@ -153,18 +148,16 @@ def submit_task(
             logger=task_logger,
         )
     elif proc_type == const.ProcessType.BB.value:
-        args = argparse.Namespace(
-            auto=True,
-            srf=run_name,
-            version=platform_config[const.PLATFORM_CONFIG.BB_DEFAULT_VERSION.name],
-            account=platform_config[const.PLATFORM_CONFIG.DEFAULT_ACCOUNT.name],
+        task_logger.debug("Submit BB arguments: {}".format(run_name))
+        submit_bb_main(
+            submit=True,
             machine=get_target_machine(const.ProcessType.BB).name,
             rel_dir=sim_dir,
-            write_directory=sim_dir,
             retries=retries,
+            version=platform_config[const.PLATFORM_CONFIG.BB_DEFAULT_VERSION.name],
+            write_directory=sim_dir,
+            logger=task_logger,
         )
-        task_logger.debug("Submit BB arguments: {}".format(args))
-        submit_bb_main(args, task_logger)
         store_metadata(
             log_file,
             const.ProcessType.BB.str_value,
