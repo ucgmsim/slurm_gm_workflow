@@ -353,6 +353,47 @@ def submit_task(
             ),
             target_machine=get_target_machine(const.ProcessType.VM_GEN).name,
         )
+    elif proc_type == const.ProcessType.VM_PERT.value:
+        submit_script_to_scheduler(
+            get_platform_specific_script(
+                const.ProcessType.VM_GEN,
+                OrderedDict(
+                    {
+                        "VM_PARAMS_YAML": str(Path(sim_struct.get_fault_VM_dir(
+                            root_folder, run_name
+                        )) / "vm_params.yaml"),
+                        "OUTPUT_DIR": sim_struct.get_fault_VM_dir(
+                            root_folder, run_name
+                        ),
+                        "SRF_PATH": sim_struct.get_srf_path(root_folder, run_name),
+                        "MGMT_DB_LOC": root_folder,
+                        "REL_NAME": run_name,
+                    }
+                ),
+            ),
+            target_machine=get_target_machine(const.ProcessType.VM_GEN).name,
+        )
+    elif proc_type == const.ProcessType.INSTALL_FAULT.value:
+        submit_script_to_scheduler(
+            get_platform_specific_script(
+                const.ProcessType.VM_GEN,
+                OrderedDict(
+                    {
+                        "VM_PARAMS_YAML": str(Path(sim_struct.get_fault_VM_dir(
+                            root_folder, run_name
+                        )) / "vm_params.yaml"),
+                        "STAT_FILE": sim_struct.get_fault_VM_dir(
+                            root_folder, run_name
+                        ),
+                        "FAULT_DIR": sim_struct.get_fault_dir(root_folder, run_name),
+                        "FDSTATLIST": str(Path(sim_struct.get_fault_dir(root_folder, run_name) / f"fd{params.sufx}")),
+                        "MGMT_DB_LOC": root_folder,
+                        "REL_NAME": run_name,
+                    }
+                ),
+            ),
+            target_machine=get_target_machine(const.ProcessType.VM_GEN).name,
+        )
 
     qclogging.clean_up_logger(task_logger)
 

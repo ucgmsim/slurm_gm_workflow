@@ -4,7 +4,7 @@
 # must be run with sbatch vm_gen.sl [realisationDirectory] [OutputDirectory] [managementDBLocation]
 
 #SBATCH --job-name=VM_GEN
-#SBATCH --time=00:15:00
+#SBATCH --time=01:00:00
 #SBATCH --cpus-per-task=18
 
 if [[ -n ${CUR_ENV} && ${CUR_HPC} != "mahuika" ]]; then
@@ -17,6 +17,8 @@ SRF=$3
 MGMT_DB_LOC=$4
 REL_NAME=$5
 
+FAULT=$(echo $REL_NAME | cut -d"_" -f1)
+CH_LOG_FFP=$MGMT_DB_LOC/$FAULT/$REL_NAME/ch_log
 
 
 if [[ ! -d $OUT_DIR ]]; then
@@ -52,12 +54,12 @@ if [[ $? == 0 ]]; then
 
     python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $REL_NAME VM_GEN completed $SLURM_JOB_ID
 
-    if [[ ! -d $REL_LOC/ch_log ]]; then
-        mkdir $REL_LOC/ch_log
+    if [[ ! -d $CH_LOG_FFP ]]; then
+        mkdir $CH_LOG_FFP
     fi
 
     # save meta data
-    python $gmsim/workflow/metadata/log_metadata.py $REL_LOC VM_GEN cores=$((SLURM_NTASKS * SLURM_CPUS_PER_TASK)) start_time=$start_time end_time=$end_time
+    python $gmsim/workflow/metadata/log_metadata.py $CH_LOG_FFP VM_GEN cores=$SLURM_NTASKS start_time=$start_time end_time=$end_time
 else
     #reformat $res to remove '\n'
     res=`echo $res | tr -d '\n'`

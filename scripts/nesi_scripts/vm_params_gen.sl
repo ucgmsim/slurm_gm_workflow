@@ -21,6 +21,8 @@ DS_MULTIPLIER=$7
 MGMT_DB_LOC=$8
 REL_NAME=$9
 
+FAULT=$(echo $REL_NAME | cut -d"_" -f1)
+CH_LOG_FFP=$MGMT_DB_LOC/$FAULT/$REL_NAME/ch_log
 
 
 if [[ ! -d $OUT_DIR ]]; then
@@ -51,12 +53,12 @@ if [[ -f $OUT_DIR/vm_params.yaml ]]; then
 
     python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $REL_NAME VM_PARAMS completed $SLURM_JOB_ID
 
-    if [[ ! -d $REL_LOC/ch_log ]]; then
-        mkdir $REL_LOC/ch_log
+    if [[ ! -d $CH_LOG_FFP ]]; then
+        mkdir $CH_LOG_FFP
     fi
 
     # save meta data
-    python $gmsim/workflow/metadata/log_metadata.py $REL_LOC VM_PARAMS cores=$SLURM_NTASKS start_time=$start_time end_time=$end_time
+    python $gmsim/workflow/metadata/log_metadata.py $CH_LOG_FFP VM_PARAMS cores=$SLURM_NTASKS start_time=$start_time end_time=$end_time
 else
     #reformat $res to remove '\n'
     res=`echo $res | tr -d '\n'`

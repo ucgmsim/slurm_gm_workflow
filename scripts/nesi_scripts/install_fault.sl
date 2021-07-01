@@ -13,9 +13,12 @@ fi
 VM_PARAMS=$1
 STAT_FILE=$2
 FAULT_DIR=$3
-REL_NAME=$6
-MGMT_DB_LOC=$7
+FDSTATLIST=$4
+REL_NAME=$5
+MGMT_DB_LOC=$6
 
+FAULT=$(echo $REL_NAME | cut -d"_" -f1)
+CH_LOG_FFP=$MGMT_DB_LOC/$FAULT/$REL_NAME/ch_log
 
 
 if [[ ! -d $FAULT_DIR ]]; then
@@ -40,17 +43,17 @@ end_time=`date +$runtime_fmt`
 echo $end_time
 
 timestamp=`date +%Y%m%d_%H%M%S`
-if [[ -f $OUT_DIR/vm_params.yaml ]]; then
+if [[ -f $FDSTATLIST ]]; then
     #passed
 
     python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $REL_NAME INSTALL_FAULT completed $SLURM_JOB_ID
 
-    if [[ ! -d $REL_LOC/ch_log ]]; then
-        mkdir $REL_LOC/ch_log
+    if [[ ! -d $CH_LOG_FFP ]]; then
+        mkdir $CH_LOG_FFP
     fi
 
     # save meta data
-    python $gmsim/workflow/metadata/log_metadata.py $REL_LOC VM_PARAMS cores=$SLURM_NTASKS start_time=$start_time end_time=$end_time
+    python $gmsim/workflow/metadata/log_metadata.py $CH_LOG_FFP INSTALL_FAULT cores=$SLURM_NTASKS start_time=$start_time end_time=$end_time
 else
     #reformat $res to remove '\n'
     res=`echo $res | tr -d '\n'`
