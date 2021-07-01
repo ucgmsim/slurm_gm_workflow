@@ -59,7 +59,7 @@ if [[ -f $OUT_DIR/vm_params.yaml ]]; then
     fi
 
     # save meta data
-    python $gmsim/workflow/metadata/log_metadata.py $SIM_DIR VM_PARAMS cores=$SLURM_NTASKS start_time=$start_time end_time=$end_time
+    python $gmsim/workflow/metadata/log_metadata.py $SIM_DIR VM_PARAMS cores=$SLURM_CPUS_PER_TASK start_time=$start_time end_time=$end_time
 else
     #reformat $res to remove '\n'
     res=`echo $res | tr -d '\n'`

@@ -54,7 +54,7 @@ if [[ -f $FDSTATLIST ]]; then
     fi
 
     # save meta data
-    python $gmsim/workflow/metadata/log_metadata.py $SIM_DIR INSTALL_FAULT cores=$SLURM_NTASKS start_time=$start_time end_time=$end_time
+    python $gmsim/workflow/metadata/log_metadata.py $SIM_DIR INSTALL_FAULT cores=$SLURM_CPUS_PER_TASK start_time=$start_time end_time=$end_time
 else
     #reformat $res to remove '\n'
     res=`echo $res | tr -d '\n'`
