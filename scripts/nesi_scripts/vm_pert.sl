@@ -11,6 +11,8 @@ if [[ -n ${CUR_ENV} && ${CUR_HPC} != "mahuika" ]]; then
     source $CUR_ENV/workflow/install_workflow/helper_functions/activate_env.sh $CUR_ENV "mahuika"
 fi
 
+module load GCC/7.4.0
+
 VM_PARAMS_YAML=$1
 OUT_DIR=$2
 SRF=$3
@@ -59,7 +61,7 @@ if [[ -f $OUT_DIR/$REL_NAME.pertb ]]; then
     fi
 
     # save meta data
-    python $gmsim/workflow/metadata/log_metadata.py $SIM_DIR VM_PERT cores=$SLURM_NTASKS start_time=$start_time end_time=$end_time
+    python $gmsim/workflow/metadata/log_metadata.py $SIM_DIR VM_PERT cores=$SLURM_CPUS_PER_TASK start_time=$start_time end_time=$end_time
 else
     #reformat $res to remove '\n'
     res=`echo $res | tr -d '\n'`
