@@ -356,7 +356,7 @@ def submit_task(
     elif proc_type == const.ProcessType.VM_PERT.value:
         submit_script_to_scheduler(
             get_platform_specific_script(
-                const.ProcessType.VM_GEN,
+                const.ProcessType.VM_PERT,
                 OrderedDict(
                     {
                         "VM_PARAMS_YAML": str(Path(sim_struct.get_fault_VM_dir(
@@ -371,7 +371,7 @@ def submit_task(
                     }
                 ),
             ),
-            target_machine=get_target_machine(const.ProcessType.VM_GEN).name,
+            target_machine=get_target_machine(const.ProcessType.VM_PERT).name,
         )
     elif proc_type == const.ProcessType.INSTALL_FAULT.value:
         submit_script_to_scheduler(
@@ -392,7 +392,7 @@ def submit_task(
                     }
                 ),
             ),
-            target_machine=get_target_machine(const.ProcessType.VM_GEN).name,
+            target_machine=get_target_machine(const.ProcessType.INSTALL_FAULT).name,
         )
 
     qclogging.clean_up_logger(task_logger)

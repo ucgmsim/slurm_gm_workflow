@@ -41,6 +41,7 @@
     "plot_srf": "mahuika",
     "advanced_IM": "maui",
     "VM_PARAMS": "mahuika",
-    "VM_GEN": "mahuika"
+    "VM_GEN": "mahuika",
+    "VM_PERT": "mahuika",
   }
 }
