@@ -22,7 +22,8 @@ MGMT_DB_LOC=$8
 REL_NAME=$9
 
 FAULT=$(echo $REL_NAME | cut -d"_" -f1)
-CH_LOG_FFP=$MGMT_DB_LOC/$FAULT/$REL_NAME/ch_log
+SIM_DIR=$MGMT_DB_LOC/$FAULT/$REL_NAME/
+CH_LOG_FFP=$SIM_DIR/ch_log
 
 
 if [[ ! -d $OUT_DIR ]]; then
@@ -58,7 +59,7 @@ if [[ -f $OUT_DIR/vm_params.yaml ]]; then
     fi
 
     # save meta data
-    python $gmsim/workflow/metadata/log_metadata.py $CH_LOG_FFP VM_PARAMS cores=$SLURM_NTASKS start_time=$start_time end_time=$end_time
+    python $gmsim/workflow/metadata/log_metadata.py $SIM_DIR VM_PARAMS cores=$SLURM_NTASKS start_time=$start_time end_time=$end_time
 else
     #reformat $res to remove '\n'
     res=`echo $res | tr -d '\n'`
