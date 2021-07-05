@@ -41,7 +41,7 @@ runtime_fmt="%Y-%m-%d_%H:%M:%S"
 start_time=`date +$runtime_fmt`
 echo $start_time
 
-echo "time python $gmsim/Pre-processing/srf_generation/velocity_model_generation/generate_perturbation_file.py $OUT_DIR/$REL_NAME.pertb $VM_PARAMS_YAML -n 1 --perturbation --model $gmsim/Pre-processing/srf_generation/velocity_model_generation/config_files/graves_pitarka_2016_model_modified.csv"
+echo time python $gmsim/Pre-processing/srf_generation/velocity_model_generation/generate_perturbation_file.py $OUT_DIR/$REL_NAME.pertb $VM_PARAMS_YAML -n 1 --perturbation --model $gmsim/Pre-processing/srf_generation/velocity_model_generation/config_files/graves_pitarka_2016_model_modified.csv
 time python $gmsim/Pre-processing/srf_generation/velocity_model_generation/generate_perturbation_file.py $OUT_DIR/$REL_NAME.pertb $VM_PARAMS_YAML -n 1 --perturbation --model $gmsim/Pre-processing/srf_generation/velocity_model_generation/config_files/graves_pitarka_2016_model_modified.csv
 
 #chmod g+rwXs -R $OUT_DIR
