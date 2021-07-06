@@ -38,7 +38,7 @@ echo $cmd
 res=`$cmd`
 exit_val=$?
 
-cmd="python $gmsim/visualization/sources/plot_srf_map.py $SRF_PATH --dpi 300 --active_faults"
+cmd="python $gmsim/visualization/sources/plot_srf_map.py $SRF_PATH --dpi 300 --active-faults"
 echo $cmd
 res2=`$cmd`
 exit_val2=$?
