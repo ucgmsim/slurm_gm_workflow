@@ -40,7 +40,7 @@ def install_simulation(
     v1d_full_path,
     cybershake_root,
     v1d_dir=platform_config[PLATFORM_CONFIG.VELOCITY_MODEL_DIR.name],
-    site_v1d_dir=None,
+    site_vm_dir=None,
     hf_stat_vs_ref=None,
     sim_params_file=None,
     seed=HF_DEFAULT_SEED,
@@ -90,6 +90,7 @@ def install_simulation(
     fault_params_dict = {
         FaultParams.root_yaml_path.value: root_yaml_path,
         FaultParams.vel_mod_dir.value: vel_mod_dir,
+        FaultParams.site_vm_dir.value: site_vm_dir,
     }
 
     # VM params
@@ -193,7 +194,7 @@ def install_simulation(
         root_params_dict,
         v1d_dir=v1d_dir,
         v1d_full_path=v1d_full_path,
-        site_v1d_dir=site_v1d_dir,
+        site_vm_dir=site_vm_dir,
         hf_stat_vs_ref=hf_stat_vs_ref,
         logger=logger,
     )
@@ -221,7 +222,7 @@ def install_bb(
     root_dict,
     v1d_dir,
     v1d_full_path=None,
-    site_v1d_dir=None,
+    site_vm_dir=None,
     hf_stat_vs_ref=None,
     logger: Logger = get_basic_logger(),
 ):
@@ -237,11 +238,11 @@ def install_bb(
         root_dict["hf"][HF_VEL_MOD_1D] = v_mod_1d_selected
 
     # TODO:add in logic for site specific as well, if the user provided as args
-    elif site_v1d_dir is not None and hf_stat_vs_ref is not None:
+    elif site_vm_dir is not None and hf_stat_vs_ref is not None:
         hf_vel_mod_1d, hf_stat_vs_ref = shared.get_site_specific_path(
             os.path.dirname(stat_file),
             hf_stat_vs_ref=hf_stat_vs_ref,
-            v1d_mod_dir=site_v1d_dir,
+            site_vm_dir=site_vm_dir,
             logger=logger,
         )
         # root_dict["bb"]["site_specific"] = True

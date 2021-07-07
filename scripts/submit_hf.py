@@ -41,6 +41,7 @@ def gen_command_template(params, machine, seed=const.HF_DEFAULT_SEED):
         "sim_bin_path": binary_version.get_hf_binmod(
             params.hf.version, get_machine_config(machine)["tools_dir"]
         ),
+        "site_vm_dir": params.site_vm_dir,
     }
     add_args = {}
     for k, v in params.hf.items():
@@ -210,8 +211,11 @@ def load_args():
     )
     # Uncomment when site_specific is implemented.
 
+    parser.add_argument(
+        "--site_specific", action="store_true", default=False
+    )
     # parser.add_argument(
-    #     "--site_specific", type=int, nargs="?", default=None, const=True
+    #     "--site-vm-dir",  type=str, help="The path to the site-specific 1D vm models"
     # )
 
     parser.add_argument("--version", type=str, default=None, const=None)
