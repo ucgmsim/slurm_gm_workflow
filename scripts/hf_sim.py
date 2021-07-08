@@ -154,7 +154,9 @@ def args_parser(cmd=None):
         help="enable site-specific calculation",
         default=False,
     )
-    arg("-s", "--site_v1d_dir", help="dir containing site specific velocity models (1D)")
+    arg(
+        "-s", "--site_v1d_dir", help="dir containing site specific velocity models (1D)"
+    )
     # HF IN, line 14
     arg("--vs-moho", help="depth to moho, < 0 for 999.9", type=float, default=999.9)
     # HF IN, line 17
@@ -313,13 +315,13 @@ if __name__ == "__main__":
             )
             # string parameters
             if args.site_v1d_dir != None:
-                vm = (
+                v1d = (
                     args.site_v1d_dir
                 )  # dir only is ok. i4 above has last element to deduce actual VM file
             else:
-                vm = args.hf_vel_mod_1d
+                v1d = args.hf_vel_mod_1d
             s64 = np.array(
-                list(map(os.path.basename, [args.stoch_file, vm])), dtype="|S64"
+                list(map(os.path.basename, [args.stoch_file, v1d])), dtype="|S64"
             )
             # station metadata
             stat_head = np.zeros(
@@ -415,7 +417,7 @@ if __name__ == "__main__":
     stations_todo_idx = np.arange(stations.size)[station_mask]
 
     def run_hf(
-        local_statfile, n_stat, idx_0, velocity_model=args.hf_vel_mod_1d, bin_mod=True
+        local_statfile, n_stat, idx_0, v1d_path=args.hf_vel_mod_1d, bin_mod=True
     ):
         """
         Runs HF Fortran code.
@@ -446,7 +448,7 @@ if __name__ == "__main__":
             % (args.rvfac, args.rvfac_shal, args.rvfac_deep, args.czero, args.calpha),
             "%s %s" % (args.mom, args.rupv),
             args.stoch_file,
-            velocity_model,
+            v1d_path,
             str(args.vs_moho),
             "%d %s %s %s %s %d" % (nl_skip, vp_sig, vsh_sig, rho_sig, qs_sig, ic_flag),
             velocity_name,
@@ -485,9 +487,9 @@ if __name__ == "__main__":
         stderr = p.communicate(stdin)[1]
 
         # load vs
-        with open(velocity_model, "r") as vm:
-            vm.readline()
-            vs = np.float32(float(vm.readline().split()[2]) * 1000.0)
+        with open(v1d_path, "r") as f:
+            f.readline()
+            vs = np.float32(float(f.readline().split()[2]) * 1000.0)
 
         # e_dist is the only other variable that HF calculates
         e_dist = np.fromstring(stderr, dtype="f4", sep="\n")
@@ -541,10 +543,10 @@ if __name__ == "__main__":
     t0 = MPI.Wtime()
     in_stats = mkstemp()[1]
 
-    vm = args.hf_vel_mod_1d
+    v1d_path = args.hf_vel_mod_1d
     for s in range(work.size):
         if args.site_v1d_dir != None:
-            vm = os.path.join(
+            v1d_path = os.path.join(
                 args.site_v1d_dir, "%s.1d" % (stations_todo[s]["name"].decode("ascii"))
             )
 
@@ -552,7 +554,7 @@ if __name__ == "__main__":
             in_stats, work[s : s + 1], fmt="%f %f %s"
         )  # making in_stats file with the list of one station work[s]
         run_hf(
-            in_stats, 1, work_idx[s], velocity_model=vm
+            in_stats, 1, work_idx[s], v1d_path=v1d_path
         )  # passing in_stat with the seed adjustment work_idx[s]
 
     if (
