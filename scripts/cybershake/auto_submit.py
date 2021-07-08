@@ -56,7 +56,9 @@ def submit_task(
     if proc_type is not const.ProcessType.VM_PARAMS:
         load_vm_params = False
 
-    params = utils.load_sim_params(sim_struct.get_sim_params_yaml_path(sim_dir), load_vm=load_vm_params)
+    params = utils.load_sim_params(
+        sim_struct.get_sim_params_yaml_path(sim_dir), load_vm=load_vm_params
+    )
 
     submitted_time = datetime.now().strftime(const.METADATA_TIMESTAMP_FMT)
     log_file = os.path.join(sim_dir, "ch_log", const.METADATA_LOG_FILENAME)
@@ -317,7 +319,10 @@ def submit_task(
                 const.ProcessType.VM_PARAMS,
                 OrderedDict(
                     {
-                        "realisationCSV": str(Path(sim_struct.get_srf_dir(root_folder, run_name)) / (run_name + ".csv")),
+                        "realisationCSV": str(
+                            Path(sim_struct.get_srf_dir(root_folder, run_name))
+                            / (run_name + ".csv")
+                        ),
                         "OUTPUT_DIR": sim_struct.get_fault_VM_dir(
                             root_folder, run_name
                         ),
@@ -339,9 +344,10 @@ def submit_task(
                 const.ProcessType.VM_GEN,
                 OrderedDict(
                     {
-                        "VM_PARAMS_YAML": str(Path(sim_struct.get_fault_VM_dir(
-                            root_folder, run_name
-                        )) / "vm_params.yaml"),
+                        "VM_PARAMS_YAML": str(
+                            Path(sim_struct.get_fault_VM_dir(root_folder, run_name))
+                            / "vm_params.yaml"
+                        ),
                         "OUTPUT_DIR": sim_struct.get_fault_VM_dir(
                             root_folder, run_name
                         ),
@@ -359,9 +365,10 @@ def submit_task(
                 const.ProcessType.VM_PERT,
                 OrderedDict(
                     {
-                        "VM_PARAMS_YAML": str(Path(sim_struct.get_fault_VM_dir(
-                            root_folder, run_name
-                        )) / "vm_params.yaml"),
+                        "VM_PARAMS_YAML": str(
+                            Path(sim_struct.get_fault_VM_dir(root_folder, run_name))
+                            / "vm_params.yaml"
+                        ),
                         "OUTPUT_DIR": sim_struct.get_fault_VM_dir(
                             root_folder, run_name
                         ),
@@ -379,12 +386,21 @@ def submit_task(
                 const.ProcessType.INSTALL_FAULT,
                 OrderedDict(
                     {
-                        "VM_PARAMS_YAML": str(Path(sim_struct.get_fault_VM_dir(
-                            root_folder, run_name
-                        )) / "vm_params.yaml"),
+                        "VM_PARAMS_YAML": str(
+                            Path(sim_struct.get_fault_VM_dir(root_folder, run_name))
+                            / "vm_params.yaml"
+                        ),
                         "STAT_FILE": str(params.stat_file),
                         "FAULT_DIR": sim_struct.get_fault_dir(root_folder, run_name),
-                        "FDSTATLIST": str(Path(sim_struct.get_fault_dir(root_folder, run_name)) / f"fd{params.sufx}"),
+                        "FDSTATLIST": str(
+                            Path(
+                                sim_struct.get_fault_dir(
+                                    root_folder,
+                                    sim_struct.get_fault_from_realisation(run_name),
+                                )
+                            )
+                            / f"fd{params.sufx}"
+                        ),
                         "MGMT_DB_LOC": root_folder,
                         "REL_NAME": run_name,
                     }
