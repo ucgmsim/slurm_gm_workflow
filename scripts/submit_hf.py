@@ -70,7 +70,6 @@ def main(
         logger.error(f"Error: sim_params.yaml doesn't exist in {rel_dir}")
         raise
 
-    print(params)
     sim_dir = Path(params.sim_dir).resolve()
 
     if version in ["mpi", "run_hf_mpi"]:
@@ -130,10 +129,6 @@ def main(
     command_template_parameters, add_args = gen_command_template(
         params, machine, seed=seed
     )
-
-    print(params)
-    print(command_template_parameters)
-    print(add_args)
 
     body_template_params = (
         f"{ll_name_prefix}.sl.template",
@@ -217,9 +212,6 @@ def load_args():
 
     # parser.add_argument(
     #     "--site_specific", action="store_true", default=False
-    # )
-    # parser.add_argument(
-    #     "--site-vm-dir",  type=str, help="The path to the site-specific 1D vm models"
     # )
 
     parser.add_argument("--version", type=str, default=None, const=None)
