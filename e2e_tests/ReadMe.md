@@ -10,7 +10,7 @@ script.
 ```
 usage: run_e2e_tests.py [-h] [--timeout TIMEOUT] [--sleep_time SLEEP_TIME]
                         [--stop_on_warning] [--stop_on_error] [--no_clean_up]
-                        config_file
+                        config_file user
 
 positional arguments:
   config_file           Config file for the end-to-end test
