@@ -70,6 +70,7 @@ def main(
         logger.error(f"Error: sim_params.yaml doesn't exist in {rel_dir}")
         raise
 
+    print(params)
     sim_dir = Path(params.sim_dir).resolve()
 
     if version in ["mpi", "run_hf_mpi"]:
@@ -129,6 +130,10 @@ def main(
     command_template_parameters, add_args = gen_command_template(
         params, machine, seed=seed
     )
+
+    print(params)
+    print(command_template_parameters)
+    print(add_args)
 
     body_template_params = (
         f"{ll_name_prefix}.sl.template",

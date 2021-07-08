@@ -148,10 +148,8 @@ def args_parser(cmd=None):
             "Mod-1D/Cant1D_v2-midQ_leer.1d",
         ),
     )
-
-    arg("--site-specific", action="store_true", help="enable site-specific calculation", default=False)
-
-    arg("-s", "--site-vm-dir", help="dir containing site specific velocity models (1D)")
+    arg("--site_specific", action="store_true", help="enable site-specific calculation",default=False)
+    arg("-s", "--site_vm_dir", help="dir containing site specific velocity models (1D)")
     # HF IN, line 14
     arg("--vs-moho", help="depth to moho, < 0 for 999.9", type=float, default=999.9)
     # HF IN, line 17
@@ -196,7 +194,6 @@ def args_parser(cmd=None):
         args.hf_vel_mod_1d = None
     else:
         args.site_vm_dir = None
-
 
     return args
 
@@ -540,7 +537,7 @@ if __name__ == "__main__":
     vm = args.hf_vel_mod_1d
     for s in range(work.size):
         if args.site_vm_dir != None:
-            vm = os.path.join(args.site_vm_dir, "%s.1d" % (stations_todo[s]["name"]))
+            vm = os.path.join(args.site_vm_dir, "%s.1d" % (stations_todo[s]["name"].decode('ascii')))
 
         np.savetxt(
             in_stats, work[s : s + 1], fmt="%f %f %s"
