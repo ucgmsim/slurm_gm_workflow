@@ -433,7 +433,7 @@ if __name__ == "__main__":
             % (args.rvfac, args.rvfac_shal, args.rvfac_deep, args.czero, args.calpha),
             "%s %s" % (args.mom, args.rupv),
             args.stoch_file,
-            args.hf_vel_mod_1d,
+            velocity_model,
             str(args.vs_moho),
             "%d %s %s %s %s %d" % (nl_skip, vp_sig, vsh_sig, rho_sig, qs_sig, ic_flag),
             velocity_name,

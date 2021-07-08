@@ -41,7 +41,6 @@ def gen_command_template(params, machine, seed=const.HF_DEFAULT_SEED):
         "sim_bin_path": binary_version.get_hf_binmod(
             params.hf.version, get_machine_config(machine)["tools_dir"]
         ),
-        "site_vm_dir": params.site_vm_dir,
     }
     add_args = {}
     for k, v in params.hf.items():
