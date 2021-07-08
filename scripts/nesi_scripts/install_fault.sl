@@ -38,6 +38,7 @@ runtime_fmt="%Y-%m-%d_%H:%M:%S"
 start_time=`date +$runtime_fmt`
 echo $start_time
 
+echo python $gmsim/workflow/shared_workflow/gen_fd.py $VM_PARAMS $STAT_FILE $FAULT_DIR
 python $gmsim/workflow/shared_workflow/gen_fd.py $VM_PARAMS $STAT_FILE $FAULT_DIR
 
 end_time=`date +$runtime_fmt`
