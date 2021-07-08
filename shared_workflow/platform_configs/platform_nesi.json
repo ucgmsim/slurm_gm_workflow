@@ -42,6 +42,7 @@
     "advanced_IM": "maui",
     "VM_PARAMS": "mahuika",
     "VM_GEN": "mahuika",
-    "VM_PERT": "mahuika"
+    "VM_PERT": "mahuika",
+    "INSTALL_FAULT": "mahuika",
   }
 }
