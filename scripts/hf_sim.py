@@ -148,6 +148,9 @@ def args_parser(cmd=None):
             "Mod-1D/Cant1D_v2-midQ_leer.1d",
         ),
     )
+
+    arg("--site-specific", action="store_true", help="enable site-specific calculation", default=False)
+
     arg("-s", "--site-vm-dir", help="dir containing site specific velocity models (1D)")
     # HF IN, line 14
     arg("--vs-moho", help="depth to moho, < 0 for 999.9", type=float, default=999.9)

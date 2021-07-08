@@ -210,9 +210,9 @@ def load_args():
     )
     # Uncomment when site_specific is implemented.
 
-    parser.add_argument(
-        "--site_specific", action="store_true", default=False
-    )
+    # parser.add_argument(
+    #     "--site_specific", action="store_true", default=False
+    # )
     # parser.add_argument(
     #     "--site-vm-dir",  type=str, help="The path to the site-specific 1D vm models"
     # )
