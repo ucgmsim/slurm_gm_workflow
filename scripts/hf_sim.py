@@ -192,6 +192,12 @@ def args_parser(cmd=None):
 
     args = parser.parse_args(cmd)
 
+    if args.site_specific is True:
+        args.hf_vel_mod_1d = None
+    else:
+        args.site_vm_dir = None
+
+
     return args
 
 
@@ -305,7 +311,7 @@ if __name__ == "__main__":
             )
             # string parameters
             if args.site_vm_dir != None:
-                vm = args.site_vm_dir
+                vm = args.site_vm_dir # dir only is ok. i4 above has last element to deduce actual VM file
             else:
                 vm = args.hf_vel_mod_1d
             s64 = np.array(
