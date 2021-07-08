@@ -154,7 +154,7 @@ def args_parser(cmd=None):
         help="enable site-specific calculation",
         default=False,
     )
-    arg("-s", "--site_vm_dir", help="dir containing site specific velocity models (1D)")
+    arg("-s", "--site_v1d_dir", help="dir containing site specific velocity models (1D)")
     # HF IN, line 14
     arg("--vs-moho", help="depth to moho, < 0 for 999.9", type=float, default=999.9)
     # HF IN, line 17
@@ -198,7 +198,7 @@ def args_parser(cmd=None):
     if args.site_specific is True:
         args.hf_vel_mod_1d = None
     else:
-        args.site_vm_dir = None
+        args.site_v1d_dir = None
 
     return args
 
@@ -277,7 +277,7 @@ if __name__ == "__main__":
                     nl_skip,
                     ic_flag,
                     args.seed >= 0,
-                    args.site_vm_dir != None,
+                    args.site_v1d_dir != None,
                 ],
                 dtype="i4",
             )
@@ -312,9 +312,9 @@ if __name__ == "__main__":
                 dtype="f4",
             )
             # string parameters
-            if args.site_vm_dir != None:
+            if args.site_v1d_dir != None:
                 vm = (
-                    args.site_vm_dir
+                    args.site_v1d_dir
                 )  # dir only is ok. i4 above has last element to deduce actual VM file
             else:
                 vm = args.hf_vel_mod_1d
@@ -543,9 +543,9 @@ if __name__ == "__main__":
 
     vm = args.hf_vel_mod_1d
     for s in range(work.size):
-        if args.site_vm_dir != None:
+        if args.site_v1d_dir != None:
             vm = os.path.join(
-                args.site_vm_dir, "%s.1d" % (stations_todo[s]["name"].decode("ascii"))
+                args.site_v1d_dir, "%s.1d" % (stations_todo[s]["name"].decode("ascii"))
             )
 
         np.savetxt(
