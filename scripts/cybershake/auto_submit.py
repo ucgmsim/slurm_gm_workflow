@@ -376,7 +376,7 @@ def submit_task(
     elif proc_type == const.ProcessType.INSTALL_FAULT.value:
         submit_script_to_scheduler(
             get_platform_specific_script(
-                const.ProcessType.VM_GEN,
+                const.ProcessType.INSTALL_FAULT,
                 OrderedDict(
                     {
                         "VM_PARAMS_YAML": str(Path(sim_struct.get_fault_VM_dir(
