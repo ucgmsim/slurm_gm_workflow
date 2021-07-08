@@ -386,7 +386,7 @@ def submit_task(
                             root_folder, run_name
                         ),
                         "FAULT_DIR": sim_struct.get_fault_dir(root_folder, run_name),
-                        "FDSTATLIST": str(Path(sim_struct.get_fault_dir(root_folder, run_name) / f"fd{params.sufx}")),
+                        "FDSTATLIST": str(Path(sim_struct.get_fault_dir(root_folder, run_name)) / f"fd{params.sufx}"),
                         "MGMT_DB_LOC": root_folder,
                         "REL_NAME": run_name,
                     }
