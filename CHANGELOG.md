@@ -1,7 +1,11 @@
 Slurm Ground Motion Workflow
 # Changelog
 (Based on https://wiki.canterbury.ac.nz/download/attachments/58458136/CodeVersioning_v18p2.pdf?version=1&modificationDate=1519269238437&api=v2 )
-
+## [19.6.29] - 2021-07-08 -- Added site-specific 1D VMs to HF
+### Added
+    - Flags --site_specific and --site_vm_dir to hf_sim.py 
+### Changed
+    - Updated nesi_tests configs to use correct non uniform grid
 ## [19.6.28] - 2021-06-22 -- Removed use of args from submit scripts' main functions
 ### Changed
     - Replaced the use of direct argparse object with unpacked variables
