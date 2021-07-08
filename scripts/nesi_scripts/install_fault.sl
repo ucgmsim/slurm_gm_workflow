@@ -3,7 +3,7 @@
 #
 # must be run with sbatch install_fault.sl [realisationDirectory] [OutputDirectory] [managementDBLocation]
 
-#SBATCH --job-name=fault_install
+#SBATCH --job-name=install_fault
 #SBATCH --time=00:15:00
 #SBATCH --cpus-per-task=1
 
@@ -14,8 +14,8 @@ VM_PARAMS=$1
 STAT_FILE=$2
 FAULT_DIR=$3
 FDSTATLIST=$4
-REL_NAME=$5
-MGMT_DB_LOC=$6
+MGMT_DB_LOC=$5
+REL_NAME=$6
 
 FAULT=$(echo $REL_NAME | cut -d"_" -f1)
 SIM_DIR=$MGMT_DB_LOC/Runs/$FAULT/$REL_NAME/

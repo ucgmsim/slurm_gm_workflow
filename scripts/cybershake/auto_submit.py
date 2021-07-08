@@ -382,9 +382,7 @@ def submit_task(
                         "VM_PARAMS_YAML": str(Path(sim_struct.get_fault_VM_dir(
                             root_folder, run_name
                         )) / "vm_params.yaml"),
-                        "STAT_FILE": sim_struct.get_fault_VM_dir(
-                            root_folder, run_name
-                        ),
+                        "STAT_FILE": str(params.stat_file)
                         "FAULT_DIR": sim_struct.get_fault_dir(root_folder, run_name),
                         "FDSTATLIST": str(Path(sim_struct.get_fault_dir(root_folder, run_name)) / f"fd{params.sufx}"),
                         "MGMT_DB_LOC": root_folder,
