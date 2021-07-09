@@ -53,7 +53,7 @@ def submit_task(
         os.mkdir(ch_log_dir)
 
     load_vm_params = True
-    if proc_type is not const.ProcessType.VM_PARAMS:
+    if proc_type is const.ProcessType.VM_PARAMS:
         load_vm_params = False
 
     params = utils.load_sim_params(
@@ -381,6 +381,9 @@ def submit_task(
             target_machine=get_target_machine(const.ProcessType.VM_PERT).name,
         )
     elif proc_type == const.ProcessType.INSTALL_FAULT.value:
+        fault_dir = sim_struct.get_fault_dir(
+            root_folder, sim_struct.get_fault_from_realisation(run_name)
+        )
         submit_script_to_scheduler(
             get_platform_specific_script(
                 const.ProcessType.INSTALL_FAULT,
@@ -391,16 +394,8 @@ def submit_task(
                             / "vm_params.yaml"
                         ),
                         "STAT_FILE": str(params.stat_file),
-                        "FAULT_DIR": sim_struct.get_fault_dir(root_folder, run_name),
-                        "FDSTATLIST": str(
-                            Path(
-                                sim_struct.get_fault_dir(
-                                    root_folder,
-                                    sim_struct.get_fault_from_realisation(run_name),
-                                )
-                            )
-                            / f"fd{params.sufx}"
-                        ),
+                        "FAULT_DIR": fault_dir,
+                        "FDSTATLIST": str(Path(fault_dir) / f"fd{str(params.sufx)}"),
                         "MGMT_DB_LOC": root_folder,
                         "REL_NAME": run_name,
                     }

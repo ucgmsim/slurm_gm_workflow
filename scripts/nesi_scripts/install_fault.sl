@@ -17,6 +17,8 @@ FDSTATLIST=$4
 MGMT_DB_LOC=$5
 REL_NAME=$6
 
+
+
 FAULT=$(echo $REL_NAME | cut -d"_" -f1)
 SIM_DIR=$MGMT_DB_LOC/Runs/$FAULT/$REL_NAME/
 CH_LOG_FFP=$SIM_DIR/ch_log
