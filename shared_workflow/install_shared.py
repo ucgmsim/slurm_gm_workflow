@@ -92,7 +92,7 @@ def install_simulation(
         FaultParams.root_yaml_path.value: root_yaml_path,
         FaultParams.vel_mod_dir.value: vel_mod_dir,
     }
-    fault_params_dict["hf"]={}
+    fault_params_dict["hf"] = {}
     fault_params_dict["hf"][FaultParams.site_specific.value]: site_specific
     fault_params_dict["hf"][FaultParams.site_v1d_dir.value]: site_v1d_dir
 
