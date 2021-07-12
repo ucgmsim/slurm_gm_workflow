@@ -70,6 +70,12 @@ def load_args(logger):
         action="store_true",
         help="Keep stations if they snap to the same grid-point",
     )
+    parser.add_argument(
+        "--no_check_vm",
+        action="store_false",
+        dest="check_vm",
+        help="Set this flag if you are generating VMs from the automated workflow"
+    )
 
     vm_pert = parser.add_mutually_exclusive_group()
     vm_pert.add_argument(
@@ -179,6 +185,7 @@ def main():
             keep_dup_station=args.keep_dup_station,
             components=args.components,
             logger=qclogging.get_realisation_logger(logger, fault),
+            check_vm=args.check_vm
         )
 
 
