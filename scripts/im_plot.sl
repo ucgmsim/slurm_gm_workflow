@@ -31,7 +31,7 @@ echo ___im plot___
 
 python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $SRF_NAME IM_plot running $SLURM_JOB_ID
 
-res=`python $gmsim/visualization/visualization/im_plotting/im_plot.py $CSV_PATH $STATION_FILE_PATH --output $OUTPUT_XYZ_DIR`
+res=`python $gmsim/visualization/im/spatialise_im.py $CSV_PATH $STATION_FILE_PATH --output $OUTPUT_XYZ_DIR`
 exit_val=$?
 
 
@@ -49,9 +49,9 @@ if [[ $exit_val == 0 ]]; then
         mkdir -p $out_dir
         cd $out_dir
         if [[ "$f" == *"real"* ]]; then
-          res2=$(python $gmsim/visualization/visualization/gmt/plot_items.py -t $SRF_NAME --xyz $f -c "$SRF_PATH" --xyz-cpt hot --xyz-cpt-invert --xyz-transparency 30 --xyz-size 0.1 --xyz-cpt-labels `cat $OUTPUT_XYZ_DIR/im_order.txt` -n 2)
+          res2=$(python $gmsim/visualization/sources/plot_items.py -t $SRF_NAME --xyz $f -c "$SRF_PATH" --xyz-cpt hot --xyz-cpt-invert --xyz-transparency 30 --xyz-size 0.1 --xyz-cpt-labels `cat $OUTPUT_XYZ_DIR/im_order.txt` -n 2)
         else
-          res2=$(python $gmsim/visualization/visualization/gmt/plot_items.py -t $SRF_NAME --xyz $f -c "$SRF_PATH" --xyz-model-params $MODEL_PARAMS --xyz-grid --xyz-grid-search 12m --xyz-landmask --xyz-cpt hot --xyz-cpt-invert --xyz-grid-contours --xyz-transparency 30 --xyz-size 1k --xyz-cpt-labels `cat $OUTPUT_XYZ_DIR/im_order.txt` -n 2)
+          res2=$(python $gmsim/visualization/sources/plot_items.py -t $SRF_NAME --xyz $f -c "$SRF_PATH" --xyz-model-params $MODEL_PARAMS --xyz-grid --xyz-grid-search 12m --xyz-landmask --xyz-cpt hot --xyz-cpt-invert --xyz-grid-contours --xyz-transparency 30 --xyz-size 1k --xyz-cpt-labels `cat $OUTPUT_XYZ_DIR/im_order.txt` -n 2)
         fi
         exit_val2=$?
         if [[ $exit_val2 != 0 ]]; then
