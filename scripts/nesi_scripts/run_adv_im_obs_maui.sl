@@ -33,12 +33,6 @@ do
     path_eventBB=$obs_dir/$event/*/*/accBB
     path_IM_calc=$obs_dir/IM_calc
     path_event_out=$path_IM_calc/$event
-    # get station count
-    station_count=`ls $path_eventBB | cut -d. -f1 | sort -u | wc -l`
-    if [[ $station_count -le 0 ]]; then
-        echo failed to get the station count in $path_eventBB
-        exit 2
-    fi
     # get module names used for simulation analysis
     root_params=`realpath $obs_dir/../Runs/root_params.yaml`
     if [[ $? == 0 ]] && [[ -f $root_params ]]; then
@@ -52,7 +46,7 @@ do
     do
         # check for status
         # skip if completed
-        res=`python $gmsim/workflow/scripts/verify_adv_IM.py $path_event_out $adv_IM_model`; res_return_code=$?
+        res=`python $IMPATH/../Advanced_IM/check_adv_IM_status.py $path_event_out $adv_IM_model`; res_return_code=$?
 
         # return code from verify_adv_IM is used to determine status.
         if [[ $res_return_code == 0 ]];then
@@ -60,7 +54,7 @@ do
         fi
         time python $IMPATH/calculate_ims.py $path_eventBB a -o $path_event_out -np 40 -i $event -r $event -t  o -e -a $adv_IM_model --OpenSees_path $opensees_bin
         # test for completion 
-        res=`python $gmsim/workflow/scripts/verify_adv_IM.py $path_event_out $adv_IM_model`; res_return_code=$?
+        res=`python $IMPATH/../Advanced_IM/check_adv_IM_status.py $path_event_out $adv_IM_model`; res_return_code=$?
         # return code from verify_adv_IM is used to determine status.
         if [[ $res_return_code == 0 ]];then
             # completed
