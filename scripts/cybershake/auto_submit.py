@@ -432,7 +432,9 @@ def run_main_submit_loop(
 
     time_since_something_happened = cycle_timeout
 
-    while time_since_something_happened > 0:
+    first = True
+    while time_since_something_happened > 0 or first:
+        first = False
         main_logger.debug(
             "time_since_something_happened is now {}".format(
                 time_since_something_happened

@@ -160,7 +160,7 @@ def run_automated_workflow(
                 tasks,
                 sleep_time,
                 main_logger=pattern_logger,
-                cycle_timeout=1,
+                cycle_timeout=0,
             )
     bulk_auto_submit_thread.join()
     wrapper_logger.info(
