@@ -46,7 +46,7 @@ do
     do
         # check for status
         # skip if completed
-        res=`python $IMPATH/../Advanced_IM/check_adv_IM_status.py $path_event_out $adv_IM_model`; res_return_code=$?
+        python $IMPATH/../Advanced_IM/check_adv_IM_status.py $path_event_out $adv_IM_model; res_return_code=$?
 
         # return code from verify_adv_IM is used to determine status.
         if [[ $res_return_code == 0 ]];then
@@ -54,7 +54,7 @@ do
         fi
         time python $IMPATH/calculate_ims.py $path_eventBB a -o $path_event_out -np 40 -i $event -r $event -t  o -e -a $adv_IM_model --OpenSees_path $opensees_bin
         # test for completion 
-        res=`python $IMPATH/../Advanced_IM/check_adv_IM_status.py $path_event_out $adv_IM_model`; res_return_code=$?
+        python $IMPATH/../Advanced_IM/check_adv_IM_status.py $path_event_out $adv_IM_model; res_return_code=$?
         # return code from verify_adv_IM is used to determine status.
         if [[ $res_return_code == 0 ]];then
             # completed
@@ -64,8 +64,8 @@ do
         else
             echo "completion test failed after running $adv_IM_model on $path_event_out"
             echo "something went wrong, stopping the job, check logs for $path_event_out for $adv_IM_model"
-            echo "$res"
-            exit 3
+            echo "error code $res_return_code"
+            exit $res_return_code
         fi
     done
 done
