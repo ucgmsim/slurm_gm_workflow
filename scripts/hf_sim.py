@@ -49,7 +49,7 @@ velocity_name = "-1"
 
 
 def random_seed():
-    return random.randrange(1000000, 9999999)
+    return random.randrange(1_000_000, 9_999_999)
 
 
 def args_parser(cmd=None):
@@ -142,13 +142,23 @@ def args_parser(cmd=None):
     arg(
         "-m",
         "--hf_vel_mod_1d",
-        help="path to velocity model (1D)",
+        help="path to velocity model (1D). ignored if --site_specific is set",
         default=os.path.join(
             platform_config[constants.PLATFORM_CONFIG.VELOCITY_MODEL_DIR.name],
             "Mod-1D/Cant1D_v2-midQ_leer.1d",
         ),
     )
-    arg("-s", "--site-vm-dir", help="dir containing site specific velocity models (1D)")
+    arg(
+        "--site_specific",
+        action="store_true",
+        help="enable site-specific calculation",
+        default=False,
+    )
+    arg(
+        "-s",
+        "--site_v1d_dir",
+        help="dir containing site specific velocity models (1D). requires --site_specific",
+    )
     # HF IN, line 14
     arg("--vs-moho", help="depth to moho, < 0 for 999.9", type=float, default=999.9)
     # HF IN, line 17
@@ -266,7 +276,7 @@ if __name__ == "__main__":
                     nl_skip,
                     ic_flag,
                     args.seed >= 0,
-                    args.site_vm_dir != None,
+                    args.site_specific is True,
                 ],
                 dtype="i4",
             )
@@ -301,12 +311,14 @@ if __name__ == "__main__":
                 dtype="f4",
             )
             # string parameters
-            if args.site_vm_dir != None:
-                vm = args.site_vm_dir
+            if args.site_specific is True:
+                v1d = (
+                    args.site_v1d_dir
+                )  # dir only is ok. i4 above has last element to deduce actual VM file
             else:
-                vm = args.hf_vel_mod_1d
+                v1d = args.hf_vel_mod_1d
             s64 = np.array(
-                list(map(os.path.basename, [args.stoch_file, vm])), dtype="|S64"
+                list(map(os.path.basename, [args.stoch_file, v1d])), dtype="|S64"
             )
             # station metadata
             stat_head = np.zeros(
@@ -402,7 +414,7 @@ if __name__ == "__main__":
     stations_todo_idx = np.arange(stations.size)[station_mask]
 
     def run_hf(
-        local_statfile, n_stat, idx_0, velocity_model=args.hf_vel_mod_1d, bin_mod=True
+        local_statfile, n_stat, idx_0, v1d_path=args.hf_vel_mod_1d, bin_mod=True
     ):
         """
         Runs HF Fortran code.
@@ -422,22 +434,26 @@ if __name__ == "__main__":
             str(args.sdrop),
             local_statfile,
             args.out_file,
-            "%d %s" % (len(args.rayset), " ".join(map(str, args.rayset))),
+            "{:d} {:s}".format(len(args.rayset), " ".join(map(str, args.rayset))),
             str(int(not args.no_siteamp)),
-            "%d %d %s %s" % (nbu, ift, flo, fhi),
+            "{:d} {:d} {:s} {:s}".format(nbu, ift, flo, fhi),
             str(seed),
             str(n_stat),
-            "%s %s %s %s %s"
-            % (args.duration, args.dt, args.fmax, args.kappa, args.qfexp),
-            "%s %s %s %s %s"
-            % (args.rvfac, args.rvfac_shal, args.rvfac_deep, args.czero, args.calpha),
-            "%s %s" % (args.mom, args.rupv),
+            "{:s} {:s} {:s} {:s} {:s}".format(
+                args.duration, args.dt, args.fmax, args.kappa, args.qfexp
+            ),
+            "{:s} {:s} {:s} {:s} {:s}".format(
+                args.rvfac, args.rvfac_shal, args.rvfac_deep, args.czero, args.calpha
+            ),
+            "{:s} {:s}".format(args.mom, args.rupv),
             args.stoch_file,
-            args.hf_vel_mod_1d,
+            v1d_path,
             str(args.vs_moho),
-            "%d %s %s %s %s %d" % (nl_skip, vp_sig, vsh_sig, rho_sig, qs_sig, ic_flag),
+            "{:d} {:s} {:s} {:s} {:s} {:d}".format(
+                nl_skip, vp_sig, vsh_sig, rho_sig, qs_sig, ic_flag
+            ),
             velocity_name,
-            "%s %s %s" % (args.fa_sig1, args.fa_sig2, args.rv_sig1),
+            "{:s} {:s} {:s}".format(args.fa_sig1, args.fa_sig2, args.rv_sig1),
             str(args.path_dur),
         ]
 
@@ -472,9 +488,9 @@ if __name__ == "__main__":
         stderr = p.communicate(stdin)[1]
 
         # load vs
-        with open(velocity_model, "r") as vm:
-            vm.readline()
-            vs = np.float32(float(vm.readline().split()[2]) * 1000.0)
+        with open(v1d_path, "r") as f:
+            f.readline()
+            vs = np.float32(float(f.readline().split()[2]) * 1000.0)
 
         # e_dist is the only other variable that HF calculates
         e_dist = np.fromstring(stderr, dtype="f4", sep="\n")
@@ -486,7 +502,7 @@ if __name__ == "__main__":
             )
             logger.error("Dumping Fortran stderr to hf_err_{}".format(idx_0))
 
-            with open("hf_err_%d" % (idx_0), "w") as e:
+            with open(f"hf_err_{idx_0}", "w") as e:
                 e.write(stderr)
             comm.Abort()
 
@@ -506,11 +522,7 @@ if __name__ == "__main__":
         try:
             assert os.stat(args.out_file).st_size == head_total + idx_n * block_size
         except AssertionError:
-            msg = "Expected size: %d bytes (last stat idx: %d), actual %d bytes." % (
-                head_total + idx_n * block_size,
-                idx_n,
-                os.stat(args.out_file).st_size,
-            )
+            msg = f"Expected size: {head_total + idx_n * block_size} bytes (last stat idx: {idx_n}), actual {os.stat(args.out_file).st_size} bytes."
             # this is here because kupe fails at stdio
             with open("hf_err_validate", "w") as e:
                 e.write(msg)
@@ -528,16 +540,18 @@ if __name__ == "__main__":
     t0 = MPI.Wtime()
     in_stats = mkstemp()[1]
 
-    vm = args.hf_vel_mod_1d
+    v1d_path = args.hf_vel_mod_1d
     for s in range(work.size):
-        if args.site_vm_dir != None:
-            vm = os.path.join(args.site_vm_dir, "%s.1d" % (stations_todo[s]["name"]))
+        if args.site_v1d_dir is not None:
+            v1d_path = os.path.join(
+                args.site_v1d_dir, f"{stations_todo[s]['name'].decode('ascii')}.1d"
+            )
 
         np.savetxt(
             in_stats, work[s : s + 1], fmt="%f %f %s"
         )  # making in_stats file with the list of one station work[s]
         run_hf(
-            in_stats, 1, work_idx[s], velocity_model=vm
+            in_stats, 1, work_idx[s], v1d_path=v1d_path
         )  # passing in_stat with the seed adjustment work_idx[s]
 
     if (
@@ -548,7 +562,11 @@ if __name__ == "__main__":
         validate_end(work_idx[-1] + 1)
 
     os.remove(in_stats)
-    print("Process %03d of %03d finished (%.2fs)." % (rank, size, MPI.Wtime() - t0))
+    print(
+        "Process {} of {} completed {} stations ({:.2f}).".format(
+            rank, size, work.size, MPI.Wtime() - t0
+        )
+    )
     logger.debug(
         "Process {} of {} completed {} stations ({:.2f}).".format(
             rank, size, work.size, MPI.Wtime() - t0
