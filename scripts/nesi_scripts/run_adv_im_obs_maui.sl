@@ -55,7 +55,7 @@ do
     do
         # check for status
         # skip if completed
-        python $IMPATH/../Advanced_IM/check_adv_IM_status.py $path_event_out $adv_IM_model; res_return_code=$?
+        python $IMPATH/../Advanced_IM/check_adv_IM_status.py $path_event_out $adv_IM_model --stations ${stations[@]}; res_return_code=$?
 
         # return code from verify_adv_IM is used to determine status.
         if [[ $res_return_code == 0 ]];then
