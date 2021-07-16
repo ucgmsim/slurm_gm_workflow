@@ -118,7 +118,7 @@ def submit_task(
             {
                 "XYTS_PATH": os.path.join(
                     sim_struct.get_lf_outbin_dir(sim_dir),
-                    "{}_xyts.e3d".format(run_name.split("_")[0]),
+                    "{}_xyts.e3d".format(run_name),
                 ),
                 "SRF_PATH": sim_struct.get_srf_path(root_folder, run_name),
                 "OUTPUT_TS_PATH": os.path.join(verification_dir, run_name),
