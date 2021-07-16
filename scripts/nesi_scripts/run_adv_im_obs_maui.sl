@@ -33,6 +33,15 @@ do
     path_eventBB=$obs_dir/$event/*/*/accBB
     path_IM_calc=$obs_dir/IM_calc
     path_event_out=$path_IM_calc/$event
+
+    #get station list using get_bbseis from im_calculation.py
+    stations=($(python -c "from IM_calculation.IM.im_calculation import get_bbseis; _,stations = get_bbseis('$path_eventBB','ascii',None); print(" ".join(stations))"))
+    #get station_count
+    station_count=${#stations[@]}
+    if [[ $station_count -le 0 ]]; then
+        echo failed to get the station count in $path_eventBB
+        exit 2
+    fi
     # get module names used for simulation analysis
     root_params=`realpath $obs_dir/../Runs/root_params.yaml`
     if [[ $? == 0 ]] && [[ -f $root_params ]]; then
@@ -54,7 +63,7 @@ do
         fi
         time python $IMPATH/calculate_ims.py $path_eventBB a -o $path_event_out -np 40 -i $event -r $event -t  o -e -a $adv_IM_model --OpenSees_path $opensees_bin
         # test for completion 
-        python $IMPATH/../Advanced_IM/check_adv_IM_status.py $path_event_out $adv_IM_model; res_return_code=$?
+        python $IMPATH/../Advanced_IM/check_adv_IM_status.py $path_event_out $adv_IM_model --stations ${stations[@]}; res_return_code=$?
         # return code from verify_adv_IM is used to determine status.
         if [[ $res_return_code == 0 ]];then
             # completed
