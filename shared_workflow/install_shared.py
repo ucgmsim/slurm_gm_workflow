@@ -40,6 +40,7 @@ def install_simulation(
     v1d_full_path,
     cybershake_root,
     v1d_dir=platform_config[PLATFORM_CONFIG.VELOCITY_MODEL_DIR.name],
+    site_specific=False,
     site_v1d_dir=None,
     hf_stat_vs_ref=None,
     sim_params_file=None,
@@ -91,6 +92,9 @@ def install_simulation(
         FaultParams.root_yaml_path.value: root_yaml_path,
         FaultParams.vel_mod_dir.value: vel_mod_dir,
     }
+    fault_params_dict["hf"] = {}
+    fault_params_dict["hf"][FaultParams.site_specific.value]: site_specific
+    fault_params_dict["hf"][FaultParams.site_v1d_dir.value]: site_v1d_dir
 
     # VM params
     vm_params_path = simulation_structure.get_vm_params_yaml(vel_mod_dir)
@@ -241,7 +245,7 @@ def install_bb(
         hf_vel_mod_1d, hf_stat_vs_ref = shared.get_site_specific_path(
             os.path.dirname(stat_file),
             hf_stat_vs_ref=hf_stat_vs_ref,
-            v1d_mod_dir=site_v1d_dir,
+            site_v1d_dir=site_v1d_dir,
             logger=logger,
         )
         # root_dict["bb"]["site_specific"] = True
