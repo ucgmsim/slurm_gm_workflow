@@ -212,7 +212,7 @@ def load_args():
     # Uncomment when site_specific is implemented.
 
     # parser.add_argument(
-    #     "--site_specific", type=int, nargs="?", default=None, const=True
+    #     "--site_specific", action="store_true", default=False
     # )
 
     parser.add_argument("--version", type=str, default=None, const=None)

@@ -510,7 +510,7 @@ def params_to_dict(params_base_path):
 def get_site_specific_path(
     stat_file_path,
     hf_stat_vs_ref=None,
-    v1d_mod_dir=None,
+    site_v1d_dir=None,
     logger: Logger = get_basic_logger(),
 ):
     show_horizontal_line()
@@ -518,8 +518,8 @@ def get_site_specific_path(
     show_horizontal_line()
     logger.info("- Station file path: %s" % stat_file_path)
 
-    if v1d_mod_dir is not None:
-        v_mod_1d_path = v1d_mod_dir
+    if site_v1d_dir is not None:
+        v_mod_1d_path = site_v1d_dir
     else:
         v_mod_1d_path = os.path.join(os.path.dirname(stat_file_path), "1D")
     if os.path.exists(v_mod_1d_path):

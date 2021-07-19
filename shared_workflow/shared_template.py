@@ -83,8 +83,12 @@ def generate_command(
     command_parts.append(command_template.format(**template_parameters))
 
     for key in add_args:
+        if (
+            add_args[key] is False
+        ):  # Don't add store_true type arg at all if False.(This repo has no use of store_false)
+            continue
         command_parts.append("--" + key)
-        if add_args[key] is True:
+        if add_args[key] is True:  # store_true type arg needs no value
             continue
         command_parts.append(str(add_args[key]))
 

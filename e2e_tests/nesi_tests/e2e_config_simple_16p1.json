@@ -1,4 +1,4 @@
-{
+{ 
   "test_dir": "/nesi/nobackup/nesi00213/RunFolder/EndToEndTest/tests/",
   "data_dir": "/nesi/project/nesi00213/EndToEndTest/test_data_simple/Data",
   "fault_list": "/nesi/project/nesi00213/EndToEndTest/test_data_simple/list.txt",
