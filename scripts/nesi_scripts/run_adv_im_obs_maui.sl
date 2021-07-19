@@ -13,8 +13,8 @@
 #SBATCH --hint=nomultithread
 #SBATCH --exclusive
 
-export IMPATH=$gmsim/IM_calculation/IM_calculation/scripts
-export PYTHONPATH=$gmsim/qcore:/$PYTHONPATH:$IMPATH
+export IMPATH=$gmsim/IM_calculation/IM_calculation
+export PYTHONPATH=$gmsim/qcore:/$PYTHONPATH:$IMPATH/scripts
 
 if [[ $# -lt 2 ]];
 then
@@ -35,7 +35,7 @@ do
     path_event_out=$path_IM_calc/$event
 
     #get station list using get_bbseis from im_calculation.py
-    stations=($(python -c "from IM_calculation.IM.im_calculation import get_bbseis; _,stations = get_bbseis('$path_eventBB','ascii',None); print(" ".join(stations))"))
+    stations=($(python -c "from IM_calculation.IM.im_calculation import get_bbseis; _,stations = get_bbseis('$path_eventBB','ascii',None); print(' '.join(stations))"))
     #get station_count
     station_count=${#stations[@]}
     if [[ $station_count -le 0 ]]; then
@@ -55,15 +55,15 @@ do
     do
         # check for status
         # skip if completed
-        python $IMPATH/../Advanced_IM/check_adv_IM_status.py $path_event_out $adv_IM_model --stations ${stations[@]}; res_return_code=$?
+        python $IMPATH/Advanced_IM/check_adv_IM_status.py $path_event_out $adv_IM_model --stations ${stations[@]}; res_return_code=$?
 
         # return code from verify_adv_IM is used to determine status.
         if [[ $res_return_code == 0 ]];then
             continue
         fi
-        time python $IMPATH/calculate_ims.py $path_eventBB a -o $path_event_out -np 40 -i $event -r $event -t  o -e -a $adv_IM_model --OpenSees_path $opensees_bin
+        time python $IMPATH/scripts/calculate_ims.py $path_eventBB a -o $path_event_out -np 40 -i $event -r $event -t  o -e -a $adv_IM_model --OpenSees_path $opensees_bin
         # test for completion 
-        python $IMPATH/../Advanced_IM/check_adv_IM_status.py $path_event_out $adv_IM_model --stations ${stations[@]}; res_return_code=$?
+        python $IMPATH/Advanced_IM/check_adv_IM_status.py $path_event_out $adv_IM_model --stations ${stations[@]}; res_return_code=$?
         # return code from verify_adv_IM is used to determine status.
         if [[ $res_return_code == 0 ]];then
             # completed
