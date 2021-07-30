@@ -28,6 +28,7 @@ pipeline {
             steps {
                 echo "Run pytest"
 		sh """
+		source /var/lib/jenkins/py3env/bin/activate
 		ln -s /tmp/${env.JOB_NAME}/sample0 ${env.WORKSPACE};
         export PYTHONPATH=/tmp/${env.JOB_NAME}/qcore:${env.WORKSPACE};
         pytest -vs --ignore=testing/test_manual_install --ignore-glob="scripts/*" && pytest --black --ignore=testing;
