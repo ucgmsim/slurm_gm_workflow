@@ -9,7 +9,7 @@ from qcore import utils
 from qcore.formats import load_station_file
 from qcore.qclogging import get_basic_logger
 from qcore import simulation_structure as sim_struct
-from qcore.timeseries import get_observed_stations
+from qcore.timeseries import get_observed_stations, BBSeis
 from qcore.config import qconfig
 
 from estimation.estimate_wct import est_IM_chours_single, get_wct, CH_SAFETY_FACTOR
@@ -67,6 +67,7 @@ def submit_im_calc_slurm(
         const.SlBodyOptConsts.mgmt_db.value: "",
         "n_components": "",
         "match_obs_stations": False,
+        "station_file": "$(cat $fd_name | awk '{print $1}')",
     }
 
     command_options = {
@@ -119,12 +120,17 @@ def submit_im_calc_slurm(
                     "got more than one folder globbed. please double check the path to the match_obs_stations is correct."
                 )
                 sys.exit()
-            station_names_tmp = get_observed_stations(obs_accBB_dir[0])
+            station_names_observed = set(get_observed_stations(obs_accBB_dir[0]))
+            station_names_simulated = set(
+                BBSeis(f"{sim_dir}/BB/Acc/BB.bin").stations.name
+            )
+            station_names_tmp = list(station_names_observed & station_names_simulated)
             # write to a tmp file
             tmp_station_file = path.join(sim_dir, "tmp_station_file")
             with open(tmp_station_file, "w") as f:
                 for station in station_names_tmp:
                     f.write(f"{station} ")
+            body_options["station_file"] = f"$(cat {tmp_station_file})"
             command_options[const.SlBodyOptConsts.advanced_IM.value] = (
                 command_options[const.SlBodyOptConsts.advanced_IM.value]
                 + f"--station_names `cat {tmp_station_file}`"
