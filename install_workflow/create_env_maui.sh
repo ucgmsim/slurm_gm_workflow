@@ -29,6 +29,7 @@ git clone git@github.com:ucgmsim/visualization.git
 
 # Create virtual environment
 mkdir virt_envs
+# The flag --system-site-packages sets include-system-site-packages to be true in the environment and allows the provided mpi4py to be used
 python3 -m venv --system-site-packages virt_envs/python3_maui
 
 # Activate new python env
