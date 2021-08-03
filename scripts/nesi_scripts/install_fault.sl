@@ -1,7 +1,7 @@
 #!/bin/bash
 # script version: slurm
 #
-# must be run with sbatch install_fault.sl [realisationDirectory] [OutputDirectory] [managementDBLocation]
+# must be run with sbatch install_fault.sl [VM_PARAMS] [STAT_FILE] [FAULT_DIR] [FDSTATLIST] [MGMT_DB_LOC] [REL_NAME]
 
 #SBATCH --job-name=install_fault
 #SBATCH --time=00:15:00
@@ -10,12 +10,13 @@
 if [[ -n ${CUR_ENV} && ${CUR_HPC} != "mahuika" ]]; then
     source $CUR_ENV/workflow/install_workflow/helper_functions/activate_env.sh $CUR_ENV "mahuika"
 fi
-VM_PARAMS=$1
-STAT_FILE=$2
-FAULT_DIR=$3
-FDSTATLIST=$4
-MGMT_DB_LOC=$5
-REL_NAME=$6
+
+VM_PARAMS=$1${1:?VM_PARAMS argument missing}
+STAT_FILE=$2${2:?STAT_FILE argument missing}
+FAULT_DIR=$3${3:?FAULT_DIR argument missing}
+FDSTATLIST=$4${4:?FDSTATLIST argument missing}
+MGMT_DB_LOC=${5:?MGMT_DB_LOC argument missing}
+REL_NAME=${6:?REL_NAME argument missing}
 
 
 
@@ -45,6 +46,8 @@ python $gmsim/workflow/shared_workflow/gen_fd.py $VM_PARAMS $STAT_FILE $FAULT_DI
 
 end_time=`date +$runtime_fmt`
 echo $end_time
+
+#TODO do more testing, such as sim_duration
 
 timestamp=`date +%Y%m%d_%H%M%S`
 if [[ -f $FDSTATLIST ]]; then

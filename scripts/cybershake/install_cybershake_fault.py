@@ -201,7 +201,7 @@ def install_fault(
             stat_file_path=stat_file_path,
             vs30_file_path=vs30_file_path,
             vs30ref_file_path=vs30ref_file_path,
-            yes_statcords=False,
+            check_vm=check_vm,
             fault_yaml_path=fault_yaml_path,
             root_yaml_path=root_yaml_path,
             cybershake_root=root_folder,

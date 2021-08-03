@@ -1,7 +1,7 @@
 #!/bin/bash
 # script version: slurm
 #
-# must be run with sbatch vm_gen.sl [realisationDirectory] [OutputDirectory] [managementDBLocation]
+# must be run with sbatch vm_gen.sl [VM_PARAMS_YAML] [OUT_DIR] [SRF]  [MGMT_DB_LOC] [REL_NAME]
 
 #SBATCH --job-name=VM_GEN
 #SBATCH --time=01:00:00
@@ -11,11 +11,13 @@ if [[ -n ${CUR_ENV} && ${CUR_HPC} != "mahuika" ]]; then
     source $CUR_ENV/workflow/install_workflow/helper_functions/activate_env.sh $CUR_ENV "mahuika"
 fi
 
-VM_PARAMS_YAML=$1
-OUT_DIR=$2
-SRF=$3
-MGMT_DB_LOC=$4
-REL_NAME=$5
+
+VM_PARAMS_YAML=${1:?VM_PARAMS_YAML argument missing}
+OUT_DIR=${2:?OUT_DIR argument missing}
+SRF=${3:?SRF argument missing}
+MGMT_DB_LOC=${4:?MGMT_DB_LOC argument missing}
+REL_NAME=${5:?REL_NAME argument missing}
+
 
 FAULT=$(echo $REL_NAME | cut -d"_" -f1)
 SIM_DIR=$MGMT_DB_LOC/Runs/$FAULT/$REL_NAME

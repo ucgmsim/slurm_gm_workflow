@@ -52,9 +52,7 @@ def submit_task(
     if not os.path.isdir(ch_log_dir):
         os.mkdir(ch_log_dir)
 
-    load_vm_params = True
-    if proc_type is const.ProcessType.VM_PARAMS:
-        load_vm_params = False
+    load_vm_params = proc_type is not const.ProcessType.VM_PARAMS
 
     params = utils.load_sim_params(
         sim_struct.get_sim_params_yaml_path(sim_dir), load_vm=load_vm_params
@@ -326,11 +324,11 @@ def submit_task(
                         "OUTPUT_DIR": sim_struct.get_fault_VM_dir(
                             root_folder, run_name
                         ),
-                        "VM_VERSION": str(params.VM.VM_Version),
-                        "VM_TOPO": str(params.VM.VM_Topo),
-                        "HH": str(params.VM.hh),
-                        "PGV_THRESHOLD": str(params.VM.PGV_Threshold),
-                        "DS_MULTIPLIER": str(params.VM.Ds_Multiplier),
+                        "VM_VERSION": str(params["VM"]["VM_Version"]),
+                        "VM_TOPO": str(params["VM"]["VM_Topo"]),
+                        "HH": str(params["VM"]["hh"]),
+                        "PGV_THRESHOLD": str(params["VM"]["PGV_Threshold"]),
+                        "DS_MULTIPLIER": str(params["VM"]["Ds_Multiplier"]),
                         "MGMT_DB_LOC": root_folder,
                         "REL_NAME": run_name,
                     }

@@ -1,7 +1,7 @@
 #!/bin/bash
 # script version: slurm
 #
-# must be run with sbatch vm_gen.sl [realisationDirectory] [OutputDirectory] [managementDBLocation]
+# must be run with sbatch vm_gen.sl [VM_PARAMS_YAML] [OUT_DIR] [MGMT_DB_LOC] [REL_NAME]
 
 #SBATCH --job-name=VM_PERT
 #SBATCH --time=10:00:00
@@ -14,11 +14,10 @@ fi
 module load FFTW
 module load GCC/7.4.0
 
-VM_PARAMS_YAML=$1
-OUT_DIR=$2
-SRF=$3
-MGMT_DB_LOC=$4
-REL_NAME=$5
+VM_PARAMS_YAML=${1:?VM_PARAMS_YAML argument missing}
+OUT_DIR=${2:?OUT_DIR argument missing}
+MGMT_DB_LOC=${3:?MGMT_DB_LOC argument missing}
+REL_NAME=${4:?REL_NAME argument missing}
 
 FAULT=$(echo $REL_NAME | cut -d"_" -f1)
 SIM_DIR=$MGMT_DB_LOC/Runs/$FAULT/$REL_NAME
@@ -43,9 +42,6 @@ echo $start_time
 
 echo time python $gmsim/Pre-processing/srf_generation/velocity_model_generation/generate_perturbation_file.py $OUT_DIR/$REL_NAME.pertb $VM_PARAMS_YAML -n 1 -v --perturbation --model $gmsim/Pre-processing/srf_generation/velocity_model_generation/config_files/graves_pitarka_2016_model_modified.csv
 time python $gmsim/Pre-processing/srf_generation/velocity_model_generation/generate_perturbation_file.py $OUT_DIR/$REL_NAME.pertb $VM_PARAMS_YAML -n 1 -v --perturbation --model $gmsim/Pre-processing/srf_generation/velocity_model_generation/config_files/graves_pitarka_2016_model_modified.csv
-
-#chmod g+rwXs -R $OUT_DIR
-#chgrp nesi00213 -R $OUT_DIR
 
 end_time=`date +$runtime_fmt`
 echo $end_time

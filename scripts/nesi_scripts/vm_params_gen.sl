@@ -11,15 +11,20 @@ if [[ -n ${CUR_ENV} && ${CUR_HPC} != "mahuika" ]]; then
     source $CUR_ENV/workflow/install_workflow/helper_functions/activate_env.sh $CUR_ENV "mahuika"
 fi
 
-REL_CSV=$1
-OUT_DIR=$2
-VM_VERSION=$3
-VM_TOPO=$4
-HH=$5
-PGV_THRESHOLD=$6
-DS_MULTIPLIER=$7
-MGMT_DB_LOC=$8
-REL_NAME=$9
+REL_CSV=${1:?rel_CSV argument missing}
+OUT_DIR=${2:?OUT_DIR argument missing}
+VM_VERSION=${3:?VM_VERSION argument missing}
+VM_TOPO=${4:?VM_TOPO argument missing}
+HH=${5:?HH argument missing}
+PGV_THRESHOLD=${6:?PGV_THRESHOLD argument missing}
+DS_MULTIPLIER=${7:?DS_MULTIPLIER argument missing}
+MGMT_DB_LOC=${8:?MGMT_DB_LOC argument missing}
+REL_NAME=${9:?REL_NAME argument missing}
+
+if [[ $# != 9 ]]; then
+    echo "9 arguments must be provided, please adjust and re-run"
+    exit
+fi
 
 FAULT=$(echo $REL_NAME | cut -d"_" -f1)
 SIM_DIR=$MGMT_DB_LOC/Runs/$FAULT/$REL_NAME
