@@ -44,6 +44,8 @@ def gen_command_template(params, machine, seed=const.HF_DEFAULT_SEED):
     }
     add_args = {}
     for k, v in params.hf.items():
+        if v is False:
+            continue
         add_args[k] = " ".join(map(str, v)) if (type(v) is list) else v
 
     add_args.update({const.RootParams.seed.value: seed})
