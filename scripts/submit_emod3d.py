@@ -91,7 +91,7 @@ def main(
         "lf_sim_dir": lf_sim_dir,
     }
 
-    body_template_params = ("run_emod3d.sl.template", {"tools_dir":target_qconfig["tools_dir"]})
+    body_template_params = ("run_emod3d.sl.template", {})
 
     script_prefix = f"run_emod3d_{srf_name}"
     script_file_path = write_sl_script(
