@@ -434,26 +434,26 @@ if __name__ == "__main__":
             str(args.sdrop),
             local_statfile,
             args.out_file,
-            "{:d} {:s}".format(len(args.rayset), " ".join(map(str, args.rayset))),
+            "{:d} {}".format(len(args.rayset), " ".join(map(str, args.rayset))),
             str(int(not args.no_siteamp)),
-            "{:d} {:d} {:s} {:s}".format(nbu, ift, flo, fhi),
+            "{:d} {:d} {} {}".format(nbu, ift, flo, fhi),
             str(seed),
             str(n_stat),
-            "{:s} {:s} {:s} {:s} {:s}".format(
+            "{} {} {} {} {}".format(
                 args.duration, args.dt, args.fmax, args.kappa, args.qfexp
             ),
-            "{:s} {:s} {:s} {:s} {:s}".format(
+            "{} {} {} {} {}".format(
                 args.rvfac, args.rvfac_shal, args.rvfac_deep, args.czero, args.calpha
             ),
-            "{:s} {:s}".format(args.mom, args.rupv),
+            "{} {}".format(args.mom, args.rupv),
             args.stoch_file,
             v1d_path,
             str(args.vs_moho),
-            "{:d} {:s} {:s} {:s} {:s} {:d}".format(
+            "{:d} {} {} {} {} {:d}".format(
                 nl_skip, vp_sig, vsh_sig, rho_sig, qs_sig, ic_flag
             ),
             velocity_name,
-            "{:s} {:s} {:s}".format(args.fa_sig1, args.fa_sig2, args.rv_sig1),
+            "{} {} {}".format(args.fa_sig1, args.fa_sig2, args.rv_sig1),
             str(args.path_dur),
         ]
 
@@ -544,7 +544,7 @@ if __name__ == "__main__":
     for s in range(work.size):
         if args.site_v1d_dir is not None:
             v1d_path = os.path.join(
-                args.site_v1d_dir, f"{stations_todo[s]['name'].decode('ascii')}.1d"
+                args.site_v1d_dir, f"{work[s]['name'].decode('ascii')}.1d"
             )
 
         np.savetxt(
