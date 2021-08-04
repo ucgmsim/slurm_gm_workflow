@@ -1,6 +1,9 @@
 Slurm Ground Motion Workflow
 # Changelog
 (Based on https://wiki.canterbury.ac.nz/download/attachments/58458136/CodeVersioning_v18p2.pdf?version=1&modificationDate=1519269238437&api=v2 )
+## [19.6.30] - 2021-07-30 -- Removed Docker from Jenkins testing
+### Changed
+    - Removed a dependence on Docker image
 ## [19.6.29] - 2021-07-08 -- Added site-specific 1D VMs to HF
 ### Added
     - Flags --site_specific and --site_v1d_dir to hf_sim.py 
