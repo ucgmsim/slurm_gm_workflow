@@ -544,7 +544,7 @@ if __name__ == "__main__":
     for s in range(work.size):
         if args.site_v1d_dir is not None:
             v1d_path = os.path.join(
-                args.site_v1d_dir, f"{stations_todo[s]['name'].decode('ascii')}.1d"
+                args.site_v1d_dir, f"{work[s]['name'].decode('ascii')}.1d"
             )
 
         np.savetxt(
