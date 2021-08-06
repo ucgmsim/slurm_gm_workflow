@@ -30,8 +30,8 @@ from qcore.qclogging import get_basic_logger, NOPRINTCRITICAL
 
 from scripts.management import create_mgmt_db
 from shared_workflow.install_shared import (
-    install_simulation, 
-    dump_all_yamls, 
+    install_simulation,
+    dump_all_yamls,
     generate_fd_files,
 )
 
@@ -233,8 +233,8 @@ def install_fault(
             return
 
         if (
-            check_vm 
-            and root_params_dict is not None 
+            check_vm
+            and root_params_dict is not None
             and not isclose(vm_params_dict["flo"], root_params_dict["flo"])
         ):
             logger.critical(
