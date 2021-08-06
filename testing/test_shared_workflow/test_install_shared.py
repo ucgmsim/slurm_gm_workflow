@@ -16,6 +16,7 @@ def test_install_simulation(set_up):
                 ("CSRoot", "AdditionalData", "PangopangoF29/")
             ):
                 input_params[i] = os.path.join(root_path, input_params[i])
+        print(input_params)
         test_output = install_shared.install_simulation(*input_params)
         root_params_dict = test_output[0]
 
