@@ -29,7 +29,11 @@ from qcore.constants import (
 from qcore.qclogging import get_basic_logger, NOPRINTCRITICAL
 
 from scripts.management import create_mgmt_db
-from shared_workflow.install_shared import install_simulation, dump_all_yamls, generate_fd_files
+from shared_workflow.install_shared import (
+    install_simulation, 
+    dump_all_yamls, 
+    generate_fd_files,
+)
 
 # from shared_workflow.shared_template import generate_command
 from shared_workflow.platform_config import platform_config, HPC
@@ -107,7 +111,7 @@ def install_fault(
     keep_dup_station=True,
     components=None,
     logger: Logger = get_basic_logger(),
-    check_vm = True,
+    check_vm=True,
 ):
 
     config_dict = utils.load_yaml(
@@ -228,8 +232,10 @@ def install_fault(
             logger.critical(f"Critical Error some params dictionary are None")
             return
 
-        if check_vm and root_params_dict is not None and not isclose(
-            vm_params_dict["flo"], root_params_dict["flo"]
+        if (
+            check_vm 
+            and root_params_dict is not None 
+            and not isclose(vm_params_dict["flo"], root_params_dict["flo"])
         ):
             logger.critical(
                 "The parameter 'flo' does not match in the VM params and root params files. "
@@ -253,13 +259,12 @@ def install_fault(
                 keep_dup_station=keep_dup_station,
             )
         else:
-            prefx =  f"fd_rt01-h{root_params_dict['vm']['hh']:.3f}"
+            prefx = f"fd_rt01-h{root_params_dict['vm']['hh']:.3f}"
             fd_statlist = f"{prefx}.ll"
             fd_statcords = f"{prefx}.statcords"
 
         fault_params_dict[FaultParams.stat_coords.value] = os.path.join(
-            simulation_structure.get_fault_dir(root_folder, fault_name),
-            fd_statcords,
+            simulation_structure.get_fault_dir(root_folder, fault_name), fd_statcords
         )
         fault_params_dict[FaultParams.FD_STATLIST.value] = os.path.join(
             simulation_structure.get_fault_dir(root_folder, fault_name), fd_statlist
