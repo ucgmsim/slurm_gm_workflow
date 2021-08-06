@@ -65,7 +65,7 @@ def install_simulation(
     version = str(version)
     if not os.path.isdir(cybershake_root):
         dir_list.insert(0, cybershake_root)
-    print(dir_list)
+
     shared.verify_user_dirs(dir_list)
 
     template_path = os.path.join(
