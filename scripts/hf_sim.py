@@ -542,7 +542,7 @@ if __name__ == "__main__":
 
     v1d_path = args.hf_vel_mod_1d
     for s in range(work.size):
-        if args.site_v1d_dir is not None:
+        if args.site_specific:
             v1d_path = os.path.join(
                 args.site_v1d_dir, f"{work[s]['name'].decode('ascii')}.1d"
             )
