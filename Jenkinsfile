@@ -16,7 +16,7 @@ pipeline {
         mkdir -p /tmp/${env.JOB_NAME}/sample0
         cd /tmp/${env.JOB_NAME}
         git clone https://github.com/ucgmsim/qcore.git
-	PYTHONPATH=/tmp/${env.JOB_NAME}/qcore:$PYTHONPATH
+	PYTHONPATH=/tmp/${env.JOB_NAME}/qcore:${PYTHONPATH}
 
         ln -s $HOME/data/testing/slurm_gm_workflow/SGMW /tmp/${env.JOB_NAME}/build
         cd /tmp/${env.JOB_NAME}/sample0
