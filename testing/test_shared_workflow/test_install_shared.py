@@ -33,6 +33,7 @@ def test_install_simulation(set_up):
         ] = "/nesi/project/nesi00213/VelocityModel/Mod-1D/Cant1D_v2-midQ_leer.1d"
 
         bench_output = get_bench_output(root_path, func_name)[0]
+        bench_output.pop("extended_period")
         bench_output["ims"] = {
             "component": ["geom"],
             "extended_period": False,
