@@ -75,6 +75,7 @@ def load_args(logger):
         action="store_false",
         dest="check_vm",
         help="Set this flag if you are generating VMs from the automated workflow",
+        default=True,
     )
 
     vm_pert = parser.add_mutually_exclusive_group()
