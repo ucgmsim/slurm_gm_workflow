@@ -1,15 +1,14 @@
 #!/usr/bin/env python3
 """Script for automatic submission of gm simulation jobs"""
-import argparse
 from collections import OrderedDict
-
-import time
+from pathlib import Path
+import argparse
 import os
+import time
 
 from datetime import datetime
 from logging import Logger
 from typing import List, Dict, Tuple
-
 import numpy as np
 
 from qcore import utils, qclogging
@@ -53,7 +52,11 @@ def submit_task(
     if not os.path.isdir(ch_log_dir):
         os.mkdir(ch_log_dir)
 
-    params = utils.load_sim_params(sim_struct.get_sim_params_yaml_path(sim_dir))
+    load_vm_params = proc_type is not const.ProcessType.VM_PARAMS
+
+    params = utils.load_sim_params(
+        sim_struct.get_sim_params_yaml_path(sim_dir), load_vm=load_vm_params
+    )
 
     submitted_time = datetime.now().strftime(const.METADATA_TIMESTAMP_FMT)
     log_file = os.path.join(sim_dir, "ch_log", const.METADATA_LOG_FILENAME)
@@ -113,7 +116,7 @@ def submit_task(
             {
                 "XYTS_PATH": os.path.join(
                     sim_struct.get_lf_outbin_dir(sim_dir),
-                    "{}_xyts.e3d".format(run_name.split("_")[0]),
+                    "{}_xyts.e3d".format(run_name),
                 ),
                 "SRF_PATH": sim_struct.get_srf_path(root_folder, run_name),
                 "OUTPUT_TS_PATH": os.path.join(verification_dir, run_name),
@@ -223,6 +226,7 @@ def submit_task(
                 OrderedDict(
                     {
                         "SIM_DIR": sim_dir,
+                        "SRF_PATH": sim_struct.get_srf_path(root_folder, run_name),
                         "SRF_NAME": run_name,
                         "MGMT_DB_LOC": root_folder,
                     }
@@ -307,6 +311,96 @@ def submit_task(
             {"submit_time": submitted_time},
             logger=task_logger,
         )
+    elif proc_type == const.ProcessType.VM_PARAMS.value:
+        submit_script_to_scheduler(
+            get_platform_specific_script(
+                const.ProcessType.VM_PARAMS,
+                OrderedDict(
+                    {
+                        "realisationCSV": str(
+                            Path(sim_struct.get_srf_dir(root_folder, run_name))
+                            / (run_name + ".csv")
+                        ),
+                        "OUTPUT_DIR": sim_struct.get_fault_VM_dir(
+                            root_folder, run_name
+                        ),
+                        "VM_VERSION": str(params["VM"]["VM_Version"]),
+                        "VM_TOPO": str(params["VM"]["VM_Topo"]),
+                        "HH": str(params["VM"]["hh"]),
+                        "PGV_THRESHOLD": str(params["VM"]["PGV_Threshold"]),
+                        "DS_MULTIPLIER": str(params["VM"]["Ds_Multiplier"]),
+                        "MGMT_DB_LOC": root_folder,
+                        "REL_NAME": run_name,
+                    }
+                ),
+            ),
+            target_machine=get_target_machine(const.ProcessType.VM_PARAMS).name,
+        )
+    elif proc_type == const.ProcessType.VM_GEN.value:
+        submit_script_to_scheduler(
+            get_platform_specific_script(
+                const.ProcessType.VM_GEN,
+                OrderedDict(
+                    {
+                        "VM_PARAMS_YAML": str(
+                            Path(sim_struct.get_fault_VM_dir(root_folder, run_name))
+                            / "vm_params.yaml"
+                        ),
+                        "OUTPUT_DIR": sim_struct.get_fault_VM_dir(
+                            root_folder, run_name
+                        ),
+                        "SRF_PATH": sim_struct.get_srf_path(root_folder, run_name),
+                        "MGMT_DB_LOC": root_folder,
+                        "REL_NAME": run_name,
+                    }
+                ),
+            ),
+            target_machine=get_target_machine(const.ProcessType.VM_GEN).name,
+        )
+    elif proc_type == const.ProcessType.VM_PERT.value:
+        submit_script_to_scheduler(
+            get_platform_specific_script(
+                const.ProcessType.VM_PERT,
+                OrderedDict(
+                    {
+                        "VM_PARAMS_YAML": str(
+                            Path(sim_struct.get_fault_VM_dir(root_folder, run_name))
+                            / "vm_params.yaml"
+                        ),
+                        "OUTPUT_DIR": sim_struct.get_fault_VM_dir(
+                            root_folder, run_name
+                        ),
+                        "SRF_PATH": sim_struct.get_srf_path(root_folder, run_name),
+                        "MGMT_DB_LOC": root_folder,
+                        "REL_NAME": run_name,
+                    }
+                ),
+            ),
+            target_machine=get_target_machine(const.ProcessType.VM_PERT).name,
+        )
+    elif proc_type == const.ProcessType.INSTALL_FAULT.value:
+        fault_dir = sim_struct.get_fault_dir(
+            root_folder, sim_struct.get_fault_from_realisation(run_name)
+        )
+        submit_script_to_scheduler(
+            get_platform_specific_script(
+                const.ProcessType.INSTALL_FAULT,
+                OrderedDict(
+                    {
+                        "VM_PARAMS_YAML": str(
+                            Path(sim_struct.get_fault_VM_dir(root_folder, run_name))
+                            / "vm_params.yaml"
+                        ),
+                        "STAT_FILE": str(params.stat_file),
+                        "FAULT_DIR": fault_dir,
+                        "FDSTATLIST": str(Path(fault_dir) / f"fd{str(params.sufx)}.ll"),
+                        "MGMT_DB_LOC": root_folder,
+                        "REL_NAME": run_name,
+                    }
+                ),
+            ),
+            target_machine=get_target_machine(const.ProcessType.INSTALL_FAULT).name,
+        )
 
     qclogging.clean_up_logger(task_logger)
 
@@ -336,7 +430,9 @@ def run_main_submit_loop(
 
     time_since_something_happened = cycle_timeout
 
-    while time_since_something_happened > 0:
+    first = True
+    while time_since_something_happened > 0 or first:
+        first = False
         main_logger.debug(
             "time_since_something_happened is now {}".format(
                 time_since_something_happened

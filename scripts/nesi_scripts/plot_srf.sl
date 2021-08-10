@@ -28,10 +28,10 @@ start_time=`date +${runtime_fmt}`
 echo ___plotting SRF___
 
 python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $SRF_NAME plot_srf running $SLURM_JOB_ID
-res=`python $gmsim/visualization/visualization/gmt/plot_srf_square.py "$SRF_PATH" --out-dir "$OUTPUT_DIR"`
+res=`python $gmsim/visualization/sources/plot_srf_slip_rise_rake.py "$SRF_PATH" --out-dir "$OUTPUT_DIR"`
 exit_val=$?
 
-res2=`python $gmsim/visualization/visualization/gmt/plot_srf_map.py "$SRF_PATH" 300 "active_faults"`
+res2=`python $gmsim/visualization/sources/plot_srf_map.py "$SRF_PATH" --dpi 300 --active-faults`
 exit_val2=$?
 
 end_time=`date +$runtime_fmt`

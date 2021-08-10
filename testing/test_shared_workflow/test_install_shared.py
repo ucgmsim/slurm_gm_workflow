@@ -16,6 +16,10 @@ def test_install_simulation(set_up):
                 ("CSRoot", "AdditionalData", "PangopangoF29/")
             ):
                 input_params[i] = os.path.join(root_path, input_params[i])
+
+        # The pickle file was missing the 10th argument. This enables the vm to be checked.
+        input_params.insert(10, True)
+
         test_output = install_shared.install_simulation(*input_params)
         root_params_dict = test_output[0]
 
