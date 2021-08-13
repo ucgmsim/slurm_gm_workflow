@@ -55,7 +55,7 @@ do
     do
         # check for status
         # skip if completed
-        python $IMPATH/Advanced_IM/check_adv_IM_status.py $path_event_out $adv_IM_model --stations ${stations[@]}; res_return_code=$?
+        python $IMPATH/Advanced_IM/scripts/check_adv_IM_status.py $path_event_out $adv_IM_model --stations ${stations[@]}; res_return_code=$?
 
         # return code from verify_adv_IM is used to determine status.
         if [[ $res_return_code == 0 ]];then
@@ -63,7 +63,7 @@ do
         fi
         time python $IMPATH/scripts/calculate_ims.py $path_eventBB a -o $path_event_out -np 40 -i $event -r $event -t  o -e -a $adv_IM_model --OpenSees_path $opensees_bin
         # test for completion 
-        python $IMPATH/Advanced_IM/check_adv_IM_status.py $path_event_out $adv_IM_model --stations ${stations[@]}; res_return_code=$?
+        python $IMPATH/Advanced_IM/scripts/check_adv_IM_status.py $path_event_out $adv_IM_model --stations ${stations[@]}; res_return_code=$?
         # return code from verify_adv_IM is used to determine status.
         if [[ $res_return_code == 0 ]];then
             # completed
