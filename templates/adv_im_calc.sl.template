@@ -3,8 +3,8 @@ set -u
 
 step_name=advanced_IM
 
-export IMPATH=$gmsim/IM_calculation/IM_calculation/scripts
-export PYTHONPATH=$gmsim/qcore:/$PYTHONPATH:$IMPATH
+export IMPATH=$gmsim/IM_calculation/IM_calculation
+export PYTHONPATH=$gmsim/qcore:/$PYTHONPATH:$IMPATH/scripts
 
 function getFromYaml {
     echo $(python -c "from qcore.utils import load_sim_params; print(load_sim_params('$1').$2)")
@@ -33,7 +33,7 @@ end_time=`date +$runtime_fmt`
 # verify the result of the analysis
 fd_name=$(getFromYaml "{{sim_dir}}/sim_params.yaml" FD_STATLIST)
 echo "=========="
-python $IMPATH/../Advanced_IM/check_adv_IM_status.py {{sim_IM_calc_dir}} {{models}} --stations {{station_file}}; success=$?
+python $IMPATH/Advanced_IM/scripts/check_adv_IM_status.py {{sim_IM_calc_dir}} {{models}} --stations {{station_file}}; success=$?
 echo "=========="
 
 # Update mgmt_db
