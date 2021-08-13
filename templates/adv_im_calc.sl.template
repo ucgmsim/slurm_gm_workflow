@@ -4,7 +4,7 @@ set -u
 step_name=advanced_IM
 
 export IMPATH=$gmsim/IM_calculation/IM_calculation
-export PYTHONPATH=$gmsim/qcore:/$PYTHONPATH:$IMPATH/scripts
+export PYTHONPATH=$gmsim/qcore:$PYTHONPATH:$IMPATH/scripts
 
 function getFromYaml {
     echo $(python -c "from qcore.utils import load_sim_params; print(load_sim_params('$1').$2)")
