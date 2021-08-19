@@ -54,7 +54,8 @@ end_time=`date +$runtime_fmt`
 echo $end_time
 
 timestamp=`date +%Y%m%d_%H%M%S`
-if [[ -f $OUT_DIR/vm_params.yaml ]]; then
+res=`python $gmsim/qcore/qcore/validate_vm.py params $OUT_DIR/vm_params.yaml`
+if [[ $? == 0 ]]; then
     #passed
 
     python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $REL_NAME VM_PARAMS completed $SLURM_JOB_ID

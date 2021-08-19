@@ -159,7 +159,12 @@ def install_fault(
     vel_mod_dir = simulation_structure.get_fault_VM_dir(root_folder, fault_name)
     vm_params_path = os.path.join(vel_mod_dir, VM_PARAMS_FILE_NAME)
     if check_vm:
-        valid_vm, message = validate_vm.validate_vm(vel_mod_dir, srf=list_srf[0])
+        valid_vm, message = validate_vm.validate_vm_params(vm_params_path)
+        if not valid_vm:
+            message = "Error: VM {} failed {}".format(fault_name, message)
+            logger.log(NOPRINTCRITICAL, message)
+            raise RuntimeError(message)
+        valid_vm, message = validate_vm.validate_vm_files(vel_mod_dir, srf=list_srf[0])
         if not valid_vm:
             message = "Error: VM {} failed {}".format(fault_name, message)
             logger.log(NOPRINTCRITICAL, message)
