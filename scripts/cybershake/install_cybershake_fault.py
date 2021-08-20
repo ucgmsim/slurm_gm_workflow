@@ -160,7 +160,9 @@ def install_fault(
     vm_params_path = os.path.join(vel_mod_dir, VM_PARAMS_FILE_NAME)
     if check_vm:
         valid_vm_params, params_message = validate_vm.validate_vm_params(vm_params_path)
-        valid_vm_files, vm_file_message = validate_vm.validate_vm_files(vel_mod_dir, srf=list_srf[0])
+        valid_vm_files, vm_file_message = validate_vm.validate_vm_files(
+            vel_mod_dir, srf=list_srf[0]
+        )
         if not valid_vm_params or not valid_vm_files:
             message = " ".join([params_message, vm_file_message])
             message = f"Error: VM {fault_name} failed {message}"
