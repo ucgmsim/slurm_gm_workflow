@@ -51,8 +51,10 @@ echo $end_time
 
 timestamp=`date +%Y%m%d_%H%M%S`
 #test before update
-res=`python $gmsim/qcore/qcore/validate_vm.py $OUT_DIR --srf $SRF`
-if [[ $? == 0 ]]; then
+res=`python $gmsim/qcore/qcore/validate_vm.py files $OUT_DIR`
+pass=$?
+
+if [[ $pass == 0 ]]; then
     #passed
 
     python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $REL_NAME VM_GEN completed $SLURM_JOB_ID

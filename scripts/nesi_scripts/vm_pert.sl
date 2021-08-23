@@ -48,7 +48,10 @@ echo $end_time
 
 timestamp=`date +%Y%m%d_%H%M%S`
 #test before update
-if [[ -s $OUT_DIR/$REL_NAME.pertb ]]; then
+res=`python $gmsim/qcore/qcore/validate_vm.py file $OUT_DIR/$REL_NAME.pertb $VM_PARAMS_YAML`
+pass=$?
+
+if [[ $pass == 0 ]]; then
     #passed - file is non-zero
 
     python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $REL_NAME VM_PERT completed $SLURM_JOB_ID
