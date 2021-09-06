@@ -1,5 +1,9 @@
 pipeline {
     agent any
+    
+    environment {
+        VIRT_ENV="/tmp/${env.JOB_NAME}/${env.ghprbActualCommit}/venv"
+    }
     stages {
 
         stage('Settin up env') {
@@ -9,6 +13,7 @@ pipeline {
                     echo "[ Current directory ] : " `pwd`
                     echo "[ Environment Variables ] "
                     env
+                    echo ${VIRT_ENV}
 # Each stage needs custom setting done again. By default /bin/python is used.
                     source /var/lib/jenkins/py3env/bin/activate
                     mkdir -p /tmp/${env.JOB_NAME}/${env.ghprbActualCommit}
