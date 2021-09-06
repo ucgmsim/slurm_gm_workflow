@@ -61,7 +61,7 @@ pipeline {
         always {
                 echo 'Tear down the environments'
                 sh """
-                    rm -rf /tmp/${env.JOB_NAME}/*
+#                    rm -rf /tmp/${env.JOB_NAME}/*
                 """
             }
     }
