@@ -48,8 +48,7 @@ pipeline {
                     echo "[ Linking test data ]"
                     rm -rf sample0
                     mkdir sample0
-                    cd sample0
-                    cp -r $HOME/data/testing/${env.JOB_NAME}/PangopangoF29_HYP01-10_S1244/* .
+                    cp -r $HOME/data/testing/${env.JOB_NAME}/PangopangoF29_HYP01-10_S1244/* sample0/
                     echo "[ Run test now ]"
                     pytest -vs --ignore=testing/test_manual_install --ignore-glob="scripts/*" && pytest --black --ignore=testing; 
                 """
