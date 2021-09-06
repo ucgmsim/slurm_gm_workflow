@@ -46,7 +46,6 @@ pipeline {
                     rm -rf build
                     ln -s $HOME/data/testing/slurm_gm_workflow/SGMW build
                     echo "[ Linking test data ]"
-                    cd ${env.JOB_NAME}
                     rm -rf sample0
                     mkdir sample0
                     cd sample0
