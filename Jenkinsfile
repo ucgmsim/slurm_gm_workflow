@@ -2,8 +2,7 @@ pipeline {
     agent any
     
     environment {
-        TEMP_DIR="/tmp/${env.JOB_NAME}/${env.ghprbActualCommit}",
-        VIRT_ENV="$TEMP_DIR/venv"
+        TEMP_DIR="/tmp/${env.JOB_NAME}/${env.ghprbActualCommit}"
     }
     stages {
 
@@ -17,9 +16,9 @@ pipeline {
 # Each stage needs custom setting done again. By default /bin/python is used.
                     source /var/lib/jenkins/py3env/bin/activate
                     mkdir -p $TEMP_DIR
-                    python -m venv $VIRT_ENV
+                    python -m venv $TEMP_DIR/venv
 # activate new virtual env
-                    source /tmp/${env.JOB_NAME}/${env.ghprbActualCommit}/venv/bin/activate
+                    source $TEMP_DIR/venv/bin/activate
                     echo "[ Python used ] : " `which python`
                     cd ${env.WORKSPACE}
                     echo "[ Install dependencies ]"
@@ -39,7 +38,7 @@ pipeline {
                 echo '[[ Run pytest ]]'
                 sh """
 # activate virtual environment again
-                    source $VIRT_ENV/bin/activate
+                    source $TEMP_DIR/venv/bin/activate
                     echo "[ Python used ] : " `which python`
                     cd ${env.WORKSPACE}
                     echo "[ Installing ${env.JOB_NAME} ]"
