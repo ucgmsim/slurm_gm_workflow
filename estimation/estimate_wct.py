@@ -345,7 +345,9 @@ def est_BB_chours_single(fd_count: int, nt: int, n_logical_cores: int):
     return core_hours[0], run_time[0]
 
 
-def estimate_BB_chours(data: np.ndarray,):
+def estimate_BB_chours(
+    data: np.ndarray,
+):
     """Make bulk BB estimations, requires data to be
     in the correct order (see above)
 

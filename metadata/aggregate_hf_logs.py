@@ -96,9 +96,12 @@ values = np.ndarray(
 )
 
 for i, file in enumerate(log_files):
-    dead_duration, decimal_dead_time, node_count, dead_times = get_duration_and_dead_ratio(
-        file
-    )
+    (
+        dead_duration,
+        decimal_dead_time,
+        node_count,
+        dead_times,
+    ) = get_duration_and_dead_ratio(file)
     if dead_duration is None:
         dead_times = [0]
     parts = file.split("/")

@@ -296,7 +296,7 @@ class E2ETests(object):
             self.errors.append(Error(location, error_msg))
 
     def check_install(self):
-        """Checks that all required templates exists, along with the yaml params """
+        """Checks that all required templates exists, along with the yaml params"""
         for sim_dir in self.sim_dirs:
             # Check sim_params.yaml are there
             self._check_true(
