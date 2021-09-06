@@ -91,17 +91,17 @@ class QueueMonitorStressTest(object):
         no_clean_up: bool = False,
     ):
         """
-                Runs the full automated workflow and checks that everything works as
-                expected. Prints out a list of errors, if there are any.
+        Runs the full automated workflow and checks that everything works as
+        expected. Prints out a list of errors, if there are any.
 
-                The test directory is deleted if there are no errors, unless no_clean_up
-                is set.
+        The test directory is deleted if there are no errors, unless no_clean_up
+        is set.
 
-                Parameters
-                ----------
-                user: str
-                    The username under which to run the tasks
-                """
+        Parameters
+        ----------
+        user: str
+            The username under which to run the tasks
+        """
         self._stop_on_error = stop_on_error
 
         # Setup folder structure

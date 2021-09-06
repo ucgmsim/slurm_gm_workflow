@@ -411,8 +411,7 @@ def get_list_of_prefix(list_of_files):
 
 
 def check_seismo_files(list_of_stations, list_of_files):
-    """check if all station in list has .000 .090 .ver files
-    """
+    """check if all station in list has .000 .090 .ver files"""
     for station in list_of_stations:
         if station + ".000" not in list_of_files:
             return False
