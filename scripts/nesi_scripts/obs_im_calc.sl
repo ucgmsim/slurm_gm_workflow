@@ -26,7 +26,7 @@ do
         fault_name=`basename $D`
         python $gmsim/workflow/scripts/im_calc_checkpoint.py ${obs_dirs}/IM_calc/ $((`ls $D/*/*/accBB | wc -l` / 3)) $comp_count --event_name ${fault_name} --observed
         if [[ $? == 1 ]]; then
-            time python ${IMPATH}/calculate_ims.py $D/*/*/accBB a -o ${obs_dirs}/IM_calc/ -np ${SLURM_CPUS_PER_TASK} -i ${fault_name} -r ${fault_name} -c $comp -t o -e -s
+            time python ${IMPATH}/IM_calculation/scripts/calculate_ims.py $D/*/*/accBB a -o ${obs_dirs}/IM_calc/ -np ${SLURM_CPUS_PER_TASK} -i ${fault_name} -r ${fault_name} -c $comp -t o -e -s
         fi
     fi
 done
