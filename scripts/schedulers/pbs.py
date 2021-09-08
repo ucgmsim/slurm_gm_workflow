@@ -19,8 +19,11 @@ class Pbs(AbstractScheduler):
         """
         cmd = f"qstat -f -F json -x {db_running_task.job_id}"
 
-        out, err = self._run_command_and_wait(cmd, shell=True)
-        json_dict = json.loads(out)
+        out, err = self._run_command_and_wait(cmd)
+        # special treatment after nurion added GPU replated variable in qstat that is a single \ which will cause json parser unable to read
+        out = out.replace("\\", "")
+        json_dict = json.loads(out, strict=False)
+
         if "Jobs" not in json_dict:
             # a special case when a job is cancelled before getting logged in the scheduler
             task_logger.warning(
@@ -39,15 +42,15 @@ class Pbs(AbstractScheduler):
             len(tasks_dict.keys()) == 1
         ), f"Too many tasks returned by qstat: {tasks_dict.keys()}"
 
-        task_name = list(tasks_dict.keys()[0])
+        task_name = list(tasks_dict.keys())[0]
         task_dict = tasks_dict[task_name]
         submit_time = task_dict["ctime"].replace(" ", "_")
-        start_time = task_dict["stime"].replace(" ", "_")
+        start_time = task_dict["qtime"].replace(" ", "_")
         # Last modified time. There isn't an explicit end time,
         # so only other option would be to add walltime to start time
         end_time = task_dict["mtime"].replace(" ", "_")
         n_cores = float(task_dict["resources_used"]["ncpus"])
-        run_time = float(task_dict["resources_used"]["walltime"])
+        run_time = task_dict["resources_used"]["walltime"]
 
         # status uses the same states as the queue monitor, rather than full words like sacct
         status = task_dict["job_state"]
@@ -80,10 +83,10 @@ class Pbs(AbstractScheduler):
 
         if len(err) != 0:
             raise self.raise_exception(
-                f"An error occurred during job submission: {err}"
+                f"An error occurred during job submission: {err} \n {script_location}"
             )
 
-        self.logger.debug("Successfully submitted task to slurm")
+        self.logger.debug("Successfully submitted task to pbs")
         # no errors, return the job id
         return_words = out.split(".pbs")  # 4027812.pbs
         self.logger.debug(return_words)
@@ -161,5 +164,12 @@ class Pbs(AbstractScheduler):
 
     @staticmethod
     def process_arguments(script_path: str, arguments: Dict[str, str]):
-        args = [x for part in arguments.items() for x in part]
-        return f"-V {' '.join(args)} {script_path} "
+        """
+            keys in arguments must match whatever the pbs script is expecting, otherwise will fail
+        """
+        # construct a string
+        args_string = ""
+        for arg in arguments.items():
+            # using "" to make sure variables are tranlated and not taken literally
+            args_string = args_string + f'{arg[0]}="{arg[1]}",'
+        return f"-v {args_string} -V {script_path} "
