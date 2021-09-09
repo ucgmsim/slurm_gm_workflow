@@ -20,7 +20,8 @@ class Pbs(AbstractScheduler):
         cmd = f"qstat -f -F json -x {db_running_task.job_id}"
 
         out, err = self._run_command_and_wait(cmd, shell=True)
-        # special treatment after nurion added GPU replated variable in qstat that is a single \ which will cause json parser unable to read
+        # remove values that contains backslash
+        # several GPU-related variables contains only a single backslash and nothing else, which will cause loads() to crash
         out = out.replace("\\", "")
         json_dict = json.loads(out, strict=False)
 
