@@ -260,7 +260,7 @@ def install_fault(
                 keep_dup_station=keep_dup_station,
             )
         else:
-            prefx = f"fd_rt01-h{root_params_dict['vm']['hh']:.3f}"
+            prefx = f"fd_rt01-h{root_params_dict['VM']['hh']:.3f}"
             fd_statlist = f"{prefx}.ll"
             fd_statcords = f"{prefx}.statcords"
 
