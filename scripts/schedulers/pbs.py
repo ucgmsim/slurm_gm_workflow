@@ -17,7 +17,7 @@ class Pbs(AbstractScheduler):
         :param task_logger: the logger for the task
         :return: A tuple containing the expected metadata
         """
-        cmd = f"qstat -f -F json -x {db_running_task.job_id}"
+        cmd = [f"qstat -f -F json -x {db_running_task.job_id}"]
 
         out, err = self._run_command_and_wait(cmd, shell=True)
         # remove values that contains backslash
@@ -78,7 +78,7 @@ class Pbs(AbstractScheduler):
 
         cwd = os.getcwd()
         os.chdir(sim_dir)  # KISTI doesn't allow job submission from home
-        out, err = self._run_command_and_wait(f"qsub {script_location}", shell=True)
+        out, err = self._run_command_and_wait([f"qsub {script_location}"], shell=True)
         os.chdir(cwd)
         self.logger.debug((out, err))
 
@@ -99,7 +99,7 @@ class Pbs(AbstractScheduler):
                 f"{return_words[0]} is not a valid jobid. Submitting the job most likely failed. The return message was {out}"
             )
 
-        out, err = self._run_command_and_wait(f"qstat {jobid}", shell=True)
+        out, err = self._run_command_and_wait([f"qstat {jobid}"], shell=True)
         try:
             job_name = out.split("\n")[2].split()[1]
         except Exception:
@@ -115,10 +115,10 @@ class Pbs(AbstractScheduler):
             f"Setting output files for task {jobid} to {sim_dir}/{f_name}.out/.err"
         )
         self._run_command_and_wait(
-            f"qalter -o {sim_dir}/{f_name}.out {jobid}", shell=True
+            [f"qalter -o {sim_dir}/{f_name}.out {jobid}"], shell=True
         )
         self._run_command_and_wait(
-            f"qalter -e {sim_dir}/{f_name}.err {jobid}", shell=True
+            [f"qalter -e {sim_dir}/{f_name}.err {jobid}"], shell=True
         )
         return jobid
 
