@@ -169,7 +169,7 @@ class Pbs(AbstractScheduler):
     @staticmethod
     def process_arguments(script_path: str, arguments: Dict[str, str]):
         """
-            keys in arguments must match whatever the pbs script is expecting, otherwise will fail
+        keys in arguments must match whatever the pbs script is expecting, otherwise will fail
         """
         # construct a string
         args_string = ""
