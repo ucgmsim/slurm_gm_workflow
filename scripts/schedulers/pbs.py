@@ -19,7 +19,7 @@ class Pbs(AbstractScheduler):
         """
         cmd = f"qstat -f -F json -x {db_running_task.job_id}"
 
-        out, err = self._run_command_and_wait(cmd)
+        out, err = self._run_command_and_wait(cmd, shell=True)
         # special treatment after nurion added GPU replated variable in qstat that is a single \ which will cause json parser unable to read
         out = out.replace("\\", "")
         json_dict = json.loads(out, strict=False)
@@ -77,7 +77,7 @@ class Pbs(AbstractScheduler):
 
         cwd = os.getcwd()
         os.chdir(sim_dir)  # KISTI doesn't allow job submission from home
-        out, err = self._run_command_and_wait(f"qsub {script_location}")
+        out, err = self._run_command_and_wait(f"qsub {script_location}", shell=True)
         os.chdir(cwd)
         self.logger.debug((out, err))
 
@@ -98,7 +98,7 @@ class Pbs(AbstractScheduler):
                 f"{return_words[0]} is not a valid jobid. Submitting the job most likely failed. The return message was {out}"
             )
 
-        out, err = self._run_command_and_wait(f"qstat {jobid}")
+        out, err = self._run_command_and_wait(f"qstat {jobid}", shell=True)
         try:
             job_name = out.split("\n")[2].split()[1]
         except Exception:
@@ -113,8 +113,12 @@ class Pbs(AbstractScheduler):
         self.logger.debug(
             f"Setting output files for task {jobid} to {sim_dir}/{f_name}.out/.err"
         )
-        self._run_command_and_wait(f"qalter -o {sim_dir}/{f_name}.out {jobid}")
-        self._run_command_and_wait(f"qalter -e {sim_dir}/{f_name}.err {jobid}")
+        self._run_command_and_wait(
+            f"qalter -o {sim_dir}/{f_name}.out {jobid}", shell=True
+        )
+        self._run_command_and_wait(
+            f"qalter -e {sim_dir}/{f_name}.err {jobid}", shell=True
+        )
         return jobid
 
     def cancel_job(self, job_id: int, target_machine=None) -> None:
@@ -125,7 +129,7 @@ class Pbs(AbstractScheduler):
             f"Checking queues with raw input of machine {target_machine} and user {user}"
         )
         if user:  # just print the list of jobid and status (a space between)
-            cmd = ["qstat", "-u", f"{self.user_name}"]
+            cmd = [f"qstat -u {self.user_name}"]
             header_pattern = "pbs:"
             header_idx = 1
             job_list_idx = 5
@@ -135,7 +139,7 @@ class Pbs(AbstractScheduler):
             header_idx = 0
             job_list_idx = 3
 
-        (output, err) = self._run_command_and_wait(cmd, encoding="utf-8")
+        (output, err) = self._run_command_and_wait(cmd, encoding="utf-8", shell=True)
         self.logger.debug(f"Command {cmd} got response output {output} and error {err}")
         try:
             header = output.split("\n")[header_idx]
