@@ -12,11 +12,6 @@
 #PBS -l walltime=00:10:00
 #PBS -W sandbox=PRIVATE
 
-module purge
-module add gcc/7.2.0 openmpi/3.1.0 craype-network-opa craype-mic-knl
-export gmsim_root=/home01/hpc11a02/gmsim
-export PYTHONPATH=$gmsim_root/Environments/nurion/workflow
-source $gmsim_root/Environments/nurion/virt_envs/python3_nurion/bin/activate
 export PBS_JOB_ID="${PBS_JOBID/.pbs/}"
 
 function getFromYaml {
@@ -29,9 +24,9 @@ script_start=`date`
 echo "script started running at: $script_start"
 runtime_fmt="%Y-%m-%d_%H:%M:%S"
 timestamp=`date +%Y%m%d_%H%M%S`
-## qsub supply the following variables with -v option
-# REL=$1
-# MGMT_DB_LOC=$2
+## qsub supply the following variables with -v option, exit if not set
+echo REL:${REL:?REL not set}
+echo MGMT_DB_LOC:${MGMT_DB_LOC:?MGMT_DB_LOC not set}
 
 REL_NAME=`basename $REL`
 REL_YAML=$(python -c "from qcore.simulation_structure import get_sim_params_yaml_path; print(get_sim_params_yaml_path('${REL}'))")
