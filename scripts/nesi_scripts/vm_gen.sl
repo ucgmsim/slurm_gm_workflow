@@ -51,7 +51,7 @@ echo $end_time
 
 timestamp=`date +%Y%m%d_%H%M%S`
 #test before update
-res=`python $gmsim/qcore/qcore/validate_vm.py files $OUT_DIR`
+res=`python $gmsim/qcore/qcore/validate_vm.py NZVM $OUT_DIR`
 pass=$?
 
 if [[ $pass == 0 ]]; then
