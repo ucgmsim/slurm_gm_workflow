@@ -17,10 +17,14 @@ class Pbs(AbstractScheduler):
         :param task_logger: the logger for the task
         :return: A tuple containing the expected metadata
         """
-        cmd = f"qstat -f -F json -x {db_running_task.job_id}"
+        cmd = [f"qstat -f -F json -x {db_running_task.job_id}"]
 
         out, err = self._run_command_and_wait(cmd, shell=True)
-        json_dict = json.loads(out)
+        # remove values that contains backslash
+        # several GPU-related variables contains only a single backslash and nothing else, which will cause loads() to crash
+        out = out.replace("\\", "")
+        json_dict = json.loads(out, strict=False)
+
         if "Jobs" not in json_dict:
             # a special case when a job is cancelled before getting logged in the scheduler
             task_logger.warning(
@@ -39,15 +43,15 @@ class Pbs(AbstractScheduler):
             len(tasks_dict.keys()) == 1
         ), f"Too many tasks returned by qstat: {tasks_dict.keys()}"
 
-        task_name = list(tasks_dict.keys()[0])
+        task_name = list(tasks_dict.keys())[0]
         task_dict = tasks_dict[task_name]
         submit_time = task_dict["ctime"].replace(" ", "_")
-        start_time = task_dict["stime"].replace(" ", "_")
+        start_time = task_dict["qtime"].replace(" ", "_")
         # Last modified time. There isn't an explicit end time,
         # so only other option would be to add walltime to start time
         end_time = task_dict["mtime"].replace(" ", "_")
         n_cores = float(task_dict["resources_used"]["ncpus"])
-        run_time = float(task_dict["resources_used"]["walltime"])
+        run_time = task_dict["resources_used"]["walltime"]
 
         # status uses the same states as the queue monitor, rather than full words like sacct
         status = task_dict["job_state"]
@@ -74,16 +78,16 @@ class Pbs(AbstractScheduler):
 
         cwd = os.getcwd()
         os.chdir(sim_dir)  # KISTI doesn't allow job submission from home
-        out, err = self._run_command_and_wait(f"qsub {script_location}")
+        out, err = self._run_command_and_wait([f"qsub {script_location}"], shell=True)
         os.chdir(cwd)
         self.logger.debug((out, err))
 
         if len(err) != 0:
             raise self.raise_exception(
-                f"An error occurred during job submission: {err}"
+                f"An error occurred during job submission: {err} \n {script_location}"
             )
 
-        self.logger.debug("Successfully submitted task to slurm")
+        self.logger.debug("Successfully submitted task to pbs")
         # no errors, return the job id
         return_words = out.split(".pbs")  # 4027812.pbs
         self.logger.debug(return_words)
@@ -95,7 +99,7 @@ class Pbs(AbstractScheduler):
                 f"{return_words[0]} is not a valid jobid. Submitting the job most likely failed. The return message was {out}"
             )
 
-        out, err = self._run_command_and_wait(f"qstat {jobid}")
+        out, err = self._run_command_and_wait([f"qstat {jobid}"], shell=True)
         try:
             job_name = out.split("\n")[2].split()[1]
         except Exception:
@@ -110,8 +114,12 @@ class Pbs(AbstractScheduler):
         self.logger.debug(
             f"Setting output files for task {jobid} to {sim_dir}/{f_name}.out/.err"
         )
-        self._run_command_and_wait(f"qalter -o {sim_dir}/{f_name}.out {jobid}")
-        self._run_command_and_wait(f"qalter -e {sim_dir}/{f_name}.err {jobid}")
+        self._run_command_and_wait(
+            [f"qalter -o {sim_dir}/{f_name}.out {jobid}"], shell=True
+        )
+        self._run_command_and_wait(
+            [f"qalter -e {sim_dir}/{f_name}.err {jobid}"], shell=True
+        )
         return jobid
 
     def cancel_job(self, job_id: int, target_machine=None) -> None:
@@ -122,7 +130,7 @@ class Pbs(AbstractScheduler):
             f"Checking queues with raw input of machine {target_machine} and user {user}"
         )
         if user:  # just print the list of jobid and status (a space between)
-            cmd = ["qstat", "-u", f"{self.user_name}"]
+            cmd = [f"qstat -u {self.user_name}"]
             header_pattern = "pbs:"
             header_idx = 1
             job_list_idx = 5
@@ -132,7 +140,7 @@ class Pbs(AbstractScheduler):
             header_idx = 0
             job_list_idx = 3
 
-        (output, err) = self._run_command_and_wait(cmd, encoding="utf-8")
+        (output, err) = self._run_command_and_wait(cmd, encoding="utf-8", shell=True)
         self.logger.debug(f"Command {cmd} got response output {output} and error {err}")
         try:
             header = output.split("\n")[header_idx]
@@ -161,5 +169,12 @@ class Pbs(AbstractScheduler):
 
     @staticmethod
     def process_arguments(script_path: str, arguments: Dict[str, str]):
-        args = [x for part in arguments.items() for x in part]
-        return f"-V {' '.join(args)} {script_path} "
+        """
+        keys in arguments must match whatever the pbs script is expecting, otherwise will fail
+        """
+        # construct a string
+        args_string = ""
+        for arg in arguments.items():
+            # using "" to make sure variables are tranlated and not taken literally
+            args_string = args_string + f'{arg[0]}="{arg[1]}",'
+        return f"-v {args_string} -V {script_path} "

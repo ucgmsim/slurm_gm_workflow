@@ -12,15 +12,10 @@
 
 export SLURM_JOB_ID="${PBS_JOBID/.pbs/}"
 
-if [[ ! -z ${CUR_ENV} && ${CUR_HPC} != "mahuika" ]]; then
-    source $CUR_ENV/workflow/install_workflow/helper_functions/activate_env.sh $CUR_ENV "mahuika"
-fi
-
-#REL_LOC=$1
-#MGMT_DB_LOC=$2
-
-#shift 2
-#REM_ARGS="$@"
+#check for required arguments/variables, exit if not set
+echo REL_LOC:${REL_LOC:?REL_LOC not set}
+echo MGMT_DB_LOC:${MGMT_DB_LOC:?MGMT_DB_LOC not set}
+echo REM_ARGS:${REM_ARGS:?REM_ARGS not set}
 
 REL_NAME=`basename $REL_LOC`
 
