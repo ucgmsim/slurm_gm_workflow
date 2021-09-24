@@ -1,13 +1,5 @@
 #!/usr/bin/env python3
 """Prints out the current cybershake status.
-
-To reduce re-collection of the same metadata over and over again a csv is created
- which stores the  progress dataframe.
-
-Note: Assumes that faults are run in alphabetical order!
-
-The missing data column of the progress dataframe is set to True if any
-metadata for any realisation of that fault.
 """
 import argparse
 import json
