@@ -84,28 +84,6 @@ def get_chours_used(fault_dirs: Iterable[str]):
     return df
 
 
-# def get_completed_r_count(db_file, proc_type: str, fault_name: str = None):
-#     """Returns the number of realisations of a fault "fault_name" that completed the proc_type. If fault_name is None,
-#     consider all faults"""
-#     proc_type_int = const.ProcessType[proc_type].value
-#     conn = sqlite3.connect(str(db_file))
-#     c = conn.cursor()
-#     if fault_name is None:
-#         c.execute(
-#             f"SELECT COUNT(*) FROM state WHERE proc_type=? and status={const.Status['completed'].value}",
-#             (proc_type_int,),
-#         )
-#     else:
-#         c.execute(
-#             f"SELECT COUNT(*) FROM state WHERE proc_type=? and status={const.Status['completed'].value} and run_name LIKE ?",
-#             (proc_type_int, fault_name + "_REL%"),
-#         )
-#
-#     completed_r_count = c.fetchone()[0]
-#     conn.close()
-#     return completed_r_count
-
-
 def get_faults_and_r_count(cybershake_list: str):
     """Gets the fault names and number of realisations from a cybershake fault list."""
     with open(cybershake_list, "r") as f:
