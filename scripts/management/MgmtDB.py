@@ -276,24 +276,21 @@ class MgmtDB:
 
         return runnable_tasks
 
-
     def num_task_complete(self, task, like=False):
         process, run_name = task
-        run_name_op = "="
+        op = "="
         if like:
-            run_name_op = "LIKE"
+            op = "LIKE"
 
-        query = f"SELECT COUNT (*) FROM state WHERE run_name {run_name_op} ? AND proc_type = ? AND status = ?"
+        query = f"SELECT COUNT (*) FROM state WHERE run_name {op} ? AND proc_type = ? AND status = ?"
         with connect_db_ctx(self._db_file) as cur:
             completed_tasks = cur.execute(
-                query,
-                (run_name, process, const.Status.completed.value),
+                query, (run_name, process, const.Status.completed.value)
             ).fetchone()[0]
         return completed_tasks
 
     def is_task_complete(self, task):
         return self.num_task_complete(task) > 0
-
 
     def _check_dependancy_met(self, task, logger=get_basic_logger()):
         """Checks if all dependencies for the specified are met"""

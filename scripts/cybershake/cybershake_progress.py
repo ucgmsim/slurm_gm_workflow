@@ -11,14 +11,14 @@ import sys
 import numpy as np
 import pandas as pd
 from urllib.request import urlopen
-import yaml
+
 
 from estimation.estimate_cybershake import main as est_cybershake
 from scripts.management.MgmtDB import MgmtDB
 import qcore.simulation_structure as sim_struct
 import qcore.constants as const
 from qcore.formats import load_fault_selection_file
-
+from qcore.utils import load_yaml
 
 # The process types that are used for progress tracking
 PROCESS_TYPES = [
@@ -128,26 +128,25 @@ def get_new_progress_df(root_dir, runs_dir, faults, fault_names, r_counts):
         index=grouped_df.index.values, columns=pd.MultiIndex.from_tuples(column_t)
     )
 
-    # Populate progress dataframe with estimation data
-    total = 0
-    for proc_type in PROCESS_TYPES:
-        values = grouped_df[proc_type, const.MetadataField.core_hours.value]
-        progress_df[proc_type, EST_CORE_HOURS_COL] = values
-        total += values
-
-    progress_df["total", EST_CORE_HOURS_COL] = total
-    progress_df["total", R_COUNT_COL] = r_counts
-    # Get actual core hours for all faults, assumes faults are run
-    # in alphabetical order
+    # Get actual core hours for all faults
     chours_df = get_chours_used(faults)
 
-    # Add actual data to progress df
-    total = 0
+    # Populate progress dataframe with estimation data and actual data
     for proc_type in PROCESS_TYPES:
-        values = chours_df[proc_type]
-        progress_df[proc_type, ACT_CORE_HOURS_COL] = values
-        total += values
-    progress_df["total", ACT_CORE_HOURS_COL] = total
+        progress_df[proc_type, EST_CORE_HOURS_COL] = grouped_df[
+            proc_type, const.MetadataField.core_hours.value
+        ]
+        progress_df[proc_type, ACT_CORE_HOURS_COL] = chours_df[proc_type]
+
+    # Compute total estimated time and actual time across all faults
+    idx = pd.IndexSlice
+    progress_df["total", EST_CORE_HOURS_COL] = progress_df.loc[
+        :, idx[:, EST_CORE_HOURS_COL]
+    ].sum(axis=1)
+    progress_df["total", ACT_CORE_HOURS_COL] = progress_df.loc[
+        :, idx[:, ACT_CORE_HOURS_COL]
+    ].sum(axis=1)
+    progress_df["total", R_COUNT_COL] = r_counts
 
     return progress_df
 
@@ -312,9 +311,11 @@ if __name__ == "__main__":
     if args.alert:
         try:
             with open(slack_config_path) as f:
-                slack_config = yaml.load(f, Loader=yaml.loader.SafeLoader)
-        except:
-            print(f"Error: --alert option used with no {slack_config_path}. Exiting")
+                slack_config = load_yaml(f)
+        except FileNotFoundError:
+            print(
+                f"Error: --alert option used but {slack_config_path} not found. Exiting"
+            )
             sys.exit(1)
 
     main(args.cybershake_root, args.list, args.outfile, slack_config)
