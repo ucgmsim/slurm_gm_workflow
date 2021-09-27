@@ -8,15 +8,13 @@ from pathlib import Path
 from typing import List, Iterable
 import sys
 
-
 import numpy as np
 import pandas as pd
-
-import sqlite3
 from urllib.request import urlopen
 import yaml
 
 from estimation.estimate_cybershake import main as est_cybershake
+from scripts.management.MgmtDB import MgmtDB
 import qcore.simulation_structure as sim_struct
 import qcore.constants as const
 
@@ -34,6 +32,9 @@ ACT_CORE_HOURS_COL = "act_core_hours"
 R_COUNT_COL = "r_count"
 
 SLACK_ALERT_CONFIG = "slack_alert.yaml"
+
+_fault_template_fmt = "{:<15}{:<22}{:<7}{:<3}{:<17}{:<7}{:<3}{:<17}{:<7}{:<3}{:<22}"
+_summary_template_fmt = "{:<6} : {:>5}/{:>5} ({:4.2f}%) RELs complete: {:10.2f} CH consumed / {:10.2f} CH est ({: >#06.2f}%) {:10.2f} CH remaining est\n"
 
 
 def get_chours(json_file, proc_types: List[str], debug=False):
@@ -83,26 +84,26 @@ def get_chours_used(fault_dirs: Iterable[str]):
     return df
 
 
-def get_completed_r_count(db_file, proc_type: str, fault_name: str = None):
-    """Returns the number of realisations of a fault "fault_name" that completed the proc_type. If fault_name is None,
-    consider all faults """
-    proc_type_int = const.ProcessType[proc_type].value
-    conn = sqlite3.connect(str(db_file))
-    c = conn.cursor()
-    if fault_name is None:
-        c.execute(
-            f"SELECT COUNT(*) FROM state WHERE proc_type=? and status={const.Status['completed'].value}",
-            (proc_type_int,),
-        )
-    else:
-        c.execute(
-            f"SELECT COUNT(*) FROM state WHERE proc_type=? and status={const.Status['completed'].value} and run_name LIKE ?",
-            (proc_type_int, fault_name + "_REL%"),
-        )
-
-    completed_r_count = c.fetchone()[0]
-    conn.close()
-    return completed_r_count
+# def get_completed_r_count(db_file, proc_type: str, fault_name: str = None):
+#     """Returns the number of realisations of a fault "fault_name" that completed the proc_type. If fault_name is None,
+#     consider all faults"""
+#     proc_type_int = const.ProcessType[proc_type].value
+#     conn = sqlite3.connect(str(db_file))
+#     c = conn.cursor()
+#     if fault_name is None:
+#         c.execute(
+#             f"SELECT COUNT(*) FROM state WHERE proc_type=? and status={const.Status['completed'].value}",
+#             (proc_type_int,),
+#         )
+#     else:
+#         c.execute(
+#             f"SELECT COUNT(*) FROM state WHERE proc_type=? and status={const.Status['completed'].value} and run_name LIKE ?",
+#             (proc_type_int, fault_name + "_REL%"),
+#         )
+#
+#     completed_r_count = c.fetchone()[0]
+#     conn.close()
+#     return completed_r_count
 
 
 def get_faults_and_r_count(cybershake_list: str):
@@ -148,11 +149,9 @@ def get_new_progress_df(root_dir, runs_dir, faults, fault_names, r_counts):
     grouped_df.sort_index(axis=0, level=0, inplace=True)
 
     # Sanity check
-    if np.any(grouped_df.index.values != fault_names):
-        raise Exception(
-            "The fault names of the estimation results and directories "
-            "are not matching. These have to match, quitting!"
-        )
+    assert np.all(
+        grouped_df.index.values == fault_names
+    ), "The fault names of the estimation results and those from the list aren't matching"
 
     # Create progress dataframe
     column_t = []
@@ -167,11 +166,12 @@ def get_new_progress_df(root_dir, runs_dir, faults, fault_names, r_counts):
     )
 
     # Populate progress dataframe with estimation data
-    total = np.nan
+    total = 0
     for proc_type in PROCESS_TYPES:
         values = grouped_df[proc_type, const.MetadataField.core_hours.value]
         progress_df[proc_type, EST_CORE_HOURS_COL] = values
-        total = values if total is np.nan else total + values
+        total += values
+
     progress_df["total", EST_CORE_HOURS_COL] = total
     progress_df["total", R_COUNT_COL] = r_counts
     # Get actual core hours for all faults, assumes faults are run
@@ -179,11 +179,11 @@ def get_new_progress_df(root_dir, runs_dir, faults, fault_names, r_counts):
     chours_df = get_chours_used(faults)
 
     # Add actual data to progress df
-    total = np.nan
+    total = 0
     for proc_type in PROCESS_TYPES:
         values = chours_df[proc_type]
         progress_df[proc_type, ACT_CORE_HOURS_COL] = values
-        total = values if total is np.nan else total + values
+        total += values
     progress_df["total", ACT_CORE_HOURS_COL] = total
 
     return progress_df
@@ -193,20 +193,11 @@ def load_progress_df(file: str):
     return pd.read_csv(file, index_col=[0], header=[0, 1])
 
 
-def print_progress(
-    progress_df: pd.DataFrame, outfile: str, db_file: str, cur_fault_ix: int = None
-):
-    """Prints the progress dataframe in a nice format.
-
-    If cur_fault_ix is specified then all uncompleted faults are printed and
-    the latest completed fault with the previous and next five faults.
-
-    Otherwise all faults are printed.
+def write_progress(progress_df: pd.DataFrame, outfile: str, mgmtdb: MgmtDB):
+    """Writes the progress dataframe to outfile (in a nice format).
     """
 
     f = open(outfile, "w")
-
-    progress_df.to_csv("progress_df.csv")
 
     def get_usage_str(fault: str, proc_type: str):
         return "{:.2f}/{:.2f}".format(
@@ -216,9 +207,8 @@ def print_progress(
 
     to_print_mask = np.ones(progress_df.shape[0], dtype=bool)
 
-    template_fmt = "{:<15}{:<22}{:<7}{:<3}{:<17}{:<7}{:<3}{:<17}{:<7}{:<3}{:<22}"
     f.write(
-        template_fmt.format(
+        _fault_template_fmt.format(
             "Fault name",
             "LF time",
             "rels",
@@ -235,24 +225,30 @@ def print_progress(
     f.write("\n")
 
     est_completed_all = {}
+    total_complete_rels = {}
     for fault in progress_df.index.values[to_print_mask]:
         est_completed_all[fault] = {}
         num_all_rels = int(
             progress_df.loc[fault, ("total", R_COUNT_COL)]
         )  # not sure why this is np.float64
-        num_complete_rels = []
-        usage_str_list = []
+        num_complete_rels = {}
+        usage_str = {}
         is_complete = {}
         for proc_type in PROCESS_TYPES:
-            usage_str_list.append(get_usage_str(fault, proc_type))
-            num_complete = get_completed_r_count(db_file, proc_type, fault)
-            num_complete_rels.append(f"{num_complete}/{num_all_rels}")
-            is_complete[proc_type] = 1 if num_complete == num_all_rels else 0
+            usage_str[proc_type] = get_usage_str(fault, proc_type)
+            ncl = mgmtdb.num_task_complete((const.ProcessType[proc_type].value, fault+"_REL%"),like=True)
+            total_complete_rels[proc_type] = total_complete_rels.get(proc_type,0) + ncl
+            num_complete_rels[proc_type] = f"{ncl}/{num_all_rels}"
+            is_complete[proc_type] = 1 if ncl == num_all_rels else 0
 
         output_list = np.array(
-            list(zip(usage_str_list, num_complete_rels, is_complete.values()))
+            list(zip(usage_str.values(), num_complete_rels.values(), is_complete.values()))
         ).flatten()
-        f.write(template_fmt.format(fault, *output_list, get_usage_str(fault, "total")))
+        f.write(
+            _fault_template_fmt.format(
+                fault, *output_list, get_usage_str(fault, "total")
+            )
+        )
         f.write("\n")
 
         for proc_type in PROCESS_TYPES:
@@ -267,22 +263,17 @@ def print_progress(
 
     overall_df = progress_df.sum()
 
-    completed_r_counts = {}
-    for proc_type in PROCESS_TYPES:
-        completed_r_counts[proc_type] = get_completed_r_count(db_file, proc_type)
-
-    #    total_r_completed = progress_df["total", COMPLETED_R_COUNT_COL].sum()
     total_r_count = progress_df["total", R_COUNT_COL].sum()
 
     f.write("\nOverall progress\n")
-    template_fmt = "{:<6} : {:>5}/{:>5} ({:4.2f}%) RELs complete: {:10.2f} CH consumed / {:10.2f} CH est ({: >#06.2f}%) {:10.2f} CH remaining est\n"
+
     for proc_type in PROCESS_TYPES:
         f.write(
-            template_fmt.format(
+            _summary_template_fmt.format(
                 proc_type,
-                completed_r_counts[proc_type],
+                total_complete_rels[proc_type],
                 total_r_count,
-                completed_r_counts[proc_type] / total_r_count * 100,
+                total_complete_rels[proc_type] / total_r_count * 100,
                 overall_df[proc_type, ACT_CORE_HOURS_COL],
                 overall_df[proc_type, EST_CORE_HOURS_COL],
                 overall_df[proc_type, ACT_CORE_HOURS_COL]
@@ -292,7 +283,6 @@ def print_progress(
                 - est_completed_df[proc_type].sum(),
             )
         )
-
     f.close()
 
 
@@ -311,10 +301,8 @@ def send2slack(msg_file, users, url):
 def main(root_dir: Path, cybershake_list, outfile, slack_config=None):
 
     runs_dir = Path(sim_struct.get_runs_dir(root_dir))
-
     fault_names, r_counts = get_faults_and_r_count(cybershake_list)
 
-    # Sort, as faults are run in alphabetical order
     sort_ind = np.argsort(fault_names)
     fault_names, r_counts = fault_names[sort_ind], r_counts[sort_ind]
 
@@ -328,11 +316,10 @@ def main(root_dir: Path, cybershake_list, outfile, slack_config=None):
 
     # Create new progress df
     progress_df = get_new_progress_df(root_dir, runs_dir, faults, fault_names, r_counts)
-    cur_fault_ix = None
 
-    db_file = root_dir / "slurm_mgmt.db"
-    # Print the progress df
-    print_progress(progress_df, outfile, db_file, cur_fault_ix)
+    mgmtdb = MgmtDB(sim_struct.get_mgmt_db(root_dir))
+
+    write_progress(progress_df, outfile, mgmtdb)
 
     if slack_config is not None:
         send2slack(outfile, slack_config["users"], slack_config["url"])

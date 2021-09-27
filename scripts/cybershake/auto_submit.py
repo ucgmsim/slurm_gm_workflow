@@ -527,7 +527,6 @@ def run_main_submit_loop(
                     [
                         const.ProcessType.clean_up.value,
                         run_name,
-                        const.Status.completed.str_value,
                     ]
                 ):
                     # If clean_up has already run, then we should set it to
