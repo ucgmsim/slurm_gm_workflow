@@ -268,6 +268,10 @@ def send2slack(msg_file, users, url):
 def main(root_dir: Path, cybershake_list, outfile, slack_config=None):
 
     runs_dir = Path(sim_struct.get_runs_dir(root_dir))
+    assert (
+        root_dir.is_dir() and runs_dir.is_dir()
+    ), f"Error: {root_dir} is not a valid cybershake root directory"
+
     fault_names, r_counts = get_faults_and_r_count(cybershake_list)
 
     sort_ind = np.argsort(fault_names)
@@ -276,10 +280,6 @@ def main(root_dir: Path, cybershake_list, outfile, slack_config=None):
     faults = np.asarray(
         [sim_struct.get_fault_dir(root_dir, fault_name) for fault_name in fault_names]
     )
-
-    if not root_dir.is_dir() or not runs_dir.is_dir():
-        print("Not a valid cybershake root directory. Quitting!")
-        return
 
     # Create new progress df
     progress_df = get_new_progress_df(root_dir, runs_dir, faults, fault_names, r_counts)

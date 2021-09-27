@@ -278,9 +278,7 @@ class MgmtDB:
 
     def num_task_complete(self, task, like=False):
         process, run_name = task
-        op = "="
-        if like:
-            op = "LIKE"
+        op = "LIKE" if like else "="
 
         query = f"SELECT COUNT (*) FROM state WHERE run_name {op} ? AND proc_type = ? AND status = ?"
         with connect_db_ctx(self._db_file) as cur:
