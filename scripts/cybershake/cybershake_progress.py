@@ -267,13 +267,13 @@ def print_progress(progress_df: pd.DataFrame):
             - est_completed_df[proc_type].sum(),
         )
         print(line)
-        summary += line
+        summary += line + "\n"
 
     return summary
 
 
 def send2slack(msg, users, url):
-    summary = " ".join(users) + " " + "\n".join(msg)  # .encode('utf-8')
+    summary = " ".join(users) + " " + msg  # .encode('utf-8')
     print(summary)
     data = json.dumps({"text": summary})
     urlopen(url, data=data.encode("utf-8"))
