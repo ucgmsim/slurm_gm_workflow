@@ -29,13 +29,14 @@ PROCESS_TYPES = [
 
 EST_CORE_HOURS_COL = "est_core_hours"
 ACT_CORE_HOURS_COL = "act_core_hours"
+NUM_COMPLETED_COL = "num_completed"
 
 R_COUNT_COL = "r_count"
 
 SLACK_ALERT_CONFIG = "slack_alert.yaml"
 
 _fault_template_fmt = "{:<15}{:<22}{:<7}{:<3}{:<17}{:<7}{:<3}{:<17}{:<7}{:<3}{:<22}"
-_summary_template_fmt = "{:<6} : {:>5}/{:>5} ({:4.2f}%) RELs complete: {:10.2f} CH consumed / {:10.2f} CH est ({: >#06.2f}%) {:10.2f} CH remaining est\n"
+_summary_template_fmt = "{:<6} : {:>5}/{:>5} ({:4.2f}%) RELs complete: {:10.2f} CH consumed / {:10.2f} CH est ({: >#06.2f}%) {:10.2f} CH remaining est"
 
 
 def get_chours(json_file, proc_types: List[str], debug=False):
@@ -85,16 +86,15 @@ def get_chours_used(fault_dirs: Iterable[str]):
     return df
 
 
-def get_faults_and_r_count(cybershake_list: str):
+def get_faults_dict(cybershake_list: str):
     """Gets the fault names and number of realisations from a cybershake fault list."""
-
     faults_dict = load_fault_selection_file(cybershake_list)
-    return np.asarray(list(faults_dict.keys())), np.asarray(list(faults_dict.values()))
+    return faults_dict
 
 
-def get_new_progress_df(root_dir, runs_dir, faults, fault_names, r_counts):
+def get_new_progress_df(root_dir, runs_dir, faults_dict, mgmtdb: MgmtDB):
     """Gets a new progress dataframe, runs the full estimation + collects
-    all actual core hours.
+    all actual core hours and number of completed realisations
     """
     # Run the estimation
     est_args = argparse.Namespace(
@@ -111,6 +111,12 @@ def get_new_progress_df(root_dir, runs_dir, faults, fault_names, r_counts):
     grouped_df = df.groupby("fault_name").sum()
     grouped_df.sort_index(axis=0, level=0, inplace=True)
 
+    fault_names, r_counts = np.asarray(list(faults_dict.keys())), np.asarray(
+        list(faults_dict.values())
+    )
+    sort_ind = np.argsort(fault_names)
+    fault_names, r_counts = fault_names[sort_ind], r_counts[sort_ind]
+
     # Sanity check
     assert np.all(
         grouped_df.index.values == fault_names
@@ -121,15 +127,21 @@ def get_new_progress_df(root_dir, runs_dir, faults, fault_names, r_counts):
     for proc_type in PROCESS_TYPES:
         column_t.append((proc_type, EST_CORE_HOURS_COL))
         column_t.append((proc_type, ACT_CORE_HOURS_COL))
+        column_t.append((proc_type, NUM_COMPLETED_COL))
     column_t.append(("total", EST_CORE_HOURS_COL))
     column_t.append(("total", ACT_CORE_HOURS_COL))
+    column_t.append(("total", NUM_COMPLETED_COL))
+    column_t.append(("total", R_COUNT_COL))
 
     progress_df = pd.DataFrame(
         index=grouped_df.index.values, columns=pd.MultiIndex.from_tuples(column_t)
     )
 
     # Get actual core hours for all faults
-    chours_df = get_chours_used(faults)
+    fault_dirs = np.asarray(
+        [sim_struct.get_fault_dir(root_dir, fault_name) for fault_name in fault_names]
+    )
+    chours_df = get_chours_used(fault_dirs)
 
     # Populate progress dataframe with estimation data and actual data
     for proc_type in PROCESS_TYPES:
@@ -137,6 +149,14 @@ def get_new_progress_df(root_dir, runs_dir, faults, fault_names, r_counts):
             proc_type, const.MetadataField.core_hours.value
         ]
         progress_df[proc_type, ACT_CORE_HOURS_COL] = chours_df[proc_type]
+
+    # Retrieve the number of completed RELs from DB
+    for fault_name in fault_names:
+        for proc_type in PROCESS_TYPES:
+            ncl = mgmtdb.num_task_complete(
+                (const.ProcessType[proc_type].value, fault_name + "_REL%"), like=True
+            )
+            progress_df.loc[fault_name, (proc_type, NUM_COMPLETED_COL)] = ncl
 
     # Compute total estimated time and actual time across all faults
     idx = pd.IndexSlice
@@ -146,6 +166,9 @@ def get_new_progress_df(root_dir, runs_dir, faults, fault_names, r_counts):
     progress_df["total", ACT_CORE_HOURS_COL] = progress_df.loc[
         :, idx[:, ACT_CORE_HOURS_COL]
     ].sum(axis=1)
+    progress_df["total", NUM_COMPLETED_COL] = progress_df.loc[
+        :, idx[:, NUM_COMPLETED_COL]
+    ].min(axis=1)
     progress_df["total", R_COUNT_COL] = r_counts
 
     return progress_df
@@ -155,20 +178,16 @@ def load_progress_df(file: str):
     return pd.read_csv(file, index_col=[0], header=[0, 1])
 
 
-def write_progress(progress_df: pd.DataFrame, outfile: str, mgmtdb: MgmtDB):
-    """Writes the progress dataframe to outfile (in a nice format)."""
+def print_progress(progress_df: pd.DataFrame):
+    """Prints the progress dataframe to screen (in a nice format)."""
 
-    f = open(outfile, "w")
-
-    def get_usage_str(fault: str, proc_type: str):
+    def get_usage_str(fault_name: str, proc_type: str):
         return "{:.2f}/{:.2f}".format(
-            progress_df.loc[fault, (proc_type, ACT_CORE_HOURS_COL)],
-            progress_df.loc[fault, (proc_type, EST_CORE_HOURS_COL)],
+            progress_df.loc[fault_name, (proc_type, ACT_CORE_HOURS_COL)],
+            progress_df.loc[fault_name, (proc_type, EST_CORE_HOURS_COL)],
         )
 
-    to_print_mask = np.ones(progress_df.shape[0], dtype=bool)
-
-    f.write(
+    print(
         _fault_template_fmt.format(
             "Fault name",
             "LF time",
@@ -183,113 +202,100 @@ def write_progress(progress_df: pd.DataFrame, outfile: str, mgmtdb: MgmtDB):
             "Total",
         )
     )
-    f.write("\n")
 
-    est_completed_all = {}
-    total_complete_rels = {}
-    for fault in progress_df.index.values[to_print_mask]:
-        est_completed_all[fault] = {}
-        num_all_rels = int(
-            progress_df.loc[fault, ("total", R_COUNT_COL)]
+    est_completed_dict = {}
+
+    for fault_name in progress_df.index.values:
+        est_completed_dict[fault_name] = {}
+        r_count = int(
+            progress_df.loc[fault_name, ("total", R_COUNT_COL)]
         )  # not sure why this is np.float64
-        num_complete_rels = {}
+        r_completed_str = {}
         usage_str = {}
         is_complete = {}
         for proc_type in PROCESS_TYPES:
-            usage_str[proc_type] = get_usage_str(fault, proc_type)
-            ncl = mgmtdb.num_task_complete(
-                (const.ProcessType[proc_type].value, fault + "_REL%"), like=True
+            usage_str[proc_type] = get_usage_str(fault_name, proc_type)
+            r_completed = int(
+                progress_df.loc[fault_name, (proc_type, NUM_COMPLETED_COL)]
             )
-            total_complete_rels[proc_type] = total_complete_rels.get(proc_type, 0) + ncl
-            num_complete_rels[proc_type] = f"{ncl}/{num_all_rels}"
-            is_complete[proc_type] = 1 if ncl == num_all_rels else 0
+            r_completed_str[proc_type] = f"{r_completed}/{r_count}"
+            is_complete[proc_type] = 1 if r_completed == r_count else 0
+            if is_complete[proc_type]:
+                est_completed_dict[fault_name][proc_type] = progress_df.loc[
+                    fault_name, (proc_type, EST_CORE_HOURS_COL)
+                ]  # estimated time for a completed "fault_name" and "proc_type"
 
+        # arrange the data for printing
         output_list = np.array(
             list(
-                zip(
-                    usage_str.values(), num_complete_rels.values(), is_complete.values()
-                )
+                zip(usage_str.values(), r_completed_str.values(), is_complete.values())
             )
         ).flatten()
-        f.write(
+        print(
             _fault_template_fmt.format(
-                fault, *output_list, get_usage_str(fault, "total")
+                fault_name, *output_list, get_usage_str(fault_name, "total")
             )
         )
-        f.write("\n")
-
-        for proc_type in PROCESS_TYPES:
-            if is_complete[proc_type]:
-                est_completed_all[fault][proc_type] = progress_df.loc[
-                    fault, (proc_type, EST_CORE_HOURS_COL)
-                ]
 
     est_completed_df = pd.DataFrame.from_dict(
-        est_completed_all, orient="index", columns=PROCESS_TYPES
+        est_completed_dict, orient="index", columns=PROCESS_TYPES
     )
 
     overall_df = progress_df.sum()
 
-    total_r_count = progress_df["total", R_COUNT_COL].sum()
-
-    f.write("\nOverall progress\n")
-
+    total_r_count = overall_df["total", R_COUNT_COL]
+    total_complete_rels = {}
     for proc_type in PROCESS_TYPES:
-        f.write(
-            _summary_template_fmt.format(
-                proc_type,
-                total_complete_rels[proc_type],
-                total_r_count,
-                total_complete_rels[proc_type] / total_r_count * 100,
-                overall_df[proc_type, ACT_CORE_HOURS_COL],
-                overall_df[proc_type, EST_CORE_HOURS_COL],
-                overall_df[proc_type, ACT_CORE_HOURS_COL]
-                / overall_df[proc_type, EST_CORE_HOURS_COL]
-                * 100,
-                overall_df[proc_type, EST_CORE_HOURS_COL]
-                - est_completed_df[proc_type].sum(),
-            )
+        total_complete_rels[proc_type] = int(
+            progress_df[proc_type, NUM_COMPLETED_COL].sum()
         )
-    f.close()
+
+    print("\nOverall progress\n")
+    summary = ""
+    for proc_type in PROCESS_TYPES:
+        line = _summary_template_fmt.format(
+            proc_type,
+            total_complete_rels[proc_type],
+            total_r_count,
+            total_complete_rels[proc_type] / total_r_count * 100,
+            overall_df[proc_type, ACT_CORE_HOURS_COL],
+            overall_df[proc_type, EST_CORE_HOURS_COL],
+            overall_df[proc_type, ACT_CORE_HOURS_COL]
+            / overall_df[proc_type, EST_CORE_HOURS_COL]
+            * 100,
+            overall_df[proc_type, EST_CORE_HOURS_COL]
+            - est_completed_df[proc_type].sum(),
+        )
+        print(line)
+        summary += line
+
+    return summary
 
 
-def send2slack(msg_file, users, url):
-    with open(msg_file, "r") as f:
-        lines = f.readlines()
-
-    summary = (
-        " ".join(users) + " " + "\n".join(lines[-4:])
-    )  # .encode('utf-8') #last 4 lines
+def send2slack(msg, users, url):
+    summary = " ".join(users) + " " + "\n".join(msg)  # .encode('utf-8')
     print(summary)
     data = json.dumps({"text": summary})
     urlopen(url, data=data.encode("utf-8"))
 
 
-def main(root_dir: Path, cybershake_list, outfile, slack_config=None):
-
+def main(root_dir: Path, cybershake_list, slack_config=None):
     runs_dir = Path(sim_struct.get_runs_dir(root_dir))
     assert (
         root_dir.is_dir() and runs_dir.is_dir()
     ), f"Error: {root_dir} is not a valid cybershake root directory"
 
-    fault_names, r_counts = get_faults_and_r_count(cybershake_list)
-
-    sort_ind = np.argsort(fault_names)
-    fault_names, r_counts = fault_names[sort_ind], r_counts[sort_ind]
-
-    faults = np.asarray(
-        [sim_struct.get_fault_dir(root_dir, fault_name) for fault_name in fault_names]
-    )
-
-    # Create new progress df
-    progress_df = get_new_progress_df(root_dir, runs_dir, faults, fault_names, r_counts)
+    faults_dict = get_faults_dict(cybershake_list)
 
     mgmtdb = MgmtDB(sim_struct.get_mgmt_db(root_dir))
 
-    write_progress(progress_df, outfile, mgmtdb)
+    # Create new progress df
+    progress_df = get_new_progress_df(root_dir, runs_dir, faults_dict, mgmtdb)
+
+    summary = print_progress(progress_df)
 
     if slack_config is not None:
-        send2slack(outfile, slack_config["users"], slack_config["url"])
+        send2slack(summary, slack_config["users"], slack_config["url"])
 
 
 if __name__ == "__main__":
@@ -299,8 +305,6 @@ if __name__ == "__main__":
         "cybershake_root", type=Path, help="The cybershake root directory"
     )
     parser.add_argument("list", type=str, help="The list of faults to run")
-    parser.add_argument("outfile", type=Path, help="output file")
-
     parser.add_argument("--alert", help="send the output to slack", action="store_true")
 
     args = parser.parse_args()
@@ -313,4 +317,4 @@ if __name__ == "__main__":
         ), f"Error: --alert option requires {slack_config_path} to be present."
         slack_config = load_yaml(slack_config_path)
 
-    main(args.cybershake_root, args.list, args.outfile, slack_config)
+    main(args.cybershake_root, args.list, slack_config)
