@@ -17,6 +17,7 @@ from estimation.estimate_cybershake import main as est_cybershake
 from scripts.management.MgmtDB import MgmtDB
 import qcore.simulation_structure as sim_struct
 import qcore.constants as const
+from qcore.formats import load_fault_selection_file
 
 
 # The process types that are used for progress tracking
@@ -86,25 +87,9 @@ def get_chours_used(fault_dirs: Iterable[str]):
 
 def get_faults_and_r_count(cybershake_list: str):
     """Gets the fault names and number of realisations from a cybershake fault list."""
-    with open(cybershake_list, "r") as f:
-        lines = f.readlines()
 
-    fault_names, r_counts = [], []
-    for ix, line in enumerate(lines):
-        line_l = line.split(" ")
-        fault_names.append(line_l[0].strip())
-
-        try:
-            r_counts.append(int(line_l[1].strip().rstrip("RrNnKk")))
-        except ValueError:
-            print(
-                "Failed to read line {} of cybershake list. Need to know"
-                "the number of realisations for each fault, quitting!".format(ix + 1)
-            )
-            # Raise the exception so execution stops
-            raise
-
-    return np.asarray(fault_names), np.asarray(r_counts)
+    faults_dict = load_fault_selection_file(cybershake_list)
+    return np.asarray(list(faults_dict.keys())), np.asarray(list(faults_dict.values()))
 
 
 def get_new_progress_df(root_dir, runs_dir, faults, fault_names, r_counts):
