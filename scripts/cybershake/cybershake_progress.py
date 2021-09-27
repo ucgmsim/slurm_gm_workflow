@@ -214,13 +214,19 @@ def write_progress(progress_df: pd.DataFrame, outfile: str, mgmtdb: MgmtDB):
         is_complete = {}
         for proc_type in PROCESS_TYPES:
             usage_str[proc_type] = get_usage_str(fault, proc_type)
-            ncl = mgmtdb.num_task_complete((const.ProcessType[proc_type].value, fault+"_REL%"),like=True)
-            total_complete_rels[proc_type] = total_complete_rels.get(proc_type,0) + ncl
+            ncl = mgmtdb.num_task_complete(
+                (const.ProcessType[proc_type].value, fault + "_REL%"), like=True
+            )
+            total_complete_rels[proc_type] = total_complete_rels.get(proc_type, 0) + ncl
             num_complete_rels[proc_type] = f"{ncl}/{num_all_rels}"
             is_complete[proc_type] = 1 if ncl == num_all_rels else 0
 
         output_list = np.array(
-            list(zip(usage_str.values(), num_complete_rels.values(), is_complete.values()))
+            list(
+                zip(
+                    usage_str.values(), num_complete_rels.values(), is_complete.values()
+                )
+            )
         ).flatten()
         f.write(
             _fault_template_fmt.format(
