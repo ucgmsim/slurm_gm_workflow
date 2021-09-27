@@ -1,4 +1,7 @@
 # cybershake_progress.py depends on this file to send the summary to SLACK channel
+# the info below is not real.
+# User ID can be obtained from user's profile > More > Copy member ID
+# URL can be obtained from https://api.slack.com/apps > Install App > Webhook URLs for Your Workspace
 users:
   - <@U1LDB2BRT>
   - <@U0C0T55F0>

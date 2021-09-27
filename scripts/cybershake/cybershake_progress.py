@@ -308,13 +308,9 @@ if __name__ == "__main__":
     slack_config = None
     slack_config_path = Path(__file__).resolve().parent / SLACK_ALERT_CONFIG
     if args.alert:
-        try:
-            with open(slack_config_path) as f:
-                slack_config = load_yaml(f)
-        except FileNotFoundError:
-            print(
-                f"Error: --alert option used but {slack_config_path} not found. Exiting"
-            )
-            sys.exit(1)
+        assert (
+            slack_config_path.exists()
+        ), f"Error: --alert option requires {slack_config_path} to be present."
+        slack_config = load_yaml(slack_config_path)
 
     main(args.cybershake_root, args.list, args.outfile, slack_config)
