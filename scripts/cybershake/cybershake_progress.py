@@ -156,8 +156,7 @@ def load_progress_df(file: str):
 
 
 def write_progress(progress_df: pd.DataFrame, outfile: str, mgmtdb: MgmtDB):
-    """Writes the progress dataframe to outfile (in a nice format).
-    """
+    """Writes the progress dataframe to outfile (in a nice format)."""
 
     f = open(outfile, "w")
 
