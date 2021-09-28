@@ -153,10 +153,10 @@ def get_new_progress_df(root_dir, runs_dir, faults_dict, mgmtdb: MgmtDB):
     # Retrieve the number of completed RELs from DB
     for fault_name in fault_names:
         for proc_type in PROCESS_TYPES:
-            ncl = mgmtdb.num_task_complete(
+            r_completed = mgmtdb.num_task_complete(
                 (const.ProcessType[proc_type].value, fault_name + "_REL%"), like=True
             )
-            progress_df.loc[fault_name, (proc_type, NUM_COMPLETED_COL)] = ncl
+            progress_df.loc[fault_name, (proc_type, NUM_COMPLETED_COL)] = r_completed
 
     # Compute total estimated time and actual time across all faults
     idx = pd.IndexSlice
