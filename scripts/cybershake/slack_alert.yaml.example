@@ -4,7 +4,5 @@
 # URL can be obtained from https://api.slack.com/apps > Install App > Webhook URLs for Your Workspace
 users:
   - <@U1LDB2BRT>
-  - <@U0C0T55F0>
   - <@U3S75KRUH>
-  - <@U3DTBKABF>
 url : https://hooks.slack.com/services/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

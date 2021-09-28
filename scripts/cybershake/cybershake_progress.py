@@ -250,8 +250,7 @@ def print_progress(progress_df: pd.DataFrame):
             progress_df[proc_type, NUM_COMPLETED_COL].sum()
         )
 
-    print("\nOverall progress\n")
-    summary = ""
+    summary = "\nOverall progress\n"
     for proc_type in PROCESS_TYPES:
         line = _summary_template_fmt.format(
             proc_type,
@@ -266,14 +265,13 @@ def print_progress(progress_df: pd.DataFrame):
             overall_df[proc_type, EST_CORE_HOURS_COL]
             - est_completed_df[proc_type].sum(),
         )
-        print(line)
         summary += line + "\n"
 
     return summary
 
 
 def send2slack(msg, users, url):
-    summary = " ".join(users) + " " + msg  # .encode('utf-8')
+    summary = " ".join(users) + "\n" + msg  # .encode('utf-8')
     print(summary)
     data = json.dumps({"text": summary})
     urlopen(url, data=data.encode("utf-8"))
