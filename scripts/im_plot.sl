@@ -13,12 +13,14 @@ fi
 
 CSV_PATH=$1
 STATION_FILE_PATH=$2
-# $3 is assigned to OUTPUT_XYZ_DIR below
+OUTPUT_XYZ_PARENT_DIR=$3
 SRF_PATH=$4
 MODEL_PARAMS=$5
 
 MGMT_DB_LOC=$6
 SRF_NAME=$7
+
+COMPS = ($(cat $CSV_PATH|cut -d , -f 2 |tail -n+2 |sort|uniq|tr " " "\n")) # find what components are used and makes an array
 
 script_start=`date`
 echo "script started running at: $script_start"
@@ -30,14 +32,18 @@ echo ___im plot___
 
 python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $SRF_NAME IM_plot running $SLURM_JOB_ID
 
-COMPS = `cat $CSV_PATH |cut  -d , -f 2 |sort |uniq` # find what components are used
-COMPS=($(echo $COMPS |tr " " "\n")) # convert to an array of strings
-COMPS_LEN=${#COMPS[@]} # length of the array
-for (( i=1;i<$COMPS_LEN;i++ )); #${COMPS[0]} is the header "component"
+# check rotd50 was found in .csv
+if [[ " ${COMPS[*]} " == *" rotd50 "* ]]; 
+then 
+    comps_to_plot=(geom rotd50)
+else 
+    comps_to_plot=(geom)
+fi
+
+for comp in ${comps_to_plot[@]};
 do 
-    COMP=${COMPS[$i]}
-    OUTPUT_XYZ_DIR=$3/$COMP
-    res=`python $gmsim/visualization/im/spatialise_im.py $CSV_PATH $STATION_FILE_PATH --out_dir $OUTPUT_XYZ_DIR -c $COMP`
+    OUTPUT_XYZ_DIR=OUTPUT_XYZ_PARENT_DIR/$comp
+    res=`python $gmsim/visualization/im/spatialise_im.py $CSV_PATH $STATION_FILE_PATH --out_dir $OUTPUT_XYZ_DIR -c $comp`
     exit_val=$?
 
     if [[ $exit_val == 0 ]]; then
@@ -67,7 +73,6 @@ do
             fi 
         done
 
-
         if [[ $failed == 0 ]]; then
             ## log information about params used to .out file    
             echo "srf_file $SRF_PATH"
@@ -81,10 +86,7 @@ do
     else
         python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $SRF_NAME IM_plot failed $SLURM_JOB_ID --error "$res"
     fi
-
 done
-
-
 
 end_time=`date +$runtime_fmt`
 echo $end_time
