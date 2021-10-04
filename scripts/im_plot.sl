@@ -42,7 +42,7 @@ fi
 
 for comp in ${comps_to_plot[@]};
 do 
-    OUTPUT_XYZ_DIR=OUTPUT_XYZ_PARENT_DIR/$comp
+    OUTPUT_XYZ_DIR=$OUTPUT_XYZ_PARENT_DIR/$comp
     res=`python $gmsim/visualization/im/spatialise_im.py $CSV_PATH $STATION_FILE_PATH --out_dir $OUTPUT_XYZ_DIR -c $comp`
     exit_val=$?
 
