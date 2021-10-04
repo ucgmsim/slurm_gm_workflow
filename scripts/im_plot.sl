@@ -30,13 +30,12 @@ echo ___im plot___
 
 python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $SRF_NAME IM_plot running $SLURM_JOB_ID
 
-COMPS = `cat $CSV_PATH |cut  -d , -f 2 |sort|uniq` # find what components are used
-COMPS=($(echo $COMPS |tr " " "\n")) # convert to an array
-n=${#COMPS[@]} # length of the array
-for (( i=1;i<$n;i++ )); #${COMPS[0]} is the header "component"
+COMPS = `cat $CSV_PATH |cut  -d , -f 2 |sort |uniq` # find what components are used
+COMPS=($(echo $COMPS |tr " " "\n")) # convert to an array of strings
+COMPS_LEN=${#COMPS[@]} # length of the array
+for (( i=1;i<$COMPS_LEN;i++ )); #${COMPS[0]} is the header "component"
 do 
     COMP=${COMPS[$i]}
-    echo $COMP;
     OUTPUT_XYZ_DIR=$3/$COMP
     res=`python $gmsim/visualization/im/spatialise_im.py $CSV_PATH $STATION_FILE_PATH --out_dir $OUTPUT_XYZ_DIR -c $COMP`
     exit_val=$?
