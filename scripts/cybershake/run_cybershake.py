@@ -38,6 +38,7 @@ def run_automated_workflow(
     wrapper_logger: Logger,
     debug: bool,
     alert_url=None,
+    run_queue_monitor=True,
 ):
     """Runs the automated workflow. Beings the queue monitor script and the script for tasks that apply to all
     realisations. Then while the all realisation thread is running go through each pattern and run all tasks that are
@@ -109,13 +110,15 @@ def run_automated_workflow(
             )
         )
 
-    queue_monitor_thread = threading.Thread(
-        name="queue monitor",
-        daemon=True,
-        target=queue_monitor.queue_monitor_loop,
-        args=(root_folder, sleep_time, n_max_retries, queue_logger, alert_url),
-    )
-    wrapper_logger.info("Created queue_monitor thread")
+    queue_monitor_thread = None
+    if run_queue_monitor:
+        queue_monitor_thread = threading.Thread(
+            name="queue monitor",
+            daemon=True,
+            target=queue_monitor.queue_monitor_loop,
+            args=(root_folder, sleep_time, n_max_retries, queue_logger, alert_url),
+        )
+        wrapper_logger.info("Created queue_monitor thread")
 
     bulk_auto_submit_thread = threading.Thread(
         name="main auto submit",
@@ -137,8 +140,9 @@ def run_automated_workflow(
         wrapper_logger.log(qclogging.NOPRINTCRITICAL, thread_not_running)
         raise RuntimeError(thread_not_running)
 
-    queue_monitor_thread.start()
-    if queue_monitor_thread.is_alive():
+    if run_queue_monitor:
+        queue_monitor_thread.start()
+    elif queue_monitor_thread.is_alive():
         wrapper_logger.info("Started queue_monitor thread")
     else:
         thread_not_running = "The main auto_submit thread has failed to start"
@@ -166,13 +170,14 @@ def run_automated_workflow(
     wrapper_logger.info(
         "The main auto_submit thread has terminated, and all auto_submit patterns have completed a final run through"
     )
-    wrapper_logger.info("Attempting to shut down the queue monitor thread")
-    queue_monitor.keepAlive = False
-    queue_monitor_thread.join(2.0 * sleep_time)
-    if not queue_monitor_thread.is_alive():
-        wrapper_logger.info("The queue monitor has been shut down successfully")
-    else:
-        wrapper_logger.critical("The queue monitor has not successfully terminated")
+    if queue_monitor_thread:
+        wrapper_logger.info("Attempting to shut down the queue monitor thread")
+        queue_monitor.keepAlive = False
+        queue_monitor_thread.join(2.0 * sleep_time)
+        if not queue_monitor_thread.is_alive():
+            wrapper_logger.info("The queue monitor has been shut down successfully")
+        else:
+            wrapper_logger.critical("The queue monitor has not successfully terminated")
 
 
 def parse_config_file(
@@ -264,6 +269,12 @@ def main():
     parser.add_argument(
         "--alert_url", help="the url to slack alert channel", default=None
     )
+    parser.add_argument(
+        "--no-queue-monitor",
+        help="disables running the queue-monitor thread",
+        store=False,
+        dest="run_queue_monitor",
+    )
     args = parser.parse_args()
 
     wrapper_logger = qclogging.get_logger(name="cybershake_wrapper", threaded=True)
@@ -343,6 +354,7 @@ def main():
         wrapper_logger,
         args.debug,
         alert_url=args.alert_url,
+        run_queue_monitor=args.run_queue_monitor,
     )
 
 

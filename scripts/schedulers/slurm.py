@@ -26,13 +26,12 @@ class Slurm(AbstractScheduler):
             account = self.account[target_machine.name]
         else:
             account = self.account
+        account_filter = " -A ".join(["", *self.platform_accounts])
         if user:
             # user is True, so we use the same use as we use for submission
-            cmd = "squeue -A {} -o '%A %t' -M {} -u {}".format(
-                account, target_machine.name, self.user_name
-            )
+            cmd = f"squeue {account_filter} -o '%A %t' -M {target_machine.name} -u {self.user_name}"
         else:
-            cmd = "squeue -A {} -o '%A %t' -M {}".format(account, target_machine.name)
+            cmd = f"squeue -A {account_filter} -o '%A %t' -M {target_machine.name}"
         self.logger.debug(f"Running squeue command: {cmd}")
         output, err = self._run_command_and_wait(cmd=[cmd], shell=True)
         self.logger.debug(f"Squeue got output: {output}")

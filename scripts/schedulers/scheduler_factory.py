@@ -24,9 +24,12 @@ class Scheduler:
         scheduler = platform_config[PLATFORM_CONFIG.SCHEDULER.name]
         if account is None:
             account = platform_config[PLATFORM_CONFIG.DEFAULT_ACCOUNT.name]
+        platform_accounts = [account]
+        if PLATFORM_CONFIG.PLATFORM_ACCOUNTS.name in platform_config:
+            platform_accounts = platform_config[PLATFORM_CONFIG.PLATFORM_ACCOUNTS.name]
         if scheduler == "slurm":
             cls.__scheduler = Slurm(
-                user=user, account=account, current_machine=host, logger=logger
+                user=user, account=account, current_machine=host, logger=logger, platform_accounts=platform_accounts
             )
         elif scheduler == "pbs":
             cls.__scheduler = Pbs(
