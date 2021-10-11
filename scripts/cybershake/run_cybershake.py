@@ -148,6 +148,8 @@ def run_automated_workflow(
             thread_not_running = "The main auto_submit thread has failed to start"
             wrapper_logger.log(qclogging.NOPRINTCRITICAL, thread_not_running)
             raise RuntimeError(thread_not_running)
+    else:
+        wrapper_logger.info("queue_monitor not started (as specified)")
     run_sub_threads = len(tasks_to_run_with_pattern_and_logger) > 0
     while bulk_auto_submit_thread.is_alive() and run_sub_threads:
         wrapper_logger.info("Checking all patterns for tasks to be run")
