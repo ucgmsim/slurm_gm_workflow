@@ -25,7 +25,9 @@ class AbstractScheduler(ABC):
     HEADER_TEMPLATE: str
     QUEUE_NAME: str
 
-    def __init__(self, user, account, current_machine, logger: Logger, platform_accounts=None):
+    def __init__(
+        self, user, account, current_machine, logger: Logger, platform_accounts=None
+    ):
         if platform_accounts is None:
             platform_accounts = account
         self.user_name = user
