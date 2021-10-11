@@ -142,12 +142,12 @@ def run_automated_workflow(
 
     if run_queue_monitor:
         queue_monitor_thread.start()
-    elif queue_monitor_thread.is_alive():
-        wrapper_logger.info("Started queue_monitor thread")
-    else:
-        thread_not_running = "The main auto_submit thread has failed to start"
-        wrapper_logger.log(qclogging.NOPRINTCRITICAL, thread_not_running)
-        raise RuntimeError(thread_not_running)
+        if queue_monitor_thread.is_alive():
+            wrapper_logger.info("Started queue_monitor thread")
+        else:
+            thread_not_running = "The main auto_submit thread has failed to start"
+            wrapper_logger.log(qclogging.NOPRINTCRITICAL, thread_not_running)
+            raise RuntimeError(thread_not_running)
     run_sub_threads = len(tasks_to_run_with_pattern_and_logger) > 0
     while bulk_auto_submit_thread.is_alive() and run_sub_threads:
         wrapper_logger.info("Checking all patterns for tasks to be run")
@@ -272,7 +272,7 @@ def main():
     parser.add_argument(
         "--no-queue-monitor",
         help="disables running the queue-monitor thread",
-        store=False,
+        action="store_false",
         dest="run_queue_monitor",
     )
     args = parser.parse_args()
