@@ -9,6 +9,7 @@
   "IM_SIM_SL_SCRIPT_NAME" : "sim_im_calc_{}.sl",
   "MERGE_TS_DEFAULT_NCORES" : 1,
   "DEFAULT_ACCOUNT" : "nesi00213",
+  "PLATFORM_ACCOUNTS": ["nesi00213", "comm00213"],
   "DEFAULT_MEMORY" : "16G",
   "SCHEDULER": "bash",
   "HEADER_FILE": "nesi_header.cfg",

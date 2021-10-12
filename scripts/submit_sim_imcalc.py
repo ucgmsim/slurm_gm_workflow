@@ -107,7 +107,7 @@ def submit_im_calc_slurm(
             str(params[const.SlBodyOptConsts.advanced_IM.value]["match_obs_stations"])
         ):
             logger.debug(
-                "match_obs_station specificed: {params[const.SlBodyOptConsts.advanced_IM.value]['match_obs_stations']}"
+                "match_obs_station specified: {params[const.SlBodyOptConsts.advanced_IM.value]['match_obs_stations']}"
             )
             # retreived station list from observed/fault(eventname)/Vol*/data/accBB/station.
             obs_accBB_dir_glob = path.join(
