@@ -1,7 +1,7 @@
 #!/bin/bash
 # script version: slurm
 #
-# must be run with sbatch hf2bb.sl [realisationDirectory] [managementDBLocation]
+# must be run with qsub -v REL_LOC=[realization_directory],MGMT_DB_LOC=[management_DB_location],REM_ARGS=[remaining_extra_args] hf2bb.sl
 
 #PBS -N hf2bb
 #PBS -V
@@ -25,6 +25,14 @@ BB_LOC=$REL_LOC/BB/Acc/BB.bin
 if [[ ! -d $REL_LOC/BB/Acc ]]; then
     mkdir -p $REL_LOC/BB/Acc
 fi
+
+#code block for saving job's MetaData
+JOB_LOG_DIR=$REL_LOC/ch_log
+if [[ ! -d ${JOB_LOG_DIR} ]];then
+    mkdir -p ${JOB_LOG_DIR}
+fi
+querery_cmd="qstat -f -F json -x ${PBS_JOBID} >> ${JOB_LOG_DIR}/${PBS_JOBID}.json"
+eval " ${querery_cmd}"
 
 #updating the stats in managementDB
 if [[ ! -d $MGMT_DB_LOC/mgmt_db_queue ]]; then
