@@ -50,8 +50,14 @@ class Pbs(AbstractScheduler):
         # Last modified time. There isn't an explicit end time,
         # so only other option would be to add walltime to start time
         end_time = task_dict["mtime"].replace(" ", "_")
-        n_cores = float(task_dict["resources_used"]["ncpus"])
-        run_time = task_dict["resources_used"]["walltime"]
+        # check if 'resources_used' are one of the fields
+        if "resources_used" in task_dict.keys():
+            n_cores = float(task_dict["resources_used"]["ncpus"])
+            run_time = task_dict["resources_used"]["walltime"]
+        else:
+            # give a dummy data when pbs failed to return json with required field
+            n_core = 1
+            run_time = "00:00:01"
 
         # status uses the same states as the queue monitor, rather than full words like sacct
         status = task_dict["job_state"]
