@@ -30,7 +30,7 @@ from shared_workflow.shared_template import write_sl_script
 def main(
     submit: bool = False,
     machine: str = host,
-    ncores: int = platform_config[const.PLATFORM_CONFIG.HF_DEFAULT_NCORES.name],
+    ncores: int = platform_config[const.PLATFORM_CONFIG.LF_DEFAULT_NCORES.name],
     rel_dir: str = ".",
     retries: int = 0,
     write_directory: str = None,
@@ -215,6 +215,5 @@ if __name__ == "__main__":
         args.ncores,
         args.rel_dir,
         args.retries,
-        args.srf,
         args.write_directory,
     )
