@@ -17,8 +17,8 @@ JOB_LOG_DIR=$REL_LOC/ch_log
 if [[ ! -d ${JOB_LOG_DIR} ]];then
     mkdir -p ${JOB_LOG_DIR}
 fi
-querery_cmd="qstat -f -F json -x ${PBS_JOBID} >> ${JOB_LOG_DIR}/${PBS_JOBID}.json"
-eval " ${querery_cmd}"
+query_cmd="qstat -f -F json -x ${PBS_JOBID} >> ${JOB_LOG_DIR}/${PBS_JOBID}.json"
+eval " ${query_cmd}"
 
 function getFromYaml {
     echo $(python -c "from qcore.utils import load_sim_params; print(load_sim_params('$1').$2)")
