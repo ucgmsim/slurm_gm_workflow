@@ -79,7 +79,7 @@ if __name__ == "__main__":
             if comp_trimmed.size == 0:
                 if args.verbose:
                     print(
-                        f" The waveform for station {stat_name} contains all zeors, please investigate."
+                        f" The waveform for station {stat_name} contains all zeros, please investigate."
                     )
                 sys.exit(1)
             ratio_zeros = (
