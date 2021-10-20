@@ -76,13 +76,19 @@ if __name__ == "__main__":
         for comp in acc.T:
             # trim leading and trailing zeros
             comp_trimmed = np.trim_zeros(comp)
+            if comp_trimmed.size == 0:
+                if args.verbose:
+                    print(
+                        f" The waveform for station {stat_name} contains all zeors, please investigate."
+                    )
+                sys.exit(1)
             ratio_zeros = (
                 comp_trimmed.size - np.count_nonzero(comp_trimmed)
             ) / comp_trimmed.size
             if ratio_zeros > ZERO_COUNT_THRESHOLD:
                 if args.verbose:
                     print(
-                        f"The velocities for station {stat_name} contains {ratio_zeros} zeros, more than {ZERO_COUNT_THRESHOLD}, please investigate. This "
+                        f"The waveform for station {stat_name} contains {ratio_zeros} zeros, more than {ZERO_COUNT_THRESHOLD}, please investigate. This "
                         f"is most likely due to crashes during HF or BB resulting in no written output."
                     )
                 sys.exit(1)
