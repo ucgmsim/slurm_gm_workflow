@@ -9,6 +9,7 @@
   "IM_SIM_SL_SCRIPT_NAME" : "sim_im_calc_{}.sl",
   "MERGE_TS_DEFAULT_NCORES" : 4,
   "DEFAULT_ACCOUNT" : "DesignSafe-Graves",
+  "PLATFORM_ACCOUNTS": ["DesignSafe-Graves"],
   "DEFAULT_MEMORY" : "16G",
   "SCHEDULER": "slurm",
   "HEADER_FILE": "tacc_header.cfg",

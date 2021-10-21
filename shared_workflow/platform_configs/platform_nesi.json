@@ -12,6 +12,7 @@
     "mahuika": "nesi00213",
     "maui": "nesi00213"
   },
+  "PLATFORM_ACCOUNTS": ["nesi00213", "comm00213"],
   "DEFAULT_MEMORY" : "16G",
   "SCHEDULER": "slurm",
   "HEADER_FILE": "nesi_header.cfg",

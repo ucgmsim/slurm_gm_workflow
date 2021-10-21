@@ -11,16 +11,15 @@ if [[ ! -z ${CUR_ENV} && ${CUR_HPC} != "mahuika" ]]; then
     source $CUR_ENV/workflow/install_workflow/helper_functions/activate_env.sh $CUR_ENV "mahuika"
 fi
 
-CSV_PATH=$1
-STATION_FILE_PATH=$2
-OUTPUT_XYZ_PARENT_DIR=$3
-SRF_PATH=$4
-MODEL_PARAMS=$5
-
-MGMT_DB_LOC=$6
+CSV_PATH=`realpath $1`
+STATION_FILE_PATH=`realpath $2`
+OUTPUT_XYZ_PARENT_DIR=`realpath $3`
+SRF_PATH=`realpath $4`
+MODEL_PARAMS=`realpath $5`
+MGMT_DB_LOC=`realpath $6`
 SRF_NAME=$7
 
-COMPS = ($(cat $CSV_PATH|cut -d , -f 2 |tail -n+2 |sort|uniq|tr " " "\n")) # find what components are used and makes an array
+COMPS=($(cat $CSV_PATH|cut -d , -f 2 |tail -n+2 |sort|uniq|tr " " "\n")) # find what components are used and makes an array
 
 script_start=`date`
 echo "script started running at: $script_start"

@@ -25,12 +25,17 @@ class AbstractScheduler(ABC):
     HEADER_TEMPLATE: str
     QUEUE_NAME: str
 
-    def __init__(self, user, account, current_machine, logger: Logger):
+    def __init__(
+        self, user, account, current_machine, logger: Logger, platform_accounts=None
+    ):
+        if platform_accounts is None:
+            platform_accounts = account
         self.user_name = user
         self.account = account
         self.current_machine = current_machine
         self.logger = logger
         self._run_command_and_wait = self.logging_wrapper(task_runner_no_debug)
+        self.platform_accounts = platform_accounts
 
     @abstractmethod
     def submit_job(

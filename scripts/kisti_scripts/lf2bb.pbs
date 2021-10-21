@@ -1,7 +1,7 @@
 #!/bin/bash
 # script version: pbs
 #
-# must be run with qsub -V REL_LOC=[realisationDirectory] MGMT_DB_LOC=[managementDBLocation] VSITE_FILE= lf2bb.pbs
+# must be run with qsub -v REL_LOC=[realisationDirectory],MGMT_DB_LOC=[managementDBLocation],VSITE_FILE=[Vs30_station_file] -V lf2bb.pbs
 
 #PBS -N lf2bb
 #PBS -V
@@ -31,6 +31,12 @@ BB_LOC=$REL_LOC/BB/Acc/BB.bin
 if [[ ! -d $REL_LOC/BB/Acc ]]; then
     mkdir -p $REL_LOC/BB/Acc
 fi
+
+#code block for saving job's MetaData
+JOB_LOG_DIR=$REL_LOC/ch_log
+mkdir -p ${JOB_LOG_DIR}
+query_cmd="qstat -f -F json -x ${PBS_JOBID} >> ${JOB_LOG_DIR}/${PBS_JOBID}.json"
+eval " ${query_cmd}"
 
 #updating the stats in managementDB
 if [[ ! -d $MGMT_DB_LOC/mgmt_db_queue ]]; then

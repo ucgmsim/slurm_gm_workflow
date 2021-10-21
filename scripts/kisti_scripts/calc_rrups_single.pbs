@@ -1,8 +1,7 @@
 #!/bin/bash
 # script version: pbs
 #
-# must be run with qsub -V REL=[observedGroundMotionsDirectory] MGMT_DB_LOC=[managementDBLocation] calc_rrups_single.pbs
-
+# must be run with qsub -v REL=[realizationDirectory],MGMT_DB_LOC=[managementDBLocation] -V calc_rrups_single.pbs
 # Please modify this file as needed, this is just a sample
 #PBS -N calc_rrups_single
 #PBS -V
@@ -13,6 +12,11 @@
 #PBS -W sandbox=PRIVATE
 
 export PBS_JOB_ID="${PBS_JOBID/.pbs/}"
+
+JOB_LOG_DIR=$REL_LOC/ch_log
+mkdir -p ${JOB_LOG_DIR}
+query_cmd="qstat -f -F json -x ${PBS_JOBID} >> ${JOB_LOG_DIR}/${PBS_JOBID}.json"
+eval " ${query_cmd}"
 
 function getFromYaml {
     echo $(python -c "from qcore.utils import load_sim_params; print(load_sim_params('$1').$2)")
