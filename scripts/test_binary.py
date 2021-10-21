@@ -7,6 +7,9 @@ import numpy as np
 from qcore.timeseries import BBSeis
 from qcore.timeseries import HFSeis
 
+# the ratio of allowed zero's before being flagged as failed, 0.01 = 1%
+ZERO_COUNT_THRESHOLD = 0.01
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("bin", type=str)
@@ -69,13 +72,23 @@ if __name__ == "__main__":
     for stat_name in np.random.choice(
         bin.stations.name, replace=False, size=min(10, bin.stations.shape[0])
     ):
-
         acc = bin.acc(stat_name)
         for comp in acc.T:
-            if len(comp) == 0 or np.any(np.trim_zeros(comp) == 0):
+            # trim leading and trailing zeros
+            comp_trimmed = np.trim_zeros(comp)
+            if comp_trimmed.size == 0:
                 if args.verbose:
                     print(
-                        f"The velocities for station {stat_name} contains zero/s, please investigate. This "
+                        f" The waveform for station {stat_name} contains all zeros, please investigate."
+                    )
+                sys.exit(1)
+            ratio_zeros = (
+                comp_trimmed.size - np.count_nonzero(comp_trimmed)
+            ) / comp_trimmed.size
+            if ratio_zeros > ZERO_COUNT_THRESHOLD:
+                if args.verbose:
+                    print(
+                        f"The waveform for station {stat_name} contains {ratio_zeros} zeros, more than {ZERO_COUNT_THRESHOLD}, please investigate. This "
                         f"is most likely due to crashes during HF or BB resulting in no written output."
                     )
                 sys.exit(1)
