@@ -8,11 +8,11 @@ import os
 import logging
 import numpy as np
 
-from config import qconfig
 from qcore.siteamp_models import nt2n, cb_amp, ba18_amp, init_ba18
 from qcore import timeseries, utils
 from qcore.constants import VM_PARAMS_FILE_NAME, Components
 from scripts.site_response import run_deconvolve_and_site_response, SiteProp
+from shared_workflow.platform_config import platform_config
 
 if __name__ == "__main__":
     from mpi4py import MPI
@@ -58,7 +58,7 @@ def args_parser(cmd=None):
     arg(
         "--site_specific_dir",
         help="The directory with site specific yaml files for OpenSees amplification",
-        default=qconfig["site_specific"],
+        default=platform_config["DEFAULT_SITE_SPECIFIC_DIR"],
     )
 
     args = parser.parse_args(cmd)
