@@ -57,7 +57,7 @@ class MgmtDB:
         """
         try:
             if self._conn is None:
-                logger.info("Aquiring db connection.")
+                logger.info("Acquiring db connection.")
                 self._conn = sql.connect(self._db_file)
             logger.debug("Getting db cursor")
 
@@ -352,7 +352,7 @@ class MgmtDB:
             )
         else:
             logger.warning(
-                "Recieved entry {}, status is more than created but the job_id is not set.".format(
+                "Received entry {}, status is more than created but the job_id is not set.".format(
                     entry
                 )
             )
