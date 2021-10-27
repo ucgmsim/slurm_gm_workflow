@@ -28,7 +28,7 @@ class Slurm(AbstractScheduler):
             account = self.account
         accounts = ",".join(self.platform_accounts)
         if user:
-            # user is True, so we use the same use as we use for submission
+            # user is True, so we use the same user as we use for submission
             cmd = f"squeue -A {accounts} -o '%A %t' -M {target_machine.name} -u {self.user_name}"
         else:
             cmd = f"squeue -A {accounts} -o '%A %t' -M {target_machine.name}"
