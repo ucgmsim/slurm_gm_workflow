@@ -1,7 +1,8 @@
-[![Build Status](http://13.238.107.244:8080/job/slurm_gm_workflow/badge/icon?build=last:${params.ghprbActualCommit=master)](http://13.238.107.244:8080/job/slurm_gm_workflow)
+[![Build Status](https://quakecoresoft.canterbury.ac.nz/jenkins/job/slurm_gm_workflow/badge/icon?build=last:${params.ghprbActualCommit=master)](https://quakecoresoft.canterbury.ac.nz/jenkins/job/slurm_gm_workflow)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## Slurm GM Simulation Workflow
+
 
 Contains the following:
 - Scripts for installing and usage of HPC environments, which allow running of 
