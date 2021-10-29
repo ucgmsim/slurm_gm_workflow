@@ -523,9 +523,6 @@ if __name__ == "__main__":
             assert os.stat(args.out_file).st_size == head_total + idx_n * block_size
         except AssertionError:
             msg = f"Expected size: {head_total + idx_n * block_size} bytes (last stat idx: {idx_n}), actual {os.stat(args.out_file).st_size} bytes."
-            # this is here because kupe fails at stdio
-            with open("hf_err_validate", "w") as e:
-                e.write(msg)
             logger.error("Validation failed: {}".format(msg))
             comm.Abort()
 
