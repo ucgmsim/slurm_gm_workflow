@@ -333,7 +333,7 @@ def print_mode_help():
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "run_folder", type=str, help="folder to the collection of runs on Kupe"
+        "run_folder", type=str, help="path to simulation root directory"
     )
     parser.add_argument(
         "run_name", type=str, nargs="?", default="%", help="name of run to be queried"

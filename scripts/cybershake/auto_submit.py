@@ -226,7 +226,6 @@ def submit_task(
                 OrderedDict(
                     {
                         "SIM_DIR": sim_dir,
-                        "SRF_PATH": sim_struct.get_srf_path(root_folder, run_name),
                         "SRF_NAME": run_name,
                         "MGMT_DB_LOC": root_folder,
                     }
@@ -524,10 +523,7 @@ def run_main_submit_loop(
             if proc_type == const.ProcessType.merge_ts.value:
                 # Check if clean up has already run
                 if mgmt_db.is_task_complete(
-                    [
-                        const.ProcessType.clean_up.value,
-                        run_name,
-                    ]
+                    [const.ProcessType.clean_up.value, run_name]
                 ):
                     # If clean_up has already run, then we should set it to
                     # be run again after merge_ts has run

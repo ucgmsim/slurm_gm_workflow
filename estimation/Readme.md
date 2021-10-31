@@ -96,7 +96,7 @@ Loading the resulting csv:
 ```
 import pandas as pd
 input_file = "/home/cbs51/code/slurm_gm_workflow/estimation/" \
-             "labelled_data/test/kupe_agg_data.csv"
+             "labelled_data/test/agg_data.csv"
 df = pd.read_csv(input_file, index_col=[0], header=[0, 1])
 ```
 
