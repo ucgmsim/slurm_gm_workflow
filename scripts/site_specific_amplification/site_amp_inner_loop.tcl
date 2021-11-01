@@ -13,65 +13,6 @@
 #  1. DEFINE SOIL GEOMETERY AND MATERIAL PARAMETERS
 #-----------------------------------------------------------------------------------------
 
-### Load parameters from site file
-
-#---SOIL GEOMETRY
-# thicknesses of soil profile (m)
-set soilThick      22.0
-# number of soil layers (not counting layer 0 which is bedrock)
-set numLayers      6
-
-# depth of water table (create a new layer at WT)
-# if water not present set waterTable anywhere below depth of model
-set waterTable     1.6
-
-# allow excess pore pressure generation? Yes or No
-# If No, permeability is automatically set very high for dynamic analysis
-set allowPWP       No
-
-# peak shear strain
-set gammaPeak       0.1
-
-# flags for water table and Vs inversion
-# set VsInvTopLayer to "Yes" if there is a velocity inversion immediately below upper layer (else "No")
-# set waterTopLayer to "Yes" if water table within upper most layer and layer was split in two (else "No")
-# if waterTopLayer == "Yes", should set refDepth(numLayers) = 1.0 and refDepth(numLayers-1) = 0.0
-set VsInvTopLayer "No"
-set waterTopLayer "Yes"
-
-# layer thicknesses
-array set layerThick [list 6 1.6 5 1.4 4 3.0 3 3.0 2 6.0 1 5.0 0 2.0]
-
-# reference pressure
-# computed as mean confining pressure at refDepth for each layer (0 is ToL, 1 is BoL)
-array set refDepth [list 6 1.0 5 0.0 4 1.0 3 0.0 2 0.5 1 0.5 0 0.5]
-
-# soil mass density (Mg/m^3)
-array set rho [list 6 1.7 5 1.6 4 1.5 3 1.5 2 1.7 1 1.7 0 2.0]
-
-# soil shear wave velocity for each layer(m/s)
-array set Vs [list 6 95.0 5 95.0 4 80.0 3 80.0 2 160.0 1 200.0 0 400.0]
-
-# soil friction angle
-array set phi [list 6 38.0 5 36.0 4 30.0 3 30.0 2 38.0 1 38.0 0 40.0]
-
-# pressure dependency coefficient
-array set pressCoeff [list 6 0.1 5 0.0 4 0.0 3 0.5 2 0.5 1 0.5 0 0.0]
-
-# phase transformation angle (not for layer 0)
-array set phaseAng [list 6 26.0 5 26.0 4 31.0 3 31.0 2 26.0 1 26.0]
-
-# contraction (not for layer 0)
-array set contract1 [list 6 0.013 5 0.067 4 0.087 3 0.087 2 0.013 1 0.013]
-array set contract3 [list 6 0.000 5 0.230 4 0.180 3 0.180 2 0.000 1 0.000]
-
-# dilation coefficients (not for layer 0)
-array set dilate1 [list 6 0.3 5 0.06 4 0.00 3 0.00 2 0.30 1 0.30]
-array set dilate3 [list 6 0.0 5 0.27 4 0.00 3 0.00 2 0.00 1 0.00]
-
-# void ratio (need it for layer 0 for element definition)
-array set voidR [list 6 0.55 5 0.77 4 0.85 3 0.85 2 0.55 1 0.55 0 0.55]
-
 #---MATERIAL PROPERTIES
 # define gravity and pi
 set g 9.80665
@@ -205,7 +146,7 @@ set nNodeT  [expr $nNodeX*$nNodeY]
 #-----------------------------------------------------------------------------------------
 model BasicBuilder -ndm 2 -ndf 3
 
-set ppNodesInfo [open ppNodesInfo.dat w]
+set ppNodesInfo [open $output_dir/ppNodesInfo.dat w]
 set dryNodeCount 1
 set PPNodeCount 1
 set layerNodeCount 0
@@ -457,7 +398,7 @@ puts "Finished creating dashpot material and element..."
 
 # create list for pore pressure nodes
 set nodeList3 {}
-set channel [open "ppNodesInfo.dat" r]
+set channel [open "$output_dir/ppNodesInfo.dat" r]
 set count 0;
 foreach line [split [read -nonewline $channel] \n] {
     set count [expr $count+1];

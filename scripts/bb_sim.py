@@ -394,55 +394,71 @@ def main():
             logger.debug(f"Station {stat.name} has a site specific file. Running OpenSees")
             site_properties = SiteProp.from_file(station_yaml)
             for j in range(3):
+                hf_c = np.hstack((hf_start_padding_ts, hf_acc[:, j], hf_end_padding_ts))
+                lf_c = np.hstack((lf_start_padding_ts, lf_acc[:, j], lf_end_padding_ts))
                 bb_acc[:, j] = run_deconvolve_and_site_response(
-                    lf_acc[:, j] + hf_acc[:, j],
-                    Components[i],
+                    hf_c + lf_c,
+                    Components(i),
                     site_properties,
                     dt=bb_dt,
+                    logger=logger
                 )
         else:
             logger.debug(f"Station {stat.name} does not have a site specific file. Running vs30 based amplification")
             pga = np.max(np.abs(hf_acc), axis=0) / 981.0
             # ideally remove loop # Could reduce to single components?
-            hf_amp_val = amp_function(
-                bb_dt,
-                n2,
-                stat.vs,
-                vs30s[stations_todo_idx[i]],
-                stat.vs,
-                pga,
-                fmin=fmin,
-                fmidbot=fmidbot,
-                version=site_amp_version,
-            )
-            lf_amp_val = lf_amp_function(
-                bb_dt,
-                n2,
-                lfvs30refs[stations_todo_idx[i]],
-                vs30s[stations_todo_idx[i]],
-                stat.vs,
-                pga,
-                fmin=fmin,
-                fmidbot=fmidbot,
-                version=site_amp_version,
-            )
             for j in range(3):
-                bb_acc[:, j] = run_based_vs30_amp(
-                    ampdeamp_lf,
-                    args.flo,
+                hf_amp_val = amp_function(
                     bb_dt,
-                    comm,
-                    hf_acc[:, j],
-                    hf_start_padding_ts,
-                    hf_end_padding_ts,
-                    hf_amp_val,
-                    is_master and i == 0,
-                    lf_acc[:, j],
-                    lf_start_padding_ts,
-                    lf_end_padding_ts,
-                    lf_amp_val,
-                    logger,
+                    n2,
+                    stat.vs,
+                    vs30s[stations_todo_idx[i]],
+                    stat.vs,
+                    pga[j],
+                    fmin=fmin,
+                    fmidbot=fmidbot,
+                    version=site_amp_version,
                 )
+                lf_amp_val = lf_amp_function(
+                    bb_dt,
+                    n2,
+                    lfvs30refs[stations_todo_idx[i]],
+                    vs30s[stations_todo_idx[i]],
+                    stat.vs,
+                    pga[j],
+                    fmin=fmin,
+                    fmidbot=fmidbot,
+                    version=site_amp_version,
+                )
+                hf_acc = bwfilter(
+                    ampdeamp(
+                        hf_acc[:, j],
+                        hf_amp_val,
+                        amp=True,
+                    ),
+                    bb_dt,
+                    args.flo,
+                    "highpass",
+                )
+                lf_acc = bwfilter(
+                    ampdeamp_lf(
+                        lf_acc[:, j],
+                        lf_amp_val,
+                        amp=True,
+                    ),
+                    bb_dt,
+                    args.flo,
+                    "lowpass",
+                )
+                hf_c = np.hstack((hf_start_padding_ts, hf_acc[:, j], hf_end_padding_ts))
+                lf_c = np.hstack((lf_start_padding_ts, lf_acc[:, j], lf_end_padding_ts))
+                if is_master and i == 0:
+                    if len(hf_c) != len(lf_c):
+                        logger.critical(
+                            "padded hf and lf have different number of timesteps, aborting. "
+                        )
+                        comm.Abort()
+                bb_acc[:, j] = (hf_c + lf_c) / 981.0
 
         bin_data.seek(bin_seek[i])
         bb_acc.tofile(bin_data)
@@ -460,54 +476,6 @@ def main():
     comm.Barrier()  # all ranks wait here until rank 0 arrives to announce all completed
     if is_master:
         logger.debug("Simulation completed.")
-
-
-def run_based_vs30_amp(
-    ampdeamp_lf,
-    flo,
-    bb_dt,
-    comm,
-    hf_acc,
-    hf_start_padding_ts,
-    hf_end_padding_ts,
-    hf_amp_val,
-    check_length,
-    lf_acc,
-    lf_start_padding_ts,
-    lf_end_padding_ts,
-    lf_amp_val,
-    logger,
-):
-
-    hf_acc = bwfilter(
-        ampdeamp(
-            hf_acc,
-            hf_amp_val,
-            amp=True,
-        ),
-        bb_dt,
-        flo,
-        "highpass",
-    )
-    lf_acc = bwfilter(
-        ampdeamp_lf(
-            lf_acc,
-            lf_amp_val,
-            amp=True,
-        ),
-        bb_dt,
-        flo,
-        "lowpass",
-    )
-    hf_c = np.hstack((hf_start_padding_ts, hf_acc, hf_end_padding_ts))
-    lf_c = np.hstack((lf_start_padding_ts, lf_acc, lf_end_padding_ts))
-    if check_length:
-        if len(hf_c) != len(lf_c):
-            logger.critical(
-                "padded hf and lf have different number of timesteps, aborting. "
-            )
-            comm.Abort()
-    return (hf_c + lf_c) / 981.0
 
 
 if __name__ == "__main__":

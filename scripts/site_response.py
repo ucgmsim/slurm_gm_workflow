@@ -2,13 +2,14 @@ import argparse
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
-from tempfile import TemporaryDirectory, TemporaryFile
+from tempfile import TemporaryDirectory, NamedTemporaryFile
 from typing import List
 
 import numpy as np
 from numpy.fft import rfft, irfft
 from scipy.integrate._quadrature import tupleset
 
+from qcore import qclogging
 from qcore.config import qconfig
 from qcore.constants import Components
 from qcore.timeseries import transf, vel2acc, read_ascii
@@ -233,20 +234,21 @@ def run_deamp(waveform, component: Components, dt, vs_site, HF_pga):
 
 
 def run_deconvolve_and_site_response(
-    waveform: np.ndarray, component: Components, site_properties: SiteProp, dt=0.005
+    acceleration_waveform: np.ndarray, component: Components, site_properties: SiteProp, dt=0.005, logger=qclogging.get_basic_logger()
 ):
     """
     Deconvolves a surface waveform to a waveform at a given depth
     No deamplification occurs here
-    :param waveform: a 1d array of the component to be run
+    :param acceleration_waveform: a 1d array of the component velocities to be run
     :param component: The name of the component. Used to determine the transfer function to use
     :param site_properties: A SiteProp object for the location
     :param dt: The timestep for the given waveform
     :return: A waveform with site specific amplification applied. Has the same shape as waveform
     """
-    ft_len = int(2.0 ** np.ceil(np.log2(waveform.size)))
-    size = waveform.size
-    waveform.resize(ft_len, refcheck=False)
+    ft_len = int(2.0 ** np.ceil(np.log2(acceleration_waveform.size)))
+    size = acceleration_waveform.size
+    acceleration_waveform = acceleration_waveform.copy()
+    acceleration_waveform.resize(ft_len, refcheck=False)
     if component in [Components.c000, Components.c090]:
         transfer = transf(
             vs_ref,
@@ -256,7 +258,7 @@ def run_deconvolve_and_site_response(
             site_properties.vs_base,
             site_properties.rho_base,
             site_properties.dampS_base,
-            waveform.size,
+            acceleration_waveform.size,
             dt,
         )
     else:
@@ -269,27 +271,26 @@ def run_deconvolve_and_site_response(
             site_properties.vs_base,
             site_properties.rho_base,
             site_properties.dampS_base,
-            waveform.size,
+            acceleration_waveform.size,
             dt,
         )
 
-    waveform_ft = np.fft.rfft(waveform)
+    waveform_ft = np.fft.rfft(acceleration_waveform)
     deconv_ft = (1.0 / transfer) * waveform_ft
     bbgm_decon = np.fft.irfft(deconv_ft)[: size]
 
     # integrate acceleration to get velocity (in m/s) for input to OpenSees
-    bbgm_decon_vel = (
-        cumulative_trapezoid(bbgm_decon, dx=dt, initial=0) * 9.80665
-    )
+    bbgm_decon_vel = cumulative_trapezoid(bbgm_decon, dx=dt, initial=0)
+
     with TemporaryDirectory() as td:
         td = Path(td)
-        with TemporaryFile(dir=td) as file_name:
+        with NamedTemporaryFile(dir=td) as file_name:
             # File name doesn't matter for temp file
             np.savetxt(file_name, bbgm_decon_vel)
             params_path = td / "params.tcl"
             site_properties.to_tcl(params_path)
             try:
-                out_file = call_opensees(file_name, params_path, td)
+                out_file = call_opensees(file_name.name, params_path, td, logger=logger)
             except RuntimeError as e:
                 print(f"This didn't work: {component}, {site_properties.name}")
                 raise e
@@ -325,7 +326,7 @@ def check_status(component_outdir, check_fail=False):
     return result
 
 
-def call_opensees(input_file, params_path, out_dir, timeout_threshold=600):
+def call_opensees(input_file, params_path, out_dir, timeout_threshold=600, logger=qclogging.get_basic_logger()):
     # print(qconfig)
     script = [
         qconfig["OpenSees"],
@@ -339,13 +340,16 @@ def call_opensees(input_file, params_path, out_dir, timeout_threshold=600):
     # print(" ".join(map(str, script)))
 
     try:
-        subprocess.run(script, timeout=timeout_threshold, stderr=subprocess.DEVNULL)
+        subp = subprocess.run(script, timeout=timeout_threshold, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     except subprocess.TimeoutExpired as e:
+        logger.error(str(e))
         raise e
-    else:
-        # save the ending time
-        pass
-
+    with subp.stdout:
+        for line in iter(subp.stdout.readline, b''):  # b'\n'-separated lines
+            logger.info(f'got stdout line from subprocess: {line}')
+    with subp.stderr:
+        for line in iter(subp.stderr.readline, b''):  # b'\n'-separated lines
+            logger.info(f'got stderr line from subprocess: {line}')
     # TODO: Add debugging if it didn't work
 
     out_file_path = out_dir / "out.csv"
@@ -391,7 +395,7 @@ def main():
             vel_waveform, meta = read_ascii(folder / f"{site_name}.{waveform_component.str_value}", meta=True)
             acc_waveform = vel2acc(vel_waveform, meta["dt"]) / 980.665
             deamp_wave = run_deamp(acc_waveform, waveform_component, meta["dt"], 155.0, 0.06275231603044873)
-            deconv = run_deconvolve_and_site_response(deamp_wave, waveform_component, site_prop, meta["dt"], size=vel_waveform.size)
+            deconv = run_deconvolve_and_site_response(deamp_wave[:], waveform_component, site_prop, meta["dt"])
             # print(deconv)
             return deconv
 
