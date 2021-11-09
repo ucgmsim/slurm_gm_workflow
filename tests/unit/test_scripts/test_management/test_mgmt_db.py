@@ -1,9 +1,9 @@
 import os
 import shutil
 import pytest
-
-from scheduler.management import connect_db_ctx, create_mgmt_db
-from scheduler.management import SchedulerTask
+from scheduler.management.db_helper import connect_db_ctx
+from scheduler.management import create_mgmt_db
+from scheduler.management.MgmtDB import SchedulerTask
 from qcore import utils
 from qcore.qclogging import get_basic_logger
 
