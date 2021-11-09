@@ -51,7 +51,7 @@ if [[ $res == 0 ]]; then
 
     fd_name=`python -c "from qcore import utils; params = utils.load_sim_params('{{sim_dir}}/sim_params.yaml'); print(params.FD_STATLIST)"`
     fd_count=`cat $fd_name | wc -l`
-    pSA_count=`cat {{sim_dir}}/IM_calc/{{sim_name}}.csv | head -n 1 | grep -o pSA | wc -l`
+    pSA_count=`cat {{sim_dir}}/IM_calc/{{realisation_name}}.csv | head -n 1 | grep -o pSA | wc -l`
 
     # log metadata
     if [[ $checkpoint_check != 0 ]]; then
