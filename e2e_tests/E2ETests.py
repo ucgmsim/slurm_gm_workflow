@@ -5,7 +5,6 @@ import os
 import json
 import shutil
 import time
-import glob
 import subprocess
 from collections import namedtuple
 from typing import List
@@ -17,12 +16,11 @@ import pandas as pd
 import sqlite3 as sql
 from pandas.testing import assert_frame_equal
 
-from scripts.management.db_helper import connect_db_ctx
-from scripts.management.MgmtDB import SchedulerTask, MgmtDB
+from automation.lib.MgmtDB import MgmtDB
 import qcore.constants as const
 import qcore.simulation_structure as sim_struct
 from qcore.shared import non_blocking_exe, exe
-from scripts.schedulers.scheduler_factory import Scheduler
+from automation.lib.schedulers.scheduler_factory import Scheduler
 
 
 def get_sim_dirs(runs_dir):
@@ -239,7 +237,7 @@ class E2ETests(object):
         """
         script_path = os.path.join(
             os.path.dirname(os.path.abspath(__file__)),
-            "../scripts/cybershake/install_cybershake.py",
+            "../automation/install_scripts/install_cybershake.py",
         )
         cmd = "python {} {} {} {} --seed {} --stat_file_path {}".format(
             script_path,
@@ -334,7 +332,7 @@ class E2ETests(object):
         submit_cmd = "python {} {} {} {} --sleep_time 2".format(
             os.path.join(
                 os.path.dirname(os.path.abspath(__file__)),
-                "../scripts/cybershake/run_cybershake.py",
+                "../automation/execution_scripts/run_cybershake.py",
             ),
             self.stage_dir,
             user,
