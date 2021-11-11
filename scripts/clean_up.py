@@ -81,7 +81,7 @@ def create_temp_dirs(sim_dir, outer_dir_name, inner_dir_name=""):
     outer_dir = os.path.join(sim_dir, outer_dir_name)
     utils.setup_dir(outer_dir)
     inner_dir = ""
-    if inner_dir_name is not "":
+    if inner_dir_name != "":
         inner_dir = os.path.join(sim_dir, outer_dir_name, inner_dir_name)
         utils.setup_dir(inner_dir)
     return outer_dir, inner_dir
