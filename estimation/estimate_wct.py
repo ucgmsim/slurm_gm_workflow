@@ -345,9 +345,7 @@ def est_BB_chours_single(fd_count: int, nt: int, n_logical_cores: int):
     return core_hours[0], run_time[0]
 
 
-def estimate_BB_chours(
-    data: np.ndarray,
-):
+def estimate_BB_chours(data: np.ndarray,):
     """Make bulk BB estimations, requires data to be
     in the correct order (see above)
 
@@ -384,6 +382,37 @@ def estimate_BB_chours(
     core_hours = np.exp(
         (coefficients["a"] * np.log(nt * np.log(nt)))
         + (coefficients["b"] * fd_count)
+        + coefficients["c"]
+    )
+
+    return core_hours, core_hours / data[:, -1]
+
+
+def est_VM_PERTB_chours_single(nx: int, ny: int, nz: int, n_cores: int):
+    data = np.array([int(nx) * int(ny) * int(nz), int(n_cores)]).reshape(1, 2)
+
+    core_hours, run_time = est_VM_PERTB_chours(data)
+    return core_hours[0], run_time[0]
+
+
+def est_VM_PERTB_chours(data: np.ndarray):
+
+    if data.shape[1] != 2:
+        raise Exception(
+            "Invalid input data, has to 3 columns. " "One for each feature."
+        )
+
+    coefficients = {
+        "a": 1.859_169_281_537_847e-09,
+        "b": 5.917_060_637_004_801e-20,
+        "c": 0.130_000_000_000_000_4,
+    }
+
+    vm_size = data[:, 0]
+
+    core_hours = (
+        (vm_size * coefficients["a"])
+        + ((vm_size ** 2) * coefficients["b"])
         + coefficients["c"]
     )
 
