@@ -27,8 +27,6 @@ DEFAULT_CPUS = 4
 def get_vm_pert_cores_and_wct(
     vm_params, ncpus, target_machine, logger: Logger = get_basic_logger()
 ):
-    # scale up the run_time if its a re-run
-    # there is not check-pointing currently
     est_core_hours, est_run_time = est.est_VM_PERT_chours_single(
         vm_params["nx"], vm_params["ny"], vm_params["nz"], ncpus
     )
