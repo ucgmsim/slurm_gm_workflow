@@ -15,11 +15,6 @@ class Slurm(AbstractScheduler):
     QUEUE_NAME = "squeue"
     HEADER_TEMPLATE = "slurm_header.cfg"
 
-    scheduler_header_command_dict = {
-        "time": "--time={value}",
-        "job_name": "--job-name={value}",
-    }
-
     def check_queues(self, user: bool = False, target_machine: HPC = None):
         self.logger.debug(
             f"Checking queues for machine {target_machine}{f' and user {self.user_name}' if user else ''}."
@@ -128,23 +123,24 @@ class Slurm(AbstractScheduler):
     def process_arguments(
         script_path: str, arguments: Dict[str, str], scheduler_arguments: Dict[str, str]
     ):
-        scheduler_commands = map_scheduler_args(scheduler_arguments)
-        return f"{schedular_commands} {script_path} {' '.join(arguments.values())}"
-
-    def map_scheduler_args(scheduler_arguments: Dict[str, str]):
-        """
-        Maps known arguments to pre-defined command with value
-        :return: a string contains all map-able args and value
-        """
-        scheduler_args_command = ""
+        #        scheduler_commands = map_scheduler_args(scheduler_arguments)
+        scheduler_header_command_dict = {
+            "time": "--time={value}",
+            "job_name": "--job-name={value}",
+            "ncpus": "--cpus-per-task={value}",
+            "nodes": "--nodes={value}",
+            "ntasks": "--ntasks={value}",
+        }
+        scheduler_args_commands = ""
         for key, value in scheduler_arguments.items():
-            if key in scheduler_header_command_dict.keys():
-                scheduler_args_command = scheduler_args_command + scheduler_header_command_dict[
-                    key
-                ].format(
-                    value=value
+            if key in scheduler_arguments.keys():
+                scheduler_args_commands = (
+                    scheduler_args_commands
+                    + " "
+                    + scheduler_header_command_dict[key].format(value=value)
                 )
-        return scheduler_args_command
+
+        return f"{scheduler_args_commands} {script_path} {' '.join(arguments.values())}"
 
     def get_metadata(self, db_running_task: SchedulerTask, task_logger: Logger):
         """
