@@ -27,7 +27,6 @@ class Scheduler:
         platform_accounts = [account]
         if PLATFORM_CONFIG.PLATFORM_ACCOUNTS.name in platform_config:
             platform_accounts = platform_config[PLATFORM_CONFIG.PLATFORM_ACCOUNTS.name]
-        # platform_accounts= ['nesi00213']
         if scheduler == "slurm":
             cls.__scheduler = Slurm(
                 user=user,
