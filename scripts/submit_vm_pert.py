@@ -79,7 +79,6 @@ def submit_vm_pert_main(
                 {
                     "VM_PARAMS_YAML": VM_PARAMS_YAML,
                     "OUTPUT_DIR": sim_struct.get_fault_VM_dir(root_folder, run_name),
-                    "SRF_PATH": sim_struct.get_srf_path(root_folder, run_name),
                     "MGMT_DB_LOC": root_folder,
                     "REL_NAME": run_name,
                 }
