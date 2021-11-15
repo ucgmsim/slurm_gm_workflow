@@ -32,11 +32,9 @@ def get_vm_pert_cores_and_wct(
     est_core_hours, est_run_time = est.est_VM_PERT_chours_single(
         vm_params["nx"], vm_params["ny"], vm_params["nz"], ncpus
     )
-    #    estimated_CH, estimated_run_time = est_VM_PERT_chours_single(vm_params['nx'], vm_params['ny'], vm_params['nz'] , ncpus)
-    #    if retries > 0:
-    # only scales up once, as it should never take more than that in normal situtation
-    #        est_run_time = est_run_time * 2
-    # re-scale core/wct
+    # not scaling run_time by rety count, as there is no check-pointing, yet
+
+    # re-scale core/wct, in case est_run_time is higher than cap
     # re-scale wct base on machine MAX_JOB_WCT
     machine_config = get_machine_config(hostname=target_machine)
     max_wct = machine_config["MAX_JOB_WCT"]
