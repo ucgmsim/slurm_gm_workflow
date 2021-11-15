@@ -388,14 +388,14 @@ def estimate_BB_chours(data: np.ndarray,):
     return core_hours, core_hours / data[:, -1]
 
 
-def est_VM_PERTB_chours_single(nx: int, ny: int, nz: int, n_cores: int):
+def est_VM_PERT_chours_single(nx: int, ny: int, nz: int, n_cores: int):
     data = np.array([int(nx) * int(ny) * int(nz), int(n_cores)]).reshape(1, 2)
 
-    core_hours, run_time = est_VM_PERTB_chours(data)
+    core_hours, run_time = est_VM_PERT_chours(data)
     return core_hours[0], run_time[0]
 
 
-def est_VM_PERTB_chours(data: np.ndarray):
+def est_VM_PERT_chours(data: np.ndarray):
 
     if data.shape[1] != 2:
         raise Exception(
