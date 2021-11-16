@@ -175,7 +175,9 @@ class Pbs(AbstractScheduler):
 
     @staticmethod
     def process_arguments(
-        script_path: str, arguments: Dict[str, str], scheduler_arguments: Dict[str, str]
+        script_path: str,
+        arguments: Dict[str, str],
+        scheduler_arguments: Dict[str, str] = [],
     ):
         """
         keys in arguments must match whatever the pbs script is expecting, otherwise will fail
@@ -189,7 +191,7 @@ class Pbs(AbstractScheduler):
         }
         scheduler_args_commands = ""
         for key, value in scheduler_arguments.items():
-            if key in scheduler_arguments.keys():
+            if key in scheduler_header_command_dict.keys():
                 scheduler_args_commands = (
                     scheduler_args_commands
                     + " "

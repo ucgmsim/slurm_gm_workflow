@@ -71,7 +71,7 @@ class Slurm(AbstractScheduler):
         else:
             mid = ""
         command = " ".join([common_pre, mid, script_location])
-
+        print(command)
         self.logger.debug(f"Submitting command {command}")
         out, err = self._run_command_and_wait(cmd=[command], shell=True)
 
@@ -133,7 +133,7 @@ class Slurm(AbstractScheduler):
         }
         scheduler_args_commands = ""
         for key, value in scheduler_arguments.items():
-            if key in scheduler_arguments.keys():
+            if key in scheduler_header_command_dict.keys():
                 scheduler_args_commands = (
                     scheduler_args_commands
                     + " "
