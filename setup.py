@@ -14,7 +14,7 @@ setup(
         license = "MIT",
         keywords = "UC GM Sim workflow installation",
         url = "https://github.com/ucgmsim/slurm_gm_workflow",
-        packages = ['automation','calculation','e2e_tests','environments','examples','scripts'],
+        packages = ['automation','automation.estimation','automation.lib','automation.lib.schedulers','automation.metadata','automation.submit','calculation','calculation.verification'],
         long_description=read('README.md'),
         classifiers=[
             "Development Status :: 1 - Alpha",

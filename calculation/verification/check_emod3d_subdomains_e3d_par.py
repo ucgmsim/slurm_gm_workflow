@@ -1,6 +1,6 @@
 import argparse
 
-from calculation.verification.check_emod3d_subdomains import test_domain
+from check_emod3d_subdomains import test_domain
 from qcore.utils import load_yaml
 
 parser = argparse.ArgumentParser(allow_abbrev=False)

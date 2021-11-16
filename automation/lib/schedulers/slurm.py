@@ -5,7 +5,7 @@ from os.path import join
 from qcore.constants import ProcessType, timestamp
 
 from automation.lib.MgmtDB import SchedulerTask
-from automation.lib.schedulers.abstractscheduler import AbstractScheduler
+from abstractscheduler import AbstractScheduler
 from automation.platform_config import HPC, get_target_machine
 
 

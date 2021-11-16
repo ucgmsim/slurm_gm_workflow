@@ -2,7 +2,7 @@ from logging import Logger
 from typing import Dict
 
 from automation.lib.MgmtDB import SchedulerTask
-from automation.lib.schedulers.abstractscheduler import AbstractScheduler
+from abstractscheduler import AbstractScheduler
 
 
 class Bash(AbstractScheduler):

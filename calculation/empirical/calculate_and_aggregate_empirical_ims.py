@@ -7,10 +7,10 @@ import pathlib
 
 from qcore.qclogging import get_logger, add_general_file_handler
 
-from calculation.empirical.agg_sim_emp_im_perms import (
+from agg_sim_emp_im_perms import (
     aggregate_simulation_empirical_im_permutations,
 )
-from calculation.empirical.calculate_unperturbated_empirical_ims import (
+from calculate_unperturbated_empirical_ims import (
     calculate_unperturbated_empiricals,
 )
 from empirical.util import classdef

@@ -6,7 +6,7 @@ from typing import List, Dict, Union
 from qcore.constants import timestamp
 
 from automation.lib.MgmtDB import SchedulerTask
-from automation.lib.schedulers.abstractscheduler import AbstractScheduler
+from abstractscheduler import AbstractScheduler
 
 
 class Pbs(AbstractScheduler):

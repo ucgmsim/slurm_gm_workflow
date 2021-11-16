@@ -14,7 +14,7 @@ from typing import List
 from automation.platform_config import platform_config
 import qcore.constants as const
 from qcore import shared, srf, utils
-from automation.estimation import estimate_wct
+import estimate_wct
 
 VM_PARAMS_FILENAME = "vm_params.yaml"
 

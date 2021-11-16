@@ -3,11 +3,10 @@ from logging import Logger
 from qcore.constants import PLATFORM_CONFIG
 from qcore.config import host
 from qcore.qclogging import get_basic_logger
-from automation.lib.schedulers.abstractscheduler import AbstractScheduler
-from automation.lib.schedulers.bash import Bash
-from automation.lib.schedulers.pbs import Pbs
-
-from automation.lib.schedulers.slurm import Slurm
+from abstractscheduler import AbstractScheduler
+from bash import Bash
+from pbs import Pbs
+from slurm import Slurm
 from automation.platform_config import platform_config
 
 
