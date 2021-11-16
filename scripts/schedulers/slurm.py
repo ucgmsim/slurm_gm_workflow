@@ -124,7 +124,7 @@ class Slurm(AbstractScheduler):
         arguments: Dict[str, str],
         scheduler_arguments: Dict[str, str],
     ):
-        #        scheduler_commands = map_scheduler_args(scheduler_arguments)
+        # maps scheduler specific args with commands
         scheduler_header_command_dict = {
             "time": "--time={value}",
             "job_name": "--job-name={value}",

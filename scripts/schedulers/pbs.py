@@ -182,7 +182,7 @@ class Pbs(AbstractScheduler):
         """
         keys in arguments must match whatever the pbs script is expecting, otherwise will fail
         """
-        # scheduler related args
+        # maps scheduler specific args with commands
         scheduler_header_command_dict = {
             "time": "-l walltime={value}",
             "job_name": "-N {value}",
