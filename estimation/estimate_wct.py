@@ -401,7 +401,7 @@ def est_VM_PERT_chours(data: np.ndarray):
 
     if data.shape[1] != 2:
         raise Exception(
-            "Invalid input data, has to be 2 columns. " "One for each feature."
+            "Invalid input data, has to be 2 columns. One for each feature."
         )
 
     coefficients = {
