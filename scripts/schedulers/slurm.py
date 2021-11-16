@@ -121,7 +121,9 @@ class Slurm(AbstractScheduler):
 
     @staticmethod
     def process_arguments(
-        script_path: str, arguments: Dict[str, str], scheduler_arguments: Dict[str, str]
+        script_path: str,
+        arguments: Dict[str, str],
+        scheduler_arguments: Dict[str, str],
     ):
         #        scheduler_commands = map_scheduler_args(scheduler_arguments)
         scheduler_header_command_dict = {
