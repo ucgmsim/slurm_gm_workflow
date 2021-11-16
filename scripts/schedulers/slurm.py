@@ -71,7 +71,6 @@ class Slurm(AbstractScheduler):
         else:
             mid = ""
         command = " ".join([common_pre, mid, script_location])
-        print(command)
         self.logger.debug(f"Submitting command {command}")
         out, err = self._run_command_and_wait(cmd=[command], shell=True)
 
