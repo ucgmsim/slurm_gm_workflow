@@ -25,6 +25,7 @@ from scripts.submit_post_emod3d import main as submit_post_lf_main
 from scripts.submit_hf import main as submit_hf_main
 from scripts.submit_bb import main as submit_bb_main
 from scripts.submit_sim_imcalc import submit_im_calc_slurm
+from scripts.submit_vm_pert import submit_vm_pert_main
 from shared_workflow import shared_automated_workflow
 from shared_workflow.platform_config import (
     HPC,
@@ -357,26 +358,7 @@ def submit_task(
             target_machine=get_target_machine(const.ProcessType.VM_GEN).name,
         )
     elif proc_type == const.ProcessType.VM_PERT.value:
-        submit_script_to_scheduler(
-            get_platform_specific_script(
-                const.ProcessType.VM_PERT,
-                OrderedDict(
-                    {
-                        "VM_PARAMS_YAML": str(
-                            Path(sim_struct.get_fault_VM_dir(root_folder, run_name))
-                            / "vm_params.yaml"
-                        ),
-                        "OUTPUT_DIR": sim_struct.get_fault_VM_dir(
-                            root_folder, run_name
-                        ),
-                        "SRF_PATH": sim_struct.get_srf_path(root_folder, run_name),
-                        "MGMT_DB_LOC": root_folder,
-                        "REL_NAME": run_name,
-                    }
-                ),
-            ),
-            target_machine=get_target_machine(const.ProcessType.VM_PERT).name,
-        )
+        submit_vm_pert_main(root_folder, run_name, sim_dir, logger=task_logger)
     elif proc_type == const.ProcessType.INSTALL_FAULT.value:
         fault_dir = sim_struct.get_fault_dir(
             root_folder, sim_struct.get_fault_from_realisation(run_name)

@@ -98,7 +98,9 @@ def get_target_machine(process: Union[ProcessType, str, int]) -> HPC:
 
 
 def get_platform_specific_script(
-    process: ProcessType, arguments: Dict[str, str]
+    process: ProcessType,
+    arguments: Dict[str, str],
+    scheduler_arguments: Dict[str, str] = {},
 ) -> str:
     """
     Returns the path to the script with arguments correctly formatted for the scheduler
@@ -132,6 +134,7 @@ def get_platform_specific_script(
             WORKFLOW_DIR, "scripts", platform_dir, f"{script_name}.{script_extension}"
         ),
         arguments,
+        scheduler_arguments,
     )
 
 
