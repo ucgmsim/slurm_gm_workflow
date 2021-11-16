@@ -345,7 +345,9 @@ def est_BB_chours_single(fd_count: int, nt: int, n_logical_cores: int):
     return core_hours[0], run_time[0]
 
 
-def estimate_BB_chours(data: np.ndarray,):
+def estimate_BB_chours(
+    data: np.ndarray,
+):
     """Make bulk BB estimations, requires data to be
     in the correct order (see above)
 
@@ -403,16 +405,16 @@ def est_VM_PERT_chours(data: np.ndarray):
         )
 
     coefficients = {
-        "a": 1.859_169_281_537_847e-09,
-        "b": 5.917_060_637_004_801e-20,
+        "a": 5.917_060_637_004_801e-20,
+        "b": 1.859_169_281_537_847e-09,
         "c": 0.130_000_000_000_000_4,
     }
 
     vm_size = data[:, 0]
 
     core_hours = (
-        (vm_size * coefficients["a"])
-        + ((vm_size ** 2) * coefficients["b"])
+        ((vm_size ** 2) * coefficients["a"])
+        + (vm_size * coefficients["b"])
         + coefficients["c"]
     )
 
