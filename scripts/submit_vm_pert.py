@@ -30,7 +30,7 @@ def get_vm_pert_cores_and_wct(
     est_core_hours, est_run_time = est.est_VM_PERT_chours_single(
         vm_params["nx"], vm_params["ny"], vm_params["nz"], ncpus
     )
-    # not scaling run_time by rety count, as there is no check-pointing, yet
+    # not scaling run_time by retry count, as there is no check-pointing, yet
 
     # re-scale core/wct, in case est_run_time is higher than cap
     # re-scale wct base on machine MAX_JOB_WCT
