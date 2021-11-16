@@ -21,7 +21,7 @@ from shared_workflow.platform_config import (
     get_target_machine,
 )
 
-DEFAULT_CPUS = 4
+DEFAULT_CPUS = platform_config[const.PLATFORM_CONFIG.VM_PERT_DEFAULT_NCORES.name]
 
 # def estimate_wc:
 def get_vm_pert_cores_and_wct(
