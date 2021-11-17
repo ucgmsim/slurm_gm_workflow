@@ -8,6 +8,7 @@ from workflow.automation.lib import shared_template
 from workflow.automation.tests.test_common_set_up import (
     get_input_params,
     get_bench_output,
+    set_up
 )
 
 
@@ -30,7 +31,7 @@ def test_write_sl_script(set_up, mocker):
 
         slurm_script = io.StringIO("")
         mocker.patch(
-            "shared_workflow.shared_template.write_file",
+            "workflow.automation.lib.shared_template.write_file",
             lambda _, parts: slurm_script.write("\n".join(parts)),
         )
 
@@ -61,7 +62,7 @@ def test_generate_context(set_up):
     for root_path, realisation in set_up:
         input_params = get_input_params(root_path, func_name, params)
         input_params[0] = os.path.join(
-            os.path.dirname(os.path.realpath(__file__)), "../../../testing", "..", "templates"
+            os.path.dirname(os.path.realpath(__file__)), "..", "..", "templates"
         )
         test_output = func(*input_params)
         # Check test output exists, doing a line by line comparison was considered to be too
@@ -77,7 +78,7 @@ def test_resolve_header(set_up):
     for root_path, realisation in set_up:
         input_params = get_input_params(root_path, func_name, params)
         input_params[0] = os.path.join(
-            os.path.dirname(os.path.realpath(__file__)), "../../../testing", "..", "templates"
+            os.path.dirname(os.path.realpath(__file__)), "..", "..", "templates"
         )
         input_params[8] = "nesi_header.cfg"
         input_params.append({"n_tasks": 40})

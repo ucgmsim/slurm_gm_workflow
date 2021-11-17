@@ -16,7 +16,7 @@
   "AVAILABLE_MACHINES":  ["nurion"],
   "VELOCITY_MODEL_DIR": "/home01/hpc11a02/gmsim/VelocityModel",
   "ESTIMATION_MODELS_DIR": "$workflow/estimation/models",
-  "TEMPLATES_DIR": "$workflow/templates",
+  "TEMPLATES_DIR": "$workflow/calculation/gmsim_templates",
   "RUN_COMMAND": "mpirun",
   "DEFAULT_N_RUNS": {
     "nurion": 50

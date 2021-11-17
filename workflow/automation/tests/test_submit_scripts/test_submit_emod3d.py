@@ -6,7 +6,7 @@ from qcore.utils import load_sim_params as mocked_load_sim_params
 from qcore.utils import load_yaml as mocked_load_yaml
 from workflow.automation.lib.shared import set_wct as mocked_set_wct
 
-from workflow.automation.tests.test_common_set_up import get_fault_from_rel
+from workflow.automation.tests.test_common_set_up import get_fault_from_rel, set_up
 
 # from testing.conftest import init_scheduler
 
@@ -18,16 +18,16 @@ def test_main(set_up, mocker):
     """No return value. Just check that it runs without crashing"""
 
     mocker.patch(
-        "scripts.submit_emod3d.set_wct", lambda x, y, z: mocked_set_wct(x, y, True)
+        "workflow.automation.submit.submit_emod3d.set_wct", lambda x, y, z: mocked_set_wct(x, y, True)
     )
-    mocker.patch("scripts.submit_emod3d.confirm", lambda x: False)
+    mocker.patch("workflow.automation.submit.submit_emod3d.confirm", lambda x: False)
     mocker.patch(
-        "scripts.submit_emod3d.est.est_LF_chours_single",
+        "workflow.automation.submit.submit_emod3d.est.est_LF_chours_single",
         lambda a, b, c, d, e, f, g: (2, 0.05, 40),
     )
 
     mocker.patch(
-        "scripts.set_runparams.utils.load_yaml",
+        "workflow.calculation.create_e3d.utils.load_yaml",
         lambda x: mocked_load_yaml(
             os.path.join(
                 os.path.dirname(os.path.realpath(__file__)),
@@ -48,11 +48,11 @@ def test_main(set_up, mocker):
         )
         # Fault will probably change on each set of data, so reset these every time
         mocker.patch(
-            "scripts.submit_emod3d.utils.load_sim_params",
+            "workflow.automation.submit.submit_emod3d.utils.load_sim_params",
             lambda x: mocked_load_sim_params(os.path.join(rel_dir, x)),
         )
 
-        automation.submit.submit_emod3d.main(
+        workflow.automation.submit.submit_emod3d.main(
             submit=None,
             machine="default",
             ncores=160,

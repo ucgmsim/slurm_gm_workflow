@@ -6,7 +6,7 @@ from qcore.utils import load_yaml as mocked_load_yaml
 
 from workflow.calculation import create_e3d
 from workflow.automation.tests.test_common_set_up import (
-    get_fault_from_rel,
+    get_fault_from_rel, set_up
 )
 
 
@@ -115,7 +115,7 @@ def test_create_run_params(set_up, mocker):
             os.path.join(root_path, "CSRoot", "Runs", fault, x)
         )
         mocker.patch(
-            "scripts.set_runparams.utils.load_sim_params", get_mocked_sim_params
+            "workflow.calculation.create_e3d.utils.load_sim_params", get_mocked_sim_params
         )
 
         outp = StringIO()
@@ -128,18 +128,16 @@ def test_create_run_params(set_up, mocker):
                     outp.write("%s=%s\n" % (key, value))
 
         mocker.patch(
-            "scripts.set_runparams.shared.write_to_py",
+            "workflow.calculation.create_e3d.shared.write_to_py",
             lambda x, y: write_e3d(y),
         )
         mocker.patch(
-            "scripts.set_runparams.utils.load_yaml",
+            "workflow.calculation.create_e3d.utils.load_yaml",
             lambda x: mocked_load_yaml(
                 os.path.join(
                     os.path.dirname(os.path.realpath(__file__)),
-                    "../../../testing",
-                    "..",
-                    "templates",
-                    "gmsim",
+                    "../../../calculation",
+                    "gmsim_templates",
                     "16.1",
                     "emod3d_defaults.yaml",
                 )

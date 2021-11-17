@@ -5,7 +5,7 @@ import pytest
 from qcore.utils import load_sim_params as mocked_load_sim_params
 from workflow.automation.lib.shared import set_wct as mocked_set_wct
 
-from workflow.automation.tests.test_common_set_up import get_fault_from_rel
+from workflow.automation.tests.test_common_set_up import get_fault_from_rel, set_up
 
 import workflow.automation.submit.submit_hf
 
@@ -15,11 +15,11 @@ def test_main(set_up, mocker):
     """No return value. Just check that it runs without crashing"""
 
     mocker.patch(
-        "scripts.submit_hf.set_wct", lambda x, y, z: mocked_set_wct(x, y, True)
+        "workflow.automation.submit.submit_hf.set_wct", lambda x, y, z: mocked_set_wct(x, y, True)
     )
-    mocker.patch("scripts.submit_hf.confirm", lambda x: False)
+    mocker.patch("workflow.automation.submit.submit_hf.confirm", lambda x: False)
     mocker.patch(
-        "scripts.submit_hf.est.est_HF_chours_single",
+        "workflow.automation.submit.submit_hf.est.est_HF_chours_single",
         lambda *args, **kwargs: (2, 0.05, 40),
     )
 
@@ -30,11 +30,11 @@ def test_main(set_up, mocker):
         )
         # Fault will probably change on each set of data, so reset this every time
         mocker.patch(
-            "scripts.submit_hf.utils.load_sim_params",
+            "workflow.automation.submit.submit_hf.utils.load_sim_params",
             lambda x: mocked_load_sim_params(os.path.join(rel_dir, x)),
         )
 
-        automation.submit.submit_hf.main(
+        workflow.automation.submit.submit_hf.main(
             submit=None,
             machine="default",
             ncores=80,
