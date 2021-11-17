@@ -10,7 +10,7 @@ import pytest
 import numpy as np
 import pandas as pd
 
-from automation.metadata.agg_json_data import (
+from workflow.automation.metadata.agg_json_data import (
     main,
     create_dataframe,
     load_metadata_df,

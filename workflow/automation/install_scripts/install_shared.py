@@ -17,8 +17,8 @@ from qcore.constants import (
     HF_DEFAULT_SEED,
     Components,
 )
-from automation.lib import shared
-from automation.platform_config import platform_config
+from workflow.automation.lib import shared
+from workflow.automation.platform_config import platform_config
 
 HF_VEL_MOD_1D = "hf_vel_mod_1d"
 

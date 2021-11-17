@@ -4,9 +4,9 @@ import argparse
 from datetime import datetime
 import os
 
-from automation.lib.schedulers.scheduler_factory import Scheduler
-from automation.platform_config import platform_config
-from automation.lib.shared_template import generate_context, resolve_header
+from workflow.automation.lib.schedulers.scheduler_factory import Scheduler
+from workflow.automation.platform_config import platform_config
+from workflow.automation.lib.shared_template import generate_context, resolve_header
 from qcore import simulation_structure, utils
 from qcore import constants as const
 

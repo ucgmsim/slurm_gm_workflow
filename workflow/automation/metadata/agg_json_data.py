@@ -19,7 +19,7 @@ from typing import List
 from multiprocessing import Pool
 from argparse import ArgumentParser
 
-from automation.estimation.estimate_wct import get_IM_comp_count
+from workflow.automation.estimation.estimate_wct import get_IM_comp_count
 from qcore.constants import (
     ProcessType,
     MetadataField,

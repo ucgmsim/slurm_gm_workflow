@@ -108,7 +108,7 @@ def get_platform_specific_script(
     """
 
     # To prevent circular dependency
-    from automation.lib.schedulers.scheduler_factory import Scheduler
+    from workflow.automation.lib.schedulers.scheduler_factory import Scheduler
 
     scheduler = Scheduler.get_scheduler()
 

@@ -7,9 +7,9 @@ A script that queries a slurm mgmt db and returns the status of a task
 import argparse
 from typing import Union, List
 
-from automation.lib import MgmtDB
+from workflow.automation.lib import MgmtDB
 
-from automation.lib.shared_automated_workflow import parse_config_file
+from workflow.automation.lib.shared_automated_workflow import parse_config_file
 
 PATTERN_FORMATTER = "{:>25}, {:>15}: created: {:>5}, queued: {:>5}, running: {:>5}, other: {:>5}, completed: {:>5}, failed: {:>5}, total: {:>6}"
 PATTERN_TODO_FORMATTER = "{:>25}, {:>15}: created: {:>5}"

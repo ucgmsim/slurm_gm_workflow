@@ -15,11 +15,11 @@ from qcore.qclogging import VERYVERBOSE
 import qcore.constants as const
 import qcore.simulation_structure as sim_struct
 from qcore import qclogging
-from automation.lib.MgmtDB import MgmtDB, SchedulerTask
-from automation.lib.schedulers.scheduler_factory import Scheduler
-from automation.platform_config import HPC
-from automation.lib.shared_automated_workflow import check_mgmt_queue
-from automation.metadata.log_metadata import store_metadata
+from workflow.automation.lib.MgmtDB import MgmtDB, SchedulerTask
+from workflow.automation.lib.schedulers.scheduler_factory import Scheduler
+from workflow.automation.platform_config import HPC
+from workflow.automation.lib.shared_automated_workflow import check_mgmt_queue
+from workflow.automation.metadata.log_metadata import store_metadata
 
 # Have to include sub-seconds, as clean up can run sub one second.
 

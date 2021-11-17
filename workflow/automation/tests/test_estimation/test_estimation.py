@@ -3,7 +3,7 @@ a) ensure that the estimate_wct workflow works
 """
 import pytest
 
-import automation.estimation.estimate_wct as est
+import workflow.automation.estimation.estimate_wct as est
 
 # Test data
 # small = Hossack

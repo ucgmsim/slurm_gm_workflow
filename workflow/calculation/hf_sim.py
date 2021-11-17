@@ -12,7 +12,7 @@ import numpy as np
 import logging
 
 from qcore import binary_version, constants, utils
-from automation.platform_config import platform_config
+from workflow.automation.platform_config import platform_config
 
 if __name__ == "__main__":
     from qcore import MPIFileHandler

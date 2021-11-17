@@ -1,7 +1,7 @@
 import inspect
 
-from automation.lib import shared
-from automation.tests.test_common_set_up import get_input_params, get_bench_output
+from workflow.automation.lib import shared
+from workflow.automation.tests.test_common_set_up import get_input_params, get_bench_output
 
 
 # test for install_simualtion inside install_cybershake_fault.py

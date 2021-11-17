@@ -12,7 +12,7 @@ from qcore.constants import (
 from qcore import qclogging
 
 from install_cybershake_fault import install_fault
-from automation.platform_config import platform_config
+from workflow.automation.platform_config import platform_config
 
 AUTO_SUBMIT_LOG_FILE_NAME = "install_cybershake_log_{}.txt"
 

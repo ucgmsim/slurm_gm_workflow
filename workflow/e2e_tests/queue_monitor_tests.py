@@ -11,10 +11,10 @@ import sqlite3 as sql
 import qcore.constants as const
 import qcore.simulation_structure as sim_struct
 from qcore.shared import exe
-from automation.execution_scripts.add_to_mgmt_queue import add_to_queue
-from automation.install_scripts import create_mgmt_db
-from automation.lib.MgmtDB import connect_db_ctx
-from e2e_tests.E2ETests import NonBlockingStreamReader, Error
+from workflow.automation.execution_scripts.add_to_mgmt_queue import add_to_queue
+from workflow.automation.install_scripts import create_mgmt_db
+from workflow.automation.lib.MgmtDB import connect_db_ctx
+from workflow.e2e_tests.E2ETests import NonBlockingStreamReader, Error
 
 
 class QueueMonitorStressTest(object):

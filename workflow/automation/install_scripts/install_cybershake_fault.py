@@ -11,10 +11,10 @@ import argparse
 from logging import Logger
 import shlex
 
-from calculation.bb_sim import args_parser as bb_args_parser
-from calculation.hf_sim import args_parser as hf_args_parser
-from automation.submit.submit_bb import gen_command_template as bb_gen_command_template
-from automation.submit.submit_hf import gen_command_template as hf_gen_command_template
+from workflow.calculation.bb_sim import args_parser as bb_args_parser
+from workflow.calculation.hf_sim import args_parser as hf_args_parser
+from workflow.automation.submit.submit_bb import gen_command_template as bb_gen_command_template
+from workflow.automation.submit.submit_hf import gen_command_template as hf_gen_command_template
 
 from numpy import isclose
 from qcore import utils, validate_vm, simulation_structure
@@ -36,7 +36,7 @@ from install_shared import (
 )
 
 # from shared_workflow.shared_template import generate_command
-from automation.platform_config import platform_config, HPC
+from workflow.automation.platform_config import platform_config, HPC
 
 
 def main():

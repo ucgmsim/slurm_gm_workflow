@@ -15,18 +15,18 @@ from qcore import utils, qclogging
 import qcore.constants as const
 import qcore.simulation_structure as sim_struct
 
-from automation.metadata.log_metadata import store_metadata
+from workflow.automation.metadata.log_metadata import store_metadata
 
-from automation.lib.MgmtDB import MgmtDB
-from automation.lib.schedulers.scheduler_factory import Scheduler
-from automation.submit.submit_emod3d import main as submit_lf_main
-from automation.submit.submit_empirical import generate_empirical_script
-from automation.submit.submit_post_emod3d import main as submit_post_lf_main
-from automation.submit.submit_hf import main as submit_hf_main
-from automation.submit.submit_bb import main as submit_bb_main
-from automation.submit.submit_sim_imcalc import submit_im_calc_slurm
-from automation.lib import shared_automated_workflow
-from automation.platform_config import (
+from workflow.automation.lib.MgmtDB import MgmtDB
+from workflow.automation.lib.schedulers.scheduler_factory import Scheduler
+from workflow.automation.submit.submit_emod3d import main as submit_lf_main
+from workflow.automation.submit.submit_empirical import generate_empirical_script
+from workflow.automation.submit.submit_post_emod3d import main as submit_post_lf_main
+from workflow.automation.submit.submit_hf import main as submit_hf_main
+from workflow.automation.submit.submit_bb import main as submit_bb_main
+from workflow.automation.submit.submit_sim_imcalc import submit_im_calc_slurm
+from workflow.automation.lib import shared_automated_workflow
+from workflow.automation.platform_config import (
     HPC,
     platform_config,
     get_platform_specific_script,

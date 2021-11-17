@@ -1,6 +1,6 @@
 import pytest
 
-from automation.lib.schedulers.scheduler_factory import Scheduler
+from workflow.automation.lib.schedulers.scheduler_factory import Scheduler
 
 
 @pytest.fixture(scope="session")

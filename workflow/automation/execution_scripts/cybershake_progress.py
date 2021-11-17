@@ -11,8 +11,8 @@ import pandas as pd
 from urllib.request import urlopen
 
 
-from automation.estimation.estimate_cybershake import main as est_cybershake
-from automation.lib.MgmtDB import MgmtDB
+from workflow.automation.estimation.estimate_cybershake import main as est_cybershake
+from workflow.automation.lib.MgmtDB import MgmtDB
 import qcore.simulation_structure as sim_struct
 import qcore.constants as const
 from qcore.formats import load_fault_selection_file

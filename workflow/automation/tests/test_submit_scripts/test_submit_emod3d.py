@@ -4,13 +4,13 @@ import pytest
 
 from qcore.utils import load_sim_params as mocked_load_sim_params
 from qcore.utils import load_yaml as mocked_load_yaml
-from automation.lib.shared import set_wct as mocked_set_wct
+from workflow.automation.lib.shared import set_wct as mocked_set_wct
 
-from automation.tests.test_common_set_up import get_fault_from_rel
+from workflow.automation.tests.test_common_set_up import get_fault_from_rel
 
 # from testing.conftest import init_scheduler
 
-import automation.submit.submit_emod3d
+import workflow.automation.submit.submit_emod3d
 
 
 @pytest.mark.usefixtures("init_scheduler")

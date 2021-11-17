@@ -11,8 +11,8 @@ from qcore.utils import load_yaml
 
 import queue_monitor
 from auto_submit import run_main_submit_loop
-from automation.lib.schedulers.scheduler_factory import Scheduler
-from automation.platform_config import platform_config, HPC
+from workflow.automation.lib.schedulers.scheduler_factory import Scheduler
+from workflow.automation.platform_config import platform_config, HPC
 
 MASTER_LOG_NAME = "master_log_{}.txt"
 SCHEDULER_LOG_NAME = "scheduler_log_{}.txt"

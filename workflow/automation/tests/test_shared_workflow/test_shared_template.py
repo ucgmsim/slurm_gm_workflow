@@ -4,8 +4,8 @@ import os
 
 import pytest
 
-from automation.lib import shared_template
-from automation.tests.test_common_set_up import (
+from workflow.automation.lib import shared_template
+from workflow.automation.tests.test_common_set_up import (
     get_input_params,
     get_bench_output,
 )

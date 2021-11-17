@@ -7,7 +7,7 @@ each stage of the run
 import argparse
 import os
 
-from automation.lib.MgmtDB import MgmtDB
+from workflow.automation.lib.MgmtDB import MgmtDB
 
 
 def create_mgmt_db(realisations, db_file, srf_files=[]):

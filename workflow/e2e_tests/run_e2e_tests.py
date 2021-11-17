@@ -3,9 +3,9 @@
 import argparse
 import signal
 
-from e2e_tests.E2ETests import E2ETests
-from e2e_tests.queue_monitor_tests import QueueMonitorStressTest
-from automation.lib.schedulers.scheduler_factory import Scheduler
+from workflow.e2e_tests.E2ETests import E2ETests
+from workflow.e2e_tests.queue_monitor_tests import QueueMonitorStressTest
+from workflow.automation.lib.schedulers.scheduler_factory import Scheduler
 
 
 def on_exit(signum, frame):

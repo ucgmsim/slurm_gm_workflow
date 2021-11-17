@@ -14,17 +14,17 @@ from qcore.qclogging import get_basic_logger
 import qcore.constants as const
 import qcore.simulation_structure as sim_struct
 
-import automation.estimation.estimate_wct as est
-import calculation.create_e3d as set_runparams
-from calculation.verification.check_emod3d_subdomains import test_domain
-from automation.lib.schedulers.scheduler_factory import Scheduler
-from automation.platform_config import (
+import workflow.automation.estimation.estimate_wct as est
+import workflow.calculation.create_e3d as set_runparams
+from workflow.calculation.verification.check_emod3d_subdomains import test_domain
+from workflow.automation.lib.schedulers.scheduler_factory import Scheduler
+from workflow.automation.platform_config import (
     platform_config,
     get_platform_node_requirements,
 )
-from automation.lib.shared import set_wct
-from automation.lib.shared_automated_workflow import submit_script_to_scheduler
-from automation.lib.shared_template import write_sl_script
+from workflow.automation.lib.shared import set_wct
+from workflow.automation.lib.shared_automated_workflow import submit_script_to_scheduler
+from workflow.automation.lib.shared_template import write_sl_script
 
 
 def main(

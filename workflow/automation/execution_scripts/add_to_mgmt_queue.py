@@ -3,7 +3,7 @@
 import argparse
 
 import qcore.constants as const
-from automation.lib.shared_automated_workflow import add_to_queue
+from workflow.automation.lib.shared_automated_workflow import add_to_queue
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

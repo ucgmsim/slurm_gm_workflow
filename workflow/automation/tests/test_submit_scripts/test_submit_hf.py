@@ -3,11 +3,11 @@ import pytest
 
 
 from qcore.utils import load_sim_params as mocked_load_sim_params
-from automation.lib.shared import set_wct as mocked_set_wct
+from workflow.automation.lib.shared import set_wct as mocked_set_wct
 
-from automation.tests.test_common_set_up import get_fault_from_rel
+from workflow.automation.tests.test_common_set_up import get_fault_from_rel
 
-import automation.submit.submit_hf
+import workflow.automation.submit.submit_hf
 
 
 @pytest.mark.usefixtures("init_scheduler")

@@ -4,22 +4,22 @@ import argparse
 from logging import Logger
 from pathlib import Path
 
-import automation.estimation.estimate_wct as est
+import workflow.automation.estimation.estimate_wct as est
 from qcore import utils, shared, srf, binary_version
 from qcore.config import host, get_machine_config
 import qcore.constants as const
 from qcore.qclogging import get_basic_logger
 import qcore.simulation_structure as sim_struct
-from automation.install_scripts.install_shared import HF_VEL_MOD_1D
-from automation.lib.schedulers.scheduler_factory import Scheduler
-from automation.platform_config import (
+from workflow.automation.install_scripts.install_shared import HF_VEL_MOD_1D
+from workflow.automation.lib.schedulers.scheduler_factory import Scheduler
+from workflow.automation.platform_config import (
     platform_config,
     get_platform_node_requirements,
 )
 
-from automation.lib.shared import set_wct, get_hf_nt
-from automation.lib.shared_automated_workflow import submit_script_to_scheduler
-from automation.lib.shared_template import write_sl_script
+from workflow.automation.lib.shared import set_wct, get_hf_nt
+from workflow.automation.lib.shared_automated_workflow import submit_script_to_scheduler
+from workflow.automation.lib.shared_template import write_sl_script
 
 # default values
 # Scale the number of nodes to be used for the simulation component

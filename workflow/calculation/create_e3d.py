@@ -16,10 +16,10 @@ from os.path import basename
 
 from qcore.constants import MAXIMUM_EMOD3D_TIMESHIFT_1_VERSION
 from qcore.utils import compare_versions
-from automation.lib import shared
+from workflow.automation.lib import shared
 from qcore import utils, binary_version, constants
 from qcore.qclogging import get_basic_logger
-from automation.platform_config import platform_config
+from workflow.automation.platform_config import platform_config
 
 sys.path.append(os.path.abspath(os.path.curdir))
 

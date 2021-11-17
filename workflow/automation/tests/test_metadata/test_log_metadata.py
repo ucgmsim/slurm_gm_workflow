@@ -8,7 +8,7 @@ from typing import Union, Dict
 
 import pytest
 
-from automation.metadata.log_metadata import store_metadata, METACONST_TO_ADD
+from workflow.automation.metadata.log_metadata import store_metadata, METACONST_TO_ADD
 from qcore.constants import ProcessType, METADATA_LOG_FILENAME
 
 

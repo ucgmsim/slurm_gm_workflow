@@ -16,11 +16,11 @@ import pandas as pd
 import sqlite3 as sql
 from pandas.testing import assert_frame_equal
 
-from automation.lib.MgmtDB import MgmtDB
+from workflow.automation.lib.MgmtDB import MgmtDB
 import qcore.constants as const
 import qcore.simulation_structure as sim_struct
 from qcore.shared import non_blocking_exe, exe
-from automation.lib.schedulers.scheduler_factory import Scheduler
+from workflow.automation.lib.schedulers.scheduler_factory import Scheduler
 
 
 def get_sim_dirs(runs_dir):
