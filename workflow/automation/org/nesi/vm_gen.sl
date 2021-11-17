@@ -8,7 +8,7 @@
 #SBATCH --cpus-per-task=32
 
 if [[ -n ${CUR_ENV} && ${CUR_HPC} != "mahuika" ]]; then
-    source $CUR_ENV/workflow/install_workflow/helper_functions/activate_env.sh $CUR_ENV "mahuika"
+    source $CUR_ENV/workflow/environments/helper_functions/activate_env.sh $CUR_ENV "mahuika"
 fi
 
 
@@ -34,7 +34,7 @@ if [[ ! -d $MGMT_DB_LOC/mgmt_db_queue ]]; then
     mkdir $MGMT_DB_LOC/mgmt_db_queue
 fi
 timestamp=`date +%Y%m%d_%H%M%S`
-python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $REL_NAME VM_GEN running $SLURM_JOB_ID
+python $gmsim/workflow/automation/execution_scripts/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $REL_NAME VM_GEN running $SLURM_JOB_ID
 
 runtime_fmt="%Y-%m-%d_%H:%M:%S"
 start_time=`date +$runtime_fmt`
@@ -57,16 +57,16 @@ pass=$?
 if [[ $pass == 0 ]]; then
     #passed
 
-    python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $REL_NAME VM_GEN completed $SLURM_JOB_ID
+    python $gmsim/workflow/automation/execution_scripts/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $REL_NAME VM_GEN completed $SLURM_JOB_ID
 
     if [[ ! -d $CH_LOG_FFP ]]; then
         mkdir $CH_LOG_FFP
     fi
 
     # save meta data
-    python $gmsim/workflow/metadata/log_metadata.py $SIM_DIR VM_GEN cores=$SLURM_CPUS_PER_TASK start_time=$start_time end_time=$end_time
+    python $gmsim/workflow/automation/metadata/log_metadata.py $SIM_DIR VM_GEN cores=$SLURM_CPUS_PER_TASK start_time=$start_time end_time=$end_time
 else
     #reformat $res to remove '\n'
     res=`echo $res | tr -d '\n'`
-    python $gmsim/workflow/scripts/cybershake/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $REL_NAME VM_GEN failed $SLURM_JOB_ID --error "$res"
+    python $gmsim/workflow/automation/execution_scripts/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $REL_NAME VM_GEN failed $SLURM_JOB_ID --error "$res"
 fi
