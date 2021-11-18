@@ -28,7 +28,7 @@ end_time=`date +$runtime_fmt`
 
 rm $filelist
 #test before update
-res=`$gmsim/workflow/scripts/test_merge_ts.sh {{sim_dir}} {{srf_name}}`
+res=`$gmsim/workflow/calculation/verification/test_merge_ts.sh {{sim_dir}} {{srf_name}}`
 if [[ $? == 0 ]]; then
     #passed
     python $gmsim/workflow/automation/execution_scripts/add_to_mgmt_queue.py {{mgmt_db_location}}/mgmt_db_queue {{srf_name}} merge_ts completed $SLURM_JOB_ID

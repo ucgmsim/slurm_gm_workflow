@@ -30,7 +30,7 @@ res=`$gmsim/workflow/calculation/verification/test_emod3d.sh {{sim_dir}} {{srf_n
 success=$?
 if [[ $success == $SUCCESS_CODE ]]; then
     sleep 2
-    res=`$gmsim/workflow/scripts/test_emod3d.sh {{sim_dir}} {{srf_name}}`
+    res=`$gmsim/workflow/calculation/verification/test_emod3d.sh {{sim_dir}} {{srf_name}}`
     success=$?
 fi
 if [[ $success == $SUCCESS_CODE ]]; then
