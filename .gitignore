@@ -16,7 +16,7 @@ downloads/
 eggs/
 .eggs/
 lib/ 
-!automation/lib
+!workflow/automation/lib
 lib64/
 parts/
 sdist/
