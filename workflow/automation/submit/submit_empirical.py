@@ -46,11 +46,11 @@ def generate_empirical_script(np, extended, cybershake_folder, realisations, out
     timestamp = datetime.now().strftime(timestamp_format)
 
     template_dir = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)), "../..", "templates/"
+        os.path.dirname(os.path.abspath(__file__)), "..", "templates/"
     )
 
     header = resolve_header(
-        platform_config[const.PLATFORM_CONFIG.TEMPLATES_DIR.name],
+        platform_config[const.PLATFORM_CONFIG.SCHEDULER_TEMPLATES_DIR.name],
         wallclock_limit="00:30:00",
         job_name="empirical",
         version="slurm",

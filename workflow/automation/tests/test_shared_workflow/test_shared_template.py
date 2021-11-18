@@ -8,7 +8,7 @@ from workflow.automation.lib import shared_template
 from workflow.automation.tests.test_common_set_up import (
     get_input_params,
     get_bench_output,
-    set_up
+    set_up,
 )
 
 
@@ -25,7 +25,9 @@ def test_write_sl_script(set_up, mocker):
     for root_path, realisation in set_up:
         input_params = get_input_params(root_path, func_name, params)
 
-        input_params[4]["platform_specific_args"] = {"n_tasks": input_params[4]["n_tasks"]}
+        input_params[4]["platform_specific_args"] = {
+            "n_tasks": input_params[4]["n_tasks"]
+        }
         del input_params[4]["n_tasks"]
         input_params[6]["run_command"] = "srun"
 
@@ -39,8 +41,8 @@ def test_write_sl_script(set_up, mocker):
         test_output = [
             "{}\n".format(line) for line in slurm_script.getvalue().split("\n")
         ]
-        
-        #testing if the test_output is non-zero output. it doesn't check whether this .sl script makes sense (it will be covered by end-to-end test)
+
+        # testing if the test_output is non-zero output. it doesn't check whether this .sl script makes sense (it will be covered by end-to-end test)
         assert len(test_output) > 0
 
 

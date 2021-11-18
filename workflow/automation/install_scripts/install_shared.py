@@ -69,7 +69,7 @@ def install_simulation(
     shared.verify_user_dirs(dir_list)
 
     template_path = os.path.join(
-        platform_config[PLATFORM_CONFIG.TEMPLATES_DIR.name], version
+        platform_config[PLATFORM_CONFIG.GMSIM_TEMPLATES_DIR.name], version
     )
     root_params_dict = utils.load_yaml(
         os.path.join(template_path, ROOT_DEFAULTS_FILE_NAME)

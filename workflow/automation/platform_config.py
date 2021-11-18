@@ -45,7 +45,9 @@ def determine_platform_config(hostname=determine_machine_config()[0]):
 
     basename = "config.json"
 
-    config_path = join(dirname(abspath(__file__)), "org", hpc_platform.name.lower(), basename)
+    config_path = join(
+        dirname(abspath(__file__)), "org", hpc_platform.name.lower(), basename
+    )
     return hpc_platform, config_path
 
 

@@ -123,7 +123,7 @@ def load_args(logger):
     messages = []
 
     gmsim_version_path = path.join(
-        platform_config[PLATFORM_CONFIG.TEMPLATES_DIR.name], "gmsim", args.version
+        platform_config[PLATFORM_CONFIG.GMSIM_TEMPLATES_DIR.name], args.version
     )
 
     if not path.exists(gmsim_version_path) or path.isfile(gmsim_version_path):
@@ -131,7 +131,7 @@ def load_args(logger):
             "Version {} does not exist, place a directory with that name into {}\n"
             "Also ensure it has contents of {} and {}".format(
                 args.version,
-                path.join(platform_config[PLATFORM_CONFIG.TEMPLATES_DIR.name], "gmsim"),
+                platform_config[PLATFORM_CONFIG.GMSIM_TEMPLATES_DIR.name],
                 ROOT_DEFAULTS_FILE_NAME,
                 "emod3d_defaults.yaml",
             )
@@ -144,8 +144,7 @@ def load_args(logger):
                         args.version,
                         f_name,
                         path.join(
-                            platform_config[PLATFORM_CONFIG.TEMPLATES_DIR.name],
-                            "gmsim",
+                            platform_config[PLATFORM_CONFIG.GMSIM_TEMPLATES_DIR.name],
                             args.version,
                         ),
                     )

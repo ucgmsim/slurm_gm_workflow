@@ -232,7 +232,7 @@ def main():
         help="The location of the config file containing everything to be run",
         nargs="?",
         default=join(
-            platform_config[const.PLATFORM_CONFIG.TEMPLATES_DIR.name],
+            platform_config[const.PLATFORM_CONFIG.EXAMPLES_DIR.name],
             "task_config.yaml",
         ),
     )

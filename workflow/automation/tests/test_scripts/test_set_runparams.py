@@ -5,9 +5,7 @@ from qcore.utils import load_sim_params as mocked_load_sim_params
 from qcore.utils import load_yaml as mocked_load_yaml
 
 from workflow.calculation import create_e3d
-from workflow.automation.tests.test_common_set_up import (
-    get_fault_from_rel, set_up
-)
+from workflow.automation.tests.test_common_set_up import get_fault_from_rel, set_up
 
 
 EXPECTED_DATA = """all_in_one=1
@@ -115,7 +113,8 @@ def test_create_run_params(set_up, mocker):
             os.path.join(root_path, "CSRoot", "Runs", fault, x)
         )
         mocker.patch(
-            "workflow.calculation.create_e3d.utils.load_sim_params", get_mocked_sim_params
+            "workflow.calculation.create_e3d.utils.load_sim_params",
+            get_mocked_sim_params,
         )
 
         outp = StringIO()

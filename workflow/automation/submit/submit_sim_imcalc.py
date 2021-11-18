@@ -12,7 +12,11 @@ from qcore import simulation_structure as sim_struct
 from qcore.timeseries import get_observed_stations, BBSeis
 from qcore.config import qconfig
 
-from workflow.automation.estimation.estimate_wct import est_IM_chours_single, get_wct, CH_SAFETY_FACTOR
+from workflow.automation.estimation.estimate_wct import (
+    est_IM_chours_single,
+    get_wct,
+    CH_SAFETY_FACTOR,
+)
 from workflow.automation.platform_config import (
     platform_config,
     get_platform_node_requirements,

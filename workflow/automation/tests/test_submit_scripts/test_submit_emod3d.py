@@ -18,7 +18,8 @@ def test_main(set_up, mocker):
     """No return value. Just check that it runs without crashing"""
 
     mocker.patch(
-        "workflow.automation.submit.submit_emod3d.set_wct", lambda x, y, z: mocked_set_wct(x, y, True)
+        "workflow.automation.submit.submit_emod3d.set_wct",
+        lambda x, y, z: mocked_set_wct(x, y, True),
     )
     mocker.patch("workflow.automation.submit.submit_emod3d.confirm", lambda x: False)
     mocker.patch(
@@ -31,10 +32,8 @@ def test_main(set_up, mocker):
         lambda x: mocked_load_yaml(
             os.path.join(
                 os.path.dirname(os.path.realpath(__file__)),
-                "../../../testing",
-                "..",
-                "templates",
-                "gmsim",
+                "../../../calculation",
+                "gmsim_templates",
                 "16.1",
                 "emod3d_defaults.yaml",
             )

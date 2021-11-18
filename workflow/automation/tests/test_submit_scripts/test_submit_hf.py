@@ -15,7 +15,8 @@ def test_main(set_up, mocker):
     """No return value. Just check that it runs without crashing"""
 
     mocker.patch(
-        "workflow.automation.submit.submit_hf.set_wct", lambda x, y, z: mocked_set_wct(x, y, True)
+        "workflow.automation.submit.submit_hf.set_wct",
+        lambda x, y, z: mocked_set_wct(x, y, True),
     )
     mocker.patch("workflow.automation.submit.submit_hf.confirm", lambda x: False)
     mocker.patch(

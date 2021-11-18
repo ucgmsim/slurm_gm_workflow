@@ -13,8 +13,12 @@ import shlex
 
 from workflow.calculation.bb_sim import args_parser as bb_args_parser
 from workflow.calculation.hf_sim import args_parser as hf_args_parser
-from workflow.automation.submit.submit_bb import gen_command_template as bb_gen_command_template
-from workflow.automation.submit.submit_hf import gen_command_template as hf_gen_command_template
+from workflow.automation.submit.submit_bb import (
+    gen_command_template as bb_gen_command_template,
+)
+from workflow.automation.submit.submit_hf import (
+    gen_command_template as hf_gen_command_template,
+)
 
 from numpy import isclose
 from qcore import utils, validate_vm, simulation_structure
@@ -116,8 +120,7 @@ def install_fault(
 
     config_dict = utils.load_yaml(
         os.path.join(
-            platform_config[PLATFORM_CONFIG.TEMPLATES_DIR.name],
-            "gmsim",
+            platform_config[PLATFORM_CONFIG.GMSIM_TEMPLATES_DIR.name],
             version,
             ROOT_DEFAULTS_FILE_NAME,
         )

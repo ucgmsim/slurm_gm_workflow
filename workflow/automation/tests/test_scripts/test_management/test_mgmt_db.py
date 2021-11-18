@@ -2,7 +2,7 @@ import os
 import shutil
 import pytest
 
-from workflow.automation.lib.MgmtDB import connect_db_ctx,SchedulerTask
+from workflow.automation.lib.MgmtDB import connect_db_ctx, SchedulerTask
 from workflow.automation.install_scripts import create_mgmt_db
 from qcore import utils
 from qcore.qclogging import get_basic_logger

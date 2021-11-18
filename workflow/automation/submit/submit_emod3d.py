@@ -22,7 +22,7 @@ from workflow.automation.platform_config import (
     platform_config,
     get_platform_node_requirements,
 )
-from workflow.automation.lib.shared import set_wct
+from workflow.automation.lib.shared import confirm, set_wct
 from workflow.automation.lib.shared_automated_workflow import submit_script_to_scheduler
 from workflow.automation.lib.shared_template import write_sl_script
 

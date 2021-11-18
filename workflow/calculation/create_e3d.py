@@ -36,8 +36,7 @@ def create_run_params(
     emod3d_filepath = binary_version.get_lf_bin(emod3d_version)
 
     e3d_yaml = os.path.join(
-        platform_config[constants.PLATFORM_CONFIG.TEMPLATES_DIR.name],
-        "gmsim",
+        platform_config[constants.PLATFORM_CONFIG.GMSIM_TEMPLATES_DIR.name],
         params.version,
         "emod3d_defaults.yaml",
     )
