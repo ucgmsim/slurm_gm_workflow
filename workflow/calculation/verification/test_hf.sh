@@ -30,5 +30,5 @@ fi
 #check the len(fd_ll) == len(hf.stations)
 #check station names are not empty
 echo $fd_ll
-python $gmsim/workflow/calculation/verification/test_binary.py $hf_bin $fd_ll hf --verbose
+python $gmsim/workflow/workflow/calculation/verification/test_binary.py $hf_bin $fd_ll hf --verbose
 

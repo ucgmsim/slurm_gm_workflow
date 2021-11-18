@@ -25,7 +25,7 @@ else
     xyts_check=0
 fi
 
-python $gmsim/workflow/calculation/verification/test_xyts.py $lf_sim_dir/OutBin/$run_name\_xyts.e3d
+python $gmsim/workflow/workflow/calculation/verification/test_xyts.py $lf_sim_dir/OutBin/$run_name\_xyts.e3d
 if [[ $? != 0 ]];
 then
     xyts_test=1

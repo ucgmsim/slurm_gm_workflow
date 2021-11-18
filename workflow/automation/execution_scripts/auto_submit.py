@@ -195,7 +195,7 @@ def submit_task(
             model_params_path=params.MODEL_PARAMS,
             mgmt_db_loc=root_folder,
             run_name=run_name,
-            script_location=os.path.expandvars("$gmsim/workflow/automation/org/nesi/im_plot.sl"),
+            script_location=os.path.expandvars("$gmsim/workflow/workflow/automation/org/nesi/im_plot.sl"),
         )
         submit_script_to_scheduler(
             script, target_machine=get_target_machine(const.ProcessType.IM_plot).name
