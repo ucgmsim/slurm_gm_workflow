@@ -18,7 +18,7 @@ echo $end_time
 
 timestamp=`date +%Y%m%d_%H%M%S`
 #test before update
-res=`$gmsim/workflow/scripts/{{test_bb_script}} {{sim_dir}} `
+res=`$gmsim/workflow/calculation/verification/{{test_bb_script}} {{sim_dir}} `
 if [[ $? == 0 ]]; then
     #passed
     python $gmsim/workflow/automation/execution_scripts/add_to_mgmt_queue.py {{mgmt_db_location}}/mgmt_db_queue {{srf_name}} BB completed $SLURM_JOB_ID

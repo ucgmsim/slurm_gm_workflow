@@ -26,7 +26,7 @@ echo $end_time
 #test before update
 ln -s {{sim_dir}}/LF/e3d.par {{sim_dir}}/LF/OutBin/e3d.par
 timestamp=`date +%Y%m%d_%H%M%S`
-res=`$gmsim/workflow/scripts/test_emod3d.sh {{sim_dir}} {{srf_name}}`
+res=`$gmsim/workflow/calculation/verification/test_emod3d.sh {{sim_dir}} {{srf_name}}`
 success=$?
 if [[ $success == $SUCCESS_CODE ]]; then
     sleep 2
