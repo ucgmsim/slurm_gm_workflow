@@ -114,7 +114,7 @@ def get_platform_specific_script(
 
     scheduler = Scheduler.get_scheduler()
 
-    platform_dir = f"{platform.name.lower()}_scripts"
+    platform_dir = join(dirname(abspath(__file__)), "org", platform.name.lower())
     script_extension = scheduler.SCRIPT_EXTENSION
     script_name = {
         ProcessType.rrup: "calc_rrups_single",
@@ -131,7 +131,7 @@ def get_platform_specific_script(
 
     return scheduler.process_arguments(
         join(
-            WORKFLOW_DIR, "scripts", platform_dir, f"{script_name}.{script_extension}"
+            platform_dir, f"{script_name}.{script_extension}"
         ),
         arguments,
     )
