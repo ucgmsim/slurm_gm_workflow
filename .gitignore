@@ -115,3 +115,6 @@ testing/PangopangoF29
 # gmt
 **/gmt.conf
 **/gmt.history
+
+# Mac OS X folder information file
+.DS_Store
