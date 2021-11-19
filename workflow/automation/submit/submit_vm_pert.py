@@ -5,16 +5,15 @@ from collections import OrderedDict
 from logging import Logger
 from pathlib import Path
 
-import estimation.estimate_wct as est
-from shared_workflow.platform_config import get_target_machine
-from shared_workflow.shared_automated_workflow import submit_script_to_scheduler
+import workflow.automation.estimation.estimate_wct as est
+from workflow.automation.lib.shared_automated_workflow import submit_script_to_scheduler
 from qcore import utils
 from qcore.config import get_machine_config
 from qcore import constants as const
 from qcore.qclogging import get_basic_logger
 from qcore import simulation_structure as sim_struct
-from shared_workflow.shared import set_wct
-from shared_workflow.platform_config import (
+from workflow.automation.lib.shared import set_wct
+from workflow.automation.platform_config import (
     HPC,
     platform_config,
     get_platform_specific_script,
