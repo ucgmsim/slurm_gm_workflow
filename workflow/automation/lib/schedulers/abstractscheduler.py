@@ -29,7 +29,7 @@ class AbstractScheduler(ABC):
         self, user, account, current_machine, logger: Logger, platform_accounts=None
     ):
         if platform_accounts is None:
-            platform_accounts = account
+            platform_accounts = [account]
         self.user_name = user
         self.account = account
         self.current_machine = current_machine
@@ -72,7 +72,9 @@ class AbstractScheduler(ABC):
 
     @staticmethod
     @abstractmethod
-    def process_arguments(script_path: str, arguments: Dict[str, str]):
+    def process_arguments(
+        script_path: str, arguments: Dict[str, str], scheduler_arguments: Dict[str, str]
+    ):
         """
         Processes the script path and arguments to return them in a format usable by the scheduler
         Slurm allows arguments to be passed to scripts. PBS requires values to be assigned to variables

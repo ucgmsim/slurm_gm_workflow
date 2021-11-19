@@ -343,6 +343,7 @@ def initialisation():
     parser = argparse.ArgumentParser()
 
     parser.add_argument("root_folder", type=str, help="Cybershake root folder.")
+    parser.add_argument("user", type=str, help="username")
     parser.add_argument(
         "--sleep_time",
         type=int,
@@ -387,6 +388,8 @@ def initialisation():
 
     qclogging.add_general_file_handler(logger, log_file_name)
     logger.debug("Successfully added {} as the log file.".format(log_file_name))
+
+    Scheduler.initialise_scheduler(user=args.user, logger=logger)
 
     queue_monitor_loop(
         root_folder,

@@ -15,8 +15,8 @@ from qcore import utils, qclogging
 import qcore.constants as const
 import qcore.simulation_structure as sim_struct
 
-from workflow.automation.metadata.log_metadata import store_metadata
 
+from workflow.automation.metadata.log_metadata import store_metadata
 from workflow.automation.lib.MgmtDB import MgmtDB
 from workflow.automation.lib.schedulers.scheduler_factory import Scheduler
 from workflow.automation.submit.submit_emod3d import main as submit_lf_main
@@ -357,26 +357,7 @@ def submit_task(
             target_machine=get_target_machine(const.ProcessType.VM_GEN).name,
         )
     elif proc_type == const.ProcessType.VM_PERT.value:
-        submit_script_to_scheduler(
-            get_platform_specific_script(
-                const.ProcessType.VM_PERT,
-                OrderedDict(
-                    {
-                        "VM_PARAMS_YAML": str(
-                            Path(sim_struct.get_fault_VM_dir(root_folder, run_name))
-                            / "vm_params.yaml"
-                        ),
-                        "OUTPUT_DIR": sim_struct.get_fault_VM_dir(
-                            root_folder, run_name
-                        ),
-                        "SRF_PATH": sim_struct.get_srf_path(root_folder, run_name),
-                        "MGMT_DB_LOC": root_folder,
-                        "REL_NAME": run_name,
-                    }
-                ),
-            ),
-            target_machine=get_target_machine(const.ProcessType.VM_PERT).name,
-        )
+        submit_vm_pert_main(root_folder, run_name, sim_dir, logger=task_logger)
     elif proc_type == const.ProcessType.INSTALL_FAULT.value:
         fault_dir = sim_struct.get_fault_dir(
             root_folder, sim_struct.get_fault_from_realisation(run_name)

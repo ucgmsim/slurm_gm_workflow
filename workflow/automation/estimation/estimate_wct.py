@@ -20,6 +20,7 @@ MAX_NODES_PER_JOB = config.qconfig[config.ConfigKeys.MAX_NODES_PER_JOB.name]
 PHYSICAL_NCORES_PER_NODE = config.qconfig[config.ConfigKeys.cores_per_node.name]
 
 CH_SAFETY_FACTOR = 1.5
+ERROR_MSG_SHAPE_MISMATCH = "Invalid input data, has to be {required_column_count} columns. One for each feature."
 
 
 def get_wct(run_time, ch_safety_factor=CH_SAFETY_FACTOR):
@@ -113,8 +114,11 @@ def estimate_LF_chours(
         The number of cores to use, returns the argument n_cores
         if scale_ncores is not set. Otherwise returns the updated ncores.
     """
-    if data.shape[1] != 6:
-        raise Exception("Invalid input data, has to 6 columns. One for each feature.")
+    required_column_count = 6
+    if data.shape[1] != required_column_count:
+        raise Exception(
+            ERROR_MSG_SHAPE_MISMATCH.format(required_column_count=required_column_count)
+        )
     #
     coefficients = {
         "a": 0.804_038_96,
@@ -218,9 +222,10 @@ def estimate_HF_chours(
         The number of physical cores to use, returns the argument n_cores
         if scale_ncores is not set. Otherwise returns the updated ncores.
     """
-    if data.shape[1] != 4:
+    required_column_count = 4
+    if data.shape[1] != required_column_count:
         raise Exception(
-            "Invalid input data, has to 4 columns. " "One for each feature."
+            ERROR_MSG_SHAPE_MISMATCH.format(required_column_count=required_column_count)
         )
 
     hyperthreading_factor = 2.0 if const.ProcessType.HF.is_hyperth else 1.0
@@ -359,9 +364,10 @@ def estimate_BB_chours(
     run_time: np.ndarray of float
         Estimated run time (hours)
     """
-    if data.shape[1] != 3:
+    required_column_count = 3
+    if data.shape[1] != required_column_count:
         raise Exception(
-            "Invalid input data, has to 3 columns. " "One for each feature."
+            ERROR_MSG_SHAPE_MISMATCH.format(required_column_count=required_column_count)
         )
 
     # Adjust the number of cores to estimate physical core hours
@@ -379,6 +385,38 @@ def estimate_BB_chours(
     core_hours = np.exp(
         (coefficients["a"] * np.log(nt * np.log(nt)))
         + (coefficients["b"] * fd_count)
+        + coefficients["c"]
+    )
+
+    return core_hours, core_hours / data[:, -1]
+
+
+def est_VM_PERT_chours_single(nx: int, ny: int, nz: int, n_cores: int):
+    data = np.array([int(nx) * int(ny) * int(nz), int(n_cores)]).reshape(1, 2)
+
+    core_hours, run_time = est_VM_PERT_chours(data)
+    return core_hours[0], run_time[0]
+
+
+def est_VM_PERT_chours(data: np.ndarray):
+
+    required_column_count = 2
+    if data.shape[1] != required_column_count:
+        raise Exception(
+            ERROR_MSG_SHAPE_MISMATCH.format(required_column_count=required_column_count)
+        )
+
+    coefficients = {
+        "a": 5.917_060_637_004_801e-20,
+        "b": 1.859_169_281_537_847e-09,
+        "c": 0.130_000_000_000_000_4,
+    }
+
+    vm_size = data[:, 0]
+
+    core_hours = (
+        ((vm_size ** 2) * coefficients["a"])
+        + (vm_size * coefficients["b"])
         + coefficients["c"]
     )
 

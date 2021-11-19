@@ -71,7 +71,6 @@ class Slurm(AbstractScheduler):
         else:
             mid = ""
         command = " ".join([common_pre, mid, script_location])
-
         self.logger.debug(f"Submitting command {command}")
         out, err = self._run_command_and_wait(cmd=[command], shell=True)
 
@@ -120,8 +119,29 @@ class Slurm(AbstractScheduler):
         return out, err
 
     @staticmethod
-    def process_arguments(script_path: str, arguments: Dict[str, str]):
-        return f"{script_path} {' '.join(arguments.values())}"
+    def process_arguments(
+        script_path: str,
+        arguments: Dict[str, str],
+        scheduler_arguments: Dict[str, str],
+    ):
+        # maps scheduler specific args with commands
+        scheduler_header_command_dict = {
+            "time": "--time={value}",
+            "job_name": "--job-name={value}",
+            "ncpus": "--cpus-per-task={value}",
+            "nodes": "--nodes={value}",
+            "ntasks": "--ntasks={value}",
+        }
+        scheduler_args_commands = ""
+        for key, value in scheduler_arguments.items():
+            if key in scheduler_header_command_dict.keys():
+                scheduler_args_commands = (
+                    scheduler_args_commands
+                    + " "
+                    + scheduler_header_command_dict[key].format(value=value)
+                )
+
+        return f"{scheduler_args_commands} {script_path} {' '.join(arguments.values())}"
 
     def get_metadata(self, db_running_task: SchedulerTask, task_logger: Logger):
         """

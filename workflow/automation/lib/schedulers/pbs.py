@@ -174,13 +174,33 @@ class Pbs(AbstractScheduler):
         return output_list
 
     @staticmethod
-    def process_arguments(script_path: str, arguments: Dict[str, str]):
+    def process_arguments(
+        script_path: str,
+        arguments: Dict[str, str],
+        scheduler_arguments: Dict[str, str] = [],
+    ):
         """
         keys in arguments must match whatever the pbs script is expecting, otherwise will fail
         """
+        # maps scheduler specific args with commands
+        scheduler_header_command_dict = {
+            "time": "-l walltime={value}",
+            "job_name": "-N {value}",
+            "ncpus": "-l ncpus={value}",
+            "nodes": "-l select={value}",
+        }
+        scheduler_args_commands = ""
+        for key, value in scheduler_arguments.items():
+            if key in scheduler_header_command_dict.keys():
+                scheduler_args_commands = (
+                    scheduler_args_commands
+                    + " "
+                    + scheduler_header_command_dict[key].format(value=value)
+                )
+        # script related args
         # construct a string
         args_string = ""
         for arg in arguments.items():
             # using "" to make sure variables are tranlated and not taken literally
             args_string = args_string + f'{arg[0]}="{arg[1]}",'
-        return f"-v {args_string} -V {script_path} "
+        return f"{scheduler_args_commands} -v {args_string} -V {script_path} "
