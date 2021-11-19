@@ -1,0 +1,39 @@
+
+if [[ ! -z ${CUR_ENV} && ${CUR_HPC} != "mahuika" ]]; then
+    source $CUR_ENV/workflow/environments/helper_functions/activate_env.sh $CUR_ENV "mahuika"
+fi
+
+export EMP_PATH=$gmsim/Empirical_Engine
+export PYTHONPATH=$gmsim/qcore:/$PYTHONPATH:$IMPATH
+
+script_start=`date`
+echo "script started running at: $script_start"
+
+echo ___calculating empirical___
+{% for run_name, fault_name in run_data %}
+    echo {{run_name}}
+    {% set srf_info = mgmt_db_location ~"/Data/Sources/" ~fault_name ~"/Srf/" ~run_name ~".info" %}
+    {% set rrup_file = mgmt_db_location ~"/Runs/" ~fault_name ~"/" ~run_name ~"/" ~"verification/" ~"rrup_" ~fault_name ~".csv" %}
+    {% set output_dir = mgmt_db_location ~"/Runs/" ~fault_name ~"/" ~run_name ~"/" ~"verification/" %}
+    #update db to running
+    timestamp=`date +%Y%m%d_%H%M%S`
+    python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py {{mgmt_db_location}}/mgmt_db_queue {{run_name}} Empirical running $SLURM_JOB_ID
+    #run the script
+    time $EMP_PATH/empirical/scripts/calculate_empirical.py {{output_dir}} -i {{run_name}} {{extended}} -r {{rrup_file}} -srf {{srf_info}} --vs30_file {{vs30_file}}
+ #   time $EMP_PATH/empirical/scripts/emp_aggregation.py {{output_dir}}/{{run_name}}_*.csv -o {{output_dir}} -i {{run_name}} -r {{fault_name}}
+ #   time $gmsim/workflow/workflow/calculation/calculate_epsilon.py {{mgmt_db_location}}/Runs/{{fault_name}}/{{run_name}}/IM_calc/{{run_name}}.csv {{output_dir}}/{{run_name}}.csv {{output_dir}}/{{run_name}}_epsilon.csv
+
+#test before update mgmt_db -- Needs a test to see if files are output
+    timestamp=`date +%Y%m%d_%H%M%S`
+    res=`echo 0`
+#update mgmt_db
+    if [[ $? == 0 ]]; then
+        #passed
+        python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py {{mgmt_db_location}}/mgmt_db_queue {{run_name}} Empirical completed $SLURM_JOB_ID
+        #save metadata for collection
+    else
+        #failed
+        python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py {{mgmt_db_location}}/mgmt_db_queue {{run_name}} Empirical failed $SLURM_JOB_ID --error "$res"
+    fi
+{% endfor %}
+date

@@ -1,0 +1,68 @@
+# prompt error when a variable is not set
+set -u
+
+step_name=advanced_IM
+
+export IMPATH=$gmsim/IM_calculation/IM_calculation
+export PYTHONPATH=$gmsim/qcore:$PYTHONPATH:$IMPATH/scripts
+
+function getFromYaml {
+    echo $(python -c "from qcore.utils import load_sim_params; print(load_sim_params('$1').$2)")
+}
+
+runtime_fmt="%Y-%m-%d_%H:%M:%S"
+
+script_start=`date`
+echo "script started running at: $script_start"
+
+# Update db to running
+timestamp=`date +%Y%m%d_%H%M%S`
+python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py {{mgmt_db_location}}/mgmt_db_queue {{srf_name}} $step_name running $SLURM_JOB_ID
+
+# Create the results directory if required
+if [[ ! -d {{sim_IM_calc_dir}} ]]; then
+    mkdir {{sim_IM_calc_dir}}
+    # error handling for rare cases
+    if [[ $? != 0 ]]; then exit;fi
+fi
+
+start_time=`date +$runtime_fmt`
+{{submit_command}}
+end_time=`date +$runtime_fmt`
+
+# verify the result of the analysis
+fd_name=$(getFromYaml "{{sim_dir}}/sim_params.yaml" FD_STATLIST)
+echo "=========="
+python $IMPATH/Advanced_IM/scripts/check_adv_IM_status.py {{sim_IM_calc_dir}} {{models}} --stations {{station_file}}; success=$?
+echo "=========="
+
+# Update mgmt_db
+# Passed
+if [[ $success == 0 ]]; then
+    timestamp=`date +%Y%m%d_%H%M%S`
+    python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py {{mgmt_db_location}}/mgmt_db_queue {{srf_name}} $step_name completed $SLURM_JOB_ID
+
+    if [[ ! -d {{sim_dir}}/ch_log ]]; then
+        mkdir {{sim_dir}}/ch_log
+    fi
+    fd_count=`cat $fd_name | wc -l`
+
+    # log metadata
+    python $gmsim/workflow/workflow/automation/metadata/log_metadata.py {{sim_dir}} $step_name cores={{np}} fd_count=$fd_count models="{{models}}" start_time=$start_time end_time=$end_time status="COMPLETED"
+    # tar the temporary outputs from analysis
+    # following IM_calc_dir/station/model/component_dir
+    # using \; instead of + to avoid extra long exec bash command. (this will result in a exec for every file found
+    find {{sim_IM_calc_dir}}/*/*/ -mindepth 1 -maxdepth 1 -type d -exec bash -c "f_path={}; relative_path=\${f_path#{{sim_IM_calc_dir}}/}; tar --remove-files -uvf {{sim_IM_calc_dir}}/adv_im_out.tar -C {{sim_IM_calc_dir}} \$relative_path" \;
+    gzip {{sim_IM_calc_dir}}/adv_im_out.tar
+else
+    #failed
+    python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py {{mgmt_db_location}}/mgmt_db_queue {{srf_name}} $step_name failed $SLURM_JOB_ID --error "error: $success"
+    backup_directory="$nobackup/tmp/$USER/""$SLURM_JOB_ID""_{{srf_name}}_$step_name"
+    echo "Completion test failed, moving all files to $backup_directory"
+    mkdir -p $backup_directory
+    mv {{sim_dir}}/IM_calc/* $backup_directory
+fi
+
+
+
+
