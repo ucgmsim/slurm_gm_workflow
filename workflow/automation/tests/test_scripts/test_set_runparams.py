@@ -135,7 +135,10 @@ def test_create_run_params(set_up, mocker):
             lambda x: mocked_load_yaml(
                 os.path.join(
                     os.path.dirname(os.path.realpath(__file__)),
-                    "../../../calculation",
+                    "..",
+                    "..",
+                    "..",
+                    "calculation",
                     "gmsim_templates",
                     "16.1",
                     "emod3d_defaults.yaml",

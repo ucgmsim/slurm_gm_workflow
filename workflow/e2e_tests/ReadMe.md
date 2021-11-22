@@ -17,8 +17,6 @@ positional arguments:
 
 optional arguments:
   -h, --help            show this help message and exit
-  --timeout TIMEOUT     The maximum time (in minutes) allowed for execution of
-                        the slurm scripts
   --sleep_time SLEEP_TIME
                         Sleep time (in seconds) between mgmt db progress
                         checks.
