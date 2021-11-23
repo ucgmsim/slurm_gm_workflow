@@ -5,13 +5,13 @@ hpc=${2?Error: "A valid  HPC has to be specified, maui, mahuika, stampede and nu
 
 # Load virtual environment
 if [[ $2 == "maui" ]]; then
-    source ${env_path}/workflow/environments/helper_functions/activate_maui_python3_virtenv.sh ${env_path}/virt_envs/python3_maui
+    source ${env_path}/workflow/workflow/environments/helper_functions/activate_maui_python3_virtenv.sh ${env_path}/virt_envs/python3_maui
 elif [[ $2 == "mahuika" ]]; then
-    source ${env_path}/workflow/environments/helper_functions/activate_mahuika_python3_virtenv.sh ${env_path}/virt_envs/python3_mahuika
+    source ${env_path}/workflow/workflow/environments/helper_functions/activate_mahuika_python3_virtenv.sh ${env_path}/virt_envs/python3_mahuika
 elif [[ $2 == "stampede" ]]; then
-    source ${env_path}/workflow/environments/helper_functions/activate_stampede_python3_virtenv.sh ${env_path}/virt_envs/python3_stampede
+    source ${env_path}/workflow/workflow/environments/helper_functions/activate_stampede_python3_virtenv.sh ${env_path}/virt_envs/python3_stampede
  elif [[ $2 == "nurion" ]]; then
-    source ${env_path}/workflow/environments/helper_functions/activate_nurion_python3_virtenv.sh ${env_path}/virt_envs/python3_nurion
+    source ${env_path}/workflow/workflow/environments/helper_functions/activate_nurion_python3_virtenv.sh ${env_path}/virt_envs/python3_nurion
 else
     echo "$2, invalid HPC, Quitting!"
     # exit
@@ -26,7 +26,7 @@ else
 fi
 
 # PYTHONPATH for workflow
-export PYTHONPATH=${env_path}/workflow:$PYTHONPATH
+export PYTHONPATH=${env_path}/workflow/workflow:$PYTHONPATH
 
 export CUR_ENV=${env_path}
 export CUR_HPC=${hpc}
