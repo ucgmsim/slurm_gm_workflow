@@ -25,7 +25,7 @@ else
     echo "no module requirements found at $module_requirments, binaries may not run properly"
 fi
 
-# PYTHONPATH for workflow/workflow
+# PYTHONPATH for workflow
 export PYTHONPATH=${env_path}/workflow/workflow:$PYTHONPATH
 
 export CUR_ENV=${env_path}
