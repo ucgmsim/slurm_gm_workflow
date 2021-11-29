@@ -454,7 +454,7 @@ def est_IM_chours_single(
 
     if isinstance(comp, list):
         comp_count = get_IM_comp_count(comp)
-        if any("rota" in c for c in comp):
+        if any("rotd" in c for c in comp):
             est_rotd = True
     else:
         comp_count = comp
