@@ -11,10 +11,11 @@ import yaml
 from argparse import ArgumentParser
 from typing import List
 
-from workflow.automation.platform_config import platform_config
 import qcore.constants as const
 from qcore import shared, srf, utils
-import estimate_wct
+from workflow.automation.estimation import estimate_wct
+from workflow.automation.platform_config import platform_config
+
 
 VM_PARAMS_FILENAME = "vm_params.yaml"
 
