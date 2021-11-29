@@ -132,9 +132,7 @@ def get_platform_specific_script(
     }[process]
 
     return scheduler.process_arguments(
-        join(
-            platform_dir, f"{script_name}.{script_extension}"
-        ),
+        join(platform_dir, f"{script_name}.{script_extension}"),
         arguments,
         scheduler_arguments,
     )

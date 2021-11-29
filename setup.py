@@ -17,14 +17,14 @@ setup(
     license="MIT",
     keywords="UC GM Sim workflow installation",
     url="https://github.com/ucgmsim/slurm_gm_workflow",
-    packages=find_packages("."), 
+    packages=find_packages("."),
     package_data={
         "workflow.automation": [
             "org/*/*",
             "templates/*",
         ],
         "workflow.calculation": ["gmsim_templates/*/*.yaml"],
-        "workflow": ["*/*.yaml","*/org/*/*.json","*/*.json"],
+        "workflow": ["*/*.yaml", "*/org/*/*.json", "*/*.json"],
     },
     long_description=read("README.md"),
     classifiers=[
