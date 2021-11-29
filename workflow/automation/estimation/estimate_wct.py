@@ -465,11 +465,12 @@ def est_IM_chours_single(
 
     fd_count = data[:, 0]
     nt = data[:, 1]
+    pSA_count = data[:, 3]
 
     if est_rotd:
         coefficients = {"a": 0.8559469343266983, "b": -19.063651268616194}
         core_hours = np.exp(
-            (coefficients["a"] * np.log(nt * fd_count * comp_count * ROTD_THETA))
+            (coefficients["a"] * np.log(nt * fd_count * pSA_count * ROTD_THETA))
             + coefficients["b"]
         )[0]
     else:
