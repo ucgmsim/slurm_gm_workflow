@@ -447,8 +447,15 @@ def est_IM_chours_single(
     run_time: float
         Estimated run time (hours)
     """
+
+    # TODO: adjust this number when its no longer hard-coded deep within IM_calc
+    ROTD_THETA = 180
+    est_rotd = False
+
     if isinstance(comp, list):
         comp_count = get_IM_comp_count(comp)
+        if any("rota" in c for c in comp):
+            est_rotd = True
     else:
         comp_count = comp
     # Make a numpy array of the input data in the right shape
@@ -456,14 +463,20 @@ def est_IM_chours_single(
         [float(fd_count), float(nt), comp_count, float(pSA_count), float(n_cores)]
     ).reshape(1, 5)
 
-    coefficients = {"a": 0.660_447_17, "b": -11.301_499_255_786_645}
-
     fd_count = data[:, 0]
     nt = data[:, 1]
 
-    core_hours = np.exp(
-        (coefficients["a"] * np.log(nt * fd_count * comp_count)) + coefficients["b"]
-    )[0]
+    if est_rotd:
+        coefficients = {"a": 0.8559469343266983, "b": -19.063651268616194}
+        core_hours = np.exp(
+            (coefficients["a"] * np.log(nt * fd_count * comp_count * ROTD_THETA))
+            + coefficients["b"]
+        )[0]
+    else:
+        coefficients = {"a": 0.660_447_17, "b": -11.301_499_255_786_645}
+        core_hours = np.exp(
+            (coefficients["a"] * np.log(nt * fd_count * comp_count)) + coefficients["b"]
+        )[0]
 
     return core_hours, core_hours / n_cores
 
