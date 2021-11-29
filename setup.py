@@ -22,6 +22,7 @@ setup(
         "workflow.automation": [
             "org/*/*",
             "templates/*",
+            "install_scripts/*.sql",
         ],
         "workflow.calculation": ["gmsim_templates/*/*.yaml"],
         "workflow": ["*/*.yaml", "*/org/*/*.json", "*/*.json"],
