@@ -464,8 +464,6 @@ def est_IM_chours_single(
 
     if est_rotd:
         coefficients = {"a": 0.855_946_934_326_698_3, "b": -19.063_651_268_616_194}
-        size = nt * fd_count * pSA_count * ROTD_THETA
-        print(size)
         core_hours = np.exp(
             (coefficients["a"] * np.log(nt * fd_count * pSA_count * ROTD_THETA))
             + coefficients["b"]
