@@ -13,7 +13,7 @@
 #export gmsim_root=/home01/hpc11a02/gmsim
 #export PYTHONPATH=$gmsim_root/Environments/nurion/workflow
 #source $gmsim_root/Environments/nurion/virt_envs/python3_nurion/bin/activate
-#export SLURM_JOB_ID="${PBS_JOBID/.pbs/}"
+export SLURM_JOB_ID="${PBS_JOBID/.pbs/}"
 
 
 #The following params are given with -v option
