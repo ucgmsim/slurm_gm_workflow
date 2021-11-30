@@ -451,11 +451,6 @@ def est_IM_chours_single(
     ROTD_THETA = 180
     est_rotd = False
 
-    # force the variable type, in case its stored as str in config
-    fd_count = int(fd_count)
-    nt = int(nt)
-    pSA_count = int(pSA_count)
-
     if isinstance(comp, list):
         comp_count = get_IM_comp_count(comp)
         est_rotd = any("rotd" in c for c in comp)
