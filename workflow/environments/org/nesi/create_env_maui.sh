@@ -52,3 +52,8 @@ pip install --upgrade pip
 xargs -n 1 -a ${env_path}/workflow/workflow/environments/org/nesi/maui_python3_requirements.txt pip install -U
 
 source "${env_path}/workflow/workflow/environments/org/nesi/create_env_common_post.sh"
+
+cd ${env_path}/qcore
+python setup.py install
+cd ${env_path}/workflow
+python setup.py install
