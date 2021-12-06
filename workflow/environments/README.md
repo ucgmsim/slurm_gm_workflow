@@ -21,10 +21,10 @@ Requirements: Setup github SSH keys for maui,
 A user specific environment of workflow, qcore, IMCalc, Empirical Engine and Pre-processing 
 can be created as follows:  
 1) Go to an existing workflow repository
-2) Navigate to ".../slurm_gm_workflow/install_workflow" 
+2) Navigate to ".../slurm_gm_workflow/workflow/environments/org/nesi" 
 3) Run 
     ```bash
-    ./create_env.sh environment_name config_to_use
+    ./create_env_maui.sh environment_name config_to_use
     ```
     where a default config (env_config.json) is located in the same directory, which should
     work without requiring any changes.  
@@ -34,7 +34,7 @@ can be created as follows:
 4) Check that the script ran to completion without any errors, 
 apart from the IM_calculation setup warning and the pip qcore error.
 5) Log into mahuika
-6) Navigate to the new environment, and into the slurm_gm_workflow/install_workflow
+6) Navigate to the new environment, and into the slurm_gm_workflow/workflow/environments/org/nes
 7) Run
     ```bash
     ./create_python_virtenv_mahuika.sh env_path

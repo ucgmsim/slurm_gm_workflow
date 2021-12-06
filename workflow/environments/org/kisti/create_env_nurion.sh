@@ -48,6 +48,6 @@ pip install --upgrade pip
 # Using xargs means that each package is installed individually, which
 # means that if there is an error (i.e. can't find qcore), then the other
 # packages are still installed. However, this is slower.
-xargs -n 1 -a ${env_path}/workflow/install_workflow/nurion_python3_requirements.txt pip install
+xargs -n 1 -a ${env_path}/workflow/workflow/environments/org/kisti/nurion_python3_requirements.txt pip install
 
-source "${env_path}/workflow/install_workflow/create_env_common_post.sh"
+source "${env_path}/workflow/workflow/environments/create_env_common_post.sh"
