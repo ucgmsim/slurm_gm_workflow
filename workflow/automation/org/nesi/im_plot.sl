@@ -6,9 +6,10 @@
 #SBATCH --job-name=im_plot
 #SBATCH --time=00:30:00
 #SBATCH --cpus-per-task=1
+echo ${CUR_ENV}
 
 if [[ ! -z ${CUR_ENV} && ${CUR_HPC} != "mahuika" ]]; then
-    source $CUR_ENV/workflow/environments/helper_functions/activate_env.sh $CUR_ENV "mahuika"
+    source $CUR_ENV/workflow/workflow//environments/helper_functions/activate_env.sh $CUR_ENV "mahuika"
 fi
 
 CSV_PATH=`realpath $1`
