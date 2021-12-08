@@ -14,11 +14,16 @@ fi
 
 CSV_PATH=`realpath $1`
 STATION_FILE_PATH=`realpath $2`
-OUTPUT_XYZ_PARENT_DIR=`realpath $3`
+OUTPUT_XYZ_PARENT_DIR=$3
 SRF_PATH=`realpath $4`
 MODEL_PARAMS=`realpath $5`
 MGMT_DB_LOC=`realpath $6`
 SRF_NAME=$7
+
+#echo $@
+
+mkdir -p $OUTPUT_XYZ_PARENT_DIR
+OUTPUT_XYZ_PARENT_DIR=`realpath $OUTPUT_XYZ_PARENT_DIR` # realpath only works if the path exists
 
 COMPS=($(cat $CSV_PATH|cut -d , -f 2 |tail -n+2 |sort|uniq|tr " " "\n")) # find what components are used and makes an array
 
@@ -43,7 +48,10 @@ fi
 for comp in ${comps_to_plot[@]};
 do 
     OUTPUT_XYZ_DIR=$OUTPUT_XYZ_PARENT_DIR/$comp
-    res=`python $gmsim/visualization/im/spatialise_im.py $CSV_PATH $STATION_FILE_PATH --out_dir $OUTPUT_XYZ_DIR -c $comp`
+    mkdir -p $OUTPUT_XYZ_DIR
+    cmd="python $gmsim/visualization/im/spatialise_im.py $CSV_PATH $STATION_FILE_PATH --out_dir $OUTPUT_XYZ_DIR -c $comp"
+    #echo $cmd
+    res=`$cmd`
     exit_val=$?
 
     if [[ $exit_val == 0 ]]; then
@@ -60,9 +68,16 @@ do
             mkdir -p $out_dir
             cd $out_dir
             if [[ "$f" == *"real"* ]]; then
-            res2=$(python $gmsim/visualization/sources/plot_items.py -t $SRF_NAME --xyz $f -c "$SRF_PATH" --xyz-cpt hot --xyz-cpt-invert --xyz-transparency 30 --xyz-size 0.1 --xyz-cpt-labels `cat $OUTPUT_XYZ_DIR/im_order.txt` -n 2)
+                imorder=`cat $OUTPUT_XYZ_DIR/im_order.txt`
+                cmd2="python $gmsim/visualization/sources/plot_items.py -t $SRF_NAME --xyz $f -c '$SRF_PATH' --xyz-cpt hot --xyz-cpt-invert --xyz-transparency 30 --xyz-size 0.1 --xyz-cpt-labels $imorder -n 2"
+#                echo $cmd2 
+                res2=`$cmd2`
+
             else
-            res2=$(python $gmsim/visualization/sources/plot_items.py -t $SRF_NAME --xyz $f -c "$SRF_PATH" --xyz-model-params $MODEL_PARAMS --xyz-grid --xyz-grid-search 12m --xyz-landmask --xyz-cpt hot --xyz-cpt-invert --xyz-grid-contours --xyz-transparency 30 --xyz-size 1k --xyz-cpt-labels `cat $OUTPUT_XYZ_DIR/im_order.txt` -n 2)
+                imorder=`cat $OUTPUT_XYZ_DIR/im_order.txt`
+                cmd2="python $gmsim/visualization/sources/plot_items.py -t $SRF_NAME --xyz $f -c '$SRF_PATH' --xyz-model-params $MODEL_PARAMS --xyz-grid --xyz-grid-search 12m --xyz-landmask --xyz-cpt hot --xyz-cpt-invert --xyz-grid-contours --xyz-transparency 30 --xyz-size 1k --xyz-cpt-labels $imorder -n 2"
+#                echo $cmd2
+                res2=`$cmd2`
             fi
             exit_val2=$?
             if [[ $exit_val2 != 0 ]]; then

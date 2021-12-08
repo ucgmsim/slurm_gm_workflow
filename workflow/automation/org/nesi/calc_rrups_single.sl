@@ -44,9 +44,13 @@ then
     echo ___calculating rrups___
 
     start_time=`date +${runtime_fmt}`
-    python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $REL_NAME rrup running $SLURM_JOB_ID
+    cmd="python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $REL_NAME rrup running $SLURM_JOB_ID"
+    #echo $cmd
+    $cmd
 
-    time python ${IMPATH}/calculate_rrups_single.py -fd ${FD} -o ${OUT_FILE} ${STATION_FILE} ${SRF_FILE}
+    cmd=" python ${IMPATH}/calculate_rrups_single.py -fd ${FD} -o ${OUT_FILE} ${STATION_FILE} ${SRF_FILE}"
+    #echo $cmd
+    time $cmd
 else
     echo "rrup file already present: ${OUT_FILE}"
     echo "Checking that there are enough rrups in it"
@@ -56,7 +60,9 @@ if [[ -f ${OUT_FILE} ]]
 then
     if [[ $(wc -l < ${OUT_FILE}) == $(( $(wc -l < ${FD}) + 1)) ]]
     then
-        python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $REL_NAME rrup completed $SLURM_JOB_ID
+        cmd="python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $REL_NAME rrup completed $SLURM_JOB_ID"
+        #echo $cmd
+        $cmd
     else
         res="Not enough rrups for the station file"
     fi
@@ -66,7 +72,10 @@ fi
 
 if [[ -n ${res} ]]
 then
-    python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $REL_NAME rrup failed $SLURM_JOB_ID --error $res
+    cmd="python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $REL_NAME rrup failed $SLURM_JOB_ID --error '$res'"
+    #echo $cmd
+    $cmd
+
 fi
 
 date
