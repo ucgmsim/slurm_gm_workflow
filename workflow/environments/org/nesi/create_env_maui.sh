@@ -19,7 +19,7 @@ cd ../
 echo "dev" > ${env_path}/workflow/version
 
 
-for pkg in "${inhouse_pkgs[@]}"; 
+for pkg in "${inhouse_pkgs[@]}";
 do
     echo "Cloning $pkg"
     git clone git@github.com:ucgmsim/${pkg}.git
@@ -56,16 +56,16 @@ xargs -n 1 -a ${env_path}/workflow/workflow/environments/org/nesi/maui_python3_r
 
 #source "${env_path}/workflow/workflow/environments//create_env_common_post.sh"
 
-for pkg in "${inhouse_pkgs[@]}";~
+for pkg in "${inhouse_pkgs[@]}";
 do
     cd ${env_path}/${pkg}
-    pip install -r requirements.txt
+    pip install -U -r requirements.txt
     cd ../
     pip install -e ./${pkg}
 done
 
 #TODO: once inhouse_pkgs includes workflow, remove the following
 cd workflow
-pip install -r requirements.txt
+pip install -U -r requirements.txt
 cd ../
 pip install -e ./workflow
