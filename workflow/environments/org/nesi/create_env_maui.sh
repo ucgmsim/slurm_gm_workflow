@@ -4,8 +4,10 @@
 DIR=$( dirname "$( realpath "${BASH_SOURCE[0]}")" )
 source "${DIR}/../../create_env_common_pre.sh"
 
+
+inhouse_pkgs=(qcore IM_calculation Pre-processing Empirical_Engine visualization) #TODO: rename slurm_gm_workflow to workflow and add here
+
 # Setting up workfow, qcore and IM calc
-echo "Cloning workflow"
 git clone git@github.com:ucgmsim/slurm_gm_workflow.git
 mv ./slurm_gm_workflow ./workflow
 
@@ -16,24 +18,17 @@ cd ../
 # Create version
 echo "dev" > ${env_path}/workflow/version
 
-echo "Cloning qcore"
-git clone git@github.com:ucgmsim/qcore.git
+
+for pkg in "${inhouse_pkgs[@]}"; 
+do
+    echo "Cloning $pkg"
+    git clone git@github.com:ucgmsim/${pkg}.git
+done
 
 cd qcore
 git checkout workflow_restructure
 cd ../
 
-echo "Cloning IM_calculation"
-git clone git@github.com:ucgmsim/IM_calculation.git
-
-echo "Cloning Pre-processing"
-git clone git@github.com:ucgmsim/Pre-processing.git
-
-echo "Cloning Empirical Engine"
-git clone git@github.com:ucgmsim/Empirical_Engine.git
-
-echo "Cloning visualization"
-git clone git@github.com:ucgmsim/visualization.git
 
 # Create virtual environment
 mkdir virt_envs
@@ -59,10 +54,18 @@ pip install --upgrade pip
 # packages are still installed. However, this is slower.
 xargs -n 1 -a ${env_path}/workflow/workflow/environments/org/nesi/maui_python3_requirements.txt pip install -U
 
-source "${env_path}/workflow/workflow/environments//create_env_common_post.sh"
+#source "${env_path}/workflow/workflow/environments//create_env_common_post.sh"
 
-#cd ${env_path}/qcore
-#pip install -r requirements.txt
-#cd ../
+for pkg in "${inhouse_pkgs[@]}";~
+do
+    cd ${env_path}/${pkg}
+    pip install -r requirements.txt
+    cd ../
+    pip install -e ./${pkg}
+done
+
+#TODO: once inhouse_pkgs includes workflow, remove the following
+cd workflow
+pip install -r requirements.txt
+cd ../
 pip install -e ./workflow
-

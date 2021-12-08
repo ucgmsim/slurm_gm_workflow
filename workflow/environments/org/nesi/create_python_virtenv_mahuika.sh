@@ -5,6 +5,9 @@
 env_path=${1?Error: "The environment path has to be given"}
 name=`basename ${env_path}`
 
+inhouse_pkgs=(qcore IM_calculation Pre-processing Empirical_Engine visualization) #TODO: rename slurm_gm_workflow to workflow and add here
+
+
 # Create virtual environment
 cd ${env_path}
 python3 -m venv --system-site-packages virt_envs/python3_mahuika
@@ -29,13 +32,15 @@ pip install --upgrade setuptools
 # packages are still installed. However, this is slower.
 xargs -n 1 -a ${env_path}/workflow/workflow/environments/org/nesi/mahuika_python3_requirements.txt pip install -U
 
-# Install qcore
-pip install -e ./qcore
-pip install -e ./Empirical_Engine
-pip install -I --no-deps -e ./IM_calculation
-pip install -e ./visualization
-
-#cd ${env_path}/qcore
-#pip install -r requirements.txt
-#cd ../
+for pkg in "${inhouse_pkgs[@]}";~
+do
+    cd ${env_path}/${pkg}
+    pip install -r requirements.txt
+    cd ../
+    pip install -e ./${pkg}
+done
+#TODO: once inhouse_pkgs includes workflow, remove the following
+cd workflow
+pip install -r requirements.txt
+cd ..
 pip install -e ./workflow
