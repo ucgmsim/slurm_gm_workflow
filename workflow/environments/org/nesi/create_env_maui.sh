@@ -54,6 +54,8 @@ xargs -n 1 -a ${env_path}/workflow/workflow/environments/org/nesi/maui_python3_r
 source "${env_path}/workflow/workflow/environments/org/nesi/create_env_common_post.sh"
 
 cd ${env_path}/qcore
-python setup.py install
-cd ${env_path}/workflow
-python setup.py install
+pip install -r requirements.txt
+
+cd ../
+pip install -e ./workflow
+
