@@ -2,18 +2,26 @@
 
 #get the absolute path of this script
 DIR=$( dirname "$( realpath "${BASH_SOURCE[0]}")" )
-source "${DIR}/create_env_common_pre.sh"
+source "${DIR}/../../create_env_common_pre.sh"
 
 # Setting up workfow, qcore and IM calc
 echo "Cloning workflow"
 git clone git@github.com:ucgmsim/slurm_gm_workflow.git
 mv ./slurm_gm_workflow ./workflow
 
+cd workflow
+git checkout restructure
+cd ../
+
 # Create version
 echo "dev" > ${env_path}/workflow/version
 
 echo "Cloning qcore"
 git clone git@github.com:ucgmsim/qcore.git
+
+cd qcore
+git checkout workflow_restructure
+cd ../
 
 echo "Cloning IM_calculation"
 git clone git@github.com:ucgmsim/IM_calculation.git
@@ -51,11 +59,10 @@ pip install --upgrade pip
 # packages are still installed. However, this is slower.
 xargs -n 1 -a ${env_path}/workflow/workflow/environments/org/nesi/maui_python3_requirements.txt pip install -U
 
-source "${env_path}/workflow/workflow/environments/org/nesi/create_env_common_post.sh"
+source "${env_path}/workflow/workflow/environments//create_env_common_post.sh"
 
-cd ${env_path}/qcore
-pip install -r requirements.txt
-
-cd ../
+#cd ${env_path}/qcore
+#pip install -r requirements.txt
+#cd ../
 pip install -e ./workflow
 

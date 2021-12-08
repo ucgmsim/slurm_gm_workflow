@@ -35,7 +35,7 @@ pip install -e ./Empirical_Engine
 pip install -I --no-deps -e ./IM_calculation
 pip install -e ./visualization
 
-cd ${env_path}/qcore
-pip install -r requirements.txt
-cd ../
+#cd ${env_path}/qcore
+#pip install -r requirements.txt
+#cd ../
 pip install -e ./workflow
