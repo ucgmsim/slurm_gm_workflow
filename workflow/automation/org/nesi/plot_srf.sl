@@ -11,6 +11,8 @@ if [[ ! -z ${CUR_ENV} && ${CUR_HPC} != "mahuika" ]]; then
     source $CUR_ENV/workflow/workflow//environments/helper_functions/activate_env.sh $CUR_ENV "mahuika"
 fi
 
+echo $@
+
 SRF_DIR=$1
 OUTPUT_DIR=$2
 MGMT_DB_LOC=$3
@@ -40,6 +42,7 @@ echo $end_time
 if [[ $exit_val == 0 ]] && [[ $exit_val2 == 0 ]]; then
     # passed
     # output map plot is defaultly saved to srf folder, move it to Verification folder
+
     if [[ -f "$STATIC_OUTPUT_MAP_PLOT_PATH" ]]; then
         echo "outputted plots to $OUTPUT_DIR"
         mv "$STATIC_OUTPUT_MAP_PLOT_PATH" "$OUTPUT_DIR"

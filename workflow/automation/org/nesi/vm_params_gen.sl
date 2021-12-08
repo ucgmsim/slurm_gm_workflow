@@ -11,6 +11,8 @@ if [[ -n ${CUR_ENV} && ${CUR_HPC} != "mahuika" ]]; then
     source $CUR_ENV/workflow/workflow//environments/helper_functions/activate_env.sh $CUR_ENV "mahuika"
 fi
 
+echo $@
+
 REL_CSV=${1:?rel_CSV argument missing}
 OUT_DIR=${2:?OUT_DIR argument missing}
 VM_VERSION=${3:?VM_VERSION argument missing}

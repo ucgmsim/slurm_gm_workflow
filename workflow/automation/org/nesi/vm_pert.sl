@@ -14,6 +14,8 @@ fi
 module load FFTW
 module load GCC/7.4.0
 
+echo $@
+
 VM_PARAMS_YAML=${1:?VM_PARAMS_YAML argument missing}
 OUT_DIR=${2:?OUT_DIR argument missing}
 MGMT_DB_LOC=${3:?MGMT_DB_LOC argument missing}

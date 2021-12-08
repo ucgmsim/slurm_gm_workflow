@@ -22,6 +22,8 @@ then
     exit 1
 fi
 
+echo $@
+
 obs_dir=$1
 list_event=$2
 # use default binary if not given

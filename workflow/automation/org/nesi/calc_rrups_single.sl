@@ -25,6 +25,8 @@ timestamp=`date +%Y%m%d_%H%M%S`
 REL=$1
 MGMT_DB_LOC=$2
 
+echo $@
+
 REL_NAME=`basename $REL`
 REL_YAML=$(python -c "from qcore.simulation_structure import get_sim_params_yaml_path; print(get_sim_params_yaml_path('${REL}'))")
 

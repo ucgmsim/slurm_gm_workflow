@@ -11,6 +11,8 @@ if [[ ! -z ${CUR_ENV} && ${CUR_HPC} != "mahuika" ]]; then
     source $CUR_ENV/workflow/workflow//environments/helper_functions/activate_env.sh $CUR_ENV "mahuika"
 fi
 
+echo $@
+
 REL_LOC=$1
 MGMT_DB_LOC=$2
 VSITE_FILE=$3
