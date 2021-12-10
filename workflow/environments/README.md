@@ -34,7 +34,7 @@ can be created as follows:
 4) Check that the script ran to completion without any errors, 
 apart from the IM_calculation setup warning and the pip qcore error.
 5) Log into mahuika
-6) Navigate to the new environment, and into the slurm_gm_workflow/workflow/environments/org/nes
+6) Navigate to the new environment, and into the slurm_gm_workflow/workflow/environments/org/nesi
 7) Run
     ```bash
     ./create_python_virtenv_mahuika.sh env_path
