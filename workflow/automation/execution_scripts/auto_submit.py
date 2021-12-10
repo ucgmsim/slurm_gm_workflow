@@ -187,15 +187,12 @@ def submit_task(
     elif proc_type == const.ProcessType.IM_plot.value:
         im_plot_template = "{script_location} {csv_path} {station_file_path} {output_xyz_dir} {srf_path} {model_params_path} {mgmt_db_loc} {run_name}"
 
-        #params.MODEL_PARAMS no longer is available.
-        model_params_path = os.path.join(os.path.dirname(params.vm_params),f"model_params{params.sufx}")
-
         script = im_plot_template.format(
             csv_path=os.path.join(sim_struct.get_IM_csv(sim_dir)),
             station_file_path=params.stat_file,
             output_xyz_dir=os.path.join(verification_dir, "IM_plot"),
             srf_path=sim_struct.get_srf_path(root_folder, run_name),
-            model_params_path=model_params_path,
+            model_params_path=params.MODEL_PARAMS,
             mgmt_db_loc=root_folder,
             run_name=run_name,
             script_location=os.path.expandvars(
