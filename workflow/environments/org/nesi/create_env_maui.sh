@@ -11,8 +11,6 @@ inhouse_pkgs=(qcore IM_calculation Pre-processing Empirical_Engine visualization
 git clone git@github.com:ucgmsim/slurm_gm_workflow.git
 mv ./slurm_gm_workflow ./workflow
 
-cd workflow
-git checkout restructure
 cd ../
 
 # Create version
@@ -24,11 +22,6 @@ do
     echo "Cloning $pkg"
     git clone git@github.com:ucgmsim/${pkg}.git
 done
-
-cd qcore
-git checkout workflow_restructure
-cd ../
-
 
 # Create virtual environment
 mkdir virt_envs
