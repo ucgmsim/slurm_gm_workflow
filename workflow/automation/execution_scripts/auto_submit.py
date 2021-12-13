@@ -25,6 +25,7 @@ from workflow.automation.submit.submit_post_emod3d import main as submit_post_lf
 from workflow.automation.submit.submit_hf import main as submit_hf_main
 from workflow.automation.submit.submit_bb import main as submit_bb_main
 from workflow.automation.submit.submit_sim_imcalc import submit_im_calc_slurm
+from workflow.automation.submit.submit_vm_pert import submit_vm_pert_main
 from workflow.automation.lib import shared_automated_workflow
 from workflow.automation.platform_config import (
     HPC,
