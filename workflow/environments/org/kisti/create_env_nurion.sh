@@ -2,30 +2,26 @@
 
 #get the absolute path of this script
 DIR=$( dirname "$( realpath "${BASH_SOURCE[0]}")" )
-source "${DIR}/create_env_common_pre.sh"
+source "${DIR}/../../create_env_common_pre.sh"
 
 # Setting up workfow, qcore and IM calc
 echo "Cloning workflow"
 git clone https://github.com/ucgmsim/slurm_gm_workflow.git
 mv ./slurm_gm_workflow ./workflow
+cd workflow
+git checkout restructure
+cd ..
 
 # Create version
 echo "dev" > ${env_path}/workflow/version
 
-echo "Cloning qcore"
-git clone https://github.com/ucgmsim/qcore.git
+inhouse_pkgs=(qcore IM_calculation Pre-processing Empirical_Engine visualization) #TODO: rename slurm_gm_workflow to workflow and add here
+for pkg in "${inhouse_pkgs[@]}";
+do
+    echo "Cloning $pkg"
+    git clone https://github.com/ucgmsim/${pkg}.git
+done
 
-echo "Cloning IM_calculation"
-git clone https://github.com/ucgmsim/IM_calculation.git
-
-echo "Cloning Pre-processing"
-git clone https://github.com/ucgmsim/Pre-processing.git
-
-echo "Cloning Empirical Engine"
-git clone https://github.com/ucgmsim/Empirical_Engine.git
-
-echo "Cloning visualization"
-git clone https://github.com/ucgmsim/visualization.git
 
 # Create virtual environment
 mkdir virt_envs
@@ -48,6 +44,18 @@ pip install --upgrade pip
 # Using xargs means that each package is installed individually, which
 # means that if there is an error (i.e. can't find qcore), then the other
 # packages are still installed. However, this is slower.
-xargs -n 1 -a ${env_path}/workflow/workflow/environments/org/kisti/nurion_python3_requirements.txt pip install
+xargs -n 1 -a ${env_path}/workflow/workflow/environments/org/kisti/nurion_python3_requirements2.txt pip install
 
-source "${env_path}/workflow/workflow/environments/create_env_common_post.sh"
+cd ${env_path}
+cd workflow
+pip install -U -r requirements.txt
+cd ../
+pip install -e ./workflow
+
+for pkg in "${inhouse_pkgs[@]}";
+do
+    cd ${env_path}/${pkg}
+    pip install -U -r requirements.txt
+    cd ../
+    pip install -e ./${pkg}
+done
