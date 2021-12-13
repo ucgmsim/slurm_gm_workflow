@@ -12,7 +12,6 @@ if [[ ! -z ${CUR_ENV} && ${CUR_HPC} != "mahuika" ]]; then
     source $CUR_ENV/workflow/workflow//environments/helper_functions/activate_env.sh $CUR_ENV "mahuika"
 fi
 
-echo $@
 
 CSV_PATH=`realpath $1`
 STATION_FILE_PATH=`realpath $2`
