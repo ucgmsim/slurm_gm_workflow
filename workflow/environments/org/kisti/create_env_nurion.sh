@@ -9,7 +9,7 @@ echo "Cloning workflow"
 git clone https://github.com/ucgmsim/slurm_gm_workflow.git
 mv ./slurm_gm_workflow ./workflow
 cd workflow
-git checkout restructure
+git checkout nurion_refactor
 cd ..
 
 # Create version
@@ -22,6 +22,9 @@ do
     git clone https://github.com/ucgmsim/${pkg}.git
 done
 
+cd qcore
+git checkout workflow_restructure
+cd ../
 
 # Create virtual environment
 mkdir virt_envs
