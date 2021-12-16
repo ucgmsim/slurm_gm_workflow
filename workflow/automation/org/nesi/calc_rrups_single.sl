@@ -31,7 +31,7 @@ REL_YAML=$(python -c "from qcore.simulation_structure import get_sim_params_yaml
 
 SRF_FILE=$(getFromYaml ${REL_YAML} srf_file)
 # Get median srf file
-SRF_FILE=${SRF_FILE//_REL??/}
+# SRF_FILE=${SRF_FILE//_REL??/}
 STATION_FILE=$(getFromYaml ${REL_YAML} stat_file)
 FD=$(getFromYaml ${REL_YAML} FD_STATLIST)
 
