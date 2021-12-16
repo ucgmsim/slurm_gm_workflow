@@ -13,7 +13,6 @@ export PYTHONPATH=${gmsim}/qcore:/${PYTHONPATH}:${IMPATH}
 script_start=`date`
 echo "script started running at: $script_start"
 
-
 obs_dirs=$1
 
 comp="000 090 geom"

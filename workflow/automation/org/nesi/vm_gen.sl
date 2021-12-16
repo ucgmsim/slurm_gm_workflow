@@ -8,10 +8,8 @@
 #SBATCH --cpus-per-task=32
 
 if [[ -n ${CUR_ENV} && ${CUR_HPC} != "mahuika" ]]; then
-    source $CUR_ENV/workflow/workflow//environments/helper_functions/activate_env.sh $CUR_ENV "mahuika"
+    source $CUR_ENV/workflow/workflow/environments/helper_functions/activate_env.sh $CUR_ENV "mahuika"
 fi
-
-
 
 VM_PARAMS_YAML=${1:?VM_PARAMS_YAML argument missing}
 OUT_DIR=${2:?OUT_DIR argument missing}
@@ -19,11 +17,9 @@ SRF=${3:?SRF argument missing}
 MGMT_DB_LOC=${4:?MGMT_DB_LOC argument missing}
 REL_NAME=${5:?REL_NAME argument missing}
 
-
 FAULT=$(echo $REL_NAME | cut -d"_" -f1)
 SIM_DIR=$MGMT_DB_LOC/Runs/$FAULT/$REL_NAME
 CH_LOG_FFP=$SIM_DIR/ch_log
-
 
 if [[ ! -d $OUT_DIR ]]; then
     mkdir -p $OUT_DIR
