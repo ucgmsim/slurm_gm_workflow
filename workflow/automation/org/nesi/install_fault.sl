@@ -8,9 +8,8 @@
 #SBATCH --cpus-per-task=1
 
 if [[ -n ${CUR_ENV} && ${CUR_HPC} != "mahuika" ]]; then
-    source $CUR_ENV/workflow/workflow//environments/helper_functions/activate_env.sh $CUR_ENV "mahuika"
+    source $CUR_ENV/workflow/workflow/environments/helper_functions/activate_env.sh $CUR_ENV "mahuika"
 fi
-
 
 VM_PARAMS=${1:?VM_PARAMS argument missing}
 STAT_FILE=${2:?STAT_FILE argument missing}

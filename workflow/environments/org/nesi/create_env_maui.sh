@@ -4,7 +4,6 @@
 DIR=$( dirname "$( realpath "${BASH_SOURCE[0]}")" )
 source "${DIR}/../../create_env_common_pre.sh"
 
-
 inhouse_pkgs=(qcore IM_calculation Pre-processing Empirical_Engine visualization) #TODO: rename slurm_gm_workflow to workflow and add here
 
 # Setting up workfow, qcore and IM calc
