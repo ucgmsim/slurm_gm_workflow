@@ -15,7 +15,8 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
+lib/ 
+!workflow/automation/lib
 lib64/
 parts/
 sdist/
@@ -114,3 +115,6 @@ testing/PangopangoF29
 # gmt
 **/gmt.conf
 **/gmt.history
+
+# Mac OS X folder information file
+.DS_Store
