@@ -43,8 +43,9 @@ pipeline {
                     echo "[ Python used ] : " `which python`
                     cd ${env.WORKSPACE}
                     echo "[ Installing ${env.JOB_NAME} ]"
-# full installation is not possible as it takes more than 3.0Gb for building and kills the server
-#                   python setup.py install
+                    cd ..
+                    pip install -e ${env.JOB_NAME}
+                    cd -
                     echo "[ Linking bins and libs ]"
                     rm -rf build
                     ln -s $HOME/data/testing/slurm_gm_workflow/SGMW build
