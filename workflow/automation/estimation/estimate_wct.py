@@ -465,6 +465,8 @@ def est_IM_chours_single(
         (coefficients["a"] * np.log(nt * fd_count * comp_count)) + coefficients["b"]
     )[0]
 
+    if config.host == 'nurion':
+        core_hours *= 5
     return core_hours, core_hours / n_cores
 
 
