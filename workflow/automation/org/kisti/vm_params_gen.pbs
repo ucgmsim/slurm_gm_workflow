@@ -1,35 +1,20 @@
 #!/bin/bash
-# script version: slurm
+
+# script version: pbs
 #
-# must be run with sbatch vm_params_gen.sl [realisationCSV] [OutputDirectory] [VM_VERSION] [VM_TOPO] [HH] [PGV_THRESHOLD] [DS_MULTIPLIER] [MGMT_DB_LOC] [REL_NAME] [managementDBLocation]
-
-#SBATCH --job-name=VM_PARAMS
-#SBATCH --time=00:15:00
-#SBATCH --cpus-per-task=1
-
-if [[ -n ${CUR_ENV} && ${CUR_HPC} != "mahuika" ]]; then
-    source $CUR_ENV/workflow/workflow/environments/helper_functions/activate_env.sh $CUR_ENV "mahuika"
-fi
-
-REL_CSV=${1:?rel_CSV argument missing}
-OUT_DIR=${2:?OUT_DIR argument missing}
-VM_VERSION=${3:?VM_VERSION argument missing}
-VM_TOPO=${4:?VM_TOPO argument missing}
-HH=${5:?HH argument missing}
-PGV_THRESHOLD=${6:?PGV_THRESHOLD argument missing}
-DS_MULTIPLIER=${7:?DS_MULTIPLIER argument missing}
-MGMT_DB_LOC=${8:?MGMT_DB_LOC argument missing}
-REL_NAME=${9:?REL_NAME argument missing}
-
-if [[ $# != 9 ]]; then
-    echo "9 arguments must be provided, please adjust and re-run"
-    exit
-fi
+# must be run with qsub -v realisationCSV=A,OutputDirectory=B,VM_VERSION=C,VM_TOPO=D,HH=E,PGV_THRESHOLD=F,DS_MULTIPLIER=G,MGMT_DB_LOC=H,REL_NAME=I,managementDBLocation=J -V vm_params_gen.pbs
+#PBS -N VM_PARAMS
+#PBS -V
+#PBS -q normal
+#PBS -A inhouse
+#PBS -l select=1:ncpus=1
+#PBS -l walltime=00:30:00
+#PBS -W sandbox=PRIVATE
+export SLURM_JOB_I=“${PBS_JOBID/.pbs/}”
 
 FAULT=$(echo $REL_NAME | cut -d"_" -f1)
 SIM_DIR=$MGMT_DB_LOC/Runs/$FAULT/$REL_NAME
 CH_LOG_FFP=$SIM_DIR/ch_log
-
 
 if [[ ! -d $OUT_DIR ]]; then
     mkdir -p $OUT_DIR
