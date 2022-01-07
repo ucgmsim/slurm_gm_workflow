@@ -1,7 +1,7 @@
 #!/bin/bash
 # script version: pbs
 #
-# must be run with qsub -v VM_PARAMS=A,STAT_FILE=B,FAULT_DIR=C,FDSTATLIST=D,MGMT_DB_LOC=E,REL_NAME=F -V install_fault.pbs
+# must be run with qsub -v VM_PARAMS_YAML=A,STAT_FILE=B,FAULT_DIR=C,FDSTATLIST=D,MGMT_DB_LOC=E,REL_NAME=F -V install_fault.pbs
 
 #PBS -N install_fault
 #PBS -V
@@ -35,8 +35,8 @@ runtime_fmt="%Y-%m-%d_%H:%M:%S"
 start_time=`date +$runtime_fmt`
 echo $start_time
 
-echo python $gmsim/workflow/workflow/automation/install_scripts/gen_fd.py $VM_PARAMS $STAT_FILE $FAULT_DIR
-python $gmsim/workflow/workflow/automation/install_scripts/gen_fd.py $VM_PARAMS $STAT_FILE $FAULT_DIR
+echo python $gmsim/workflow/workflow/automation/install_scripts/gen_fd.py $VM_PARAMS_YAML $STAT_FILE $FAULT_DIR
+python $gmsim/workflow/workflow/automation/install_scripts/gen_fd.py $VM_PARAMS_YAML $STAT_FILE $FAULT_DIR
 
 end_time=`date +$runtime_fmt`
 echo $end_time

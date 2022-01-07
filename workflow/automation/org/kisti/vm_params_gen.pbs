@@ -2,7 +2,7 @@
 
 # script version: pbs
 #
-# must be run with qsub -v realisationCSV=A,OutputDirectory=B,VM_VERSION=C,VM_TOPO=D,HH=E,PGV_THRESHOLD=F,DS_MULTIPLIER=G,MGMT_DB_LOC=H,REL_NAME=I,managementDBLocation=J -V vm_params_gen.pbs
+# must be run with qsub -v realisationCSV=A,OUTPUT_DIR=B,VM_VERSION=C,VM_TOPO=D,HH=E,PGV_THRESHOLD=F,DS_MULTIPLIER=G,MGMT_DB_LOC=H,MGMT_DB_LOC=I, REL_NAME=J, -V vm_params_gen.pbs
 #PBS -N VM_PARAMS
 #PBS -V
 #PBS -q normal
@@ -16,8 +16,8 @@ FAULT=$(echo $REL_NAME | cut -d"_" -f1)
 SIM_DIR=$MGMT_DB_LOC/Runs/$FAULT/$REL_NAME
 CH_LOG_FFP=$SIM_DIR/ch_log
 
-if [[ ! -d $OUT_DIR ]]; then
-    mkdir -p $OUT_DIR
+if [[ ! -d $OUTPUT_DIR ]]; then
+    mkdir -p $OUTPUT_DIR
 fi
 
 #updating the stats in managementDB
@@ -32,14 +32,14 @@ runtime_fmt="%Y-%m-%d_%H:%M:%S"
 start_time=`date +$runtime_fmt`
 echo $start_time
 
-echo "python $gmsim/Pre-processing/VM/rel2vm_params.py -o $OUT_DIR --hh $HH --vm-version $VM_VERSION --vm-topo  $VM_TOPO --pgv $PGV_THRESHOLD --ds-multiplier $DS_MULTIPLIER $REL_CSV"
-python $gmsim/Pre-processing/VM/rel2vm_params.py -o $OUT_DIR --hh $HH --vm-version $VM_VERSION --vm-topo  $VM_TOPO --pgv $PGV_THRESHOLD --ds-multiplier $DS_MULTIPLIER $REL_CSV
+echo "python $gmsim/Pre-processing/VM/rel2vm_params.py -o $OUTPUT_DIR --hh $HH --vm-version $VM_VERSION --vm-topo  $VM_TOPO --pgv $PGV_THRESHOLD --ds-multiplier $DS_MULTIPLIER $realisationCSV"
+python $gmsim/Pre-processing/VM/rel2vm_params.py -o $OUTPUT_DIR --hh $HH --vm-version $VM_VERSION --vm-topo  $VM_TOPO --pgv $PGV_THRESHOLD --ds-multiplier $DS_MULTIPLIER $realisationCSV
 
 end_time=`date +$runtime_fmt`
 echo $end_time
 
 timestamp=`date +%Y%m%d_%H%M%S`
-res=`python $gmsim/qcore/qcore/validate_vm.py params $OUT_DIR/vm_params.yaml`
+res=`python $gmsim/qcore/qcore/validate_vm.py params $OUTPUT_DIR/vm_params.yaml`
 pass=$?
 
 if [[ $pass == 0 ]]; then
