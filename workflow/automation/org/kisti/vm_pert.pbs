@@ -10,7 +10,7 @@
 #PBS -l select=1:ncpus=8;
 #PBS -l walltime=10:00:00
 #PBS -W sandbox=PRIVATE
-export SLURM_JOB_I=“${PBS_JOBID/.pbs/}”
+export SLURM_JOB_ID=“${PBS_JOBID/.pbs/}”
 
 #module load FFTW #not sure what module needs to be loaded on nurion
 #module load GCC/7.4.0

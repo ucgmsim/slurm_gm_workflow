@@ -11,7 +11,7 @@
 #PBS -l walltime=00:30:00
 #PBS -W sandbox=PRIVATE
 
-export SLURM_JOB_I="${PBS_JOBID/.pbs/}"
+export SLURM_JOB_ID="${PBS_JOBID/.pbs/}"
 
 
 FAULT=$(echo $REL_NAME | cut -d"_" -f1)
