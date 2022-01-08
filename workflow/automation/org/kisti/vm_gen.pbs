@@ -6,7 +6,7 @@
 #PBS -V
 #PBS -q normal
 #PBS -A inhouse
-#PBS -l select=1:ncpus=64;ompthreads=64
+#PBS -l select=1:ncpus=64:ompthreads=64
 #PBS -l walltime=01:00:00
 #PBS -W sandbox=PRIVATE
 export SLURM_JOB_ID="${PBS_JOBID/.pbs/}"
