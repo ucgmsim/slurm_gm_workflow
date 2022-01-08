@@ -2,12 +2,14 @@
 # script version: pbs
 #
 # must be run with qsub -v VM_PARAMS_YAML=A,OUTPUT_DIR=B,SRF_PATH=C,MGMT_DB_LOC=D,REL_NAME=E -V vm_gen.pbs
+# wawlltime=02:00:00 might be a bit too tight
+
 #PBS -N VM_GEN
 #PBS -V
 #PBS -q normal
 #PBS -A inhouse
 #PBS -l select=1:ncpus=64:ompthreads=64
-#PBS -l walltime=01:00:00
+#PBS -l walltime=03:00:00
 #PBS -W sandbox=PRIVATE
 export SLURM_JOB_ID="${PBS_JOBID/.pbs/}"
 
