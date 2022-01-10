@@ -1,6 +1,15 @@
 Slurm Ground Motion Workflow
 # Changelog
 (Based on https://wiki.canterbury.ac.nz/download/attachments/58458136/CodeVersioning_v18p2.pdf?version=1&modificationDate=1519269238437&api=v2 )
+## [21.11.1] - 2021-11-19 -- Restructured
+### Added
+    - Added setup.py such that importable code is installed as submodules
+### Changed
+    - Updated the structure to have clear separation between scripts and importables
+### removed
+    - TACC support
+    - Unused test for manual_install 
+
 ## [19.6.32] - 2021-09-24 -- Adding CS progress report
 ### Added
     - Added cybershake_progress.py producing a formatted report and optionally alerts to Slack channel

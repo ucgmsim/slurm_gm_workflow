@@ -6,7 +6,7 @@ pipeline {
     }
     stages {
 
-        stage('Settin up env') {
+        stage('Setting up env') {
             steps {
                 echo "[[ Start virtual environment ]]"
                 sh """
@@ -30,6 +30,18 @@ pipeline {
                     cd qcore
                     pip install -r requirements.txt
                     python setup.py install --no-data
+                    echo "[ Installing ${env.JOB_NAME} ]"
+                    cd ${env.WORKSPACE}
+                    cd ..
+                    pip install -e ${env.JOB_NAME}
+                    cd -
+                    echo "[ Linking bins and libs ]"
+                    rm -rf build
+                    ln -s $HOME/data/testing/slurm_gm_workflow/SGMW build
+                    echo "[ Linking test data ]"
+                    rm -rf sample0
+                    mkdir sample0
+                    cp -r $HOME/data/testing/${env.JOB_NAME}/PangopangoF29_HYP01-10_S1244/* sample0/
                 """
             }
         }
@@ -42,18 +54,9 @@ pipeline {
                     source $TEMP_DIR/venv/bin/activate
                     echo "[ Python used ] : " `which python`
                     cd ${env.WORKSPACE}
-                    echo "[ Installing ${env.JOB_NAME} ]"
-# full installation is not possible as it takes more than 3.0Gb for building and kills the server
-#                   python setup.py install
-                    echo "[ Linking bins and libs ]"
-                    rm -rf build
-                    ln -s $HOME/data/testing/slurm_gm_workflow/SGMW build
-                    echo "[ Linking test data ]"
-                    rm -rf sample0
-                    mkdir sample0
-                    cp -r $HOME/data/testing/${env.JOB_NAME}/PangopangoF29_HYP01-10_S1244/* sample0/
+
                     echo "[ Run test now ]"
-                    pytest -vs --ignore=testing/test_manual_install --ignore-glob="scripts/*" && pytest --black --ignore=testing; 
+                    pytest -vs '--ignore-glob=verification/*' && pytest --black --ignore=workflow/automation/tests;
                 """
             }
         }

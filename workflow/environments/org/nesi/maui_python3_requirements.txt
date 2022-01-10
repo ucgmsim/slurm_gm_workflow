@@ -1,0 +1,17 @@
+numpy
+black
+Cython
+filelock
+h5py
+Jinja2
+Keras
+matplotlib
+mpi4py==2.0.0
+pandas
+pytest
+pyyaml>=4.2b1
+scikit-learn
+scipy
+numba
+
+
