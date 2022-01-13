@@ -56,7 +56,7 @@ class Pbs(AbstractScheduler):
             run_time = task_dict["resources_used"]["walltime"]
         else:
             # give a dummy data when pbs failed to return json with required field
-            n_core = 1
+            n_cores = 1
             run_time = "00:00:01"
 
         # status uses the same states as the queue monitor, rather than full words like sacct

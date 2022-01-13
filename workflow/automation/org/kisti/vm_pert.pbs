@@ -1,31 +1,27 @@
+
 #!/bin/bash
-# script version: slurm
+# script version: pbs
 #
-# must be run with sbatch vm_pert.sl [VM_PARAMS_YAML] [OUT_DIR] [MGMT_DB_LOC] [REL_NAME]
+# must be run with qsub -v VM_PARAMS_YAML=A,OUTPUT_DIR=B,SRF=C,MGMT_DB_LOC=D,REL_NAME=E -V vm_pert.pbs
+#PBS -N VM_PERT
+#PBS -V
+#PBS -q normal
+#PBS -A inhouse
+#PBS -l select=1:ncpus=8;
+#PBS -l walltime=10:00:00
+#PBS -W sandbox=PRIVATE
+export SLURM_JOB_ID="${PBS_JOBID/.pbs/}"
 
-#SBATCH --job-name=VM_PERT
-#SBATCH --time=10:00:00
-#SBATCH --cpus-per-task=4
-
-if [[ -n ${CUR_ENV} && ${CUR_HPC} != "mahuika" ]]; then
-    source $CUR_ENV/workflow/workflow/environments/helper_functions/activate_env.sh $CUR_ENV "mahuika"
-fi
-
-module load FFTW
-module load GCC/7.4.0
-
-VM_PARAMS_YAML=${1:?VM_PARAMS_YAML argument missing}
-OUT_DIR=${2:?OUT_DIR argument missing}
-MGMT_DB_LOC=${3:?MGMT_DB_LOC argument missing}
-REL_NAME=${4:?REL_NAME argument missing}
+#module load FFTW # appears to work without module load
+#module load GCC/7.4.0
 
 FAULT=$(echo $REL_NAME | cut -d"_" -f1)
 SIM_DIR=$MGMT_DB_LOC/Runs/$FAULT/$REL_NAME
 CH_LOG_FFP=$SIM_DIR/ch_log
 
 
-if [[ ! -d $OUT_DIR ]]; then
-    mkdir -p $OUT_DIR
+if [[ ! -d $OUTPUT_DIR ]]; then
+    mkdir -p $OUTPUT_DIR
 fi
 
 #updating the stats in managementDB
@@ -40,15 +36,15 @@ runtime_fmt="%Y-%m-%d_%H:%M:%S"
 start_time=`date +$runtime_fmt`
 echo $start_time
 
-echo time python $gmsim/Pre-processing/srf_generation/velocity_model_generation/generate_perturbation_file.py $OUT_DIR/$REL_NAME.pertb $VM_PARAMS_YAML -n 1 -v --perturbation --model $gmsim/Pre-processing/srf_generation/velocity_model_generation/config_files/graves_pitarka_2016_model_modified.csv
-time python $gmsim/Pre-processing/srf_generation/velocity_model_generation/generate_perturbation_file.py $OUT_DIR/$REL_NAME.pertb $VM_PARAMS_YAML -n 1 -v --perturbation --model $gmsim/Pre-processing/srf_generation/velocity_model_generation/config_files/graves_pitarka_2016_model_modified.csv
+echo time python $gmsim/Pre-processing/srf_generation/velocity_model_generation/generate_perturbation_file.py $OUTPUT_DIR/$REL_NAME.pertb $VM_PARAMS_YAML -n 1 -v --perturbation --model $gmsim/Pre-processing/srf_generation/velocity_model_generation/config_files/graves_pitarka_2016_model_modified.csv
+time python $gmsim/Pre-processing/srf_generation/velocity_model_generation/generate_perturbation_file.py $OUTPUT_DIR/$REL_NAME.pertb $VM_PARAMS_YAML -n 1 -v --perturbation --model $gmsim/Pre-processing/srf_generation/velocity_model_generation/config_files/graves_pitarka_2016_model_modified.csv
 
 end_time=`date +$runtime_fmt`
 echo $end_time
 
 timestamp=`date +%Y%m%d_%H%M%S`
 #test before update
-res=`python $gmsim/qcore/qcore/validate_vm.py file $OUT_DIR/$REL_NAME.pertb $VM_PARAMS_YAML`
+res=`python $gmsim/qcore/qcore/validate_vm.py file $OUTPUT_DIR/$REL_NAME.pertb $VM_PARAMS_YAML`
 pass=$?
 
 if [[ $pass == 0 ]]; then
