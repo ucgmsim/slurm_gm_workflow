@@ -39,6 +39,10 @@
     "LF2BB": "nurion",
     "HF2BB": "nurion",
     "plot_srf": "nurion",
-    "advanced_IM": "nurion"
+    "advanced_IM": "nurion",
+    "VM_PARAMS": "nurion",
+    "VM_GEN": "nurion",
+    "VM_PERT": "nurion",
+    "INSTALL_FAULT": "nurion"
   }
 }
