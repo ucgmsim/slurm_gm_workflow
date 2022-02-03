@@ -1,0 +1,5 @@
+VM_PARAMS: ALL
+VM_GEN: ALL
+# if you select the VM_PERT option you need to re-install (install_cybershake.py) after generating perturbations to
+# enable the perturbation to take effect
+INSTALL_FAULT: ALL

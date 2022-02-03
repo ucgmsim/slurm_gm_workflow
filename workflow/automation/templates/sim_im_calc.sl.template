@@ -1,0 +1,67 @@
+
+export IMPATH=$gmsim/IM_calculation/IM_calculation/scripts
+export PYTHONPATH=$gmsim/qcore:/$PYTHONPATH:$IMPATH
+
+function getFromYaml {
+    echo $(python -c "from qcore.utils import load_sim_params; print(load_sim_params('$1').$2)")
+}
+
+runtime_fmt="%Y-%m-%d_%H:%M:%S"
+
+script_start=`date`
+echo "script started running at: $script_start"
+
+# Update db to running
+timestamp=`date +%Y%m%d_%H%M%S`
+python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py {{mgmt_db_location}}/mgmt_db_queue {{srf_name}} IM_calc running $SLURM_JOB_ID
+
+# Create the results directory if required
+if [[ ! -d {{sim_dir}}/IM_calc ]]; then
+    mkdir {{sim_dir}}/IM_calc
+fi
+
+FD=$(getFromYaml "{{sim_dir}}/sim_params.yaml" FD_STATLIST)
+python $gmsim/workflow/workflow/calculation/verification/im_calc_checkpoint.py {{sim_dir}}/IM_calc/ `wc -l < ${FD}` {{n_components}} --simulated
+
+checkpoint_check=$?
+
+if [[ $checkpoint_check != 0 ]]; then
+    # Run the script
+    start_time=`date +$runtime_fmt`
+    {{submit_command}}
+    end_time=`date +$runtime_fmt`
+fi
+
+# Check that the result files exist
+res=0
+if [[ ! -f {{output_csv}} ]] || [[ ! -f {{output_info}} ]]; then
+    res=1
+    echo "IM calculation failed, result files do not exist."
+fi
+
+# Update mgmt_db
+# Passed
+if [[ $res == 0 ]]; then
+    timestamp=`date +%Y%m%d_%H%M%S`
+    python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py {{mgmt_db_location}}/mgmt_db_queue {{srf_name}} IM_calc completed $SLURM_JOB_ID
+
+    if [[ ! -d {{sim_dir}}/ch_log ]]; then
+        mkdir {{sim_dir}}/ch_log
+    fi
+
+    fd_name=`python -c "from qcore import utils; params = utils.load_sim_params('{{sim_dir}}/sim_params.yaml'); print(params.FD_STATLIST)"`
+    fd_count=`cat $fd_name | wc -l`
+    pSA_count=`cat {{sim_dir}}/IM_calc/{{realisation_name}}.csv | head -n 1 | grep -o pSA | wc -l`
+
+    # log metadata
+    if [[ $checkpoint_check != 0 ]]; then
+        python $gmsim/workflow/workflow/automation/metadata/log_metadata.py {{sim_dir}} IM_calc cores={{np}} pSA_count=$pSA_count fd_count=$fd_count start_time=$start_time end_time=$end_time status="COMPLETED"
+    fi
+else
+    #failed
+    python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py {{mgmt_db_location}}/mgmt_db_queue {{srf_name}} IM_calc failed $SLURM_JOB_ID --error "$res"
+fi
+
+
+
+

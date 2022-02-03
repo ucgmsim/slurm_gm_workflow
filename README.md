@@ -1,7 +1,8 @@
-[![Build Status](http://13.238.107.244:8080/job/slurm_gm_workflow/badge/icon?build=last:${params.ghprbActualCommit=master)](http://13.238.107.244:8080/job/slurm_gm_workflow)
+[![Build Status](https://quakecoresoft.canterbury.ac.nz/jenkins/job/slurm_gm_workflow/badge/icon?build=last:${params.ghprbActualCommit=master)](https://quakecoresoft.canterbury.ac.nz/jenkins/job/slurm_gm_workflow)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## Slurm GM Simulation Workflow
+
 
 Contains the following:
 - Scripts for installing and usage of HPC environments, which allow running of 
@@ -46,7 +47,7 @@ and [cybershake manual](https://wiki.canterbury.ac.nz/display/QuakeCore/Cybersha
 #### Installing
 Run the install_cybershake.sh bash script, e.g.
 ```bash
-$gmsim/workflow/scripts/cybershake/install_cybershake path/to/rootDir 
+$gmsim/workflow/workflow/automation/install_scripts/install_cybershake path/to/rootDir 
 cybershake_version /path/to/list.txt --seed [seed]
 ```
 where the cybershake version is a string with a relevant subdirectory in the templates folder.
@@ -63,6 +64,6 @@ seed is an optional integer argument to specify the seed to be used for HF calcu
 To run the installed simulations, copy the task_config.yaml configuration file to the run directory and modify it to 
 your needs. Run the cybershake with the following script:
 ```bash
-python $gmsim/workflow/scripts/cybershake/run_cybershake.py /path/to/rootDir /path/to/rootDir/task_config.yaml <user name>
+python $gmsim/workflow/workflow/automation/execution_scripts/run_cybershake.py /path/to/rootDir /path/to/rootDir/task_config.yaml <user name>
 ```
 this will start submitting the different tasks on the HPC and will keep the database up to date.

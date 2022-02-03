@@ -40,7 +40,6 @@ class SiteProp:
     # TODO: Investigate use of dataframe for the list values instead
     """
 
-
     H_soil: float  # Depth to bottom of soil column
     dampS_base: float  # Vs damping ratio of layer to which you deconvolve
 
@@ -101,11 +100,21 @@ class SiteProp:
         assert len(self.rho) == self.numLayers + 1, f"{self.rho}, {self.numLayers + 1}"
         assert len(self.Vs) == self.numLayers + 1, f"{self.Vs}, {self.numLayers + 1}"
         assert len(self.phi) == self.numLayers + 1, f"{self.phi}, {self.numLayers + 1}"
-        assert len(self.pressCoeff) == self.numLayers + 1, f"{self.pressCoeff}, {self.numLayers + 1}"
-        assert len(self.voidR) == self.numLayers + 1, f"{self.voidR}, {self.numLayers + 1}"
-        assert len(self.phaseAng) == self.numLayers, f"{self.phaseAng}, {self.numLayers}"
-        assert len(self.contract1) == self.numLayers, f"{self.contract1}, {self.numLayers}"
-        assert len(self.contract3) == self.numLayers, f"{self.contract3}, {self.numLayers}"
+        assert (
+            len(self.pressCoeff) == self.numLayers + 1
+        ), f"{self.pressCoeff}, {self.numLayers + 1}"
+        assert (
+            len(self.voidR) == self.numLayers + 1
+        ), f"{self.voidR}, {self.numLayers + 1}"
+        assert (
+            len(self.phaseAng) == self.numLayers
+        ), f"{self.phaseAng}, {self.numLayers}"
+        assert (
+            len(self.contract1) == self.numLayers
+        ), f"{self.contract1}, {self.numLayers}"
+        assert (
+            len(self.contract3) == self.numLayers
+        ), f"{self.contract3}, {self.numLayers}"
         assert len(self.dilate1) == self.numLayers, f"{self.dilate1}, {self.numLayers}"
         assert len(self.dilate3) == self.numLayers, f"{self.dilate3}, {self.numLayers}"
 
@@ -118,6 +127,7 @@ class SiteProp:
         """
         Writes the site properties in tcl format, as required by the site amplification code
         :param file_path: The path to write the file to
+        :param nt: The number of time steps. Added for convenience. If more non-site paramters are needed, make a new filek
         """
 
         def list_to_tcl(val, offset=0):
@@ -128,35 +138,35 @@ class SiteProp:
             """Converts a bool into tcl compatible equivalent"""
             return "Yes" if val else "No"
 
-        with open(file_path, "w") as fp:
-            fp.write(
-                f"""
-                # Scalars
-                set numLayers {self.numLayers}
-                set soilThick {self.soilThick}
-                set waterTable {self.waterTable}
-                set gammaPeak {self.gammaPeak}
+        out_str = f"""
+# Scalars
+set numLayers {self.numLayers}
+set soilThick {self.soilThick}
+set waterTable {self.waterTable}
+set gammaPeak {self.gammaPeak}
 
-                # Bools
-                set allowPWP {bool_to_tcl(self.allowPWP)}                
-                set VsInvTopLayer {bool_to_tcl(self.VsInvTopLayer)}
-                set waterTopLayer {bool_to_tcl(self.waterTopLayer)}
-                
-                # Arrays
-                array set layerThick [list {list_to_tcl(self.layerThick)}]
-                array set refDepth [list {list_to_tcl(self.refDepth)}]
-                array set rho [list {list_to_tcl(self.rho)}]
-                array set Vs [list {list_to_tcl(self.Vs)}]
-                array set phi [list {list_to_tcl(self.phi)}]
-                array set pressCoeff [list {list_to_tcl(self.pressCoeff)}]
-                array set phaseAng [list {list_to_tcl(self.phaseAng, 1)}]
-                array set contract1 [list {list_to_tcl(self.contract1, 1)}]
-                array set contract3 [list {list_to_tcl(self.contract3, 1)}]
-                array set dilate1 [list {list_to_tcl(self.dilate1, 1)}]
-                array set dilate3 [list {list_to_tcl(self.dilate3, 1)}]
-                array set voidR [list {list_to_tcl(self.voidR)}]
-                """
-            )
+# Bools
+set allowPWP {bool_to_tcl(self.allowPWP)}                
+set VsInvTopLayer {bool_to_tcl(self.VsInvTopLayer)}
+set waterTopLayer {bool_to_tcl(self.waterTopLayer)}
+
+# Arrays
+array set layerThick [list {list_to_tcl(self.layerThick)}]
+array set refDepth [list {list_to_tcl(self.refDepth)}]
+array set rho [list {list_to_tcl(self.rho)}]
+array set Vs [list {list_to_tcl(self.Vs)}]
+array set phi [list {list_to_tcl(self.phi)}]
+array set pressCoeff [list {list_to_tcl(self.pressCoeff)}]
+array set phaseAng [list {list_to_tcl(self.phaseAng, 1)}]
+array set contract1 [list {list_to_tcl(self.contract1, 1)}]
+array set contract3 [list {list_to_tcl(self.contract3, 1)}]
+array set dilate1 [list {list_to_tcl(self.dilate1, 1)}]
+array set dilate3 [list {list_to_tcl(self.dilate3, 1)}]
+array set voidR [list {list_to_tcl(self.voidR)}]
+"""
+
+        with open(file_path, "w") as fp:
+            fp.write(out_str)
 
 
 class TimeOutError(Exception):
@@ -190,8 +200,8 @@ def cumulative_trapezoid(y, dx=1.0, initial=0):
     """
     y = np.asarray(y)
     nd = len(y.shape)
-    slice1 = tupleset((slice(None),)*nd, -1, slice(1, None))
-    slice2 = tupleset((slice(None),)*nd, -1, slice(None, -1))
+    slice1 = tupleset((slice(None),) * nd, -1, slice(1, None))
+    slice2 = tupleset((slice(None),) * nd, -1, slice(None, -1))
     res = np.cumsum(dx * (y[slice1] + y[slice2]) / 2.0, axis=-1)
 
     shape = list(res.shape)
@@ -234,19 +244,23 @@ def run_deamp(waveform, component: Components, dt, vs_site, HF_pga):
 
 
 def run_deconvolve_and_site_response(
-    acceleration_waveform: np.ndarray, component: Components, site_properties: SiteProp, dt=0.005, logger=qclogging.get_basic_logger()
+    acceleration_waveform: np.ndarray,
+    component: Components,
+    site_properties: SiteProp,
+    dt=0.005,
+    logger=qclogging.get_basic_logger(),
 ):
     """
     Deconvolves a surface waveform to a waveform at a given depth
     No deamplification occurs here
-    :param acceleration_waveform: a 1d array of the component velocities to be run
+    :param acceleration_waveform: a 1d array of the component velocities to be run in cm/s/s
     :param component: The name of the component. Used to determine the transfer function to use
     :param site_properties: A SiteProp object for the location
     :param dt: The timestep for the given waveform
     :return: A waveform with site specific amplification applied. Has the same shape as waveform
     """
-    ft_len = int(2.0 ** np.ceil(np.log2(acceleration_waveform.size)))
     size = acceleration_waveform.size
+    ft_len = int(2.0 ** np.ceil(np.log2(size)))
     acceleration_waveform = acceleration_waveform.copy()
     acceleration_waveform.resize(ft_len, refcheck=False)
     if component in [Components.c000, Components.c090]:
@@ -275,12 +289,16 @@ def run_deconvolve_and_site_response(
             dt,
         )
 
+    ntap = int(size * 0.05)
+    acceleration_waveform[size - ntap :] *= np.hanning(ntap * 2 + 1)[ntap + 1 :]
+
     waveform_ft = np.fft.rfft(acceleration_waveform)
     deconv_ft = (1.0 / transfer) * waveform_ft
-    bbgm_decon = np.fft.irfft(deconv_ft)[: size]
+    bbgm_decon = np.fft.irfft(deconv_ft)[:size]
 
     # integrate acceleration to get velocity (in m/s) for input to OpenSees
-    bbgm_decon_vel = cumulative_trapezoid(bbgm_decon, dx=dt, initial=0)
+    cm_to_m_multiplier = 1.0/100
+    bbgm_decon_vel = cumulative_trapezoid(bbgm_decon, dx=dt, initial=0) * cm_to_m_multiplier
 
     with TemporaryDirectory() as td:
         td = Path(td)
@@ -326,7 +344,13 @@ def check_status(component_outdir, check_fail=False):
     return result
 
 
-def call_opensees(input_file, params_path, out_dir, timeout_threshold=600, logger=qclogging.get_basic_logger()):
+def call_opensees(
+    input_file,
+    params_path,
+    out_dir,
+    timeout_threshold=600,
+    logger=qclogging.get_basic_logger(),
+):
     # print(qconfig)
     script = [
         qconfig["OpenSees"],
@@ -340,16 +364,21 @@ def call_opensees(input_file, params_path, out_dir, timeout_threshold=600, logge
     # print(" ".join(map(str, script)))
 
     try:
-        subp = subprocess.run(script, timeout=timeout_threshold, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        subp = subprocess.run(
+            script,
+            timeout=timeout_threshold,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
     except subprocess.TimeoutExpired as e:
         logger.error(str(e))
         raise e
     with subp.stdout:
-        for line in iter(subp.stdout.readline, b''):  # b'\n'-separated lines
-            logger.info(f'got stdout line from subprocess: {line}')
+        for line in iter(subp.stdout.readline, b""):  # b'\n'-separated lines
+            logger.info(f"got stdout line from subprocess: {line}")
     with subp.stderr:
-        for line in iter(subp.stderr.readline, b''):  # b'\n'-separated lines
-            logger.info(f'got stderr line from subprocess: {line}')
+        for line in iter(subp.stderr.readline, b""):  # b'\n'-separated lines
+            logger.info(f"got stderr line from subprocess: {line}")
     # TODO: Add debugging if it didn't work
 
     out_file_path = out_dir / "out.csv"
@@ -392,10 +421,16 @@ def main():
     for site_name, site_path in sites.items():
         site_prop = SiteProp.from_file(site_path)
         for i, waveform_component in enumerate(components):
-            vel_waveform, meta = read_ascii(folder / f"{site_name}.{waveform_component.str_value}", meta=True)
+            vel_waveform, meta = read_ascii(
+                folder / f"{site_name}.{waveform_component.str_value}", meta=True
+            )
             acc_waveform = vel2acc(vel_waveform, meta["dt"]) / 980.665
-            deamp_wave = run_deamp(acc_waveform, waveform_component, meta["dt"], 155.0, 0.06275231603044873)
-            deconv = run_deconvolve_and_site_response(deamp_wave[:], waveform_component, site_prop, meta["dt"])
+            deamp_wave = run_deamp(
+                acc_waveform, waveform_component, meta["dt"], 155.0, 0.06275231603044873
+            )
+            deconv = run_deconvolve_and_site_response(
+                deamp_wave[:], waveform_component, site_prop, meta["dt"]
+            )
             # print(deconv)
             return deconv
 

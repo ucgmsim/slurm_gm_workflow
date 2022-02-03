@@ -416,10 +416,13 @@ puts "Finished creating gravity recorders..."
 #-----------------------------------------------------------------------------------------
 
 #---GROUND MOTION PARAMETERS
-# time step in ground motion record
-set motionDT        0.005
-# number of steps in ground motion record. 100sec for 4Sept2010, 50sec for all else
-set motionSteps [expr int(50/0.005)]
+
+# number of steps in ground motion record
+
+# Temporary load of timeseries to determine nt
+set mSeries "Path -dt 0.005 -filePath $gMotion"
+# set motionSteps [expr int($simTime/0.005)]
+# set motionSteps [llength $mSeries]
 
 puts "duration = [expr $motionSteps*0.005] sec"
 
@@ -445,7 +448,9 @@ for {set i 1} {$i <= $numLayers} {incr i 1} {
     }
 }
 # duration of ground motion (s)
+set motionDT 0.005
 set duration    [expr $motionDT*$motionSteps]
+puts "Duration: $duration"
 # minimum element size
 set minSize $sElemY(0)
 for {set i 1} {$i <= $numLayers} {incr i 1} {
@@ -513,7 +518,7 @@ if {$allowPWP == Yes} {
 
     # choose base number for parameter IDs which is higer than other tags used in analysis
     set ctr 10000.0
-    # loop over elements to define parameter IDs 
+    # loop over elements to define parameter IDs
     for {set i 1} {$i<=$nElemT} {incr i 1} {
        parameter [expr int($ctr+1.0)] element $i vPerm
        parameter [expr int($ctr+2.0)] element $i hPerm
@@ -554,7 +559,7 @@ set recDT  [expr 10*$motionDT]
 
 # # record nodal displacment, acceleration, and porepressure
 # record horizontal acceleration at the top node
-eval "recorder Node -file $output_path/out.txt -time -dT $dT -node $nNodeT -dof 1 accel"
+eval "recorder Node -file $output_dir/out.txt -dT $dT -node $nNodeT -dof 1 accel"
 puts "Finished creating all recorders..."
 
 #-----------------------------------------------------------------------------------------
@@ -579,8 +584,10 @@ pattern Plain 10 $mSeries {
 }
 puts "Dynamic loading created..."
 
+# For "test" change the last digit to 1 or 2 for debugging
+
 constraints Penalty 1.e16 1.e16
-test        NormDispIncr 1.0e-5 35 1
+test        NormDispIncr 1.0e-5 35 2
 algorithm   KrylovNewton
 numberer    RCM
 system      ProfileSPD
