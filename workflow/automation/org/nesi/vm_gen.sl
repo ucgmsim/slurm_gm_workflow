@@ -6,7 +6,6 @@
 #SBATCH --job-name=VM_GEN
 #SBATCH --time=01:00:00
 #SBATCH --cpus-per-task=32
-#SBATCH --mem=450G
 
 if [[ -n ${CUR_ENV} && ${CUR_HPC} != "mahuika" ]]; then
     source $CUR_ENV/workflow/workflow/environments/helper_functions/activate_env.sh $CUR_ENV "mahuika"
