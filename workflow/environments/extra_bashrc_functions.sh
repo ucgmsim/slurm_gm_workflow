@@ -16,7 +16,12 @@ activate_env () {
             echo "You might be lost, or more likely this is not working as planned!"
         fi
     fi
+    {
     source ${env_path}/workflow/workflow/environments/helper_functions/activate_env.sh ${env_path} ${hpc}
+    } || {
+    echo "Loading new style environment failed. Attemping to load old style."
+    source ${env_path}/workflow/install_workflow/helper_functions/activate_env.sh ${env_path} ${hpc}
+    }
 }
 
 deactivate_env () {
