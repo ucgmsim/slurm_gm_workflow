@@ -17,8 +17,7 @@ from qcore.qclogging import get_basic_logger
 
 MAX_JOB_WCT = config.qconfig[config.ConfigKeys.MAX_JOB_WCT.name]
 MAX_NODES_PER_JOB = config.qconfig[config.ConfigKeys.MAX_NODES_PER_JOB.name]
-PHYSICAL_NCORES_PER_NODE = 40 #config.qconfig[config.ConfigKeys.cores_per_node.name]
-MAX_CORE_HOURS_PER_JOB = 1200 * 40
+PHYSICAL_NCORES_PER_NODE = config.qconfig[config.ConfigKeys.cores_per_node.name]
 
 CH_SAFETY_FACTOR = 1.5
 ERROR_MSG_SHAPE_MISMATCH = "Invalid input data, has to be {required_column_count} columns. One for each feature."
@@ -142,9 +141,6 @@ def estimate_LF_chours(
             coefficients["b"] * np.log(fd_count),
         )
     )
-    mask = core_hours > MAX_CORE_HOURS_PER_JOB
-    if np.any(mask):
-        core_hours[mask] = MAX_CORE_HOURS_PER_JOB
 
     # data[:, -1] represents the last column of the ndarray data, which contains the number of cores for each task
     wct = core_hours / data[:, -1]
@@ -318,12 +314,8 @@ def scale_core_hours(
         estimated_nodes[mask] = np.ceil(
             (core_hours[mask] / MAX_JOB_WCT) / PHYSICAL_NCORES_PER_NODE
         )
-    mask = core_hours > MAX_CORE_HOURS_PER_JOB
-    if np.any(mask):
-        core_hours[mask] = MAX_CORE_HOURS_PER_JOB
     n_nodes = np.minimum(np.maximum(estimated_nodes, n_nodes), MAX_NODES_PER_JOB)
     n_cpus = n_nodes * PHYSICAL_NCORES_PER_NODE
-    print(core_hours, core_hours / n_cpus, n_cpus, PHYSICAL_NCORES_PER_NODE)
     return core_hours, core_hours / n_cpus, n_cpus
 
 
