@@ -1,5 +1,5 @@
 hf:
-  version: 5.4.5.3_new_gnu
+  version: 5.4.5.4
   dt: 0.01
   rvfac: 0.8
   sdrop: 50
