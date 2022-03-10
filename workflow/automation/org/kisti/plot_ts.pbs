@@ -1,5 +1,7 @@
 #!/bin/bash
-# must be run with sbatch plot_ts.sl [xyts file path] [srf file path] [output ts file path] [management database location] [realization name]
+# must be run with
+# qsub -v XYTS_PATH=[xyts file path],SRF_PATH=[srf file path],OUTPUT_TS_PATH=[output ts file path]
+#MGMT_DB_LOC=[management database location],SRF_NAME=[realization name] -V plot_ts.pbs
 
 #PBS -N plot_ts
 #PBS -V
@@ -13,6 +15,7 @@
 #export gmsim_root=/home01/x2319a02/gmsim
 #export PYTHONPATH=$gmsim_root/Environments/nurion/workflow
 #source $gmsim_root/Environments/nurion/virt_envs/python3_nurion/bin/activate
+
 module_requirments=$(python -c "from qcore.config import module_requirments; print(module_requirments)")
 if [[ -f $module_requirments ]];then
     source $module_requirments
