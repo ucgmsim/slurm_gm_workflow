@@ -1,16 +1,19 @@
 #!/usr/bin/env bash
 
+if [ "$#" -ne 2 ]
+  then echo "This script requires two arguments: Env_name/path and enviroment config path"
+  exit
+fi
+
 #get the absolute path of this script
 DIR=$( dirname "$( realpath "${BASH_SOURCE[0]}")" )
+# sourcing the script below uses the args passed to this script
 source "${DIR}/../../create_env_common_pre.sh"
 
 # Setting up workfow, qcore and IM calc
 echo "Cloning workflow"
 git clone https://github.com/ucgmsim/slurm_gm_workflow.git
 mv ./slurm_gm_workflow ./workflow
-cd workflow
-git checkout nurion_refactor
-cd ..
 
 # Create version
 echo "dev" > ${env_path}/workflow/version
@@ -21,10 +24,6 @@ do
     echo "Cloning $pkg"
     git clone https://github.com/ucgmsim/${pkg}.git
 done
-
-cd qcore
-git checkout workflow_restructure
-cd ../
 
 # Create virtual environment
 mkdir virt_envs
