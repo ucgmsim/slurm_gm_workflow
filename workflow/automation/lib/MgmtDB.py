@@ -79,7 +79,7 @@ class MgmtDB:
             return cur.execute(
                 "SELECT COUNT(*) from state "
                 "WHERE run_name = ? AND proc_type = ? and status != ?",
-                (realisation_name, process, const.Status.created.value),
+                (realisation_name, process, const.Status.WCT.value),
             ).fetchone()[0]
 
     def update_entries_live(
