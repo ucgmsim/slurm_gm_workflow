@@ -1,7 +1,5 @@
 #!/bin/bash
-# must be run with
-# qsub -v XYTS_PATH=[xyts file path],SRF_PATH=[srf file path],OUTPUT_TS_PATH=[output ts file path]
-#MGMT_DB_LOC=[management database location],SRF_NAME=[realization name] -V plot_ts.pbs
+# must be run with sbatch plot_ts.sl [xyts file path] [srf file path] [output ts file path] [management database location] [realization name]
 
 #PBS -N plot_ts
 #PBS -V
