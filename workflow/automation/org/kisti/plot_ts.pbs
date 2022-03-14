@@ -12,7 +12,7 @@
 
 #module purge
 #module add gcc/7.2.0 openmpi/3.1.0 craype-network-opa craype-mic-knl
-#export gmsim_root=/home01/x2319a02/gmsim
+#export gmsim_root=/home01/hpc11a02/gmsim
 #export PYTHONPATH=$gmsim_root/Environments/nurion/workflow
 #source $gmsim_root/Environments/nurion/virt_envs/python3_nurion/bin/activate
 

@@ -1,12 +1,12 @@
 {
-  "test_dir": "/scratch/x2319a02/gmsim/RunFolder/EndToEndTest/tests/",
-  "data_dir": "/home01/x2319a02/gmsim/EndToEndTest/test_data_simple/Data",
-  "fault_list": "/home01/x2319a02/gmsim/EndToEndTest/test_data_simple/list.txt",
-  "bench_dir": "/home01/x2319a02/gmsim/EndToEndTest/test_data_simple/benchmark",
+  "test_dir": "/scratch/hpc11a02/gmsim/RunFolder/EndToEndTest/tests/",
+  "data_dir": "/home01/hpc11a02/gmsim/EndToEndTest/test_data_simple/Data",
+  "fault_list": "/home01/hpc11a02/gmsim/EndToEndTest/test_data_simple/list.txt",
+  "bench_dir": "/home01/hpc11a02/gmsim/EndToEndTest/test_data_simple/benchmark",
   "test_checkpoint": true,
   "timeout": 120,
   "version": "16.1",
   "seed": 34580,
-  "stat_file": "/home01/x2319a02/gmsim/StationInfo/non_uniform_whole_nz_with_real_stations-hh400_v18p6.ll",
+  "stat_file": "/home01/hpc11a02/gmsim/StationInfo/non_uniform_whole_nz_with_real_stations-hh400_v18p6.ll",
   "wrapper_config": "auto_config.yaml"
 }
