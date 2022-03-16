@@ -1,7 +1,8 @@
 import json
 import os
 from logging import Logger
-from typing import List, Dict, Union
+from typing import List, Dict
+from datetime import timedelta
 
 from qcore.constants import timestamp
 
@@ -172,6 +173,22 @@ class Pbs(AbstractScheduler):
         output_list = list(filter(None, jobs))
         self.logger.debug(output_list)
         return output_list
+
+    def check_wct(self, job_id: int):
+        """
+        Checks the given job_id if it has hit Wall Clock Time
+        :param job_id: The id of the job to be checked for wct
+        :return: Boolean for if the job has hit Wall Clock Time or not
+        """
+        cmd = f"qstat -x {job_id} -f -F json"
+        output, err = self._run_command_and_wait(cmd=[cmd], shell=True)
+
+        job_info = output["Jobs"][f"{job_id}.pbs"]
+        limit_hour, limit_min, limit_sec = job_info["Resource_List"]["walltime"].split(":")
+        limit_time = timedelta(hours=int(limit_hour), minutes=int(limit_min), seconds=int(limit_sec))
+        elapsed_hour, elapsed_min, elapsed_sec = job_info["resources_used"]["walltime"].split(":")
+        elapsed_time = timedelta(hours=int(elapsed_hour), minutes=int(elapsed_min), seconds=int(elapsed_sec))
+        return elapsed_time > limit_time
 
     @staticmethod
     def process_arguments(

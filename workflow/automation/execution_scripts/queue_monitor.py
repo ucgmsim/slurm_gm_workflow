@@ -153,12 +153,16 @@ def update_tasks(
                     f"not found on {Scheduler.get_scheduler().QUEUE_NAME} or in the management db folder; resetting the status "
                     "to 'created' for resubmission"
                 )
+
+                # Check for if task hit Wall Clock Time
+                hit_wct = Scheduler.get_scheduler().check_wct(db_running_task.job_id)
+
                 # Add an error
                 tasks_to_do.append(
                     SchedulerTask(
                         db_running_task.run_name,
                         db_running_task.proc_type,
-                        const.Status.failed.value,
+                        const.Status.WCT.value if hit_wct else const.Status.failed.value,
                         None,
                         f"Disappeared from {Scheduler.get_scheduler().QUEUE_NAME}. Creating a new task.",
                     )
