@@ -63,7 +63,7 @@ class Slurm(AbstractScheduler):
         cmd = f"sacct -j {job_id} -o jobid,timelimit,elapsed -P -n"
         output, err = self._run_command_and_wait(cmd=[cmd], shell=True)
 
-        output_lines = output.decode("utf-8").split()
+        output_lines = output.split()
         _, time_limit, elapsed = output_lines[0].split("|")
         limit_hour, limit_min, limit_sec = time_limit.split(":")
         limit_time = timedelta(hours=int(limit_hour), minutes=int(limit_min), seconds=int(limit_sec))
