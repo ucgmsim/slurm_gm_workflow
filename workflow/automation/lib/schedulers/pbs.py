@@ -183,7 +183,7 @@ class Pbs(AbstractScheduler):
         cmd = f"qstat -x {job_id} -f -F json"
         output, err = self._run_command_and_wait(cmd=[cmd], shell=True)
 
-        job_info = output["Jobs"][f"{job_id}.pbs"]
+        job_info = eval(output)["Jobs"][f"{job_id}.pbs"]
         limit_hour, limit_min, limit_sec = job_info["Resource_List"]["walltime"].split(":")
         limit_time = timedelta(hours=int(limit_hour), minutes=int(limit_min), seconds=int(limit_sec))
         elapsed_hour, elapsed_min, elapsed_sec = job_info["resources_used"]["walltime"].split(":")
