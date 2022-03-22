@@ -16,8 +16,6 @@ inhouse_pkgs=(qcore IM_calculation Pre-processing Empirical_Engine visualization
 git clone git@github.com:ucgmsim/slurm_gm_workflow.git
 mv ./slurm_gm_workflow ./workflow
 
-cd ../
-
 # Create version
 echo "dev" > ${env_path}/workflow/version
 
