@@ -207,7 +207,6 @@ def submit_task(
         submit_script_to_scheduler(
             script, target_machine=get_target_machine(const.ProcessType.IM_plot).name
         )
-
     elif proc_type == const.ProcessType.rrup.value:
         submit_script_to_scheduler(
             get_platform_specific_script(

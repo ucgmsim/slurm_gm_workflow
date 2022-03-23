@@ -37,7 +37,7 @@ echo python $gmsim/Pre-processing/VM/vm_params2vm.py -t 18 $REL_NAME $VM_PARAMS_
 python $gmsim/Pre-processing/VM/vm_params2vm.py -t 18 $REL_NAME $VM_PARAMS_YAML -o $OUTPUT_DIR
 
 chmod g+rwXs -R $OUTPUT_DIR
-chgrp `groups` -R $OUTPUT_DIR
+chgrp `id -gn $username` -R $OUTPUT_DIR
 
 end_time=`date +$runtime_fmt`
 echo $end_time
