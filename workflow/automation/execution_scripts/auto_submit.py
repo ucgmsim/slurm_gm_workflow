@@ -186,7 +186,6 @@ def submit_task(
             logger=task_logger,
         )
     elif proc_type == const.ProcessType.IM_plot.value:
-
         arguments = OrderedDict(
             {
                 "CSV_PATH": os.path.join(sim_struct.get_IM_csv(sim_dir)),
@@ -201,9 +200,6 @@ def submit_task(
                 "SRF_NAME": run_name,
             }
         )
-
-        script = get_platform_specific_script(const.ProcessType.IM_plot, arguments)
-
         submit_script_to_scheduler(
             script, target_machine=get_target_machine(const.ProcessType.IM_plot).name
         )
