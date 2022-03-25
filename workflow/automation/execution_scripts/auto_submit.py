@@ -200,6 +200,7 @@ def submit_task(
                 "SRF_NAME": run_name,
             }
         )
+        script = get_platform_specific_script(const.ProcessType.IM_plot, arguments)
         submit_script_to_scheduler(
             script, target_machine=get_target_machine(const.ProcessType.IM_plot).name
         )
