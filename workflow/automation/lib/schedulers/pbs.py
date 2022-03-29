@@ -182,15 +182,11 @@ class Pbs(AbstractScheduler):
         """
         cmd = f"qstat -x {job_id} -f -F json | grep walltime"
         output, err = self._run_command_and_wait(cmd=[cmd], shell=True)
-        print("PERFOMED QSTAT WALLTIME")
+
         walltime_split = output.split()
-        print(walltime_split)
-        print(type(walltime_split))
         _, limit_hour, limit_min, limit_sec = walltime_split[1].replace("\"", "").split(":")
-        print(f"{limit_hour} {limit_min}, {limit_sec}")
         limit_time = timedelta(hours=int(limit_hour), minutes=int(limit_min), seconds=int(limit_sec))
         _, elapsed_hour, elapsed_min, elapsed_sec = walltime_split[0].replace("\"", "").split(":")
-        print(f"{elapsed_hour} {elapsed_min}, {elapsed_sec}")
         elapsed_time = timedelta(hours=int(elapsed_hour), minutes=int(elapsed_min), seconds=int(elapsed_sec))
         return elapsed_time > limit_time
 
