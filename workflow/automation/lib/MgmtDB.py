@@ -200,9 +200,9 @@ class MgmtDB:
             errored = cur.execute(
                 "SELECT run_name, proc_type "
                 "FROM state, status_enum "
-                "WHERE (state.status = status_enum.id "
-                "AND status_enum.state  = 'failed')"
-                "OR (status_enum.state = 'killed_WCT')"
+                "WHERE state.status = status_enum.id "
+                "AND (status_enum.state  = 'failed'"
+                "OR status_enum.state = 'killed_WCT')"
             ).fetchall()
 
         failure_count = {}
