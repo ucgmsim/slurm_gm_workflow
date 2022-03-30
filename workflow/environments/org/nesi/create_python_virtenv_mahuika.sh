@@ -32,7 +32,7 @@ pip install --upgrade setuptools
 # packages are still installed. However, this is slower.
 xargs -n 1 -a ${env_path}/workflow/workflow/environments/org/nesi/mahuika_python3_requirements.txt pip install -U
 
-for pkg in "${inhouse_pkgs[@]}";~
+for pkg in "${inhouse_pkgs[@]}";
 do
     cd ${env_path}/${pkg}
     pip install -U -r requirements.txt

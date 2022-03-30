@@ -56,9 +56,9 @@ class Slurm(AbstractScheduler):
 
     def check_wct(self, job_id: int):
         """
-        Checks the given job_id if it has hit Wall Clock Time
+        Checks the given job_id if it has failed due to Wall Clock Time
         :param job_id: The id of the job to be checked for wct
-        :return: Boolean for if the job has hit Wall Clock Time or not
+        :return: Boolean for if the job has failed due to Wall Clock Time or not
         """
         cmd = f"sacct -j {job_id} -o jobid,timelimit,elapsed -P -n"
         output, err = self._run_command_and_wait(cmd=[cmd], shell=True)

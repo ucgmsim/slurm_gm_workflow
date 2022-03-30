@@ -79,7 +79,7 @@ class MgmtDB:
             return cur.execute(
                 "SELECT COUNT(*) from state "
                 "WHERE run_name = ? AND proc_type = ? and status != ?",
-                (realisation_name, process, const.Status.WCT.value),
+                (realisation_name, process, const.Status.killed_WCT.value),
             ).fetchone()[0]
 
     def update_entries_live(
@@ -200,9 +200,9 @@ class MgmtDB:
             errored = cur.execute(
                 "SELECT run_name, proc_type "
                 "FROM state, status_enum "
-                "WHERE state.status = status_enum.id "
-                "AND status_enum.state  = 'failed'"
-                "OR status_enum.state = 'WCT'"
+                "WHERE (state.status = status_enum.id "
+                "AND status_enum.state  = 'failed')"
+                "OR (status_enum.state = 'killed_WCT')"
             ).fetchall()
 
         failure_count = {}
