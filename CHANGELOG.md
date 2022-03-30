@@ -3,9 +3,9 @@ Slurm Ground Motion Workflow
 (Based on https://wiki.canterbury.ac.nz/download/attachments/58458136/CodeVersioning_v18p2.pdf?version=1&modificationDate=1519269238437&api=v2 )
 ## [22.3.1] - 2022-3-17 -- Metadata Refactor Part 1
 ### Added
-    - Added new State for a job hitting Wall Clock Time
+    - Added new State for a job failing due to Wall Clock Time
 ### Changed
-    - Updated Enum values in the DB (failed is now 7, WCT is 6)
+    - Updated Enum values in the DB (failed is now 7, killed_WCT is 6)
     - Updated function to determine number of retires to only count tasks that hit WCT
 
 ## [21.11.1] - 2021-11-19 -- Restructured
