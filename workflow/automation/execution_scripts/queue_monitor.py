@@ -60,6 +60,13 @@ def get_queue_entry(
         status=data_dict[MgmtDB.col_status],
         job_id=data_dict[MgmtDB.col_job_id],
         error=data_dict.get("error"),
+        queued_time=data_dict.get(MgmtDB.col_queued_time),
+        start_time=data_dict.get(MgmtDB.col_start_time),
+        end_time=data_dict.get(MgmtDB.col_end_time),
+        nodes=data_dict.get(MgmtDB.col_nodes),
+        cores=data_dict.get(MgmtDB.col_cores),
+        memory=data_dict.get(MgmtDB.col_memory),
+        wct=data_dict.get(MgmtDB.col_wct),
     )
 
 

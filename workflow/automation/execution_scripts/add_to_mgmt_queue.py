@@ -35,6 +35,42 @@ if __name__ == "__main__":
         help="Errors that occurred during the execution of the script.",
         default=None,
     )
+    parser.add_argument(
+        "--start_time",
+        type=int,
+        help="Starting time of the task",
+        default=None,
+    )
+    parser.add_argument(
+        "--end_time",
+        type=int,
+        help="Ending time of the task",
+        default=None,
+    )
+    parser.add_argument(
+        "--nodes",
+        type=int,
+        help="Number of nodes used by the task",
+        default=None,
+    )
+    parser.add_argument(
+        "--cores",
+        type=int,
+        help="Number of cores used by the task",
+        default=None,
+    )
+    parser.add_argument(
+        "--memory",
+        type=int,
+        help="Amount of memory used by the task",
+        default=None,
+    )
+    parser.add_argument(
+        "--wct",
+        type=int,
+        help="The Wall Clock Time for the given task",
+        default=None,
+    )
 
     args = parser.parse_args()
     add_to_queue(
@@ -44,4 +80,10 @@ if __name__ == "__main__":
         const.Status.from_str(args.status).value,
         job_id=args.job_id,
         error=args.error,
+        start_time=args.start_time,
+        end_time=args.end_time,
+        nodes=args.nodes,
+        cores=args.cores,
+        memory=args.memory,
+        wct=args.wct,
     )
