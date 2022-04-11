@@ -518,8 +518,8 @@ class MgmtDB:
         wct: int = None,
     ):
         cur.execute(
-            "UPDATE `job_duration_log`"
-            "SET 'start_time' = ?, 'end_time' = ?, 'nodes' = ?, 'cores' = ?, 'memory' = ?, 'WCT' = ?"
+            "UPDATE `job_duration_log` "
+            "SET 'start_time' = ?, 'end_time' = ?, 'nodes' = ?, 'cores' = ?, 'memory' = ?, 'WCT' = ? "
             "WHERE 'job_id' = ?",
             (start_time, end_time, nodes, cores, memory, wct, job_id),
         )
