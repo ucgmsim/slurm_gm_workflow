@@ -148,6 +148,23 @@ class MgmtDB:
                 self._update_entry(cur, entry, logger=logger)
                 logger.debug("Task successfully updated")
 
+                if (
+                    entry.status == const.Status.failed.value
+                    or entry.status == const.Status.killed_WCT.value
+                    or entry.status == const.Status.completed.value
+                ):
+                    # Update the job duration log if task has failed, killed by WCT or completed
+                    self.update_job_log(
+                        cur,
+                        entry.job_id,
+                        entry.start_time,
+                        entry.end_time,
+                        entry.nodes,
+                        entry.cores,
+                        entry.memory,
+                        entry.wct,
+                    )
+
                 # fails dependant task if parent task fails
                 if entry.status == const.Status.failed.value:
                     if self.get_retries(process, realisation_name) < retry_max:
@@ -488,13 +505,13 @@ class MgmtDB:
     @staticmethod
     def update_job_log(
         cur: sql.Cursor,
-        start_time: int,
-        end_time: int,
-        nodes: int,
-        cores: int,
-        memory: int,
-        wct: int,
         job_id: int,
+        start_time: int = None,
+        end_time: int = None,
+        nodes: int = None,
+        cores: int = None,
+        memory: int = None,
+        wct: int = None,
     ):
         cur.execute(
             """UPDATE `job_duration_log` 
