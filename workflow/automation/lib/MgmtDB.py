@@ -121,7 +121,7 @@ class MgmtDB:
                 process = entry.proc_type
                 realisation_name = entry.run_name
 
-                logger.debug(
+                logger.info( # CHANGE BACK TO DEBUG
                     "The status of process {} for realisation {} is being set to {}. It has slurm id {}".format(
                         entry.proc_type, entry.run_name, entry.status, entry.job_id
                     )
@@ -129,6 +129,7 @@ class MgmtDB:
 
                 if entry.status == const.Status.queued.value:
                     # Add entry to the job duration log when a task has been added to the queue
+                    logger.info("Logging queued task to the db")
                     self.insert_job_log(cur, entry.job_id, entry.queued_time)
 
                 if entry.status == const.Status.created.value:
@@ -153,6 +154,9 @@ class MgmtDB:
                     or entry.status == const.Status.killed_WCT.value
                     or entry.status == const.Status.completed.value
                 ):
+                    logger.info("Updating task log in the db {} {} {} {} {} {} {}".format(
+                        entry.status, entry.start_time, entry.end_time, entry.nodes, entry.cores, entry.memory, entry.wct
+                    ))
                     # Update the job duration log if task has failed, killed by WCT or completed
                     self.update_job_log(
                         cur,
