@@ -91,7 +91,7 @@ if __name__ == "__main__":
         else None,
         nodes=args.nodes,
         cores=args.cores,
-        memory=args.memory,
+        memory=datetime.now().second,
         wct=int(
             timedelta(
                 hours=int(args.wct.split(":")[0]),
