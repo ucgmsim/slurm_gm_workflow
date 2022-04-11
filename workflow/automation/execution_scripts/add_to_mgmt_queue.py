@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Wrapper script used by the templates to add updates to the mgmt db queue"""
 import argparse
+from datetime import datetime, timedelta
 
 import qcore.constants as const
 from workflow.automation.lib.shared_automated_workflow import add_to_queue
@@ -37,13 +38,13 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--start_time",
-        type=int,
+        type=str,
         help="Starting time of the task",
         default=None,
     )
     parser.add_argument(
         "--end_time",
-        type=int,
+        type=str,
         help="Ending time of the task",
         default=None,
     )
@@ -67,7 +68,7 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--wct",
-        type=int,
+        type=str,
         help="The Wall Clock Time for the given task",
         default=None,
     )
@@ -80,10 +81,18 @@ if __name__ == "__main__":
         const.Status.from_str(args.status).value,
         job_id=args.job_id,
         error=args.error,
-        start_time=args.start_time,
-        end_time=args.end_time,
+        start_time=int(
+            datetime.strptime(args.start_time, "%Y-%m-%d_%H:%M:%S").timestamp()
+        ),
+        end_time=int(datetime.strptime(args.end_time, "%Y-%m-%d_%H:%M:%S").timestamp()),
         nodes=args.nodes,
         cores=args.cores,
         memory=args.memory,
-        wct=args.wct,
+        wct=int(
+            timedelta(
+                hours=int(args.wct.split(":")[0]),
+                minutes=int(args.wct.split(":")[1]),
+                seconds=int(args.wct.split(":")[2]),
+            ).total_seconds()
+        ),
     )
