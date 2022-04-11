@@ -83,8 +83,12 @@ if __name__ == "__main__":
         error=args.error,
         start_time=int(
             datetime.strptime(args.start_time, "%Y-%m-%d_%H:%M:%S").timestamp()
-        ),
-        end_time=int(datetime.strptime(args.end_time, "%Y-%m-%d_%H:%M:%S").timestamp()),
+        )
+        if args.start_time is not None
+        else None,
+        end_time=int(datetime.strptime(args.end_time, "%Y-%m-%d_%H:%M:%S").timestamp())
+        if args.end_time is not None
+        else None,
         nodes=args.nodes,
         cores=args.cores,
         memory=args.memory,
@@ -94,5 +98,7 @@ if __name__ == "__main__":
                 minutes=int(args.wct.split(":")[1]),
                 seconds=int(args.wct.split(":")[2]),
             ).total_seconds()
-        ),
+        )
+        if args.wct is not None
+        else None,
     )
