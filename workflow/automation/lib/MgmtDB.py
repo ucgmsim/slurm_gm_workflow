@@ -121,7 +121,7 @@ class MgmtDB:
                 process = entry.proc_type
                 realisation_name = entry.run_name
 
-                logger.info( # CHANGE BACK TO DEBUG
+                logger.info(  # CHANGE BACK TO DEBUG
                     "The status of process {} for realisation {} is being set to {}. It has slurm id {}".format(
                         entry.proc_type, entry.run_name, entry.status, entry.job_id
                     )
@@ -154,9 +154,17 @@ class MgmtDB:
                     or entry.status == const.Status.killed_WCT.value
                     or entry.status == const.Status.completed.value
                 ):
-                    logger.info("Updating task log in the db {} {} {} {} {} {} {}".format(
-                        entry.status, entry.start_time, entry.end_time, entry.nodes, entry.cores, entry.memory, entry.wct
-                    ))
+                    logger.info(
+                        "Updating task log in the db {} {} {} {} {} {} {}".format(
+                            entry.status,
+                            entry.start_time,
+                            entry.end_time,
+                            entry.nodes,
+                            entry.cores,
+                            entry.memory,
+                            entry.wct,
+                        )
+                    )
                     # Update the job duration log if task has failed, killed by WCT or completed
                     self.update_job_log(
                         cur,

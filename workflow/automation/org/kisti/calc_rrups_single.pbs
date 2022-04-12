@@ -12,6 +12,8 @@
 #PBS -W sandbox=PRIVATE
 
 export PBS_JOB_ID="${PBS_JOBID/.pbs/}"
+export SLURM_CPUS_PER_TASK=$(qstat $SLURM_JOB_ID -f | grep "used.ncpus" | cut -d"=" -f2 | bc)
+export SLURM_NNODES=$(qstat $SLURM_JOB_ID -f | grep "List.nodect" | cut -d"=" -f2 | bc)
 
 JOB_LOG_DIR=$REL_LOC/ch_log
 mkdir -p ${JOB_LOG_DIR}
