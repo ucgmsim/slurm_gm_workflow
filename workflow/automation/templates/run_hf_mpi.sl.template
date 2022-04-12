@@ -13,7 +13,8 @@ start_time=`date +$runtime_fmt`
 echo $start_time
 {{submit_command}}
 end_time=`date +$runtime_fmt`
-echo $end_time 
+echo $end_time
+echo {{wct}}
 
 timestamp=`date +%Y%m%d_%H%M%S`
 #test before update
