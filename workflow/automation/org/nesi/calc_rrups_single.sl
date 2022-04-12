@@ -38,12 +38,12 @@ OUT_FILE=$(python -c "from qcore.simulation_structure import get_rrup_path; prin
 OUT_DIR=`dirname $OUT_FILE`
 mkdir -p $OUT_DIR
 
+start_time=`date +${runtime_fmt}`
 if [[ ! -f ${OUT_FILE} ]]
 then
     # Create the output folder if needed
     echo ___calculating rrups___
 
-    start_time=`date +${runtime_fmt}`
     cmd="python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $REL_NAME rrup running $SLURM_JOB_ID"
     #echo $cmd
     $cmd
@@ -56,14 +56,13 @@ else
     echo "Checking that there are enough rrups in it"
 fi
 
-cores=$(SLURM_CPUS_PER_TASK*SLURM_NTASKS)
 end_time=`date +$runtime_fmt`
 
 if [[ -f ${OUT_FILE} ]]
 then
     if [[ $(wc -l < ${OUT_FILE}) == $(( $(wc -l < ${FD}) + 1)) ]]
     then
-        cmd="python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $REL_NAME rrup completed $SLURM_JOB_ID --start_time $start_time --end_time $end_time --nodes $SLURM_NNODES --cores $cores --wct 00:10:00"
+        cmd="python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $REL_NAME rrup completed $SLURM_JOB_ID --start_time '$start_time' --end_time '$end_time' --nodes $SLURM_NNODES --cores $SLURM_CPUS_PER_TASK --wct 00:10:00"
         #echo $cmd
         $cmd
     else
@@ -75,7 +74,7 @@ fi
 
 if [[ -n ${res} ]]
 then
-    cmd="python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $REL_NAME rrup failed $SLURM_JOB_ID --error '$res' --start_time $start_time --end_time $end_time --nodes $SLURM_NNODES --cores $cores --wct 00:10:00"
+    cmd="python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $REL_NAME rrup failed $SLURM_JOB_ID --error '$res' --start_time '$start_time' --end_time '$end_time' --nodes $SLURM_NNODES --cores $SLURM_CPUS_PER_TASK --wct 00:10:00"
     #echo $cmd
     $cmd
 

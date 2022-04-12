@@ -51,7 +51,7 @@ timestamp=`date +%Y%m%d_%H%M%S`
 res=`$gmsim/workflow/workflow/calculation/verification/test_bb.sh $REL_LOC `
 if [[ $? == 0 ]]; then
     #passed
-    python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $REL_NAME LF2BB completed $SLURM_JOB_ID
+    python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $REL_NAME LF2BB completed $SLURM_JOB_ID --start_time "$start_time" --end_time "$end_time" --nodes $SLURM_NNODES --cores $SLURM_CPUS_PER_TASK --wct 01:00:00
 
     if [[ ! -d $REL_LOC/ch_log ]]; then
         mkdir $REL_LOC/ch_log
@@ -64,5 +64,5 @@ if [[ $? == 0 ]]; then
 else
     #reformat $res to remove '\n'
     res=`echo $res | tr -d '\n'`
-    python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $REL_NAME LF2BB failed $SLURM_JOB_ID --error "$res"
+    python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $REL_NAME LF2BB failed $SLURM_JOB_ID --error "$res" --start_time "$start_time" --end_time "$end_time" --nodes $SLURM_NNODES --cores $SLURM_CPUS_PER_TASK --wct 01:00:00
 fi

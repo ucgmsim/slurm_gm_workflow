@@ -60,7 +60,7 @@ pass=$?
 if [[ $pass == 0 ]]; then
     #passed
 
-    python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $REL_NAME VM_PARAMS completed $SLURM_JOB_ID
+    python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $REL_NAME VM_PARAMS completed $SLURM_JOB_ID --start_time "$start_time" --end_time "$end_time" --nodes $SLURM_NNODES --cores $SLURM_CPUS_PER_TASK --wct 00:15:00
 
     if [[ ! -d $CH_LOG_FFP ]]; then
         mkdir $CH_LOG_FFP
@@ -71,5 +71,5 @@ if [[ $pass == 0 ]]; then
 else
     #reformat $res to remove '\n'
     res=`echo $res | tr -d '\n'`
-    python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $REL_NAME VM_PARAMS failed $SLURM_JOB_ID --error "$res"
+    python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $REL_NAME VM_PARAMS failed $SLURM_JOB_ID --error "$res" --start_time "$start_time" --end_time "$end_time" --nodes $SLURM_NNODES --cores $SLURM_CPUS_PER_TASK --wct 00:15:00
 fi

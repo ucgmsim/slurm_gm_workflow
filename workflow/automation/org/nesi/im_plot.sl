@@ -85,20 +85,28 @@ do
             fi 
         done
 
-        if [[ $failed == 0 ]]; then
-            ## log information about params used to .out file    
-            echo "srf_file $SRF_PATH"
-            echo "model_params $MODEL_PARAMS"
-            printf '%s\n' "${success_msgs[@]}" 
-            python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $SRF_NAME IM_plot completed $SLURM_JOB_ID
-        else
-        printf '%s\n' "${failed_msgs[@]}" 
-        python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $SRF_NAME IM_plot failed $SLURM_JOB_ID --error "$failed_msgs"
+        if [[ $failed == 1 ]]; then
+          break
         fi
     else
-        python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $SRF_NAME IM_plot failed $SLURM_JOB_ID --error "$res"
+        break
     fi
 done
 
 end_time=`date +$runtime_fmt`
 echo $end_time
+
+if [[ $exit_val != 0 ]]; then
+  python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $SRF_NAME IM_plot failed $SLURM_JOB_ID --error "$res" --start_time "$start_time" --end_time "$end_time" --nodes $SLURM_NNODES --cores $SLURM_CPUS_PER_TASK --wct 00:30:00
+else
+  if [[ $failed == 0 ]]; then
+      ## log information about params used to .out file
+      echo "srf_file $SRF_PATH"
+      echo "model_params $MODEL_PARAMS"
+      printf '%s\n' "${success_msgs[@]}"
+      python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $SRF_NAME IM_plot completed $SLURM_JOB_ID --start_time "$start_time" --end_time "$end_time" --nodes $SLURM_NNODES --cores $SLURM_CPUS_PER_TASK --wct 00:30:00
+  else
+    printf '%s\n' "${failed_msgs[@]}"
+    python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $SRF_NAME IM_plot failed $SLURM_JOB_ID --error "$failed_msgs" --start_time "$start_time" --end_time "$end_time" --nodes $SLURM_NNODES --cores $SLURM_CPUS_PER_TASK --wct 00:30:00
+  fi
+fi

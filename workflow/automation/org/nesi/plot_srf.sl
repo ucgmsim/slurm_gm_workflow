@@ -46,7 +46,7 @@ if [[ $exit_val == 0 ]] && [[ $exit_val2 == 0 ]]; then
         mv "$STATIC_OUTPUT_MAP_PLOT_PATH" "$OUTPUT_DIR"
     fi
 
-    python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $SRF_NAME plot_srf completed $SLURM_JOB_ID
+    python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $SRF_NAME plot_srf completed $SLURM_JOB_ID --start_time "$start_time" --end_time "$end_time" --nodes $SLURM_NNODES --cores $SLURM_CPUS_PER_TASK --wct 00:30:00
 else
     errors=""
     if [[ $exit_val != 0 ]]; then
@@ -55,6 +55,6 @@ else
     if [[ $exit_val2 != 0 ]]; then
         errors+=" failed executing plot_srf_map.py "
     fi
-    python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $SRF_NAME plot_srf failed $SLURM_JOB_ID --error "$errors"
+    python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $SRF_NAME plot_srf failed $SLURM_JOB_ID --error "$errors" --start_time "$start_time" --end_time "$end_time" --nodes $SLURM_NNODES --cores $SLURM_CPUS_PER_TASK --wct 00:30:00
 fi
 
