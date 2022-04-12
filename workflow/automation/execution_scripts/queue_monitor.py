@@ -162,7 +162,9 @@ def update_tasks(
                     SchedulerTask(
                         db_running_task.run_name,
                         db_running_task.proc_type,
-                        const.Status.killed_WCT.value if killed_wct else const.Status.failed.value,
+                        const.Status.killed_WCT.value
+                        if killed_wct
+                        else const.Status.failed.value,
                         None,
                         f"Disappeared from {Scheduler.get_scheduler().QUEUE_NAME}. Creating a new task.",
                     )
