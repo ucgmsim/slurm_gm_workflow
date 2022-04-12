@@ -21,7 +21,7 @@ timestamp=`date +%Y%m%d_%H%M%S`
 res=`$gmsim/workflow/workflow/calculation/verification/{{test_bb_script}} {{sim_dir}} `
 if [[ $? == 0 ]]; then
     #passed
-    python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py {{mgmt_db_location}}/mgmt_db_queue {{srf_name}} BB completed $SLURM_JOB_ID --start_time $start_time --end_time $end_time --nodes $SLURM_NNODES --cores $SLURM_NTASKS --wct wct
+    python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py {{mgmt_db_location}}/mgmt_db_queue {{srf_name}} BB completed $SLURM_JOB_ID --start_time "$start_time" --end_time "$end_time" --nodes $SLURM_NNODES --cores $SLURM_NTASKS --wct {{wct}}
 
     if [[ ! -d {{sim_dir}}/ch_log ]]; then
         mkdir {{sim_dir}}/ch_log
@@ -34,7 +34,7 @@ if [[ $? == 0 ]]; then
 else
     #reformat $res to remove '\n'
     res=`echo $res | tr -d '\n'`
-    python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py {{mgmt_db_location}}/mgmt_db_queue {{srf_name}} BB failed $SLURM_JOB_ID --error "$res" --start_time $start_time --end_time $end_time --nodes $SLURM_NNODES --cores $SLURM_NTASKS --wct wct
+    python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py {{mgmt_db_location}}/mgmt_db_queue {{srf_name}} BB failed $SLURM_JOB_ID --error "$res" --start_time "$start_time" --end_time "$end_time" --nodes $SLURM_NNODES --cores $SLURM_NTASKS --wct {{wct}}
     backup_directory="$nobackup/tmp/$USER/""$SLURM_JOB_ID""_{{srf_name}}_BB"
     echo "Completion test failed, moving all files to $backup_directory"
     echo "Failure reason: $res"
