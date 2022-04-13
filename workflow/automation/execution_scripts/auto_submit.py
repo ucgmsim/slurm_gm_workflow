@@ -8,14 +8,13 @@ import time
 
 from datetime import datetime
 from logging import Logger
-from typing import List, Dict, Tuple
+from typing import List, Dict
 import numpy as np
 
 from qcore import utils, qclogging
 import qcore.constants as const
 import qcore.simulation_structure as sim_struct
 
-from metadata.log_metadata import store_metadata
 
 from workflow.automation.metadata.log_metadata import store_metadata
 from workflow.automation.lib.MgmtDB import MgmtDB

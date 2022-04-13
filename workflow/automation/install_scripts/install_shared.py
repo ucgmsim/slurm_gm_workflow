@@ -159,8 +159,8 @@ def install_simulation(
         if os.path.exists(qsfile) and os.path.exists(qpfile):
             # The Qp/Qs files exist, use them
             root_params_dict["emod3d"]["useqsqp"] = 1
-            sim_params_dict["emod3d"]["qsfile"] = os.path.basename(qsfile)
-            sim_params_dict["emod3d"]["qpfile"] = os.path.basename(qpfile)
+            sim_params_dict["emod3d"]["qsfile"] = qsfile
+            sim_params_dict["emod3d"]["qpfile"] = qpfile
         else:
             # At least one of the Qp/Qs files do not exist. Raise an exception
             message = f"The expected Qp/Qs files {qpfile} and/or {qsfile} do not exist. Generate or move these files to the given location."

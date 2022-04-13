@@ -330,23 +330,16 @@ class MgmtDB:
         """Checks if all dependencies for the specified are met"""
         process, run_name = task
         process = Process(process)
-        dependency_check_query = """SELECT proc_type 
-                                  FROM status_enum, state 
-                                  WHERE state.status = status_enum.id
-                                   AND run_name = (?)
-                                   AND status_enum.state = 'completed'"""
 
         with connect_db_ctx(self._db_file) as cur:
             completed_tasks = cur.execute(
-                dependency_check_query,
+                """SELECT proc_type 
+                          FROM status_enum, state 
+                          WHERE state.status = status_enum.id
+                           AND run_name = (?)
+                           AND status_enum.state = 'completed'""",
                 (run_name,),
             ).fetchall()
-            completed_tasks.extend(
-                cur.execute(
-                    dependency_check_query,
-                    (get_fault_from_realisation(run_name),),
-                ).fetchall()
-            )
         logger.debug(
             "Considering task {} for realisation {}. Completed tasks as follows: {}".format(
                 process, run_name, completed_tasks

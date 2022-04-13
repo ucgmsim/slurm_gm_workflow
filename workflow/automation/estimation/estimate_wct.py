@@ -305,7 +305,6 @@ def scale_core_hours(
 
     # All computation is in terms of nodes
     n_nodes = data[:, -1] / PHYSICAL_NCORES_PER_NODE
-    # node_time_th_factor /= 2
     estimated_nodes = np.ceil(
         np.sqrt(core_hours / (node_time_th_factor * PHYSICAL_NCORES_PER_NODE))
     )
