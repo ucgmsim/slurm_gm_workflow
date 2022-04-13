@@ -391,7 +391,9 @@ def main():
         hf_acc = np.copy(hf.acc(stat.name, dt=bb_dt))
         station_yaml = os.path.join(args.site_specific_dir, f"{stat.name}.yaml")
         if os.path.isfile(station_yaml):
-            logger.debug(f"Station {stat.name} has a site specific file. Running OpenSees")
+            logger.debug(
+                f"Station {stat.name} has a site specific file. Running OpenSees"
+            )
             site_properties = SiteProp.from_file(station_yaml)
             for j in range(3):
                 hf_filtered = bwfilter(
@@ -409,14 +411,12 @@ def main():
                 hf_c = np.hstack((hf_start_padding_ts, hf_filtered, hf_end_padding_ts))
                 lf_c = np.hstack((lf_start_padding_ts, lf_filtered, lf_end_padding_ts))
                 bb_acc[:, j] = run_deconvolve_and_site_response(
-                    hf_c + lf_c,
-                    Components(j),
-                    site_properties,
-                    dt=bb_dt,
-                    logger=logger
+                    hf_c + lf_c, Components(j), site_properties, dt=bb_dt, logger=logger
                 )
         else:
-            logger.debug(f"Station {stat.name} does not have a site specific file. Running vs30 based amplification")
+            logger.debug(
+                f"Station {stat.name} does not have a site specific file. Running vs30 based amplification"
+            )
             pga = np.max(np.abs(hf_acc), axis=0) / 981.0
             # ideally remove loop # Could reduce to single components?
             for j in range(3):

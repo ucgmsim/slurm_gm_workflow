@@ -227,7 +227,7 @@ def run_deamp(waveform, component: Components, dt, vs_site, HF_pga):
     ft_len = int(2.0 ** np.ceil(np.log2(npts)))
     # apply taper to BBGM simulation on 5% values on the right using the Hanning method
     ntap = int(npts * 0.05)
-    waveform[npts - ntap:] *= np.hanning(ntap * 2 + 1)[ntap + 1:]
+    waveform[npts - ntap :] *= np.hanning(ntap * 2 + 1)[ntap + 1 :]
     # extend with blanks for the fft
     waveform.resize(ft_len, refcheck=False)
     ft = rfft(waveform)
@@ -294,14 +294,15 @@ def run_deconvolve_and_site_response(
             dt,
         )
 
-
     waveform_ft = np.fft.rfft(acceleration_waveform)
     deconv_ft = (1.0 / transfer) * waveform_ft
     bbgm_decon = np.fft.irfft(deconv_ft)[:size]
 
     # integrate acceleration to get velocity (in m/s) for input to OpenSees
-    cm_to_m_multiplier = 1.0/100
-    bbgm_decon_vel = cumulative_trapezoid(bbgm_decon, dx=dt, initial=0) * cm_to_m_multiplier
+    cm_to_m_multiplier = 1.0 / 100
+    bbgm_decon_vel = (
+        cumulative_trapezoid(bbgm_decon, dx=dt, initial=0) * cm_to_m_multiplier
+    )
 
     with TemporaryDirectory() as td:
         td = Path(td)
