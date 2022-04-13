@@ -1,7 +1,13 @@
 #!/usr/bin/env bash
 
+if [ "$#" -ne 2 ]
+  then echo "This script requires two arguments: Env_name/path and enviroment config path"
+  exit
+fi
+
 #get the absolute path of this script
 DIR=$( dirname "$( realpath "${BASH_SOURCE[0]}")" )
+# sourcing the script below uses the args passed to this script
 source "${DIR}/../../create_env_common_pre.sh"
 
 inhouse_pkgs=(qcore IM_calculation Pre-processing Empirical_Engine visualization) #TODO: rename slurm_gm_workflow to workflow and add here
@@ -9,8 +15,6 @@ inhouse_pkgs=(qcore IM_calculation Pre-processing Empirical_Engine visualization
 # Setting up workfow, qcore and IM calc
 git clone git@github.com:ucgmsim/slurm_gm_workflow.git
 mv ./slurm_gm_workflow ./workflow
-
-cd ../
 
 # Create version
 echo "dev" > ${env_path}/workflow/version
