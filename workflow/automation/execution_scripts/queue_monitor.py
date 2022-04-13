@@ -162,14 +162,25 @@ def update_tasks(
                 )
 
                 # Check for if task was killed by Wall Clock Time
-                killed_wct = Scheduler.get_scheduler().check_wct(db_running_task.job_id)
+                try:
+                    killed_wct = Scheduler.get_scheduler().check_wct(
+                        db_running_task.job_id
+                    )
+                except Exception:
+                    task_logger.warning(
+                        f"Could not find wall clock time for Task '{const.ProcessType(db_running_task.proc_type).str_value}' "
+                        f"on '{db_running_task.run_name}'"
+                    )
+                    killed_wct = False
 
                 # Add an error
                 tasks_to_do.append(
                     SchedulerTask(
                         db_running_task.run_name,
                         db_running_task.proc_type,
-                        const.Status.killed_WCT.value if killed_wct else const.Status.failed.value,
+                        const.Status.killed_WCT.value
+                        if killed_wct
+                        else const.Status.failed.value,
                         None,
                         f"Disappeared from {Scheduler.get_scheduler().QUEUE_NAME}. Creating a new task.",
                     )
