@@ -12,7 +12,7 @@ from qcore.siteamp_models import nt2n, cb_amp, ba18_amp, init_ba18
 from qcore import timeseries, utils
 from qcore.constants import VM_PARAMS_FILE_NAME, Components
 from scripts.site_response import run_deconvolve_and_site_response, SiteProp
-from workflow.automation.platform_config import platform_config
+from workflow.automation import platform_config
 
 if __name__ == "__main__":
     from mpi4py import MPI
@@ -58,7 +58,7 @@ def args_parser(cmd=None):
     arg(
         "--site_specific_dir",
         help="The directory with site specific yaml files for OpenSees amplification",
-        default=platform_config["DEFAULT_SITE_SPECIFIC_DIR"],
+        default=platform_config.platform_config["DEFAULT_SITE_SPECIFIC_DIR"],
     )
 
     args = parser.parse_args(cmd)
@@ -385,7 +385,7 @@ def main():
     bb_acc = np.empty((bb_nt, N_COMP), dtype="f4")
     for i, stat in enumerate(stations_todo):
         logger.debug(
-            f"Working on {stat.name}, {100 * i / len(stations_todo):.2f}% complete"
+            f"Working on {stat.name}, {100*i/len(stations_todo):.2f}% complete"
         )
         lf_acc = np.copy(lf.acc(stat.name, dt=bb_dt))
         hf_acc = np.copy(hf.acc(stat.name, dt=bb_dt))
@@ -394,11 +394,23 @@ def main():
             logger.debug(f"Station {stat.name} has a site specific file. Running OpenSees")
             site_properties = SiteProp.from_file(station_yaml)
             for j in range(3):
-                hf_c = np.hstack((hf_start_padding_ts, hf_acc[:, j], hf_end_padding_ts))
-                lf_c = np.hstack((lf_start_padding_ts, lf_acc[:, j], lf_end_padding_ts))
+                hf_filtered = bwfilter(
+                    hf_acc[:, j],
+                    bb_dt,
+                    args.flo,
+                    "highpass",
+                )
+                lf_filtered = bwfilter(
+                    lf_acc[:, j],
+                    bb_dt,
+                    args.flo,
+                    "lowpass",
+                )
+                hf_c = np.hstack((hf_start_padding_ts, hf_filtered, hf_end_padding_ts))
+                lf_c = np.hstack((lf_start_padding_ts, lf_filtered, lf_end_padding_ts))
                 bb_acc[:, j] = run_deconvolve_and_site_response(
                     hf_c + lf_c,
-                    Components(i),
+                    Components(j),
                     site_properties,
                     dt=bb_dt,
                     logger=logger
@@ -430,7 +442,7 @@ def main():
                     fmidbot=fmidbot,
                     version=site_amp_version,
                 )
-                hf_acc = bwfilter(
+                hf_filtered = bwfilter(
                     ampdeamp(
                         hf_acc[:, j],
                         hf_amp_val,
@@ -440,7 +452,7 @@ def main():
                     args.flo,
                     "highpass",
                 )
-                lf_acc = bwfilter(
+                lf_filtered = bwfilter(
                     ampdeamp_lf(
                         lf_acc[:, j],
                         lf_amp_val,
@@ -450,8 +462,8 @@ def main():
                     args.flo,
                     "lowpass",
                 )
-                hf_c = np.hstack((hf_start_padding_ts, hf_acc[:, j], hf_end_padding_ts))
-                lf_c = np.hstack((lf_start_padding_ts, lf_acc[:, j], lf_end_padding_ts))
+                hf_c = np.hstack((hf_start_padding_ts, hf_filtered, hf_end_padding_ts))
+                lf_c = np.hstack((lf_start_padding_ts, lf_filtered, lf_end_padding_ts))
                 if is_master and i == 0:
                     if len(hf_c) != len(lf_c):
                         logger.critical(
