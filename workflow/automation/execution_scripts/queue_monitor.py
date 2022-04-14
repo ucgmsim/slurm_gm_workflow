@@ -166,7 +166,7 @@ def update_tasks(
                     killed_wct = Scheduler.get_scheduler().check_wct(
                         db_running_task.job_id
                     )
-                except Exception:
+                except:
                     task_logger.warning(
                         f"Could not find wall clock time for Task '{const.ProcessType(db_running_task.proc_type).str_value}' "
                         f"on '{db_running_task.run_name}'"

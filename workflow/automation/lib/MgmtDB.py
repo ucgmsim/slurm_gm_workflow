@@ -121,39 +121,15 @@ class MgmtDB:
                 process = entry.proc_type
                 realisation_name = entry.run_name
 
-                logger.info(  # CHANGE BACK TO DEBUG
+                logger.debug(
                     "The status of process {} for realisation {} is being set to {}. It has slurm id {}".format(
                         entry.proc_type, entry.run_name, entry.status, entry.job_id
                     )
                 )
 
-                if entry.status == const.Status.completed.value:
-                    logger.info(
-                        "Updating 1 task log in the db {} {} {} {} {} {} {}".format(
-                            entry.status,
-                            entry.start_time,
-                            entry.end_time,
-                            entry.nodes,
-                            entry.cores,
-                            entry.memory,
-                            entry.wct,
-                        )
-                    )
-                    # Update the job duration log if task has failed, killed by WCT or completed
-                    self.update_job_log(
-                        cur,
-                        entry.job_id,
-                        entry.start_time,
-                        entry.end_time,
-                        entry.nodes,
-                        entry.cores,
-                        entry.memory,
-                        entry.wct,
-                    )
-
                 if entry.status == const.Status.queued.value:
                     # Add entry to the job duration log when a task has been added to the queue
-                    logger.info("Logging queued task to the db")
+                    logger.debug("Logging queued task to the db")
                     self.insert_job_log(cur, entry.job_id, entry.queued_time)
 
                 if entry.status == const.Status.created.value:
@@ -172,25 +148,14 @@ class MgmtDB:
                 logger.debug("Updating task in the db")
                 self._update_entry(cur, entry, logger=logger)
                 logger.debug("Task successfully updated")
-                logger.info(f"Test {entry.status == const.Status.failed.value or entry.status == const.Status.killed_WCT.value or entry.status == const.Status.completed.value}")
 
                 if (
                     entry.status == const.Status.failed.value
                     or entry.status == const.Status.killed_WCT.value
                     or entry.status == const.Status.completed.value
                 ):
-                    logger.info(
-                        "Updating 2 task log in the db {} {} {} {} {} {} {}".format(
-                            entry.status,
-                            entry.start_time,
-                            entry.end_time,
-                            entry.nodes,
-                            entry.cores,
-                            entry.memory,
-                            entry.wct,
-                        )
-                    )
                     # Update the job duration log if task has failed, killed by WCT or completed
+                    logger.debug("Logging finished task to the db")
                     self.update_job_log(
                         cur,
                         entry.job_id,

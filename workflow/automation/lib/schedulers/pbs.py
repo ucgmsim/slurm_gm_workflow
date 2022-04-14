@@ -184,10 +184,18 @@ class Pbs(AbstractScheduler):
         output, err = self._run_command_and_wait(cmd=[cmd], shell=True)
 
         walltime_split = output.split()
-        _, limit_hour, limit_min, limit_sec = walltime_split[1].replace("\"", "").split(":")
-        limit_time = timedelta(hours=int(limit_hour), minutes=int(limit_min), seconds=int(limit_sec))
-        _, elapsed_hour, elapsed_min, elapsed_sec = walltime_split[0].replace("\"", "").split(":")
-        elapsed_time = timedelta(hours=int(elapsed_hour), minutes=int(elapsed_min), seconds=int(elapsed_sec))
+        _, limit_hour, limit_min, limit_sec = (
+            walltime_split[1].replace('"', "").split(":")
+        )
+        limit_time = timedelta(
+            hours=int(limit_hour), minutes=int(limit_min), seconds=int(limit_sec)
+        )
+        _, elapsed_hour, elapsed_min, elapsed_sec = (
+            walltime_split[0].replace('"', "").split(":")
+        )
+        elapsed_time = timedelta(
+            hours=int(elapsed_hour), minutes=int(elapsed_min), seconds=int(elapsed_sec)
+        )
         return elapsed_time > limit_time
 
     @staticmethod

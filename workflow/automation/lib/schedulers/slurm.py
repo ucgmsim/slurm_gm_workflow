@@ -66,9 +66,13 @@ class Slurm(AbstractScheduler):
         output_lines = output.split()
         _, time_limit, elapsed = output_lines[0].split("|")
         limit_hour, limit_min, limit_sec = time_limit.split(":")
-        limit_time = timedelta(hours=int(limit_hour), minutes=int(limit_min), seconds=int(limit_sec))
+        limit_time = timedelta(
+            hours=int(limit_hour), minutes=int(limit_min), seconds=int(limit_sec)
+        )
         elapsed_hour, elapsed_min, elapsed_sec = elapsed.split(":")
-        elapsed_time = timedelta(hours=int(elapsed_hour), minutes=int(elapsed_min), seconds=int(elapsed_sec))
+        elapsed_time = timedelta(
+            hours=int(elapsed_hour), minutes=int(elapsed_min), seconds=int(elapsed_sec)
+        )
         return elapsed_time > limit_time
 
     def submit_job(self, sim_dir, script_location, target_machine=None):
