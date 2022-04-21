@@ -123,7 +123,7 @@ class SiteProp:
         """Loads the station yaml file"""
         return SiteProp(**load_yaml(file_path), name=Path(file_path).stem)
 
-    def to_tcl(self, file_path):
+    def to_tcl(self, file_path, nt=None):
         """
         Writes the site properties in tcl format, as required by the site amplification code
         :param file_path: The path to write the file to
@@ -165,6 +165,9 @@ array set dilate3 [list {list_to_tcl(self.dilate3, 1)}]
 array set voidR [list {list_to_tcl(self.voidR)}]
 """
 
+        if nt is not None:
+            out_str += f"\nset motionSteps {nt}"
+        
         with open(file_path, "w") as fp:
             fp.write(out_str)
 
@@ -314,7 +317,7 @@ def run_deconvolve_and_site_response(
             try:
                 out_file = call_opensees(file_name.name, params_path, td, logger=logger)
             except RuntimeError as e:
-                print(f"This didn't work: {component}, {site_properties.name}")
+                logger.error(f"This didn't work: {component}, {site_properties.name}")
                 raise e
         # Acceleration
         out_waveform = np.loadtxt(out_file)
@@ -377,15 +380,12 @@ def call_opensees(
     except subprocess.TimeoutExpired as e:
         logger.error(str(e))
         raise e
-    with subp.stdout:
-        for line in iter(subp.stdout.readline, b""):  # b'\n'-separated lines
-            logger.info(f"got stdout line from subprocess: {line}")
-    with subp.stderr:
-        for line in iter(subp.stderr.readline, b""):  # b'\n'-separated lines
-            logger.info(f"got stderr line from subprocess: {line}")
+    
+    logger.info(f'got stdout line from subprocess: {subp.stdout.decode("utf-8")}')
+    logger.info(f'got stderr line from subprocess: {subp.stderr.decode("utf-8")}')
     # TODO: Add debugging if it didn't work
 
-    out_file_path = out_dir / "out.csv"
+    out_file_path = out_dir / "out.txt"
     return out_file_path
 
 
