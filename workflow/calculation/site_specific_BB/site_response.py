@@ -29,7 +29,7 @@ dampS_soil = 1.0 / (2.0 * Qs)  # damping ratio - shear (dimensionless)
 dampP_soil = 1.0 / (2.0 * Qp)  # damping ratio - compression (dimensionless)
 
 SITE_AMP_SCRIPT = (
-    Path(__file__).parent / "site_specific_amplification" / "run_site_amp.tcl"
+    Path(__file__).parent / "run_site_amp.tcl"
 )
 
 
