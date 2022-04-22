@@ -313,7 +313,7 @@ def run_deconvolve_and_site_response(
             # File name doesn't matter for temp file
             np.savetxt(file_name, bbgm_decon_vel)
             params_path = td / "params.tcl"
-            site_properties.to_tcl(params_path)
+            site_properties.to_tcl(params_path, nt=size)
             try:
                 out_file = call_opensees(file_name.name, params_path, td, logger=logger)
             except RuntimeError as e:
