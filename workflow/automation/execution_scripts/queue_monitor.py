@@ -182,7 +182,7 @@ def update_tasks(
                         if killed_wct
                         else const.Status.failed.value,
                         None,
-                        f"Disappeared from {Scheduler.get_scheduler().QUEUE_NAME}. Creating a new task.",
+                        f"Disappeared from {Scheduler.get_scheduler().QUEUE_NAME}.",
                     )
                 )
             # When job failed, we want to log metadata as well

@@ -167,7 +167,10 @@ class MgmtDB:
                         entry.wct,
                     )
 
-                if entry.status == const.Status.failed.value:
+                if (
+                    entry.status == const.Status.failed.value
+                    or entry.status == const.Status.killed_WCT.value
+                ):
                     if self.get_retries(process, realisation_name) < retry_max:
                         # The task was failed. If there have been few enough other attempts at the task make another one
                         logger.debug(
@@ -175,6 +178,8 @@ class MgmtDB:
                         )
                         self._insert_task(cur, realisation_name, process)
                         logger.debug("New task added to the db")
+
+                if entry.status == const.Status.failed.value:
                     tasks = MgmtDB.find_dependant_task(cur, entry)
                     i = 0
                     while i < len(tasks):
@@ -237,7 +242,7 @@ class MgmtDB:
                 "SELECT run_name, proc_type "
                 "FROM state, status_enum "
                 "WHERE state.status = status_enum.id "
-                "AND (status_enum.state  = 'failed'"
+                "AND (status_enum.state  = 'failed' "
                 "OR status_enum.state = 'killed_WCT')"
             ).fetchall()
 
