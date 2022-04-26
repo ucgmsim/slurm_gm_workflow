@@ -79,7 +79,7 @@ class MgmtDB:
             return cur.execute(
                 "SELECT COUNT(*) from state "
                 "WHERE run_name = ? AND proc_type = ? and status != ?",
-                (realisation_name, process, const.Status.created.value),
+                (realisation_name, process, const.Status.killed_WCT.value),
             ).fetchone()[0]
 
     def update_entries_live(
@@ -201,7 +201,8 @@ class MgmtDB:
                 "SELECT run_name, proc_type "
                 "FROM state, status_enum "
                 "WHERE state.status = status_enum.id "
-                "AND status_enum.state  = 'failed' "
+                "AND (status_enum.state  = 'failed'"
+                "OR status_enum.state = 'killed_WCT')"
             ).fetchall()
 
         failure_count = {}
@@ -217,7 +218,7 @@ class MgmtDB:
                     continue
                 run_name, proc_type = key.split("__")
                 # Gets the number of entries for the task with state in [created, queued, running or completed]
-                # Where completed has enum index 4, and the other 3 less than this
+                # Where completed has enum index 5, and the other 4 less than this
                 # If any are found then don't add another entry
                 not_failed_count = cur.execute(
                     "SELECT COUNT(*) "
