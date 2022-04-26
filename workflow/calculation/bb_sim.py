@@ -11,7 +11,10 @@ import numpy as np
 from qcore.siteamp_models import nt2n, cb_amp, ba18_amp, init_ba18
 from qcore import timeseries, utils
 from qcore.constants import VM_PARAMS_FILE_NAME, Components
-from workflow.calculation.site_specific_BB.site_response import run_deconvolve_and_site_response, SiteProp
+from workflow.calculation.site_specific_BB.site_response import (
+    run_deconvolve_and_site_response,
+    SiteProp,
+)
 from workflow.automation import platform_config
 
 if __name__ == "__main__":
