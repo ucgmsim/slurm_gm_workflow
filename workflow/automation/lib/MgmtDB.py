@@ -167,7 +167,6 @@ class MgmtDB:
                         entry.wct,
                     )
 
-                # fails dependant task if parent task fails
                 if entry.status == const.Status.failed.value:
                     if self.get_retries(process, realisation_name) < retry_max:
                         # The task was failed. If there have been few enough other attempts at the task make another one
@@ -180,6 +179,7 @@ class MgmtDB:
                     i = 0
                     while i < len(tasks):
                         task = tasks[i]
+                        # fails dependant task
                         self._update_entry(cur, task, logger=logger)
                         logger.debug(
                             f"Cascading failure for {entry.run_name} - {task.proc_type}"

@@ -6,6 +6,14 @@ from datetime import datetime, timedelta
 import qcore.constants as const
 from workflow.automation.lib.shared_automated_workflow import add_to_queue
 
+
+def convert_time(time: str):
+    return (
+        int(datetime.strptime(time, "%Y-%m-%d_%H:%M:%S").timestamp())
+        if time is not None
+        else None
+    )
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
@@ -74,25 +82,8 @@ if __name__ == "__main__":
     )
 
     args = parser.parse_args()
-    add_to_queue(
-        args.queue_folder,
-        args.run_name,
-        const.ProcessType.from_str(args.proc_type).value,
-        const.Status.from_str(args.status).value,
-        job_id=args.job_id,
-        error=args.error,
-        start_time=int(
-            datetime.strptime(args.start_time, "%Y-%m-%d_%H:%M:%S").timestamp()
-        )
-        if args.start_time is not None
-        else None,
-        end_time=int(datetime.strptime(args.end_time, "%Y-%m-%d_%H:%M:%S").timestamp())
-        if args.end_time is not None
-        else None,
-        nodes=args.nodes,
-        cores=args.cores,
-        memory=args.memory,
-        wct=int(
+    wct = (
+        int(
             timedelta(
                 hours=int(args.wct.split(":")[0]),
                 minutes=int(args.wct.split(":")[1]),
@@ -100,5 +91,19 @@ if __name__ == "__main__":
             ).total_seconds()
         )
         if args.wct is not None
-        else None,
+        else None
+    )
+    add_to_queue(
+        args.queue_folder,
+        args.run_name,
+        const.ProcessType.from_str(args.proc_type).value,
+        const.Status.from_str(args.status).value,
+        job_id=args.job_id,
+        error=args.error,
+        start_time=convert_time(args.start_time),
+        end_time=convert_time(args.end_time),
+        nodes=args.nodes,
+        cores=args.cores,
+        memory=args.memory,
+        wct=wct,
     )
