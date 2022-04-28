@@ -170,9 +170,9 @@ def install_fault(
             message = " ".join([params_message, vm_file_message])
             message = f"Error: VM {fault_name} failed {message}"
             logger.log(NOPRINTCRITICAL, message)
-            raise RuntimeError(message)
-        # Load the variables from vm_params.yaml
-        vm_params_dict = utils.load_yaml(vm_params_path)
+            #raise RuntimeError(message)
+    #  Load the variables from vm_params.yaml
+    vm_params_dict = utils.load_yaml(vm_params_path)
 
     sim_root_dir = simulation_structure.get_runs_dir(root_folder)
     fault_yaml_path = simulation_structure.get_fault_yaml_path(sim_root_dir, fault_name)
@@ -244,6 +244,7 @@ def install_fault(
             logger.critical(
                 "The parameter 'flo' does not match in the VM params and root params files. "
                 "Please ensure you are installing the correct gmsim version"
+                f"{vm_params_dict['flo']} {root_params_dict['flo']}"
             )
             return
 
@@ -263,7 +264,8 @@ def install_fault(
                 keep_dup_station=keep_dup_station,
             )
         else:
-            prefx = f"fd_rt01-h{root_params_dict['VM']['hh']:.3f}"
+            print(root_params_dict)
+            prefx = f"fd_rt01-h{vm_params_dict['hh']:.3f}"
             fd_statlist = f"{prefx}.ll"
             fd_statcords = f"{prefx}.statcords"
 
