@@ -7,12 +7,16 @@ import qcore.constants as const
 from workflow.automation.lib.shared_automated_workflow import add_to_queue
 
 
-def convert_time(time: str):
+def datestr_to_timestamp(time: str):
+    """
+    Converts a datetime string to a timestamp
+    """
     return (
         int(datetime.strptime(time, "%Y-%m-%d_%H:%M:%S").timestamp())
         if time is not None
         else None
     )
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -100,8 +104,8 @@ if __name__ == "__main__":
         const.Status.from_str(args.status).value,
         job_id=args.job_id,
         error=args.error,
-        start_time=convert_time(args.start_time),
-        end_time=convert_time(args.end_time),
+        start_time=datestr_to_timestamp(args.start_time),
+        end_time=datestr_to_timestamp(args.end_time),
         nodes=args.nodes,
         cores=args.cores,
         memory=args.memory,
