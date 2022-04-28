@@ -9,17 +9,19 @@ class Bash(AbstractScheduler):
     job_counter = 0
     task_running = False
 
-    RUN_COMMAND = ""
+    RUN_COMMAND = "mpirun"
     SCRIPT_EXTENSION = "sh"
+    QUEUE_NAME = "ps"
 
     @staticmethod
     def process_arguments(script_path: str, arguments: Dict[str, str]):
         return f"{script_path} {' '.join(arguments.items())}"
 
     def get_metadata(self, db_running_task: SchedulerTask, task_logger: Logger):
-        pass
+        status = "RUNNING" if self.task_running else "FAILED"
+        return 0, 0, 0, 1, status
 
-    def submit_job(self, script_location: str, target_machine: str = None, **kwargs):
+    def submit_job(self, sim_dir: str, script_location: str, target_machine: str = None, **kwargs):
         """
         Runs job in the bash shell
         Will run job until completion
@@ -56,7 +58,7 @@ class Bash(AbstractScheduler):
         self.logger.debug("Bash scheduler queues are empty")
         tasks = []
         if self.task_running:
-            tasks.append((f"{self.job_counter}", "R"))
+            tasks.append((f"{self.job_counter} R"))
         return tasks
 
     def check_wct(self, job_id: int):
