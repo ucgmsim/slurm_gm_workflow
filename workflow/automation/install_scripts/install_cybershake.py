@@ -77,6 +77,14 @@ def load_args(logger):
         help="Set this flag if you are generating VMs from the automated workflow",
         default=True,
     )
+    parser.add_argument(
+        "--skip_validate_vm",
+        action="store_true",
+        dest="skip_validate_vm",
+        help="Set this flag if you know you have a validated VM and skip memory-hungry step",
+        default=False,
+    )
+
 
     vm_pert = parser.add_mutually_exclusive_group()
     vm_pert.add_argument(
@@ -186,6 +194,7 @@ def main():
             components=args.components,
             logger=qclogging.get_realisation_logger(logger, fault),
             check_vm=args.check_vm,
+            skip_validate_vm=args.skip_validate_vm,
         )
 
 
