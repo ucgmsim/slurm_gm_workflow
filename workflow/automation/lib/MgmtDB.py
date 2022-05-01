@@ -128,8 +128,8 @@ class MgmtDB:
 
                 if (
                     entry.status == const.Status.failed.value
-                    and self.get_retries(process, realisation_name) < retry_max
-                ):
+                    or entry.status == const.Status.killed_WCT.value
+                ) and self.get_retries(process, realisation_name) < retry_max:
                     # The task was failed. If there have been few enough other attempts at the task make another one
                     logger.debug(
                         "Task failed but is able to be retried. Adding new task to the db"
@@ -137,12 +137,12 @@ class MgmtDB:
                     self._insert_task(cur, realisation_name, process)
                     logger.debug("New task added to the db")
 
-                # fails dependant task if parent task fails
                 if entry.status == const.Status.failed.value:
                     tasks = MgmtDB.find_dependant_task(cur, entry)
                     i = 0
                     while i < len(tasks):
                         task = tasks[i]
+                        # fails dependant task
                         self._update_entry(cur, task, logger=logger)
                         logger.debug(
                             f"Cascading failure for {entry.run_name} - {task.proc_type}"
