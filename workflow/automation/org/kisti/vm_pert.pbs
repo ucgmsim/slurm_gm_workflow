@@ -6,13 +6,13 @@
 #PBS -V
 #PBS -q normal
 #PBS -A inhouse
-#PBS -l select=1:ncpus=8;
+#PBS -l select=1:ncpus=8
 #PBS -l walltime=10:00:00
 #PBS -W sandbox=PRIVATE
 export SLURM_JOB_ID="${PBS_JOBID/.pbs/}"
 export SLURM_CPUS_PER_TASK=$(qstat $SLURM_JOB_ID -f | grep "used.ncpus" | cut -d"=" -f2 | bc)
 export SLURM_NNODES=$(qstat $SLURM_JOB_ID -f | grep "List.nodect" | cut -d"=" -f2 | bc)
-export WCT=($(qstat -x $SLURM_JOB_ID -f -F json | grep walltime))
+export WCT=($(qstat -x $SLURM_JOB_ID -f -F json | grep "walltime"))
 
 #module load FFTW # appears to work without module load
 #module load GCC/7.4.0
@@ -52,7 +52,7 @@ pass=$?
 if [[ $pass == 0 ]]; then
     #passed - file is non-zero
 
-    python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $REL_NAME VM_PERT completed $SLURM_JOB_ID --start_time "$start_time" --end_time "$end_time" --nodes $PBS_NUM_NODES --cores $PBS_NUM_PPN --wct ${WCT[1]//"walltime":/ }
+    python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $REL_NAME VM_PERT completed $SLURM_JOB_ID --start_time "$start_time" --end_time "$end_time" --nodes "$PBS_NUM_NODES" --cores "$PBS_NUM_PPN" --wct ${WCT[1]/'"walltime":"'/''} | sed 's/"//g'
 
     if [[ ! -d $CH_LOG_FFP ]]; then
         mkdir $CH_LOG_FFP
@@ -63,5 +63,5 @@ if [[ $pass == 0 ]]; then
 else
     #reformat $res to remove '\n'
     res=`echo $res | tr -d '\n'`
-    python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $REL_NAME VM_PERT failed $SLURM_JOB_ID --error "$res" --start_time "$start_time" --end_time "$end_time" --nodes $PBS_NUM_NODES --cores $PBS_NUM_PPN --wct ${WCT[1]//"walltime":/ }
+    python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $REL_NAME VM_PERT failed $SLURM_JOB_ID --error "$res" --start_time "$start_time" --end_time "$end_time" --nodes "$PBS_NUM_NODES" --cores "$PBS_NUM_PPN" --wct ${WCT[1]/'"walltime":"'/''} | sed 's/"//g'
 fi

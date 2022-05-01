@@ -12,8 +12,6 @@
 #PBS -l walltime=03:00:00
 #PBS -W sandbox=PRIVATE
 export SLURM_JOB_ID="${PBS_JOBID/.pbs/}"
-export SLURM_CPUS_PER_TASK=$(qstat $SLURM_JOB_ID -f | grep "used.ncpus" | cut -d"=" -f2 | bc)
-export SLURM_NNODES=$(qstat $SLURM_JOB_ID -f | grep "List.nodect" | cut -d"=" -f2 | bc)
 export WCT=($(qstat -x $SLURM_JOB_ID -f -F json | grep walltime))
 
 FAULT=$(echo $REL_NAME | cut -d"_" -f1)
@@ -60,7 +58,7 @@ if [[ $pass == 0 ]]; then
     fi
 
     # save meta data
-    python $gmsim/workflow/workflow/automation/metadata/log_metadata.py $SIM_DIR VM_GEN cores=$SLURM_CPUS_PER_TASK start_time=$start_time end_time=$end_time
+    python $gmsim/workflow/workflow/automation/metadata/log_metadata.py $SIM_DIR VM_GEN cores=$PBS_NUM_PPN start_time=$start_time end_time=$end_time
 else
     #reformat $res to remove '\n'
     res=`echo $res | tr -d '\n'`

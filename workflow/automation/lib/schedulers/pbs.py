@@ -211,7 +211,7 @@ class Pbs(AbstractScheduler):
         scheduler_header_command_dict = {
             "time": "-l walltime={value}",
             "job_name": "-N {value}",
-            "ncpus": "-l ncpus={value}",
+            "ncpus": "-l select=1:ncpus={value}",
             "nodes": "-l select={value}",
         }
         scheduler_args_commands = ""
