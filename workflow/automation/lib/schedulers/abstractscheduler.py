@@ -70,6 +70,15 @@ class AbstractScheduler(ABC):
         """
         pass
 
+    @abstractmethod
+    def check_wct(self, job_id: int) -> bool:
+        """
+        Checks the given job_id if it has failed due to Wall Clock Time
+        :param job_id: The id of the job to be checked for wct
+        :return: Boolean for if the job has failed due to Wall Clock Time or not
+        """
+        pass
+
     @staticmethod
     @abstractmethod
     def process_arguments(
