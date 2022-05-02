@@ -243,11 +243,11 @@ def queue_monitor_loop(
                     VERYVERBOSE,
                     f"{Scheduler.get_scheduler().QUEUE_NAME} tasks: {', '.join([' '.join(task) for task in queued_tasks.items()])}",
                 )
-                queue_logger.info(
+                queue_logger.debug(
                     f"Over 200 tasks were found in the queue. Check the log for an exact listing of them"
                 )
             else:
-                queue_logger.info(
+                queue_logger.debug(
                     f"{Scheduler.get_scheduler().QUEUE_NAME} tasks: {', '.join([' '.join(task) for task in queued_tasks.items()])}"
                 )
         else:
@@ -256,7 +256,7 @@ def queue_monitor_loop(
         db_in_progress_tasks = mgmt_db.get_submitted_tasks()
         if len(db_in_progress_tasks) > 0:
 
-            queue_logger.info(
+            queue_logger.debug(
                 "In progress tasks in mgmt db:"
                 + ", ".join(
                     [
@@ -336,7 +336,7 @@ def queue_monitor_loop(
                     "will block all other entries from updating."
                 )
         else:
-            queue_logger.info("No entries in the mgmt db queue.")
+            queue_logger.debug("No entries in the mgmt db queue.")
 
         # Nap time
         queue_logger.debug("Sleeping for {}".format(sleep_time))
