@@ -10,8 +10,10 @@ elif [[ $2 == "mahuika" ]]; then
     source ${env_path}/workflow/workflow/environments/helper_functions/activate_mahuika_python3_virtenv.sh ${env_path}/virt_envs/python3_mahuika
 elif [[ $2 == "stampede" ]]; then
     source ${env_path}/workflow/workflow/environments/helper_functions/activate_stampede_python3_virtenv.sh ${env_path}/virt_envs/python3_stampede
- elif [[ $2 == "nurion" ]]; then
+elif [[ $2 == "nurion" ]]; then
     source ${env_path}/workflow/workflow/environments/helper_functions/activate_nurion_python3_virtenv.sh ${env_path}/virt_envs/python3_nurion
+elif [[ $2 == "local" ]]; then
+    source ${env_path}/workflow/workflow/environments/helper_functions/activate_local_python3_virtenv.sh ${env_path}/virt_envs/python3_local
 else
     echo "$2, invalid HPC, Quitting!"
     # exit
