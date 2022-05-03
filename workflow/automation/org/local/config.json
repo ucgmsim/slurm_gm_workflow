@@ -20,7 +20,7 @@
   "GMSIM_TEMPLATES_DIR": "$workflow/calculation/gmsim_templates",
   "SCHEDULER_TEMPLATES_DIR": "$workflow/automation/templates",
   "EXAMPLES_DIR" : "$workflow/examples",
-  "RUN_COMMAND": "",
+  "RUN_COMMAND": "mpirun",
   "DEFAULT_N_RUNS": {
     "local": 1
   },
