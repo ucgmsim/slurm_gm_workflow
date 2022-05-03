@@ -9,9 +9,9 @@ class Bash(AbstractScheduler):
     job_counter = 0
     task_running = False
 
-    RUN_COMMAND = "mpirun"
     SCRIPT_EXTENSION = "sh"
     QUEUE_NAME = "ps"
+    STATUS_DICT = {"R": 3}
 
     @staticmethod
     def process_arguments(script_path: str, arguments: Dict[str, str]):
