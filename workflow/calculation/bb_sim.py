@@ -410,9 +410,16 @@ def main():
                 )
                 hf_c = np.hstack((hf_start_padding_ts, hf_filtered, hf_end_padding_ts))
                 lf_c = np.hstack((lf_start_padding_ts, lf_filtered, lf_end_padding_ts))
-                bb_acc[:, j] = site_response.run_deconvolve_and_site_response(
-                    hf_c + lf_c, Components(j), site_properties, dt=bb_dt, logger=logger
-                ) / 9.81
+                bb_acc[:, j] = (
+                    site_response.run_deconvolve_and_site_response(
+                        hf_c + lf_c,
+                        Components(j),
+                        site_properties,
+                        dt=bb_dt,
+                        logger=logger,
+                    )
+                    / 9.81
+                )
         else:
             logger.debug(
                 f"Station {stat.name} does not have a site specific file. Running vs30 based amplification"

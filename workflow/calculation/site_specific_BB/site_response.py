@@ -28,9 +28,7 @@ Qp = 2.0 * Qs  # quality factor - compression (dimensionless)
 dampS_soil = 1.0 / (2.0 * Qs)  # damping ratio - shear (dimensionless)
 dampP_soil = 1.0 / (2.0 * Qp)  # damping ratio - compression (dimensionless)
 
-SITE_AMP_SCRIPT = (
-    Path(__file__).parent / "run_site_amp.tcl"
-)
+SITE_AMP_SCRIPT = Path(__file__).parent / "run_site_amp.tcl"
 
 
 @dataclass
