@@ -130,9 +130,16 @@ def load_args(logger):
 
     messages = []
 
-    gmsim_version_path = path.join(
-        platform_config[PLATFORM_CONFIG.GMSIM_TEMPLATES_DIR.name], args.version
-    )
+    # args.version can be a full path to a template directory including 2 yaml files
+
+    if path.exists(args.version) and path.isdir(args.version) and path.isfile(path.join(args.version,"emod3d_defaults.yaml")) and path.isfile(path.join(args.version,"root_defaults.yaml")):
+        gmsim_version_path = args.version
+    # if it is just a version name, assume it is under gmsim_templates directory
+    else:
+        gmsim_version_path = path.join(
+            platform_config[PLATFORM_CONFIG.GMSIM_TEMPLATES_DIR.name], args.version
+        )
+
 
     if not path.exists(gmsim_version_path) or path.isfile(gmsim_version_path):
         messages.append(
@@ -157,6 +164,8 @@ def load_args(logger):
                         ),
                     )
                 )
+
+    print(f"Version path: {gmsim_version_path}")
 
     if len(messages) > 0:
         message = "\n".join(messages)
