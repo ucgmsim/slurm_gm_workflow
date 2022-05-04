@@ -167,7 +167,7 @@ array set voidR [list {list_to_tcl(self.voidR)}]
 
         if nt is not None:
             out_str += f"\nset motionSteps {nt}"
-        
+
         with open(file_path, "w") as fp:
             fp.write(out_str)
 
@@ -381,7 +381,7 @@ def call_opensees(
     except subprocess.TimeoutExpired as e:
         logger.error(str(e))
         raise e
-    
+
     logger.info(f'got stdout line from subprocess: {subp.stdout.decode("utf-8")}')
     logger.info(f'got stderr line from subprocess: {subp.stderr.decode("utf-8")}')
     # TODO: Add debugging if it didn't work

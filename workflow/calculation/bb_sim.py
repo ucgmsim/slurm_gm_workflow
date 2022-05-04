@@ -11,7 +11,7 @@ import numpy as np
 from qcore.siteamp_models import nt2n, cb_amp, ba18_amp, init_ba18
 from qcore import timeseries, utils
 from qcore.constants import VM_PARAMS_FILE_NAME, Components
-from workflow.calculation.site_specific_BB.site_response import run_deconvolve_and_site_response, SiteProp
+from workflow.calculation.site_specific_BB import site_response
 from workflow.automation import platform_config
 
 if __name__ == "__main__":
@@ -394,7 +394,7 @@ def main():
             logger.debug(
                 f"Station {stat.name} has a site specific file. Running OpenSees"
             )
-            site_properties = SiteProp.from_file(station_yaml)
+            site_properties = site_response.SiteProp.from_file(station_yaml)
             for j in range(3):
                 hf_filtered = bwfilter(
                     hf_acc[:, j],
@@ -410,9 +410,9 @@ def main():
                 )
                 hf_c = np.hstack((hf_start_padding_ts, hf_filtered, hf_end_padding_ts))
                 lf_c = np.hstack((lf_start_padding_ts, lf_filtered, lf_end_padding_ts))
-                bb_acc[:, j] = run_deconvolve_and_site_response(
+                bb_acc[:, j] = site_response.run_deconvolve_and_site_response(
                     hf_c + lf_c, Components(j), site_properties, dt=bb_dt, logger=logger
-                )/9.81
+                ) / 9.81
         else:
             logger.debug(
                 f"Station {stat.name} does not have a site specific file. Running vs30 based amplification"
