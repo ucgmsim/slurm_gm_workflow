@@ -29,7 +29,7 @@ dampS_soil = 1.0 / (2.0 * Qs)  # damping ratio - shear (dimensionless)
 dampP_soil = 1.0 / (2.0 * Qp)  # damping ratio - compression (dimensionless)
 
 SITE_AMP_SCRIPT = (
-    Path(__file__).parent / "site_specific_amplification" / "run_site_amp.tcl"
+    Path(__file__).parent / "run_site_amp.tcl"
 )
 
 
@@ -260,7 +260,7 @@ def run_deconvolve_and_site_response(
     :param component: The name of the component. Used to determine the transfer function to use
     :param site_properties: A SiteProp object for the location
     :param dt: The timestep for the given waveform
-    :return: A waveform with site specific amplification applied. Has the same shape as waveform
+    :return: A waveform with site specific amplification applied. Has the same shape as waveform and units of m/s/s
     """
     size = acceleration_waveform.size
 
@@ -313,14 +313,15 @@ def run_deconvolve_and_site_response(
             # File name doesn't matter for temp file
             np.savetxt(file_name, bbgm_decon_vel)
             params_path = td / "params.tcl"
-            site_properties.to_tcl(params_path)
+            site_properties.to_tcl(params_path, nt=size)
             try:
                 out_file = call_opensees(file_name.name, params_path, td, logger=logger)
             except RuntimeError as e:
                 logger.error(f"This didn't work: {component}, {site_properties.name}")
                 raise e
-        # Acceleration
-        out_waveform = np.loadtxt(out_file)
+            else:
+                # Acceleration in m/s/s
+                out_waveform = np.loadtxt(out_file)
 
     return out_waveform
 
