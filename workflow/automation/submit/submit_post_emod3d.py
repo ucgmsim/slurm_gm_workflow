@@ -92,6 +92,7 @@ def main(
         body_template_params,
         command_template_parameters,
     )
+    print(write_directory)
     if submit:
         submit_script_to_scheduler(
             script_file_path,

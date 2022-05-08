@@ -258,7 +258,8 @@ def estimate_HF_chours(
         core_hours, wct, data[:, -1] = scale_core_hours(
             core_hours, data, node_time_th_factor
         )
-
+    if config is not None and hasattr(config, "host") and config.host == "nurion":
+        core_hours *= 10
     return core_hours, wct, data[:, -1] * hyperthreading_factor
 
 
@@ -470,7 +471,7 @@ def est_IM_chours_single(
         )
 
     if config is not None and hasattr(config, "host") and config.host == "nurion":
-        core_hours *= 5
+        core_hours *= 20
     return core_hours, core_hours / n_cores
 
 

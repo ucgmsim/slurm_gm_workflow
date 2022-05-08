@@ -116,6 +116,7 @@ def install_fault(
     components=None,
     logger: Logger = get_basic_logger(),
     check_vm=True,
+    skip_validate_vm=False,
 ):
 
     config_dict = utils.load_yaml(
@@ -163,15 +164,16 @@ def install_fault(
     vm_params_path = os.path.join(vel_mod_dir, VM_PARAMS_FILE_NAME)
     if check_vm:
         valid_vm_params, params_message = validate_vm.validate_vm_params(vm_params_path)
-        valid_vm_files, vm_file_message = validate_vm.validate_vm_files(
-            vel_mod_dir, srf=list_srf[0]
-        )
-        if not valid_vm_params or not valid_vm_files:
-            message = " ".join([params_message, vm_file_message])
-            message = f"Error: VM {fault_name} failed {message}"
-            logger.log(NOPRINTCRITICAL, message)
-            raise RuntimeError(message)
-        # Load the variables from vm_params.yaml
+        if not skip_validate_vm:
+            valid_vm_files, vm_file_message = validate_vm.validate_vm_files(
+                vel_mod_dir, srf=list_srf[0]
+            )
+            if not valid_vm_params or not valid_vm_files:
+                message = " ".join([params_message, vm_file_message])
+                message = f"Error: VM {fault_name} failed {message}"
+                logger.log(NOPRINTCRITICAL, message)
+                #raise RuntimeError(message)
+            #  Load the variables from vm_params.yaml
         vm_params_dict = utils.load_yaml(vm_params_path)
 
     sim_root_dir = simulation_structure.get_runs_dir(root_folder)
@@ -244,6 +246,7 @@ def install_fault(
             logger.critical(
                 "The parameter 'flo' does not match in the VM params and root params files. "
                 "Please ensure you are installing the correct gmsim version"
+                f"{vm_params_dict['flo']} {root_params_dict['flo']}"
             )
             return
 
