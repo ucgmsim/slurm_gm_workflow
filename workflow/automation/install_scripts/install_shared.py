@@ -33,7 +33,6 @@ def install_simulation(
     stoch_file,
     stat_file_path,
     vs30_file_path,
-    vs30ref_file_path,
     check_vm,
     fault_yaml_path,
     root_yaml_path,
@@ -54,7 +53,6 @@ def install_simulation(
     components=None,
 ):
     """Installs a single simulation"""
-    run_name = simulation_structure.get_fault_from_realisation(rel_name)
 
     lf_sim_root_dir = simulation_structure.get_lf_dir(sim_dir)
     hf_dir = simulation_structure.get_hf_dir(sim_dir)
@@ -78,7 +76,6 @@ def install_simulation(
     root_params_dict[RootParams.version.value] = version
     root_params_dict[RootParams.stat_file.value] = stat_file_path
     root_params_dict[RootParams.stat_vs_est.value] = vs30_file_path
-    root_params_dict[RootParams.stat_vs_ref.value] = vs30ref_file_path
     root_params_dict["hf"][RootParams.seed.value] = seed
     if components is not None:
         if not set(components).issubset(set(Components.iterate_str_values())):
@@ -110,8 +107,6 @@ def install_simulation(
         SimParams.srf_file.value: srf_file,
         SimParams.vm_params.value: vm_params_path,
     }
-    if stat_file_path is not None:
-        sim_params_dict[SimParams.stat_file.value] = stat_file_path
 
     if check_vm:
         vm_params_dict = utils.load_yaml(vm_params_path)
