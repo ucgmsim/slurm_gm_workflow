@@ -43,6 +43,7 @@ def test_install_simulation(set_up):
 
         bench_output = get_bench_output(root_path, func_name)[0]
         bench_output.pop("extended_period")
+        bench_output.pop("stat_vs_ref")
         bench_output["ims"] = {
             "component": ["geom"],
             "extended_period": False,
