@@ -213,7 +213,9 @@ def queue_monitor_loop(
     mgmt_db.add_retries(max_retries)
 
     sqlite_tmpdir = "/tmp/cer"
-    while keepAlive:
+    latch = True
+    while keepAlive or latch:
+        latch = False
         complete_data = True
         if not os.path.exists(sqlite_tmpdir):
             os.makedirs(sqlite_tmpdir)

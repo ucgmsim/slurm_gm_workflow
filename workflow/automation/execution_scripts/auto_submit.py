@@ -469,6 +469,8 @@ def run_main_submit_loop(
             cur_hpc = get_target_machine(cur_proc_type)
             # Add task if limit has not been reached and there are no
             # outstanding mgmt db updates
+            main_logger.debug(f"Checking {cur_run_name} of job type {cur_proc_type}. {shared_automated_workflow.check_mgmt_queue(mgmt_queue_entries, cur_run_name, cur_proc_type)} and {task_counter.get(cur_hpc, 0) < n_tasks_to_run[cur_hpc]}")
+            main_logger.debug(f"{mgmt_queue_entries} {task_counter} {cur_hpc}")
             if (
                 not shared_automated_workflow.check_mgmt_queue(
                     mgmt_queue_entries, cur_run_name, cur_proc_type

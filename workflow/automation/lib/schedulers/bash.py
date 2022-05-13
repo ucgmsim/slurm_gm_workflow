@@ -1,4 +1,5 @@
 from logging import Logger
+from os import path
 from typing import Dict
 
 from workflow.automation.lib.MgmtDB import SchedulerTask
@@ -14,8 +15,8 @@ class Bash(AbstractScheduler):
     STATUS_DICT = {"R": 3}
 
     @staticmethod
-    def process_arguments(script_path: str, arguments: Dict[str, str]):
-        return f"{script_path} {' '.join(arguments.items())}"
+    def process_arguments(script_path: str, arguments: Dict[str, str], scheduler_arguments: Dict[str, str]):
+        return f"{' '.join([f'--{k} {v}' for k,v in scheduler_arguments.items()])} {script_path} {' '.join([f'{v}' for k,v in arguments.items()])}"
 
     def get_metadata(self, db_running_task: SchedulerTask, task_logger: Logger):
         status = "RUNNING" if self.task_running else "FAILED"
@@ -31,6 +32,15 @@ class Bash(AbstractScheduler):
         :param **kwargs: Any additional parameters to be passed to the executor
         :return: The index of the task
         """
+        from workflow.automation.execution_scripts import queue_monitor
+        
+        queue_monitor.keepAlive = False
+        queue_monitor.queue_monitor_loop(
+            root_folder=path.dirname(kwargs['queue_folder']),
+            sleep_time=0,
+            max_retries=kwargs.get("max_retries", 0),
+        )
+        
         self.logger.debug(
             f"Ensuring execute set and running script located at: {script_location}"
         )
@@ -42,6 +52,12 @@ class Bash(AbstractScheduler):
         self._run_command_and_wait(cmd=f"{script_location}")
         self.task_running = False
         self.job_counter += 1
+
+        queue_monitor.queue_monitor_loop(
+            root_folder=path.dirname(kwargs['queue_folder']),
+            sleep_time=0,
+            max_retries=kwargs.get("max_retries", 0),
+        )
         return self.job_counter
 
     def cancel_job(self, job_id: int, target_machine=None):
