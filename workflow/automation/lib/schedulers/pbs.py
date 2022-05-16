@@ -211,10 +211,10 @@ class Pbs(AbstractScheduler):
         scheduler_header_command_dict = {
             "time": "-l walltime={value}",
             "job_name": "-N {value}",
-            "ncpus": "-l select=1:ncpus={value}",
-            "nodes": "-l select={value}",
         }
         scheduler_args_commands = ""
+        if "nodes" in scheduler_arguments and "ncpus" in scheduler_arguments:
+            scheduler_args_commands += f"-l select={scheduler_arguments['nodes']}:ncpus={scheduler_arguments['ncpus']}"
         for key, value in scheduler_arguments.items():
             if key in scheduler_header_command_dict.keys():
                 scheduler_args_commands = (
