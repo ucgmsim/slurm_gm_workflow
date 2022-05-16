@@ -224,8 +224,5 @@ class Pbs(AbstractScheduler):
                 )
         # script related args
         # construct a string
-        args_string = ""
-        for arg in arguments.items():
-            # using "" to make sure variables are tranlated and not taken literally
-            args_string = args_string + f'{arg[0]}="{arg[1]}",'
+        args_string = ",".join([f'{k}="{v}"' for k, v in arguments.items()])
         return f"{scheduler_args_commands} -v {args_string} -V {script_path} "
