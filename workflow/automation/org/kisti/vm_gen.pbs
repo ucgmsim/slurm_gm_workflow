@@ -12,7 +12,9 @@
 #PBS -l walltime=03:00:00
 #PBS -W sandbox=PRIVATE
 export SLURM_JOB_ID="${PBS_JOBID/.pbs/}"
-export WCT=($(qstat -x $SLURM_JOB_ID -f -F json | grep walltime))
+export SLURM_CPUS_PER_TASK=$(qstat $SLURM_JOB_ID -f | grep "used.ncpus" | cut -d"=" -f2 | bc)
+export SLURM_NNODES=$(qstat $SLURM_JOB_ID -f | grep "List.nodect" | cut -d"=" -f2 | bc)
+export WCT=$(qstat -f $SLURM_JOB_ID | sed -rn 's/.*Resource_List.walltime = (.*)/\1/p')
 
 FAULT=$(echo $REL_NAME | cut -d"_" -f1)
 SIM_DIR=$MGMT_DB_LOC/Runs/$FAULT/$REL_NAME
@@ -51,16 +53,16 @@ pass=$?
 if [[ $pass == 0 ]]; then
     #passed
 
-    python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $REL_NAME VM_GEN completed $SLURM_JOB_ID --start_time "$start_time" --end_time "$end_time" --nodes $PBS_NUM_NODES --cores $PBS_NUM_PPN --wct ${WCT[1]//"walltime":/ }
+    python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $REL_NAME VM_GEN completed $SLURM_JOB_ID --start_time "$start_time" --end_time "$end_time" --nodes $SLURM_NNODES --cores $SLURM_CPUS_PER_TASK --wct "$WCT"
 
     if [[ ! -d $CH_LOG_FFP ]]; then
         mkdir $CH_LOG_FFP
     fi
 
     # save meta data
-    python $gmsim/workflow/workflow/automation/metadata/log_metadata.py $SIM_DIR VM_GEN cores=$PBS_NUM_PPN start_time=$start_time end_time=$end_time
+    python $gmsim/workflow/workflow/automation/metadata/log_metadata.py $SIM_DIR VM_GEN cores=$SLURM_CPUS_PER_TASK start_time=$start_time end_time=$end_time
 else
     #reformat $res to remove '\n'
     res=`echo $res | tr -d '\n'`
-    python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $REL_NAME VM_GEN failed $SLURM_JOB_ID --error "$res" --start_time "$start_time" --end_time "$end_time" --nodes $PBS_NUM_NODES --cores $PBS_NUM_PPN --wct ${WCT[1]//"walltime":/ }
+    python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $REL_NAME VM_GEN failed $SLURM_JOB_ID --error "$res" --start_time "$start_time" --end_time "$end_time" --nodes $SLURM_NNODES --cores $SLURM_CPUS_PER_TASK --wct "$WCT"
 fi
