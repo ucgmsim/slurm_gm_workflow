@@ -195,13 +195,16 @@ def get_rel_info(df: pd.DataFrame, rel_name: str, root_dir: str, db: sql.Connect
 
     # From IM calc csv
     csv_ffp = f"{root_dir}/Runs/{fault_name}/{rel_name}/IM_calc/{rel_name}.csv"
-    csv_columns = pd.read_csv(csv_ffp).columns.values
-    df.loc[rel_name, "IM_calc_pSA_count"] = len(
-        [True for column in csv_columns if "pSA" in column]
-    )
-    df.loc[rel_name, "IM_calc_FAS_count"] = len(
-        [True for column in csv_columns if "FAS" in column]
-    )
+    try:
+        csv_columns = pd.read_csv(csv_ffp).columns.values
+        df.loc[rel_name, "IM_calc_pSA_count"] = len(
+            [True for column in csv_columns if "pSA" in column]
+        )
+        df.loc[rel_name, "IM_calc_FAS_count"] = len(
+            [True for column in csv_columns if "FAS" in column]
+        )
+    except FileNotFoundError:
+        print(f"Could not find file {csv_ffp} (Will not exist if IM_calc was not run)")
     return df
 
 
