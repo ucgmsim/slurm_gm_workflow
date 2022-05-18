@@ -18,6 +18,8 @@ if __name__ == "__main__":
     from mpi4py import MPI
     from qcore import MPIFileHandler
 
+N_COMPONENTS = 3
+
 ampdeamp = timeseries.ampdeamp
 bwfilter = timeseries.bwfilter
 HEAD_SIZE = timeseries.BBSeis.HEAD_SIZE
@@ -57,8 +59,9 @@ def args_parser(cmd=None):
     )
     arg(
         "--site_specific_dir",
-        help="The directory with site specific yaml files for OpenSees amplification",
-        default=platform_config.platform_config["DEFAULT_SITE_SPECIFIC_DIR"],
+        help="The directory with site specific yaml files for OpenSees amplification. Without an argument uses the default.",
+        default=False,
+        const=platform_config.platform_config["DEFAULT_SITE_SPECIFIC_DIR"],
     )
 
     args = parser.parse_args(cmd)
@@ -389,51 +392,57 @@ def main():
         )
         lf_acc = np.copy(lf.acc(stat.name, dt=bb_dt))
         hf_acc = np.copy(hf.acc(stat.name, dt=bb_dt))
-        station_yaml = os.path.join(args.site_specific_dir, f"{stat.name}.yaml")
-        if os.path.isfile(station_yaml):
+        station_yaml = os.path.join(str(args.site_specific_dir), f"{stat.name}.yaml")
+        if args.site_specific_dir and os.path.isfile(station_yaml):
             logger.debug(
                 f"Station {stat.name} has a site specific file. Running OpenSees"
             )
             site_properties = site_response.SiteProp.from_file(station_yaml)
-            for j in range(3):
+            for c in range(N_COMPONENTS):
                 hf_filtered = bwfilter(
-                    hf_acc[:, j],
+                    hf_acc[:, c],
                     bb_dt,
                     args.flo,
                     "highpass",
                 )
                 lf_filtered = bwfilter(
-                    lf_acc[:, j],
+                    lf_acc[:, c],
                     bb_dt,
                     args.flo,
                     "lowpass",
                 )
                 hf_c = np.hstack((hf_start_padding_ts, hf_filtered, hf_end_padding_ts))
                 lf_c = np.hstack((lf_start_padding_ts, lf_filtered, lf_end_padding_ts))
-                bb_acc[:, j] = (
-                    site_response.run_deconvolve_and_site_response(
+                bb_acc[:, c] = (
+                    site_response.deconvolve_timeseries_and_run_site_response(
                         hf_c + lf_c,
-                        Components(j),
+                        Components(c),
                         site_properties,
                         dt=bb_dt,
                         logger=logger,
                     )
                     / 9.81
                 )
+
         else:
-            logger.debug(
-                f"Station {stat.name} does not have a site specific file. Running vs30 based amplification"
-            )
+            if args.site_specific_dir:
+                logger.debug(
+                    f"Station {stat.name} does not have a site specific file. Running vs30 based amplification"
+                )
+            else:
+                logger.debug(
+                    f"Site specific response not being used. Running vs30 based amplification for {stat.name}"
+                )
             pga = np.max(np.abs(hf_acc), axis=0) / 981.0
             # ideally remove loop # Could reduce to single components?
-            for j in range(3):
+            for c in range(N_COMPONENTS):
                 hf_amp_val = amp_function(
                     bb_dt,
                     n2,
                     stat.vs,
                     vs30s[stations_todo_idx[i]],
                     stat.vs,
-                    pga[j],
+                    pga[c],
                     fmin=fmin,
                     fmidbot=fmidbot,
                     version=site_amp_version,
@@ -444,14 +453,14 @@ def main():
                     lfvs30refs[stations_todo_idx[i]],
                     vs30s[stations_todo_idx[i]],
                     stat.vs,
-                    pga[j],
+                    pga[c],
                     fmin=fmin,
                     fmidbot=fmidbot,
                     version=site_amp_version,
                 )
                 hf_filtered = bwfilter(
                     ampdeamp(
-                        hf_acc[:, j],
+                        hf_acc[:, c],
                         hf_amp_val,
                         amp=True,
                     ),
@@ -461,7 +470,7 @@ def main():
                 )
                 lf_filtered = bwfilter(
                     ampdeamp_lf(
-                        lf_acc[:, j],
+                        lf_acc[:, c],
                         lf_amp_val,
                         amp=True,
                     ),
@@ -477,7 +486,7 @@ def main():
                             "padded hf and lf have different number of timesteps, aborting. "
                         )
                         comm.Abort()
-                bb_acc[:, j] = (hf_c + lf_c) / 981.0
+                bb_acc[:, c] = (hf_c + lf_c) / 981.0
 
         bin_data.seek(bin_seek[i])
         bb_acc.tofile(bin_data)

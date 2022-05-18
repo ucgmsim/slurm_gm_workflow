@@ -1,20 +1,22 @@
 import argparse
 import subprocess
-from dataclasses import dataclass
-from pathlib import Path
-from tempfile import TemporaryDirectory, NamedTemporaryFile
-from typing import List
+import dataclasses
+import pathlib
+import tempfile
+import typing
 
 import numpy as np
-from numpy.fft import rfft, irfft
-from scipy.integrate._quadrature import tupleset
+from numpy import fft
+from scipy.integrate import _quadrature
 
-from qcore import qclogging
-from qcore.config import qconfig
-from qcore.constants import Components
-from qcore.timeseries import transf, vel2acc, read_ascii
-from qcore.utils import load_yaml
-from qcore.siteamp_models import cb_amp
+from qcore import config, constants, qclogging, siteamp_models, timeseries, utils
+
+BASE_COMPONENTS = [
+    constants.Components.c000,
+    constants.Components.c090,
+    constants.Components.cver,
+]
+CM_TO_M_MULTIPLIER = 1.0 / 100
 
 vs_ref = 500.0  # reference Vs at the ground surface in the HF GM simulation (m/s)
 vp_ref = 1800.0  # reference Vp at the ground surface in the HF GM simulation (m/s)
@@ -28,14 +30,13 @@ Qp = 2.0 * Qs  # quality factor - compression (dimensionless)
 dampS_soil = 1.0 / (2.0 * Qs)  # damping ratio - shear (dimensionless)
 dampP_soil = 1.0 / (2.0 * Qp)  # damping ratio - compression (dimensionless)
 
-SITE_AMP_SCRIPT = Path(__file__).parent / "run_site_amp.tcl"
+SITE_AMP_SCRIPT = pathlib.Path(__file__).parent / "run_site_amp.tcl"
 
 
-@dataclass
+@dataclasses.dataclass
 class SiteProp:
     """
     Dataclass to hold the site properties for a location to run site response at a given location
-    # TODO: Investigate use of dataframe for the list values instead
     """
 
     H_soil: float  # Depth to bottom of soil column
@@ -57,32 +58,32 @@ class SiteProp:
     VsInvTopLayer: bool
     waterTopLayer: bool
 
-    layerThick: List[float]  # layer thicknesses
+    layerThick: typing.List[float]  # layer thicknesses
 
     # reference pressure
     # computed as mean confining pressure at refDepth for each layer (0 is ToL, 1 is BoL)
-    refDepth: List[float]
+    refDepth: typing.List[float]
 
-    rho: List[float]  # soil mass density (Mg/m^3)
-    Vs: List[float]  # soil shear wave velocity for each layer(m/s)
-    phi: List[float]  # soil friction angle
-    pressCoeff: List[float]  # pressure dependency coefficient
-    voidR: List[float]  # void ratio (need it for layer 0 for element definition)
+    rho: typing.List[float]  # soil mass density (Mg/m^3)
+    Vs: typing.List[float]  # soil shear wave velocity for each layer(m/s)
+    phi: typing.List[float]  # soil friction angle
+    pressCoeff: typing.List[float]  # pressure dependency coefficient
+    voidR: typing.List[float]  # void ratio (need it for layer 0 for element definition)
 
-    phaseAng: List[float]  # phase transformation angle (not for layer 0)
+    phaseAng: typing.List[float]  # phase transformation angle (not for layer 0)
 
     # contraction (not for layer 0)
-    contract1: List[float]
-    contract3: List[float]
+    contract1: typing.List[float]
+    contract3: typing.List[float]
 
     # dilation coefficients (not for layer 0)
-    dilate1: List[float]
-    dilate3: List[float]
+    dilate1: typing.List[float]
+    dilate3: typing.List[float]
 
     name: str = ""  # Name of the station
 
     @property
-    def soilThick(self):
+    def soil_thick(self):
         return sum(self.layerThick)
 
     @property
@@ -119,13 +120,14 @@ class SiteProp:
     @staticmethod
     def from_file(file_path):
         """Loads the station yaml file"""
-        return SiteProp(**load_yaml(file_path), name=Path(file_path).stem)
+        return SiteProp(**utils.load_yaml(file_path), name=pathlib.Path(file_path).stem)
 
     def to_tcl(self, file_path, nt=None):
         """
         Writes the site properties in tcl format, as required by the site amplification code
         :param file_path: The path to write the file to
-        :param nt: The number of time steps. Added for convenience. If more non-site paramters are needed, make a new filek
+        :param nt: The number of time steps. Added for convenience.
+            If more non-site parameters are needed, make a new file
         """
 
         def list_to_tcl(val, offset=0):
@@ -139,7 +141,7 @@ class SiteProp:
         out_str = f"""
 # Scalars
 set numLayers {self.numLayers}
-set soilThick {self.soilThick}
+set soilThick {self.soil_thick}
 set waterTable {self.waterTable}
 set gammaPeak {self.gammaPeak}
 
@@ -198,11 +200,12 @@ def cumulative_trapezoid(y, dx=1.0, initial=0):
         has one less value than `y`. If `initial` is given, the shape is equal
         to that of `y`.
 
+    Note: Copied from numpy source, as function not present in Python3.6 compatible versions of numpy
     """
     y = np.asarray(y)
     nd = len(y.shape)
-    slice1 = tupleset((slice(None),) * nd, -1, slice(1, None))
-    slice2 = tupleset((slice(None),) * nd, -1, slice(None, -1))
+    slice1 = _quadrature.tupleset((slice(None),) * nd, -1, slice(1, None))
+    slice2 = _quadrature.tupleset((slice(None),) * nd, -1, slice(None, -1))
     res = np.cumsum(dx * (y[slice1] + y[slice2]) / 2.0, axis=-1)
 
     shape = list(res.shape)
@@ -212,15 +215,15 @@ def cumulative_trapezoid(y, dx=1.0, initial=0):
     return res
 
 
-def run_deamp(waveform, component: Components, dt, vs_site, HF_pga):
+def run_deamp(waveform, component: constants.Components, dt, vs_site, hf_pga):
     """
-    Performs Hanning tapering and applies a deamplification factor to
-    :param waveform:
-    :param component:
-    :param dt:
-    :param vs_site:
-    :param HF_pga:
-    :return:
+    Performs Hanning tapering and applies a deamplification factor to the input timeseries
+    :param waveform: timeseries in cm/s/s
+    :param component: The component the timeseries is for. Currently not used
+    :param dt: The time step of the input timeseries
+    :param vs_site: the Vs value of the site
+    :param hf_pga: The PGA of the HF component of the input waveform
+    :return: A timeseries with the Hanning tapering and deamplification applied in cm/s/s
     """
     npts = waveform.size
     # Fourier transform of the acceleration time history of the BBGM simulation
@@ -231,22 +234,22 @@ def run_deamp(waveform, component: Components, dt, vs_site, HF_pga):
     waveform[npts - ntap :] *= np.hanning(ntap * 2 + 1)[ntap + 1 :]
     # extend with blanks for the fft
     waveform.resize(ft_len, refcheck=False)
-    ft = rfft(waveform)
+    ft = fft.rfft(waveform)
 
     # compute the amplification factor from CB14, take inverse, and...
     # "remove" it from the BBGM simulation
     # TODO: have multiple deamp functions
-    if component in [Components.c000, Components.c090]:
-        ampf = cb_amp(dt, ft_len, vs_ref, vs_site, vs_pga, HF_pga)
+    if component in [constants.Components.c000, constants.Components.c090]:
+        ampf = siteamp_models.cb_amp(dt, ft_len, vs_ref, vs_site, vs_pga, hf_pga)
     else:  # TODO we should have different site amp for hor and ver components
-        ampf = cb_amp(dt, ft_len, vs_ref, vs_site, vs_pga, HF_pga)
+        ampf = siteamp_models.cb_amp(dt, ft_len, vs_ref, vs_site, vs_pga, hf_pga)
     ft[:-1] *= 1.0 / ampf
-    return irfft(ft)[:npts]
+    return fft.irfft(ft)[:npts]
 
 
-def run_deconvolve_and_site_response(
+def deconvolve_timeseries_and_run_site_response(
     acceleration_waveform: np.ndarray,
-    component: Components,
+    component: constants.Components,
     site_properties: SiteProp,
     dt=0.005,
     logger=qclogging.get_basic_logger(),
@@ -258,6 +261,7 @@ def run_deconvolve_and_site_response(
     :param component: The name of the component. Used to determine the transfer function to use
     :param site_properties: A SiteProp object for the location
     :param dt: The timestep for the given waveform
+    :param logger: Logger to send messages to
     :return: A waveform with site specific amplification applied. Has the same shape as waveform and units of m/s/s
     """
     size = acceleration_waveform.size
@@ -269,8 +273,8 @@ def run_deconvolve_and_site_response(
     acceleration_waveform = acceleration_waveform.copy()
     acceleration_waveform.resize(ft_len, refcheck=False)
 
-    if component in [Components.c000, Components.c090]:
-        transfer = transf(
+    if component in BASE_COMPONENTS[:2]:
+        transfer = timeseries.transf(
             vs_ref,
             rho_ref,
             dampS_soil,
@@ -281,9 +285,9 @@ def run_deconvolve_and_site_response(
             acceleration_waveform.size,
             dt,
         )
-    else:
+    elif component is constants.Components.cver:
         # TODO: Get ver transfer function
-        transfer = transf(
+        transfer = timeseries.transf(
             vp_ref,
             rho_ref,
             dampP_soil,
@@ -294,20 +298,25 @@ def run_deconvolve_and_site_response(
             acceleration_waveform.size,
             dt,
         )
+    else:
+        raise ValueError(
+            f"Invalid component selected. "
+            f"Only {[comp.str_value for comp in BASE_COMPONENTS]} are valid. "
+            f"{component} is not."
+        )
 
     waveform_ft = np.fft.rfft(acceleration_waveform)
     deconv_ft = (1.0 / transfer) * waveform_ft
     bbgm_decon = np.fft.irfft(deconv_ft)[:size]
 
     # integrate acceleration to get velocity (in m/s) for input to OpenSees
-    cm_to_m_multiplier = 1.0 / 100
     bbgm_decon_vel = (
-        cumulative_trapezoid(bbgm_decon, dx=dt, initial=0) * cm_to_m_multiplier
+        cumulative_trapezoid(bbgm_decon, dx=dt, initial=0) * CM_TO_M_MULTIPLIER
     )
 
-    with TemporaryDirectory() as td:
-        td = Path(td)
-        with NamedTemporaryFile(dir=td) as file_name:
+    with tempfile.TemporaryDirectory() as td:
+        td = pathlib.Path(td)
+        with tempfile.NamedTemporaryFile(dir=td) as file_name:
             # File name doesn't matter for temp file
             np.savetxt(file_name, bbgm_decon_vel)
             params_path = td / "params.tcl"
@@ -319,9 +328,7 @@ def run_deconvolve_and_site_response(
                 raise e
             else:
                 # Acceleration in m/s/s
-                out_waveform = np.loadtxt(out_file)
-
-    return out_waveform
+                return np.loadtxt(out_file)
 
 
 def check_status(component_outdir, check_fail=False):
@@ -330,7 +337,7 @@ def check_status(component_outdir, check_fail=False):
     check_fail: Bools. changes the keyword
     """
 
-    analysis_files = list(Path(component_outdir).glob("Analysis_*"))
+    analysis_files = list(pathlib.Path(component_outdir).glob("Analysis_*"))
 
     if len(analysis_files) == 0:
         return False
@@ -357,17 +364,13 @@ def call_opensees(
     timeout_threshold=600,
     logger=qclogging.get_basic_logger(),
 ):
-    # print(qconfig)
     script = [
-        qconfig["OpenSees"],
+        config.qconfig["OpenSees"],
         SITE_AMP_SCRIPT,
         input_file,
         params_path,
         out_dir,
     ]
-
-    # Cast to string then join for printing
-    # print(" ".join(map(str, script)))
 
     try:
         subp = subprocess.run(
@@ -380,63 +383,109 @@ def call_opensees(
         logger.error(str(e))
         raise e
 
-    logger.info(f'got stdout line from subprocess: {subp.stdout.decode("utf-8")}')
-    logger.info(f'got stderr line from subprocess: {subp.stderr.decode("utf-8")}')
-    # TODO: Add debugging if it didn't work
+    logger.debug(f'got stdout line from subprocess: {subp.stdout.decode("utf-8")}')
+    logger.debug(f'got stderr line from subprocess: {subp.stderr.decode("utf-8")}')
 
     out_file_path = out_dir / "out.txt"
     return out_file_path
 
 
-def load_args():
-    parser = argparse.ArgumentParser(allow_abbrev=False)
+def run_deamp_decon_and_site_response_ascii(folder, station_folder, output_dir):
 
-    parser.add_argument("bb_bin", type=Path)
-    parser.add_argument("station_folder", type=Path)
-    parser.add_argument("output_dir")
-
-    args = parser.parse_args()
-    return args
-
-
-def main():
-    args = load_args()
-
-    # bb = BBSeis(args.bb_bin)
-
-    folder = args.bb_bin
     files = folder.glob("*.*")
     stations = {x.stem for x in files}
 
-    # sites_in = [
-    #     station.stem in stations
-    #     for station in args.station_folder.iterdir()
-    # ]
-
     sites = {
         station.stem: station
-        for station in args.station_folder.iterdir()
+        for station in station_folder.iterdir()
         if station.stem in stations
     }
 
-    components = [Components.c000, Components.c090, Components.cver]
+    for site_name, site_path in sites.items():
+        site_prop = SiteProp.from_file(site_path)
+        for i, waveform_component in enumerate(BASE_COMPONENTS):
+            vel_waveform, meta = timeseries.read_ascii(
+                folder / f"{site_name}.{waveform_component.str_value}", meta=True
+            )
+            acc_waveform = timeseries.vel2acc(vel_waveform, meta["dt"])
+            deamp_wave = run_deamp(
+                acc_waveform,
+                waveform_component,
+                meta["dt"],
+                site_prop.Vs[0],
+                np.max(acc_waveform),
+            )
+            deconv = deconvolve_timeseries_and_run_site_response(
+                deamp_wave[:], waveform_component, site_prop, meta["dt"]
+            )
+            np.savetxt(
+                output_dir / f"{site_name}_{waveform_component.str_value}.csv",
+                deconv,
+            )
+
+
+def run_deamp_decon_and_site_response_binary(bb_bin, station_folder, output_dir):
+
+    bb = timeseries.BBSeis(bb_bin)
+    dt = bb.dt
+
+    sites = {
+        station.stem: station
+        for station in station_folder.iterdir()
+        if station.stem in bb.stations
+    }
 
     for site_name, site_path in sites.items():
         site_prop = SiteProp.from_file(site_path)
-        for i, waveform_component in enumerate(components):
-            vel_waveform, meta = read_ascii(
-                folder / f"{site_name}.{waveform_component.str_value}", meta=True
-            )
-            acc_waveform = vel2acc(vel_waveform, meta["dt"]) / 980.665
+        acc_waveforms = bb.acc(site_name) * 980.665  # Convert g to cm/s/s
+        for i, waveform_component in enumerate(BASE_COMPONENTS):
             deamp_wave = run_deamp(
-                acc_waveform, waveform_component, meta["dt"], 155.0, 0.06275231603044873
+                acc_waveforms[i],
+                waveform_component,
+                dt,
+                site_prop.Vs[0],
+                np.max(acc_waveforms[i]),  # ????
             )
-            deconv = run_deconvolve_and_site_response(
-                deamp_wave[:], waveform_component, site_prop, meta["dt"]
+            deconv = deconvolve_timeseries_and_run_site_response(
+                deamp_wave[:], waveform_component, site_prop, dt
             )
-            # print(deconv)
-            return deconv
+            np.savetxt(
+                output_dir / f"{site_name}_{waveform_component.str_value}.csv",
+                deconv,
+            )
+
+
+def load_args():
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument(
+        "bb_bin",
+        type=pathlib.Path,
+        help="Either folder of ascii waveforms or binary BB.bin files",
+    )
+    parser.add_argument(
+        "station_folder", type=pathlib.Path, help="Folder with site data"
+    )
+    parser.add_argument(
+        "output_dir", type=pathlib.Path, help="Location to save output values"
+    )
+    parser.add_argument(
+        "--type",
+        default="a",
+        choices=["a", "b"],
+        help="Type of input data, either (a)scii or (b)inary.",
+    )
+
+    return parser.parse_args()
 
 
 if __name__ == "__main__":
-    test = main()
+    args = load_args()
+    if args.type == "a":
+        run_deamp_decon_and_site_response_ascii(
+            args.bb_bin, args.station_folder, args.output_dir
+        )
+    elif args.type == "b":
+        run_deamp_decon_and_site_response_binary(
+            args.bb_bin, args.station_folder, args.output_dir
+        )
