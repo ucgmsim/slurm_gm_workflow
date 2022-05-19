@@ -136,7 +136,6 @@ class MgmtDB:
                         entry.job_id,
                         entry.queued_time,
                         entry.start_time,
-                        entry.end_time,
                         entry.nodes,
                         entry.cores,
                         entry.memory,
