@@ -10,8 +10,8 @@ import numpy as np
 
 from qcore.siteamp_models import nt2n, cb_amp, ba18_amp, init_ba18
 from qcore import timeseries, utils
-from qcore.constants import VM_PARAMS_FILE_NAME, Components
-from workflow.calculation.site_specific_BB import site_response
+from qcore.constants import VM_PARAMS_FILE_NAME, Components, PLATFORM_CONFIG
+from workflow.calculation.site_response_BB import site_response
 from workflow.automation import platform_config
 
 if __name__ == "__main__":
@@ -58,10 +58,10 @@ def args_parser(cmd=None):
         choices=["CB08", "CB14", "BA18"],
     )
     arg(
-        "--site_specific_dir",
-        help="The directory with site specific yaml files for OpenSees amplification. Without an argument uses the default.",
+        "--site_response_dir",
+        help="The directory with site response yaml files for OpenSees amplification. Without an argument uses the default.",
         default=False,
-        const=platform_config.platform_config["DEFAULT_SITE_SPECIFIC_DIR"],
+        const=platform_config.platform_config[PLATFORM_CONFIG.DEFAULT_SITE_RESPONSE_DIR.name],
     )
 
     args = parser.parse_args(cmd)
@@ -392,8 +392,8 @@ def main():
         )
         lf_acc = np.copy(lf.acc(stat.name, dt=bb_dt))
         hf_acc = np.copy(hf.acc(stat.name, dt=bb_dt))
-        station_yaml = os.path.join(str(args.site_specific_dir), f"{stat.name}.yaml")
-        if args.site_specific_dir and os.path.isfile(station_yaml):
+        station_yaml = os.path.join(str(args.site_response_dir), f"{stat.name}.yaml")
+        if args.site_response_dir and os.path.isfile(station_yaml):
             logger.debug(
                 f"Station {stat.name} has a site specific file. Running OpenSees"
             )
@@ -425,7 +425,7 @@ def main():
                 )
 
         else:
-            if args.site_specific_dir:
+            if args.site_response_dir:
                 logger.debug(
                     f"Station {stat.name} does not have a site specific file. Running vs30 based amplification"
                 )

@@ -49,5 +49,5 @@
     "VM_PERT": "mahuika",
     "INSTALL_FAULT": "mahuika"
   },
-  "DEFAULT_SITE_SPECIFIC_DIR": "/nesi/project/nesi00213/StationInfo/site_specific/202110/"
+  "DEFAULT_SITE_RESPONSE_DIR": "/nesi/project/nesi00213/StationInfo/site_specific/202110/"
 }
