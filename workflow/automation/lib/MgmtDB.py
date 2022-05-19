@@ -170,7 +170,9 @@ class MgmtDB:
                     self.update_job_log(
                         cur,
                         entry.job_id,
-                        int(datetime.datetime.now().timestamp()) if entry.end_time is "" else entry.end_time,
+                        int(datetime.datetime.now().timestamp())
+                        if entry.end_time is ""
+                        else entry.end_time,
                     )
 
                 if (
