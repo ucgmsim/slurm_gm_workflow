@@ -54,7 +54,7 @@ then
     echo ___calculating rrups___
 
 
-    python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $REL_NAME rrup running $PBS_JOB_ID
+    python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $REL_NAME rrup running $PBS_JOB_ID --start_time "$start_time" --nodes $SLURM_NNODES --cores $SLURM_CPUS_PER_TASK --wct 00:10:00
 
     time python ${IMPATH}/calculate_rrups_single.py -fd ${FD} -o ${OUT_FILE} ${STATION_FILE} ${SRF_FILE}
 else
@@ -67,7 +67,7 @@ if [[ -f ${OUT_FILE} ]]
 then
     if [[ $(wc -l < ${OUT_FILE}) == $(( $(wc -l < ${FD}) + 1)) ]]
     then
-        python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $REL_NAME rrup completed $PBS_JOB_ID --start_time "$start_time" --end_time "$end_time" --nodes $SLURM_NNODES --cores $SLURM_CPUS_PER_TASK --wct 00:10:00
+        python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $REL_NAME rrup completed $PBS_JOB_ID --end_time "$end_time"
     else
         res="Not enough rrups for the station file"
     fi
@@ -77,7 +77,7 @@ fi
 
 if [[ -n ${res} ]]
 then
-    python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $REL_NAME rrup failed $PBS_JOB_ID --error $res --start_time "$start_time" --end_time "$end_time" --nodes $SLURM_NNODES --cores $SLURM_CPUS_PER_TASK --wct 00:10:00
+    python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $REL_NAME rrup failed $PBS_JOB_ID --error $res --end_time "$end_time"
 fi
 
 date
