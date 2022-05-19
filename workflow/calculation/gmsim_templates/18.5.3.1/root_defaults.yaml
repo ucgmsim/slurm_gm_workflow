@@ -9,6 +9,7 @@ bb:
   fmin: 0.5
   fmidbot: 1.0
   no-lf-amp: True
+  site_specific_dir: False
 emod3d:
    emod3d_version: 3.0.4
 ims:
