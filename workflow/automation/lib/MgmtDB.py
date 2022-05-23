@@ -546,9 +546,9 @@ class MgmtDB:
 
     @staticmethod
     def update_end_job_log(
-            cur: sql.Cursor,
-            job_id: int,
-            end_time: int = None,
+        cur: sql.Cursor,
+        job_id: int,
+        end_time: int = None,
     ):
         cur.execute(
             "UPDATE job_duration_log SET end_time = ? WHERE job_id = ?",
