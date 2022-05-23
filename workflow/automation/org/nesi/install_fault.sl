@@ -35,11 +35,11 @@ if [[ ! -d $MGMT_DB_LOC/mgmt_db_queue ]]; then
     mkdir $MGMT_DB_LOC/mgmt_db_queue
 fi
 timestamp=`date +%Y%m%d_%H%M%S`
-python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $REL_NAME INSTALL_FAULT running $SLURM_JOB_ID --start_time "$start_time" --nodes $SLURM_NNODES --cores $SLURM_CPUS_PER_TASK --wct 00:15:00
-
 runtime_fmt="%Y-%m-%d_%H:%M:%S"
 start_time=`date +$runtime_fmt`
 echo $start_time
+
+python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $REL_NAME INSTALL_FAULT running $SLURM_JOB_ID --start_time "$start_time" --nodes $SLURM_NNODES --cores $SLURM_CPUS_PER_TASK --wct 00:15:00
 
 echo python $gmsim/workflow/workflow/automation/install_scripts/gen_fd.py $VM_PARAMS $STAT_FILE $FAULT_DIR
 python $gmsim/workflow/workflow/automation/install_scripts/gen_fd.py $VM_PARAMS $STAT_FILE $FAULT_DIR
