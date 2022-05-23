@@ -106,7 +106,7 @@ def main(
 
 def load_args():
     parser = argparse.ArgumentParser(
-        description="Create (and submit if specified) the slurm script for HF"
+        description="Create (and submit if specified) the slurm script for merge_ts"
     )
     parser.add_argument("--submit", nargs="?", type=str, const=True)
     parser.add_argument(
@@ -141,4 +141,4 @@ if __name__ == "__main__":
     # The name parameter is only used to check user tasks in the queue monitor
     Scheduler.initialise_scheduler("", args.account)
 
-    main(args.submit, args.machine, args.rel_dir, args.srf, args.write_directory)
+    main(args.submit, args.machine, args.rel_dir, args.write_directory)

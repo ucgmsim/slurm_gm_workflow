@@ -9,7 +9,8 @@ INSERT OR IGNORE INTO `status_enum` (id,state) VALUES (2,'queued');
 INSERT OR IGNORE INTO `status_enum` (id,state) VALUES (3,'running');
 INSERT OR IGNORE INTO `status_enum` (id,state) VALUES (4,'unknown');
 INSERT OR IGNORE INTO `status_enum` (id,state) VALUES (5,'completed');
-INSERT OR IGNORE INTO `status_enum` (id,state) VALUES (6,'failed');
+INSERT OR IGNORE INTO `status_enum` (id,state) VALUES (6,'killed_WCT');
+INSERT OR IGNORE INTO `status_enum` (id,state) VALUES (7,'failed');
 CREATE TABLE IF NOT EXISTS `state` (
 	`id`	INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
 	`run_name`	TEXT NOT NULL,

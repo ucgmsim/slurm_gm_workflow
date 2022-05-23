@@ -1,7 +1,8 @@
 import json
 import os
 from logging import Logger
-from typing import List, Dict, Union
+from typing import List, Dict
+from datetime import timedelta
 
 from qcore.constants import timestamp
 
@@ -173,6 +174,30 @@ class Pbs(AbstractScheduler):
         self.logger.debug(output_list)
         return output_list
 
+    def check_wct(self, job_id: int):
+        """
+        Checks the given job_id if it has failed due to Wall Clock Time
+        :param job_id: The id of the job to be checked for wct
+        :return: Boolean for if the job has failed due to Wall Clock Time or not
+        """
+        cmd = f"qstat -x {job_id} -f -F json | grep walltime"
+        output, err = self._run_command_and_wait(cmd=[cmd], shell=True)
+
+        walltime_split = output.split()
+        _, limit_hour, limit_min, limit_sec = (
+            walltime_split[1].replace('"', "").split(":")
+        )
+        limit_time = timedelta(
+            hours=int(limit_hour), minutes=int(limit_min), seconds=int(limit_sec)
+        )
+        _, elapsed_hour, elapsed_min, elapsed_sec = (
+            walltime_split[0].replace('"', "").split(":")
+        )
+        elapsed_time = timedelta(
+            hours=int(elapsed_hour), minutes=int(elapsed_min), seconds=int(elapsed_sec)
+        )
+        return elapsed_time > limit_time
+
     @staticmethod
     def process_arguments(
         script_path: str,
@@ -186,10 +211,10 @@ class Pbs(AbstractScheduler):
         scheduler_header_command_dict = {
             "time": "-l walltime={value}",
             "job_name": "-N {value}",
-            "ncpus": "-l ncpus={value}",
-            "nodes": "-l select={value}",
         }
         scheduler_args_commands = ""
+        if "nodes" in scheduler_arguments and "ncpus" in scheduler_arguments:
+            scheduler_args_commands += f"-l select={scheduler_arguments['nodes']}:ncpus={scheduler_arguments['ncpus']}"
         for key, value in scheduler_arguments.items():
             if key in scheduler_header_command_dict.keys():
                 scheduler_args_commands = (
