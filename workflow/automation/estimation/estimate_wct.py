@@ -142,6 +142,9 @@ def estimate_LF_chours(
         )
     )
 
+    if config is not None and hasattr(config, "host") and config.host == "nurion":
+        core_hours *= 4
+
     # data[:, -1] represents the last column of the ndarray data, which contains the number of cores for each task
     wct = core_hours / data[:, -1]
 
@@ -250,6 +253,9 @@ def estimate_HF_chours(
         + (coefficients["c"] * fd_count)
         + coefficients["d"]
     )
+
+    if config is not None and hasattr(config, "host") and config.host == "nurion":
+        core_hours *= 6
 
     wct = core_hours / data[:, -1]
     if scale_ncores and np.any(
@@ -470,7 +476,7 @@ def est_IM_chours_single(
         )
 
     if config is not None and hasattr(config, "host") and config.host == "nurion":
-        core_hours *= 5
+        core_hours *= 7.5
     return core_hours, core_hours / n_cores
 
 
