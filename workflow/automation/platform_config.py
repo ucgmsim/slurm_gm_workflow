@@ -153,7 +153,7 @@ def get_platform_node_requirements(task_count):
         }
     elif platform == Platforms.KISTI:
         n_nodes = int(ceil(task_count / qconfig["cores_per_node"]))
-        return {"n_nodes": n_nodes, "n_tasks_per_node": qconfig["cores_per_node"]}
+        return {"n_nodes": n_nodes, "n_tasks_per_node": task_count}
     raise NotImplementedError(
         f"The platform {platform}  does not have related node requirements"
     )
