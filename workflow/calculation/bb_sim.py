@@ -64,6 +64,7 @@ def args_parser(cmd=None):
         const=platform_config.platform_config[
             PLATFORM_CONFIG.DEFAULT_SITE_RESPONSE_DIR.name
         ],
+        nargs="?",
     )
 
     args = parser.parse_args(cmd)
