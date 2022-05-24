@@ -1,3 +1,4 @@
+import datetime
 from collections import namedtuple
 from contextlib import contextmanager
 from logging import Logger
@@ -128,9 +129,26 @@ class MgmtDB:
                 )
 
                 if entry.status == const.Status.queued.value:
-                    # Add entry to the job duration log when a task has been added to the queue
+                    # Add queued time metadata to the job log when the job has been queued
                     logger.debug("Logging queued task to the db")
-                    self.insert_job_log(cur, entry.job_id, entry.queued_time)
+                    self.insert_job_log(
+                        cur,
+                        entry.job_id,
+                        entry.queued_time,
+                    )
+
+                if entry.status == const.Status.running.value:
+                    # Add general metadata to the job log when the task has started running
+                    logger.debug("Logging running task to the db")
+                    self.update_job_log(
+                        cur,
+                        entry.job_id,
+                        entry.start_time,
+                        entry.nodes,
+                        entry.cores,
+                        entry.memory,
+                        entry.wct,
+                    )
 
                 if entry.status == const.Status.created.value:
                     # Something has attempted to set a task to created
@@ -155,16 +173,13 @@ class MgmtDB:
                     or entry.status == const.Status.completed.value
                 ):
                     # Update the job duration log if task has failed, killed by WCT or completed
-                    logger.debug("Logging finished task to the db")
-                    self.update_job_log(
+                    logger.debug("Logging end time for the task to the db")
+                    self.update_end_job_log(
                         cur,
                         entry.job_id,
-                        entry.start_time,
-                        entry.end_time,
-                        entry.nodes,
-                        entry.cores,
-                        entry.memory,
-                        entry.wct,
+                        int(datetime.datetime.now().timestamp())
+                        if entry.end_time is ""
+                        else entry.end_time,
                     )
 
                 if (
@@ -503,9 +518,14 @@ class MgmtDB:
         return count > 0
 
     @staticmethod
-    def insert_job_log(cur: sql.Cursor, job_id: int, queued_time: int):
+    def insert_job_log(
+        cur: sql.Cursor,
+        job_id: int,
+        queued_time: int,
+    ):
         cur.execute(
-            """INSERT OR IGNORE INTO `job_duration_log`(job_id, queued_time) VALUES(?, ?)""",
+            """INSERT OR IGNORE INTO `job_duration_log`(job_id, queued_time)
+             VALUES(?, ?)""",
             (job_id, queued_time),
         )
 
@@ -514,15 +534,25 @@ class MgmtDB:
         cur: sql.Cursor,
         job_id: int,
         start_time: int = None,
-        end_time: int = None,
         nodes: int = None,
         cores: int = None,
         memory: int = None,
         wct: int = None,
     ):
         cur.execute(
-            "UPDATE job_duration_log SET start_time = ?, end_time = ?, nodes = ?, cores = ?, memory = ?, WCT = ? WHERE job_id = ?",
-            (start_time, end_time, nodes, cores, memory, wct, job_id),
+            "UPDATE job_duration_log SET start_time = ?, nodes = ?, cores = ?, memory = ?, WCT = ? WHERE job_id = ?",
+            (start_time, nodes, cores, memory, wct, job_id),
+        )
+
+    @staticmethod
+    def update_end_job_log(
+        cur: sql.Cursor,
+        job_id: int,
+        end_time: int = None,
+    ):
+        cur.execute(
+            "UPDATE job_duration_log SET end_time = ? WHERE job_id = ?",
+            (end_time, job_id),
         )
 
     @classmethod
