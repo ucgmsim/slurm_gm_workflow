@@ -35,7 +35,6 @@ def test_install_simulation(set_up):
         ] = "/nesi/project/nesi00213/VelocityModel/Mod-1D/Cant1D_v3-midQ_OneRay.1d"
         root_params_dict["bb"]["version"] = "3.0.4"
         root_params_dict["bb"]["site_specific"] = False
-        root_params_dict["bb"]["site_response_dir"] = False
         del root_params_dict["hf"]["hf_vel_mod_1d"]
         root_params_dict[
             "v_mod_1d_name"
@@ -64,4 +63,5 @@ def test_install_simulation(set_up):
                 10.0,
             ],
         }
+        bench_output["bb"]["site_response_dir"] = False
         assert root_params_dict == bench_output
