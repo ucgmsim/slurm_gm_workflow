@@ -98,7 +98,7 @@ def add_db_stat(df: pd.DataFrame, rel_name: str, df_location: str, new_val: int)
     return df
 
 
-def get_rel_info(df: pd.DataFrame, rel_name: str, root_dir: str, db: sql.Connection):
+def get_rel_info(df: pd.DataFrame, rel_name: str, root_dir: str, db: sql.Connection, ch_count_type: str):
     """
     Loads the given relisations info and populates the dataframe row
     """
@@ -208,7 +208,7 @@ def get_rel_info(df: pd.DataFrame, rel_name: str, root_dir: str, db: sql.Connect
     return df
 
 
-def main(root_dir: str, out_ffp: str):
+def main(root_dir: str, ch_count_type: str, out_ffp: str):
     """
     Gather metadata from each realisation and outputs to a csv
     """
@@ -220,7 +220,7 @@ def main(root_dir: str, out_ffp: str):
     df.index = [name_tuple[0] for name_tuple in rel_names]
     df.index.name = "Rel_name"
     for ix, name_tuple in enumerate(rel_names):
-        df = get_rel_info(df, name_tuple[0], root_dir, db)
+        df = get_rel_info(df, name_tuple[0], root_dir, db, ch_count_type)
     db.close()
     df.to_csv(out_ffp)
 
@@ -228,6 +228,11 @@ def main(root_dir: str, out_ffp: str):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("root_dir", type=str, help="The root directory")
+    parser.add_argument(
+        "ch_count_type",
+        type=str,
+        help="How to count the Core Hours, 'Actual' counts the actual core hours used. 'Needed' counts the core hours it should have used without fails",
+    )
     parser.add_argument("output_ffp", type=str)
     args = parser.parse_args()
-    main(args.root_dir, args.output_ffp)
+    main(args.root_dir, args.ch_count_type, args.output_ffp)
