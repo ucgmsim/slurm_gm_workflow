@@ -68,6 +68,7 @@ COLUMNS = [
     "AdvIM_cores",
     "AdvIM_core_hours",
     "AdvIM_resubmits",
+    "Total_core_hours",
 ]
 METADATA_PROC_TYPES = ["EMOD3D", "VM_GEN", "VM_PERT", "HF", "BB", "IM_calc", "AdvIM"]
 
@@ -82,6 +83,7 @@ def add_db_stat(df: pd.DataFrame, rel_name: str, df_location: str, new_val: int)
         prev_runtime = df.loc[rel_name, df_location]
         if isinstance(prev_runtime, str) and "-" in prev_runtime:
             low, high = prev_runtime.split("-")
+            low, high = float(low), float(high)
             if low > new_val:
                 low = new_val
             elif high < new_val:
@@ -135,12 +137,41 @@ def get_rel_info(df: pd.DataFrame, rel_name: str, root_dir: str, db: sql.Connect
             value = params[v]
         df.loc[rel_name, k] = value
 
-    # DB Metadata
-    states = db.execute(
-        "SELECT * from state WHERE run_name=? AND status != ?",
-        (rel_name, const.Status.created.value),
-    ).fetchall()
+    # Select states
     resub_counter = dict()
+    if ch_count_type == "Needed":
+        states = []
+        # Selects only tasks after the last failed attempt
+        proc_types = db.execute(
+            "SELECT DISTINCT proc_type from state WHERE run_name=? AND status != ?",
+            (rel_name, const.Status.created.value),
+        ).fetchall()
+        for proc_type in proc_types:
+            proc_type = proc_type[0]
+            failed_task_modified = db.execute(
+                "SELECT last_modified from state WHERE run_name=? AND status == ? AND proc_type=?",
+                (rel_name, const.Status.failed.value, proc_type),
+            ).fetchall()
+            if len(failed_task_modified) > 0:
+                # Only select tasks for this proc_type that were modified after the last failed task
+                failed_task_modified_time = failed_task_modified[-1][0]
+                states.extend(db.execute(
+                    "SELECT * from state WHERE run_name=? AND status != ? AND proc_type=? AND last_modified>?",
+                    (rel_name, const.Status.created.value, proc_type, failed_task_modified_time),
+                ).fetchall())
+            else:
+                # There were no failed tasks for this proc_type
+                states.extend(db.execute(
+                    "SELECT * from state WHERE run_name=? AND status != ? AND proc_type=?",
+                    (rel_name, const.Status.created.value, proc_type),
+                ).fetchall())
+    elif ch_count_type == "Actual":
+        states = db.execute(
+            "SELECT * from state WHERE run_name=? AND status != ?",
+            (rel_name, const.Status.created.value),
+        ).fetchall()
+
+    # DB Metadata
     for state in states:
         # Get proc_type and job_id
         _, _, proc_type, status, job_id, _ = state
@@ -172,6 +203,7 @@ def get_rel_info(df: pd.DataFrame, rel_name: str, root_dir: str, db: sql.Connect
             df = add_db_stat(df, rel_name, f"{proc_type_name}_cores", cores)
             # Add to core hours
             df.loc[rel_name, f"{proc_type_name}_core_hours"] += cores * runtime / 60
+            df.loc[rel_name, f"Total_core_hours"] += cores * runtime / 60
             # Add to resubmits dict
             if resub_counter.get(proc_type_name) is None:
                 resub_counter[proc_type_name] = 0
