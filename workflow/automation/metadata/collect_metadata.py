@@ -199,11 +199,11 @@ def get_rel_info(df: pd.DataFrame, rel_name: str, root_dir: str, db: sql.Connect
             ).fetchone()
             # Add runtime and cores to df
             runtime = end_time - start_time
-            df = add_db_stat(df, rel_name, f"{proc_type_name}_runtime", runtime)
+            df.loc[rel_name, f"{proc_type_name}_runtime"] += runtime / 60
             df = add_db_stat(df, rel_name, f"{proc_type_name}_cores", cores)
             # Add to core hours
-            df.loc[rel_name, f"{proc_type_name}_core_hours"] += cores * runtime / 60
-            df.loc[rel_name, f"Total_core_hours"] += cores * runtime / 60
+            df.loc[rel_name, f"{proc_type_name}_core_hours"] += cores * runtime / 3600
+            df.loc[rel_name, f"Total_core_hours"] += cores * runtime / 3600
             # Add to resubmits dict
             if resub_counter.get(proc_type_name) is None:
                 resub_counter[proc_type_name] = 0
@@ -263,6 +263,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "ch_count_type",
         type=str,
+        choices=["Actual", "Needed"],
         help="How to count the Core Hours, 'Actual' counts the actual core hours used. 'Needed' counts the core hours it should have used without fails",
     )
     parser.add_argument("output_ffp", type=str)
