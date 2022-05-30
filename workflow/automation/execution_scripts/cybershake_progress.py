@@ -4,10 +4,11 @@
 import argparse
 import json
 from pathlib import Path
-from typing import List, Iterable
+from typing import List
 
 import numpy as np
 import pandas as pd
+import sqlite3 as sql
 from urllib.request import urlopen
 
 
@@ -59,27 +60,29 @@ def get_chours(json_file, proc_types: List[str], debug=False):
     return sim_name, core_hours
 
 
-def get_chours_used(fault_dirs: Iterable[str]):
+def get_chours_used(root_dir: str):
     """Returns a dataframe containing the core hours used for each of the
     specified faults"""
-    faults, core_hours, completed_r_counts, missing_data = [], [], [], []
-    for fault in fault_dirs:
-        fault = Path(fault)
-        fault_name = fault.stem
-        cur_fault_chours = np.asarray(
-            [
-                get_chours(json_file, PROCESS_TYPES)[1]
-                for json_file in fault.glob(f"**/{const.METADATA_LOG_FILENAME}")
-            ]
-        ).reshape(-1, len(PROCESS_TYPES))
+    db = sql.connect(f"{root_dir}/slurm_mgmt.db")
 
-        faults.append(fault_name)
-        if cur_fault_chours.shape[0] > 0:
-            core_hours.append(np.nansum(cur_fault_chours, axis=0))
-        else:
-            core_hours.append([np.nan, np.nan, np.nan])
-
-    df = pd.DataFrame(index=faults, data=core_hours, columns=PROCESS_TYPES)
+    # faults, core_hours, completed_r_counts, missing_data = [], [], [], []
+    # for fault in fault_dirs:
+    #     fault = Path(fault)
+    #     fault_name = fault.stem
+    #     cur_fault_chours = np.asarray(
+    #         [
+    #             get_chours(json_file, PROCESS_TYPES)[1]
+    #             for json_file in fault.glob(f"**/{const.METADATA_LOG_FILENAME}")
+    #         ]
+    #     ).reshape(-1, len(PROCESS_TYPES))
+    #
+    #     faults.append(fault_name)
+    #     if cur_fault_chours.shape[0] > 0:
+    #         core_hours.append(np.nansum(cur_fault_chours, axis=0))
+    #     else:
+    #         core_hours.append([np.nan, np.nan, np.nan])
+    #
+    # df = pd.DataFrame(index=faults, data=core_hours, columns=PROCESS_TYPES)
 
     return df
 
@@ -139,7 +142,7 @@ def get_new_progress_df(root_dir, runs_dir, faults_dict, mgmtdb: MgmtDB):
     fault_dirs = np.asarray(
         [sim_struct.get_fault_dir(root_dir, fault_name) for fault_name in fault_names]
     )
-    chours_df = get_chours_used(fault_dirs)
+    chours_df = get_chours_used(root_dir)
 
     # Populate progress dataframe with estimation data and actual data
     for proc_type in PROCESS_TYPES:
