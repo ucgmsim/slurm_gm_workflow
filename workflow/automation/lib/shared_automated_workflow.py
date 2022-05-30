@@ -60,6 +60,12 @@ def add_to_queue(
     status: int,
     job_id: int = None,
     error: str = None,
+    start_time: int = None,
+    end_time: int = None,
+    nodes: int = None,
+    cores: int = None,
+    memory: int = None,
+    wct: int = None,
     logger: Logger = get_basic_logger(),
 ):
     """Adds an update entry to the queue"""
@@ -98,6 +104,13 @@ def add_to_queue(
                 MgmtDB.col_status: status,
                 MgmtDB.col_job_id: job_id,
                 "error": error,
+                MgmtDB.col_queued_time: int(datetime.now().timestamp()),
+                MgmtDB.col_start_time: start_time,
+                MgmtDB.col_end_time: end_time,
+                MgmtDB.col_nodes: nodes,
+                MgmtDB.col_cores: cores,
+                MgmtDB.col_memory: memory,
+                MgmtDB.col_wct: wct,
             },
             f,
         )

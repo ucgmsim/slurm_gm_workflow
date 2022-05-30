@@ -60,6 +60,13 @@ def get_queue_entry(
         status=data_dict[MgmtDB.col_status],
         job_id=data_dict[MgmtDB.col_job_id],
         error=data_dict.get("error"),
+        queued_time=data_dict.get(MgmtDB.col_queued_time),
+        start_time=data_dict.get(MgmtDB.col_start_time),
+        end_time=data_dict.get(MgmtDB.col_end_time),
+        nodes=data_dict.get(MgmtDB.col_nodes),
+        cores=data_dict.get(MgmtDB.col_cores),
+        memory=data_dict.get(MgmtDB.col_memory),
+        wct=data_dict.get(MgmtDB.col_wct),
     )
 
 
@@ -155,7 +162,16 @@ def update_tasks(
                 )
 
                 # Check for if task was killed by Wall Clock Time
-                killed_wct = Scheduler.get_scheduler().check_wct(db_running_task.job_id)
+                try:
+                    killed_wct = Scheduler.get_scheduler().check_wct_hit(
+                        db_running_task.job_id
+                    )
+                except IndexError:
+                    task_logger.warning(
+                        f"Could not find wall clock time for Task '{const.ProcessType(db_running_task.proc_type).str_value}' "
+                        f"on '{db_running_task.run_name}'"
+                    )
+                    killed_wct = False
 
                 # Add an error
                 tasks_to_do.append(
@@ -166,7 +182,7 @@ def update_tasks(
                         if killed_wct
                         else const.Status.failed.value,
                         None,
-                        f"Disappeared from {Scheduler.get_scheduler().QUEUE_NAME}. Creating a new task.",
+                        f"Disappeared from {Scheduler.get_scheduler().QUEUE_NAME}.",
                     )
                 )
             # When job failed, we want to log metadata as well
