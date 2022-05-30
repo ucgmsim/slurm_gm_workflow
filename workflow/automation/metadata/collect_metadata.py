@@ -100,7 +100,13 @@ def add_db_stat(df: pd.DataFrame, rel_name: str, df_location: str, new_val: int)
     return df
 
 
-def get_rel_info(df: pd.DataFrame, rel_name: str, root_dir: str, db: sql.Connection, ch_count_type: str):
+def get_rel_info(
+    df: pd.DataFrame,
+    rel_name: str,
+    root_dir: str,
+    db: sql.Connection,
+    ch_count_type: str,
+):
     """
     Loads the given relisations info and populates the dataframe row
     """
@@ -155,17 +161,26 @@ def get_rel_info(df: pd.DataFrame, rel_name: str, root_dir: str, db: sql.Connect
             if len(failed_task_modified) > 0:
                 # Only select tasks for this proc_type that were modified after the last failed task
                 failed_task_modified_time = failed_task_modified[-1][0]
-                states.extend(db.execute(
-                    "SELECT * from state WHERE run_name=? AND status != ? AND proc_type=? AND last_modified>?",
-                    (rel_name, const.Status.created.value, proc_type, failed_task_modified_time),
-                ).fetchall())
+                states.extend(
+                    db.execute(
+                        "SELECT * from state WHERE run_name=? AND status != ? AND proc_type=? AND last_modified>?",
+                        (
+                            rel_name,
+                            const.Status.created.value,
+                            proc_type,
+                            failed_task_modified_time,
+                        ),
+                    ).fetchall()
+                )
             else:
                 # There were no failed tasks for this proc_type
-                states.extend(db.execute(
-                    "SELECT * from state WHERE run_name=? AND status != ? AND proc_type=?",
-                    (rel_name, const.Status.created.value, proc_type),
-                ).fetchall())
-    elif ch_count_type == "Actual":
+                states.extend(
+                    db.execute(
+                        "SELECT * from state WHERE run_name=? AND status != ? AND proc_type=?",
+                        (rel_name, const.Status.created.value, proc_type),
+                    ).fetchall()
+                )
+    else:
         states = db.execute(
             "SELECT * from state WHERE run_name=? AND status != ?",
             (rel_name, const.Status.created.value),
@@ -264,7 +279,8 @@ if __name__ == "__main__":
         "ch_count_type",
         type=str,
         choices=["Actual", "Needed"],
-        help="How to count the Core Hours, 'Actual' counts the actual core hours used. 'Needed' counts the core hours it should have used without fails",
+        help="How to count the Core Hours, 'Actual' counts the actual core hours used."
+        " 'Needed' counts the core hours it should have used without fails",
     )
     parser.add_argument("output_ffp", type=str)
     args = parser.parse_args()
