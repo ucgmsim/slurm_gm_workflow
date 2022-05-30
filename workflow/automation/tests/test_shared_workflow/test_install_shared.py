@@ -63,4 +63,5 @@ def test_install_simulation(set_up):
                 10.0,
             ],
         }
+        bench_output["bb"]["site_response_dir"] = False
         assert root_params_dict == bench_output

@@ -1,6 +1,12 @@
 Slurm Ground Motion Workflow
 # Changelog
 (Based on https://wiki.canterbury.ac.nz/download/attachments/58458136/CodeVersioning_v18p2.pdf?version=1&modificationDate=1519269238437&api=v2 )
+
+## [22.4.1] - 2022-5-19 -- Site response
+### Added
+    - Added site reponse code for BB step
+    - New entry in gmsim templates to control site response directory
+
 ## [22.3.1] - 2022-3-17 -- Metadata Refactor Part 1
 ### Added
     - Added new State for a job failing due to Wall Clock Time
