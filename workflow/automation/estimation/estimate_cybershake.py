@@ -23,7 +23,7 @@ VM_PARAMS_FILENAME = "vm_params.yaml"
 NODE_TIME_TH_FACTOR = 0.5
 
 
-def get_faults(vms_dir, sources_dir, runs_dir, args):
+def get_faults(vms_dir, sources_dir, runs_dir, fault_selection=None):
     """Gets the faults and their realisation counts.
     Handles the different cases from the specified user arguments.
     """
@@ -48,9 +48,9 @@ def get_faults(vms_dir, sources_dir, runs_dir, args):
 
     faults_df = (
         None
-        if args.fault_selection is None
+        if fault_selection is None
         else pd.read_table(
-            args.fault_selection,
+            fault_selection,
             header=None,
             sep="\s+",
             index_col=False,
@@ -314,15 +314,22 @@ def get_runs_dir_params(
     )
 
 
-def main(args):
+def main(
+    vms_dir: str,
+    sources_dir: str,
+    runs_dir: str,
+    fault_selection: str = None,
+    root_yaml: str = None,
+    models_dir: str = None,
+):
     fault_names, realisations = get_faults(
-        args.vms_dir, args.sources_dir, args.runs_dir, args
+        vms_dir, sources_dir, runs_dir, fault_selection
     )
 
-    if args.models_dir is None:
+    if models_dir is None:
         models_dir = platform_config[const.PLATFORM_CONFIG.ESTIMATION_MODELS_DIR.name]
     else:
-        models_dir = args.models_dir
+        models_dir = models_dir
     model_dir_dict = {
         "LF": os.path.join(models_dir, "LF"),
         "HF": os.path.join(models_dir, "HF"),
@@ -333,7 +340,7 @@ def main(args):
     vm_params = (
         np.concatenate(
             [
-                get_vm_params(fault_vm_path=os.path.join(args.vms_dir, fault))
+                get_vm_params(fault_vm_path=os.path.join(vms_dir, fault))
                 for fault in fault_names
             ]
         )
@@ -342,9 +349,9 @@ def main(args):
     )
 
     config_dt, config_hf_dt = None, None
-    if args.root_yaml:
+    if root_yaml:
         print("Loading df and hf_dt from root_default.yaml")
-        with open(args.root_yaml, "r") as f:
+        with open(root_yaml, "r") as f:
             root_config = yaml.load(f)
 
         config_dt = root_config.get("dt")
@@ -354,8 +361,8 @@ def main(args):
     # of a fault have the same parameters!
     runs_params = (
         None
-        if args.runs_dir is None
-        else get_runs_dir_params(args.runs_dir, fault_names, realisations)
+        if runs_dir is None
+        else get_runs_dir_params(runs_dir, fault_names, realisations)
     )
 
     # Set dt
@@ -545,7 +552,14 @@ if __name__ == "__main__":
         print("File {} does not exist".format(args.fault_selection))
         sys.exit()
 
-    results_df = main(args)
+    results_df = main(
+        args.vms_dir,
+        args.sources_dir,
+        args.runs_dir,
+        args.fault_selection,
+        args.root_yaml,
+        args.models_dir,
+    )
 
     # Save the results
     results_df.to_csv(args.output)

@@ -60,10 +60,20 @@ def get_chours(json_file, proc_types: List[str], debug=False):
     return sim_name, core_hours
 
 
-def get_chours_used(root_dir: str):
+def get_chours_used(root_dir: str, fault_names: List[str]):
     """Returns a dataframe containing the core hours used for each of the
     specified faults"""
     db = sql.connect(f"{root_dir}/slurm_mgmt.db")
+
+    for fault_name in fault_names:
+        for str_proc_type in PROCESS_TYPES:
+            proc_type = const.ProcessType[str_proc_type].value
+            states = db.execute(
+                f"SELECT * from state WHERE run_name LIKE '%{fault_name}%' AND proc_type=? AND (status == ? OR status == ?)",
+                (proc_type, const.Status.killed_WCT.value, const.Status.completed.value),
+            ).fetchall()
+
+    db.close()
 
     # faults, core_hours, completed_r_counts, missing_data = [], [], [], []
     # for fault in fault_dirs:
@@ -98,17 +108,11 @@ def get_new_progress_df(root_dir, runs_dir, faults_dict, mgmtdb: MgmtDB):
     all actual core hours and number of completed realisations
     """
     # Run the estimation
-    est_args = argparse.Namespace(
-        vms_dir=sim_struct.get_VM_dir(root_dir),
-        sources_dir=sim_struct.get_sources_dir(root_dir),
-        runs_dir=runs_dir,
-        fault_selection=None,
-        root_yaml=None,
-        output=None,
-        verbose=False,
-        models_dir=None,
+    df = est_cybershake(
+        sim_struct.get_VM_dir(root_dir),
+        sim_struct.get_sources_dir(root_dir),
+        runs_dir,
     )
-    df = est_cybershake(est_args)
     grouped_df = df.groupby("fault_name").sum()
     grouped_df.sort_index(axis=0, level=0, inplace=True)
 
@@ -139,10 +143,7 @@ def get_new_progress_df(root_dir, runs_dir, faults_dict, mgmtdb: MgmtDB):
     )
 
     # Get actual core hours for all faults
-    fault_dirs = np.asarray(
-        [sim_struct.get_fault_dir(root_dir, fault_name) for fault_name in fault_names]
-    )
-    chours_df = get_chours_used(root_dir)
+    chours_df = get_chours_used(root_dir, fault_names)
 
     # Populate progress dataframe with estimation data and actual data
     for proc_type in PROCESS_TYPES:
