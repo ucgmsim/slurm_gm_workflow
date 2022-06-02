@@ -12,7 +12,7 @@ import sqlite3 as sql
 from urllib.request import urlopen
 
 
-from workflow.automation.estimation.estimate_cybershake import main as est_cybershake
+# from workflow.automation.estimation.estimate_cybershake import main as est_cybershake
 from workflow.automation.lib.MgmtDB import MgmtDB
 import qcore.simulation_structure as sim_struct
 import qcore.constants as const
@@ -68,6 +68,23 @@ def get_chours_used(root_dir: str, fault_names: List[str]):
     for fault_name in fault_names:
         for str_proc_type in PROCESS_TYPES:
             proc_type = const.ProcessType[str_proc_type].value
+            failed_task_modified = db.execute(
+                f"SELECT last_modified from state WHERE run_name LIKE '%{fault_name}%' AND status == ? AND proc_type=?",
+                (const.Status.failed.value, proc_type),
+            ).fetchall()
+            if len(failed_task_modified) > 0:
+                # Only select tasks for this proc_type that were modified after the last failed task
+                failed_task_modified_time = failed_task_modified[-1][0]
+                states = db.execute(
+                    "SELECT * from state WHERE run_name=? AND status != ? AND proc_type=? AND last_modified>?",
+                    (
+                        rel_name,
+                        const.Status.created.value,
+                        proc_type,
+                        failed_task_modified_time,
+                    ),
+                ).fetchall()
+            else:
             states = db.execute(
                 f"SELECT * from state WHERE run_name LIKE '%{fault_name}%' AND proc_type=? AND (status == ? OR status == ?)",
                 (proc_type, const.Status.killed_WCT.value, const.Status.completed.value),
