@@ -1,9 +1,11 @@
+import datetime
 from collections import namedtuple
 from contextlib import contextmanager
 from logging import Logger
 import os
 import sqlite3 as sql
 from typing import List, Union
+from dataclasses import dataclass
 
 import qcore.constants as const
 from qcore.qclogging import get_basic_logger
@@ -11,11 +13,21 @@ from qcore.qclogging import get_basic_logger
 
 Process = const.ProcessType
 
-SchedulerTask = namedtuple(
-    "SchedulerTask", ["run_name", "proc_type", "status", "job_id", "error"]
-)
-# Make error an optional value, once we are using Python 3.7 then this can be made nicer..
-SchedulerTask.__new__.__defaults__ = (None,)
+
+@dataclass
+class SchedulerTask:
+    run_name: str
+    proc_type: int
+    status: int
+    job_id: int
+    error: str = None
+    queued_time: int = None
+    start_time: int = None
+    end_time: int = None
+    nodes: int = None
+    cores: int = None
+    memory: int = None
+    wct: int = None
 
 
 def connect_db(path):
@@ -61,6 +73,13 @@ class MgmtDB:
     col_proc_type = "proc_type"
     col_status = "status"
     col_job_id = "job_id"
+    col_queued_time = "queued_time"
+    col_start_time = "start_time"
+    col_end_time = "end_time"
+    col_nodes = "nodes"
+    col_cores = "cores"
+    col_memory = "memory"
+    col_wct = "WCT"
 
     def __init__(self, db_file: str):
         self._db_file = db_file
@@ -109,6 +128,28 @@ class MgmtDB:
                     )
                 )
 
+                if entry.status == const.Status.queued.value:
+                    # Add queued time metadata to the job log when the job has been queued
+                    logger.debug("Logging queued task to the db")
+                    self.insert_job_log(
+                        cur,
+                        entry.job_id,
+                        entry.queued_time,
+                    )
+
+                if entry.status == const.Status.running.value:
+                    # Add general metadata to the job log when the task has started running
+                    logger.debug("Logging running task to the db")
+                    self.update_job_log(
+                        cur,
+                        entry.job_id,
+                        entry.start_time,
+                        entry.nodes,
+                        entry.cores,
+                        entry.memory,
+                        entry.wct,
+                    )
+
                 if entry.status == const.Status.created.value:
                     # Something has attempted to set a task to created
                     # Make a new task with created status and move to the next task
@@ -129,13 +170,29 @@ class MgmtDB:
                 if (
                     entry.status == const.Status.failed.value
                     or entry.status == const.Status.killed_WCT.value
-                ) and self.get_retries(process, realisation_name) < retry_max:
-                    # The task was failed. If there have been few enough other attempts at the task make another one
-                    logger.debug(
-                        "Task failed but is able to be retried. Adding new task to the db"
+                    or entry.status == const.Status.completed.value
+                ):
+                    # Update the job duration log if task has failed, killed by WCT or completed
+                    logger.debug("Logging end time for the task to the db")
+                    self.update_end_job_log(
+                        cur,
+                        entry.job_id,
+                        int(datetime.datetime.now().timestamp())
+                        if entry.end_time is ""
+                        else entry.end_time,
                     )
-                    self._insert_task(cur, realisation_name, process)
-                    logger.debug("New task added to the db")
+
+                if (
+                    entry.status == const.Status.failed.value
+                    or entry.status == const.Status.killed_WCT.value
+                ):
+                    if self.get_retries(process, realisation_name) < retry_max:
+                        # The task was failed. If there have been few enough other attempts at the task make another one
+                        logger.debug(
+                            "Task failed but is able to be retried. Adding new task to the db"
+                        )
+                        self._insert_task(cur, realisation_name, process)
+                        logger.debug("New task added to the db")
 
                 if entry.status == const.Status.failed.value:
                     tasks = MgmtDB.find_dependant_task(cur, entry)
@@ -186,7 +243,6 @@ class MgmtDB:
                             process.value,
                             const.Status.failed.value,
                             job_id[0],
-                            None,
                         )
                         tasks.append(dependant_entry)
         return tasks
@@ -201,7 +257,7 @@ class MgmtDB:
                 "SELECT run_name, proc_type "
                 "FROM state, status_enum "
                 "WHERE state.status = status_enum.id "
-                "AND (status_enum.state  = 'failed'"
+                "AND (status_enum.state  = 'failed' "
                 "OR status_enum.state = 'killed_WCT')"
             ).fetchall()
 
@@ -460,6 +516,44 @@ class MgmtDB:
             (run_name, proc_type),
         ).fetchone()[0]
         return count > 0
+
+    @staticmethod
+    def insert_job_log(
+        cur: sql.Cursor,
+        job_id: int,
+        queued_time: int,
+    ):
+        cur.execute(
+            """INSERT OR IGNORE INTO `job_duration_log`(job_id, queued_time)
+             VALUES(?, ?)""",
+            (job_id, queued_time),
+        )
+
+    @staticmethod
+    def update_job_log(
+        cur: sql.Cursor,
+        job_id: int,
+        start_time: int = None,
+        nodes: int = None,
+        cores: int = None,
+        memory: int = None,
+        wct: int = None,
+    ):
+        cur.execute(
+            "UPDATE job_duration_log SET start_time = ?, nodes = ?, cores = ?, memory = ?, WCT = ? WHERE job_id = ?",
+            (start_time, nodes, cores, memory, wct, job_id),
+        )
+
+    @staticmethod
+    def update_end_job_log(
+        cur: sql.Cursor,
+        job_id: int,
+        end_time: int = None,
+    ):
+        cur.execute(
+            "UPDATE job_duration_log SET end_time = ? WHERE job_id = ?",
+            (end_time, job_id),
+        )
 
     @classmethod
     def init_db(cls, db_file: str, init_script: str):
