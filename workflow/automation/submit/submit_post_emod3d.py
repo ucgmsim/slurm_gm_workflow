@@ -23,7 +23,6 @@ from workflow.automation.lib.shared_template import write_sl_script
 
 merge_ts_name_prefix = "post_emod3d_merge_ts"
 
-# TODO: implement estimation for these numbers
 default_run_time_merge_ts = "00:30:00"
 
 

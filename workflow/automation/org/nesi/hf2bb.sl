@@ -32,11 +32,11 @@ if [[ ! -d $MGMT_DB_LOC/mgmt_db_queue ]]; then
     mkdir $MGMT_DB_LOC/mgmt_db_queue
 fi
 timestamp=`date +%Y%m%d_%H%M%S`
-python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $REL_NAME HF2BB running $SLURM_JOB_ID
-
 runtime_fmt="%Y-%m-%d_%H:%M:%S"
 start_time=`date +$runtime_fmt`
 echo $start_time
+
+python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $REL_NAME HF2BB running $SLURM_JOB_ID --start_time "$start_time" --nodes $SLURM_NNODES --cores $SLURM_CPUS_PER_TASK --wct 00:15:00
 
 echo "python $gmsim/workflow/workflow/calculation/hf2bb.py $HF_LOC $BB_LOC"
 python $gmsim/workflow/workflow/calculation/hf2bb.py $HF_LOC $BB_LOC $REM_ARGS
@@ -49,7 +49,7 @@ timestamp=`date +%Y%m%d_%H%M%S`
 res=`$gmsim/workflow/workflow/calculation/verification/test_bb.sh $REL_LOC `
 if [[ $? == 0 ]]; then
     #passed
-    python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $REL_NAME HF2BB completed $SLURM_JOB_ID
+    python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $REL_NAME HF2BB completed $SLURM_JOB_ID --end_time "$end_time"
 
     if [[ ! -d $REL_LOC/ch_log ]]; then
         mkdir $REL_LOC/ch_log
@@ -62,5 +62,5 @@ if [[ $? == 0 ]]; then
 else
     #reformat $res to remove '\n'
     res=`echo $res | tr -d '\n'`
-    python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $REL_NAME HF2BB failed $SLURM_JOB_ID --error "$res"
+    python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $REL_NAME HF2BB failed $SLURM_JOB_ID --error "$res" --end_time "$end_time"
 fi

@@ -67,6 +67,19 @@ CREATE TABLE IF NOT EXISTS `job_time_log`(
 	PRIMARY KEY(`id`),
 	FOREIGN KEY(`job_id`) REFERENCES state(job_id)
 );
+CREATE TABLE IF NOT EXISTS `job_duration_log`(
+    `id`	INTEGER NOT NULL UNIQUE,
+	`job_id`	INTEGER,
+	`queued_time` INTEGER,
+	`start_time` INTEGER,
+	`end_time` INTEGER,
+	`nodes` INTEGER,
+	`cores` INTEGER,
+	`memory` INTEGER,
+	`WCT` INTEGER,
+	PRIMARY KEY(`id`),
+	FOREIGN KEY(`job_id`) REFERENCES state(job_id)
+);
 CREATE VIEW IF NOT EXISTS state_view AS
 SELECT state.id, state.run_name, proc_type_enum.proc_type, status_enum.state, state.job_id, state.last_modified
 FROM state, status_enum, proc_type_enum
