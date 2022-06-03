@@ -8,8 +8,8 @@ from typing import List, Union
 from dataclasses import dataclass
 
 import qcore.constants as const
+from workflow.automation.lib.constants import ChCountType
 from qcore.qclogging import get_basic_logger
-
 
 Process = const.ProcessType
 
@@ -67,7 +67,6 @@ def enum_to_list(enum):
 
 
 class MgmtDB:
-
     # State Column names
     col_run_name = "run_name"
     col_proc_type = "proc_type"
@@ -178,7 +177,7 @@ class MgmtDB:
                         cur,
                         entry.job_id,
                         int(datetime.datetime.now().timestamp())
-                        if entry.end_time is ""
+                        if entry.end_time == ""
                         else entry.end_time,
                     )
 
@@ -223,6 +222,72 @@ class MgmtDB:
             cur.close()
 
         return True
+
+    def get_core_hour_states(self, rel_name: str, ch_count_type: ChCountType):
+        with connect_db_ctx(self._db_file) as cur:
+            if ch_count_type == ChCountType.Needed:
+                states = []
+                # Selects only tasks after the last failed attempt
+                proc_types = cur.execute(
+                    "SELECT DISTINCT proc_type from state WHERE run_name=? AND status != ?",
+                    (rel_name, const.Status.created.value),
+                ).fetchall()
+                for proc_type in proc_types:
+                    proc_type = proc_type[0]
+                    failed_task_modified = cur.execute(
+                        "SELECT last_modified from state WHERE run_name=? AND status == ? AND proc_type=?",
+                        (rel_name, const.Status.failed.value, proc_type),
+                    ).fetchall()
+                    if len(failed_task_modified) > 0:
+                        # Only select tasks for this proc_type that were modified after the last failed task
+                        failed_task_modified_time = failed_task_modified[-1][0]
+                        states.extend(
+                            cur.execute(
+                                "SELECT * from state WHERE run_name=? AND "
+                                "(status == ? OR status == ?) AND proc_type=? AND last_modified>?",
+                                (
+                                    rel_name,
+                                    const.Status.completed.value,
+                                    const.Status.killed_WCT.value,
+                                    proc_type,
+                                    failed_task_modified_time,
+                                ),
+                            ).fetchall()
+                        )
+                    else:
+                        # There were no failed tasks for this proc_type
+                        states.extend(
+                            cur.execute(
+                                "SELECT * from state WHERE run_name=? AND (status == ? OR status == ?) AND proc_type=?",
+                                (
+                                    rel_name,
+                                    const.Status.completed.value,
+                                    const.Status.killed_WCT.value,
+                                    proc_type,
+                                ),
+                            ).fetchall()
+                        )
+            else:
+                states = cur.execute(
+                    "SELECT * from state WHERE run_name=? AND (status == ? OR status == ?)",
+                    (
+                        rel_name,
+                        const.Status.completed.value,
+                        const.Status.killed_WCT.value,
+                    ),
+                ).fetchall()
+        return states
+
+    def get_job_duration_info(self, job_id: int):
+        with connect_db_ctx(self._db_file) as cur:
+            return cur.execute(
+                "SELECT * from job_duration_log WHERE job_id=?",
+                (job_id,),
+            ).fetchone()
+
+    def get_rel_names(self):
+        with connect_db_ctx(self._db_file) as cur:
+            return cur.execute("SELECT DISTINCT run_name from state").fetchall()
 
     @staticmethod
     def find_dependant_task(cur, entry):
