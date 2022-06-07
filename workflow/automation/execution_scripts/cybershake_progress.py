@@ -65,6 +65,13 @@ def get_chours_used(root_dir: str, fault_names: List[str]):
     specified faults"""
     db = sql.connect(f"{root_dir}/slurm_mgmt.db")
 
+
+    df = pd.DataFrame(
+        columns=PROCESS_TYPES, index=fault_names, data=np.zeros(shape=(len(fault_names), len(PROCESS_TYPES)))
+    )
+
+
+
     for fault_name in fault_names:
         for str_proc_type in PROCESS_TYPES:
             proc_type = const.ProcessType[str_proc_type].value
