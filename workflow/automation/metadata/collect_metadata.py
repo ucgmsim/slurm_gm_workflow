@@ -2,16 +2,16 @@
 """
 This script is used after the workflow has been run to collect metadata and compile it all to a csv
 """
-import os
 import argparse
 
-import sqlite3 as sql
 import numpy as np
 import pandas as pd
 
-from qcore import utils
+from qcore import utils, simulation_structure
 from qcore import constants as const
+from workflow.automation.lib.constants import ChCountType
 from workflow.automation.lib.shared import get_stations
+from workflow.automation.lib.MgmtDB import MgmtDB
 
 COLUMNS = [
     "EMOD3D_runtime",
@@ -56,21 +56,60 @@ COLUMNS = [
     "BB_resubmits",
     "IM_calc_runtime",
     "IM_calc_pSA_count",
-    "IM_calc_BB_nt",
     "IM_calc_components",
     "IM_calc_FAS_count",
     "IM_calc_cores",
     "IM_calc_core_hours",
     "IM_calc_resubmits",
-    "AdvIM_runtime",
-    "AdvIM_models",
-    "AdvIM_stations",
-    "AdvIM_cores",
-    "AdvIM_core_hours",
-    "AdvIM_resubmits",
+    "advanced_IM_runtime",
+    "advanced_IM_models",
+    "advanced_IM_stations",
+    "advanced_IM_cores",
+    "advanced_IM_core_hours",
+    "advanced_IM_resubmits",
     "Total_core_hours",
 ]
-METADATA_PROC_TYPES = ["EMOD3D", "VM_GEN", "VM_PERT", "HF", "BB", "IM_calc", "AdvIM"]
+GENERAL_PARAM_LOCATIONS = {
+    "EMOD3D_nx": "nx",
+    "EMOD3D_ny": "ny",
+    "EMOD3D_nz": "nz",
+    "EMOD3D_min_Vs": "min_vs",
+    "EMOD3D_flo": "flo",
+    "VM_GEN_nx": "nx",
+    "VM_GEN_ny": "ny",
+    "VM_GEN_nz": "nz",
+    "VM_GEN_flo": "flo",
+    "VM_PERT_nx": "nx",
+    "VM_PERT_ny": "ny",
+    "VM_PERT_nz": "nz",
+    "VM_PERT_flo": "flo",
+    "HF_dt": ["hf", "dt"],
+    "BB_dt": ["bb", "dt"],
+}
+METADATA_PROC_TYPES = [
+    const.ProcessType.EMOD3D.value,
+    const.ProcessType.VM_GEN.value,
+    const.ProcessType.VM_PERT.value,
+    const.ProcessType.HF.value,
+    const.ProcessType.BB.value,
+    const.ProcessType.IM_calculation.value,
+    const.ProcessType.advanced_IM.value,
+]
+
+
+class DbStat:
+    def __init__(self, low: float, high: float):
+        self.low = low
+        self.high = high
+
+    def add_value(self, new_val: float):
+        if self.low > new_val:
+            self.low = new_val
+        elif self.high < new_val:
+            self.high = new_val
+
+    def __str__(self):
+        return f"{self.low}-{self.high}"
 
 
 def add_db_stat(df: pd.DataFrame, rel_name: str, df_location: str, new_val: int):
@@ -79,62 +118,45 @@ def add_db_stat(df: pd.DataFrame, rel_name: str, df_location: str, new_val: int)
     But first checks if there is a current non_zero value in the df location
     If there is one then it adds the values as a low-high format
     """
-    if df.loc[rel_name, df_location] != 0:
-        prev_runtime = df.loc[rel_name, df_location]
-        if isinstance(prev_runtime, str) and "-" in prev_runtime:
-            low, high = prev_runtime.split("-")
-            low, high = float(low), float(high)
-            if low > new_val:
-                low = new_val
-            elif high < new_val:
-                high = new_val
-            df.loc[rel_name, df_location] = f"{low}-{high}"
-        elif prev_runtime > new_val:
-            low, high = new_val, prev_runtime
-            df.loc[rel_name, df_location] = f"{low}-{high}"
-        elif prev_runtime < new_val:
-            low, high = prev_runtime, new_val
-            df.loc[rel_name, df_location] = f"{low}-{high}"
+    prev_val = df.loc[rel_name, df_location]
+    if prev_val != 0:
+        if isinstance(prev_val, DbStat):
+            prev_val.add_value(new_val)
+        elif prev_val != new_val:
+            if prev_val > new_val:
+                low, high = new_val, prev_val
+            else:
+                low, high = prev_val, new_val
+            df.loc[rel_name, df_location] = DbStat(low, high)
     else:
         df.loc[rel_name, df_location] = new_val
     return df
 
 
 def get_rel_info(
-    df: pd.DataFrame,
     rel_name: str,
     root_dir: str,
-    db: sql.Connection,
-    ch_count_type: str,
+    db: MgmtDB,
+    ch_count_type: ChCountType,
 ):
     """
     Loads the given relisations info and populates the dataframe row
     """
-    fault_name = rel_name.split("_")[0] if "REL" in rel_name else rel_name
+    fault_name = simulation_structure.get_fault_from_realisation(rel_name)
     params = utils.load_sim_params(
-        os.path.join(f"{root_dir}/Runs/{fault_name}/{rel_name}", "sim_params.yaml"),
+        simulation_structure.get_sim_params_yaml_path(
+            f"{root_dir}/Runs/{fault_name}/{rel_name}"
+        ),
         load_vm=True,
     )
 
+    # Create relisation df
+    df = pd.DataFrame(
+        columns=COLUMNS, index=[rel_name], data=np.zeros(shape=(1, len(COLUMNS)))
+    )
+
     # General Parameter Metadata
-    general_param_locations = {
-        "EMOD3D_nx": "nx",
-        "EMOD3D_ny": "ny",
-        "EMOD3D_nz": "nz",
-        "EMOD3D_min_Vs": "min_vs",
-        "EMOD3D_flo": "flo",
-        "VM_GEN_nx": "nx",
-        "VM_GEN_ny": "ny",
-        "VM_GEN_nz": "nz",
-        "VM_GEN_flo": "flo",
-        "VM_PERT_nx": "nx",
-        "VM_PERT_ny": "ny",
-        "VM_PERT_nz": "nz",
-        "VM_PERT_flo": "flo",
-        "HF_dt": ["hf", "dt"],
-        "BB_dt": ["bb", "dt"],
-    }
-    for k, v in general_param_locations.items():
+    for k, v in GENERAL_PARAM_LOCATIONS.items():
         if isinstance(v, list):
             value = params
             for index in v:
@@ -143,61 +165,14 @@ def get_rel_info(
             value = params[v]
         df.loc[rel_name, k] = value
 
-    # Select states
+    states = db.get_core_hour_states(rel_name, ch_count_type)
     resub_counter = dict()
-    if ch_count_type == "Needed":
-        states = []
-        # Selects only tasks after the last failed attempt
-        proc_types = db.execute(
-            "SELECT DISTINCT proc_type from state WHERE run_name=? AND status != ?",
-            (rel_name, const.Status.created.value),
-        ).fetchall()
-        for proc_type in proc_types:
-            proc_type = proc_type[0]
-            failed_task_modified = db.execute(
-                "SELECT last_modified from state WHERE run_name=? AND status == ? AND proc_type=?",
-                (rel_name, const.Status.failed.value, proc_type),
-            ).fetchall()
-            if len(failed_task_modified) > 0:
-                # Only select tasks for this proc_type that were modified after the last failed task
-                failed_task_modified_time = failed_task_modified[-1][0]
-                states.extend(
-                    db.execute(
-                        "SELECT * from state WHERE run_name=? AND status != ? AND proc_type=? AND last_modified>?",
-                        (
-                            rel_name,
-                            const.Status.created.value,
-                            proc_type,
-                            failed_task_modified_time,
-                        ),
-                    ).fetchall()
-                )
-            else:
-                # There were no failed tasks for this proc_type
-                states.extend(
-                    db.execute(
-                        "SELECT * from state WHERE run_name=? AND status != ? AND proc_type=?",
-                        (rel_name, const.Status.created.value, proc_type),
-                    ).fetchall()
-                )
-    else:
-        states = db.execute(
-            "SELECT * from state WHERE run_name=? AND status != ?",
-            (rel_name, const.Status.created.value),
-        ).fetchall()
-
     # DB Metadata
     for state in states:
         # Get proc_type and job_id
         _, _, proc_type, status, job_id, _ = state
-        proc_type_name = db.execute(
-            "SELECT proc_type from proc_type_enum where id=?",
-            (proc_type,),
-        ).fetchone()[0]
-        proc_type_name = (
-            "IM_calc" if proc_type_name == "IM_calculation" else proc_type_name
-        )
-        if proc_type_name in METADATA_PROC_TYPES:
+        proc_type_name = const.ProcessType(proc_type).str_value
+        if proc_type in METADATA_PROC_TYPES:
             (
                 _,
                 _,
@@ -208,10 +183,7 @@ def get_rel_info(
                 cores,
                 memory,
                 WCT,
-            ) = db.execute(
-                "SELECT * from job_duration_log WHERE job_id=?",
-                (job_id,),
-            ).fetchone()
+            ) = db.get_job_duration_info(job_id)
             # Add runtime and cores to df
             runtime = end_time - start_time
             df.loc[rel_name, f"{proc_type_name}_runtime"] += runtime / 60
@@ -231,14 +203,13 @@ def get_rel_info(
     # Extra Metadata
     df.loc[rel_name, "IM_calc_components"] = len(params["ims"]["component"])
     df.loc[rel_name, "EMOD3D_nt"] = params["sim_duration"] / params["dt"]
-    df.loc[rel_name, "HF_nt"] = params["sim_duration"] / params["dt"]
-    df.loc[rel_name, "BB_nt"] = params["sim_duration"] / params["dt"]
-    df.loc[rel_name, "IM_calc_BB_nt"] = params["sim_duration"] / params["dt"]
-    df.loc[rel_name, "AdvIM_models"] = len(params["advanced_IM"]["models"])
+    df.loc[rel_name, "HF_nt"] = params["sim_duration"] / params["hf"]["dt"]
+    df.loc[rel_name, "BB_nt"] = params["sim_duration"] / params["bb"]["dt"]
+    df.loc[rel_name, "advanced_IM_models"] = len(params["advanced_IM"]["models"])
     stations = get_stations(params["stat_file"])
     df.loc[rel_name, "HF_n_stats"] = len(stations)
     df.loc[rel_name, "BB_n_stats"] = len(stations)
-    df.loc[rel_name, "AdvIM_stations"] = len(stations)
+    df.loc[rel_name, "advanced_IM_stations"] = len(stations)
 
     # From IM calc csv
     csv_ffp = f"{root_dir}/Runs/{fault_name}/{rel_name}/IM_calc/{rel_name}.csv"
@@ -255,20 +226,23 @@ def get_rel_info(
     return df
 
 
-def main(root_dir: str, ch_count_type: str, out_ffp: str):
+def main(root_dir: str, ch_count_type: ChCountType, out_ffp: str):
     """
     Gather metadata from each realisation and outputs to a csv
     """
-    db = sql.connect(f"{root_dir}/slurm_mgmt.db")
-    rel_names = db.execute("SELECT DISTINCT run_name from state").fetchall()
+    db = MgmtDB(f"{root_dir}/slurm_mgmt.db")
+    rel_names = db.get_rel_names()
     df = pd.DataFrame(
         columns=COLUMNS, data=np.zeros(shape=(len(rel_names), len(COLUMNS)))
     )
     df.index = [name_tuple[0] for name_tuple in rel_names]
     df.index.name = "Rel_name"
     for ix, name_tuple in enumerate(rel_names):
-        df = get_rel_info(df, name_tuple[0], root_dir, db, ch_count_type)
-    db.close()
+        rel_name = name_tuple[0]
+        df.loc[rel_name] = get_rel_info(rel_name, root_dir, db, ch_count_type).loc[
+            rel_name
+        ]
+    db.close_conn()
     df.to_csv(out_ffp)
 
 
@@ -284,4 +258,4 @@ if __name__ == "__main__":
     )
     parser.add_argument("output_ffp", type=str)
     args = parser.parse_args()
-    main(args.root_dir, args.ch_count_type, args.output_ffp)
+    main(args.root_dir, ChCountType[args.ch_count_type], args.output_ffp)
