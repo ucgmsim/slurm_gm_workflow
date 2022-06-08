@@ -12,8 +12,9 @@ import sqlite3 as sql
 from urllib.request import urlopen
 
 
-# from workflow.automation.estimation.estimate_cybershake import main as est_cybershake
+from workflow.automation.estimation.estimate_cybershake import main as est_cybershake
 from workflow.automation.lib.MgmtDB import MgmtDB
+from workflow.automation.lib.constants import ChCountType
 import qcore.simulation_structure as sim_struct
 import qcore.constants as const
 from qcore.formats import load_fault_selection_file
@@ -24,6 +25,7 @@ PROCESS_TYPES = [
     const.ProcessType.EMOD3D.str_value,
     const.ProcessType.HF.str_value,
     const.ProcessType.BB.str_value,
+    const.ProcessType.IM_calculation.str_value,
 ]
 
 EST_CORE_HOURS_COL = "est_core_hours"
@@ -38,86 +40,41 @@ _fault_template_fmt = "{:<15}{:<22}{:<7}{:<3}{:<17}{:<7}{:<3}{:<17}{:<7}{:<3}{:<
 _summary_template_fmt = "{:<6} : {:>5}/{:>5} ({:4.2f}%) RELs complete: {:10.2f} CH consumed / {:10.2f} CH est ({: >#06.2f}%) {:10.2f} CH remaining est"
 
 
-def get_chours(json_file, proc_types: List[str], debug=False):
-    """Gets the core hours for the specified process types (i.e. EMOD3D, HF, BB, ...)
-    for the specified simulation metadata json log file.
-    """
-    with open(json_file, "r") as f:
-        data = json.load(f)
-    sim_name = data.get(const.MetadataField.sim_name.value)
-    core_hours = []
-    completed_proc = {}
-    for proc_type in proc_types:
-        if proc_type in data.keys():
-            core_hours.append(
-                data[proc_type].get(const.MetadataField.run_time.value, np.nan)
-                * data[proc_type].get(const.MetadataField.n_cores.value, np.nan)
-                / 3600.0
-            )
-
-        else:
-            core_hours.append(np.nan)
-    return sim_name, core_hours
-
-
 def get_chours_used(root_dir: str, fault_names: List[str]):
     """Returns a dataframe containing the core hours used for each of the
     specified faults"""
-    db = sql.connect(f"{root_dir}/slurm_mgmt.db")
-
+    db = MgmtDB(f"{root_dir}/slurm_mgmt.db")
+    runs_dir = Path(sim_struct.get_runs_dir(root_dir))
 
     df = pd.DataFrame(
-        columns=PROCESS_TYPES, index=fault_names, data=np.zeros(shape=(len(fault_names), len(PROCESS_TYPES)))
+        columns=PROCESS_TYPES,
+        index=fault_names,
+        data=np.zeros(shape=(len(fault_names), len(PROCESS_TYPES))),
     )
 
-
-
     for fault_name in fault_names:
-        for str_proc_type in PROCESS_TYPES:
-            proc_type = const.ProcessType[str_proc_type].value
-            failed_task_modified = db.execute(
-                f"SELECT last_modified from state WHERE run_name LIKE '%{fault_name}%' AND status == ? AND proc_type=?",
-                (const.Status.failed.value, proc_type),
-            ).fetchall()
-            if len(failed_task_modified) > 0:
-                # Only select tasks for this proc_type that were modified after the last failed task
-                failed_task_modified_time = failed_task_modified[-1][0]
-                states = db.execute(
-                    "SELECT * from state WHERE run_name=? AND status != ? AND proc_type=? AND last_modified>?",
+        rel_names = sim_struct.get_realisation_names(fault_name, runs_dir)
+        for rel_name in rel_names:
+            rel_states = db.get_core_hour_states(rel_name, ChCountType.Needed)
+            for state in rel_states:
+                _, _, proc_type, _, job_id, _ = state
+                proc_type_name = const.ProcessType(proc_type).str_value
+                if proc_type_name in PROCESS_TYPES:
                     (
-                        rel_name,
-                        const.Status.created.value,
-                        proc_type,
-                        failed_task_modified_time,
-                    ),
-                ).fetchall()
-            else:
-            states = db.execute(
-                f"SELECT * from state WHERE run_name LIKE '%{fault_name}%' AND proc_type=? AND (status == ? OR status == ?)",
-                (proc_type, const.Status.killed_WCT.value, const.Status.completed.value),
-            ).fetchall()
+                        _,
+                        _,
+                        _,
+                        start_time,
+                        end_time,
+                        _,
+                        cores,
+                        _,
+                        _,
+                    ) = db.get_job_duration_info(job_id)
+                    runtime = end_time - start_time
+                    df.loc[fault_name, proc_type_name] += cores * runtime / 3600
 
-    db.close()
-
-    # faults, core_hours, completed_r_counts, missing_data = [], [], [], []
-    # for fault in fault_dirs:
-    #     fault = Path(fault)
-    #     fault_name = fault.stem
-    #     cur_fault_chours = np.asarray(
-    #         [
-    #             get_chours(json_file, PROCESS_TYPES)[1]
-    #             for json_file in fault.glob(f"**/{const.METADATA_LOG_FILENAME}")
-    #         ]
-    #     ).reshape(-1, len(PROCESS_TYPES))
-    #
-    #     faults.append(fault_name)
-    #     if cur_fault_chours.shape[0] > 0:
-    #         core_hours.append(np.nansum(cur_fault_chours, axis=0))
-    #     else:
-    #         core_hours.append([np.nan, np.nan, np.nan])
-    #
-    # df = pd.DataFrame(index=faults, data=core_hours, columns=PROCESS_TYPES)
-
+    db.close_conn()
     return df
 
 
@@ -328,7 +285,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "cybershake_root", type=Path, help="The cybershake root directory"
     )
-    parser.add_argument("list", type=str, help="The list of faults to run")
+    parser.add_argument("--list", type=str, help="Optional list of faults to run")
     parser.add_argument("--alert", help="send the output to slack", action="store_true")
 
     args = parser.parse_args()
