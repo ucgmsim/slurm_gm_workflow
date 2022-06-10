@@ -235,7 +235,7 @@ def main():
         type=str,
         choices=["Actual", "Needed"],
         help="How to count the Core Hours, 'Actual' counts the actual core hours used."
-             " 'Needed' counts the core hours it should have used without fails",
+        " 'Needed' counts the core hours it should have used without fails",
     )
     parser.add_argument("output_ffp", type=str)
     args = parser.parse_args()
