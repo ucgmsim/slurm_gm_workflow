@@ -13,6 +13,7 @@ from typing import List
 
 import qcore.constants as const
 from qcore import shared, srf, utils
+from workflow.automation.lib.shared import get_stations
 from workflow.automation.estimation import estimate_wct
 from workflow.automation.platform_config import platform_config
 
@@ -112,12 +113,12 @@ def run_estimations(
     fault_names,
     realisations,
     r_counts,
-    model_dirs_dict,
     lf_input_data,
     hf_input_data=None,
     bb_input_data=None,
+    im_calc_input_data=None,
 ):
-    """Runs the estimations for LF and BB, HF (if the runs_dir argument was set)
+    """Runs the estimations for LF and BB, HF, IM_calc (if the runs_dir argument was set)
     and returns a dataframe containing the results for
     each fault/realisation combination.
     """
@@ -189,6 +190,190 @@ def run_estimations(
         (const.ProcessType.BB.str_value, const.MetadataField.n_cores.value)
     ] = bb_cores
 
+    if im_calc_input_data is not None:
+        print("Running IM_calc estimation")
+        im_calc_core_hours, im_calc_run_time = estimate_wct.est_IM_chours_single(**im_calc_input_data)
+        im_calc_cores = im_calc_input_data[-1]
+    else:
+        im_calc_core_hours, im_calc_run_time, im_calc_cores = np.nan, np.nan, np.nan
+
+    results_df[
+        (const.ProcessType.IM_calculation.str_value, const.MetadataField.core_hours.value)
+    ] = im_calc_core_hours
+    results_df[
+        (const.ProcessType.IM_calculation.str_value, const.MetadataField.run_time.value)
+    ] = im_calc_run_time
+    results_df[
+        (const.ProcessType.IM_calculation.str_value, const.MetadataField.n_cores.value)
+    ] = im_calc_cores
+
+    return results_df
+
+
+def main(
+    vms_dir: str,
+    sources_dir: str,
+    runs_dir: str,
+    fault_selection: str = None,
+):
+    fault_names, realisations = get_faults(
+        vms_dir, sources_dir, runs_dir, fault_selection
+    )
+
+    print("Collecting vm params")
+    vm_params = (
+        np.concatenate(
+            [
+                get_vm_params(fault_vm_path=os.path.join(vms_dir, fault))
+                for fault in fault_names
+            ]
+        )
+        .reshape(fault_names.shape[0], 5)
+        .astype(np.float32)
+    )
+
+    config_dt, config_hf_dt = None, None
+    print("Loading df and hf_dt from root_params.yaml")
+    root_yaml = f"{runs_dir}/root_params.yaml"
+    with open(root_yaml, "r") as f:
+        root_config = yaml.safe_load(f)
+
+    config_dt = root_config.get("dt")
+
+    # Get the params from the Runs directory
+    # These are on a per fault basis, i.e. assuming that all realisations
+    # of a fault have the same parameters!
+    runs_params = (
+        None
+        if runs_dir is None
+        else get_runs_dir_params(runs_dir, fault_names, realisations)
+    )
+
+    # Set dt
+    if runs_params is not None:
+        dt = runs_params.dt
+        if np.any(dt != config_dt):
+            print(
+                "One of the fault dt's does not match the config dt. "
+                "Something went wrong during install."
+            )
+    else:
+        dt = (
+            vm_params[:, 4]
+            if config_dt is None
+            else np.ones(fault_names.shape[0]) * config_dt
+        )
+
+    nan_mask = np.any(np.isnan(vm_params[:, :4]), axis=1) | np.isnan(dt)
+    if np.any(nan_mask):
+        print(
+            "\nFollowing faults are missing vm values "
+            "and are therefore dropped from the estimation: \n{}\n".format(
+                "\n".join(fault_names[nan_mask])
+            )
+        )
+
+        if fault_names[~nan_mask].shape[0] == 0:
+            print("This leaves no faults. Quitting!")
+            sys.exit()
+
+        fault_names, realisations = fault_names[~nan_mask], realisations[~nan_mask]
+        vm_params, dt = vm_params[~nan_mask], dt[~nan_mask]
+
+    print("Preparing LF input data")
+    fault_sim_durations = vm_params[:, 3]
+    nt = fault_sim_durations / dt
+
+    lf_ncores = (
+        np.ones(fault_names.shape[0], dtype=np.float32)
+        * platform_config[const.PLATFORM_CONFIG.LF_DEFAULT_NCORES.name]
+    )
+
+    # Get fd_count for each fault
+    fd_counts = np.asarray(
+        [
+            len(shared.get_stations(fd_statlist))
+            for fd_statlist in runs_params.fd_statlist
+        ]
+    )
+    r_counts = [len(cur_r_list) for cur_r_list in realisations]
+    lf_input_data = np.concatenate(
+        (
+            vm_params[:, :3],
+            nt.reshape(-1, 1),
+            fd_counts.reshape(-1, 1),
+            lf_ncores.reshape(-1, 1),
+        ),
+        axis=1,
+    )
+
+    print("Preparing HF estimation input data")
+    # Have to repeat/extend the fault sim_durations to per realisation
+    r_hf_ncores = np.repeat(
+        np.ones(realisations.shape[0], dtype=np.float32)
+        * platform_config[const.PLATFORM_CONFIG.HF_DEFAULT_NCORES.name],
+        r_counts,
+    )
+
+    # Get fd_count and nsub_stoch for each realization
+    r_fd_counts = np.repeat(fd_counts, r_counts)
+    r_nsub_stochs = np.repeat(
+        np.asarray(
+            [srf.get_nsub_stoch(slip, get_area=False) for slip in runs_params.slip]
+        ),
+        r_counts,
+    )
+
+    # Calculate nt
+    r_hf_nt = np.repeat(fault_sim_durations / runs_params.hf_dt, r_counts)
+
+    hf_input_data = np.concatenate(
+        (
+            r_fd_counts[:, None],
+            r_nsub_stochs[:, None],
+            r_hf_nt[:, None],
+            r_hf_ncores[:, None],
+        ),
+        axis=1,
+    )
+
+    print("Preparing BB estimation input data")
+    r_bb_ncores = np.repeat(
+        np.ones(realisations.shape[0], dtype=np.float32)
+        * platform_config[const.PLATFORM_CONFIG.BB_DEFAULT_NCORES.name],
+        r_counts,
+    )
+
+    bb_input_data = np.concatenate(
+        (r_fd_counts[:, None], r_hf_nt[:, None], r_bb_ncores[:, None]), axis=1
+    )
+
+    print("Preparing IM_calc input data")
+    if root_config["ims"][const.RootParams.extended_period.name]:
+        period_count = len(
+            np.unique(np.append(root_config["ims"]["pSA_periods"], const.EXT_PERIOD))
+        )
+    else:
+        period_count = len(root_config["ims"]["pSA_periods"])
+    im_calc_input_data = [
+        np.repeat(len(get_stations(root_config["stat_file"])), r_counts),
+        np.repeat(fault_sim_durations / float(root_config["dt"]), r_counts),
+        root_config["ims"][const.SlBodyOptConsts.component.value],
+        period_count,
+        platform_config[const.PLATFORM_CONFIG.IM_CALC_DEFAULT_N_CORES.name],
+    ]
+
+    results_df = run_estimations(
+        fault_names,
+        realisations,
+        r_counts,
+        lf_input_data,
+        hf_input_data,
+        bb_input_data,
+        im_calc_input_data,
+    )
+
+    results_df["fault_name"] = np.repeat(fault_names, r_counts)
     return results_df
 
 
@@ -314,170 +499,6 @@ def get_runs_dir_params(
     )
 
 
-def main(
-    vms_dir: str,
-    sources_dir: str,
-    runs_dir: str,
-    fault_selection: str = None,
-    root_yaml: str = None,
-    models_dir: str = None,
-):
-    fault_names, realisations = get_faults(
-        vms_dir, sources_dir, runs_dir, fault_selection
-    )
-
-    if models_dir is None:
-        models_dir = platform_config[const.PLATFORM_CONFIG.ESTIMATION_MODELS_DIR.name]
-    else:
-        models_dir = models_dir
-    model_dir_dict = {
-        "LF": os.path.join(models_dir, "LF"),
-        "HF": os.path.join(models_dir, "HF"),
-        "BB": os.path.join(models_dir, "BB"),
-    }
-
-    print("Collecting vm params")
-    vm_params = (
-        np.concatenate(
-            [
-                get_vm_params(fault_vm_path=os.path.join(vms_dir, fault))
-                for fault in fault_names
-            ]
-        )
-        .reshape(fault_names.shape[0], 5)
-        .astype(np.float32)
-    )
-
-    config_dt, config_hf_dt = None, None
-    if root_yaml:
-        print("Loading df and hf_dt from root_default.yaml")
-        with open(root_yaml, "r") as f:
-            root_config = yaml.load(f)
-
-        config_dt = root_config.get("dt")
-
-    # Get the params from the Runs directory
-    # These are on a per fault basis, i.e. assuming that all realisations
-    # of a fault have the same parameters!
-    runs_params = (
-        None
-        if runs_dir is None
-        else get_runs_dir_params(runs_dir, fault_names, realisations)
-    )
-
-    # Set dt
-    if runs_params is not None:
-        dt = runs_params.dt
-        if config_dt is not None and np.any(dt != config_dt):
-            print(
-                "One of the fault dt's does not match the config dt. "
-                "Something went wrong during install."
-            )
-    else:
-        dt = (
-            vm_params[:, 4]
-            if config_dt is None
-            else np.ones(fault_names.shape[0]) * config_dt
-        )
-
-    nan_mask = np.any(np.isnan(vm_params[:, :4]), axis=1) | np.isnan(dt)
-    if np.any(nan_mask):
-        print(
-            "\nFollowing faults are missing vm values "
-            "and are therefore dropped from the estimation: \n{}\n".format(
-                "\n".join(fault_names[nan_mask])
-            )
-        )
-
-        if fault_names[~nan_mask].shape[0] == 0:
-            print("This leaves no faults. Quitting!")
-            sys.exit()
-
-        fault_names, realisations = fault_names[~nan_mask], realisations[~nan_mask]
-        vm_params, dt = vm_params[~nan_mask], dt[~nan_mask]
-
-    print("Preparing LF input data")
-    fault_sim_durations = vm_params[:, 3]
-    nt = fault_sim_durations / dt
-
-    lf_ncores = (
-        np.ones(fault_names.shape[0], dtype=np.float32)
-        * platform_config[const.PLATFORM_CONFIG.LF_DEFAULT_NCORES.name]
-    )
-
-    # Get fd_count for each fault
-    fd_counts = np.asarray(
-        [
-            len(shared.get_stations(fd_statlist))
-            for fd_statlist in runs_params.fd_statlist
-        ]
-    )
-    r_counts = [len(cur_r_list) for cur_r_list in realisations]
-    lf_input_data = np.concatenate(
-        (
-            vm_params[:, :3],
-            nt.reshape(-1, 1),
-            fd_counts.reshape(-1, 1),
-            lf_ncores.reshape(-1, 1),
-        ),
-        axis=1,
-    )
-
-    print("Preparing HF estimation input data")
-    # Have to repeat/extend the fault sim_durations to per realisation
-    r_hf_ncores = np.repeat(
-        np.ones(realisations.shape[0], dtype=np.float32)
-        * platform_config[const.PLATFORM_CONFIG.HF_DEFAULT_NCORES.name],
-        r_counts,
-    )
-
-    # Get fd_count and nsub_stoch for each realization
-    r_fd_counts = np.repeat(fd_counts, r_counts)
-    r_nsub_stochs = np.repeat(
-        np.asarray(
-            [srf.get_nsub_stoch(slip, get_area=False) for slip in runs_params.slip]
-        ),
-        r_counts,
-    )
-
-    # Calculate nt
-    r_hf_nt = np.repeat(fault_sim_durations / runs_params.hf_dt, r_counts)
-
-    hf_input_data = np.concatenate(
-        (
-            r_fd_counts[:, None],
-            r_nsub_stochs[:, None],
-            r_hf_nt[:, None],
-            r_hf_ncores[:, None],
-        ),
-        axis=1,
-    )
-
-    print("Preparing BB estimation input data")
-    r_bb_ncores = np.repeat(
-        np.ones(realisations.shape[0], dtype=np.float32)
-        * platform_config[const.PLATFORM_CONFIG.BB_DEFAULT_NCORES.name],
-        r_counts,
-    )
-
-    bb_input_data = np.concatenate(
-        (r_fd_counts[:, None], r_hf_nt[:, None], r_bb_ncores[:, None]), axis=1
-    )
-
-    results_df = run_estimations(
-        fault_names,
-        realisations,
-        r_counts,
-        model_dir_dict,
-        lf_input_data,
-        hf_input_data,
-        bb_input_data,
-    )
-
-    results_df["fault_name"] = np.repeat(fault_names, r_counts)
-    return results_df
-
-
 if __name__ == "__main__":
     parser = ArgumentParser()
 
@@ -501,13 +522,6 @@ if __name__ == "__main__":
         "Ignored if --runs_dir is specified.",
     )
     parser.add_argument(
-        "--root_yaml",
-        type=str,
-        default=None,
-        help="root_default.yaml file to retrieve dt."
-        "Ignored if --runs_dir is specified.",
-    )
-    parser.add_argument(
         "--output",
         type=str,
         default=None,
@@ -519,13 +533,6 @@ if __name__ == "__main__":
         action="store_true",
         help="Print estimation on a per fault basis instead of just "
         "the final estimation.",
-    )
-    parser.add_argument(
-        "--models_dir",
-        type=str,
-        default=None,
-        help="The models directory (i.e. ..../estimation/models/. If not specified"
-        "then the model dir from the workflow config is used.",
     )
 
     args = parser.parse_args()
@@ -543,11 +550,7 @@ if __name__ == "__main__":
         print("{} does not exists. Quitting!".format(args.runs_dir))
         sys.exit()
 
-    # Check that the specified files exist
-    if args.root_yaml is not None and not os.path.isfile(args.root_yaml):
-        print("File {} does not exist".format(args.root_yaml))
-        sys.exit()
-
+    # Check that the specified file exist
     if args.fault_selection is not None and not os.path.isfile(args.fault_selection):
         print("File {} does not exist".format(args.fault_selection))
         sys.exit()
@@ -557,8 +560,6 @@ if __name__ == "__main__":
         args.sources_dir,
         args.runs_dir,
         args.fault_selection,
-        args.root_yaml,
-        args.models_dir,
     )
 
     # Save the results
