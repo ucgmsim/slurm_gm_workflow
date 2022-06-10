@@ -229,13 +229,13 @@ class MgmtDB:
                 states = []
                 # Selects only tasks after the last failed attempt
                 proc_types = cur.execute(
-                    "SELECT DISTINCT proc_type from state WHERE run_name=? AND status != ?",
+                    "SELECT DISTINCT proc_type from state WHERE run_name=? AND status!=?",
                     (rel_name, const.Status.created.value),
                 ).fetchall()
                 for proc_type in proc_types:
                     proc_type = proc_type[0]
                     failed_task_modified = cur.execute(
-                        "SELECT last_modified from state WHERE run_name=? AND status == ? AND proc_type=?",
+                        "SELECT last_modified from state WHERE run_name=? AND status=? AND proc_type=?",
                         (rel_name, const.Status.failed.value, proc_type),
                     ).fetchall()
                     if len(failed_task_modified) > 0:
@@ -244,7 +244,7 @@ class MgmtDB:
                         states.extend(
                             cur.execute(
                                 "SELECT * from state WHERE run_name=? AND "
-                                "(status == ? OR status == ?) AND proc_type=? AND last_modified>?",
+                                "(status=? OR status=?) AND proc_type=? AND last_modified>?",
                                 (
                                     rel_name,
                                     const.Status.completed.value,
@@ -258,7 +258,7 @@ class MgmtDB:
                         # There were no failed tasks for this proc_type
                         states.extend(
                             cur.execute(
-                                "SELECT * from state WHERE run_name=? AND (status == ? OR status == ?) AND proc_type=?",
+                                "SELECT * from state WHERE run_name=? AND (status=? OR status=?) AND proc_type=?",
                                 (
                                     rel_name,
                                     const.Status.completed.value,
@@ -269,7 +269,7 @@ class MgmtDB:
                         )
             else:
                 states = cur.execute(
-                    "SELECT * from state WHERE run_name=? AND (status == ? OR status == ?)",
+                    "SELECT * from state WHERE run_name=? AND (status=? OR status=?)",
                     (
                         rel_name,
                         const.Status.completed.value,
