@@ -73,8 +73,6 @@ def get_chours_used(root_dir: str, fault_names: List[str]):
                     ) = db.get_job_duration_info(job_id)
                     runtime = end_time - start_time
                     df.loc[fault_name, proc_type_name] += cores * runtime / 3600
-
-    db.close_conn()
     return df
 
 

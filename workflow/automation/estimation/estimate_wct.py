@@ -421,7 +421,7 @@ def est_VM_PERT_chours(data: np.ndarray):
     vm_size = data[:, 0]
 
     core_hours = (
-        ((vm_size**2) * coefficients["a"])
+        ((vm_size ** 2) * coefficients["a"])
         + (vm_size * coefficients["b"])
         + coefficients["c"]
     )
@@ -430,7 +430,11 @@ def est_VM_PERT_chours(data: np.ndarray):
 
 
 def est_IM_chours_single(
-    fd_count: int, nt: int, comp: Union[List[str], int], pSA_count: int, n_cores: int
+    fd_count: int,
+    nt: Union[int, np.ndarray],
+    comp: Union[List[str], int],
+    pSA_count: int,
+    n_cores: int,
 ):
     """Convenience function to make a single estimation
 
