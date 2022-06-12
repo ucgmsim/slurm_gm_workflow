@@ -53,7 +53,8 @@ def get_chours_used(root_dir: str, fault_names: List[str]):
     )
 
     for fault_name in fault_names:
-        rel_names = sim_struct.get_realisation_names(fault_name, runs_dir)
+        rel_names = db.get_rel_names()
+        rel_names = [rel_name[0] for rel_name in rel_names if fault_name in rel_name[0]]
         for rel_name in rel_names:
             rel_states = db.get_core_hour_states(rel_name, ChCountType.Needed)
             for state in rel_states:
@@ -134,6 +135,7 @@ def get_new_progress_df(root_dir, runs_dir, faults_dict, mgmtdb: MgmtDB):
     # Retrieve the number of completed RELs from DB
     for fault_name in fault_names:
         for proc_type in PROCESS_TYPES:
+            proc_type = "IM_calculation" if proc_type == "IM_calc" else proc_type
             r_completed = mgmtdb.num_task_complete(
                 (const.ProcessType[proc_type].value, fault_name + "_REL%"), like=True
             )
