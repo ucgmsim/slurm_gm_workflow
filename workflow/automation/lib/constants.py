@@ -1,6 +1,6 @@
-from enum import Enum
+from enum import Enum, auto
 
 
 class ChCountType(Enum):
-    Needed = "Needed"
-    Actual = "Actual"
+    Needed = auto()
+    Actual = auto()

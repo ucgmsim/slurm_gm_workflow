@@ -9,9 +9,7 @@ import pandas as pd
 
 from qcore import utils, simulation_structure
 from qcore import constants as const
-from workflow.automation.lib.constants import ChCountType
-from workflow.automation.lib.shared import get_stations
-from workflow.automation.lib.MgmtDB import MgmtDB
+from workflow.automation.lib import MgmtDB, shared, constants
 
 COLUMNS = [
     "EMOD3D_runtime",
@@ -137,7 +135,7 @@ def get_rel_info(
     rel_name: str,
     root_dir: str,
     db: MgmtDB,
-    ch_count_type: ChCountType,
+    ch_count_type: constants.ChCountType,
 ):
     """
     Loads the given relisations info and populates the dataframe row
@@ -206,7 +204,7 @@ def get_rel_info(
     df.loc[rel_name, "HF_nt"] = params["sim_duration"] / params["hf"]["dt"]
     df.loc[rel_name, "BB_nt"] = params["sim_duration"] / params["bb"]["dt"]
     df.loc[rel_name, "advanced_IM_models"] = len(params["advanced_IM"]["models"])
-    stations = get_stations(params["stat_file"])
+    stations = shared.get_stations(params["stat_file"])
     df.loc[rel_name, "HF_n_stats"] = len(stations)
     df.loc[rel_name, "BB_n_stats"] = len(stations)
     df.loc[rel_name, "advanced_IM_stations"] = len(stations)
@@ -226,11 +224,34 @@ def get_rel_info(
     return df
 
 
-def main(root_dir: str, ch_count_type: ChCountType, out_ffp: str):
+def parse_args():
+    """
+    Parses the arguments
+    """
+    parser = argparse.ArgumentParser()
+    parser.add_argument("root_dir", type=str, help="The root directory")
+    parser.add_argument(
+        "ch_count_type",
+        type=str,
+        choices=["Actual", "Needed"],
+        help="How to count the Core Hours, 'Actual' counts the actual core hours used."
+        " 'Needed' counts the core hours it should have used without fails",
+    )
+    parser.add_argument("output_ffp", type=str)
+    return parser.parse_args()
+
+
+def main():
     """
     Gather metadata from each realisation and outputs to a csv
     """
-    db = MgmtDB(f"{root_dir}/slurm_mgmt.db")
+    # Get arguments
+    args = parse_args()
+    root_dir, output_ffp = args.root_dir, args.output_ffp
+    ch_count_type = constants.ChCountType[args.ch_count_type]
+
+    # Generate dataframe
+    db = MgmtDB.MgmtDB(f"{root_dir}/slurm_mgmt.db")
     rel_names = db.get_rel_names()
     df = pd.DataFrame(
         columns=COLUMNS, data=np.zeros(shape=(len(rel_names), len(COLUMNS)))
@@ -242,20 +263,8 @@ def main(root_dir: str, ch_count_type: ChCountType, out_ffp: str):
         df.loc[rel_name] = get_rel_info(rel_name, root_dir, db, ch_count_type).loc[
             rel_name
         ]
-    db.close_conn()
-    df.to_csv(out_ffp)
+    df.to_csv(output_ffp)
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("root_dir", type=str, help="The root directory")
-    parser.add_argument(
-        "ch_count_type",
-        type=str,
-        choices=["Actual", "Needed"],
-        help="How to count the Core Hours, 'Actual' counts the actual core hours used."
-        " 'Needed' counts the core hours it should have used without fails",
-    )
-    parser.add_argument("output_ffp", type=str)
-    args = parser.parse_args()
-    main(args.root_dir, ChCountType[args.ch_count_type], args.output_ffp)
+    main()
