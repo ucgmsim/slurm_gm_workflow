@@ -245,8 +245,12 @@ def main():
     """
     Gather metadata from each realisation and outputs to a csv
     """
-    root_dir, ch_count_type, output_ffp = parse_args()
-    ch_count_type = constants.ChCountType[ch_count_type]
+    # Get arguments
+    args = parse_args()
+    root_dir, output_ffp = args.root_dir, args.output_ffp
+    ch_count_type = constants.ChCountType[args.ch_count_type]
+
+    # Generate dataframe
     db = MgmtDB.MgmtDB(f"{root_dir}/slurm_mgmt.db")
     rel_names = db.get_rel_names()
     df = pd.DataFrame(
