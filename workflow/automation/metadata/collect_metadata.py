@@ -224,9 +224,9 @@ def get_rel_info(
     return df
 
 
-def main():
+def parse_args():
     """
-    Gather metadata from each realisation and outputs to a csv
+    Parses the arguments
     """
     parser = argparse.ArgumentParser()
     parser.add_argument("root_dir", type=str, help="The root directory")
@@ -238,9 +238,16 @@ def main():
         " 'Needed' counts the core hours it should have used without fails",
     )
     parser.add_argument("output_ffp", type=str)
-    args = parser.parse_args()
-    ch_count_type = constants.ChCountType[args.ch_count_type]
-    db = MgmtDB.MgmtDB(f"{args.root_dir}/slurm_mgmt.db")
+    return parser.parse_args()
+
+
+def main():
+    """
+    Gather metadata from each realisation and outputs to a csv
+    """
+    root_dir, ch_count_type, output_ffp = parse_args()
+    ch_count_type = constants.ChCountType[ch_count_type]
+    db = MgmtDB.MgmtDB(f"{root_dir}/slurm_mgmt.db")
     rel_names = db.get_rel_names()
     df = pd.DataFrame(
         columns=COLUMNS, data=np.zeros(shape=(len(rel_names), len(COLUMNS)))
@@ -249,10 +256,10 @@ def main():
     df.index.name = "Rel_name"
     for ix, name_tuple in enumerate(rel_names):
         rel_name = name_tuple[0]
-        df.loc[rel_name] = get_rel_info(rel_name, args.root_dir, db, ch_count_type).loc[
+        df.loc[rel_name] = get_rel_info(rel_name, root_dir, db, ch_count_type).loc[
             rel_name
         ]
-    df.to_csv(args.output_ffp)
+    df.to_csv(output_ffp)
 
 
 if __name__ == "__main__":
