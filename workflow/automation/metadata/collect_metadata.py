@@ -233,7 +233,7 @@ def parse_args():
     parser.add_argument(
         "ch_count_type",
         type=str,
-        choices=["Actual", "Needed"],
+        choices=constants.ChCountType.get_names(),
         help="How to count the Core Hours, 'Actual' counts the actual core hours used."
         " 'Needed' counts the core hours it should have used without fails",
     )
