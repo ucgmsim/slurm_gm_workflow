@@ -21,7 +21,7 @@ from qcore.formats import load_fault_selection_file
 from qcore.utils import load_yaml
 
 # The process types that are used for progress tracking
-PROCESS_TYPES = [
+DEFAULT_PROCESS_TYPES = [
     const.ProcessType.EMOD3D.str_value,
     const.ProcessType.HF.str_value,
     const.ProcessType.BB.str_value,
@@ -40,16 +40,16 @@ _fault_template_fmt = "{:<15}{:<22}{:<7}{:<3}{:<17}{:<7}{:<3}{:<17}{:<7}{:<3}{:<
 _summary_template_fmt = "{:<6} : {:>5}/{:>5} ({:4.2f}%) RELs complete: {:10.2f} CH consumed / {:10.2f} CH est ({: >#06.2f}%) {:10.2f} CH remaining est"
 
 
-def get_chours_used(root_dir: str, fault_names: List[str]):
+def get_chours_used(root_dir: str, fault_names: List[str], proc_types: List[str]):
     """Returns a dataframe containing the core hours used for each of the
     specified faults"""
     db = MgmtDB(f"{root_dir}/slurm_mgmt.db")
     runs_dir = Path(sim_struct.get_runs_dir(root_dir))
 
     df = pd.DataFrame(
-        columns=PROCESS_TYPES,
+        columns=proc_types,
         index=fault_names,
-        data=np.zeros(shape=(len(fault_names), len(PROCESS_TYPES))),
+        data=np.zeros(shape=(len(fault_names), len(proc_types))),
     )
 
     for fault_name in fault_names:
@@ -60,7 +60,7 @@ def get_chours_used(root_dir: str, fault_names: List[str]):
             for state in rel_states:
                 _, _, proc_type, _, job_id, _ = state
                 proc_type_name = const.ProcessType(proc_type).str_value
-                if proc_type_name in PROCESS_TYPES:
+                if proc_type_name in proc_types:
                     (
                         _,
                         _,
@@ -83,7 +83,9 @@ def get_faults_dict(cybershake_list: str):
     return faults_dict
 
 
-def get_new_progress_df(root_dir, runs_dir, faults_dict, mgmtdb: MgmtDB):
+def get_new_progress_df(
+    root_dir, runs_dir, faults_dict, mgmtdb: MgmtDB, proc_types: List[str]
+):
     """Gets a new progress dataframe, runs the full estimation + collects
     all actual core hours and number of completed realisations
     """
@@ -109,7 +111,7 @@ def get_new_progress_df(root_dir, runs_dir, faults_dict, mgmtdb: MgmtDB):
 
     # Create progress dataframe
     column_t = []
-    for proc_type in PROCESS_TYPES:
+    for proc_type in proc_types:
         column_t.append((proc_type, EST_CORE_HOURS_COL))
         column_t.append((proc_type, ACT_CORE_HOURS_COL))
         column_t.append((proc_type, NUM_COMPLETED_COL))
@@ -123,23 +125,28 @@ def get_new_progress_df(root_dir, runs_dir, faults_dict, mgmtdb: MgmtDB):
     )
 
     # Get actual core hours for all faults
-    chours_df = get_chours_used(root_dir, fault_names)
+    chours_df = get_chours_used(root_dir, fault_names, proc_types)
 
     # Populate progress dataframe with estimation data and actual data
-    for proc_type in PROCESS_TYPES:
-        progress_df[proc_type, EST_CORE_HOURS_COL] = grouped_df[
-            proc_type, const.MetadataField.core_hours.value
-        ]
+    for proc_type in proc_types:
+        if proc_type in DEFAULT_PROCESS_TYPES:
+            progress_df[proc_type, EST_CORE_HOURS_COL] = grouped_df[
+                proc_type, const.MetadataField.core_hours.value
+            ]
         progress_df[proc_type, ACT_CORE_HOURS_COL] = chours_df[proc_type]
 
     # Retrieve the number of completed RELs from DB
     for fault_name in fault_names:
-        for proc_type in PROCESS_TYPES:
-            proc_type = "IM_calculation" if proc_type == "IM_calc" else proc_type
+        for proc_type_name in proc_types:
+            proc_type = (
+                "IM_calculation" if proc_type_name == "IM_calc" else proc_type_name
+            )
             r_completed = mgmtdb.num_task_complete(
                 (const.ProcessType[proc_type].value, fault_name + "_REL%"), like=True
             )
-            progress_df.loc[fault_name, (proc_type, NUM_COMPLETED_COL)] = r_completed
+            progress_df.loc[
+                fault_name, (proc_type_name, NUM_COMPLETED_COL)
+            ] = r_completed
 
     # Compute total estimated time and actual time across all faults
     idx = pd.IndexSlice
@@ -161,7 +168,7 @@ def load_progress_df(file: str):
     return pd.read_csv(file, index_col=[0], header=[0, 1])
 
 
-def print_progress(progress_df: pd.DataFrame):
+def print_progress(progress_df: pd.DataFrame, proc_types: List[str]):
     """Prints the progress dataframe to screen (in a nice format)."""
 
     def get_usage_str(fault_name: str, proc_type: str):
@@ -196,7 +203,7 @@ def print_progress(progress_df: pd.DataFrame):
         r_completed_str = {}
         usage_str = {}
         is_complete = {}
-        for proc_type in PROCESS_TYPES:
+        for proc_type in proc_types:
             usage_str[proc_type] = get_usage_str(fault_name, proc_type)
             r_completed = int(
                 progress_df.loc[fault_name, (proc_type, NUM_COMPLETED_COL)]
@@ -221,20 +228,27 @@ def print_progress(progress_df: pd.DataFrame):
         )
 
     est_completed_df = pd.DataFrame.from_dict(
-        est_completed_dict, orient="index", columns=PROCESS_TYPES
+        est_completed_dict, orient="index", columns=proc_types
     )
 
     overall_df = progress_df.sum()
 
     total_r_count = overall_df["total", R_COUNT_COL]
     total_complete_rels = {}
-    for proc_type in PROCESS_TYPES:
+    for proc_type in proc_types:
         total_complete_rels[proc_type] = int(
             progress_df[proc_type, NUM_COMPLETED_COL].sum()
         )
 
     summary = "\nOverall progress\n"
-    for proc_type in PROCESS_TYPES:
+    for proc_type in proc_types:
+        percentage = (
+            overall_df[proc_type, ACT_CORE_HOURS_COL]
+            / overall_df[proc_type, EST_CORE_HOURS_COL]
+            * 100
+            if proc_type in DEFAULT_PROCESS_TYPES
+            else 100
+        )
         line = _summary_template_fmt.format(
             proc_type,
             total_complete_rels[proc_type],
@@ -242,9 +256,7 @@ def print_progress(progress_df: pd.DataFrame):
             total_complete_rels[proc_type] / total_r_count * 100,
             overall_df[proc_type, ACT_CORE_HOURS_COL],
             overall_df[proc_type, EST_CORE_HOURS_COL],
-            overall_df[proc_type, ACT_CORE_HOURS_COL]
-            / overall_df[proc_type, EST_CORE_HOURS_COL]
-            * 100,
+            percentage,
             overall_df[proc_type, EST_CORE_HOURS_COL]
             - est_completed_df[proc_type].sum(),
         )
@@ -260,7 +272,7 @@ def send2slack(msg, users, url):
     urlopen(url, data=data.encode("utf-8"))
 
 
-def main(root_dir: Path, cybershake_list, slack_config=None):
+def main(root_dir: Path, cybershake_list, proc_types, slack_config=None):
     runs_dir = Path(sim_struct.get_runs_dir(root_dir))
     assert (
         root_dir.is_dir() and runs_dir.is_dir()
@@ -271,9 +283,11 @@ def main(root_dir: Path, cybershake_list, slack_config=None):
     mgmtdb = MgmtDB(sim_struct.get_mgmt_db(root_dir))
 
     # Create new progress df
-    progress_df = get_new_progress_df(root_dir, runs_dir, faults_dict, mgmtdb)
+    progress_df = get_new_progress_df(
+        root_dir, runs_dir, faults_dict, mgmtdb, proc_types
+    )
 
-    summary = print_progress(progress_df)
+    summary = print_progress(progress_df, proc_types)
 
     if slack_config is not None:
         send2slack(summary, slack_config["users"], slack_config["url"])
@@ -286,6 +300,13 @@ if __name__ == "__main__":
         "cybershake_root", type=Path, help="The cybershake root directory"
     )
     parser.add_argument("--list", type=str, help="Optional list of faults to run")
+    parser.add_argument(
+        "--proc_types",
+        type=str,
+        nargs="+",
+        default=DEFAULT_PROCESS_TYPES,
+        help="Optional list of process types to get progress for",
+    )
     parser.add_argument("--alert", help="send the output to slack", action="store_true")
 
     args = parser.parse_args()
@@ -298,4 +319,4 @@ if __name__ == "__main__":
         ), f"Error: --alert option requires {slack_config_path} to be present."
         slack_config = load_yaml(slack_config_path)
 
-    main(args.cybershake_root, args.list, slack_config)
+    main(args.cybershake_root, args.list, args.proc_types, slack_config)
