@@ -8,9 +8,7 @@ from typing import List
 
 import numpy as np
 import pandas as pd
-import sqlite3 as sql
 from urllib.request import urlopen
-
 
 from workflow.automation.estimation.estimate_cybershake import main as est_cybershake
 from workflow.automation.lib.MgmtDB import MgmtDB
@@ -20,7 +18,7 @@ import qcore.constants as const
 from qcore.formats import load_fault_selection_file
 from qcore.utils import load_yaml
 
-# The process types that are used for progress tracking
+# The default process types that are used for progress tracking
 DEFAULT_PROCESS_TYPES = [
     const.ProcessType.EMOD3D.str_value,
     const.ProcessType.HF.str_value,
@@ -37,15 +35,18 @@ R_COUNT_COL = "r_count"
 SLACK_ALERT_CONFIG = "slack_alert.yaml"
 
 _fault_template_fmt = "{:<15}{:<22}{:<7}{:<3}{:<17}{:<7}{:<3}{:<17}{:<7}{:<3}{:<22}"
-_summary_template_fmt = "{:<6} : {:>5}/{:>5} ({:4.2f}%) RELs complete: {:10.2f} CH consumed / {:10.2f} CH est ({: >#06.2f}%) {:10.2f} CH remaining est"
+_summary_con_template_fmt = (
+    "{:<6} : {:>5}/{:>5} ({:4.2f}%) RELs complete: {:10.2f} CH consumed"
+)
+_summary_est_template_fmt = (
+    " / {:10.2f} CH est ({: >#06.2f}%) {:10.2f} CH remaining est"
+)
 
 
 def get_chours_used(root_dir: str, fault_names: List[str], proc_types: List[str]):
     """Returns a dataframe containing the core hours used for each of the
     specified faults"""
     db = MgmtDB(f"{root_dir}/slurm_mgmt.db")
-    runs_dir = Path(sim_struct.get_runs_dir(root_dir))
-
     df = pd.DataFrame(
         columns=proc_types,
         index=fault_names,
@@ -54,8 +55,8 @@ def get_chours_used(root_dir: str, fault_names: List[str], proc_types: List[str]
 
     for fault_name in fault_names:
         rel_names = db.get_rel_names()
-        rel_names = [rel_name[0] for rel_name in rel_names if fault_name in rel_name[0]]
-        for rel_name in rel_names:
+        flt_rel_names = [rel_name[0] for rel_name in rel_names if fault_name in rel_name[0]]
+        for rel_name in flt_rel_names:
             rel_states = db.get_core_hour_states(rel_name, ChCountType.Needed)
             for state in rel_states:
                 _, _, proc_type, _, job_id, _ = state
@@ -141,8 +142,9 @@ def get_new_progress_df(
             proc_type = (
                 "IM_calculation" if proc_type_name == "IM_calc" else proc_type_name
             )
+            task = fault_name + "_REL%" if faults_dict[fault_name] > 1 else fault_name
             r_completed = mgmtdb.num_task_complete(
-                (const.ProcessType[proc_type].value, fault_name + "_REL%"), like=True
+                (const.ProcessType[proc_type].value, task), like=True
             )
             progress_df.loc[
                 fault_name, (proc_type_name, NUM_COMPLETED_COL)
@@ -242,25 +244,23 @@ def print_progress(progress_df: pd.DataFrame, proc_types: List[str]):
 
     summary = "\nOverall progress\n"
     for proc_type in proc_types:
-        percentage = (
-            overall_df[proc_type, ACT_CORE_HOURS_COL]
-            / overall_df[proc_type, EST_CORE_HOURS_COL]
-            * 100
-            if proc_type in DEFAULT_PROCESS_TYPES
-            else 100
-        )
-        line = _summary_template_fmt.format(
+        summary += _summary_con_template_fmt.format(
             proc_type,
             total_complete_rels[proc_type],
             total_r_count,
             total_complete_rels[proc_type] / total_r_count * 100,
             overall_df[proc_type, ACT_CORE_HOURS_COL],
-            overall_df[proc_type, EST_CORE_HOURS_COL],
-            percentage,
-            overall_df[proc_type, EST_CORE_HOURS_COL]
-            - est_completed_df[proc_type].sum(),
         )
-        summary += line + "\n"
+        if proc_type in DEFAULT_PROCESS_TYPES:
+            summary += _summary_est_template_fmt.format(
+                overall_df[proc_type, EST_CORE_HOURS_COL],
+                overall_df[proc_type, ACT_CORE_HOURS_COL]
+                / overall_df[proc_type, EST_CORE_HOURS_COL]
+                * 100,
+                overall_df[proc_type, EST_CORE_HOURS_COL]
+                - est_completed_df[proc_type].sum(),
+            )
+        summary += "\n"
 
     print(summary)
     return summary
