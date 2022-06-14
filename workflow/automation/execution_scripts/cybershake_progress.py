@@ -86,18 +86,12 @@ def get_faults_dict(cybershake_list: str):
     return faults_dict
 
 
-def get_new_progress_df(
-    root_dir, runs_dir, faults_dict, mgmtdb: MgmtDB, proc_types: List[str]
-):
+def get_new_progress_df(root_dir, faults_dict, mgmtdb: MgmtDB, proc_types: List[str]):
     """Gets a new progress dataframe, runs the full estimation + collects
     all actual core hours and number of completed realisations
     """
     # Run the estimation
-    df = est_cybershake(
-        sim_struct.get_VM_dir(root_dir),
-        sim_struct.get_sources_dir(root_dir),
-        runs_dir,
-    )
+    df = est_cybershake(root_dir)
     grouped_df = df.groupby("fault_name").sum()
     grouped_df.sort_index(axis=0, level=0, inplace=True)
 
@@ -140,18 +134,13 @@ def get_new_progress_df(
 
     # Retrieve the number of completed RELs from DB
     for fault_name in fault_names:
-        for proc_type_name in proc_types:
-            proc_type = (
-                "IM_calculation" if proc_type_name == "IM_calc" else proc_type_name
-            )
+        for proc_type in proc_types:
             task = fault_name + "_REL%" if faults_dict[fault_name] > 1 else fault_name
             like = faults_dict[fault_name] > 1
             r_completed = mgmtdb.num_task_complete(
-                (const.ProcessType[proc_type].value, task), like=like
+                (const.ProcessType.from_str(proc_type).value, task), like=like
             )
-            progress_df.loc[
-                fault_name, (proc_type_name, NUM_COMPLETED_COL)
-            ] = r_completed
+            progress_df.loc[fault_name, (proc_type, NUM_COMPLETED_COL)] = r_completed
 
     # Compute total estimated time and actual time across all faults
     idx = pd.IndexSlice
@@ -276,9 +265,8 @@ def send2slack(msg, users, url):
 
 
 def main(root_dir: Path, cybershake_list, proc_types, slack_config=None):
-    runs_dir = Path(sim_struct.get_runs_dir(root_dir))
     assert (
-        root_dir.is_dir() and runs_dir.is_dir()
+        root_dir.is_dir()
     ), f"Error: {root_dir} is not a valid cybershake root directory"
 
     faults_dict = get_faults_dict(cybershake_list)
@@ -286,9 +274,7 @@ def main(root_dir: Path, cybershake_list, proc_types, slack_config=None):
     mgmtdb = MgmtDB(sim_struct.get_mgmt_db(root_dir))
 
     # Create new progress df
-    progress_df = get_new_progress_df(
-        root_dir, runs_dir, faults_dict, mgmtdb, proc_types
-    )
+    progress_df = get_new_progress_df(root_dir, faults_dict, mgmtdb, proc_types)
 
     summary = print_progress(progress_df, proc_types)
 

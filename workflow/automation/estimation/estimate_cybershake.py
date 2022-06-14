@@ -216,11 +216,12 @@ def run_estimations(
 
 
 def main(
-    vms_dir: str,
-    sources_dir: str,
-    runs_dir: str,
+    root_dir: str,
     fault_selection: str = None,
 ):
+    vms_dir = f"{root_dir}/Data/VMs"
+    sources_dir = f"{root_dir}/Data/Sources"
+    runs_dir = f"{root_dir}/Runs"
     fault_names, realisations = get_faults(
         vms_dir, sources_dir, runs_dir, fault_selection
     )
@@ -239,9 +240,7 @@ def main(
 
     config_dt, config_hf_dt = None, None
     print("Loading df and hf_dt from root_params.yaml")
-    root_yaml = f"{runs_dir}/root_params.yaml"
-    with open(root_yaml, "r") as f:
-        root_config = yaml.safe_load(f)
+    root_config = utils.load_yaml(f"{runs_dir}/root_params.yaml")
 
     config_dt = root_config.get("dt")
 
@@ -387,12 +386,14 @@ def display_results(df: pd.DataFrame, verbose: bool = False):
     If verbose is specified the results are shown on a per fault basis.
     """
     print()
+    process_types = "{:>14}{:>30}{:>30}{:>35}".format("LF", "HF", "BB", "IM_calc")
     if verbose:
         header = "{:<12}{:<10}{:<8}".format("core hours", "run time", "cores")
-        print("{:>14}{:>30}{:>30}".format("LF", "HF", "BB"))
-        print("{:>12}{}{}{}".format("", header, header, header))
+        print(process_types)
+        print("{:>12}{}{}{}{}".format("", header, header, header, header))
+        process_type_result = "{:<12.3f}{:<10.3f}{:<8.0f}"
         for fault_name, row in df.groupby("fault_name").sum().iterrows():
-            lf_str = "{:<12.3f}{:<10.3f}{:<8.0f}".format(
+            lf_str = process_type_result.format(
                 row.loc[
                     (
                         const.ProcessType.EMOD3D.str_value,
@@ -412,7 +413,7 @@ def display_results(df: pd.DataFrame, verbose: bool = False):
                     )
                 ],
             )
-            hf_str = "{:<12.3f}{:<10.3f}{:<8.0f}".format(
+            hf_str = process_type_result.format(
                 row.loc[
                     (
                         const.ProcessType.HF.str_value,
@@ -426,7 +427,7 @@ def display_results(df: pd.DataFrame, verbose: bool = False):
                     (const.ProcessType.HF.str_value, const.MetadataField.n_cores.value)
                 ],
             )
-            bb_str = "{:<12.3f}{:<10.3f}{:<8.0f}".format(
+            bb_str = process_type_result.format(
                 row.loc[
                     (
                         const.ProcessType.BB.str_value,
@@ -440,15 +441,38 @@ def display_results(df: pd.DataFrame, verbose: bool = False):
                     (const.ProcessType.BB.str_value, const.MetadataField.n_cores.value)
                 ],
             )
-            print("{:<12}{}{}{}".format(fault_name, lf_str, hf_str, bb_str))
+            im_calc_str = process_type_result.format(
+                row.loc[
+                    (
+                        const.ProcessType.IM_calculation.str_value,
+                        const.MetadataField.core_hours.value,
+                    )
+                ],
+                row.loc[
+                    (
+                        const.ProcessType.IM_calculation.str_value,
+                        const.MetadataField.run_time.value,
+                    )
+                ],
+                row.loc[
+                    (
+                        const.ProcessType.IM_calculation.str_value,
+                        const.MetadataField.n_cores.value,
+                    )
+                ],
+            )
+            print(
+                "{:<12}{}{}{}{}".format(fault_name, lf_str, hf_str, bb_str, im_calc_str)
+            )
 
     print()
     sum_df = df.sum()
     header = "{:<12}{:<10}{:<8}".format("core hours", "run time", "")
-    print("{:>14}{:>30}{:>30}".format("LF", "HF", "BB"))
-    print("{:>12}{}{}{}".format("", header, header, header))
+    print(process_types)
+    print("{:>12}{}{}{}{}".format("", header, header, header, header))
     print(
         "{:<12}{:<12.3f}{:<10.3f}{:<8.0}"
+        "{:<12.3f}{:<10.3f}{:<8.0}"
         "{:<12.3f}{:<10.3f}{:<8.0}"
         "{:<12.3f}{:<10.3f}{:<8.0}".format(
             "Total",
@@ -471,6 +495,15 @@ def display_results(df: pd.DataFrame, verbose: bool = False):
             ],
             sum_df.loc[
                 const.ProcessType.BB.str_value, const.MetadataField.run_time.value
+            ],
+            "",
+            sum_df.loc[
+                const.ProcessType.IM_calculation.str_value,
+                const.MetadataField.core_hours.value,
+            ],
+            sum_df.loc[
+                const.ProcessType.IM_calculation.str_value,
+                const.MetadataField.run_time.value,
             ],
             "",
         )
@@ -508,16 +541,7 @@ if __name__ == "__main__":
     parser = ArgumentParser()
 
     parser.add_argument(
-        "vms_dir", type=str, help="The absolute path to the VMs directory."
-    )
-    parser.add_argument(
-        "sources_dir", type=str, help="The absolute path to the Sources directory."
-    )
-    parser.add_argument(
-        "runs_dir",
-        type=str,
-        help="The absolute path to the Runs directory."
-        "Specifying this allows estimation of HF and BB.",
+        "root_dir", type=str, help="The absolute path to the cybershake root directory."
     )
     parser.add_argument(
         "--fault_selection",
@@ -542,17 +566,9 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    # Check that the folders exists
-    if not os.path.isdir(args.vms_dir):
+    # Check that the folder exists
+    if not os.path.isdir(args.root_dir):
         print("{} does not exists. Quitting!".format(args.vms_dir))
-        sys.exit()
-
-    if not os.path.isdir(args.sources_dir):
-        print("{} does not exists. Quitting!".format(args.sources_dir))
-        sys.exit()
-
-    if args.runs_dir is not None and not os.path.isdir(args.runs_dir):
-        print("{} does not exists. Quitting!".format(args.runs_dir))
         sys.exit()
 
     # Check that the specified file exist
@@ -561,9 +577,7 @@ if __name__ == "__main__":
         sys.exit()
 
     results_df = main(
-        args.vms_dir,
-        args.sources_dir,
-        args.runs_dir,
+        args.root_dir,
         args.fault_selection,
     )
 
