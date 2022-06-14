@@ -16,10 +16,10 @@ def check_xyts_file(file_path: str):
 
 
 def check_zero_bytes(file_path: str):
-    """Checks that a timeslice 25% of the way through has a non zero reading at every point"""
+    """Checks that the timeslice has at least 1 value higher than 0"""
     xyts_file = XYTSFile(file_path)
-    time_slice = xyts_file.tslice_get(xyts_file.data.shape[0] // 4)
-    min_pgv = min(abs(time_slice[2, :]))
+    time_slice = xyts_file.tslice_get(xyts_file.data.shape[0]-1)
+    min_pgv = max(time_slice[2, :])
     return min_pgv > 0
 
 
