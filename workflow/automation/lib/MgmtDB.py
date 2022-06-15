@@ -551,6 +551,10 @@ class MgmtDB:
                     """select * from proc_type_enum"""
                 ).fetchall()
 
+                if len(realisations) > 1:
+                    print("Adding median realisation into the db")
+                    realisations.append(realisations[0].split("_"))
+
                 for run_name in realisations:
                     for proc in procs_to_be_done:
                         if not self._does_task_exists(cur, run_name, proc[0]):
