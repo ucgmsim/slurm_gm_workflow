@@ -392,25 +392,22 @@ def display_results(df: pd.DataFrame, verbose: bool = False):
         print("{:>12}{}{}{}{}".format("", header, header, header, header))
         process_type_result = "{:<12.3f}{:<10.3f}{:<8.0f}"
         for fault_name, row in df.groupby("fault_name").sum().iterrows():
-            cols = (
+            cols = [
                 const.MetadataField.core_hours.value,
                 const.MetadataField.run_time.value,
                 const.MetadataField.n_cores.value,
-            )
+            ]
             lf_str = process_type_result.format(
-                *[row.loc[const.ProcessType.EMOD3D.str_value, col] for col in cols],
+                *row.loc[const.ProcessType.EMOD3D.str_value, cols]
             )
             hf_str = process_type_result.format(
-                *[row.loc[const.ProcessType.HF.str_value, col] for col in cols],
+                *row.loc[const.ProcessType.HF.str_value, cols]
             )
             bb_str = process_type_result.format(
-                *[row.loc[const.ProcessType.BB.str_value, col] for col in cols],
+                *row.loc[const.ProcessType.BB.str_value, cols]
             )
             im_calc_str = process_type_result.format(
-                *[
-                    row.loc[const.ProcessType.IM_calculation.str_value, col]
-                    for col in cols
-                ],
+                *row.loc[const.ProcessType.IM_calculation.str_value, cols]
             )
             print(
                 "{:<12}{}{}{}{}".format(fault_name, lf_str, hf_str, bb_str, im_calc_str)
