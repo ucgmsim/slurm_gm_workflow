@@ -385,11 +385,11 @@ def display_results(df: pd.DataFrame, verbose: bool = False):
     If verbose is specified the results are shown on a per fault basis.
     """
     print()
-    process_types = "{:>14}{:>30}{:>30}{:>35}".format("LF", "HF", "BB", "IM_calc")
+    header = "{:>14}{:>30}{:>30}{:>35}".format("LF", "HF", "BB", "IM_calc")
     if verbose:
-        header = "{:<12}{:<10}{:<8}".format("core hours", "run time", "cores")
-        print(process_types)
-        print("{:>42}{}{}{}".format(header, header, header, header))
+        sub_header = "{:<12}{:<10}{:<8}".format("core hours", "run time", "cores")
+        print(header)
+        print("{:>42}{}{}{}".format(sub_header, sub_header, sub_header, sub_header))
         process_type_result = "{:<12.3f}{:<10.3f}{:<8.0f}"
         for fault_name, row in df.groupby("fault_name").sum().iterrows():
             cols = [
@@ -415,9 +415,9 @@ def display_results(df: pd.DataFrame, verbose: bool = False):
 
     print()
     sum_df = df.sum()
-    header = "{:>20}{:>10}".format("core hours", "run time")
-    print(process_types)
-    print("{:>32}{}{}{}".format(header, header, header, header))
+    sub_header = "{:>20}{:>10}".format("core hours", "run time")
+    print(header)
+    print("{:>32}{}{}{}".format(sub_header, sub_header, sub_header, sub_header))
     print(
         "{:<12}{:<12.3f}{:<18.3f}"
         "{:<12.3f}{:<18.3f}"
