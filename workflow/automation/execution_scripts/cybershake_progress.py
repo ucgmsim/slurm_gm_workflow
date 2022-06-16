@@ -101,10 +101,8 @@ def get_new_progress_df(root_dir, faults_dict, mgmtdb: MgmtDB, proc_types: List[
     sort_ind = np.argsort(fault_names)
     fault_names, r_counts = fault_names[sort_ind], r_counts[sort_ind]
 
-    # Sanity check
-    assert np.all(
-        grouped_df.index.values == fault_names
-    ), "The fault names of the estimation results and those from the list aren't matching"
+    # Ensure the grouped_df only contains faults from the faults_dict
+    grouped_df = grouped_df.loc[fault_names]
 
     # Create progress dataframe
     column_t = []

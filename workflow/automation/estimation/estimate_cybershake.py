@@ -389,7 +389,7 @@ def display_results(df: pd.DataFrame, verbose: bool = False):
     if verbose:
         header = "{:<12}{:<10}{:<8}".format("core hours", "run time", "cores")
         print(process_types)
-        print("{:>12}{}{}{}{}".format("", header, header, header, header))
+        print("{:>42}{}{}{}".format(header, header, header, header))
         process_type_result = "{:<12.3f}{:<10.3f}{:<8.0f}"
         for fault_name, row in df.groupby("fault_name").sum().iterrows():
             cols = [
@@ -415,14 +415,14 @@ def display_results(df: pd.DataFrame, verbose: bool = False):
 
     print()
     sum_df = df.sum()
-    header = "{:<12}{:<10}{:<8}".format("core hours", "run time", "")
+    header = "{:>20}{:>10}".format("core hours", "run time")
     print(process_types)
-    print("{:>12}{}{}{}{}".format("", header, header, header, header))
+    print("{:>32}{}{}{}".format(header, header, header, header))
     print(
-        "{:<12}{:<12.3f}{:<10.3f}{:<8.0}"
-        "{:<12.3f}{:<10.3f}{:<8.0}"
-        "{:<12.3f}{:<10.3f}{:<8.0}"
-        "{:<12.3f}{:<10.3f}{:<8.0}".format(
+        "{:<12}{:<12.3f}{:<18.3f}"
+        "{:<12.3f}{:<18.3f}"
+        "{:<12.3f}{:<18.3f}"
+        "{:<12.3f}{:.3f}".format(
             "Total",
             sum_df.loc[
                 const.ProcessType.EMOD3D.str_value, const.MetadataField.core_hours.value
@@ -430,21 +430,18 @@ def display_results(df: pd.DataFrame, verbose: bool = False):
             sum_df.loc[
                 const.ProcessType.EMOD3D.str_value, const.MetadataField.run_time.value
             ],
-            "",
             sum_df.loc[
                 const.ProcessType.HF.str_value, const.MetadataField.core_hours.value
             ],
             sum_df.loc[
                 const.ProcessType.HF.str_value, const.MetadataField.run_time.value
             ],
-            "",
             sum_df.loc[
                 const.ProcessType.BB.str_value, const.MetadataField.core_hours.value
             ],
             sum_df.loc[
                 const.ProcessType.BB.str_value, const.MetadataField.run_time.value
             ],
-            "",
             sum_df.loc[
                 const.ProcessType.IM_calculation.str_value,
                 const.MetadataField.core_hours.value,
@@ -453,7 +450,6 @@ def display_results(df: pd.DataFrame, verbose: bool = False):
                 const.ProcessType.IM_calculation.str_value,
                 const.MetadataField.run_time.value,
             ],
-            "",
         )
     )
 
