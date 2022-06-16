@@ -53,8 +53,8 @@ def get_chours_used(root_dir: str, fault_names: List[str], proc_types: List[str]
         data=np.zeros(shape=(len(fault_names), len(proc_types))),
     )
 
+    rel_names = db.get_rel_names()
     for fault_name in fault_names:
-        rel_names = db.get_rel_names()
         flt_rel_names = [
             rel_name[0] for rel_name in rel_names if fault_name in rel_name[0]
         ]

@@ -6,13 +6,12 @@ import sys
 import os
 import pandas as pd
 import numpy as np
-import yaml
 
 from argparse import ArgumentParser
 from typing import List
 
 import qcore.constants as const
-from qcore import shared, srf, utils
+from qcore import shared, srf, utils, simulation_structure
 from workflow.automation.lib.shared import get_stations
 from workflow.automation.estimation import estimate_wct
 from workflow.automation.platform_config import platform_config
@@ -219,9 +218,9 @@ def main(
     root_dir: str,
     fault_selection: str = None,
 ):
-    vms_dir = f"{root_dir}/Data/VMs"
-    sources_dir = f"{root_dir}/Data/Sources"
-    runs_dir = f"{root_dir}/Runs"
+    vms_dir = simulation_structure.get_VM_dir(root_dir)
+    sources_dir = simulation_structure.get_sources_dir(root_dir)
+    runs_dir = simulation_structure.get_runs_dir(root_dir)
     fault_names, realisations = get_faults(
         vms_dir, sources_dir, runs_dir, fault_selection
     )
@@ -393,72 +392,24 @@ def display_results(df: pd.DataFrame, verbose: bool = False):
         print("{:>12}{}{}{}{}".format("", header, header, header, header))
         process_type_result = "{:<12.3f}{:<10.3f}{:<8.0f}"
         for fault_name, row in df.groupby("fault_name").sum().iterrows():
+            cols = (
+                const.MetadataField.core_hours.value,
+                const.MetadataField.run_time.value,
+                const.MetadataField.n_cores.value,
+            )
             lf_str = process_type_result.format(
-                row.loc[
-                    (
-                        const.ProcessType.EMOD3D.str_value,
-                        const.MetadataField.core_hours.value,
-                    )
-                ],
-                row.loc[
-                    (
-                        const.ProcessType.EMOD3D.str_value,
-                        const.MetadataField.run_time.value,
-                    )
-                ],
-                row.loc[
-                    (
-                        const.ProcessType.EMOD3D.str_value,
-                        const.MetadataField.n_cores.value,
-                    )
-                ],
+                *[row.loc[const.ProcessType.EMOD3D.str_value, col] for col in cols],
             )
             hf_str = process_type_result.format(
-                row.loc[
-                    (
-                        const.ProcessType.HF.str_value,
-                        const.MetadataField.core_hours.value,
-                    )
-                ],
-                row.loc[
-                    (const.ProcessType.HF.str_value, const.MetadataField.run_time.value)
-                ],
-                row.loc[
-                    (const.ProcessType.HF.str_value, const.MetadataField.n_cores.value)
-                ],
+                *[row.loc[const.ProcessType.HF.str_value, col] for col in cols],
             )
             bb_str = process_type_result.format(
-                row.loc[
-                    (
-                        const.ProcessType.BB.str_value,
-                        const.MetadataField.core_hours.value,
-                    )
-                ],
-                row.loc[
-                    (const.ProcessType.BB.str_value, const.MetadataField.run_time.value)
-                ],
-                row.loc[
-                    (const.ProcessType.BB.str_value, const.MetadataField.n_cores.value)
-                ],
+                *[row.loc[const.ProcessType.BB.str_value, col] for col in cols],
             )
             im_calc_str = process_type_result.format(
-                row.loc[
-                    (
-                        const.ProcessType.IM_calculation.str_value,
-                        const.MetadataField.core_hours.value,
-                    )
-                ],
-                row.loc[
-                    (
-                        const.ProcessType.IM_calculation.str_value,
-                        const.MetadataField.run_time.value,
-                    )
-                ],
-                row.loc[
-                    (
-                        const.ProcessType.IM_calculation.str_value,
-                        const.MetadataField.n_cores.value,
-                    )
+                *[
+                    row.loc[const.ProcessType.IM_calculation.str_value, col]
+                    for col in cols
                 ],
             )
             print(
@@ -566,7 +517,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    # Check that the folder exists
+    # Check that the folder exist
     if not os.path.isdir(args.root_dir):
         print("{} does not exists. Quitting!".format(args.vms_dir))
         sys.exit()
