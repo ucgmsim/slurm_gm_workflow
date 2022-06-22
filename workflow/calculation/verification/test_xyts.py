@@ -16,7 +16,7 @@ def check_xyts_file(file_path: str):
 
 
 def check_zero_bytes(file_path: str):
-    """Checks there is no PGV values that are not above zero"""
+    """Checks that all PGV values are above zero"""
     xyts_file = XYTSFile(file_path)
     pgv = xyts_file.pgv()[:, 2]
     return min(pgv) > 0
