@@ -19,7 +19,7 @@ fi
 python $gmsim/workflow/workflow/calculation/verification/test_xyts.py $xyts_file
 if [[ $? != 0 ]];
 then
-    echo "$xyts_file was not able to be loaded"
+    echo "$xyts_file test has failed"
     exit 1
 fi
 
