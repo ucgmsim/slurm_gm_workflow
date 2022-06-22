@@ -12,7 +12,7 @@ lf_sim_dir=$sim_dir/LF
 xyts_file=$(ls $lf_sim_dir/OutBin/*_xyts.e3d)
 if [[ $? != 0 ]];
 then
-    echo "$xyts_file missing"
+    echo "No combined xyts file found in $lf_sim_dir/OutBin"
     exit 1
 fi
 
