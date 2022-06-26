@@ -12,7 +12,7 @@ timestamp=`date +%Y%m%d_%H%M%S`
 runtime_fmt="%Y-%m-%d_%H:%M:%S"
 start_time=`date +$runtime_fmt`
 
-python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py {{mgmt_db_location}}/mgmt_db_queue {{srf_name}} merge_ts running $SLURM_JOB_ID  --start_time '$start_time' --nodes $SLURM_NNODES --cores $SLURM_NTASKS --wct '$wct'"
+python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py {{mgmt_db_location}}/mgmt_db_queue {{srf_name}} merge_ts running $SLURM_JOB_ID  --start_time '$start_time' --nodes $SLURM_NNODES --cores $SLURM_NTASKS --wct '$wct'
 
 filelist={{sim_dir}}/LF/flist_{{srf_name}}
 #get tools dir from shared_defaults
@@ -29,15 +29,13 @@ end_time=`date +$runtime_fmt`
 rm $filelist
 #test before update
 res=`$gmsim/workflow/workflow/calculation/verification/test_merge_ts.sh {{sim_dir}} {{srf_name}}`
-echo "res=$res"
-echo "?=$?"
+success=$?
+echo "$res"
 
-if [[ $? == 0 ]]; then
+if [[ $success == 0 ]]; then
     #passed
     echo "passed"
-    cmd="python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py {{mgmt_db_location}}/mgmt_db_queue {{srf_name}} merge_ts completed $SLURM_JOB_ID --end_time '$end_time'
-    echo $cmd
-    $cmd
+    python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py {{mgmt_db_location}}/mgmt_db_queue {{srf_name}} merge_ts completed $SLURM_JOB_ID --end_time $end_time
 
     #save meta data
     cmd="python $gmsim/workflow/workflow/automation/metadata/log_metadata.py {{sim_dir}} merge_ts start_time=$start_time end_time=$end_time status='COMPLETED'"
@@ -45,7 +43,6 @@ if [[ $? == 0 ]]; then
     $cmd
 
 else
-    cmd="python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py {{mgmt_db_location}}/mgmt_db_queue {{srf_name}} merge_ts failed $SLURM_JOB_ID --error '$res' --end_time '$end_time'
-    echo $cmd
-    $cmd
+    echo "failed"
+    python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py {{mgmt_db_location}}/mgmt_db_queue {{srf_name}} merge_ts failed $SLURM_JOB_ID --error '$res' --end_time $end_time
 fi

@@ -1,5 +1,5 @@
 import argparse
-from os.path import abspath, getsize
+from os.path import abspath
 from sys import stderr
 
 from qcore.xyts import XYTSFile
@@ -16,11 +16,10 @@ def check_xyts_file(file_path: str):
 
 
 def check_zero_bytes(file_path: str):
-    """Checks that a timeslice 25% of the way through has a non zero reading at every point"""
+    """Checks that all PGV values are above zero"""
     xyts_file = XYTSFile(file_path)
-    time_slice = xyts_file.tslice_get(xyts_file.data.shape[0] // 4)
-    min_pgv = min(abs(time_slice[2, :]))
-    return min_pgv > 0
+    pgv = xyts_file.pgv()[:, 2]
+    return min(pgv) > 0
 
 
 def main():
