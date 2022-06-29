@@ -44,5 +44,6 @@
     "VM_GEN": "nurion",
     "VM_PERT": "nurion",
     "INSTALL_FAULT": "nurion"
-  }
+  },
+  "DEFAULT_SITE_RESPONSE_DIR": false
 }

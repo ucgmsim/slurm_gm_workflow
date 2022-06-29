@@ -1,9 +1,22 @@
 #!/usr/bin/env python3
 """Wrapper script used by the templates to add updates to the mgmt db queue"""
 import argparse
+from datetime import datetime, timedelta
 
 import qcore.constants as const
 from workflow.automation.lib.shared_automated_workflow import add_to_queue
+
+
+def datestr_to_timestamp(time: str):
+    """
+    Converts a datetime string to a timestamp
+    """
+    return (
+        int(datetime.strptime(time, "%Y-%m-%d_%H:%M:%S").timestamp())
+        if time is not None
+        else None
+    )
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -35,8 +48,55 @@ if __name__ == "__main__":
         help="Errors that occurred during the execution of the script.",
         default=None,
     )
+    parser.add_argument(
+        "--start_time",
+        type=str,
+        help="Starting time of the task",
+        default=None,
+    )
+    parser.add_argument(
+        "--end_time",
+        type=str,
+        help="Ending time of the task",
+        default=None,
+    )
+    parser.add_argument(
+        "--nodes",
+        type=int,
+        help="Number of nodes used by the task",
+        default=None,
+    )
+    parser.add_argument(
+        "--cores",
+        type=int,
+        help="Number of cores used by the task",
+        default=None,
+    )
+    parser.add_argument(
+        "--memory",
+        type=int,
+        help="Amount of memory used by the task",
+        default=None,
+    )
+    parser.add_argument(
+        "--wct",
+        type=str,
+        help="The Wall Clock Time for the given task",
+        default=None,
+    )
 
     args = parser.parse_args()
+    wct = (
+        int(
+            timedelta(
+                hours=int(args.wct.split(":")[0]),
+                minutes=int(args.wct.split(":")[1]),
+                seconds=int(args.wct.split(":")[2]),
+            ).total_seconds()
+        )
+        if args.wct is not None
+        else None
+    )
     add_to_queue(
         args.queue_folder,
         args.run_name,
@@ -44,4 +104,10 @@ if __name__ == "__main__":
         const.Status.from_str(args.status).value,
         job_id=args.job_id,
         error=args.error,
+        start_time=datestr_to_timestamp(args.start_time),
+        end_time=datestr_to_timestamp(args.end_time),
+        nodes=args.nodes,
+        cores=args.cores,
+        memory=args.memory,
+        wct=wct,
     )

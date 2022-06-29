@@ -174,7 +174,7 @@ class Pbs(AbstractScheduler):
         self.logger.debug(output_list)
         return output_list
 
-    def check_wct(self, job_id: int):
+    def check_wct_hit(self, job_id: int):
         """
         Checks the given job_id if it has failed due to Wall Clock Time
         :param job_id: The id of the job to be checked for wct
@@ -196,7 +196,7 @@ class Pbs(AbstractScheduler):
         elapsed_time = timedelta(
             hours=int(elapsed_hour), minutes=int(elapsed_min), seconds=int(elapsed_sec)
         )
-        return elapsed_time > limit_time
+        return elapsed_time >= limit_time
 
     @staticmethod
     def process_arguments(
@@ -224,8 +224,5 @@ class Pbs(AbstractScheduler):
                 )
         # script related args
         # construct a string
-        args_string = ""
-        for arg in arguments.items():
-            # using "" to make sure variables are tranlated and not taken literally
-            args_string = args_string + f'{arg[0]}="{arg[1]}",'
+        args_string = ",".join([f'{k}="{v}"' for k, v in arguments.items()])
         return f"{scheduler_args_commands} -v {args_string} -V {script_path} "

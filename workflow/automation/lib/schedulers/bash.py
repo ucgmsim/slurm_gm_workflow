@@ -59,5 +59,5 @@ class Bash(AbstractScheduler):
             tasks.append((f"{self.job_counter}", "R"))
         return tasks
 
-    def check_wct(self, job_id: int):
+    def check_wct_hit(self, job_id: int):
         pass
