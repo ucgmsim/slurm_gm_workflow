@@ -35,7 +35,7 @@ if [[ ! -d $REL_LOC/BB/Acc ]]; then
 fi
 
 #code block for saving job's MetaData
-JOB_LOG_DIR=$REL_LOC/ch_log
+JOB_LOG_DIR=$REL_LOC/ch_log/json_log
 mkdir -p ${JOB_LOG_DIR}
 query_cmd="qstat -f -F json -x ${PBS_JOBID} >> ${JOB_LOG_DIR}/${PBS_JOBID}.json"
 eval " ${query_cmd}"
