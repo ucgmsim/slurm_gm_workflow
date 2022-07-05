@@ -76,7 +76,7 @@ def test_resolve_header(set_up):
     func_name = "resolve_header"
     func = shared_template.resolve_header
     params = inspect.getfullargspec(func).args
-    bench_variable_lines = [11, 12]
+    bench_variable_lines = [9, 11, 12]
     output_variable_lines = [9, 11, 12]
     for root_path, realisation in set_up:
         input_params = get_input_params(root_path, func_name, params)
