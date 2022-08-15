@@ -32,7 +32,7 @@ timestamp=`date +%Y%m%d_%H%M%S`
 start_time=`date +${runtime_fmt}`
 echo ___im plot___
 
-python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $SRF_NAME IM_plot running $SLURM_JOB_ID
+python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $SRF_NAME IM_plot running $SLURM_JOB_ID  --start_time "$start_time" --nodes $SLURM_NNODES --cores $SLURM_CPUS_PER_TASK --wct 00:30:00
 
 # check rotd50 was found in .csv
 if [[ " ${COMPS[*]} " == *" rotd50 "* ]]; 
@@ -85,20 +85,28 @@ do
             fi 
         done
 
-        if [[ $failed == 0 ]]; then
-            ## log information about params used to .out file    
-            echo "srf_file $SRF_PATH"
-            echo "model_params $MODEL_PARAMS"
-            printf '%s\n' "${success_msgs[@]}" 
-            python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $SRF_NAME IM_plot completed $SLURM_JOB_ID
-        else
-        printf '%s\n' "${failed_msgs[@]}" 
-        python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $SRF_NAME IM_plot failed $SLURM_JOB_ID --error "$failed_msgs"
+        if [[ $failed == 1 ]]; then
+          break
         fi
     else
-        python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $SRF_NAME IM_plot failed $SLURM_JOB_ID --error "$res"
+        break
     fi
 done
 
 end_time=`date +$runtime_fmt`
 echo $end_time
+
+if [[ $exit_val != 0 ]]; then
+  python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $SRF_NAME IM_plot failed $SLURM_JOB_ID --error "$res" --end_time "$end_time"
+else
+  if [[ $failed == 0 ]]; then
+      ## log information about params used to .out file
+      echo "srf_file $SRF_PATH"
+      echo "model_params $MODEL_PARAMS"
+      printf '%s\n' "${success_msgs[@]}"
+      python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $SRF_NAME IM_plot completed $SLURM_JOB_ID --end_time "$end_time"
+  else
+    printf '%s\n' "${failed_msgs[@]}"
+    python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $SRF_NAME IM_plot failed $SLURM_JOB_ID --error "$failed_msgs" --end_time "$end_time"
+  fi
+fi

@@ -54,7 +54,7 @@ class Slurm(AbstractScheduler):
         output_list.pop(0)
         return output_list
 
-    def check_wct(self, job_id: int):
+    def check_wct_hit(self, job_id: int):
         """
         Checks the given job_id if it has failed due to Wall Clock Time
         :param job_id: The id of the job to be checked for wct
@@ -73,7 +73,7 @@ class Slurm(AbstractScheduler):
         elapsed_time = timedelta(
             hours=int(elapsed_hour), minutes=int(elapsed_min), seconds=int(elapsed_sec)
         )
-        return elapsed_time > limit_time
+        return elapsed_time >= limit_time
 
     def submit_job(self, sim_dir, script_location, target_machine=None):
         """Submits the slurm script and updates the management db

@@ -71,7 +71,7 @@ class AbstractScheduler(ABC):
         pass
 
     @abstractmethod
-    def check_wct(self, job_id: int) -> bool:
+    def check_wct_hit(self, job_id: int) -> bool:
         """
         Checks the given job_id if it has failed due to Wall Clock Time
         :param job_id: The id of the job to be checked for wct

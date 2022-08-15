@@ -90,6 +90,7 @@ def submit_vm_pert_main(
                     # overwrites the job-name for monitoring purpose
                     "job_name": f"vm_pert_{run_name}",
                     "ncpus": ncpus,
+                    "nodes": 1,
                     # TODO:update if qcore.config contains relative info
                     "ntasks": 1,
                 }
