@@ -23,6 +23,7 @@ def test_install_simulation(set_up):
 
         # The pickle file was missing the 10th argument. This enables the vm to be checked.
         input_params.insert(10, True)
+        input_params.pop(9)  # Removes the vs_ref stat file parameter
 
         test_output = install_shared.install_simulation(*input_params)
         root_params_dict = test_output[0]
@@ -42,6 +43,7 @@ def test_install_simulation(set_up):
 
         bench_output = get_bench_output(root_path, func_name)[0]
         bench_output.pop("extended_period")
+        bench_output.pop("stat_vs_ref")
         bench_output["ims"] = {
             "component": ["geom"],
             "extended_period": False,

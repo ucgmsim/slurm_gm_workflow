@@ -136,7 +136,6 @@ def install_fault(
     hf_stat_vs_ref = config_dict.get("hf_stat_vs_ref")
 
     vs30_file_path = stat_file_path.replace(".ll", ".vs30")
-    vs30ref_file_path = stat_file_path.replace(".ll", ".vs30ref")
 
     # this variable has to be empty
     # TODO: fix this legacy issue, very low priority
@@ -208,7 +207,6 @@ def install_fault(
             stoch_file=stoch_file_path,
             stat_file_path=stat_file_path,
             vs30_file_path=vs30_file_path,
-            vs30ref_file_path=vs30ref_file_path,
             check_vm=check_vm,
             fault_yaml_path=fault_yaml_path,
             root_yaml_path=root_yaml_path,
