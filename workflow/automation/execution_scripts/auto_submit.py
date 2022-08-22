@@ -188,13 +188,13 @@ def submit_task(
     elif proc_type == const.ProcessType.IM_plot.value:
         arguments = OrderedDict(
             {
-                "CSV_PATH": os.path.join(sim_struct.get_IM_csv(sim_dir)),
+                "CSV_PATH": sim_struct.get_IM_csv(sim_dir),
                 "STATION_FILE_PATH": params.stat_file,
                 "OUTPUT_XYZ_PARENT_DIR": os.path.join(verification_dir, "IM_plot"),
                 "SRF_PATH": sim_struct.get_srf_path(root_folder, run_name),
                 "MODEL_PARAMS": os.path.join(
                     sim_struct.get_fault_VM_dir(root_folder, run_name),
-                    params.MODEL_PARAMS,
+                    os.path.basename(params.MODEL_PARAMS),
                 ),
                 "MGMT_DB_LOC": root_folder,
                 "SRF_NAME": run_name,
