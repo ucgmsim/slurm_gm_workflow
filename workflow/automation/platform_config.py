@@ -125,6 +125,7 @@ def get_platform_specific_script(
         ProcessType.LF2BB: "lf2bb",
         ProcessType.plot_srf: "plot_srf",
         ProcessType.plot_ts: "plot_ts",
+        ProcessType.IM_plot: "im_plot",
         ProcessType.VM_PARAMS: "vm_params_gen",
         ProcessType.VM_GEN: "vm_gen",
         ProcessType.VM_PERT: "vm_pert",
