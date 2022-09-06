@@ -186,20 +186,21 @@ def submit_task(
             logger=task_logger,
         )
     elif proc_type == const.ProcessType.IM_plot.value:
-        im_plot_template = "{script_location} {csv_path} {station_file_path} {output_xyz_dir} {srf_path} {model_params_path} {mgmt_db_loc} {run_name}"
-
-        script = im_plot_template.format(
-            csv_path=os.path.join(sim_struct.get_IM_csv(sim_dir)),
-            station_file_path=params.stat_file,
-            output_xyz_dir=os.path.join(verification_dir, "IM_plot"),
-            srf_path=sim_struct.get_srf_path(root_folder, run_name),
-            model_params_path=params.MODEL_PARAMS,
-            mgmt_db_loc=root_folder,
-            run_name=run_name,
-            script_location=os.path.expandvars(
-                "$gmsim/workflow/workflow/automation/org/nesi/im_plot.sl"
-            ),
+        arguments = OrderedDict(
+            {
+                "CSV_PATH": sim_struct.get_IM_csv(sim_dir),
+                "STATION_FILE_PATH": params.stat_file,
+                "OUTPUT_XYZ_PARENT_DIR": os.path.join(verification_dir, "IM_plot"),
+                "SRF_PATH": sim_struct.get_srf_path(root_folder, run_name),
+                "MODEL_PARAMS": os.path.join(
+                    sim_struct.get_fault_VM_dir(root_folder, run_name),
+                    os.path.basename(params.MODEL_PARAMS),
+                ),
+                "MGMT_DB_LOC": root_folder,
+                "SRF_NAME": run_name,
+            }
         )
+        script = get_platform_specific_script(const.ProcessType.IM_plot, arguments)
         submit_script_to_scheduler(
             script, target_machine=get_target_machine(const.ProcessType.IM_plot).name
         )
