@@ -3,6 +3,7 @@
 """
 import argparse
 import json
+import re
 from pathlib import Path
 from typing import List
 
@@ -267,9 +268,19 @@ def main(root_dir: Path, cybershake_list, proc_types, slack_config=None):
         root_dir.is_dir()
     ), f"Error: {root_dir} is not a valid cybershake root directory"
 
-    faults_dict = get_faults_dict(cybershake_list)
-
     mgmtdb = MgmtDB(sim_struct.get_mgmt_db(root_dir))
+
+    if cybershake_list is None:
+        rel_names = mgmtdb.get_rel_names()
+        faults_dict = dict()
+        for rel_name_tuple in rel_names:
+            flt_name = sim_struct.get_fault_from_realisation(rel_name_tuple[0])
+            if flt_name in faults_dict:
+                faults_dict[flt_name] += 1
+            else:
+                faults_dict[flt_name] = 1
+    else:
+        faults_dict = get_faults_dict(cybershake_list)
 
     # Create new progress df
     progress_df = get_new_progress_df(root_dir, faults_dict, mgmtdb, proc_types)
@@ -286,7 +297,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "cybershake_root", type=Path, help="The cybershake root directory"
     )
-    parser.add_argument("--list", type=str, help="Optional list of faults to run")
+    parser.add_argument("--list", type=str, default=None, help="Optional list of faults to run")
     parser.add_argument(
         "--proc_types",
         type=str,
