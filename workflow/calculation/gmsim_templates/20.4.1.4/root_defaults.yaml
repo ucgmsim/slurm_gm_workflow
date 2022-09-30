@@ -1,5 +1,5 @@
 hf:
-  version: 5.4.5.3_new_gnu
+  version: 5.4.5.3
   dt: 0.01
   rvfac: 0.8
   sdrop: 50
@@ -29,9 +29,9 @@ dt: 0.02
 VM:
   hh: 0.4
   VM_Version: 2.06
-  VM_Topo: BULLDOZED
-  PGV_Threshold: 2
-  Ds_Multiplier: 0.75
+  VM_Topo: SQUASHED_TAPERED
+  PGV_Threshold: -1
+  Ds_Multiplier: 1.2
 v_1d_mod: Cant1D_v3-midQ_OneRay.1d
 advanced_IM:
   models: [ATC_Steel_SCBF_3Story, SAC_Steel_MF_3Story]
