@@ -128,9 +128,9 @@ def run_estimations(
         )
     else:
         lf_core_hours, lf_run_time, lf_ncores = (
-            np.asarray([np.nan] * len(fault_names)),
-            np.asarray([np.nan] * len(fault_names)),
-            np.asarray([np.nan] * len(fault_names)),
+            np.full(len(fault_names), np.nan),
+            np.full(len(fault_names), np.nan),
+            np.full(len(fault_names), np.nan),
         )
 
     lf_result_data = np.concatenate(
