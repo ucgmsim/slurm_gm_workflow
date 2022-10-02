@@ -297,7 +297,9 @@ if __name__ == "__main__":
     parser.add_argument(
         "cybershake_root", type=Path, help="The cybershake root directory"
     )
-    parser.add_argument("--list", type=str, default=None, help="Optional list of faults to run")
+    parser.add_argument(
+        "--list", type=str, default=None, help="Optional list of faults to run"
+    )
     parser.add_argument(
         "--proc_types",
         type=str,
