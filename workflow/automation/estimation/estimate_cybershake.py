@@ -291,16 +291,16 @@ def main(
         vm_params, dt = vm_params[~nan_mask], dt[~nan_mask]
 
     r_counts = [len(cur_r_list) for cur_r_list in realisations]
-    print("Preparing LF input data")
-    try:
-        fault_sim_durations = vm_params[:, 3]
-        nt = fault_sim_durations / dt
 
-        lf_ncores = (
+    print("Preparing LF input data")
+    fault_sim_durations = vm_params[:, 3]
+    nt = fault_sim_durations / dt
+
+    lf_ncores = (
             np.ones(fault_names.shape[0], dtype=np.float32)
             * platform_config[const.PLATFORM_CONFIG.LF_DEFAULT_NCORES.name]
-        )
-
+    )
+    try:
         # Get fd_count for each fault
         fd_counts = np.asarray(
             [
@@ -308,6 +308,10 @@ def main(
                 for fd_statlist in runs_params.fd_statlist
             ]
         )
+    except FileNotFoundError:
+        print("Encountered error preparing LF input data")
+        lf_input_data = None
+    else:
         lf_input_data = np.concatenate(
             (
                 vm_params[:, :3],
@@ -317,19 +321,18 @@ def main(
             ),
             axis=1,
         )
-    except FileNotFoundError:
-        print("Encountered error preparing LF input data")
-        lf_input_data = None
 
     print("Preparing HF estimation input data")
-    try:
-        # Have to repeat/extend the fault sim_durations to per realisation
-        r_hf_ncores = np.repeat(
-            np.ones(realisations.shape[0], dtype=np.float32)
-            * platform_config[const.PLATFORM_CONFIG.HF_DEFAULT_NCORES.name],
-            r_counts,
-        )
+    # Have to repeat/extend the fault sim_durations to per realisation
+    r_hf_ncores = np.repeat(
+        np.ones(realisations.shape[0], dtype=np.float32)
+        * platform_config[const.PLATFORM_CONFIG.HF_DEFAULT_NCORES.name],
+        r_counts,
+    )
 
+    # Calculate nt
+    r_hf_nt = np.repeat(fault_sim_durations / runs_params.hf_dt, r_counts)
+    try:
         # Get fd_count and nsub_stoch for each realization
         r_fd_counts = np.repeat(fd_counts, r_counts)
         r_nsub_stochs = np.repeat(
@@ -338,10 +341,10 @@ def main(
             ),
             r_counts,
         )
-
-        # Calculate nt
-        r_hf_nt = np.repeat(fault_sim_durations / runs_params.hf_dt, r_counts)
-
+    except UnboundLocalError or FileNotFoundError:
+        print("Encountered error preparing HF estimation input data")
+        hf_input_data = None
+    else:
         hf_input_data = np.concatenate(
             (
                 r_fd_counts[:, None],
@@ -351,18 +354,14 @@ def main(
             ),
             axis=1,
         )
-    except UnboundLocalError or FileNotFoundError:
-        print("Encountered error preparing HF estimation input data")
-        hf_input_data = None
 
     print("Preparing BB estimation input data")
+    r_bb_ncores = np.repeat(
+        np.ones(realisations.shape[0], dtype=np.float32)
+        * platform_config[const.PLATFORM_CONFIG.BB_DEFAULT_NCORES.name],
+        r_counts,
+    )
     try:
-        r_bb_ncores = np.repeat(
-            np.ones(realisations.shape[0], dtype=np.float32)
-            * platform_config[const.PLATFORM_CONFIG.BB_DEFAULT_NCORES.name],
-            r_counts,
-        )
-
         bb_input_data = np.concatenate(
             (r_fd_counts[:, None], r_hf_nt[:, None], r_bb_ncores[:, None]), axis=1
         )
