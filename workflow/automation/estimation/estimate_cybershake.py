@@ -297,8 +297,8 @@ def main(
     nt = fault_sim_durations / dt
 
     lf_ncores = (
-            np.ones(fault_names.shape[0], dtype=np.float32)
-            * platform_config[const.PLATFORM_CONFIG.LF_DEFAULT_NCORES.name]
+        np.ones(fault_names.shape[0], dtype=np.float32)
+        * platform_config[const.PLATFORM_CONFIG.LF_DEFAULT_NCORES.name]
     )
     try:
         # Get fd_count for each fault
