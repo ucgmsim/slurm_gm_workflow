@@ -85,6 +85,7 @@ def submit_im_calc_slurm(
         const.SlBodyOptConsts.simple_out.value: "",
         const.SlBodyOptConsts.advanced_IM.value: "",
         "pSA_periods": "",
+        "run_command": platform_config[const.PLATFORM_CONFIG.RUN_COMMAND.name],
     }
 
     # Convert option settings to values
@@ -171,7 +172,6 @@ def submit_im_calc_slurm(
             ] = f"-p {' '.join(str(p) for p in params['ims']['pSA_periods'])}"
 
         comps_to_store = params["ims"][const.SlBodyOptConsts.component.value]
-        command_options["run_command"] = platform_config[const.PLATFORM_CONFIG.RUN_COMMAND.name]
         command_options[const.SlBodyOptConsts.component.value] = "-c " + " ".join(
             comps_to_store
         )
