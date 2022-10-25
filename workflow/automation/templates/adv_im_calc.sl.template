@@ -34,7 +34,7 @@ end_time=`date +$runtime_fmt`
 # verify the result of the analysis
 fd_name=$(getFromYaml "{{sim_dir}}/sim_params.yaml" FD_STATLIST)
 echo "=========="
-python $IMPATH_ADVANCED/Advanced_IM/scripts/check_adv_IM_status.py {{sim_IM_calc_dir}} {{models}} --stations {{station_file}}; success=$?
+python $IMPATH_ADVANCED/check_adv_IM_status.py {{sim_IM_calc_dir}} {{models}} --stations {{station_file}}; success=$?
 echo "=========="
 
 # Update mgmt_db
