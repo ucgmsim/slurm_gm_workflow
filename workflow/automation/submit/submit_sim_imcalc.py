@@ -70,7 +70,7 @@ def submit_im_calc_slurm(
         const.SlBodyOptConsts.mgmt_db.value: "",
         "n_components": "",
         "match_obs_stations": False,
-        "station_file": "$(cat $fd_name | awk '{print $1}')",
+        "station_file": "$(cat $fd_name | awk '{print $3}')",
     }
 
     command_options = {
