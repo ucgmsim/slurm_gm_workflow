@@ -92,7 +92,7 @@ class MgmtDB:
     def db_file(self):
         return self._db_file
 
-    def get_retries(self, process, realisation_name, get_WCT = False):
+    def get_retries(self, process, realisation_name, get_WCT=False):
         get_WCT_symbol = "=" if get_WCT else "!="
         with connect_db_ctx(self._db_file) as cur:
             return cur.execute(
