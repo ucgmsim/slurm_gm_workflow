@@ -11,6 +11,7 @@ from qcore.utils import load_yaml
 
 import queue_monitor
 from auto_submit import run_main_submit_loop
+from workflow.automation.lib.MgmtDB import ComparisonOperator
 from workflow.automation.lib.schedulers.scheduler_factory import Scheduler
 from workflow.automation.platform_config import platform_config, HPC
 
@@ -22,8 +23,12 @@ MASTER_AUTO_SUBMIT_LOG_FILE_NAME = "main_auto_submit_log_{}.txt"
 PATTERN_AUTO_SUBMIT_LOG_FILE_NAME = "pattern_{}_auto_submit_log_{}.txt"
 
 ALL = "ALL"
-ONCE = "ONCE"
-ONCE_PATTERN = "%_REL01"
+MEDIAN_ONLY = "MEDIAN"
+# MEDIAN_ONLY_PATTERN is negation of REL_ONLY_PATTERN. Has to be done in SQL
+REL_ONLY = "REL_ONLY"
+REL_ONLY_PATTERN = "%_REL%"
+# ONCE = "ONCE"
+# ONCE_PATTERN = "%_REL01"
 NONE = "NONE"
 
 
@@ -35,6 +40,7 @@ def run_automated_workflow(
     tasks_to_run: List[const.ProcessType],
     sleep_time: int,
     tasks_to_run_with_pattern: List[Tuple[str, List[const.ProcessType]]],
+    tasks_to_run_without_pattern: List[Tuple[str, List[const.ProcessType]]],
     wrapper_logger: Logger,
     debug: bool,
     alert_url=None,
@@ -88,26 +94,33 @@ def run_automated_workflow(
 
     tasks_to_run_with_pattern_and_logger = [
         (
+            ComparisonOperator.LIKE,
             pattern,
             tasks,
-            qclogging.get_logger(name="pattern_{}".format(pattern), threaded=True),
+            qclogging.get_logger(name=f"{ComparisonOperator.LIKE.name}_pattern_{pattern}", threaded=True),
         )
         for pattern, tasks in tasks_to_run_with_pattern
+    ] + [
+        (
+            ComparisonOperator.NOTLIKE,
+            pattern,
+            tasks,
+            qclogging.get_logger(name=f"{ComparisonOperator.NOTLIKE.name}_pattern_{pattern}", threaded=True),
+        )
+        for pattern, tasks in tasks_to_run_without_pattern
     ]
-    for pattern, tasks, logger in tasks_to_run_with_pattern_and_logger:
+    for comp, pattern, tasks, logger in tasks_to_run_with_pattern_and_logger:
         qclogging.add_general_file_handler(
             logger,
             join(
                 log_directory,
                 PATTERN_AUTO_SUBMIT_LOG_FILE_NAME.format(
-                    pattern, datetime.now().strftime(const.TIMESTAMP_FORMAT)
+                    f"{comp.name}_{pattern}", datetime.now().strftime(const.TIMESTAMP_FORMAT)
                 ),
             ),
         )
         wrapper_logger.debug(
-            "Created logger for auto_submit with pattern {} and added to list to run".format(
-                pattern
-            )
+            f"Created logger for auto_submit with{'out' if comp==ComparisonOperator.NOTLIKE else ''} pattern {pattern} and added to list to run"
         )
 
     queue_monitor_thread = None
@@ -126,6 +139,7 @@ def run_automated_workflow(
         target=run_main_submit_loop,
         args=(root_folder, n_runs, "%", tasks_to_run, sleep_time),
         kwargs={
+            "matcher": ComparisonOperator.LIKE,
             "main_logger": bulk_logger,
             "cycle_timeout": 2 * len(tasks_to_run_with_pattern_and_logger) + 2,
         },
@@ -153,7 +167,7 @@ def run_automated_workflow(
     run_sub_threads = len(tasks_to_run_with_pattern_and_logger) > 0
     while bulk_auto_submit_thread.is_alive() and run_sub_threads:
         wrapper_logger.info("Checking all patterns for tasks to be run")
-        for pattern, tasks, pattern_logger in tasks_to_run_with_pattern_and_logger:
+        for comp, pattern, tasks, pattern_logger in tasks_to_run_with_pattern_and_logger:
             wrapper_logger.info(
                 "Loaded pattern {}. Checking for tasks to be run of types: {}".format(
                     pattern, tasks
@@ -165,6 +179,7 @@ def run_automated_workflow(
                 pattern,
                 tasks,
                 sleep_time,
+                comparator=comp,
                 main_logger=pattern_logger,
                 cycle_timeout=0,
             )
@@ -198,27 +213,39 @@ def parse_config_file(
 
     tasks_to_run_for_all = []
     tasks_with_pattern_match = {}
+    tasks_with_anti_pattern_match = {}
 
     for proc_name, pattern in config.items():
         proc = const.ProcessType.from_str(proc_name)
         if pattern == ALL:
             tasks_to_run_for_all.append(proc)
+        elif pattern == REL_ONLY:
+            add_to_dict_list(proc, tasks_with_pattern_match)
+        elif pattern == MEDIAN_ONLY:
+            add_to_dict_list(proc, tasks_with_anti_pattern_match)
         elif pattern == NONE:
             pass
         else:
             if isinstance(pattern, str):
                 pattern = [pattern]
             for subpattern in pattern:
-                if subpattern == ONCE:
-                    subpattern = ONCE_PATTERN
-                if subpattern not in tasks_with_pattern_match.keys():
-                    tasks_with_pattern_match.update({subpattern: []})
-                tasks_with_pattern_match[subpattern].append(proc)
+                if subpattern == REL_ONLY:
+                    add_to_dict_list(proc, tasks_with_pattern_match)
+                elif subpattern == MEDIAN_ONLY:
+                    add_to_dict_list(proc, tasks_with_anti_pattern_match)
+                else:
+                    add_to_dict_list(proc, tasks_with_pattern_match, subpattern)
     logger.info("Master script will run {}".format(tasks_to_run_for_all))
     for pattern, tasks in tasks_with_pattern_match.items():
         logger.info("Pattern {} will run tasks {}".format(pattern, tasks))
 
-    return tasks_to_run_for_all, tasks_with_pattern_match.items()
+    return tasks_to_run_for_all, tasks_with_pattern_match.items(), tasks_with_anti_pattern_match.items()
+
+
+def add_to_dict_list(proc_to_add, dict_to_add_to, pattern=REL_ONLY_PATTERN):
+    if pattern not in dict_to_add_to:
+        dict_to_add_to.update({pattern: []})
+    dict_to_add_to[pattern].append(proc_to_add)
 
 
 def main():
@@ -343,7 +370,7 @@ def main():
         "Machines will allow up to {} jobs to run simultaneously".format(n_runs)
     )
 
-    tasks_n, tasks_to_match = parse_config_file(args.config_file, wrapper_logger)
+    tasks_n, tasks_to_match, tasks_to_not_match = parse_config_file(args.config_file, wrapper_logger)
 
     run_automated_workflow(
         root_directory,
@@ -353,6 +380,7 @@ def main():
         tasks_n,
         args.sleep_time,
         tasks_to_match,
+        tasks_to_not_match,
         wrapper_logger,
         args.debug,
         alert_url=args.alert_url,

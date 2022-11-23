@@ -17,7 +17,7 @@ import qcore.simulation_structure as sim_struct
 
 
 from workflow.automation.metadata.log_metadata import store_metadata
-from workflow.automation.lib.MgmtDB import MgmtDB
+from workflow.automation.lib.MgmtDB import MgmtDB, ComparisonOperator
 from workflow.automation.lib.schedulers.scheduler_factory import Scheduler
 from workflow.automation.submit.submit_emod3d import main as submit_lf_main
 from workflow.automation.submit.submit_empirical import generate_empirical_script
@@ -395,6 +395,7 @@ def run_main_submit_loop(
     rels_to_run: str,
     given_tasks_to_run: List[const.ProcessType],
     sleep_time: int,
+    comparator: ComparisonOperator = ComparisonOperator.LIKE,
     main_logger: Logger = qclogging.get_basic_logger(),
     cycle_timeout=1,
 ):
@@ -451,6 +452,7 @@ def run_main_submit_loop(
             rels_to_run,
             sum(n_runs.values()),
             os.listdir(sim_struct.get_mgmt_db_queue(root_folder)),
+            comparator,
             given_tasks_to_run,
             main_logger,
         )
@@ -547,7 +549,7 @@ def main():
         type=int,
         nargs="+",
         help="The number of processes each machine can run at once. If a single value is given this is used for all "
-        "machines, otherwise one value per machine must be given. The current order is: {}".format(
+             "machines, otherwise one value per machine must be given. The current order is: {}".format(
             (x.name for x in HPC)
         ),
     )
@@ -565,7 +567,7 @@ def main():
         type=str,
         default=None,
         help="Location of the log file to use. Defaults to 'cybershake_log.txt' in the location root_folder. "
-        "Must be absolute or relative to the root_folder.",
+             "Must be absolute or relative to the root_folder.",
     )
     parser.add_argument(
         "--task_types_to_run",
@@ -579,9 +581,18 @@ def main():
         help="An SQLite formatted query to match the realisations that should run.",
         default="%",
     )
+    parser.add_argument(
+        "--matcher",
+        help="Type of SQL match to make. Either: "
+             "EXACT for exact only match, "
+             "LIKE to match any '%' or '_' symbols, or "
+             "NOTLIKE to match everything except the --rels_to_run argument",
+        default=ComparisonOperator.LIKE.name,
+        options=ComparisonOperator.get_names(),
+    )
 
     args = parser.parse_args()
-
+    args.matcher = ComparisonOperator[args.matcher]
     root_folder = os.path.abspath(args.root_folder)
 
     if args.log_file is None:
@@ -634,28 +645,30 @@ def main():
         n_runs = platform_config[const.PLATFORM_CONFIG.DEFAULT_N_RUNS.name]
 
     logger.debug(
-        "Processes to be run were: {}. Getting all required dependencies now.".format(
+        "Processes to be run were: {}. "
+        "Getting all required dependencies now. "
+        "Assuming all given tasks are to be run for all realisations (including median, as per --rels_to_run)".format(
             args.task_types_to_run
         )
     )
     task_types_to_run = [
-        const.ProcessType.from_str(proc) for proc in args.task_types_to_run
+        (const.ProcessType.from_str(proc), const.DependencyTarget.REL) for proc in args.task_types_to_run
     ]
-    for task in task_types_to_run:
+    for task, target in task_types_to_run:
         logger.debug(
             "Process {} in processes to be run, adding dependencies now.".format(
                 task.str_value
             )
         )
-        for proc_num in task.get_remaining_dependencies(task_types_to_run):
-            proc = const.ProcessType(proc_num)
-            if proc not in task_types_to_run:
+        for proc, dep_target in task.get_remaining_dependencies(task_types_to_run):
+            target = (proc, dep_target)
+            if target not in task_types_to_run:
                 logger.debug(
-                    "Process {} added as a dependency of process {}".format(
-                        proc.str_value, task.str_value
+                    "Process {} targeting {} added as a dependency of process {}".format(
+                        proc.str_value, dep_target, task.str_value
                     )
                 )
-                task_types_to_run.append(proc)
+                task_types_to_run.append(target)
 
     mutually_exclusive_task_error = const.ProcessType.check_mutually_exclusive_tasks(
         task_types_to_run
@@ -668,13 +681,13 @@ def main():
 
     scheduler_logger = qclogging.get_logger(name=f"{logger.name}.scheduler")
     Scheduler.initialise_scheduler(user=args.user, logger=scheduler_logger)
-
     run_main_submit_loop(
         root_folder,
         n_runs,
         args.rels_to_run,
         task_types_to_run,
         args.sleep_time,
+        args.matcher,
         main_logger=logger,
     )
 
