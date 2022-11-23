@@ -92,11 +92,12 @@ class MgmtDB:
     def db_file(self):
         return self._db_file
 
-    def get_retries(self, process, realisation_name):
+    def get_retries(self, process, realisation_name, get_WCT = False):
+        get_WCT_symbol = "=" if get_WCT else "!="
         with connect_db_ctx(self._db_file) as cur:
             return cur.execute(
                 "SELECT COUNT(*) from state "
-                "WHERE run_name = ? AND proc_type = ? and status != ?",
+                f"WHERE run_name = ? AND proc_type = ? and status {get_WCT_symbol} ?",
                 (realisation_name, process, const.Status.killed_WCT.value),
             ).fetchone()[0]
 
@@ -424,7 +425,7 @@ class MgmtDB:
                 ).fetchall()
                 runnable_tasks.extend(
                     [
-                        (*task, self.get_retries(*task))
+                        (*task, self.get_retries(*task, get_WCT=True))
                         for task in db_tasks
                         if self._check_dependancy_met(task, logger)
                         and "{}__{}".format(*task) not in tasks_waiting_for_updates
