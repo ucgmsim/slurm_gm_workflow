@@ -173,6 +173,7 @@ def submit_task(
         submit_im_calc_slurm(
             sim_dir=sim_dir,
             simple_out=True,
+            retries=retries,
             target_machine=get_target_machine(const.ProcessType.IM_calculation).name,
             logger=task_logger,
         )
