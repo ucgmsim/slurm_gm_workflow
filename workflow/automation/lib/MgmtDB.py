@@ -184,15 +184,27 @@ class MgmtDB:
 
                 if (
                     entry.status == const.Status.failed.value
-                    or entry.status == const.Status.killed_WCT.value
+                    and self.get_retries(process, realisation_name, get_WCT=False)
+                    < retry_max
                 ):
-                    if self.get_retries(process, realisation_name) < retry_max:
-                        # The task was failed. If there have been few enough other attempts at the task make another one
-                        logger.debug(
-                            "Task failed but is able to be retried. Adding new task to the db"
-                        )
-                        self._insert_task(cur, realisation_name, process)
-                        logger.debug("New task added to the db")
+                    # The task was failed. If there have been few enough other attempts at the task make another one
+                    logger.debug(
+                        "Task failed but is able to be retried. Adding new task to the db"
+                    )
+                    self._insert_task(cur, realisation_name, process)
+                    logger.debug("New task added to the db")
+
+                if (
+                    entry.status == const.Status.killed_WCT.value
+                    and self.get_retries(process, realisation_name, get_WCT=True)
+                    < retry_max
+                ):
+                    # The task was killed_WCT. If there have been few enough other attempts at the task make another one
+                    logger.debug(
+                        "Task hit WCT but is able to be retried. Adding new task to the db"
+                    )
+                    self._insert_task(cur, realisation_name, process)
+                    logger.debug("New task added to the db")
 
                 if entry.status == const.Status.failed.value:
                     tasks = MgmtDB.find_dependant_task(cur, entry)
