@@ -332,7 +332,7 @@ class MgmtDB:
         n_max_retries: The maximum number of retries a task can have"""
         with connect_db_ctx(self._db_file) as cur:
             errored = cur.execute(
-                "SELECT run_name, proc_type "
+                "SELECT run_name, proc_type, state "
                 "FROM state, status_enum "
                 "WHERE state.status = status_enum.id "
                 "AND (status_enum.state  = 'failed' "
@@ -340,15 +340,15 @@ class MgmtDB:
             ).fetchall()
 
         failure_count = {}
-        for run_name, proc_type in errored:
+        for run_name, proc_type, state in errored:
             key = "{}__{}".format(run_name, proc_type)
             if key not in failure_count.keys():
-                failure_count.update({key: 0})
-            failure_count[key] += 1
+                failure_count.update({key: {"killed_WCT": 0, "failed": 0}})
+            failure_count[key][state] += 1
 
         with connect_db_ctx(self._db_file) as cur:
             for key, fail_count in failure_count.items():
-                if fail_count >= n_max_retries:
+                if any([x >= n_max_retries for x in fail_count.values()]):
                     continue
                 run_name, proc_type = key.split("__")
                 # Gets the number of entries for the task with state in [created, queued, running or completed]
