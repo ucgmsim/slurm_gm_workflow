@@ -441,7 +441,9 @@ class MgmtDB:
 
         return runnable_tasks
 
-    def num_task_complete(self, task, matcher: ComparisonOperator = ComparisonOperator.EXACT):
+    def num_task_complete(
+        self, task, matcher: ComparisonOperator = ComparisonOperator.EXACT
+    ):
         process, run_name = task
 
         query = f"SELECT COUNT (*) FROM state WHERE run_name {matcher.value} ? AND proc_type = ? AND status = ?"
@@ -482,8 +484,9 @@ class MgmtDB:
                 process, run_name, completed_rel_tasks, completed_median_tasks
             )
         )
-        completed_deps = [(const.ProcessType(x[0]), const.DependencyTarget.REL) for x in completed_rel_tasks] + \
-                         [(const.ProcessType(x[0]), const.DependencyTarget.MEDIAN) for x in completed_median_tasks]
+        completed_deps = [
+            const.Dependency(x[0], median=False) for x in completed_rel_tasks
+        ] + [const.Dependency(x[0], median=True) for x in completed_median_tasks]
         remaining_deps = process.get_remaining_dependencies(completed_deps)
         logger.debug("{} has remaining deps: {}".format(task, remaining_deps))
         return len(remaining_deps) == 0

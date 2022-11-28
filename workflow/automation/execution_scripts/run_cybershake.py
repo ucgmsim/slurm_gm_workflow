@@ -97,7 +97,9 @@ def run_automated_workflow(
             ComparisonOperator.LIKE,
             pattern,
             tasks,
-            qclogging.get_logger(name=f"{ComparisonOperator.LIKE.name}_pattern_{pattern}", threaded=True),
+            qclogging.get_logger(
+                name=f"{ComparisonOperator.LIKE.name}_pattern_{pattern}", threaded=True
+            ),
         )
         for pattern, tasks in tasks_to_run_with_pattern
     ] + [
@@ -105,7 +107,10 @@ def run_automated_workflow(
             ComparisonOperator.NOTLIKE,
             pattern,
             tasks,
-            qclogging.get_logger(name=f"{ComparisonOperator.NOTLIKE.name}_pattern_{pattern}", threaded=True),
+            qclogging.get_logger(
+                name=f"{ComparisonOperator.NOTLIKE.name}_pattern_{pattern}",
+                threaded=True,
+            ),
         )
         for pattern, tasks in tasks_to_run_without_pattern
     ]
@@ -115,7 +120,8 @@ def run_automated_workflow(
             join(
                 log_directory,
                 PATTERN_AUTO_SUBMIT_LOG_FILE_NAME.format(
-                    f"{comp.name}_{pattern}", datetime.now().strftime(const.TIMESTAMP_FORMAT)
+                    f"{comp.name}_{pattern}",
+                    datetime.now().strftime(const.TIMESTAMP_FORMAT),
                 ),
             ),
         )
@@ -167,10 +173,15 @@ def run_automated_workflow(
     run_sub_threads = len(tasks_to_run_with_pattern_and_logger) > 0
     while bulk_auto_submit_thread.is_alive() and run_sub_threads:
         wrapper_logger.info("Checking all patterns for tasks to be run")
-        for comp, pattern, tasks, pattern_logger in tasks_to_run_with_pattern_and_logger:
+        for (
+            comp,
+            pattern,
+            tasks,
+            pattern_logger,
+        ) in tasks_to_run_with_pattern_and_logger:
             wrapper_logger.info(
-                "Loaded pattern {}. Checking for tasks to be run of types: {}".format(
-                    pattern, tasks
+                "Loaded pattern {} {}. Checking for tasks to be run of types: {}".format(
+                    comp, pattern, tasks
                 )
             )
             run_main_submit_loop(
@@ -179,7 +190,7 @@ def run_automated_workflow(
                 pattern,
                 tasks,
                 sleep_time,
-                comparator=comp,
+                matcher=comp,
                 main_logger=pattern_logger,
                 cycle_timeout=0,
             )
@@ -239,7 +250,11 @@ def parse_config_file(
     for pattern, tasks in tasks_with_pattern_match.items():
         logger.info("Pattern {} will run tasks {}".format(pattern, tasks))
 
-    return tasks_to_run_for_all, tasks_with_pattern_match.items(), tasks_with_anti_pattern_match.items()
+    return (
+        tasks_to_run_for_all,
+        tasks_with_pattern_match.items(),
+        tasks_with_anti_pattern_match.items(),
+    )
 
 
 def add_to_dict_list(proc_to_add, dict_to_add_to, pattern=REL_ONLY_PATTERN):
@@ -370,7 +385,9 @@ def main():
         "Machines will allow up to {} jobs to run simultaneously".format(n_runs)
     )
 
-    tasks_n, tasks_to_match, tasks_to_not_match = parse_config_file(args.config_file, wrapper_logger)
+    tasks_n, tasks_to_match, tasks_to_not_match = parse_config_file(
+        args.config_file, wrapper_logger
+    )
 
     run_automated_workflow(
         root_directory,

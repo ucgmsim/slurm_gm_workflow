@@ -395,7 +395,7 @@ def run_main_submit_loop(
     rels_to_run: str,
     given_tasks_to_run: List[const.ProcessType],
     sleep_time: int,
-    comparator: ComparisonOperator = ComparisonOperator.LIKE,
+    matcher: ComparisonOperator = ComparisonOperator.LIKE,
     main_logger: Logger = qclogging.get_basic_logger(),
     cycle_timeout=1,
 ):
@@ -452,7 +452,7 @@ def run_main_submit_loop(
             rels_to_run,
             sum(n_runs.values()),
             os.listdir(sim_struct.get_mgmt_db_queue(root_folder)),
-            comparator,
+            matcher,
             given_tasks_to_run,
             main_logger,
         )
@@ -549,7 +549,7 @@ def main():
         type=int,
         nargs="+",
         help="The number of processes each machine can run at once. If a single value is given this is used for all "
-             "machines, otherwise one value per machine must be given. The current order is: {}".format(
+        "machines, otherwise one value per machine must be given. The current order is: {}".format(
             (x.name for x in HPC)
         ),
     )
@@ -567,7 +567,7 @@ def main():
         type=str,
         default=None,
         help="Location of the log file to use. Defaults to 'cybershake_log.txt' in the location root_folder. "
-             "Must be absolute or relative to the root_folder.",
+        "Must be absolute or relative to the root_folder.",
     )
     parser.add_argument(
         "--task_types_to_run",
@@ -584,9 +584,9 @@ def main():
     parser.add_argument(
         "--matcher",
         help="Type of SQL match to make. Either: "
-             "EXACT for exact only match, "
-             "LIKE to match any '%' or '_' symbols, or "
-             "NOTLIKE to match everything except the --rels_to_run argument",
+        "EXACT for exact only match, "
+        "LIKE to match any '%' or '_' symbols, or "
+        "NOTLIKE to match everything except the --rels_to_run argument",
         default=ComparisonOperator.LIKE.name,
         options=ComparisonOperator.get_names(),
     )
@@ -651,24 +651,21 @@ def main():
             args.task_types_to_run
         )
     )
-    task_types_to_run = [
-        (const.ProcessType.from_str(proc), const.DependencyTarget.REL) for proc in args.task_types_to_run
-    ]
-    for task, target in task_types_to_run:
+    task_types_to_run = [const.Dependency(proc) for proc in args.task_types_to_run]
+    for dependency in task_types_to_run:
         logger.debug(
-            "Process {} in processes to be run, adding dependencies now.".format(
-                task.str_value
-            )
+            f"Process {dependency} in processes to be run, adding dependencies now."
         )
-        for proc, dep_target in task.get_remaining_dependencies(task_types_to_run):
-            target = (proc, dep_target)
+        for sub_dependency in dependency.process.get_remaining_dependencies(
+            task_types_to_run
+        ):
+            target = sub_dependency
             if target not in task_types_to_run:
                 logger.debug(
-                    "Process {} targeting {} added as a dependency of process {}".format(
-                        proc.str_value, dep_target, task.str_value
-                    )
+                    f"Dependency {target.process} added as a dependency of process {dependency.process}"
                 )
                 task_types_to_run.append(target)
+    task_types_to_run = [x.process for x in task_types_to_run]
 
     mutually_exclusive_task_error = const.ProcessType.check_mutually_exclusive_tasks(
         task_types_to_run
