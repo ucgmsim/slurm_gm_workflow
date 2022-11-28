@@ -166,14 +166,14 @@ def get_all_entries_from_config(config_file, db, query_mode):
                         WHERE state.proc_type = proc_type_enum.id 
                         AND state.status = status_enum.id
                         {{}}
-                        AND state.proc_type IN (?{",?" * (len(tasks_n) - 1)})
+                        AND state.proc_type IN (?{{}})
                         {extra_query}
                         ORDER BY state.run_name, status_enum.id"""
 
     if len(tasks_n) > 0:
         status.extend(
             db.execute(
-                base_command.format(""),
+                base_command.format("", ",?" * (len(tasks_n) - 1)),
                 [i.value for i in tasks_n],
             ).fetchall()
         )
@@ -181,7 +181,7 @@ def get_all_entries_from_config(config_file, db, query_mode):
         tasks = [i.value for i in tasks]
         status.extend(
             db.execute(
-                base_command.format("AND state.run_name LIKE ?"),
+                base_command.format("AND state.run_name LIKE ?", ",?" * (len(tasks) - 1)),
                 (pattern, *tasks),
             ).fetchall()
         )
@@ -189,7 +189,7 @@ def get_all_entries_from_config(config_file, db, query_mode):
         tasks = [i.value for i in tasks]
         status.extend(
             db.execute(
-                base_command.format("AND state.run_name NOT LIKE ?"),
+                base_command.format("AND state.run_name NOT LIKE ?", ",?" * (len(tasks) - 1)),
                 (pattern, *tasks),
             ).fetchall()
         )
