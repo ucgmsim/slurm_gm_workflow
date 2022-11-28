@@ -7,12 +7,12 @@ from typing import Dict, List, Tuple
 
 from qcore import constants as const
 from qcore import qclogging
-from qcore.utils import load_yaml
 
 import queue_monitor
 from auto_submit import run_main_submit_loop
 from workflow.automation.lib.MgmtDB import ComparisonOperator
 from workflow.automation.lib.schedulers.scheduler_factory import Scheduler
+from workflow.automation.lib import shared_automated_workflow
 from workflow.automation.platform_config import platform_config, HPC
 
 MASTER_LOG_NAME = "master_log_{}.txt"
@@ -21,15 +21,6 @@ WRAPPER_LOG_FILE_NAME = "wrapper_log_{}.txt"
 QUEUE_MONITOR_LOG_FILE_NAME = "queue_monitor_log_{}.txt"
 MASTER_AUTO_SUBMIT_LOG_FILE_NAME = "main_auto_submit_log_{}.txt"
 PATTERN_AUTO_SUBMIT_LOG_FILE_NAME = "pattern_{}_auto_submit_log_{}.txt"
-
-ALL = "ALL"
-MEDIAN_ONLY = "MEDIAN"
-# MEDIAN_ONLY_PATTERN is negation of REL_ONLY_PATTERN. Has to be done in SQL
-REL_ONLY = "REL_ONLY"
-REL_ONLY_PATTERN = "%_REL%"
-# ONCE = "ONCE"
-# ONCE_PATTERN = "%_REL01"
-NONE = "NONE"
 
 
 def run_automated_workflow(
@@ -208,61 +199,6 @@ def run_automated_workflow(
             wrapper_logger.critical("The queue monitor has not successfully terminated")
 
 
-def parse_config_file(
-    config_file_location: str, logger: Logger = qclogging.get_basic_logger()
-):
-    """Takes in the location of a wrapper config file and creates the tasks to be run.
-    Requires that the file contains the keys 'run_all_tasks' and 'run_some', even if they are empty
-    If the dependencies for a run_some task overlap with those in the tasks_to_run_for_all, as a race condition is
-    possible if multiple auto_submit scripts have the same tasks. If multiple run_some instances have the same
-    dependencies then this is not an issue as they run sequentially, rather than simultaneously
-    :param config_file_location: The location of the config file
-    :return: A tuple containing the tasks to be run on all processes and a list of pattern, tasks tuples which state
-    which tasks can be run with which patterns
-    """
-    config = load_yaml(config_file_location)
-
-    tasks_to_run_for_all = []
-    tasks_with_pattern_match = {}
-    tasks_with_anti_pattern_match = {}
-
-    for proc_name, pattern in config.items():
-        proc = const.ProcessType.from_str(proc_name)
-        if pattern == ALL:
-            tasks_to_run_for_all.append(proc)
-        elif pattern == REL_ONLY:
-            add_to_dict_list(proc, tasks_with_pattern_match)
-        elif pattern == MEDIAN_ONLY:
-            add_to_dict_list(proc, tasks_with_anti_pattern_match)
-        elif pattern == NONE:
-            pass
-        else:
-            if isinstance(pattern, str):
-                pattern = [pattern]
-            for subpattern in pattern:
-                if subpattern == REL_ONLY:
-                    add_to_dict_list(proc, tasks_with_pattern_match)
-                elif subpattern == MEDIAN_ONLY:
-                    add_to_dict_list(proc, tasks_with_anti_pattern_match)
-                else:
-                    add_to_dict_list(proc, tasks_with_pattern_match, subpattern)
-    logger.info("Master script will run {}".format(tasks_to_run_for_all))
-    for pattern, tasks in tasks_with_pattern_match.items():
-        logger.info("Pattern {} will run tasks {}".format(pattern, tasks))
-
-    return (
-        tasks_to_run_for_all,
-        tasks_with_pattern_match.items(),
-        tasks_with_anti_pattern_match.items(),
-    )
-
-
-def add_to_dict_list(proc_to_add, dict_to_add_to, pattern=REL_ONLY_PATTERN):
-    if pattern not in dict_to_add_to:
-        dict_to_add_to.update({pattern: []})
-    dict_to_add_to[pattern].append(proc_to_add)
-
-
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -385,7 +321,7 @@ def main():
         "Machines will allow up to {} jobs to run simultaneously".format(n_runs)
     )
 
-    tasks_n, tasks_to_match, tasks_to_not_match = parse_config_file(
+    tasks_n, tasks_to_match, tasks_to_not_match = shared_automated_workflow.parse_config_file(
         args.config_file, wrapper_logger
     )
 
