@@ -184,7 +184,7 @@ class MgmtDB:
 
                 if (
                     entry.status == const.Status.failed.value
-                    and self.get_retries(process, realisation_name, get_WCT=False)
+                    and self.get_retries(process, realisation_name, get_WCT=False) + 1
                     < retry_max
                 ):
                     # The task was failed. If there have been few enough other attempts at the task make another one
@@ -196,7 +196,7 @@ class MgmtDB:
 
                 if (
                     entry.status == const.Status.killed_WCT.value
-                    and self.get_retries(process, realisation_name, get_WCT=True)
+                    and self.get_retries(process, realisation_name, get_WCT=True) + 1
                     < retry_max
                 ):
                     # The task was killed_WCT. If there have been few enough other attempts at the task make another one
