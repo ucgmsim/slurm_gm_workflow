@@ -137,7 +137,7 @@ class MgmtDB:
                         entry.queued_time,
                     )
 
-                if entry.status == const.Status.running.value:
+                elif entry.status == const.Status.running.value:
                     # Add general metadata to the job log when the task has started running
                     logger.debug("Logging running task to the db")
                     self.update_job_log(
@@ -150,7 +150,7 @@ class MgmtDB:
                         entry.wct,
                     )
 
-                if entry.status == const.Status.created.value:
+                elif entry.status == const.Status.created.value:
                     # Something has attempted to set a task to created
                     # Make a new task with created status and move to the next task
                     logger.debug("Adding new task to the db")
@@ -183,18 +183,6 @@ class MgmtDB:
                     )
 
                 if (
-                    entry.status == const.Status.failed.value
-                    and self.get_retries(process, realisation_name, get_WCT=False) + 1
-                    < retry_max
-                ):
-                    # The task was failed. If there have been few enough other attempts at the task make another one
-                    logger.debug(
-                        "Task failed but is able to be retried. Adding new task to the db"
-                    )
-                    self._insert_task(cur, realisation_name, process)
-                    logger.debug("New task added to the db")
-
-                if (
                     entry.status == const.Status.killed_WCT.value
                     and self.get_retries(process, realisation_name, get_WCT=True) + 1
                     < retry_max
@@ -202,6 +190,17 @@ class MgmtDB:
                     # The task was killed_WCT. If there have been few enough other attempts at the task make another one
                     logger.debug(
                         "Task hit WCT but is able to be retried. Adding new task to the db"
+                    )
+                    self._insert_task(cur, realisation_name, process)
+                    logger.debug("New task added to the db")
+                elif (
+                    entry.status == const.Status.failed.value
+                    and self.get_retries(process, realisation_name, get_WCT=False) + 1
+                    < retry_max
+                ):
+                    # The task was failed. If there have been few enough other attempts at the task make another one
+                    logger.debug(
+                        "Task failed but is able to be retried. Adding new task to the db"
                     )
                     self._insert_task(cur, realisation_name, process)
                     logger.debug("New task added to the db")
