@@ -495,8 +495,12 @@ class MgmtDB:
             )
         )
         completed_deps = [
-            const.Dependency(x[0], median=False) for x in completed_rel_tasks
-        ] + [const.Dependency(x[0], median=True) for x in completed_median_tasks]
+            const.Dependency(x[0], dependency_target=const.DependencyTarget.REL)
+            for x in completed_rel_tasks
+        ] + [
+            const.Dependency(x[0], dependency_target=const.DependencyTarget.MEDIAN)
+            for x in completed_median_tasks
+        ]
         remaining_deps = process.get_remaining_dependencies(completed_deps)
         logger.debug("{} has remaining deps: {}".format(task, remaining_deps))
         return len(remaining_deps) == 0
