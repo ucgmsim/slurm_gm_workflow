@@ -42,9 +42,7 @@ def state_table_query_builder(
     what: Union[str, List[str]],
     state: Union[bool, int] = False,
     process_type: Union[bool, int] = False,
-    run_name_exact: bool = False,
-    run_name_similar: bool = False,
-    run_name_disimilar: bool = False,
+    run_name_type: MgmtDB.ComparisonOperator = None,
     task_id: Union[bool, int] = False,
     ordering: Union[bool, str, List[str]] = False,
 ):
@@ -66,12 +64,8 @@ def state_table_query_builder(
     query = f"SELECT {', '.join(what)} FROM state "
 
     wheres = []
-    if run_name_exact:
-        wheres.append(f"run_name = ?")
-    elif run_name_similar:
-        wheres.append(f"run_name like ?")
-    elif run_name_disimilar:
-        wheres.append(f"run_name not like ?")
+    if run_name_type is not None:
+        wheres.append(f"run_name {run_name_type.value} ?")
 
     if state is not False:
         if state is not True:
@@ -215,7 +209,7 @@ def show_pattern_state_counts(config_file, db, todo=False):
             vals.append(
                 db.execute(
                     state_table_query_builder(
-                        "COUNT(*)", state=True, run_name_similar=True
+                        "COUNT(*)", state=True, run_name_type=MgmtDB.ComparisonOperator.LIKE
                     ),
                     (pattern, i),
                 ).fetchone()[0]
@@ -234,7 +228,7 @@ def show_pattern_state_counts(config_file, db, todo=False):
             vals.append(
                 db.execute(
                     state_table_query_builder(
-                        "COUNT(*)", state=True, run_name_disimilar=True
+                        "COUNT(*)", state=True, run_name_type=MgmtDB.ComparisonOperator.NOTLIKE
                     ),
                     (pattern, i),
                 ).fetchone()[0]
@@ -276,7 +270,26 @@ def show_detailed_config_counts(config_file, db, todo=False):
                             "COUNT(*)",
                             state=True,
                             process_type=True,
-                            run_name_similar=True,
+                            run_name_type=MgmtDB.ComparisonOperator.LIKE,
+                        ),
+                        (pattern, i, j.value),
+                    ).fetchone()[0]
+                )
+            if todo:
+                print(PATTERN_TODO_FORMATTER.format(pattern, j.str_value, vals[0]))
+            else:
+                print(PATTERN_FORMATTER.format(pattern, j.str_value, *vals, sum(vals)))
+    for pattern, tasks in tasks_to_not_match:
+        for j in tasks:
+            vals = []
+            for i in range(1, 7):
+                vals.append(
+                    db.execute(
+                        state_table_query_builder(
+                            "COUNT(*)",
+                            state=True,
+                            process_type=True,
+                            run_name_type=MgmtDB.ComparisonOperator.NOTLIKE,
                         ),
                         (pattern, i, j.value),
                     ).fetchone()[0]
