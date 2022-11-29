@@ -146,18 +146,21 @@ def check_mgmt_queue(
 
 
 def parse_config_file(
-        config_file_location: str, logger: Logger = qclogging.get_basic_logger()
+        config_file: str, logger: Logger = qclogging.get_basic_logger()
 ):
     """Takes in the location of a wrapper config file and creates the tasks to be run.
     Requires that the file contains the keys 'run_all_tasks' and 'run_some', even if they are empty
     If the dependencies for a run_some task overlap with those in the tasks_to_run_for_all, as a race condition is
     possible if multiple auto_submit scripts have the same tasks. If multiple run_some instances have the same
     dependencies then this is not an issue as they run sequentially, rather than simultaneously
-    :param config_file_location: The location of the config file
+    :param config_file: The location of the config file
     :return: A tuple containing the tasks to be run on all processes and a list of pattern, tasks tuples which state
     which tasks can be run with which patterns
     """
-    config = qc_utils.load_yaml(config_file_location)
+    if isinstance(config_file, str):
+        config = qc_utils.load_yaml(config_file)
+    else:
+        config = config_file
 
     tasks_to_run_for_all = []
     tasks_with_pattern_match = {}
