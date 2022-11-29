@@ -92,11 +92,12 @@ class MgmtDB:
     def db_file(self):
         return self._db_file
 
-    def get_retries(self, process, realisation_name):
+    def get_retries(self, process, realisation_name, get_WCT=False):
+        get_WCT_symbol = "=" if get_WCT else "!="
         with connect_db_ctx(self._db_file) as cur:
             return cur.execute(
                 "SELECT COUNT(*) from state "
-                "WHERE run_name = ? AND proc_type = ? and status != ?",
+                f"WHERE run_name = ? AND proc_type = ? and status {get_WCT_symbol} ?",
                 (realisation_name, process, const.Status.killed_WCT.value),
             ).fetchone()[0]
 
@@ -136,7 +137,7 @@ class MgmtDB:
                         entry.queued_time,
                     )
 
-                if entry.status == const.Status.running.value:
+                elif entry.status == const.Status.running.value:
                     # Add general metadata to the job log when the task has started running
                     logger.debug("Logging running task to the db")
                     self.update_job_log(
@@ -149,7 +150,7 @@ class MgmtDB:
                         entry.wct,
                     )
 
-                if entry.status == const.Status.created.value:
+                elif entry.status == const.Status.created.value:
                     # Something has attempted to set a task to created
                     # Make a new task with created status and move to the next task
                     logger.debug("Adding new task to the db")
@@ -182,16 +183,27 @@ class MgmtDB:
                     )
 
                 if (
-                    entry.status == const.Status.failed.value
-                    or entry.status == const.Status.killed_WCT.value
+                    entry.status == const.Status.killed_WCT.value
+                    and self.get_retries(process, realisation_name, get_WCT=True) + 1
+                    < retry_max
                 ):
-                    if self.get_retries(process, realisation_name) < retry_max:
-                        # The task was failed. If there have been few enough other attempts at the task make another one
-                        logger.debug(
-                            "Task failed but is able to be retried. Adding new task to the db"
-                        )
-                        self._insert_task(cur, realisation_name, process)
-                        logger.debug("New task added to the db")
+                    # The task was killed_WCT. If there have been few enough other attempts at the task make another one
+                    logger.debug(
+                        "Task hit WCT but is able to be retried. Adding new task to the db"
+                    )
+                    self._insert_task(cur, realisation_name, process)
+                    logger.debug("New task added to the db")
+                elif (
+                    entry.status == const.Status.failed.value
+                    and self.get_retries(process, realisation_name, get_WCT=False) + 1
+                    < retry_max
+                ):
+                    # The task was failed. If there have been few enough other attempts at the task make another one
+                    logger.debug(
+                        "Task failed but is able to be retried. Adding new task to the db"
+                    )
+                    self._insert_task(cur, realisation_name, process)
+                    logger.debug("New task added to the db")
 
                 if entry.status == const.Status.failed.value:
                     tasks = MgmtDB.find_dependant_task(cur, entry)
@@ -319,7 +331,7 @@ class MgmtDB:
         n_max_retries: The maximum number of retries a task can have"""
         with connect_db_ctx(self._db_file) as cur:
             errored = cur.execute(
-                "SELECT run_name, proc_type "
+                "SELECT run_name, proc_type, state "
                 "FROM state, status_enum "
                 "WHERE state.status = status_enum.id "
                 "AND (status_enum.state  = 'failed' "
@@ -327,15 +339,15 @@ class MgmtDB:
             ).fetchall()
 
         failure_count = {}
-        for run_name, proc_type in errored:
+        for run_name, proc_type, state in errored:
             key = "{}__{}".format(run_name, proc_type)
             if key not in failure_count.keys():
-                failure_count.update({key: 0})
-            failure_count[key] += 1
+                failure_count.update({key: {"killed_WCT": 0, "failed": 0}})
+            failure_count[key][state] += 1
 
         with connect_db_ctx(self._db_file) as cur:
             for key, fail_count in failure_count.items():
-                if fail_count >= n_max_retries:
+                if any([x >= n_max_retries for x in fail_count.values()]):
                     continue
                 run_name, proc_type = key.split("__")
                 # Gets the number of entries for the task with state in [created, queued, running or completed]
@@ -424,7 +436,7 @@ class MgmtDB:
                 ).fetchall()
                 runnable_tasks.extend(
                     [
-                        (*task, self.get_retries(*task))
+                        (*task, self.get_retries(*task, get_WCT=True))
                         for task in db_tasks
                         if self._check_dependancy_met(task, logger)
                         and "{}__{}".format(*task) not in tasks_waiting_for_updates
