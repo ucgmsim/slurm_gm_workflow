@@ -122,7 +122,6 @@ def print_run_status(db, run_name, query_mode: QueryModes, config_file=None):
             print("{:>25} | {:>15} | {:>10} | {!s:>8} | {:>20}".format(*statum))
 
 
-# noinspection SqlResolve,SqlNoDataSourceInspection
 def get_all_entries(db, run_name, query_mode):
     extra_query = ""
     if query_mode.todo:
@@ -145,7 +144,6 @@ def get_all_entries(db, run_name, query_mode):
     return status
 
 
-# noinspection SqlResolve,SqlNoDataSourceInspection
 def get_all_entries_from_config(config_file, db, query_mode):
     extra_query = ""
     if query_mode.todo:
