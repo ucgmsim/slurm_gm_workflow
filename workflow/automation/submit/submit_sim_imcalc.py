@@ -31,6 +31,7 @@ def submit_im_calc_slurm(
     write_dir: str = None,
     simple_out: bool = True,
     adv_ims: bool = False,
+    retries: int = 0,
     target_machine: str = get_target_machine(const.ProcessType.IM_calculation).name,
     logger: Logger = get_basic_logger(),
 ):
@@ -193,6 +194,7 @@ def submit_im_calc_slurm(
     # Header options requiring upstream settings
     # special treatment for im_calc, as the scaling feature in estimation is not suitable
     # cap the wct, otherwise cannot submit
+    est_run_time = est_run_time * (int(retries) + 1)
     est_run_time = min(est_run_time * CH_SAFETY_FACTOR, qconfig["MAX_JOB_WCT"])
     # set ch_safety_factor=1 as we scale it already.
     header_options["wallclock_limit"] = get_wct(est_run_time, ch_safety_factor=1)
