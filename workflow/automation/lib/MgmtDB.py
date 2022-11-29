@@ -300,9 +300,7 @@ class MgmtDB:
         tasks = []
         for process in const.ProcessType:
             for dependency in process.dependencies:
-                if isinstance(dependency, tuple):
-                    dependency = dependency[0]
-                if entry.proc_type == dependency:
+                if entry.proc_type == dependency.process.value:
                     job_id = cur.execute(
                         "SELECT `job_id` FROM `state` WHERE proc_type = ? and status = ? and run_name = ?",
                         (process.value, const.Status.completed.value, entry.run_name),
