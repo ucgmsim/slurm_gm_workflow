@@ -1,8 +1,19 @@
+#! python3
+"""
+Sets a cybershake database to a state determined by the db_task_config file.
+
+The format of the db_task_config file is as follows:
+<database state>:
+    <process name>:
+        <SQL style patterns to match>
+Where each of "process name" and "SQL" are repeatable if there are multiple things of the parent that need to be set
+No database state can be repeated
+"""
 import argparse
 from pathlib import Path
-from sqlite3 import Connection
+from typing import Dict, Union, List
 
-from qcore import utils, simulation_structure
+from qcore import utils, simulation_structure, constants
 from workflow.automation.lib import shared_automated_workflow, MgmtDB
 
 
@@ -19,18 +30,22 @@ def main():
     db_task_config = args.db_task_config.absolute()
     cs_root = args.cybershake_root.absolute()
 
-    config = utils.load_yaml(db_task_config)
+    # Load config
+    config: Dict[str, Dict[str, Union[str, List[str]]]] = utils.load_yaml(db_task_config)
+    errors = []
+    for state in config.keys():
+        if not constants.Status.has_value(state):
+            errors.append(f"State {state} in db_task_config not valid. Valid states are {constants.Status.iterate_str_values()}.")
+    if errors:
+        raise ValueError(f"Error(s) were found, please correct these before re-running: {', '.join(errors)}")
+
     config = {
         state: shared_automated_workflow.parse_config_file(tree)
         for state, tree in config.items()
     }
-    # for state, tree in raw_config.items():
-    #     processed_config[state] = shared_automated_workflow.parse_config_file(tree)
 
-    # I mean really? Couldn't we have just made the MgmtDB a context manager?
     db = MgmtDB.MgmtDB(simulation_structure.get_mgmt_db(cs_root))
     with MgmtDB.connect_db_ctx(db.db_file) as db_cur:
-        db_cur: Connection
         db_cur.execute("BEGIN")
         for state, (
             apply_to_all,
