@@ -173,7 +173,9 @@ def get_all_entries_from_config(config_file, db, query_mode):
         tasks = [i.value for i in tasks]
         status.extend(
             db.execute(
-                base_command.format("AND state.run_name LIKE ?", ",?" * (len(tasks) - 1)),
+                base_command.format(
+                    "AND state.run_name LIKE ?", ",?" * (len(tasks) - 1)
+                ),
                 (pattern, *tasks),
             ).fetchall()
         )
@@ -181,7 +183,9 @@ def get_all_entries_from_config(config_file, db, query_mode):
         tasks = [i.value for i in tasks]
         status.extend(
             db.execute(
-                base_command.format("AND state.run_name NOT LIKE ?", ",?" * (len(tasks) - 1)),
+                base_command.format(
+                    "AND state.run_name NOT LIKE ?", ",?" * (len(tasks) - 1)
+                ),
                 (pattern, *tasks),
             ).fetchall()
         )
@@ -207,7 +211,9 @@ def show_pattern_state_counts(config_file, db, todo=False):
             vals.append(
                 db.execute(
                     state_table_query_builder(
-                        "COUNT(*)", state=True, run_name_type=MgmtDB.ComparisonOperator.LIKE
+                        "COUNT(*)",
+                        state=True,
+                        run_name_type=MgmtDB.ComparisonOperator.LIKE,
                     ),
                     (pattern, i),
                 ).fetchone()[0]
@@ -226,7 +232,9 @@ def show_pattern_state_counts(config_file, db, todo=False):
             vals.append(
                 db.execute(
                     state_table_query_builder(
-                        "COUNT(*)", state=True, run_name_type=MgmtDB.ComparisonOperator.NOTLIKE
+                        "COUNT(*)",
+                        state=True,
+                        run_name_type=MgmtDB.ComparisonOperator.NOTLIKE,
                     ),
                     (pattern, i),
                 ).fetchone()[0]
