@@ -168,24 +168,21 @@ def parse_config_file(
 
     for proc_name, pattern in config.items():
         proc = const.ProcessType.from_str(proc_name)
-        if pattern == ALL:
+        if pattern == ALL or ALL in pattern:
             tasks_to_run_for_all.append(proc)
-        elif pattern == REL_ONLY:
-            add_to_dict_list(proc, tasks_with_pattern_match)
-        elif pattern == MEDIAN_ONLY:
-            add_to_dict_list(proc, tasks_with_anti_pattern_match)
-        elif pattern == NONE:
-            pass
-        else:
-            if isinstance(pattern, str):
-                pattern = [pattern]
-            for subpattern in pattern:
-                if subpattern == REL_ONLY:
-                    add_to_dict_list(proc, tasks_with_pattern_match)
-                elif subpattern == MEDIAN_ONLY:
-                    add_to_dict_list(proc, tasks_with_anti_pattern_match)
-                else:
-                    add_to_dict_list(proc, tasks_with_pattern_match, subpattern)
+            # If something has ALL it should only be added to the main runner and no other
+            continue
+        if isinstance(pattern, str):
+            pattern = [pattern]
+        for subpattern in pattern:
+            if subpattern == REL_ONLY:
+                add_to_dict_list(proc, tasks_with_pattern_match)
+            elif subpattern == MEDIAN_ONLY:
+                add_to_dict_list(proc, tasks_with_anti_pattern_match)
+            elif subpattern == NONE:
+                pass
+            else:
+                add_to_dict_list(proc, tasks_with_pattern_match, subpattern)
     logger.info("Master script will run {}".format(tasks_to_run_for_all))
     for pattern, tasks in tasks_with_pattern_match.items():
         logger.info("Pattern {} will run tasks {}".format(pattern, tasks))
