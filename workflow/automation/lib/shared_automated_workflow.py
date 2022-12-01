@@ -125,7 +125,10 @@ def add_to_queue(
 
 
 def check_mgmt_queue(
-    queue_entries: List[str], run_name: str, proc_type: int, logger=qclogging.get_basic_logger()
+    queue_entries: List[str],
+    run_name: str,
+    proc_type: int,
+    logger=qclogging.get_basic_logger(),
 ):
     """Returns True if there are any queued entries for this run_name and process type,
     otherwise returns False.
@@ -146,7 +149,7 @@ def check_mgmt_queue(
 
 
 def parse_config_file(
-        config_file_location: str, logger: Logger = qclogging.get_basic_logger()
+    config_file_location: str, logger: Logger = qclogging.get_basic_logger()
 ):
     """Takes in the location of a wrapper config file and creates the tasks to be run.
     Requires that the file contains the keys 'run_all_tasks' and 'run_some', even if they are empty
@@ -198,4 +201,3 @@ def add_to_dict_list(proc_to_add, dict_to_add_to, pattern=REL_ONLY_PATTERN):
     if pattern not in dict_to_add_to:
         dict_to_add_to.update({pattern: []})
     dict_to_add_to[pattern].append(proc_to_add)
-

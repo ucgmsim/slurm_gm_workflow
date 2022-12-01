@@ -421,7 +421,7 @@ def est_VM_PERT_chours(data: np.ndarray):
     vm_size = data[:, 0]
 
     core_hours = (
-        ((vm_size ** 2) * coefficients["a"])
+        ((vm_size**2) * coefficients["a"])
         + (vm_size * coefficients["b"])
         + coefficients["c"]
     )
