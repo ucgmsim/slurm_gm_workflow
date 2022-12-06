@@ -321,9 +321,11 @@ def main():
         "Machines will allow up to {} jobs to run simultaneously".format(n_runs)
     )
 
-    tasks_n, tasks_to_match, tasks_to_not_match = shared_automated_workflow.parse_config_file(
-        args.config_file, wrapper_logger
-    )
+    (
+        tasks_n,
+        tasks_to_match,
+        tasks_to_not_match,
+    ) = shared_automated_workflow.parse_config_file(args.config_file, wrapper_logger)
 
     run_automated_workflow(
         root_directory,

@@ -132,14 +132,16 @@ def get_new_progress_df(root_dir, faults_dict, mgmtdb: MgmtDB, proc_types: List[
 
     # Retrieve the number of completed RELs from DB
     for fault_name in fault_names:
+        using_rels = faults_dict[fault_name] > 0
         for proc_type in proc_types:
-            using_rels = faults_dict[fault_name] > 1
             r_completed = mgmtdb.num_task_complete(
-                (const.ProcessType.from_str(proc_type).value, fault_name), matcher=ComparisonOperator.EXACT
+                (const.ProcessType.from_str(proc_type).value, fault_name),
+                matcher=ComparisonOperator.EXACT,
             )
             if using_rels:
                 r_completed += mgmtdb.num_task_complete(
-                    (const.ProcessType.from_str(proc_type).value, fault_name + "_REL%"), matcher=ComparisonOperator.LIKE
+                    (const.ProcessType.from_str(proc_type).value, f"{fault_name}_REL%"),
+                    matcher=ComparisonOperator.LIKE,
                 )
             progress_df.loc[fault_name, (proc_type, NUM_COMPLETED_COL)] = r_completed
 

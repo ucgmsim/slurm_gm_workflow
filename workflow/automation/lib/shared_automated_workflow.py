@@ -125,7 +125,10 @@ def add_to_queue(
 
 
 def check_mgmt_queue(
-    queue_entries: List[str], run_name: str, proc_type: int, logger=qclogging.get_basic_logger()
+    queue_entries: List[str],
+    run_name: str,
+    proc_type: int,
+    logger=qclogging.get_basic_logger(),
 ):
     """Returns True if there are any queued entries for this run_name and process type,
     otherwise returns False.
@@ -146,7 +149,7 @@ def check_mgmt_queue(
 
 
 def parse_config_file(
-        config_file: str, logger: Logger = qclogging.get_basic_logger()
+        task_config: str, logger: Logger = qclogging.get_basic_logger()
 ):
     """Takes in the location of a wrapper config file and creates the tasks to be run.
     Requires that the file contains the keys 'run_all_tasks' and 'run_some', even if they are empty
@@ -157,10 +160,10 @@ def parse_config_file(
     :return: A tuple containing the tasks to be run on all processes and a list of pattern, tasks tuples which state
     which tasks can be run with which patterns
     """
-    if isinstance(config_file, str):
-        config = qc_utils.load_yaml(config_file)
+    if isinstance(task_config, str):
+        config = qc_utils.load_yaml(task_config)
     else:
-        config = config_file
+        config = task_config
 
     tasks_to_run_for_all = []
     tasks_with_pattern_match = {}
@@ -168,24 +171,21 @@ def parse_config_file(
 
     for proc_name, pattern in config.items():
         proc = const.ProcessType.from_str(proc_name)
-        if pattern == ALL:
+        if pattern == ALL or ALL in pattern:
             tasks_to_run_for_all.append(proc)
-        elif pattern == REL_ONLY:
-            add_to_dict_list(proc, tasks_with_pattern_match)
-        elif pattern == MEDIAN_ONLY:
-            add_to_dict_list(proc, tasks_with_anti_pattern_match)
-        elif pattern == NONE:
-            pass
-        else:
-            if isinstance(pattern, str):
-                pattern = [pattern]
-            for subpattern in pattern:
-                if subpattern == REL_ONLY:
-                    add_to_dict_list(proc, tasks_with_pattern_match)
-                elif subpattern == MEDIAN_ONLY:
-                    add_to_dict_list(proc, tasks_with_anti_pattern_match)
-                else:
-                    add_to_dict_list(proc, tasks_with_pattern_match, subpattern)
+            # If something has ALL it should only be added to the main runner and no other
+            continue
+        if isinstance(pattern, str):
+            pattern = [pattern]
+        for subpattern in pattern:
+            if subpattern == REL_ONLY:
+                add_to_dict_list(proc, tasks_with_pattern_match)
+            elif subpattern == MEDIAN_ONLY:
+                add_to_dict_list(proc, tasks_with_anti_pattern_match)
+            elif subpattern == NONE:
+                pass
+            else:
+                add_to_dict_list(proc, tasks_with_pattern_match, subpattern)
     logger.info("Master script will run {}".format(tasks_to_run_for_all))
     for pattern, tasks in tasks_with_pattern_match.items():
         logger.info("Pattern {} will run tasks {}".format(pattern, tasks))
@@ -201,4 +201,3 @@ def add_to_dict_list(proc_to_add, dict_to_add_to, pattern=REL_ONLY_PATTERN):
     if pattern not in dict_to_add_to:
         dict_to_add_to.update({pattern: []})
     dict_to_add_to[pattern].append(proc_to_add)
-
