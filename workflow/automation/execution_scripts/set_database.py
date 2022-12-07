@@ -34,8 +34,8 @@ def main():
     config: Dict[str, Dict[str, Union[str, List[str]]]] = utils.load_yaml(db_task_config)
     errors = []
     for state in config.keys():
-        if not constants.Status.has_value(state):
-            errors.append(f"State {state} in db_task_config not valid. Valid states are {constants.Status.iterate_str_values()}.")
+        if not constants.Status.has_str_value(state):
+            errors.append(f"State {state} in db_task_config not valid. Valid states are {list(constants.Status.iterate_str_values())}.")
     if errors:
         raise ValueError(f"Error(s) were found, please correct these before re-running: {', '.join(errors)}")
 
