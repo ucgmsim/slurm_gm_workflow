@@ -10,6 +10,7 @@ Where each of "process name" and "SQL" are repeatable if there are multiple thin
 No database state can be repeated
 """
 import argparse
+from collections import dict_items
 from pathlib import Path
 from typing import Dict, Union, List
 
@@ -55,32 +56,32 @@ def main():
             if len(apply_to_all) > 0:
                 db_cur.execute(
                     f"UPDATE state SET {db.col_status} = ?, last_modified = strftime('%s','now') "
-                    "WHERE proc_type IN ({', '.join('?'*len(apply_to_all))})",
+                    f"WHERE proc_type IN ({', '.join('?'*len(apply_to_all))})",
                     (
                         state,
-                        apply_to_all,
+                        *[x.str_value for x in apply_to_all],
                     ),
                 )
             if len(apply_to_pattern) > 0:
-                for pattern, task_set in apply_to_pattern.items:
+                for pattern, task_set in apply_to_pattern:
                     db_cur.execute(
                         f"UPDATE state SET {db.col_status} = ?, last_modified = strftime('%s','now') "
-                        "WHERE run_name LIKE ? AND proc_type IN ({', '.join('?'*len(task_set))})",
+                        f"WHERE run_name LIKE ? AND proc_type IN ({', '.join('?'*len(task_set))})",
                         (
                             state,
                             pattern,
-                            task_set,
+                            *[x.str_value for x in task_set],
                         ),
                     )
             if len(apply_to_not_pattern) > 0:
-                for pattern, task_set in apply_to_not_pattern.items:
+                for pattern, task_set in apply_to_not_pattern:
                     db_cur.execute(
                         f"UPDATE state SET {db.col_status} = ?, last_modified = strftime('%s','now') "
-                        "WHERE run_name NOT LIKE ? AND proc_type IN ({', '.join('?'*len(task_set))})",
+                        f"WHERE run_name NOT LIKE ? AND proc_type IN ({', '.join('?'*len(task_set))})",
                         (
                             state,
                             pattern,
-                            task_set,
+                            *[x.str_value for x in task_set],
                         ),
                     )
         db_cur.commit()
