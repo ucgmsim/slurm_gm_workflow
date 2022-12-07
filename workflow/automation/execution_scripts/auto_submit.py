@@ -17,7 +17,7 @@ import qcore.simulation_structure as sim_struct
 
 
 from workflow.automation.metadata.log_metadata import store_metadata
-from workflow.automation.lib.MgmtDB import MgmtDB
+from workflow.automation.lib.MgmtDB import MgmtDB, ComparisonOperator
 from workflow.automation.lib.schedulers.scheduler_factory import Scheduler
 from workflow.automation.submit.submit_emod3d import main as submit_lf_main
 from workflow.automation.submit.submit_empirical import generate_empirical_script
@@ -396,6 +396,7 @@ def run_main_submit_loop(
     rels_to_run: str,
     given_tasks_to_run: List[const.ProcessType],
     sleep_time: int,
+    matcher: ComparisonOperator = ComparisonOperator.LIKE,
     main_logger: Logger = qclogging.get_basic_logger(),
     cycle_timeout=1,
 ):
@@ -452,6 +453,7 @@ def run_main_submit_loop(
             rels_to_run,
             sum(n_runs.values()),
             os.listdir(sim_struct.get_mgmt_db_queue(root_folder)),
+            matcher,
             given_tasks_to_run,
             main_logger,
         )
@@ -580,9 +582,18 @@ def main():
         help="An SQLite formatted query to match the realisations that should run.",
         default="%",
     )
+    parser.add_argument(
+        "--matcher",
+        help="Type of SQL match to make. Either: "
+        "EXACT for exact only match, "
+        "LIKE to match any '%' or '_' symbols, or "
+        "NOTLIKE to match everything except the --rels_to_run argument",
+        default=ComparisonOperator.LIKE.name,
+        options=ComparisonOperator.get_names(),
+    )
 
     args = parser.parse_args()
-
+    args.matcher = ComparisonOperator[args.matcher]
     root_folder = os.path.abspath(args.root_folder)
 
     if args.log_file is None:
@@ -635,28 +646,27 @@ def main():
         n_runs = platform_config[const.PLATFORM_CONFIG.DEFAULT_N_RUNS.name]
 
     logger.debug(
-        "Processes to be run were: {}. Getting all required dependencies now.".format(
+        "Processes to be run were: {}. "
+        "Getting all required dependencies now. "
+        "Assuming all given tasks are to be run for all realisations (including median, as per --rels_to_run)".format(
             args.task_types_to_run
         )
     )
-    task_types_to_run = [
-        const.ProcessType.from_str(proc) for proc in args.task_types_to_run
-    ]
-    for task in task_types_to_run:
+    task_types_to_run = [const.Dependency(proc) for proc in args.task_types_to_run]
+    for dependency in task_types_to_run:
         logger.debug(
-            "Process {} in processes to be run, adding dependencies now.".format(
-                task.str_value
-            )
+            f"Process {dependency} in processes to be run, adding dependencies now."
         )
-        for proc_num in task.get_remaining_dependencies(task_types_to_run):
-            proc = const.ProcessType(proc_num)
-            if proc not in task_types_to_run:
+        for sub_dependency in dependency.process.get_remaining_dependencies(
+            task_types_to_run
+        ):
+            target = sub_dependency
+            if target not in task_types_to_run:
                 logger.debug(
-                    "Process {} added as a dependency of process {}".format(
-                        proc.str_value, task.str_value
-                    )
+                    f"Dependency {target.process} added as a dependency of process {dependency.process}"
                 )
-                task_types_to_run.append(proc)
+                task_types_to_run.append(target)
+    task_types_to_run = [x.process for x in task_types_to_run]
 
     mutually_exclusive_task_error = const.ProcessType.check_mutually_exclusive_tasks(
         task_types_to_run
@@ -669,13 +679,13 @@ def main():
 
     scheduler_logger = qclogging.get_logger(name=f"{logger.name}.scheduler")
     Scheduler.initialise_scheduler(user=args.user, logger=scheduler_logger)
-
     run_main_submit_loop(
         root_folder,
         n_runs,
         args.rels_to_run,
         task_types_to_run,
         args.sleep_time,
+        args.matcher,
         main_logger=logger,
     )
 
