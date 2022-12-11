@@ -386,6 +386,23 @@ def submit_task(
             ),
             target_machine=get_target_machine(const.ProcessType.INSTALL_FAULT).name,
         )
+    elif proc_type == const.ProcessType.SRF_GEN.value:
+        submit_script_to_scheduler(
+            get_platform_specific_script(
+                const.ProcessType.SRF_GEN,
+                OrderedDict(
+                    {
+                        "REL_YAML": str(
+                            Path(sim_struct.get_srf_path(root_folder, run_name)).parent
+                            / f"{run_name}.yaml"
+                        ),
+                        "MGMT_DB_LOC": root_folder,
+                        "REL_NAME": run_name,
+                    }
+                ),
+            ),
+            target_machine=get_target_machine(const.ProcessType.SRF_GEN).name,
+        )
 
     qclogging.clean_up_logger(task_logger)
 
