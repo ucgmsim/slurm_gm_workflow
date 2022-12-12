@@ -8,7 +8,7 @@ import os
 import logging
 import numpy as np
 
-from qcore.siteamp_models import nt2n, cb_amp, ba18_amp, init_ba18
+from qcore.siteamp_models import nt2n, cb_amp, ba18_amp, init_ba18, get_ft_freq, amplification_uncertainty
 from qcore import timeseries, utils
 from qcore.constants import VM_PARAMS_FILE_NAME, Components, PLATFORM_CONFIG
 from workflow.calculation.site_response_BB import site_response
@@ -65,6 +65,17 @@ def args_parser(cmd=None):
             PLATFORM_CONFIG.DEFAULT_SITE_RESPONSE_DIR.name
         ],
         nargs="?",
+    )
+    arg(
+        "--site-amp-uncertainty",
+        help="Use site amplification uncertainty",
+        action="store_true",
+    )
+    arg(
+        "--site-amp-uncertainty-seed",
+        help="Seed to use for site amp uncertainty. Will use a random seed otherwise.",
+        default=None,
+        type=int,
     )
 
     args = parser.parse_args(cmd)
@@ -461,6 +472,11 @@ def main():
                     fmidbot=fmidbot,
                     version=site_amp_version,
                 )
+                if args.site_amp_uncertainty:
+                    freqs = get_ft_freq(bb_dt, n2)
+                    seed = args.site_amp_uncertainty_seed + stations_todo_idx[i]
+                    hf_amp_val = amplification_uncertainty(hf_amp_val, freqs, seed=seed)
+                    lf_amp_val = amplification_uncertainty(lf_amp_val, freqs, seed=seed + hf.stations.size)
                 hf_filtered = bwfilter(
                     ampdeamp(
                         hf_acc[:, c],
