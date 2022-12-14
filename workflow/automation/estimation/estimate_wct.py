@@ -485,7 +485,9 @@ def est_IM_chours_single(
         core_hours *= 7.5
 
     wct = core_hours / n_cores
-    if scale_ncores and wct > (node_time_th_factor * n_cores / PHYSICAL_NCORES_PER_NODE):
+    if scale_ncores and wct > (
+        node_time_th_factor * n_cores / PHYSICAL_NCORES_PER_NODE
+    ):
         # Make a numpy array of the input data in the right shape
         data = np.array([int(n_cores)]).reshape(1, 1)
         core_hours, wct, n_cores = scale_core_hours(
