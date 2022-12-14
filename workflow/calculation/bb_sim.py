@@ -69,12 +69,8 @@ def args_parser(cmd=None):
     arg(
         "--site-amp-uncertainty",
         help="Use site amplification uncertainty",
-        action="store_true",
-    )
-    arg(
-        "--site-amp-uncertainty-seed",
-        help="Seed to use for site amp uncertainty. Will use a random seed otherwise.",
-        default=None,
+        default=False,
+        nargs="?",
         type=int,
     )
 
@@ -472,11 +468,16 @@ def main():
                     fmidbot=fmidbot,
                     version=site_amp_version,
                 )
-                if args.site_amp_uncertainty:
+                if args.site_amp_uncertainty is not False:
                     freqs = get_ft_freq(bb_dt, n2)
-                    seed = args.site_amp_uncertainty_seed + stations_todo_idx[i]
-                    hf_amp_val = amplification_uncertainty(hf_amp_val, freqs, seed=seed)
-                    lf_amp_val = amplification_uncertainty(lf_amp_val, freqs, seed=seed + hf.stations.size)
+                    if args.site_amp_uncertainty is None:
+                        lf_seed = hf_seed = None
+                    else:
+                        hf_seed = args.site_amp_uncertainty + stations_todo_idx[i]
+                        lf_seed = hf_seed + hf.stations.size
+                    hf_amp_val = amplification_uncertainty(hf_amp_val, freqs, seed=hf_seed)
+                    if lf_amp_val is not None:
+                        lf_amp_val = amplification_uncertainty(lf_amp_val, freqs, seed=lf_seed)
                 hf_filtered = bwfilter(
                     ampdeamp(
                         hf_acc[:, c],
