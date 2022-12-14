@@ -68,7 +68,7 @@ def args_parser(cmd=None):
     )
     arg(
         "--site-amp-uncertainty",
-        help="Use site amplification uncertainty",
+        help="Use site amplification uncertainty. Optionally provide a seed to give reproducible behaviour. Maximum seed value is 2^64-1",
         default=False,
         nargs="?",
         type=int,
