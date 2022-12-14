@@ -1,6 +1,6 @@
-VM_PARAMS: ONCE
-VM_GEN: ONCE
+VM_PARAMS: MEDIAN
+VM_GEN: MEDIAN
 # if you select the VM_PERT option you need to re-install (install_cybershake.py) after generating perturbations to
 # enable the perturbation to take effect
-VM_PERT: NONE # ALL
-INSTALL_FAULT: ONCE
+VM_PERT: NONE # ALL # REL_ONLY
+INSTALL_FAULT: MEDIAN

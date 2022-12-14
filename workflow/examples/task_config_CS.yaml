@@ -1,0 +1,13 @@
+EMOD3D: ALL
+HF: REL_ONLY
+BB: REL_ONLY
+IM_calc: REL_ONLY
+clean_up: REL_ONLY
+merge_ts: MEDIAN
+plot_ts: MEDIAN
+IM_plot: NONE
+rrup: MEDIAN
+LF2BB: NONE
+HF2BB: NONE
+plot_srf: NONE
+advanced_IM: NONE

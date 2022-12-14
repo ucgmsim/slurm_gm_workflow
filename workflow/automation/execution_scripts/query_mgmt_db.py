@@ -42,8 +42,7 @@ def state_table_query_builder(
     what: Union[str, List[str]],
     state: Union[bool, int] = False,
     process_type: Union[bool, int] = False,
-    run_name_exact: bool = False,
-    run_name_similar: bool = False,
+    run_name_type: MgmtDB.ComparisonOperator = None,
     task_id: Union[bool, int] = False,
     ordering: Union[bool, str, List[str]] = False,
 ):
@@ -54,7 +53,8 @@ def state_table_query_builder(
     :param state: Either true for one, or the number of states to be selected
     :param process_type: Either true for one, or the number of states to be selected
     :param run_name_exact: If an exact pattern match is required
-    :param run_name_similar: If a similar pattern match is required, to be used with '%' sa the sqlite wildcard character
+    :param run_name_similar: If a pattern match is required, to be used with '%' as the sqlite wildcard character
+    :param run_name_disimilar: If a pattern non-match is required, to be used with '%' as the sqlite wildcard character
     :param task_id: Either true for one, or the number of states to be selected
     :param ordering: The columns to order the results by
     :return: The string to be used as the query
@@ -64,10 +64,8 @@ def state_table_query_builder(
     query = f"SELECT {', '.join(what)} FROM state "
 
     wheres = []
-    if run_name_exact:
-        wheres.append(f"run_name = ?")
-    elif run_name_similar:
-        wheres.append(f"run_name like ?")
+    if run_name_type is not None:
+        wheres.append(f"run_name {run_name_type.value} ?")
 
     if state is not False:
         if state is not True:
@@ -132,14 +130,12 @@ def get_all_entries(db, run_name, query_mode):
         extra_query = RETRY_MAX_FILTER
 
     db.execute(
-        """SELECT state.run_name, proc_type_enum.proc_type, status_enum.state, state.job_id, datetime(last_modified,'unixepoch')
+        f"""SELECT state.run_name, proc_type_enum.proc_type, status_enum.state, state.job_id, datetime(last_modified,'unixepoch')
                 FROM state, status_enum, proc_type_enum
                 WHERE state.proc_type = proc_type_enum.id 
                 AND state.status = status_enum.id
                 AND UPPER(state.run_name) LIKE UPPER(?)
-                """
-        + extra_query
-        + """                
+                {extra_query}
                 ORDER BY state.run_name, status_enum.id
                 """,
         (run_name,),
@@ -154,21 +150,22 @@ def get_all_entries_from_config(config_file, db, query_mode):
         extra_query = """AND status_enum.state = 'created'"""
     elif query_mode.retry_max:
         extra_query = RETRY_MAX_FILTER
-    tasks_n, tasks_to_match = parse_config_file(config_file)
+    tasks_n, tasks_to_match, tasks_to_not_match = parse_config_file(config_file)
     status = []
-    if len(tasks_n) > 0:
-        status.extend(
-            db.execute(
-                (
-                    """ SELECT state.run_name, proc_type_enum.proc_type, status_enum.state, state.job_id, datetime(last_modified,'unixepoch')
+
+    base_command = f""" SELECT state.run_name, proc_type_enum.proc_type, status_enum.state, state.job_id, datetime(last_modified,'unixepoch')
                         FROM state, status_enum, proc_type_enum
                         WHERE state.proc_type = proc_type_enum.id 
                         AND state.status = status_enum.id
-                        AND state.proc_type IN (?{})
-                """
-                    + extra_query
-                    + """ ORDER BY state.run_name, status_enum.id"""
-                ).format(",?" * (len(tasks_n) - 1)),
+                        {{}}
+                        AND state.proc_type IN (?{{}})
+                        {extra_query}
+                        ORDER BY state.run_name, status_enum.id"""
+
+    if len(tasks_n) > 0:
+        status.extend(
+            db.execute(
+                base_command.format("", ",?" * (len(tasks_n) - 1)),
                 [i.value for i in tasks_n],
             ).fetchall()
         )
@@ -176,19 +173,19 @@ def get_all_entries_from_config(config_file, db, query_mode):
         tasks = [i.value for i in tasks]
         status.extend(
             db.execute(
-                (
-                    """SELECT state.run_name, proc_type_enum.proc_type, status_enum.state, state.job_id, datetime(last_modified,'unixepoch')
-                    FROM state, status_enum, proc_type_enum
-                    WHERE state.proc_type = proc_type_enum.id 
-                    AND state.status = status_enum.id
-                    AND state.run_name LIKE ?
-                    AND state.proc_type IN (?{})
-                """
-                    + extra_query
-                    + """
-                    ORDER BY state.run_name, status_enum.id
-                """
-                ).format(",?" * (len(tasks) - 1)),
+                base_command.format(
+                    "AND state.run_name LIKE ?", ",?" * (len(tasks) - 1)
+                ),
+                (pattern, *tasks),
+            ).fetchall()
+        )
+    for pattern, tasks in tasks_to_not_match:
+        tasks = [i.value for i in tasks]
+        status.extend(
+            db.execute(
+                base_command.format(
+                    "AND state.run_name NOT LIKE ?", ",?" * (len(tasks) - 1)
+                ),
                 (pattern, *tasks),
             ).fetchall()
         )
@@ -196,7 +193,7 @@ def get_all_entries_from_config(config_file, db, query_mode):
 
 
 def show_pattern_state_counts(config_file, db, todo=False):
-    tasks_n, tasks_to_match = parse_config_file(config_file)
+    tasks_n, tasks_to_match, tasks_to_not_match = parse_config_file(config_file)
     vals = []
     for i in range(1, 7):
         vals.append(
@@ -214,7 +211,30 @@ def show_pattern_state_counts(config_file, db, todo=False):
             vals.append(
                 db.execute(
                     state_table_query_builder(
-                        "COUNT(*)", state=True, run_name_similar=True
+                        "COUNT(*)",
+                        state=True,
+                        run_name_type=MgmtDB.ComparisonOperator.LIKE,
+                    ),
+                    (pattern, i),
+                ).fetchone()[0]
+            )
+        if todo:
+            print(PATTERN_TODO_FORMATTER.format("ALL", "ALL", vals[0]))
+        else:
+            print(
+                PATTERN_FORMATTER.format(
+                    ", ".join([task.name for task in tasks]), pattern, *vals, sum(vals)
+                )
+            )
+    for pattern, tasks in tasks_to_not_match:
+        vals = []
+        for i in range(1, 7):
+            vals.append(
+                db.execute(
+                    state_table_query_builder(
+                        "COUNT(*)",
+                        state=True,
+                        run_name_type=MgmtDB.ComparisonOperator.NOTLIKE,
                     ),
                     (pattern, i),
                 ).fetchone()[0]
@@ -230,7 +250,7 @@ def show_pattern_state_counts(config_file, db, todo=False):
 
 
 def show_detailed_config_counts(config_file, db, todo=False):
-    tasks_n, tasks_to_match = parse_config_file(config_file)
+    tasks_n, tasks_to_match, tasks_to_not_match = parse_config_file(config_file)
     for j in tasks_n:
         vals = []
         for i in range(1, 7):
@@ -256,7 +276,26 @@ def show_detailed_config_counts(config_file, db, todo=False):
                             "COUNT(*)",
                             state=True,
                             process_type=True,
-                            run_name_similar=True,
+                            run_name_type=MgmtDB.ComparisonOperator.LIKE,
+                        ),
+                        (pattern, i, j.value),
+                    ).fetchone()[0]
+                )
+            if todo:
+                print(PATTERN_TODO_FORMATTER.format(pattern, j.str_value, vals[0]))
+            else:
+                print(PATTERN_FORMATTER.format(pattern, j.str_value, *vals, sum(vals)))
+    for pattern, tasks in tasks_to_not_match:
+        for j in tasks:
+            vals = []
+            for i in range(1, 7):
+                vals.append(
+                    db.execute(
+                        state_table_query_builder(
+                            "COUNT(*)",
+                            state=True,
+                            process_type=True,
+                            run_name_type=MgmtDB.ComparisonOperator.NOTLIKE,
                         ),
                         (pattern, i, j.value),
                     ).fetchone()[0]

@@ -14,7 +14,7 @@ pipeline {
                     echo "[ Environment Variables ] "
                     env
 # Each stage needs custom setting done again. By default /bin/python is used.
-                    source /var/lib/jenkins/py3env/bin/activate
+                    source /home/qcadmin/py310/bin/activate
                     mkdir -p $TEMP_DIR
                     python -m venv $TEMP_DIR/venv
 # activate new virtual env
@@ -37,11 +37,11 @@ pipeline {
                     cd -
                     echo "[ Linking bins and libs ]"
                     rm -rf build
-                    ln -s $HOME/data/testing/slurm_gm_workflow/SGMW build
+                    ln -s /home/qcadmin/data/testing/slurm_gm_workflow/SGMW build
                     echo "[ Linking test data ]"
                     rm -rf sample0
                     mkdir sample0
-                    cp -r $HOME/data/testing/${env.JOB_NAME}/PangopangoF29_HYP01-10_S1244/* sample0/
+                    cp -r /home/qcadmin/data/testing/${env.JOB_NAME}/PangopangoF29_HYP01-10_S1244/* sample0/
                 """
             }
         }

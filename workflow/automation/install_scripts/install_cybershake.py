@@ -9,7 +9,7 @@ from qcore.constants import (
     HF_DEFAULT_SEED,
     Components,
 )
-from qcore import qclogging
+from qcore import qclogging, formats
 
 from install_cybershake_fault import install_fault
 from workflow.automation.platform_config import platform_config
@@ -162,12 +162,7 @@ def main():
     logger = qclogging.get_logger()
     args = load_args(logger)
 
-    faults = {}
-    with open(args.fault_selection_list) as fault_file:
-        for line in fault_file.readlines():
-            fault, count, *_ = line.split()
-            count = int(count[:-1])
-            faults.update({fault: count})
+    faults = formats.load_fault_selection_file(args.fault_selection_list)
 
     for fault, count in faults.items():
         install_fault(

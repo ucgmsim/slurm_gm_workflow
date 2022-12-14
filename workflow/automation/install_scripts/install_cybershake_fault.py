@@ -137,17 +137,15 @@ def install_fault(
 
     vs30_file_path = stat_file_path.replace(".ll", ".vs30")
 
-    # this variable has to be empty
-    # TODO: fix this legacy issue, very low priority
-    event_name = ""
-
     # get all srf from source
     srf_dir = simulation_structure.get_srf_dir(root_folder, fault_name)
 
     list_srf = glob.glob(os.path.join(srf_dir, "*_REL*.srf"))
     if len(list_srf) == 0:
         list_srf = glob.glob(os.path.join(srf_dir, "*.srf"))
-
+    median_path = os.path.join(srf_dir, f"{fault_name}.srf")
+    if median_path in list_srf:
+        list_srf.remove(median_path)
     list_srf.sort()
     if n_rel is not None and len(list_srf) != n_rel:
         message = (
@@ -156,6 +154,9 @@ def install_fault(
         )
         logger.log(NOPRINTCRITICAL, message)
         raise RuntimeError(message)
+
+    if os.path.isfile(median_path) and median_path not in list_srf:
+        list_srf.insert(0, median_path)
 
     # Get & validate velocity model directory
     vel_mod_dir = simulation_structure.get_fault_VM_dir(root_folder, fault_name)
