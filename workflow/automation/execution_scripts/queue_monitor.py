@@ -181,7 +181,7 @@ def update_tasks(
                         const.Status.killed_WCT.value
                         if killed_wct
                         else const.Status.failed.value,
-                        None,
+                        db_running_task.job_id,
                         f"Disappeared from {Scheduler.get_scheduler().QUEUE_NAME}.",
                     )
                 )
