@@ -493,6 +493,7 @@ def est_IM_chours_single(
         core_hours, wct, n_cores = scale_core_hours(
             core_hours, data, node_time_th_factor
         )
+        core_hours, n_cores = float(core_hours), int(n_cores)
 
     return core_hours, core_hours / n_cores, n_cores
 
