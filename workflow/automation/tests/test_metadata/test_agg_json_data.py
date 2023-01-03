@@ -155,10 +155,10 @@ class TestAggJsonData:
                 assert df[col].dtype == np.dtype(bool)
             # Check run time and core hours column
             elif col[1] == const.MetadataField.run_time.value:
-                assert df[col].dtype == np.dtype(np.float)
+                assert df[col].dtype == np.dtype(np.float64)
                 assert df[
                     col[0], const.MetadataField.core_hours.value
-                ].dtype == np.dtype(np.float)
+                ].dtype == np.dtype(np.float64)
 
 
 if __name__ == "__main__":
