@@ -41,9 +41,7 @@ def verify_strings(string_list):
     """Makes sure required string are not empty"""
     for variable in string_list:
         if variable == "":
-            raise ValueError(
-                "Variable is empty: %s. Check " "params.py." % (variable)
-            )
+            raise ValueError("Variable is empty: %s. Check " "params.py." % (variable))
 
 
 def verify_user_dirs(dir_list):
@@ -80,6 +78,7 @@ def get_hf_nt(params):
 
 
 ### functions mostly used in regression_test
+
 
 def get_site_specific_path(
     stat_file_path,
