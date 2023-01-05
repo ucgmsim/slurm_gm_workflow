@@ -75,6 +75,7 @@ def install_simulation(
     root_params_dict[RootParams.stat_file.value] = stat_file_path
     root_params_dict[RootParams.stat_vs_est.value] = vs30_file_path
     root_params_dict["hf"][RootParams.seed.value] = seed
+    root_params_dict["hf"][HF_VEL_MOD_1D] = v1d_full_path
     if components is not None:
         if not set(components).issubset(set(Components.iterate_str_values())):
             message = f"{components} are not all in {Components}"
@@ -170,10 +171,7 @@ def install_simulation(
         # Either the Qp/Qs files don't exist, or we are explicitly ignoring them. Keep going
         pass
 
-    sim_params_dict["hf"] = {
-        SimParams.slip.value: stoch_file,
-        HF_VEL_MOD_1D: v1d_full_path
-    }
+    sim_params_dict["hf"] = {SimParams.slip.value: stoch_file}
     sim_params_dict["bb"] = {}
 
     if sim_params_file is not None and os.path.isfile(sim_params_file):
