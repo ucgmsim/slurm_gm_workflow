@@ -7,7 +7,6 @@ import qcore.constants as const
 from qcore.utils import load_sim_params
 from workflow.automation.lib.schedulers.scheduler_factory import Scheduler
 from workflow.automation.platform_config import platform_config
-from workflow.automation.lib.shared import write_file
 
 
 def write_sl_script(
@@ -64,7 +63,10 @@ def write_sl_script(
             ),
         )
     )
-    write_file(script_name, [header, body])
+
+    content = "\n".join([header, body])
+    with open(script_name, "w") as f:
+        f.write(content)
 
     return script_name
 

@@ -7,9 +7,9 @@ import argparse
 import numpy as np
 import pandas as pd
 
-from qcore import utils, simulation_structure
+from qcore import utils, simulation_structure, shared
 from qcore import constants as const
-from workflow.automation.lib import MgmtDB, shared, constants
+from workflow.automation.lib import MgmtDB, constants
 
 COLUMNS = [
     "EMOD3D_runtime",

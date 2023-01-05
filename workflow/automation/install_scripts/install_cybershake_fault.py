@@ -133,7 +133,6 @@ def install_fault(
         config_dict.get("v_1d_mod"),
     )
     site_v1d_dir = config_dict.get("site_v1d_dir")
-    hf_stat_vs_ref = config_dict.get("hf_stat_vs_ref")
 
     vs30_file_path = stat_file_path.replace(".ll", ".vs30")
 
@@ -213,7 +212,6 @@ def install_fault(
             root_yaml_path=root_yaml_path,
             cybershake_root=root_folder,
             site_v1d_dir=site_v1d_dir,
-            hf_stat_vs_ref=hf_stat_vs_ref,
             v1d_full_path=v1d_full_path,
             sim_params_file=sim_params_file,
             seed=seed,

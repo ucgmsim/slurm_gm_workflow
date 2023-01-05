@@ -1,12 +1,12 @@
 """Module that contains shared install functions"""
 import os
-import glob
 from logging import Logger
 
 from numpy import isclose
 import yaml
 
 from qcore import geo, utils, simulation_structure
+from qcore import shared as qc_shared
 from qcore.qclogging import get_basic_logger, VERYVERBOSE, NOPRINTWARNING
 from qcore.constants import (
     SimParams,
@@ -38,10 +38,8 @@ def install_simulation(
     root_yaml_path,
     v1d_full_path,
     cybershake_root,
-    v1d_dir=platform_config[PLATFORM_CONFIG.VELOCITY_MODEL_DIR.name],
     site_specific=False,
     site_v1d_dir=None,
-    hf_stat_vs_ref=None,
     sim_params_file=None,
     seed=HF_DEFAULT_SEED,
     logger: Logger = get_basic_logger(),
@@ -172,22 +170,11 @@ def install_simulation(
         # Either the Qp/Qs files don't exist, or we are explicitly ignoring them. Keep going
         pass
 
-    sim_params_dict["hf"] = {SimParams.slip.value: stoch_file}
+    sim_params_dict["hf"] = {
+        SimParams.slip.value: stoch_file,
+        HF_VEL_MOD_1D: v1d_full_path
+    }
     sim_params_dict["bb"] = {}
-
-    shared.show_horizontal_line(c="*")
-
-    logger.info("installing bb")
-    install_bb(
-        stat_file_path,
-        root_params_dict,
-        v1d_dir=v1d_dir,
-        v1d_full_path=v1d_full_path,
-        site_v1d_dir=site_v1d_dir,
-        hf_stat_vs_ref=hf_stat_vs_ref,
-        logger=logger,
-    )
-    logger.info("installing bb finished")
 
     if sim_params_file is not None and os.path.isfile(sim_params_file):
         with open(sim_params_file) as spf:
@@ -204,77 +191,6 @@ def install_simulation(
                 sim_params_dict.update({key: value})
 
     return root_params_dict, fault_params_dict, sim_params_dict
-
-
-def install_bb(
-    stat_file,
-    root_dict,
-    v1d_dir,
-    v1d_full_path=None,
-    site_v1d_dir=None,
-    hf_stat_vs_ref=None,
-    logger: Logger = get_basic_logger(),
-):
-    shared.show_horizontal_line(c="*")
-    logger.info(" " * 37 + "EMOD3D HF/BB Preparation Ver.slurm")
-    shared.show_horizontal_line(c="*")
-    if v1d_full_path is not None:
-        v_mod_1d_selected = v1d_full_path
-        # temporary removed because master version of bb_sim does not take this as a argument
-        # TODO: most of these logic are not required and should be removed
-        # these logic are now depending on gmsim_version_template
-        # root_dict["bb"]["site_specific"] = False
-        root_dict["hf"][HF_VEL_MOD_1D] = v_mod_1d_selected
-
-    # TODO:add in logic for site specific as well, if the user provided as args
-    elif site_v1d_dir is not None and hf_stat_vs_ref is not None:
-        hf_vel_mod_1d, hf_stat_vs_ref = shared.get_site_specific_path(
-            os.path.dirname(stat_file),
-            hf_stat_vs_ref=hf_stat_vs_ref,
-            site_v1d_dir=site_v1d_dir,
-            logger=logger,
-        )
-        # root_dict["bb"]["site_specific"] = True
-        root_dict["hf"][HF_VEL_MOD_1D] = hf_vel_mod_1d
-        root_dict["hf_stat_vs_ref"] = hf_stat_vs_ref
-    else:
-        is_site_specific_id = q_site_specific()
-        if is_site_specific_id:
-            hf_vel_mod_1d, hf_stat_vs_ref = shared.get_site_specific_path(
-                os.path.dirname(stat_file), logger=logger
-            )
-            # root_dict["bb"]["site_specific"] = True
-            root_dict["hf"][HF_VEL_MOD_1D] = hf_vel_mod_1d
-            root_dict["hf_stat_vs_ref"] = hf_stat_vs_ref
-        else:
-            hf_vel_mod_1d, v_mod_1d_selected = q_1d_velocity_model(v1d_dir)
-            # root_dict["bb"]["site_specific"] = False
-            root_dict["hf"][HF_VEL_MOD_1D] = v_mod_1d_selected
-
-
-def q_1d_velocity_model(v_mod_1d_dir):
-    shared.show_horizontal_line()
-    print("Select one of 1D Velocity models (from %s)" % v_mod_1d_dir)
-    shared.show_horizontal_line()
-
-    v_mod_1d_options = glob.glob(os.path.join(v_mod_1d_dir, "*.1d"))
-    v_mod_1d_options.sort()
-
-    v_mod_1d_selected = shared.show_multiple_choice(v_mod_1d_options)
-    print(v_mod_1d_selected)  # full path
-    hf_vel_mod_1d = os.path.basename(v_mod_1d_selected).replace(".1d", "")
-
-    return hf_vel_mod_1d, v_mod_1d_selected
-
-
-def q_site_specific():
-    shared.show_horizontal_line()
-    print(
-        "Do you want site-specific computation? "
-        "(To use a universal 1D profile, Select 'No')"
-    )
-    shared.show_horizontal_line()
-    return shared.show_yes_no_question()
 
 
 def dump_all_yamls(sim_dir, root_params_dict, fault_params_dict, sim_params_dict):
@@ -320,7 +236,7 @@ def generate_fd_files(
     hh = float(hh)
 
     # retrieve in station names, latitudes and longitudes
-    sname, slat, slon = shared.get_stations(ll_in, locations=True)
+    sname, slat, slon = qc_shared.get_stations(ll_in, locations=True)
     slon = list(map(float, slon))
     slat = list(map(float, slat))
 
