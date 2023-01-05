@@ -23,7 +23,7 @@ def test_install_simulation(set_up):
 
         # An incorrect parameter is at index 9
         input_params[9] = True
-
+        print(input_params)
         test_output = install_shared.install_simulation(*input_params)
         root_params_dict = test_output[0]
 
