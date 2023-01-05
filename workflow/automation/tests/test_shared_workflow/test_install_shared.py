@@ -22,8 +22,7 @@ def test_install_simulation(set_up):
                 input_params[i] = os.path.join(root_path, input_params[i])
 
         # An incorrect parameter is at index 9
-        input_params[9] = True
-        print(input_params)
+        input_params.insert(10, True)
         test_output = install_shared.install_simulation(*input_params)
         root_params_dict = test_output[0]
 
