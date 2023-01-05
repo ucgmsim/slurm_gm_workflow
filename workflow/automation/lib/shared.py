@@ -17,24 +17,14 @@ from logging import Logger, DEBUG, INFO
 
 from qcore.qclogging import get_basic_logger
 
-if sys.version_info.major == 3:
-    basestring = str
-
 
 def dict_to_e3d_par(pyfile, vardict):
     with open(pyfile, "w") as fp:
         for (key, value) in vardict.items():
-            if isinstance(value, basestring):
+            if isinstance(value, str):
                 fp.write('%s="%s"\n' % (key, value))
             else:
                 fp.write("%s=%s\n" % (key, value))
-
-
-################# Verify Section ###################
-# verify functions make sure script resources exist before continuing to run.
-# it also creates output directories if not existing.
-# very important to prevent (for example) empty variables. 'rm -r emptyvar/*' == 'rm -r /*'
-# these functions prevent a script malfunctioning and causing code to run dangerously
 
 
 def verify_strings(string_list):
@@ -75,9 +65,6 @@ def set_wct(est_run_time, ncores, auto=False, logger=get_basic_logger()):
 
 def get_hf_nt(params):
     return int(float(params["sim_duration"]) / float(params["hf"]["dt"]))
-
-
-### functions mostly used in regression_test
 
 
 def get_site_specific_path(
