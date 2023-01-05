@@ -65,10 +65,14 @@ def write_sl_script(
     )
 
     content = "\n".join([header, body])
-    with open(script_name, "w") as f:
-        f.write(content)
+    write_to_file(content, script_name)
 
     return script_name
+
+
+def write_to_file(content, script_name):
+    with open(script_name, "w") as f:
+        f.write(content)
 
 
 def generate_command(
