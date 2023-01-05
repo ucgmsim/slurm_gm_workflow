@@ -21,9 +21,8 @@ def test_install_simulation(set_up):
             ):
                 input_params[i] = os.path.join(root_path, input_params[i])
 
-        # The pickle file was missing the 10th argument. This enables the vm to be checked.
-        input_params.insert(10, True)
-        input_params.pop(9)  # Removes the vs_ref stat file parameter
+        # An incorrect parameter is at index 9
+        input_params[9] = True
 
         test_output = install_shared.install_simulation(*input_params)
         root_params_dict = test_output[0]
