@@ -435,6 +435,8 @@ def est_IM_chours_single(
     comp: Union[List[str], int],
     pSA_count: int,
     n_cores: int,
+    scale_ncores: bool = True,
+    node_time_th_factor: int = 1,
 ):
     """Convenience function to make a single estimation
 
@@ -481,7 +483,19 @@ def est_IM_chours_single(
 
     if config is not None and hasattr(config, "host") and config.host == "nurion":
         core_hours *= 7.5
-    return core_hours, core_hours / n_cores
+
+    wct = core_hours / n_cores
+    if scale_ncores and wct > (
+        node_time_th_factor * n_cores / PHYSICAL_NCORES_PER_NODE
+    ):
+        # Make a numpy array of the input data in the right shape
+        data = np.array([int(n_cores)]).reshape(1, 1)
+        core_hours, wct, n_cores = scale_core_hours(
+            core_hours, data, node_time_th_factor
+        )
+        core_hours, n_cores = float(core_hours), int(n_cores)
+
+    return core_hours, core_hours / n_cores, n_cores
 
 
 def get_IM_comp_count(comp: List[str]):

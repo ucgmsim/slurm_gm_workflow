@@ -71,7 +71,7 @@ def submit_im_calc_slurm(
         const.SlBodyOptConsts.mgmt_db.value: "",
         "n_components": "",
         "match_obs_stations": False,
-        "station_file": "$(cat $fd_name | awk '{print $1}')",
+        "station_file": "$(cat $fd_name | awk '{print $3}')",
     }
 
     command_options = {
@@ -86,6 +86,7 @@ def submit_im_calc_slurm(
         const.SlBodyOptConsts.simple_out.value: "",
         const.SlBodyOptConsts.advanced_IM.value: "",
         "pSA_periods": "",
+        "run_command": platform_config[const.PLATFORM_CONFIG.RUN_COMMAND.name],
     }
 
     # Convert option settings to values
@@ -149,6 +150,7 @@ def submit_im_calc_slurm(
             * 2
             * time_for_one_station
         )
+        n_cores = body_options["np"]
 
     else:
         proc_type = const.ProcessType.IM_calculation
@@ -183,7 +185,7 @@ def submit_im_calc_slurm(
                 realisation_name
             )
         )
-        _, est_run_time = est_IM_chours_single(
+        _, est_run_time, n_cores = est_IM_chours_single(
             station_count,
             int(float(params["sim_duration"]) / float(params["dt"])),
             comps_to_store,
@@ -200,9 +202,7 @@ def submit_im_calc_slurm(
     header_options["wallclock_limit"] = get_wct(est_run_time, ch_safety_factor=1)
     logger.debug("Using WCT for IM_calc: {header_options['wallclock_limit']}")
     header_options["job_name"] = "{}_{}".format(proc_type.str_value, fault_name)
-    header_options["platform_specific_args"] = get_platform_node_requirements(
-        body_options["np"]
-    )
+    header_options["platform_specific_args"] = get_platform_node_requirements(n_cores)
 
     script_file_path = write_sl_script(
         write_dir,
