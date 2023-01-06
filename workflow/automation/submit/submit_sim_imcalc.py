@@ -13,7 +13,7 @@ from qcore.timeseries import get_observed_stations, BBSeis
 from qcore.config import qconfig
 
 from workflow.automation.estimation.estimate_wct import (
-    est_IM_chours_single,
+    est_IM_chours,
     get_wct,
     CH_SAFETY_FACTOR,
 )
@@ -185,7 +185,7 @@ def submit_im_calc_slurm(
                 realisation_name
             )
         )
-        _, est_run_time, n_cores = est_IM_chours_single(
+        _, est_run_time, n_cores = est_IM_chours(
             station_count,
             int(float(params["sim_duration"]) / float(params["dt"])),
             comps_to_store,

@@ -199,10 +199,9 @@ def run_estimations(
 
     if im_calc_input_data is not None:
         print("Running IM_calc estimation")
-        im_calc_core_hours, im_calc_run_time = estimate_wct.est_IM_chours(
+        im_calc_core_hours, im_calc_run_time, im_calc_cores = estimate_wct.est_IM_chours(
             *im_calc_input_data
         )
-        im_calc_cores = [im_calc_input_data[-1]] * sum(r_counts)
     else:
         im_calc_core_hours, im_calc_run_time, im_calc_cores = np.nan, np.nan, np.nan
 
