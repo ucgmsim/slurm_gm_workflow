@@ -18,7 +18,6 @@ def test_main(set_up, mocker):
         "workflow.automation.submit.submit_hf.set_wct",
         lambda x, y, z: mocked_set_wct(x, y, True),
     )
-    mocker.patch("workflow.automation.submit.submit_hf.confirm", lambda x: False)
     mocker.patch(
         "workflow.automation.submit.submit_hf.est.est_HF_chours_single",
         lambda *args, **kwargs: (2, 0.05, 40),

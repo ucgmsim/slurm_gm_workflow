@@ -394,7 +394,7 @@ if __name__ == "__main__":
         if station_mask is None or sum(station_mask) == stations.size:
             logger.debug("No valid checkpoints found. Starting fresh simulation.")
             initialise()
-            station_mask = np.ones(stations.size, dtype=np.bool)
+            station_mask = np.ones(stations.size, dtype=bool)
         else:
             try:
                 initialise(check_only=True)
@@ -408,7 +408,7 @@ if __name__ == "__main__":
                     "Simulation parameters mismatch. Starting fresh simulation."
                 )
                 initialise()
-                station_mask = np.ones(stations.size, dtype=np.bool)
+                station_mask = np.ones(stations.size, dtype=bool)
     station_mask = comm.bcast(station_mask, root=master)
     stations_todo = stations[station_mask]
     stations_todo_idx = np.arange(stations.size)[station_mask]

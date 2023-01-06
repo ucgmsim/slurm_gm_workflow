@@ -127,7 +127,7 @@ def create_run_params(
                         )
                     )
 
-        shared.write_to_py(os.path.join(params.sim_dir, "LF", "e3d.par"), e3d_dict)
+        shared.dict_to_e3d_par(os.path.join(params.sim_dir, "LF", "e3d.par"), e3d_dict)
 
 
 if __name__ == "__main__":
