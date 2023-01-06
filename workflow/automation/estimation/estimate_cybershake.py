@@ -379,7 +379,7 @@ def main(
         else:
             period_count = len(root_config["ims"]["pSA_periods"])
         im_calc_input_data = [
-            r_fd_counts,
+            np.repeat(fd_counts, r_counts),
             np.repeat(fault_sim_durations / runs_params.dt, r_counts),
             root_config["ims"][const.SlBodyOptConsts.component.value],
             period_count,
