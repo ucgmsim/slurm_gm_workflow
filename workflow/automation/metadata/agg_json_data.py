@@ -107,9 +107,7 @@ def convert_df(df: pd.DataFrame):
                 # Convert components to boolean
                 elif Components.has_value(meta_col):
                     df.loc[df[proc_type, meta_col].isna(), (proc_type, meta_col)] = 0.0
-                    df[(proc_type, meta_col)] = df[(proc_type, meta_col)].astype(
-                        bool
-                    )
+                    df[(proc_type, meta_col)] = df[(proc_type, meta_col)].astype(bool)
                 # status, status_1, do nothing to df, keep status string as it is
                 elif MetadataField.status.value in meta_col:
                     continue
