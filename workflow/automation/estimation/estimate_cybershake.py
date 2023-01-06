@@ -385,7 +385,7 @@ def main(
             period_count,
             platform_config[const.PLATFORM_CONFIG.IM_CALC_DEFAULT_N_CORES.name],
         ]
-    except FileNotFoundError or KeyError:
+    except FileNotFoundError or KeyError or NameError:
         print("Encountered error preparing IM_calc input data")
         im_calc_input_data = None
 
