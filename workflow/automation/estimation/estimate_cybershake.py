@@ -199,9 +199,11 @@ def run_estimations(
 
     if im_calc_input_data is not None:
         print("Running IM_calc estimation")
-        im_calc_core_hours, im_calc_run_time, im_calc_cores = estimate_wct.est_IM_chours(
-            *im_calc_input_data
-        )
+        (
+            im_calc_core_hours,
+            im_calc_run_time,
+            im_calc_cores,
+        ) = estimate_wct.est_IM_chours(*im_calc_input_data)
     else:
         im_calc_core_hours, im_calc_run_time, im_calc_cores = np.nan, np.nan, np.nan
 
@@ -385,7 +387,7 @@ def main(
             period_count,
             platform_config[const.PLATFORM_CONFIG.IM_CALC_DEFAULT_N_CORES.name],
         ]
-    except FileNotFoundError or KeyError or NameError:
+    except FileNotFoundError or KeyError or UnboundLocalError:
         print("Encountered error preparing IM_calc input data")
         im_calc_input_data = None
 
