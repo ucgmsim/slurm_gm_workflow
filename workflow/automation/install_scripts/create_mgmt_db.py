@@ -10,12 +10,14 @@ import os
 from workflow.automation.lib.MgmtDB import MgmtDB
 
 
-def create_mgmt_db(realisations, db_file, srf_files=[]):
+def create_mgmt_db(realisations, db_file, fault_selection=None):
+    if fault_selection is None:
+        fault_selection = dict()
     mgmt_db = MgmtDB.init_db(
         db_file,
         os.path.join(os.path.dirname(os.path.realpath(__file__)), "slurm_mgmt.db.sql"),
     )
-    mgmt_db.populate(realisations, srf_files)
+    mgmt_db.populate(realisations, fault_selection)
 
     return mgmt_db
 

@@ -3,7 +3,7 @@ from contextlib import contextmanager
 from logging import Logger
 import os
 import sqlite3 as sql
-from typing import List, Union
+from typing import List, Union, Dict
 from dataclasses import dataclass
 
 import qcore.constants as const
@@ -565,14 +565,15 @@ class MgmtDB:
                 (entry.proc_type, entry.run_name, entry.error),
             )
 
-    def populate(self, realisations, srf_files: Union[List[str], str] = []):
+    def populate(self, realisations, fault_selection: Dict[str, int]):
         """Initial population of the database with all realisations"""
-        # for manual install, only one srf will be passed to srf_files as a string
-        if isinstance(srf_files, str):
-            srf_files = [srf_files]
-
+        realisations.extend(fault_selection.keys())
         realisations.extend(
-            [os.path.splitext(os.path.basename(srf))[0] for srf in srf_files]
+            [
+                simulation_structure.get_realisation_name(event, i)
+                for event, rel_count in fault_selection.items()
+                for i in range(rel_count)
+            ]
         )
 
         if len(realisations) == 0:

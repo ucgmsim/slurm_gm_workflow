@@ -10,7 +10,7 @@ from qcore.config import host, get_machine_config
 import qcore.constants as const
 from qcore.qclogging import get_basic_logger
 import qcore.simulation_structure as sim_struct
-from workflow.automation.install_scripts.install_shared import HF_VEL_MOD_1D
+from workflow.automation.lib.constants import HF_VEL_MOD_1D
 from workflow.automation.lib.schedulers.scheduler_factory import Scheduler
 from workflow.automation.platform_config import (
     platform_config,

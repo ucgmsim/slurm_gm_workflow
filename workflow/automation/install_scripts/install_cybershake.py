@@ -1,17 +1,12 @@
 import argparse
 from datetime import datetime
-from os import path
+from logging import Logger
+from pathlib import Path
 
-from qcore.constants import (
-    TIMESTAMP_FORMAT,
-    ROOT_DEFAULTS_FILE_NAME,
-    PLATFORM_CONFIG,
-    HF_DEFAULT_SEED,
-    Components,
-)
-from qcore import qclogging, formats
+from qcore import constants, qclogging, formats, simulation_structure, utils
 
-from install_cybershake_fault import install_fault
+from workflow.automation.install_scripts import create_mgmt_db
+from workflow.automation.lib import constants as wf_constants
 from workflow.automation.platform_config import platform_config
 
 AUTO_SUBMIT_LOG_FILE_NAME = "install_cybershake_log_{}.txt"
@@ -21,23 +16,21 @@ def load_args(logger):
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "path_cybershake",
-        type=path.abspath,
+        type=Path,
         help="the path to the root of a specific version cybershake.",
     )
     parser.add_argument(
-        "fault_selection_list", type=str, help="The fault selection file"
+        "fault_selection_list", type=Path, help="The fault selection file"
     )
     parser.add_argument(
         "version",
         type=str,
-        default="16.1",
         help="Please specify GMSim version",
-        nargs="?",
     )
     parser.add_argument(
         "--seed",
         type=str,
-        default=HF_DEFAULT_SEED,
+        default=constants.HF_DEFAULT_SEED,
         help="The seed to be used for HF simulations. Default is to request a random seed.",
     )
     parser.add_argument(
@@ -48,7 +41,7 @@ def load_args(logger):
     )
     parser.add_argument(
         "--components",
-        choices=list(Components.iterate_str_values()),
+        choices=list(constants.Components.iterate_str_values()),
         nargs="+",
         default=None,
         help="list of components to run IM_calcs, overwrites value in selected gmsim version template",
@@ -59,8 +52,8 @@ def load_args(logger):
         help="Should IM_calc calculate more psa periods.",
     )
     parser.add_argument(
-        "--log_file",
-        type=str,
+        "--log_dir",
+        type=Path,
         default=None,
         help="Location of the log file to use. Defaults to 'cybershake_log.txt' in the location root_folder. "
         "Must be absolute or relative to the root_folder.",
@@ -70,85 +63,54 @@ def load_args(logger):
         action="store_true",
         help="Keep stations if they snap to the same grid-point",
     )
-    parser.add_argument(
-        "--no_check_vm",
-        action="store_false",
-        dest="check_vm",
-        help="Set this flag if you are generating VMs from the automated workflow",
-        default=True,
-    )
-
-    vm_pert = parser.add_mutually_exclusive_group()
-    vm_pert.add_argument(
-        "--vm_perturbations",
-        action="store_true",
-        help="Use velocity model perturbations. If this is selected all realisations must have a perturbation file.",
-    )
-    vm_pert.add_argument(
-        "--ignore_vm_perturbations",
-        action="store_true",
-        help="Don't use velocity model perturbations. If this is selected any perturbation files will be ignored.",
-    )
-
-    qp_qs = parser.add_mutually_exclusive_group()
-    qp_qs.add_argument(
-        "--vm_qpqs_files",
-        action="store_true",
-        help="Use generated Qp/Qs files. If this is selected all events/faults must have Qp and Qs files.",
-    )
-    qp_qs.add_argument(
-        "--ignore_vm_qpqs_files",
-        action="store_true",
-        help="Don't use generated Qp/Qs files. If this is selected any Qp/Qs files will be ignored.",
-    )
     args = parser.parse_args()
 
     if args.log_file is None:
         qclogging.add_general_file_handler(
             logger,
-            path.join(
-                args.path_cybershake,
-                AUTO_SUBMIT_LOG_FILE_NAME.format(
-                    datetime.now().strftime(TIMESTAMP_FORMAT)
-                ),
+            args.path_cybershake
+            / AUTO_SUBMIT_LOG_FILE_NAME.format(
+                datetime.now().strftime(constants.TIMESTAMP_FORMAT)
             ),
         )
     else:
         qclogging.add_general_file_handler(
-            logger, path.join(args.path_cybershake, args.log_file)
+            logger,
+            args.log_dir
+            / AUTO_SUBMIT_LOG_FILE_NAME.format(
+                datetime.now().strftime(constants.TIMESTAMP_FORMAT)
+            ),
         )
     logger.debug("Added file handler to the logger")
     logger.debug(f"Arguments are as follows: {args}")
 
     messages = []
 
-    gmsim_version_path = path.join(
-        platform_config[PLATFORM_CONFIG.GMSIM_TEMPLATES_DIR.name], args.version
+    gmsim_version_path = (
+        Path(platform_config[constants.PLATFORM_CONFIG.GMSIM_TEMPLATES_DIR.name])
+        / args.version
     )
 
-    if not path.exists(gmsim_version_path) or path.isfile(gmsim_version_path):
-        messages.append(
-            "Version {} does not exist, place a directory with that name into {}\n"
-            "Also ensure it has contents of {} and {}".format(
-                args.version,
-                platform_config[PLATFORM_CONFIG.GMSIM_TEMPLATES_DIR.name],
-                ROOT_DEFAULTS_FILE_NAME,
-                "emod3d_defaults.yaml",
-            )
-        )
-    else:
-        for f_name in [ROOT_DEFAULTS_FILE_NAME, "emod3d_defaults.yaml"]:
-            if not path.exists(path.join(gmsim_version_path, f_name)):
+    if gmsim_version_path.is_file():
+        for f_name in [constants.ROOT_DEFAULTS_FILE_NAME, "emod3d_defaults.yaml"]:
+            if not (gmsim_version_path / f_name).exists():
                 messages.append(
                     "Version {} does not have a required {} file in the directory {}".format(
                         args.version,
                         f_name,
-                        path.join(
-                            platform_config[PLATFORM_CONFIG.GMSIM_TEMPLATES_DIR.name],
-                            args.version,
-                        ),
+                        gmsim_version_path,
                     )
                 )
+    else:
+        messages.append(
+            "Version {} does not exist, place a directory with that name into {}\n"
+            "Also ensure it has contents of {} and {}".format(
+                args.version,
+                platform_config[constants.PLATFORM_CONFIG.GMSIM_TEMPLATES_DIR.name],
+                constants.ROOT_DEFAULTS_FILE_NAME,
+                "emod3d_defaults.yaml",
+            )
+        )
 
     if len(messages) > 0:
         message = "\n".join(messages)
@@ -162,26 +124,62 @@ def main():
     logger = qclogging.get_logger()
     args = load_args(logger)
 
-    faults = formats.load_fault_selection_file(args.fault_selection_list)
+    fault_selection = formats.load_fault_selection_file(args.fault_selection_list)
 
-    for fault, count in faults.items():
-        install_fault(
-            fault,
-            count,
-            args.path_cybershake,
-            args.version,
-            args.stat_file_path,
-            args.seed,
-            args.extended_period,
-            vm_perturbations=args.vm_perturbations,
-            ignore_vm_perturbations=args.ignore_vm_perturbations,
-            vm_qpqs_files=args.vm_qpqs_files,
-            ignore_vm_qpqs_files=args.ignore_vm_qpqs_files,
-            keep_dup_station=args.keep_dup_station,
-            components=args.components,
-            logger=qclogging.get_realisation_logger(logger, fault),
-            check_vm=args.check_vm,
-        )
+    create_mgmt_db.create_mgmt_db(
+        [],
+        simulation_structure.get_mgmt_db(args.cybershake_root),
+        fault_selection=fault_selection,
+    )
+    utils.setup_dir(args.cybershake_root / "mgmt_db_queue")
+
+    generate_root_params(
+        args.version,
+        args.stat_file_path,
+        args.vs30_file_path,
+        args.v1d_full_path,
+        args.cybershake_root,
+        seed=args.seed,
+        logger=logger,
+        extended_period=False,
+        components=None,
+    )
+
+
+def generate_root_params(
+    version,
+    stat_file_path,
+    vs30_file_path,
+    v1d_full_path,
+    cybershake_root,
+    seed=constants.HF_DEFAULT_SEED,
+    logger: Logger = qclogging.get_basic_logger(),
+    extended_period=False,
+    components=None,
+):
+    template_path = (
+        Path(platform_config[constants.PLATFORM_CONFIG.GMSIM_TEMPLATES_DIR.name])
+        / version
+    )
+
+    root_params_dict = utils.load_yaml(
+        template_path / constants.ROOT_DEFAULTS_FILE_NAME
+    )
+    root_params_dict["ims"][
+        constants.RootParams.extended_period.value
+    ] = extended_period
+    root_params_dict[constants.RootParams.version.value] = version
+    root_params_dict[constants.RootParams.stat_file.value] = stat_file_path
+    root_params_dict[constants.RootParams.stat_vs_est.value] = vs30_file_path
+    root_params_dict["hf"][constants.RootParams.seed.value] = seed
+    root_params_dict["hf"][wf_constants.HF_VEL_MOD_1D] = v1d_full_path
+    if components is not None:
+        if not set(components).issubset(set(constants.Components.iterate_str_values())):
+            message = f"{components} are not all in {constants.Components}"
+            logger.critical(message)
+            raise ValueError(message)
+        root_params_dict["ims"][constants.RootParams.component.value] = components
+    root_params_dict["mgmt_db_location"] = cybershake_root
 
 
 if __name__ == "__main__":
