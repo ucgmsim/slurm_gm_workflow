@@ -12,7 +12,6 @@ from typing import List
 
 import qcore.constants as const
 from qcore import shared, srf, utils, simulation_structure
-from workflow.automation.lib.shared import get_stations
 from workflow.automation.estimation import estimate_wct
 from workflow.automation.platform_config import platform_config
 
@@ -382,7 +381,7 @@ def main(
             period_count = len(root_config["ims"]["pSA_periods"])
         im_calc_input_data = [
             np.repeat(fd_counts, r_counts),
-            np.repeat(fault_sim_durations / runs_params.dt, r_counts),
+            np.repeat(fault_sim_durations / float(root_config["dt"]), r_counts),
             root_config["ims"][const.SlBodyOptConsts.component.value],
             period_count,
             platform_config[const.PLATFORM_CONFIG.IM_CALC_DEFAULT_N_CORES.name],

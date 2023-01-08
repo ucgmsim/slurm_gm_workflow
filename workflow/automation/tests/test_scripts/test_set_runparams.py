@@ -127,7 +127,7 @@ def test_create_run_params(set_up, mocker):
                     outp.write("%s=%s\n" % (key, value))
 
         mocker.patch(
-            "workflow.calculation.create_e3d.shared.write_to_py",
+            "workflow.calculation.create_e3d.shared.dict_to_e3d_par",
             lambda x, y: write_e3d(y),
         )
         mocker.patch(

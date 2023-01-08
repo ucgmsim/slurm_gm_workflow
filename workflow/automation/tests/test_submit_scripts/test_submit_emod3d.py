@@ -21,7 +21,6 @@ def test_main(set_up, mocker):
         "workflow.automation.submit.submit_emod3d.set_wct",
         lambda x, y, z: mocked_set_wct(x, y, True),
     )
-    mocker.patch("workflow.automation.submit.submit_emod3d.confirm", lambda x: False)
     mocker.patch(
         "workflow.automation.submit.submit_emod3d.est.est_LF_chours_single",
         lambda a, b, c, d, e, f, g: (2, 0.05, 40),

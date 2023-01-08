@@ -33,8 +33,8 @@ def test_write_sl_script(set_up, mocker):
 
         slurm_script = io.StringIO("")
         mocker.patch(
-            "workflow.automation.lib.shared_template.write_file",
-            lambda _, parts: slurm_script.write("\n".join(parts)),
+            "workflow.automation.lib.shared_template.write_to_file",
+            lambda _, parts: slurm_script.write(parts),
         )
 
         func(*input_params)

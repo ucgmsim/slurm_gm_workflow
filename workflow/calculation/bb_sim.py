@@ -359,7 +359,7 @@ def main():
         if station_mask is None or sum(station_mask) == lf.stations.size:
             logger.debug("No valid checkpoints found. Starting fresh simulation.")
             initialise()
-            station_mask = np.ones(lf.stations.size, dtype=np.bool)
+            station_mask = np.ones(lf.stations.size, dtype=bool)
         else:
             try:
                 initialise(check_only=True)
@@ -374,7 +374,7 @@ def main():
                     "Simulation parameters mismatch. Starting fresh simulation."
                 )
                 initialise()
-                station_mask = np.ones(lf.stations.size, dtype=np.bool)
+                station_mask = np.ones(lf.stations.size, dtype=bool)
     station_mask = comm.bcast(station_mask, root=master)
     stations_todo = hf.stations[station_mask][rank::size]
     stations_todo_idx = np.arange(hf.stations.size)[station_mask][rank::size]
