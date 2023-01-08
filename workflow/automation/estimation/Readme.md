@@ -10,7 +10,7 @@ Estimation of wall clock is already included in the
 slurm script creation for simulation  
   
 For one off estimation the *est_LF_chours_single*, *est_HF_chours_single*, *est_BB_chours_single* 
-and *est_IM_chours_single* functions from estimate_WC.py can be used  
+and *est_IM_chours* functions from estimate_WC.py can be used  
 ```
 import estimation.estimate_wct as est
 print(est.est_LF_chours_single(nx, ny, nz, nt, fd_count , n_cores))
@@ -44,10 +44,10 @@ def est_BB_chours_single(
 ):
         pass
 
-def est_IM_chours_single(
+def est_IM_chours(
     fd_count: int,
-    nt: int,
-    comp: List[str],
+    nt: Union[int, np.ndarray],
+    comp: Union[List[str], int],
     pSA_count: int,
     n_cores: int,
 ):
