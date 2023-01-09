@@ -190,12 +190,12 @@ def submit_task(
         arguments = OrderedDict(
             {
                 "CSV_PATH": sim_struct.get_IM_csv(sim_dir),
-                "STATION_FILE_PATH": params.stat_file,
+                "STATION_FILE_PATH": params["stat_file"],
                 "OUTPUT_XYZ_PARENT_DIR": os.path.join(verification_dir, "IM_plot"),
                 "SRF_PATH": sim_struct.get_srf_path(root_folder, run_name),
                 "MODEL_PARAMS": os.path.join(
                     sim_struct.get_fault_VM_dir(root_folder, run_name),
-                    os.path.basename(params.MODEL_PARAMS),
+                    os.path.basename(params["MODEL_PARAMS"]),
                 ),
                 "MGMT_DB_LOC": root_folder,
                 "SRF_NAME": run_name,
@@ -251,7 +251,7 @@ def submit_task(
                         + " ".join(
                             [
                                 "--{} {}".format(key, item)
-                                for key, item in params.bb.items()
+                                for key, item in params["bb"].items()
                             ]
                         )
                         + "'",
@@ -272,7 +272,7 @@ def submit_task(
                         + " ".join(
                             [
                                 "--{} {}".format(key, item)
-                                for key, item in params.bb.items()
+                                for key, item in params["bb"].items()
                             ]
                         )
                         + "'",
@@ -376,9 +376,9 @@ def submit_task(
                             Path(sim_struct.get_fault_VM_dir(root_folder, run_name))
                             / "vm_params.yaml"
                         ),
-                        "STAT_FILE": str(params.stat_file),
+                        "STAT_FILE": str(params["stat_file"]),
                         "FAULT_DIR": fault_dir,
-                        "FDSTATLIST": str(Path(fault_dir) / f"fd{str(params.sufx)}.ll"),
+                        "FDSTATLIST": str(Path(fault_dir) / f"fd{str(params['sufx'])}.ll"),
                         "MGMT_DB_LOC": root_folder,
                         "REL_NAME": run_name,
                     }

@@ -46,12 +46,12 @@ def main(
         logger.error(f"Error: sim_params.yaml doesn't exist in {rel_dir}")
         raise
 
-    sim_dir = Path(params.sim_dir).resolve()
+    sim_dir = Path(params["sim_dir"]).resolve()
 
-    mgmt_db_loc = params.mgmt_db_location
+    mgmt_db_loc = params["mgmt_db_location"]
 
     # get the srf(rup) name without extensions
-    srf_name = Path(params.srf_file).stem
+    srf_name = Path(params["srf_file"]).stem
 
     if write_directory is None:
         write_directory = sim_dir
