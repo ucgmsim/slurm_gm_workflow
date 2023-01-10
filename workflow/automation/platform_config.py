@@ -130,6 +130,7 @@ def get_platform_specific_script(
         ProcessType.VM_GEN: "vm_gen",
         ProcessType.VM_PERT: "vm_pert",
         ProcessType.INSTALL_FAULT: "install_fault",
+        ProcessType.INSTALL_REALISATION: "install_realisation",
         ProcessType.SRF_GEN: "srf_gen",
     }[process]
 

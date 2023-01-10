@@ -14,14 +14,6 @@ def load_args():
     parser.add_argument("cs_root", type=Path)
     parser.add_argument("fault")
     parser.add_argument("--log_dir", type=Path)
-    parser.add_argument("--site_specific", action="store_true")
-    parser.add_argument("--keep_dup_station", action="store_true")
-    parser.add_argument(
-        "--stat_file_path",
-        type=Path,
-        default="/nesi/project/nesi00213/StationInfo/non_uniform_whole_nz_with_real_stations-hh400_v20p3_land.ll",
-        help="The path to the station info file path.",
-    )
     args = parser.parse_args()
     return args
 
@@ -29,11 +21,19 @@ def load_args():
 def main():
     args = load_args()
 
-    log_dir = args.log_dir
     fault_name = args.fault
-    cybershake_root = args.cs_root
+    cybershake_root: Path = args.cs_root
+
+    if args.log_dir is None:
+        log_dir = Path(simulation_structure.get_sim_dir(cybershake_root, fault_name))
+    else:
+        log_dir: Path = args.log_dir
+
     logger = qclogging.get_logger(f"install_fault_{fault_name}")
     qclogging.add_general_file_handler(logger, log_dir / f"install_fault_{fault_name}")
+
+    root_params_path = simulation_structure.get_root_yaml_path(cybershake_root)
+    root_params = utils.load_yaml(root_params_path)
 
     vm_params_path = simulation_structure.get_vm_params_yaml(
         simulation_structure.get_fault_VM_dir(cybershake_root, fault_name)
@@ -43,9 +43,9 @@ def main():
     fd_statcords, fd_statlist = generate_fd_files(
         simulation_structure.get_fault_dir(cybershake_root, fault_name),
         vm_params_dict,
-        stat_file=args.stat_file_path,
+        stat_file=root_params[constants.RootParams.stat_file.value],
         logger=logger,
-        keep_dup_station=args.keep_dup_station,
+        keep_dup_station=root_params[constants.RootParams.keep_dup_station.value],
     )
 
     fault_params_dict = generate_fault_params(

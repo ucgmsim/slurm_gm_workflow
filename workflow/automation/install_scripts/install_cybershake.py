@@ -141,8 +141,9 @@ def main():
         args.cybershake_root,
         seed=args.seed,
         logger=logger,
-        extended_period=False,
-        components=None,
+        extended_period=args.extended_period,
+        components=args.components,
+        keep_dup_station=args.keep_dup_station,
     )
 
 
@@ -156,6 +157,7 @@ def generate_root_params(
     logger: Logger = qclogging.get_basic_logger(),
     extended_period=False,
     components=None,
+    keep_dup_station=True,
 ):
     template_path = (
         Path(platform_config[constants.PLATFORM_CONFIG.GMSIM_TEMPLATES_DIR.name])
@@ -165,12 +167,21 @@ def generate_root_params(
     root_params_dict = utils.load_yaml(
         template_path / constants.ROOT_DEFAULTS_FILE_NAME
     )
+
+    root_params_dict.update(
+        {
+            root_params_dict[constants.RootParams.version.value]: version,
+            root_params_dict[constants.RootParams.stat_file.value]: stat_file_path,
+            root_params_dict[constants.RootParams.stat_vs_est.value]: vs30_file_path,
+            root_params_dict[
+                constants.RootParams.keep_dup_station.value
+            ]: keep_dup_station,
+        }
+    )
+
     root_params_dict["ims"][
         constants.RootParams.extended_period.value
     ] = extended_period
-    root_params_dict[constants.RootParams.version.value] = version
-    root_params_dict[constants.RootParams.stat_file.value] = stat_file_path
-    root_params_dict[constants.RootParams.stat_vs_est.value] = vs30_file_path
     root_params_dict["hf"][constants.RootParams.seed.value] = seed
     root_params_dict["hf"][wf_constants.HF_VEL_MOD_1D] = v1d_full_path
     if components is not None:
