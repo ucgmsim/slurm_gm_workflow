@@ -42,7 +42,10 @@ def create_run_params(
     )
     e3d_dict = utils.load_yaml(e3d_yaml)
     # skip all logic if a specific srf_name is provided
-    if srf_name is None or srf_name == os.path.splitext(basename(params["srf_file"]))[0]:
+    if (
+        srf_name is None
+        or srf_name == os.path.splitext(basename(params["srf_file"]))[0]
+    ):
 
         # EMOD3D adds a timeshift to the event rupture time
         # this must be accounted for as EMOD3D does not extend the sim duration by the amount of time shift
@@ -94,7 +97,9 @@ def create_run_params(
         e3d_dict["ts_file"] = os.path.join(
             e3d_dict["main_dump_dir"], params["run_name"] + "_xyts.e3d"
         )
-        e3d_dict["ts_out_dir"] = os.path.join(params["sim_dir"], "LF", "TSlice", "TSFiles")
+        e3d_dict["ts_out_dir"] = os.path.join(
+            params["sim_dir"], "LF", "TSlice", "TSFiles"
+        )
 
         e3d_dict["restartdir"] = os.path.join(params["sim_dir"], "LF", "Restart")
         if steps_per_checkpoint:
@@ -127,7 +132,9 @@ def create_run_params(
                         )
                     )
 
-        shared.dict_to_e3d_par(os.path.join(params["sim_dir"], "LF", "e3d.par"), e3d_dict)
+        shared.dict_to_e3d_par(
+            os.path.join(params["sim_dir"], "LF", "e3d.par"), e3d_dict
+        )
 
 
 if __name__ == "__main__":

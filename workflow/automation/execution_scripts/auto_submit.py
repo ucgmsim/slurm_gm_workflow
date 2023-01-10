@@ -378,7 +378,9 @@ def submit_task(
                         ),
                         "STAT_FILE": str(params["stat_file"]),
                         "FAULT_DIR": fault_dir,
-                        "FDSTATLIST": str(Path(fault_dir) / f"fd{str(params['sufx'])}.ll"),
+                        "FDSTATLIST": str(
+                            Path(fault_dir) / f"fd{str(params['sufx'])}.ll"
+                        ),
                         "MGMT_DB_LOC": root_folder,
                         "REL_NAME": run_name,
                     }
