@@ -31,8 +31,8 @@ def write_sl_script(
     }
     common_template_params = {
         "sim_dir": sim_dir,
-        "srf_name": os.path.splitext(os.path.basename(params.srf_file))[0],
-        "mgmt_db_location": params.mgmt_db_location,
+        "srf_name": os.path.splitext(os.path.basename(params["srf_file"]))[0],
+        "mgmt_db_location": params["mgmt_db_location"],
         "submit_command": generate_command(
             process,
             sim_dir,
