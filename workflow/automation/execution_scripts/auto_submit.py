@@ -209,12 +209,12 @@ def submit_task(
         arguments = OrderedDict(
             {
                 "CSV_PATH": sim_struct.get_IM_csv(sim_dir),
-                "STATION_FILE_PATH": params.stat_file,
+                "STATION_FILE_PATH": params["stat_file"],
                 "OUTPUT_XYZ_PARENT_DIR": plot_dir,
                 "SRF_PATH": sim_struct.get_srf_path(root_folder, run_name),
                 "MODEL_PARAMS": os.path.join(
                     sim_struct.get_fault_VM_dir(root_folder, run_name),
-                    os.path.basename(params.MODEL_PARAMS),
+                    os.path.basename(params["MODEL_PARAMS"]),
                 ),
                 "MGMT_DB_LOC": root_folder,
                 "SRF_NAME": run_name,
@@ -270,7 +270,7 @@ def submit_task(
                         + " ".join(
                             [
                                 "--{} {}".format(key, item)
-                                for key, item in params.bb.items()
+                                for key, item in params["bb"].items()
                             ]
                         )
                         + "'",
@@ -291,7 +291,7 @@ def submit_task(
                         + " ".join(
                             [
                                 "--{} {}".format(key, item)
-                                for key, item in params.bb.items()
+                                for key, item in params["bb"].items()
                             ]
                         )
                         + "'",

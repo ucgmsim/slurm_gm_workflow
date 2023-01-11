@@ -491,7 +491,14 @@ def get_runs_dir_params(
             os.path.join(runs_dir, fault_name, r, "sim_params.yaml")
         )
 
-        data.append((params.dt, params.hf.dt, params.FD_STATLIST, params.hf.slip))
+        data.append(
+            (
+                params["dt"],
+                params["hf"]["dt"],
+                params["FD_STATLIST"],
+                params["hf"]["slip"],
+            )
+        )
 
     return np.rec.array(
         data,

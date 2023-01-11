@@ -31,18 +31,18 @@ default_wct = "00:30:00"
 def gen_command_template(params, machine, seed=const.HF_DEFAULT_SEED):
     command_template_parameters = {
         "run_command": platform_config[const.PLATFORM_CONFIG.RUN_COMMAND.name],
-        "fd_statlist": params.FD_STATLIST,
-        "hf_bin_path": sim_struct.get_hf_bin_path(params.sim_dir),
+        "fd_statlist": params["FD_STATLIST"],
+        "hf_bin_path": sim_struct.get_hf_bin_path(params["sim_dir"]),
         HF_VEL_MOD_1D: params["hf"][HF_VEL_MOD_1D],
         "duration": params.get("sim_duration", 0),
-        "dt": params.hf.dt,
-        "version": params.hf.version,
+        "dt": params["hf"]["dt"],
+        "version": params["hf"]["version"],
         "sim_bin_path": binary_version.get_hf_binmod(
-            params.hf.version, get_machine_config(machine)["tools_dir"]
+            params["hf"]["version"], get_machine_config(machine)["tools_dir"]
         ),
     }
     add_args = {}
-    for k, v in params.hf.items():
+    for k, v in params["hf"].items():
         if v is False or v is None:
             continue
         add_args[k] = " ".join(map(str, v)) if (type(v) is list) else v
@@ -71,7 +71,7 @@ def main(
         logger.error(f"Error: sim_params.yaml doesn't exist in {rel_dir}")
         raise
 
-    sim_dir = Path(params.sim_dir).resolve()
+    sim_dir = Path(params["sim_dir"]).resolve()
 
     if version in ["mpi", "run_hf_mpi"]:
         ll_name_prefix = "run_hf_mpi"
@@ -87,13 +87,13 @@ def main(
         ll_name_prefix = version_default
     logger.debug(f"version: {version}")
 
-    srf_name = Path(params.srf_file).stem
+    srf_name = Path(params["srf_file"]).stem
 
     nt = get_hf_nt(params)
-    fd_count = len(shared.get_stations(params.FD_STATLIST))
+    fd_count = len(shared.get_stations(params["FD_STATLIST"]))
     # TODO:make it read through the whole list
     #  instead of assuming every stoch has same size
-    nsub_stoch, sub_fault_area = srf.get_nsub_stoch(params.hf.slip, get_area=True)
+    nsub_stoch, sub_fault_area = srf.get_nsub_stoch(params["hf"]["slip"], get_area=True)
 
     est_core_hours, est_run_time, est_cores = est.est_HF_chours_single(
         fd_count, nsub_stoch, nt, ncores, scale_ncores=SCALE_NCORES, logger=logger
@@ -154,7 +154,7 @@ def main(
         submit_script_to_scheduler(
             script_file_path,
             const.ProcessType.HF.value,
-            sim_struct.get_mgmt_db_queue(params.mgmt_db_location),
+            sim_struct.get_mgmt_db_queue(params["mgmt_db_location"]),
             sim_dir,
             srf_name,
             target_machine=machine,
