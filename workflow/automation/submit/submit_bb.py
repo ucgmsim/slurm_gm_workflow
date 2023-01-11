@@ -26,15 +26,15 @@ default_wct = "00:30:00"
 def gen_command_template(params):
     command_template_parameters = {
         "run_command": platform_config[const.PLATFORM_CONFIG.RUN_COMMAND.name],
-        "outbin_dir": simulation_structure.get_lf_outbin_dir(params.sim_dir),
-        "vel_mod_dir": params.vel_mod_dir,
-        "hf_bin_path": simulation_structure.get_hf_bin_path(params.sim_dir),
-        "stat_vs_est": params.stat_vs_est,
-        "bb_bin_path": simulation_structure.get_bb_bin_path(params.sim_dir),
-        "flo": params.flo,
+        "outbin_dir": simulation_structure.get_lf_outbin_dir(params["sim_dir"]),
+        "vel_mod_dir": params["vel_mod_dir"],
+        "hf_bin_path": simulation_structure.get_hf_bin_path(params["sim_dir"]),
+        "stat_vs_est": params["stat_vs_est"],
+        "bb_bin_path": simulation_structure.get_bb_bin_path(params["sim_dir"]),
+        "flo": params["flo"],
     }
 
-    return command_template_parameters, params.bb
+    return command_template_parameters, params["bb"]
 
 
 def main(
@@ -54,7 +54,7 @@ def main(
         logger.error(f"Error: sim_params.yaml doesn't exist in {rel_dir}")
         raise
 
-    sim_dir = Path(params.sim_dir).resolve()
+    sim_dir = Path(params["sim_dir"]).resolve()
 
     if version in ["mpi", "run_bb_mpi"]:
         sl_name_prefix = "run_bb_mpi"
@@ -70,12 +70,12 @@ def main(
         sl_name_prefix = version_default
     logger.debug(version)
 
-    srf_name = Path(params.srf_file).stem
+    srf_name = Path(params["srf_file"]).stem
 
     # TODO: save status as HF. refer to submit_hf
     # Use HF nt for wct estimation
     nt = get_hf_nt(params)
-    fd_count = len(shared.get_stations(params.FD_STATLIST))
+    fd_count = len(shared.get_stations(params["FD_STATLIST"]))
 
     est_core_hours, est_run_time = est.est_BB_chours_single(fd_count, nt, ncores)
 
@@ -131,7 +131,7 @@ def main(
         submit_script_to_scheduler(
             script_file_path,
             const.ProcessType.BB.value,
-            simulation_structure.get_mgmt_db_queue(params.mgmt_db_location),
+            simulation_structure.get_mgmt_db_queue(params["mgmt_db_location"]),
             sim_dir,
             srf_name,
             target_machine=machine,
