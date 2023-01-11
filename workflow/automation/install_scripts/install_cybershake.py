@@ -127,6 +127,7 @@ def main():
     fault_selection = formats.load_fault_selection_file(args.fault_selection_list)
 
     cybershake_root = args.cybershake_root
+    runs_dir = simulation_structure.get_runs_dir(cybershake_root)
     create_mgmt_db.create_mgmt_db(
         [],
         simulation_structure.get_mgmt_db(cybershake_root),
@@ -140,7 +141,7 @@ def main():
             utils.setup_dir(simulation_structure.get_sim_dir(cybershake_root, rel_name))
 
     utils.setup_dir(simulation_structure.get_mgmt_db_queue(cybershake_root))
-    utils.setup_dir(simulation_structure.get_runs_dir(cybershake_root))
+    utils.setup_dir(runs_dir)
 
     root_params = generate_root_params(
         args.version,
@@ -153,7 +154,7 @@ def main():
         keep_dup_station=args.keep_dup_station,
     )
 
-    root_params_path = simulation_structure.get_root_yaml_path(cybershake_root)
+    root_params_path = simulation_structure.get_root_yaml_path(runs_dir)
     utils.dump_yaml(root_params, root_params_path)
 
 
@@ -182,9 +183,10 @@ def generate_root_params(
     root_params_dict.update(
         {
             constants.RootParams.version.value: version,
-            constants.RootParams.stat_file.value: stat_file_path,
-            constants.RootParams.stat_vs_est.value: vs30_file_path,
+            constants.RootParams.stat_file.value: str(stat_file_path),
+            constants.RootParams.stat_vs_est.value: str(vs30_file_path),
             constants.RootParams.keep_dup_station.value: keep_dup_station,
+            constants.RootParams.mgmt_db_location.value: str(cybershake_root),
         }
     )
 
@@ -192,14 +194,13 @@ def generate_root_params(
         constants.RootParams.extended_period.value
     ] = extended_period
     root_params_dict["hf"][constants.RootParams.seed.value] = seed
-    root_params_dict["hf"][wf_constants.HF_VEL_MOD_1D] = v1d_full_path
+    root_params_dict["hf"][wf_constants.HF_VEL_MOD_1D] = str(v1d_full_path)
     if components is not None:
         if not set(components).issubset(set(constants.Components.iterate_str_values())):
             message = f"{components} are not all in {constants.Components}"
             logger.critical(message)
             raise ValueError(message)
         root_params_dict["ims"][constants.RootParams.component.value] = components
-    root_params_dict["mgmt_db_location"] = cybershake_root
 
     return root_params_dict
 

@@ -47,7 +47,10 @@
     "VM_PARAMS": "mahuika",
     "VM_GEN": "mahuika",
     "VM_PERT": "mahuika",
-    "INSTALL_FAULT": "mahuika"
+    "INSTALL_FAULT": "mahuika",
+    "SRF_GEN": "mahuika",
+    "INSTALL_REALISATION": "mahuika",
+    "NO_VM_PERT": "none"
   },
   "DEFAULT_SITE_RESPONSE_DIR": "/nesi/project/nesi00213/StationInfo/site_specific/202110/"
 }

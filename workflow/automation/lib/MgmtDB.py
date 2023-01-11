@@ -572,7 +572,7 @@ class MgmtDB:
             [
                 simulation_structure.get_realisation_name(event, i)
                 for event, rel_count in fault_selection.items()
-                for i in range(rel_count)
+                for i in range(1, rel_count+1)
             ]
         )
 
