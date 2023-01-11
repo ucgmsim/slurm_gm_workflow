@@ -69,7 +69,7 @@ def generate_empirical_script(np, extended, cybershake_folder, realisations, out
             "run_data": run_data,
             "np": np,
             "extended": extended,
-            "vs30_file": sim_params.stat_vs_est,
+            "vs30_file": sim_params["stat_vs_est"],
             "mgmt_db_location": cybershake_folder,
         },
     )

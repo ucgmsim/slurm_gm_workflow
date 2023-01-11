@@ -44,18 +44,18 @@ def main(
         logger.error(f"Error: sim_params.yaml doesn't exist in {rel_dir}")
         raise
 
-    sim_dir = Path(params.sim_dir).resolve()
+    sim_dir = Path(params["sim_dir"]).resolve()
 
-    logger.debug(f"params.srf_file {params.srf_file}")
+    logger.debug(f"params.srf_file {params['srf_file']}")
 
     # Get the srf(rup) name without extensions
-    srf_name = Path(params.srf_file).stem
+    srf_name = Path(params["srf_file"]).stem
 
     logger.debug("not set_params_only")
     # get lf_sim_dir
     lf_sim_dir = sim_struct.get_lf_dir(sim_dir)
 
-    nt = int(float(params.sim_duration) / float(params.dt))
+    nt = int(float(params["sim_duration"]) / float(params["dt"]))
 
     target_qconfig = get_machine_config(machine)
 
@@ -64,7 +64,7 @@ def main(
     )
 
     binary_path = binary_version.get_lf_bin(
-        params.emod3d.emod3d_version, target_qconfig["tools_dir"]
+        params["emod3d"]["emod3d_version"], target_qconfig["tools_dir"]
     )
     # use the original estimated run time for determining the checkpoint, or uses a minimum of 3 checkpoints
     steps_per_checkpoint = int(
@@ -107,7 +107,7 @@ def main(
         submit_script_to_scheduler(
             script_file_path,
             const.ProcessType.EMOD3D.value,
-            sim_struct.get_mgmt_db_queue(params.mgmt_db_location),
+            sim_struct.get_mgmt_db_queue(params["mgmt_db_location"]),
             sim_dir,
             srf_name,
             target_machine=machine,
@@ -118,9 +118,15 @@ def main(
 def get_lf_cores_and_wct(
     logger, nt, params, sim_dir, srf_name, target_qconfig, ncores, retries=None
 ):
-    fd_count = len(shared.get_stations(params.FD_STATLIST))
+    fd_count = len(shared.get_stations(params["FD_STATLIST"]))
     est_core_hours, est_run_time, est_cores = est.est_LF_chours_single(
-        int(params.nx), int(params.ny), int(params.nz), nt, fd_count, ncores, True
+        int(params["nx"]),
+        int(params["ny"]),
+        int(params["nz"]),
+        nt,
+        fd_count,
+        ncores,
+        True,
     )
     # scale up the est_run_time if it is a re-run (with check-pointing)
     # otherwise do nothing
