@@ -15,7 +15,7 @@ AUTO_SUBMIT_LOG_FILE_NAME = "install_cybershake_log_{}.txt"
 def load_args(logger):
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "path_cybershake",
+        "cybershake_root",
         type=Path,
         help="the path to the root of a specific version cybershake.",
     )
@@ -65,7 +65,7 @@ def load_args(logger):
     )
     args = parser.parse_args()
 
-    if args.log_file is None:
+    if args.log_dir is None:
         qclogging.add_general_file_handler(
             logger,
             args.path_cybershake
@@ -91,7 +91,7 @@ def load_args(logger):
         / args.version
     )
 
-    if gmsim_version_path.is_file():
+    if gmsim_version_path.is_dir():
         for f_name in [constants.ROOT_DEFAULTS_FILE_NAME, "emod3d_defaults.yaml"]:
             if not (gmsim_version_path / f_name).exists():
                 messages.append(
@@ -126,19 +126,26 @@ def main():
 
     fault_selection = formats.load_fault_selection_file(args.fault_selection_list)
 
+    cybershake_root = args.cybershake_root
     create_mgmt_db.create_mgmt_db(
         [],
-        simulation_structure.get_mgmt_db(args.cybershake_root),
+        simulation_structure.get_mgmt_db(cybershake_root),
         fault_selection=fault_selection,
     )
-    utils.setup_dir(args.cybershake_root / "mgmt_db_queue")
 
-    generate_root_params(
+    for fault, count in fault_selection.items():
+        utils.setup_dir(simulation_structure.get_sim_dir(cybershake_root, fault))
+        for i in range(1, count+1):
+            rel_name = simulation_structure.get_realisation_name(fault, i)
+            utils.setup_dir(simulation_structure.get_sim_dir(cybershake_root, rel_name))
+
+    utils.setup_dir(simulation_structure.get_mgmt_db_queue(cybershake_root))
+    utils.setup_dir(simulation_structure.get_runs_dir(cybershake_root))
+
+    root_params = generate_root_params(
         args.version,
         args.stat_file_path,
-        args.vs30_file_path,
-        args.v1d_full_path,
-        args.cybershake_root,
+        cybershake_root,
         seed=args.seed,
         logger=logger,
         extended_period=args.extended_period,
@@ -146,12 +153,13 @@ def main():
         keep_dup_station=args.keep_dup_station,
     )
 
+    root_params_path = simulation_structure.get_root_yaml_path(cybershake_root)
+    utils.dump_yaml(root_params, root_params_path)
+
 
 def generate_root_params(
     version,
     stat_file_path,
-    vs30_file_path,
-    v1d_full_path,
     cybershake_root,
     seed=constants.HF_DEFAULT_SEED,
     logger: Logger = qclogging.get_basic_logger(),
@@ -168,14 +176,15 @@ def generate_root_params(
         template_path / constants.ROOT_DEFAULTS_FILE_NAME
     )
 
+    vs30_file_path = stat_file_path.replace(".ll", ".vs30")
+    v1d_full_path = Path(platform_config[constants.PLATFORM_CONFIG.VELOCITY_MODEL_DIR.name]) / "Mod-1D" / root_params_dict["v_1d_mod"]
+
     root_params_dict.update(
         {
-            root_params_dict[constants.RootParams.version.value]: version,
-            root_params_dict[constants.RootParams.stat_file.value]: stat_file_path,
-            root_params_dict[constants.RootParams.stat_vs_est.value]: vs30_file_path,
-            root_params_dict[
-                constants.RootParams.keep_dup_station.value
-            ]: keep_dup_station,
+            constants.RootParams.version.value: version,
+            constants.RootParams.stat_file.value: stat_file_path,
+            constants.RootParams.stat_vs_est.value: vs30_file_path,
+            constants.RootParams.keep_dup_station.value: keep_dup_station,
         }
     )
 
@@ -191,6 +200,8 @@ def generate_root_params(
             raise ValueError(message)
         root_params_dict["ims"][constants.RootParams.component.value] = components
     root_params_dict["mgmt_db_location"] = cybershake_root
+
+    return root_params_dict
 
 
 if __name__ == "__main__":
