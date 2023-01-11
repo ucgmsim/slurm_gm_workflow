@@ -140,7 +140,6 @@ def submit_im_calc_slurm(
                 command_options[const.SlBodyOptConsts.advanced_IM.value]
                 + f"--station_names `cat {tmp_station_file}`"
             )
-        #        header_options[const.SlHdrOptConsts.n_tasks.value] = body_options["np"] = qconfig["cores_per_node"]
 
         # Time for one station to run in hours
         # This should be a machine property. Or take the largest across all machines used
