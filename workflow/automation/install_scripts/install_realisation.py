@@ -63,10 +63,10 @@ def generate_sim_params_yaml(
     stoch_file = simulation_structure.get_stoch_path(cybershake_root, rel_name)
 
     sim_params_dict = {
-        constants.SimParams.user_root.value: cybershake_root,
+        constants.SimParams.user_root.value: str(cybershake_root),
         constants.SimParams.run_dir.value: runs_dir,
         constants.SimParams.fault_yaml_path.value: fault_yaml_path,
-        constants.SimParams.sim_dir.value: rel_sim_dir,
+        constants.SimParams.sim_dir.value: str(rel_sim_dir),
         constants.SimParams.run_name.value: rel_name,
         constants.SimParams.srf_file.value: srf_file,
         constants.SimParams.vm_params.value: vm_params_path,
@@ -83,7 +83,7 @@ def generate_sim_params_yaml(
         if vm_pert_file.is_file():
             # The perturbation file exists, use it
             sim_params_dict["emod3d"]["model_style"] = 3
-            sim_params_dict["emod3d"]["pertbfile"] = vm_pert_file
+            sim_params_dict["emod3d"]["pertbfile"] = str(vm_pert_file)
         else:
             # The perturbation file does not exist. Raise an exception
             message = f"The expected perturbation file {vm_pert_file} does not exist. Generate or move this file to the given location."
@@ -105,8 +105,8 @@ def generate_sim_params_yaml(
         if qsfile.is_file() and qpfile.is_file():
             # The Qp/Qs files exist, use them
             sim_params_dict["emod3d"]["useqsqp"] = 1
-            sim_params_dict["emod3d"]["qsfile"] = qsfile
-            sim_params_dict["emod3d"]["qpfile"] = qpfile
+            sim_params_dict["emod3d"]["qsfile"] = str(qsfile)
+            sim_params_dict["emod3d"]["qpfile"] = str(qpfile)
         else:
             # At least one of the Qp/Qs files do not exist. Raise an exception
             message = f"The expected Qp/Qs files {qpfile} and/or {qsfile} do not exist. Generate or move these files to the given location."
@@ -139,11 +139,13 @@ def generate_sim_params_yaml(
 def main():
     args = load_args()
 
-    log_dir = args.log_dir
+    cybershake_root = args.cs_root
     rel_name = args.realisation
+    log_dir = args.log_dir
+    if log_dir is None:
+        log_dir = Path(simulation_structure.get_sim_dir(cybershake_root, rel_name))
     logger = qclogging.get_logger(f"install_rel_{rel_name}")
     qclogging.add_general_file_handler(logger, log_dir / f"install_rel_{rel_name}")
-    cybershake_root = args.cs_root
 
     sim_params_dict = generate_sim_params_yaml(
         rel_name,

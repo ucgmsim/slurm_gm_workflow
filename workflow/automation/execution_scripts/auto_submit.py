@@ -383,6 +383,9 @@ def submit_task(
     elif proc_type == const.ProcessType.VM_PERT.value:
         submit_vm_pert_main(root_folder, run_name, sim_dir, logger=task_logger)
     elif proc_type == const.ProcessType.INSTALL_FAULT.value:
+        fd_stat = Path(sim_struct.get_fault_dir(
+            root_folder, sim_struct.get_fault_from_realisation(run_name)
+        )) / f"fd{str(params['sufx'])}.ll"
         submit_script_to_scheduler(
             get_platform_specific_script(
                 const.ProcessType.INSTALL_FAULT,
@@ -390,6 +393,7 @@ def submit_task(
                     {
                         "FAULT": run_name,
                         "MGMT_DB_LOC": root_folder,
+                        "FDSTATLIST": str(fd_stat)
                     }
                 ),
             ),
@@ -427,7 +431,7 @@ def submit_task(
                     {
                         "REL_YAML": str(
                             Path(sim_struct.get_srf_path(root_folder, run_name)).parent
-                            / f"{run_name}.yaml"
+                            / f"{run_name}.csv"
                         ),
                         "MGMT_DB_LOC": root_folder,
                         "REL_NAME": run_name,

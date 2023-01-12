@@ -49,7 +49,7 @@ def main():
     )
 
     fault_params_dict = generate_fault_params(
-        cybershake_root, fault_name, fd_statcords, fd_statlist, args.site_specific
+        cybershake_root, fault_name, fd_statcords, fd_statlist
     )
 
     runs_dir = simulation_structure.get_runs_dir(cybershake_root)
@@ -58,25 +58,17 @@ def main():
 
 
 def generate_fault_params(
-    cybershake_root, fault_name, fd_statcords, fd_statlist, site_specific=False
+    cybershake_root, fault_name, fd_statcords, fd_statlist
 ):
     runs_dir = simulation_structure.get_runs_dir(cybershake_root)
     root_params_yaml = simulation_structure.get_root_yaml_path(runs_dir)
     vel_mod_dir = simulation_structure.get_fault_VM_dir(cybershake_root, fault_name)
+    fault_dir = Path(simulation_structure.get_fault_dir(cybershake_root, fault_name))
     fault_params_dict = {
         constants.FaultParams.root_yaml_path.value: root_params_yaml,
         constants.FaultParams.vel_mod_dir.value: vel_mod_dir,
-        "hf": {
-            constants.FaultParams.site_specific.value: site_specific,
-        },
-        constants.FaultParams.stat_coords.value: Path(
-            simulation_structure.get_fault_dir(cybershake_root, fault_name)
-        )
-        / fd_statcords,
-        constants.FaultParams.FD_STATLIST.value: Path(
-            simulation_structure.get_fault_dir(cybershake_root, fault_name)
-        )
-        / fd_statlist,
+        constants.FaultParams.stat_coords.value: str(fault_dir / fd_statcords),
+        constants.FaultParams.FD_STATLIST.value: str(fault_dir / fd_statlist),
     }
 
     return fault_params_dict
