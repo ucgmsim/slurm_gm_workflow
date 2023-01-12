@@ -198,10 +198,11 @@ def run_estimations(
 
     if im_calc_input_data is not None:
         print("Running IM_calc estimation")
-        im_calc_core_hours, im_calc_run_time = estimate_wct.est_IM_chours_single(
-            *im_calc_input_data
-        )
-        im_calc_cores = [im_calc_input_data[-1]] * sum(r_counts)
+        (
+            im_calc_core_hours,
+            im_calc_run_time,
+            im_calc_cores,
+        ) = estimate_wct.est_IM_chours(*im_calc_input_data)
     else:
         im_calc_core_hours, im_calc_run_time, im_calc_cores = np.nan, np.nan, np.nan
 
@@ -379,13 +380,13 @@ def main(
         else:
             period_count = len(root_config["ims"]["pSA_periods"])
         im_calc_input_data = [
-            len(shared.get_stations(root_config["stat_file"])),
+            np.repeat(fd_counts, r_counts),
             np.repeat(fault_sim_durations / float(root_config["dt"]), r_counts),
             root_config["ims"][const.SlBodyOptConsts.component.value],
             period_count,
             platform_config[const.PLATFORM_CONFIG.IM_CALC_DEFAULT_N_CORES.name],
         ]
-    except FileNotFoundError or KeyError:
+    except FileNotFoundError or KeyError or UnboundLocalError:
         print("Encountered error preparing IM_calc input data")
         im_calc_input_data = None
 

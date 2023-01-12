@@ -75,7 +75,7 @@ def test_BB_single(data, true, tolerance):
 )
 def test_IM_single(data, true, tolerance):
     fd_count, nt, im_comp_count, pSA_count, n_cores = data
-    chours, *_ = est.est_IM_chours_single(
+    chours, *_ = est.est_IM_chours(
         fd_count, nt, im_comp_count, pSA_count, n_cores
     )
 
