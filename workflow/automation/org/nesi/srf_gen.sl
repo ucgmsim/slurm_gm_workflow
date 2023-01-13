@@ -53,6 +53,8 @@ if [[ $pass == 0 ]]; then
     chmod g+rwXs -R $SRF_DIR/$REL_NAME*
     chgrp nesi00213 -R $SRF_DIR/$REL_NAME*
 
+    mkdir -p $SRF_DIR/../Stoch
+    mkdir -p $SRF_DIR/../Sim_params
     mv $STOCH_PATH $SRF_DIR/../Stoch
     mv $SIM_PARAMS_PATH $SRF_DIR/../Sim_params
 
