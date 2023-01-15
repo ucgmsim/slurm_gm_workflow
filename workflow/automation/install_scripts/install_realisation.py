@@ -147,6 +147,17 @@ def main():
     logger = qclogging.get_logger(f"install_rel_{rel_name}")
     qclogging.add_general_file_handler(logger, log_dir / f"install_rel_{rel_name}")
 
+    rel_sim_dir = Path(simulation_structure.get_sim_dir(cybershake_root, rel_name))
+
+    lf_sim_root_dir = simulation_structure.get_lf_dir(rel_sim_dir)
+    hf_dir = simulation_structure.get_hf_dir(rel_sim_dir)
+    bb_dir = simulation_structure.get_bb_dir(rel_sim_dir)
+    im_calc_dir = simulation_structure.get_im_calc_dir(rel_sim_dir)
+
+    dir_list = [rel_sim_dir, lf_sim_root_dir, hf_dir, bb_dir, im_calc_dir]
+    for dir in dir_list:
+        utils.setup_dir(dir)
+
     sim_params_dict = generate_sim_params_yaml(
         rel_name,
         cybershake_root,
@@ -157,7 +168,6 @@ def main():
         logger=logger,
     )
 
-    rel_sim_dir = Path(simulation_structure.get_sim_dir(cybershake_root, rel_name))
     sim_params_path = Path(simulation_structure.get_sim_params_yaml_path(rel_sim_dir))
     utils.dump_yaml(sim_params_dict, sim_params_path)
 
