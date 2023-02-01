@@ -57,9 +57,7 @@ def main():
     utils.dump_yaml(fault_params_dict, fault_params_path)
 
 
-def generate_fault_params(
-    cybershake_root, fault_name, fd_statcords, fd_statlist
-):
+def generate_fault_params(cybershake_root, fault_name, fd_statcords, fd_statlist):
     runs_dir = simulation_structure.get_runs_dir(cybershake_root)
     root_params_yaml = simulation_structure.get_root_yaml_path(runs_dir)
     vel_mod_dir = simulation_structure.get_fault_VM_dir(cybershake_root, fault_name)

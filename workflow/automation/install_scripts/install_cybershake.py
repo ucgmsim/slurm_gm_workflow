@@ -136,7 +136,7 @@ def main():
 
     for fault, count in fault_selection.items():
         utils.setup_dir(simulation_structure.get_sim_dir(cybershake_root, fault))
-        for i in range(1, count+1):
+        for i in range(1, count + 1):
             rel_name = simulation_structure.get_realisation_name(fault, i)
             utils.setup_dir(simulation_structure.get_sim_dir(cybershake_root, rel_name))
 
@@ -178,7 +178,11 @@ def generate_root_params(
     )
 
     vs30_file_path = stat_file_path.replace(".ll", ".vs30")
-    v1d_full_path = Path(platform_config[constants.PLATFORM_CONFIG.VELOCITY_MODEL_DIR.name]) / "Mod-1D" / root_params_dict["v_1d_mod"]
+    v1d_full_path = (
+        Path(platform_config[constants.PLATFORM_CONFIG.VELOCITY_MODEL_DIR.name])
+        / "Mod-1D"
+        / root_params_dict["v_1d_mod"]
+    )
 
     root_params_dict.update(
         {
