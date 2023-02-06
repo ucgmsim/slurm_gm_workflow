@@ -1,6 +1,16 @@
+# Should both be set to ALL, MEDIAN or REL_ONLY
+SRF_GEN: ALL
+INSTALL_REALISATION: ALL
+
+# Only intended to run with median, setting to anything else will have unintended effects
 VM_PARAMS: MEDIAN
 VM_GEN: MEDIAN
-# if you select the VM_PERT option you need to re-install (install_cybershake.py) after generating perturbations to
-# enable the perturbation to take effect
-VM_PERT: NONE # ALL # REL_ONLY
 INSTALL_FAULT: MEDIAN
+
+# The realisations selected in VM_PERT and NO_VM_PERT must combine together
+# to form the complete list of realisations to run simulations for.
+# If a realisation is set for both it will result in EMOD3D running before the perturbation file is generated,
+# and if neither are set EMOD3D/HF will never run
+# Common method are to use ALL/NONE and MEDIAN/REL_ONLY pairs
+VM_PERT: NONE # ALL # REL_ONLY
+NO_VM_PERT: ALL

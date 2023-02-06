@@ -4,16 +4,16 @@ import pytest
 
 from workflow.automation.lib.MgmtDB import connect_db_ctx, SchedulerTask
 from workflow.automation.install_scripts import create_mgmt_db
-from qcore import utils
+from qcore import utils, constants
 from qcore.qclogging import get_basic_logger
 
 TEST_DB_FILE = "./output/slurm_mgmt.db"
-TEST_SRF_FILE = "/nesi/nobackup/nesi00213/RunFolder/PangopangoF29/Data/Sources/PangopangoF29/Srf/PangopangoF29_HYP01-10_S1244.srf"
 TEST_RUN_NAME = "PangopangoF29_HYP01-10_S1244"
+TEST_SRF_FILE = {TEST_RUN_NAME: 0}
 TEST_PROC = (2, "merge_ts")
 TEST_STATUS = (4, "completed")
 FORCE_STATUS = (5, "failed")
-INIT_DB_ROWS = 19
+INIT_DB_ROWS = len(constants.ProcessType)
 EXPECTED_ERROS = [
     "test_err",
     "",
