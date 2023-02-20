@@ -127,6 +127,10 @@ def resolve_header(
         template_path = platform_config[const.PLATFORM_CONFIG.HEADER_FILE.name]
 
     j2_env = Environment(loader=FileSystemLoader(template_dir), trim_blocks=True)
+
+    from qcore import config
+    wallclock_limit = min(wallclock_limit, str(config.qconfig[config.ConfigKeys.MAX_JOB_WCT.name]))
+
     header = j2_env.get_template(template_path).render(
         version=version,
         job_description=job_description,

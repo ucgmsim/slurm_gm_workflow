@@ -481,6 +481,7 @@ if __name__ == "__main__":
         hf_sim_args.append("")
 
         stdin = "\n".join(hf_sim_args)
+        print(stdin)
 
         logger.debug(stdin)
 

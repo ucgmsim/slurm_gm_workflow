@@ -15,14 +15,14 @@
   "SCHEDULER": "pbs",
   "HEADER_FILE": "kisti_header.cfg",
   "AVAILABLE_MACHINES":  ["nurion"],
-  "VELOCITY_MODEL_DIR": "/home01/x2319a02/gmsim/VelocityModel",
+  "VELOCITY_MODEL_DIR": "/scratch/x2568a02/gmsim_home/VelocityModel",
   "ESTIMATION_MODELS_DIR": "$workflow/estimation/models",
   "GMSIM_TEMPLATES_DIR": "$workflow/calculation/gmsim_templates",
   "SCHEDULER_TEMPLATES_DIR": "$workflow/automation/templates",
   "EXAMPLES_DIR" : "$workflow/examples",
   "RUN_COMMAND": "mpirun",
   "DEFAULT_N_RUNS": {
-    "nurion": 50
+    "nurion": 60
   },
   "MACHINE_TASKS": {
     "EMOD3D": "nurion",

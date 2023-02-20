@@ -14,6 +14,8 @@ import shutil
 import sys
 from datetime import datetime
 from logging import Logger, DEBUG, INFO
+from pathlib import Path
+import shutil
 
 from qcore.qclogging import get_basic_logger
 
@@ -22,12 +24,15 @@ if sys.version_info.major == 3:
 
 
 def write_to_py(pyfile, vardict):
+    Path(pyfile).parent.mkdir(exist_ok=True,parents=True)
+
     with open(pyfile, "w") as fp:
         for (key, value) in vardict.items():
             if isinstance(value, basestring):
                 fp.write('%s="%s"\n' % (key, value))
             else:
                 fp.write("%s=%s\n" % (key, value))
+    
 
 
 def get_stations(source_file, locations=False):
