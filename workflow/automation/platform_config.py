@@ -75,9 +75,10 @@ if errors:
     )
     if missing_keys:
         message += f" Missing keys: {', '.join(missing_keys)}."
+        raise ValueError(message)
     if extra_keys:
         message += f" Additional keys found: {', '.join(extra_keys)}."
-    raise ValueError(message)
+        print(message)
 
 # Dynamically generate the HPC enum
 

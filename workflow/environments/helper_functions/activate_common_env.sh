@@ -11,6 +11,5 @@ virtenv_path=$1
 
 # Reset the PYTHONPATH
 export PYTHONPATH=''
-
 # Load the virtual environment
 source ${virtenv_path}/bin/activate
