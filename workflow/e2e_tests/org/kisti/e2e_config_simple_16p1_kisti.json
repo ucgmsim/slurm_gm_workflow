@@ -1,5 +1,5 @@
 {
-  "test_dir": "/scratch/x2568a02/gmsim/RunFolder/EndToEndTest/tests/",
+  "test_dir": "/scratch/x2568a02/tmp/EndToEndTest/tests/",
   "data_dir": "/scratch/x2568a02/gmsim_home/EndToEndTest/test_data_simple/Data",
   "fault_list": "/scratch/x2568a02/gmsim_home/EndToEndTest/test_data_simple/list.txt",
   "bench_dir": "/scratch/x2568a02/gmsim_home/EndToEndTest/test_data_simple/benchmark",
