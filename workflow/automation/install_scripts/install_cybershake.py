@@ -68,7 +68,7 @@ def load_args(logger):
     if args.log_dir is None:
         qclogging.add_general_file_handler(
             logger,
-            args.path_cybershake
+            args.cybershake_root
             / AUTO_SUBMIT_LOG_FILE_NAME.format(
                 datetime.now().strftime(constants.TIMESTAMP_FORMAT)
             ),
