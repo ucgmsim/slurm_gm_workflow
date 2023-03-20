@@ -6,13 +6,13 @@ from logging import Logger
 from pathlib import Path
 
 import workflow.automation.estimation.estimate_wct as est
+from workflow.automation.estimation import estimate_wct
 from workflow.automation.lib.shared_automated_workflow import submit_script_to_scheduler
 from qcore import utils
 from qcore.config import get_machine_config
 from qcore import constants as const
 from qcore.qclogging import get_basic_logger
 from qcore import simulation_structure as sim_struct
-from workflow.automation.lib.shared import set_wct
 from workflow.automation.platform_config import (
     HPC,
     platform_config,
@@ -51,8 +51,9 @@ def get_vm_pert_cores_and_wct(
             ncpus = cores_per_node
             break
 
-    est_wct = set_wct(est_run_time, ncpus, auto=True, logger=logger)
-    return est_wct, ncpus
+    ncpus, wct = estimate_wct.confine_wct_node_parameters(ncpus, est_run_time)
+    wct_string = estimate_wct.get_wct(wct)
+    return wct_string, ncpus
 
 
 def submit_vm_pert_main(

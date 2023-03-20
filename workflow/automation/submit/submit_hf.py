@@ -10,6 +10,7 @@ from qcore.config import host, get_machine_config
 import qcore.constants as const
 from qcore.qclogging import get_basic_logger
 import qcore.simulation_structure as sim_struct
+from workflow.automation.estimation import estimate_wct
 from workflow.automation.lib.constants import HF_VEL_MOD_1D
 from workflow.automation.lib.schedulers.scheduler_factory import Scheduler
 from workflow.automation.platform_config import (
@@ -17,10 +18,9 @@ from workflow.automation.platform_config import (
     get_platform_node_requirements,
 )
 
-from workflow.automation.lib.shared import set_wct, get_hf_nt
+from workflow.automation.lib.shared import get_hf_nt
 from workflow.automation.lib.shared_automated_workflow import submit_script_to_scheduler
 from workflow.automation.lib.shared_template import write_sl_script
-
 # default values
 # Scale the number of nodes to be used for the simulation component
 
@@ -113,7 +113,9 @@ def main(
         else:
             est_run_time_scaled = est_run_time * (retries + 1)
 
-    wct = set_wct(est_run_time_scaled, est_cores, submit)
+    est_cores, wct = estimate_wct.confine_wct_node_parameters(est_cores, est_run_time_scaled)
+    wct_string = estimate_wct.get_wct(wct)
+
     hf_sim_dir = sim_struct.get_hf_dir(sim_dir)
     if write_directory is None:
         write_directory = sim_dir
@@ -122,7 +124,7 @@ def main(
 
     header_dict = {
         "platform_specific_args": get_platform_node_requirements(est_cores),
-        "wallclock_limit": wct,
+        "wallclock_limit": wct_string,
         "job_name": f"hf.{underscored_srf}",
         "job_description": "HF calculation",
         "additional_lines": "",

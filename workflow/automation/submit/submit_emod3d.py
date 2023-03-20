@@ -16,13 +16,13 @@ import qcore.simulation_structure as sim_struct
 
 import workflow.automation.estimation.estimate_wct as est
 import workflow.calculation.create_e3d as set_runparams
+from workflow.automation.estimation import estimate_wct
 from workflow.calculation.verification.check_emod3d_subdomains import test_domain
 from workflow.automation.lib.schedulers.scheduler_factory import Scheduler
 from workflow.automation.platform_config import (
     platform_config,
     get_platform_node_requirements,
 )
-from workflow.automation.lib.shared import set_wct
 from workflow.automation.lib.shared_automated_workflow import submit_script_to_scheduler
 from workflow.automation.lib.shared_template import write_sl_script
 
@@ -163,8 +163,9 @@ def get_lf_cores_and_wct(
             f"Event {srf_name} needed {extra_nodes} extra nodes assigned in order to prevent station(s) "
             f"not being assigned to a sub domain."
         )
-    wct = set_wct(est_run_time_scaled, est_cores, True)
-    return est_cores, est_run_time, wct
+    ncores, wct = estimate_wct.confine_wct_node_parameters(ncores, est_run_time_scaled)
+    wct_string = estimate_wct.get_wct(wct)
+    return ncores, wct, wct_string
 
 
 def load_args():

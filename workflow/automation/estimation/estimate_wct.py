@@ -18,9 +18,74 @@ from qcore.qclogging import get_basic_logger
 MAX_JOB_WCT = config.qconfig[config.ConfigKeys.MAX_JOB_WCT.name]
 MAX_NODES_PER_JOB = config.qconfig[config.ConfigKeys.MAX_NODES_PER_JOB.name]
 PHYSICAL_NCORES_PER_NODE = config.qconfig[config.ConfigKeys.cores_per_node.name]
+MAX_CH_PER_JOB = config.qconfig[config.ConfigKeys.MAX_CH_PER_JOB.name]
 
 CH_SAFETY_FACTOR = 1.5
 ERROR_MSG_SHAPE_MISMATCH = "Invalid input data, has to be {required_column_count} columns. One for each feature."
+
+
+def confine_wct_node_parameters(
+    core_count: int,
+    run_time: float,
+    max_wct=float(MAX_JOB_WCT),
+    max_core_count=MAX_NODES_PER_JOB * PHYSICAL_NCORES_PER_NODE,
+    max_core_hours=MAX_CH_PER_JOB,
+    cores_per_node=PHYSICAL_NCORES_PER_NODE,
+    logger=get_basic_logger(),
+):
+    """
+    Confines the parameters of a job to those of the queue it is to be submitted to.
+    Assumes that a job requires a constant number of core hours regardless of core count
+    (This is not true, as most jobs have a fixed start-up time, which will consume more CH with increasing core count).
+    Performs a three-step process, first it ensures the total core hours is within the maxmium allowed, second if either
+    of run time or core count are beyond the individual parameter limit it reduces that parameter to the limit, third if
+    the individual parameters are still beyond the maximum total core hours for the job then the wall clock time is
+    reduced so that for the same job less total WCT will be required (ignoring time spent in the queue)
+    :param run_time: The currently requested wall clock time to run for in hours
+    :param core_count: The currently requested number of cores to use
+    :param max_wct: The maximum wall clock time available for the current queue
+    :param max_core_count: The maximum core count possible for the current queue
+    :param max_core_hours: The maximum core hours possible for a single job in the current queue
+    :param logger: The logger to send messages to
+    :return: A tuple containing the constrained run time and
+    """
+    ch = run_time * core_count
+
+    if ch > max_core_hours:
+        logger.debug(
+            f"Job requires {ch} core hours, but the queue only allows {max_core_hours}, reducing. "
+            f"This job will have to rely on checkpointing to complete across multiple submissions."
+        )
+        ch = max_core_hours
+
+    if run_time > max_wct:
+        logger.debug(
+            f"Job had {run_time} wall clock time which is greater than max allowed run time of {max_wct}, "
+            f"reducing wall clock time and increasing core count"
+        )
+        run_time = max_wct
+        core_count = int(
+            min(
+                cores_per_node * np.ceil((ch / max_wct) / cores_per_node),
+                max_core_count,
+            )
+        )
+    elif core_count > max_core_count:
+        logger.debug(
+            f"Job had {core_count} cores which is greater than max allowed core count of {max_core_count}, "
+            f"reducing core count and increasing wall clock time"
+        )
+        core_count = max_core_count
+        run_time = min(ch / max_core_count, max_wct)
+
+    if core_count * run_time > ch:
+        logger.debug(
+            f"Job parameters total ch ({core_count*run_time}) still beyond max core-hour bounds ({ch}). "
+            f"Reducing wall clock time to fit."
+        )
+        run_time = ch / core_count
+
+    return core_count, run_time
 
 
 def get_wct(run_time, ch_safety_factor=CH_SAFETY_FACTOR):

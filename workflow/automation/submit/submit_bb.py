@@ -11,11 +11,12 @@ from qcore import simulation_structure
 from qcore import utils, shared
 from qcore.config import host
 from qcore.qclogging import get_basic_logger
+from workflow.automation.estimation import estimate_wct
 from workflow.automation.platform_config import (
     platform_config,
     get_platform_node_requirements,
 )
-from workflow.automation.lib.shared import set_wct, get_hf_nt
+from workflow.automation.lib.shared import get_hf_nt
 from workflow.automation.lib.shared_automated_workflow import submit_script_to_scheduler
 from workflow.automation.lib.shared_template import write_sl_script
 from workflow.automation.lib.schedulers.scheduler_factory import Scheduler
@@ -92,7 +93,8 @@ def main(
         else:
             est_run_time_scaled = est_run_time * (retries + 1)
 
-    wct = set_wct(est_run_time_scaled, ncores, submit)
+    ncores, wct = estimate_wct.confine_wct_node_parameters(ncores, est_run_time_scaled)
+    wct_string = estimate_wct.get_wct(wct)
 
     if write_directory is None:
         write_directory = sim_dir
@@ -100,7 +102,7 @@ def main(
     underscored_srf = srf_name.replace("/", "__")
 
     header_dict = {
-        "wallclock_limit": wct,
+        "wallclock_limit": wct_string,
         "job_name": f"bb.{underscored_srf}",
         "job_description": "BB calculation",
         "additional_lines": "",
