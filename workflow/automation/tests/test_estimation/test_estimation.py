@@ -90,15 +90,15 @@ PHYSICAL_NCORES_PER_NODE = 40
 @patch("workflow.automation.estimation.estimate_wct.MAX_CH_PER_JOB", 1200*40)
 @pytest.mark.parametrize(
     ["in_params", "out_time", "out_count"], [
-        ((12, PHYSICAL_NCORES_PER_NODE * 2), 12, PHYSICAL_NCORES_PER_NODE*2),
-        ((25, PHYSICAL_NCORES_PER_NODE), 12.5, PHYSICAL_NCORES_PER_NODE*2),
-        ((12.0, PHYSICAL_NCORES_PER_NODE * 240 * 2), 5.0, PHYSICAL_NCORES_PER_NODE*240),
-        ((25, PHYSICAL_NCORES_PER_NODE * 241), 5, PHYSICAL_NCORES_PER_NODE*240),
-        ((23, PHYSICAL_NCORES_PER_NODE * 239), 1200/239, PHYSICAL_NCORES_PER_NODE*239),
+        ((PHYSICAL_NCORES_PER_NODE * 2, 12), PHYSICAL_NCORES_PER_NODE * 2, 12),
+        ((PHYSICAL_NCORES_PER_NODE, 25),PHYSICAL_NCORES_PER_NODE * 2, 12.5),
+        ((PHYSICAL_NCORES_PER_NODE * 240 * 2, 12.0), PHYSICAL_NCORES_PER_NODE * 240, 5.0),
+        ((PHYSICAL_NCORES_PER_NODE * 241, 25), PHYSICAL_NCORES_PER_NODE * 240, 5),
+        ((PHYSICAL_NCORES_PER_NODE * 239, 23), PHYSICAL_NCORES_PER_NODE * 239, 1200/239),
     ]
 )
-def test_confine_wct_node_parameters(in_params, out_time, out_count, tolerance=0.1):
-    test_time, test_count = workflow.automation.estimation.estimate_wct.confine_wct_node_parameters(*in_params)
+def test_confine_wct_node_parameters(in_params, out_count, out_time, tolerance=0.1):
+    test_count, test_time = workflow.automation.estimation.estimate_wct.confine_wct_node_parameters(*in_params)
 
-    check_chours(test_time, out_time, tolerance)
     check_chours(test_count, out_count, tolerance)
+    check_chours(test_time, out_time, tolerance)
