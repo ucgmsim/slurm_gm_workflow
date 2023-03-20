@@ -84,10 +84,10 @@ def test_IM_single(data, true, tolerance):
     check_chours(chours, true, tolerance)
 
 PHYSICAL_NCORES_PER_NODE = 40
-@patch(est.MAX_JOB_WCT, 24.0)
-@patch(est.MAX_NODES_PER_JOB, 240)
-@patch(est.PHYSICAL_NCORES_PER_NODE, PHYSICAL_NCORES_PER_NODE)
-@patch(est.MAX_CH_PER_JOB, 1200*40)
+@patch("est.MAX_JOB_WCT", 24.0)
+@patch("est.MAX_NODES_PER_JOB", 240)
+@patch("est.PHYSICAL_NCORES_PER_NODE", PHYSICAL_NCORES_PER_NODE)
+@patch("est.MAX_CH_PER_JOB", 1200*40)
 @pytest.mark.parametrize(
     ["in_params", "out_time", "out_count"], [
         ((12, PHYSICAL_NCORES_PER_NODE * 2), 12, PHYSICAL_NCORES_PER_NODE*2),
