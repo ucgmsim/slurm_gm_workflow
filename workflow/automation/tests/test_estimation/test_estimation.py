@@ -5,7 +5,7 @@ import pytest
 
 from unittest.mock import patch
 
-import workflow.automation.estimation.estimate_wct as est
+import workflow.automation.estimation.estimate_wct
 
 # Test data
 # small = Hossack
@@ -45,7 +45,7 @@ def check_chours(est, true, tol):
 )
 def test_EMOD3D_single(data, true, tolerance):
     nx, ny, nz, nt, fd_count, ncores = data
-    chours, *_ = est.est_LF_chours_single(nx, ny, nz, nt, fd_count, ncores, False)
+    chours, *_ = workflow.automation.estimation.estimate_wct.est_LF_chours_single(nx, ny, nz, nt, fd_count, ncores, False)
 
     check_chours(chours, true, tolerance)
 
@@ -55,7 +55,7 @@ def test_EMOD3D_single(data, true, tolerance):
 )
 def test_HF_single(data, true, tolerance):
     fd_count, nsub_stoch, nt, n_logical_cores = data
-    chours, *_ = est.est_HF_chours_single(
+    chours, *_ = workflow.automation.estimation.estimate_wct.est_HF_chours_single(
         fd_count, nsub_stoch, nt, n_logical_cores, False
     )
 
@@ -67,7 +67,7 @@ def test_HF_single(data, true, tolerance):
 )
 def test_BB_single(data, true, tolerance):
     fd_count, nt, n_logical_cores = data
-    chours, *_ = est.est_BB_chours_single(fd_count, nt, n_logical_cores)
+    chours, *_ = workflow.automation.estimation.estimate_wct.est_BB_chours_single(fd_count, nt, n_logical_cores)
 
     check_chours(chours, true, tolerance)
 
@@ -77,17 +77,17 @@ def test_BB_single(data, true, tolerance):
 )
 def test_IM_single(data, true, tolerance):
     fd_count, nt, im_comp_count, pSA_count, n_cores = data
-    chours, *_ = est.est_IM_chours(
+    chours, *_ = workflow.automation.estimation.estimate_wct.est_IM_chours(
         fd_count, nt, im_comp_count, pSA_count, n_cores
     )
 
     check_chours(chours, true, tolerance)
 
 PHYSICAL_NCORES_PER_NODE = 40
-@patch("est.MAX_JOB_WCT", 24.0)
-@patch("est.MAX_NODES_PER_JOB", 240)
-@patch("est.PHYSICAL_NCORES_PER_NODE", PHYSICAL_NCORES_PER_NODE)
-@patch("est.MAX_CH_PER_JOB", 1200*40)
+@patch("workflow.automation.estimation.estimate_wct.MAX_JOB_WCT", 24.0)
+@patch("workflow.automation.estimation.estimate_wct.MAX_NODES_PER_JOB", 240)
+@patch("workflow.automation.estimation.estimate_wct.PHYSICAL_NCORES_PER_NODE", PHYSICAL_NCORES_PER_NODE)
+@patch("workflow.automation.estimation.estimate_wct.MAX_CH_PER_JOB", 1200*40)
 @pytest.mark.parametrize(
     ["in_params", "out_time", "out_count"], [
         ((12, PHYSICAL_NCORES_PER_NODE * 2), 12, PHYSICAL_NCORES_PER_NODE*2),
@@ -98,7 +98,7 @@ PHYSICAL_NCORES_PER_NODE = 40
     ]
 )
 def test_confine_wct_node_parameters(in_params, out_time, out_count, tolerance=0.1):
-    test_time, test_count = est.confine_wct_node_parameters(*in_params)
+    test_time, test_count = workflow.automation.estimation.estimate_wct.confine_wct_node_parameters(*in_params)
 
     check_chours(test_time, out_time, tolerance)
     check_chours(test_count, out_count, tolerance)
