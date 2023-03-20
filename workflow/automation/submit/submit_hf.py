@@ -21,6 +21,7 @@ from workflow.automation.platform_config import (
 from workflow.automation.lib.shared import get_hf_nt
 from workflow.automation.lib.shared_automated_workflow import submit_script_to_scheduler
 from workflow.automation.lib.shared_template import write_sl_script
+
 # default values
 # Scale the number of nodes to be used for the simulation component
 
@@ -113,7 +114,9 @@ def main(
         else:
             est_run_time_scaled = est_run_time * (retries + 1)
 
-    est_cores, wct = estimate_wct.confine_wct_node_parameters(est_cores, est_run_time_scaled)
+    est_cores, wct = estimate_wct.confine_wct_node_parameters(
+        est_cores, est_run_time_scaled, preserve_core_count=retries > 0, logger=logger
+    )
     wct_string = estimate_wct.get_wct(wct)
 
     hf_sim_dir = sim_struct.get_hf_dir(sim_dir)

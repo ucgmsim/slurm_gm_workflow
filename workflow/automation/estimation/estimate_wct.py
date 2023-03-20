@@ -31,6 +31,7 @@ def confine_wct_node_parameters(
     max_core_count=MAX_NODES_PER_JOB * PHYSICAL_NCORES_PER_NODE,
     max_core_hours=MAX_CH_PER_JOB,
     cores_per_node=PHYSICAL_NCORES_PER_NODE,
+    preserve_core_count: bool = False,
     logger=get_basic_logger(),
 ):
     """
@@ -44,8 +45,10 @@ def confine_wct_node_parameters(
     :param run_time: The currently requested wall clock time to run for in hours
     :param core_count: The currently requested number of cores to use
     :param max_wct: The maximum wall clock time available for the current queue
-    :param max_core_count: The maximum core count possible for the current queue
+    :param max_core_count: The maximum core count possible for the current queue or job. Set to PHYSICAL_NCORES_PER_NODE to only use one node
     :param max_core_hours: The maximum core hours possible for a single job in the current queue
+    :param cores_per_node: The number of cores on each node
+    :param preserve_core_count: Maintain the number of cores to be used. Used for jobs that are being retried
     :param logger: The logger to send messages to
     :return: A tuple containing the constrained run time and
     """
@@ -61,16 +64,23 @@ def confine_wct_node_parameters(
     if run_time > max_wct:
         logger.debug(
             f"Job had {run_time} wall clock time which is greater than max allowed run time of {max_wct}, "
-            f"reducing wall clock time and increasing core count"
+            f"reducing wall clock time"
+            + (" and increasing core count" if not preserve_core_count else "")
         )
         run_time = max_wct
-        core_count = int(
-            min(
-                cores_per_node * np.ceil((ch / max_wct) / cores_per_node),
-                max_core_count,
+        if not preserve_core_count:
+            core_count = int(
+                min(
+                    cores_per_node * np.ceil((ch / max_wct) / cores_per_node),
+                    max_core_count,
+                )
             )
-        )
     elif core_count > max_core_count:
+        if preserve_core_count:
+            raise AssertionError(
+                f"Core count ({core_count}) greater than maximum core count ({max_core_count}), "
+                f"but preserve_core_count is True."
+            )
         logger.debug(
             f"Job had {core_count} cores which is greater than max allowed core count of {max_core_count}, "
             f"reducing core count and increasing wall clock time"

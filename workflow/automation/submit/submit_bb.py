@@ -93,7 +93,9 @@ def main(
         else:
             est_run_time_scaled = est_run_time * (retries + 1)
 
-    ncores, wct = estimate_wct.confine_wct_node_parameters(ncores, est_run_time_scaled)
+    ncores, wct = estimate_wct.confine_wct_node_parameters(
+        ncores, est_run_time_scaled, preserve_core_count=(retries > 0), logger=logger
+    )
     wct_string = estimate_wct.get_wct(wct)
 
     if write_directory is None:

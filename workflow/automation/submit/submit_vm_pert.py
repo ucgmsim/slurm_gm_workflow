@@ -29,29 +29,10 @@ def get_vm_pert_cores_and_wct(
     est_core_hours, est_run_time = est.est_VM_PERT_chours_single(
         vm_params["nx"], vm_params["ny"], vm_params["nz"], ncpus
     )
-    # not scaling run_time by retry count, as there is no check-pointing, yet
 
-    # re-scale core/wct, in case est_run_time is higher than cap
-    # re-scale wct base on machine MAX_JOB_WCT
-    machine_config = get_machine_config(hostname=target_machine)
-    max_wct = machine_config["MAX_JOB_WCT"]
-    cores_per_node = machine_config["cores_per_node"]
-
-    while est_run_time > max_wct:
-        est_run_time = est_run_time / 2
-        ncpus = ncpus * 2
-        if ncpus > cores_per_node:
-            # raise warning if WCT is still larger than MAX_JOB_WCT.
-            # assumes machine does not support mp calls above one nodes.
-            # TODO: extend this when qcore.configs contains relative info
-            logger.warning(
-                "run_time:{est_run_time} is still larger than {target_machine}'s max_wct:{max_wct}. Using wct:{max_wct} and ncpus:{cores_per_node}"
-            )
-            est_run_time = max_wct
-            ncpus = cores_per_node
-            break
-
-    ncpus, wct = estimate_wct.confine_wct_node_parameters(ncpus, est_run_time)
+    ncpus, wct = estimate_wct.confine_wct_node_parameters(
+        ncpus, est_run_time, max_core_count=est.PHYSICAL_NCORES_PER_NODE, logger=logger
+    )
     wct_string = estimate_wct.get_wct(wct)
     return wct_string, ncpus
 
