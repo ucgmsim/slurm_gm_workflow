@@ -3,6 +3,8 @@ a) ensure that the estimate_wct workflow works
 """
 import pytest
 
+from unittest.mock import patch
+
 import workflow.automation.estimation.estimate_wct as est
 
 # Test data
@@ -80,3 +82,23 @@ def test_IM_single(data, true, tolerance):
     )
 
     check_chours(chours, true, tolerance)
+
+PHYSICAL_NCORES_PER_NODE = 40
+@patch(est.MAX_JOB_WCT, 24.0)
+@patch(est.MAX_NODES_PER_JOB, 240)
+@patch(est.PHYSICAL_NCORES_PER_NODE, PHYSICAL_NCORES_PER_NODE)
+@patch(est.MAX_CH_PER_JOB, 1200*40)
+@pytest.mark.parametrize(
+    ["in_params", "out_time", "out_count"], [
+        ((12, PHYSICAL_NCORES_PER_NODE * 2), 12, PHYSICAL_NCORES_PER_NODE*2),
+        ((25, PHYSICAL_NCORES_PER_NODE), 12.5, PHYSICAL_NCORES_PER_NODE*2),
+        ((12.0, PHYSICAL_NCORES_PER_NODE * 240 * 2), 5.0, PHYSICAL_NCORES_PER_NODE*240),
+        ((25, PHYSICAL_NCORES_PER_NODE * 241), 5, PHYSICAL_NCORES_PER_NODE*240),
+        ((23, PHYSICAL_NCORES_PER_NODE * 239), 1200/239, PHYSICAL_NCORES_PER_NODE*239),
+    ]
+)
+def test_confine_wct_node_parameters(in_params, out_time, out_count, tolerance=0.1):
+    test_time, test_count = est.confine_wct_node_parameters(*in_params)
+
+    check_chours(test_time, out_time, tolerance)
+    check_chours(test_count, out_count, tolerance)

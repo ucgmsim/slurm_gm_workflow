@@ -61,7 +61,19 @@ def confine_wct_node_parameters(
         )
         ch = max_core_hours
 
-    if run_time > max_wct:
+    if core_count > max_core_count:
+        if preserve_core_count:
+            raise AssertionError(
+                f"Core count ({core_count}) greater than maximum core count ({max_core_count}), "
+                f"but preserve_core_count is True."
+            )
+        logger.debug(
+            f"Job had {core_count} cores which is greater than max allowed core count of {max_core_count}, "
+            f"reducing core count and increasing wall clock time"
+        )
+        core_count = max_core_count
+        run_time = min(ch / max_core_count, max_wct)
+    elif run_time > max_wct:
         logger.debug(
             f"Job had {run_time} wall clock time which is greater than max allowed run time of {max_wct}, "
             f"reducing wall clock time"
@@ -75,18 +87,6 @@ def confine_wct_node_parameters(
                     max_core_count,
                 )
             )
-    elif core_count > max_core_count:
-        if preserve_core_count:
-            raise AssertionError(
-                f"Core count ({core_count}) greater than maximum core count ({max_core_count}), "
-                f"but preserve_core_count is True."
-            )
-        logger.debug(
-            f"Job had {core_count} cores which is greater than max allowed core count of {max_core_count}, "
-            f"reducing core count and increasing wall clock time"
-        )
-        core_count = max_core_count
-        run_time = min(ch / max_core_count, max_wct)
 
     if core_count * run_time > ch:
         logger.debug(
