@@ -391,7 +391,6 @@ def call_opensees(
 
 
 def run_deamp_decon_and_site_response_ascii(folder, station_folder, output_dir):
-
     files = folder.glob("*.*")
     stations = {x.stem for x in files}
 
@@ -425,7 +424,6 @@ def run_deamp_decon_and_site_response_ascii(folder, station_folder, output_dir):
 
 
 def run_deamp_decon_and_site_response_binary(bb_bin, station_folder, output_dir):
-
     bb = timeseries.BBSeis(bb_bin)
     dt = bb.dt
 

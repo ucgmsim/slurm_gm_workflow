@@ -20,7 +20,7 @@ from qcore.qclogging import get_basic_logger
 
 def dict_to_e3d_par(pyfile, vardict):
     with open(pyfile, "w") as fp:
-        for (key, value) in vardict.items():
+        for key, value in vardict.items():
             if isinstance(value, str):
                 fp.write('%s="%s"\n' % (key, value))
             else:

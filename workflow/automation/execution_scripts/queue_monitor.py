@@ -88,7 +88,6 @@ def update_tasks(
     for db_running_task in db_running_tasks:
         task_logger.debug("Checking task {}".format(db_running_task))
         if str(db_running_task.job_id) in squeue_tasks.keys():
-
             queue_status = squeue_tasks[str(db_running_task.job_id)]
             task_logger.debug("Found task. It has state {}".format(queue_status))
 
@@ -271,7 +270,6 @@ def queue_monitor_loop(
 
         db_in_progress_tasks = mgmt_db.get_submitted_tasks()
         if len(db_in_progress_tasks) > 0:
-
             queue_logger.info(
                 "In progress tasks in mgmt db:"
                 + ", ".join(

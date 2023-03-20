@@ -480,7 +480,6 @@ def est_VM_PERT_chours_single(nx: int, ny: int, nz: int, n_cores: int):
 
 
 def est_VM_PERT_chours(data: np.ndarray):
-
     required_column_count = 2
     if data.shape[1] != required_column_count:
         raise Exception(

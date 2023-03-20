@@ -46,7 +46,6 @@ def create_run_params(
         srf_name is None
         or srf_name == os.path.splitext(basename(params["srf_file"]))[0]
     ):
-
         # EMOD3D adds a timeshift to the event rupture time
         # this must be accounted for as EMOD3D does not extend the sim duration by the amount of time shift
         # As flo is in Hz, the sim_duration_extension is in s

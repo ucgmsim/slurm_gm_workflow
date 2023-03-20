@@ -205,7 +205,6 @@ def args_parser(cmd=None):
 if __name__ == "__main__":
     args = None
     if is_master:
-
         try:
             args = args_parser()
         except SystemExit as e:

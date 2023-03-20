@@ -22,6 +22,7 @@ from workflow.automation.platform_config import (
 
 DEFAULT_CPUS = platform_config[const.PLATFORM_CONFIG.VM_PERT_DEFAULT_NCORES.name]
 
+
 # def estimate_wc:
 def get_vm_pert_cores_and_wct(
     vm_params, ncpus, target_machine, logger: Logger = get_basic_logger()
@@ -40,7 +41,6 @@ def get_vm_pert_cores_and_wct(
 def submit_vm_pert_main(
     root_folder, run_name, sim_dir, logger: Logger = get_basic_logger()
 ):
-
     # load vm_params.yaml for estimation
     VM_PARAMS_YAML = str(
         Path(sim_struct.get_fault_VM_dir(root_folder, run_name)) / "vm_params.yaml"

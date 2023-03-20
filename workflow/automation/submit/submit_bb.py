@@ -200,7 +200,6 @@ def load_args():
 
 
 if __name__ == "__main__":
-
     args = load_args()
     # The name parameter is only used to check user tasks in the queue monitor
     Scheduler.initialise_scheduler("", args.account)
