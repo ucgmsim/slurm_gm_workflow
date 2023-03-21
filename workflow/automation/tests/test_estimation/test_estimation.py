@@ -138,6 +138,9 @@ def test_confine_wct_node_parameters(in_params, out_count, out_time):
         max_core_count=MAX_NODES_PER_JOB * PHYSICAL_NCORES_PER_NODE,
         max_core_hours=MAX_CH_PER_JOB,
         cores_per_node=PHYSICAL_NCORES_PER_NODE,
+        hyperthreaded=False,
+        can_checkpoint=True,
+        ch_safety_factor=1.0,
     )
 
     assert np.isclose(test_count, out_count)
