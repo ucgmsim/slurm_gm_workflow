@@ -99,7 +99,11 @@ def confine_wct_node_parameters(
         logger.debug(
             f"Job had {run_time} wall clock time which is greater than max allowed run time of {max_wct}, "
             f"reducing wall clock time"
-            + (" and potentially increasing core count" if not preserve_core_count else "")
+            + (
+                " and potentially increasing core count"
+                if not preserve_core_count
+                else ""
+            )
         )
         if not preserve_core_count:
             core_count = min(
