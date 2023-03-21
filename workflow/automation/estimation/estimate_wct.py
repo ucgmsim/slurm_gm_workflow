@@ -28,12 +28,14 @@ def confine_wct_node_parameters(
     core_count: int,
     run_time: float,
     max_wct=float(MAX_JOB_WCT),
+    min_wct=(const.CHECKPOINT_DURATION * 3) / 60.0,
     max_core_count=MAX_NODES_PER_JOB * PHYSICAL_NCORES_PER_NODE,
     max_core_hours=MAX_CH_PER_JOB,
     cores_per_node=PHYSICAL_NCORES_PER_NODE,
     preserve_core_count: bool = False,
     can_checkpoint=False,
     hyperthreaded: bool = False,
+    ch_safety_factor: float = CH_SAFETY_FACTOR,
     logger=get_basic_logger(),
 ):
     """
@@ -49,19 +51,25 @@ def confine_wct_node_parameters(
     :param run_time: The currently requested wall clock time to run for in hours
     :param core_count: The currently requested number of cores to use
     :param max_wct: The maximum wall clock time available for the current queue
-    :param max_core_count: The maximum core count possible for the current queue or job. Set to PHYSICAL_NCORES_PER_NODE to only use one node
+    :param min_wct: The minimum wall clock time for a given job. Based on desired frequency of checkpointing, even if
+    the job does not support checkpointing.
+    :param max_core_count: The maximum core count possible for the current queue or job. Set to
+    PHYSICAL_NCORES_PER_NODE to only use one node
     :param max_core_hours: The maximum core hours possible for a single job in the current queue
     :param cores_per_node: The number of cores on each node
     :param preserve_core_count: Maintain the number of cores to be used. Used for jobs that are being retried
     :param hyperthreaded: If the core count given is hyperthreaded this must be taken into account
-    :param can_checkpoint: If the job cannot checkpoint and the requested CH is greater than the available CH the job cannot run
+    :param can_checkpoint: If the job cannot checkpoint and the requested CH is greater than the available CH the job
+    cannot run
+    :param ch_safety_factor: A ch safety factor to add where possible, to try and ensure the job doesn't take just
+    slightly longer than estimation calculates, significantly increasing the time required to complete
     :param logger: The logger to send messages to
     :return: A tuple containing the constrained core count and run time
     """
     if hyperthreaded:
         core_count /= 2
 
-    ch = run_time * core_count
+    ch = run_time * core_count * ch_safety_factor
 
     if ch > max_core_hours:
         if not can_checkpoint:
@@ -107,24 +115,25 @@ def confine_wct_node_parameters(
             f"Reducing wall clock time to fit."
         )
         run_time = max_core_hours / core_count
+    elif core_count * run_time < ch:
+        logger.debug(
+            f"Job parameters total ch ({core_count * run_time}) below minimum core-hour bounds ({max_core_hours}). "
+            f"Reducing wall clock time to fit."
+        )
+        run_time = min(ch / core_count, max_wct)
+        if not preserve_core_count:
+            core_count = min(
+                cores_per_node * np.ceil((ch / run_time) / cores_per_node),
+                max_core_count,
+            )
+
+    if run_time < min_wct:
+        run_time = min_wct
 
     if hyperthreaded:
         core_count *= 2
 
     return int(core_count), run_time
-
-
-def get_wct(run_time, ch_safety_factor=CH_SAFETY_FACTOR):
-    """Pad the run time (in hours) by the specified factor.
-    Then convert to wall clock time.
-
-    Use this when estimation as max run time in a slurm script.
-    """
-    wct_with_safety_factor = run_time * ch_safety_factor
-    if wct_with_safety_factor < ((const.CHECKPOINT_DURATION * 3) / 60.0):
-        return convert_to_wct((const.CHECKPOINT_DURATION * 3) / 60.0)
-    else:
-        return convert_to_wct(wct_with_safety_factor)
 
 
 def convert_to_wct(run_time):

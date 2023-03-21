@@ -12,11 +12,7 @@ from qcore import simulation_structure as sim_struct
 from qcore.timeseries import get_observed_stations, BBSeis
 from qcore.config import qconfig
 
-from workflow.automation.estimation.estimate_wct import (
-    est_IM_chours,
-    get_wct,
-    CH_SAFETY_FACTOR,
-)
+from workflow.automation.estimation import estimate_wct
 from workflow.automation.platform_config import (
     platform_config,
     get_platform_node_requirements,
@@ -184,7 +180,7 @@ def submit_im_calc_slurm(
                 realisation_name
             )
         )
-        _, est_run_time, n_cores = est_IM_chours(
+        _, est_run_time, n_cores = estimate_wct.est_IM_chours(
             station_count,
             int(float(params["sim_duration"]) / float(params["dt"])),
             comps_to_store,
@@ -196,9 +192,16 @@ def submit_im_calc_slurm(
     # special treatment for im_calc, as the scaling feature in estimation is not suitable
     # cap the wct, otherwise cannot submit
     est_run_time = est_run_time * (int(retries) + 1)
-    est_run_time = min(est_run_time * CH_SAFETY_FACTOR, qconfig["MAX_JOB_WCT"])
+    n_cores, est_run_time = estimate_wct.confine_wct_node_parameters(
+        n_cores,
+        est_run_time,
+        preserve_core_count=retries > 0,
+        hyperthreaded=const.ProcessType.IM_calculation.is_hyperth,
+        can_checkpoint=True,  # hard coded for now as this is not available programatically
+        logger=logger,
+    )
     # set ch_safety_factor=1 as we scale it already.
-    header_options["wallclock_limit"] = get_wct(est_run_time, ch_safety_factor=1)
+    header_options["wallclock_limit"] = estimate_wct.convert_to_wct(est_run_time)
     logger.debug("Using WCT for IM_calc: {header_options['wallclock_limit']}")
     header_options["job_name"] = "{}_{}".format(proc_type.str_value, fault_name)
     header_options["platform_specific_args"] = get_platform_node_requirements(n_cores)

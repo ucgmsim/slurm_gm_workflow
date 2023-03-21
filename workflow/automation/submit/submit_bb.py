@@ -101,7 +101,7 @@ def main(
         can_checkpoint=True,  # hard coded for now as this is not available programatically
         logger=logger,
     )
-    wct_string = estimate_wct.get_wct(wct)
+    wct_string = estimate_wct.convert_to_wct(wct)
 
     if write_directory is None:
         write_directory = sim_dir

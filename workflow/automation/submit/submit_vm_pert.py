@@ -9,12 +9,10 @@ import workflow.automation.estimation.estimate_wct as est
 from workflow.automation.estimation import estimate_wct
 from workflow.automation.lib.shared_automated_workflow import submit_script_to_scheduler
 from qcore import utils
-from qcore.config import get_machine_config
 from qcore import constants as const
 from qcore.qclogging import get_basic_logger
 from qcore import simulation_structure as sim_struct
 from workflow.automation.platform_config import (
-    HPC,
     platform_config,
     get_platform_specific_script,
     get_target_machine,
@@ -24,9 +22,7 @@ DEFAULT_CPUS = platform_config[const.PLATFORM_CONFIG.VM_PERT_DEFAULT_NCORES.name
 
 
 # def estimate_wc:
-def get_vm_pert_cores_and_wct(
-    vm_params, ncpus, target_machine, logger: Logger = get_basic_logger()
-):
+def get_vm_pert_cores_and_wct(vm_params, ncpus, logger: Logger = get_basic_logger()):
     est_core_hours, est_run_time = est.est_VM_PERT_chours_single(
         vm_params["nx"], vm_params["ny"], vm_params["nz"], ncpus
     )
@@ -39,7 +35,7 @@ def get_vm_pert_cores_and_wct(
         can_checkpoint=False,  # hard coded for now as this is not available programatically
         logger=logger,
     )
-    wct_string = estimate_wct.get_wct(wct)
+    wct_string = estimate_wct.convert_to_wct(wct)
     return wct_string, ncpus
 
 
@@ -53,8 +49,7 @@ def submit_vm_pert_main(
     vm_params = utils.load_yaml(VM_PARAMS_YAML)
     ncpus = DEFAULT_CPUS
     # get machine job will be submitted to
-    target_machine = get_target_machine(const.ProcessType.VM_PERT).name
-    est_wct, ncpus = get_vm_pert_cores_and_wct(vm_params, ncpus, target_machine, logger)
+    est_wct, ncpus = get_vm_pert_cores_and_wct(vm_params, ncpus, logger)
 
     submit_script_to_scheduler(
         get_platform_specific_script(
