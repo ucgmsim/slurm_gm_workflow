@@ -94,7 +94,12 @@ def main(
             est_run_time_scaled = est_run_time * (retries + 1)
 
     ncores, wct = estimate_wct.confine_wct_node_parameters(
-        ncores, est_run_time_scaled, preserve_core_count=(retries > 0), logger=logger
+        ncores,
+        est_run_time_scaled,
+        preserve_core_count=(retries > 0),
+        hyperthreaded=const.ProcessType.BB.is_hyperth,
+        can_checkpoint=True,  # hard coded for now as this is not available programatically
+        logger=logger,
     )
     wct_string = estimate_wct.get_wct(wct)
 

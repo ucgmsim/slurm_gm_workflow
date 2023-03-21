@@ -32,7 +32,12 @@ def get_vm_pert_cores_and_wct(
     )
 
     ncpus, wct = estimate_wct.confine_wct_node_parameters(
-        ncpus, est_run_time, max_core_count=est.PHYSICAL_NCORES_PER_NODE, logger=logger
+        ncpus,
+        est_run_time,
+        max_core_count=est.PHYSICAL_NCORES_PER_NODE,
+        hyperthreaded=const.ProcessType.VM_PERT.is_hyperth,
+        can_checkpoint=False,  # hard coded for now as this is not available programatically
+        logger=logger,
     )
     wct_string = estimate_wct.get_wct(wct)
     return wct_string, ncpus

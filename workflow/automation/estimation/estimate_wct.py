@@ -32,16 +32,20 @@ def confine_wct_node_parameters(
     max_core_hours=MAX_CH_PER_JOB,
     cores_per_node=PHYSICAL_NCORES_PER_NODE,
     preserve_core_count: bool = False,
+    can_checkpoint=False,
+    hyperthreaded: bool = False,
     logger=get_basic_logger(),
 ):
     """
     Confines the parameters of a job to those of the queue it is to be submitted to.
     Assumes that a job requires a constant number of core hours regardless of core count
     (This is not true, as most jobs have a fixed start-up time, which will consume more CH with increasing core count).
-    Performs a three-step process, first it ensures the total core hours is within the maxmium allowed, second if either
-    of run time or core count are beyond the individual parameter limit it reduces that parameter to the limit, third if
-    the individual parameters are still beyond the maximum total core hours for the job then the wall clock time is
-    reduced so that for the same job less total WCT will be required (ignoring time spent in the queue)
+    This function performs a three-step process:
+    1) It ensures the total core hours is within the maximum allowed for a single job,
+    2) If either of run time or core count are beyond the individual parameter limit it reduces that parameter to
+    the limit.
+    3) If the individual parameters are still beyond the maximum total core hours for the job then the wall
+    clock time is reduced so that for the same job less total WCT will be required (ignoring time spent in the queue)
     :param run_time: The currently requested wall clock time to run for in hours
     :param core_count: The currently requested number of cores to use
     :param max_wct: The maximum wall clock time available for the current queue
@@ -49,12 +53,22 @@ def confine_wct_node_parameters(
     :param max_core_hours: The maximum core hours possible for a single job in the current queue
     :param cores_per_node: The number of cores on each node
     :param preserve_core_count: Maintain the number of cores to be used. Used for jobs that are being retried
+    :param hyperthreaded: If the core count given is hyperthreaded this must be taken into account
+    :param can_checkpoint: If the job cannot checkpoint and the requested CH is greater than the available CH the job cannot run
     :param logger: The logger to send messages to
     :return: A tuple containing the constrained core count and run time
     """
+    if hyperthreaded:
+        core_count /= 2
+
     ch = run_time * core_count
 
     if ch > max_core_hours:
+        if not can_checkpoint:
+            raise AssertionError(
+                f"Job has greater core hours ({ch}) required than are available for a single job on this platform "
+                f"({max_core_hours}). This job is unable to run successfully on this platform."
+            )
         logger.debug(
             f"Job requires {ch} core hours, but the queue only allows {max_core_hours}, reducing. "
             f"This job will have to rely on checkpointing to complete across multiple submissions."
@@ -93,6 +107,9 @@ def confine_wct_node_parameters(
             f"Reducing wall clock time to fit."
         )
         run_time = max_core_hours / core_count
+
+    if hyperthreaded:
+        core_count *= 2
 
     return int(core_count), run_time
 
