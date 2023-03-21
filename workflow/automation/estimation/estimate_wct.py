@@ -50,7 +50,7 @@ def confine_wct_node_parameters(
     :param cores_per_node: The number of cores on each node
     :param preserve_core_count: Maintain the number of cores to be used. Used for jobs that are being retried
     :param logger: The logger to send messages to
-    :return: A tuple containing the constrained run time and
+    :return: A tuple containing the constrained core count and run time
     """
     ch = run_time * core_count
 
@@ -77,25 +77,24 @@ def confine_wct_node_parameters(
         logger.debug(
             f"Job had {run_time} wall clock time which is greater than max allowed run time of {max_wct}, "
             f"reducing wall clock time"
-            + (" and increasing core count" if not preserve_core_count else "")
+            + (" and potentially increasing core count" if not preserve_core_count else "")
         )
-        run_time = max_wct
-        if not preserve_core_count:
-            core_count = int(
-                min(
-                    cores_per_node * np.ceil((ch / max_wct) / cores_per_node),
-                    max_core_count,
-                )
+        if preserve_core_count:
+            run_time = min(ch / max_core_count, max_wct)
+        else:
+            run_time = max_wct
+            core_count = min(
+                cores_per_node * np.ceil((ch / max_wct) / cores_per_node),
+                max_core_count,
             )
-
-    if core_count * run_time > ch:
+    elif core_count * run_time > max_core_hours:
         logger.debug(
-            f"Job parameters total ch ({core_count*run_time}) still beyond max core-hour bounds ({ch}). "
+            f"Job parameters total ch ({core_count*run_time}) still beyond max core-hour bounds ({max_core_hours}). "
             f"Reducing wall clock time to fit."
         )
-        run_time = ch / core_count
+        run_time = max_core_hours / core_count
 
-    return core_count, run_time
+    return int(core_count), run_time
 
 
 def get_wct(run_time, ch_safety_factor=CH_SAFETY_FACTOR):
