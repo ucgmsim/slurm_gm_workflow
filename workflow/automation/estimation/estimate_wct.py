@@ -27,13 +27,13 @@ ERROR_MSG_SHAPE_MISMATCH = "Invalid input data, has to be {required_column_count
 def confine_wct_node_parameters(
     core_count: int,
     run_time: float,
-    max_wct=float(MAX_JOB_WCT),
-    min_wct=(const.CHECKPOINT_DURATION * 3) / 60.0,
-    max_core_count=MAX_NODES_PER_JOB * PHYSICAL_NCORES_PER_NODE,
-    max_core_hours=MAX_CH_PER_JOB,
-    cores_per_node=PHYSICAL_NCORES_PER_NODE,
+    max_wct: float = float(MAX_JOB_WCT),
+    min_wct: float = (const.CHECKPOINT_DURATION * 3) / 60.0,
+    max_core_count: int = MAX_NODES_PER_JOB * PHYSICAL_NCORES_PER_NODE,
+    max_core_hours: int = MAX_CH_PER_JOB,
+    cores_per_node: int = PHYSICAL_NCORES_PER_NODE,
     preserve_core_count: bool = False,
-    can_checkpoint=False,
+    can_checkpoint: bool = False,
     hyperthreaded: bool = False,
     ch_safety_factor: float = CH_SAFETY_FACTOR,
     logger=get_basic_logger(),
@@ -101,14 +101,12 @@ def confine_wct_node_parameters(
             f"reducing wall clock time"
             + (" and potentially increasing core count" if not preserve_core_count else "")
         )
-        if preserve_core_count:
-            run_time = min(ch / max_core_count, max_wct)
-        else:
-            run_time = max_wct
+        if not preserve_core_count:
             core_count = min(
                 cores_per_node * np.ceil((ch / max_wct) / cores_per_node),
                 max_core_count,
             )
+        run_time = min(ch / core_count, max_wct)
     elif core_count * run_time > max_core_hours:
         logger.debug(
             f"Job parameters total ch ({core_count*run_time}) still beyond max core-hour bounds ({max_core_hours}). "
