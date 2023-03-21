@@ -72,7 +72,7 @@ def confine_wct_node_parameters(
     ch = run_time * core_count * ch_safety_factor
 
     if ch > max_core_hours:
-        if not can_checkpoint:
+        if run_time * core_count > max_core_hours and not can_checkpoint:
             raise AssertionError(
                 f"Job has greater core hours ({ch}) required than are available for a single job on this platform "
                 f"({max_core_hours}). This job is unable to run successfully on this platform."
