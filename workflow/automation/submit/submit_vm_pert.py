@@ -6,15 +6,13 @@ from logging import Logger
 from pathlib import Path
 
 import workflow.automation.estimation.estimate_wct as est
+from workflow.automation.estimation import estimate_wct
 from workflow.automation.lib.shared_automated_workflow import submit_script_to_scheduler
 from qcore import utils
-from qcore.config import get_machine_config
 from qcore import constants as const
 from qcore.qclogging import get_basic_logger
 from qcore import simulation_structure as sim_struct
-from workflow.automation.lib.shared import set_wct
 from workflow.automation.platform_config import (
-    HPC,
     platform_config,
     get_platform_specific_script,
     get_target_machine,
@@ -22,43 +20,28 @@ from workflow.automation.platform_config import (
 
 DEFAULT_CPUS = platform_config[const.PLATFORM_CONFIG.VM_PERT_DEFAULT_NCORES.name]
 
+
 # def estimate_wc:
-def get_vm_pert_cores_and_wct(
-    vm_params, ncpus, target_machine, logger: Logger = get_basic_logger()
-):
+def get_vm_pert_cores_and_wct(vm_params, ncpus, logger: Logger = get_basic_logger()):
     est_core_hours, est_run_time = est.est_VM_PERT_chours_single(
         vm_params["nx"], vm_params["ny"], vm_params["nz"], ncpus
     )
-    # not scaling run_time by retry count, as there is no check-pointing, yet
 
-    # re-scale core/wct, in case est_run_time is higher than cap
-    # re-scale wct base on machine MAX_JOB_WCT
-    machine_config = get_machine_config(hostname=target_machine)
-    max_wct = machine_config["MAX_JOB_WCT"]
-    cores_per_node = machine_config["cores_per_node"]
-
-    while est_run_time > max_wct:
-        est_run_time = est_run_time / 2
-        ncpus = ncpus * 2
-        if ncpus > cores_per_node:
-            # raise warning if WCT is still larger than MAX_JOB_WCT.
-            # assumes machine does not support mp calls above one nodes.
-            # TODO: extend this when qcore.configs contains relative info
-            logger.warning(
-                "run_time:{est_run_time} is still larger than {target_machine}'s max_wct:{max_wct}. Using wct:{max_wct} and ncpus:{cores_per_node}"
-            )
-            est_run_time = max_wct
-            ncpus = cores_per_node
-            break
-
-    est_wct = set_wct(est_run_time, ncpus, auto=True, logger=logger)
-    return est_wct, ncpus
+    ncpus, wct = estimate_wct.confine_wct_node_parameters(
+        ncpus,
+        est_run_time,
+        max_core_count=est.PHYSICAL_NCORES_PER_NODE,
+        hyperthreaded=const.ProcessType.VM_PERT.is_hyperth,
+        can_checkpoint=False,  # hard coded for now as this is not available programatically
+        logger=logger,
+    )
+    wct_string = estimate_wct.convert_to_wct(wct)
+    return wct_string, ncpus
 
 
 def submit_vm_pert_main(
     root_folder, run_name, sim_dir, logger: Logger = get_basic_logger()
 ):
-
     # load vm_params.yaml for estimation
     VM_PARAMS_YAML = str(
         Path(sim_struct.get_fault_VM_dir(root_folder, run_name)) / "vm_params.yaml"
@@ -66,8 +49,7 @@ def submit_vm_pert_main(
     vm_params = utils.load_yaml(VM_PARAMS_YAML)
     ncpus = DEFAULT_CPUS
     # get machine job will be submitted to
-    target_machine = get_target_machine(const.ProcessType.VM_PERT).name
-    est_wct, ncpus = get_vm_pert_cores_and_wct(vm_params, ncpus, target_machine, logger)
+    est_wct, ncpus = get_vm_pert_cores_and_wct(vm_params, ncpus, logger)
 
     submit_script_to_scheduler(
         get_platform_specific_script(
