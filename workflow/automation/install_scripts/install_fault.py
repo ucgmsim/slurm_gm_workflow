@@ -23,6 +23,7 @@ def main():
 
     fault_name = args.fault
     cybershake_root: Path = args.cs_root
+    runs_dir = simulation_structure.get_runs_dir(cybershake_root)
 
     if args.log_dir is None:
         log_dir = Path(simulation_structure.get_sim_dir(cybershake_root, fault_name))
@@ -32,7 +33,7 @@ def main():
     logger = qclogging.get_logger(f"install_fault_{fault_name}")
     qclogging.add_general_file_handler(logger, log_dir / f"install_fault_{fault_name}")
 
-    root_params_path = simulation_structure.get_root_yaml_path(cybershake_root)
+    root_params_path = simulation_structure.get_root_yaml_path(runs_dir)
     root_params = utils.load_yaml(root_params_path)
 
     vm_params_path = simulation_structure.get_vm_params_yaml(
@@ -52,7 +53,6 @@ def main():
         cybershake_root, fault_name, fd_statcords, fd_statlist
     )
 
-    runs_dir = simulation_structure.get_runs_dir(cybershake_root)
     fault_params_path = simulation_structure.get_fault_yaml_path(runs_dir, fault_name)
     utils.dump_yaml(fault_params_dict, fault_params_path)
 

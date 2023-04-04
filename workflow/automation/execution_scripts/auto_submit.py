@@ -53,14 +53,17 @@ def submit_task(
     if not os.path.isdir(ch_log_dir):
         os.mkdir(ch_log_dir)
 
+    runs_dir = sim_struct.get_runs_dir(root_folder)
+
     sim_params_path = Path(sim_struct.get_sim_params_yaml_path(sim_dir))
     fault_params_path = Path(
         sim_struct.get_fault_yaml_path(
-            root_folder, sim_struct.get_fault_from_realisation(run_name)
+            runs_dir,
+            sim_struct.get_fault_from_realisation(run_name),
         )
     )
     vm_params_path = Path(sim_struct.get_vm_params_path(root_folder, run_name))
-    root_params_path = Path(sim_struct.get_root_yaml_path(root_folder))
+    root_params_path = Path(sim_struct.get_root_yaml_path(runs_dir))
 
     if not sim_params_path.exists():
         sim_params_path = False
