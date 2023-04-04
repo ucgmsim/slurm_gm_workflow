@@ -20,7 +20,7 @@ from qcore.qclogging import get_basic_logger
 
 def dict_to_e3d_par(pyfile, vardict):
     with open(pyfile, "w") as fp:
-        for (key, value) in vardict.items():
+        for key, value in vardict.items():
             if isinstance(value, str):
                 fp.write('%s="%s"\n' % (key, value))
             else:
@@ -40,27 +40,6 @@ def verify_user_dirs(dir_list):
     """
     for dir_path in dir_list:
         os.makedirs(dir_path, exist_ok=True)
-
-
-def set_wct(est_run_time, ncores, auto=False, logger=get_basic_logger()):
-    import workflow.automation.estimation.estimate_wct as est
-
-    if auto:
-        level = DEBUG
-    else:
-        level = INFO
-    logger.log(
-        level,
-        "Estimated time: {} with {} number of cores".format(
-            est.convert_to_wct(est_run_time), ncores
-        ),
-    )
-
-    logger.debug("Using generated estimation.")
-    wct = est.get_wct(est_run_time)
-
-    logger.log(level, "WCT set to: {}".format(wct))
-    return wct
 
 
 def get_hf_nt(params):

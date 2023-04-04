@@ -18,7 +18,6 @@ from workflow.e2e_tests.E2ETests import NonBlockingStreamReader, Error
 
 
 class QueueMonitorStressTest(object):
-
     # Config keys
     cf_test_dir_key = "test_dir"
     test_checkpoint_key = "test_checkpoint"
@@ -36,7 +35,6 @@ class QueueMonitorStressTest(object):
     possible_task_states = 3
 
     def __init__(self, config_file: str):
-
         with open(config_file, "r") as f:
             self.config_dict = json.load(f)
 

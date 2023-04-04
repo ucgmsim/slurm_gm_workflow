@@ -527,7 +527,6 @@ def run_main_submit_loop(
         # for mgmt db updates (i.e. items in the queue)
         tasks_to_run, task_counter = [], {key: 0 for key in HPC}
         for cur_proc_type, cur_run_name, retries in runnable_tasks:
-
             cur_hpc = get_target_machine(cur_proc_type)
             # Add task if limit has not been reached and there are no
             # outstanding mgmt db updates
@@ -565,7 +564,6 @@ def run_main_submit_loop(
 
         # Submit the runnable tasks
         for proc_type, run_name, retries in tasks_to_run:
-
             # Special handling for merge-ts
             if proc_type == const.ProcessType.merge_ts.value:
                 # Check if clean up has already run

@@ -47,7 +47,6 @@ def generate_sim_params_yaml(
     ignore_vm_qpqs_files=False,
     logger=qclogging.get_basic_logger(),
 ):
-
     fault_name = simulation_structure.get_fault_from_realisation(rel_name)
     rel_sim_dir = Path(simulation_structure.get_sim_dir(cybershake_root, rel_name))
     source_params_path = Path(

@@ -13,8 +13,10 @@ import numpy as np
 
 
 def get_duration_and_dead_ratio(file_name):
-    """Takes a log filename and extracts the amount of wasted core hours.
-    :returns: A tuple containing the sim duration, percent of time lost, number of cores with valid times and the time lost for each core"""
+    """
+    Takes a log filename and extracts the amount of wasted core hours.
+    :returns: A tuple containing the sim duration, percent of time lost, number of cores with valid times and the time lost for each core
+    """
     with open(file_name) as f:
         lines = f.readlines()
     final_times = {}
