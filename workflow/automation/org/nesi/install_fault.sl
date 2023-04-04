@@ -14,7 +14,7 @@ fi
 
 FAULT=${1:?FAULT argument missing}
 SIMULATION_ROOT=${2:?SIMULATION_ROOT argument missing}
-FDSTATLIST=${2:?$FDSTATLIST argument missing}
+FDSTATLIST=${3:?$FDSTATLIST argument missing}
 
 
 SIM_DIR=$SIMULATION_ROOT/Runs/$FAULT/$FAULT
@@ -43,7 +43,7 @@ timestamp=`date +%Y%m%d_%H%M%S`
 if [[ -f $FDSTATLIST ]]; then
     #passed
 
-    python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py $SIMULATION_ROOT/mgmt_db_queue $REL_NAME INSTALL_FAULT completed $SLURM_JOB_ID --end_time "$end_time"
+    python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py $SIMULATION_ROOT/mgmt_db_queue $FAULT INSTALL_FAULT completed $SLURM_JOB_ID --end_time "$end_time"
 
     if [[ ! -d $CH_LOG_FFP ]]; then
         mkdir $CH_LOG_FFP
@@ -54,5 +54,5 @@ if [[ -f $FDSTATLIST ]]; then
 else
     #reformat $res to remove '\n'
     res=`echo $res | tr -d '\n'`
-    python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py $SIMULATION_ROOT/mgmt_db_queue $REL_NAME INSTALL_FAULT failed $SLURM_JOB_ID --error "$res" --end_time "$end_time"
+    python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py $SIMULATION_ROOT/mgmt_db_queue $FAULT INSTALL_FAULT failed $SLURM_JOB_ID --error "$res" --end_time "$end_time"
 fi
