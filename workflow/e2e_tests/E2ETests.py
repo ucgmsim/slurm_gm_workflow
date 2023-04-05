@@ -16,8 +16,9 @@ import pandas as pd
 import sqlite3 as sql
 from pandas.testing import assert_frame_equal
 
-from workflow.automation.lib.MgmtDB import MgmtDB
+from workflow.automation.lib.MgmtDB import MgmtDB, SchedulerTask
 import qcore.constants as const
+from qcore import formats
 import qcore.simulation_structure as sim_struct
 from qcore.shared import non_blocking_exe, exe
 from workflow.automation.lib.schedulers.scheduler_factory import Scheduler
@@ -170,6 +171,9 @@ class E2ETests(object):
             self.print_warnings()
             return False
 
+        # Set the db to have srfs and VMs generated, just need to do the sub installations
+        self.stage_db()
+
         # Run automated workflow
         if not self._run_auto(user, sleep_time=sleep_time):
             return False
@@ -187,6 +191,32 @@ class E2ETests(object):
                 self.teardown()
 
         return True
+
+    def stage_db(self):
+        db = MgmtDB(sim_struct.get_mgmt_db(self.stage_dir))
+        faults = formats.load_fault_selection_file(os.path.join(
+            self.stage_dir,
+            os.path.basename(self.config_dict[self.cf_fault_list_key]),
+        ))
+        entries = [
+            SchedulerTask(
+                fault,
+                const.ProcessType.VM_GEN.value,
+                const.Status.completed.value,
+                i,
+            )
+            for i, fault in enumerate(faults.keys())
+        ] + [
+            SchedulerTask(
+                fault,
+                const.ProcessType.SRF_GEN.value,
+                const.Status.completed.value,
+                i + len(faults),
+            )
+            for i, fault in enumerate(faults.keys())
+        ]
+        db.update_entries_live(entries=entries, retry_max=2)
+
 
     def print_warnings(self):
         with open(os.path.join(self.stage_dir, self.warnings_file), "a") as f:
@@ -471,7 +501,9 @@ class E2ETests(object):
         # Get all running jobs in the mgmt db
         db = MgmtDB(sim_struct.get_mgmt_db(self.stage_dir))
         entries = db.command_builder(
-            allowed_tasks=proc_types, allowed_states=[const.Status.running]
+            allowed_tasks=proc_types,
+            allowed_states=[const.Status.running],
+            realisation_only=True,
         )
 
         # Cancel one for each process type
@@ -506,6 +538,7 @@ class E2ETests(object):
             allowed_tasks=base_proc_types,
             allowed_states=[const.Status.unknown, const.Status.failed],
             blocked_ids=self.canceled_running,
+            realisation_only=True,
         )
 
         for entry in entries:
@@ -513,7 +546,7 @@ class E2ETests(object):
                 Error(
                     "Slurm task",
                     "Run {} did not complete task {} "
-                    "(Status {}, JobId {}".format(
+                    "(Status {}, JobId {})".format(
                         entry.run_name,
                         const.ProcessType(entry.proc_type),
                         const.Status(entry.status),
@@ -586,11 +619,15 @@ class E2ETests(object):
         ]
         db = MgmtDB(sim_struct.get_mgmt_db(self.stage_dir))
 
-        total_count = len(db.command_builder(allowed_tasks=base_proc_types))
+        total_count = len(
+            db.command_builder(allowed_tasks=base_proc_types, realisation_only=True)
+        )
 
         comp_count = len(
             db.command_builder(
-                allowed_tasks=base_proc_types, allowed_states=[const.Status.completed]
+                allowed_tasks=base_proc_types,
+                allowed_states=[const.Status.completed],
+                realisation_only=True,
             )
         )
 
@@ -598,6 +635,7 @@ class E2ETests(object):
             db.command_builder(
                 allowed_tasks=base_proc_types,
                 allowed_states=[const.Status.failed, const.Status.unknown],
+                realisation_only=True,
             )
         )
 
@@ -608,7 +646,9 @@ class E2ETests(object):
         base_proc_types = [const.ProcessType.IM_calculation]
         db = MgmtDB(sim_struct.get_mgmt_db(self.stage_dir))
         entries = db.command_builder(
-            allowed_tasks=base_proc_types, allowed_states=[const.Status.completed]
+            allowed_tasks=base_proc_types,
+            allowed_states=[const.Status.completed],
+            realisation_only=True,
         )
 
         completed_sims = [sim_t.run_name for sim_t in entries]
