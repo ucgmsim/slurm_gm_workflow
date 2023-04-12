@@ -22,6 +22,7 @@ from qcore import formats
 import qcore.simulation_structure as sim_struct
 from qcore.shared import non_blocking_exe, exe
 from workflow.automation.lib.schedulers.scheduler_factory import Scheduler
+from VM import gen_coords
 
 
 def get_sim_dirs(runs_dir):
@@ -203,19 +204,25 @@ class E2ETests(object):
                 fault,
                 const.ProcessType.VM_GEN.value,
                 const.Status.completed.value,
-                i,
+                None,
             )
             for i, fault in enumerate(faults.keys())
         ] + [
             SchedulerTask(
-                fault,
+                sim_struct.get_realisation_name(fault, i),
                 const.ProcessType.SRF_GEN.value,
                 const.Status.completed.value,
-                i + len(faults),
+                None,
             )
-            for i, fault in enumerate(faults.keys())
+            for fault, count in faults.items()
+            for i in range(1, count+1)
         ]
         db.update_entries_live(entries=entries, retry_max=2)
+
+        for fault in faults.keys():
+            gen_coords.gen_coords(
+                sim_struct.get_fault_VM_dir(self.stage_dir, fault),
+            )
 
 
     def print_warnings(self):
