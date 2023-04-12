@@ -37,7 +37,11 @@ def get_sim_dirs(runs_dir):
         entries = os.listdir(fault)
         for entry in entries:
             entry_path = os.path.join(fault, entry)
-            if entry.startswith(fault_name) and os.path.isdir(entry_path) and entry != fault_name:
+            if (
+                entry.startswith(fault_name)
+                and os.path.isdir(entry_path)
+                and entry != fault_name
+            ):
                 sim_dirs.append(entry_path)
 
     return fault_dirs, sim_dirs
