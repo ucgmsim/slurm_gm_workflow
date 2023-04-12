@@ -194,6 +194,11 @@ class E2ETests(object):
         return True
 
     def stage_db(self):
+        """
+        Sets the simulation database to show that srfs and VMs are already generated, just requiring fault and
+        realisation installation to occur before the regular E2E test can run.
+        Generates the path names required by vm_params.yaml and sets these values.
+        """
         db = MgmtDB(sim_struct.get_mgmt_db(self.stage_dir))
         faults = formats.load_fault_selection_file(os.path.join(
             self.stage_dir,
