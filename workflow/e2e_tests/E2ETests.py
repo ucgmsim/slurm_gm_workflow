@@ -200,10 +200,12 @@ class E2ETests(object):
         Generates the path names required by vm_params.yaml and sets these values.
         """
         db = MgmtDB(sim_struct.get_mgmt_db(self.stage_dir))
-        faults = formats.load_fault_selection_file(os.path.join(
-            self.stage_dir,
-            os.path.basename(self.config_dict[self.cf_fault_list_key]),
-        ))
+        faults = formats.load_fault_selection_file(
+            os.path.join(
+                self.stage_dir,
+                os.path.basename(self.config_dict[self.cf_fault_list_key]),
+            )
+        )
         entries = [
             SchedulerTask(
                 fault,
@@ -220,7 +222,7 @@ class E2ETests(object):
                 None,
             )
             for fault, count in faults.items()
-            for i in range(1, count+1)
+            for i in range(1, count + 1)
         ]
         db.update_entries_live(entries=entries, retry_max=2)
 
@@ -228,7 +230,6 @@ class E2ETests(object):
             gen_coords.gen_coords(
                 sim_struct.get_fault_VM_dir(self.stage_dir, fault),
             )
-
 
     def print_warnings(self):
         with open(os.path.join(self.stage_dir, self.warnings_file), "a") as f:
