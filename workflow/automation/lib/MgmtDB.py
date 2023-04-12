@@ -734,7 +734,7 @@ class MgmtDB:
 
         if realisation_only is True:
             base_command += " AND state.run_name LIKE (?)"
-            arguments.extend("%_REL%")
+            arguments.append("%_REL%")
 
         with connect_db_ctx(self._db_file) as cur:
             result = cur.execute(base_command, arguments).fetchall()
