@@ -673,6 +673,7 @@ class MgmtDB:
         blocked_states: List[const.Status] = None,
         allowed_ids: List[int] = None,
         blocked_ids: List[int] = None,
+        realisation_only: bool = False,
     ):
         """
         Allows for retrieving custom collections of database entries
@@ -681,6 +682,7 @@ class MgmtDB:
         :param allowed_tasks, blocked_tasks: a list of process types to either block or exclusively allow
         :param allowed_states, blocked_states: a list of states to either block or exclusively allow
         :param allowed_ids, blocked_ids: a list of job ids to either block or exclusively allow
+        :param realisation_only: Only select realisation jobs, not median jobs
         :return: A list of Entry objects
         """
 
@@ -729,6 +731,10 @@ class MgmtDB:
                 ",".join("?" * len(blocked_ids))
             )
             arguments.extend(blocked_ids)
+
+        if realisation_only is True:
+            base_command += " AND state.run_name LIKE (?)"
+            arguments.append("%_REL%")
 
         with connect_db_ctx(self._db_file) as cur:
             result = cur.execute(base_command, arguments).fetchall()

@@ -16,11 +16,13 @@ import pandas as pd
 import sqlite3 as sql
 from pandas.testing import assert_frame_equal
 
-from workflow.automation.lib.MgmtDB import MgmtDB
+from workflow.automation.lib.MgmtDB import MgmtDB, SchedulerTask
 import qcore.constants as const
+from qcore import formats
 import qcore.simulation_structure as sim_struct
 from qcore.shared import non_blocking_exe, exe
 from workflow.automation.lib.schedulers.scheduler_factory import Scheduler
+from VM import gen_coords
 
 
 def get_sim_dirs(runs_dir):
@@ -35,7 +37,11 @@ def get_sim_dirs(runs_dir):
         entries = os.listdir(fault)
         for entry in entries:
             entry_path = os.path.join(fault, entry)
-            if entry.startswith(fault_name) and os.path.isdir(entry_path):
+            if (
+                entry.startswith(fault_name)
+                and os.path.isdir(entry_path)
+                and entry != fault_name
+            ):
                 sim_dirs.append(entry_path)
 
     return fault_dirs, sim_dirs
@@ -170,6 +176,9 @@ class E2ETests(object):
             self.print_warnings()
             return False
 
+        # Set the db to have srfs and VMs generated, just need to do the sub installations
+        self.stage_db()
+
         # Run automated workflow
         if not self._run_auto(user, sleep_time=sleep_time):
             return False
@@ -187,6 +196,44 @@ class E2ETests(object):
                 self.teardown()
 
         return True
+
+    def stage_db(self):
+        """
+        Sets the simulation database to show that srfs and VMs are already generated, just requiring fault and
+        realisation installation to occur before the regular E2E test can run.
+        Generates the path names required by vm_params.yaml and sets these values.
+        """
+        db = MgmtDB(sim_struct.get_mgmt_db(self.stage_dir))
+        faults = formats.load_fault_selection_file(
+            os.path.join(
+                self.stage_dir,
+                os.path.basename(self.config_dict[self.cf_fault_list_key]),
+            )
+        )
+        entries = [
+            SchedulerTask(
+                fault,
+                const.ProcessType.VM_GEN.value,
+                const.Status.completed.value,
+                None,
+            )
+            for i, fault in enumerate(faults.keys())
+        ] + [
+            SchedulerTask(
+                sim_struct.get_realisation_name(fault, i),
+                const.ProcessType.SRF_GEN.value,
+                const.Status.completed.value,
+                None,
+            )
+            for fault, count in faults.items()
+            for i in range(1, count + 1)
+        ]
+        db.update_entries_live(entries=entries, retry_max=2)
+
+        for fault in faults.keys():
+            gen_coords.gen_coords(
+                sim_struct.get_fault_VM_dir(self.stage_dir, fault),
+            )
 
     def print_warnings(self):
         with open(os.path.join(self.stage_dir, self.warnings_file), "a") as f:
@@ -471,7 +518,9 @@ class E2ETests(object):
         # Get all running jobs in the mgmt db
         db = MgmtDB(sim_struct.get_mgmt_db(self.stage_dir))
         entries = db.command_builder(
-            allowed_tasks=proc_types, allowed_states=[const.Status.running]
+            allowed_tasks=proc_types,
+            allowed_states=[const.Status.running],
+            realisation_only=True,
         )
 
         # Cancel one for each process type
@@ -506,6 +555,7 @@ class E2ETests(object):
             allowed_tasks=base_proc_types,
             allowed_states=[const.Status.unknown, const.Status.failed],
             blocked_ids=self.canceled_running,
+            realisation_only=True,
         )
 
         for entry in entries:
@@ -513,7 +563,7 @@ class E2ETests(object):
                 Error(
                     "Slurm task",
                     "Run {} did not complete task {} "
-                    "(Status {}, JobId {}".format(
+                    "(Status {}, JobId {})".format(
                         entry.run_name,
                         const.ProcessType(entry.proc_type),
                         const.Status(entry.status),
@@ -586,11 +636,15 @@ class E2ETests(object):
         ]
         db = MgmtDB(sim_struct.get_mgmt_db(self.stage_dir))
 
-        total_count = len(db.command_builder(allowed_tasks=base_proc_types))
+        total_count = len(
+            db.command_builder(allowed_tasks=base_proc_types, realisation_only=True)
+        )
 
         comp_count = len(
             db.command_builder(
-                allowed_tasks=base_proc_types, allowed_states=[const.Status.completed]
+                allowed_tasks=base_proc_types,
+                allowed_states=[const.Status.completed],
+                realisation_only=True,
             )
         )
 
@@ -598,6 +652,7 @@ class E2ETests(object):
             db.command_builder(
                 allowed_tasks=base_proc_types,
                 allowed_states=[const.Status.failed, const.Status.unknown],
+                realisation_only=True,
             )
         )
 
@@ -608,7 +663,9 @@ class E2ETests(object):
         base_proc_types = [const.ProcessType.IM_calculation]
         db = MgmtDB(sim_struct.get_mgmt_db(self.stage_dir))
         entries = db.command_builder(
-            allowed_tasks=base_proc_types, allowed_states=[const.Status.completed]
+            allowed_tasks=base_proc_types,
+            allowed_states=[const.Status.completed],
+            realisation_only=True,
         )
 
         completed_sims = [sim_t.run_name for sim_t in entries]
