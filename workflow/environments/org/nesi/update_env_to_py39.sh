@@ -8,6 +8,8 @@ export myenv=$envs/$env_name
 if [[ `hostname` =~ 'mahuika' ]] || [[ $HOSTNAME =~ 'wb' ]];then
     module load Python/3.9.9-gimkl-2020a
 
+    python $myenv/workflow/environments/org/nesi/edit_cfg.py $myenv/virt_envs/python3_mahuika/pyvenv.cfg include-system-site-packages true
+
     ln -sf /opt/nesi/CS400_centos7_bdw/Python/3.9.9-gimkl-2020a/bin/python3.9 $myenv/virt_envs/python3_mahuika/bin/python3.9
     ln -sf $myenv/virt_envs/python3_mahuika/bin/python3.9 $myenv/virt_envs/python3_mahuika/bin/python3
     ln -sf $myenv/virt_envs/python3_mahuika/bin/python3 $myenv/virt_envs/python3_mahuika/bin/python
@@ -15,10 +17,14 @@ if [[ `hostname` =~ 'mahuika' ]] || [[ $HOSTNAME =~ 'wb' ]];then
     # Add python_ver to the start of the bashrc so that python 3.9 will be loaded on next login
     sed -i '1iexport PYTHON_VER=3.9' ~/.bashrc
 
+    python3 -m venv --upgrade $myenv/virt_envs/python3_mahuika
+
     source $myenv/virt_envs/python3_mahuika/bin/activate
 
 elif [[ `hostname` =~ 'maui' ]] || [[ $HOSTNAME =~ 'ni' ]];then
     module load cray-python
+
+    python $myenv/workflow/environments/org/nesi/edit_cfg.py $myenv/virt_envs/python3_maui/pyvenv.cfg include-system-site-packages true
 
     ln -sf /opt/python/3.9.13.2/bin/python3.9 $myenv/virt_envs/python3_maui/bin/python3.9
     ln -sf $myenv/virt_envs/python3_maui/bin/python3.9 $myenv/virt_envs/python3_maui/bin/python3
@@ -26,6 +32,8 @@ elif [[ `hostname` =~ 'maui' ]] || [[ $HOSTNAME =~ 'ni' ]];then
 
     # Create the user specific mpi4py library
     MPICC="cc --shared" pip install --no-binary=mpi4py --force-reinstall --user mpi4py
+
+    python3 -m venv --upgrade $myenv/virt_envs/python3_maui
 
     source $myenv/virt_envs/python3_maui/bin/activate
 
