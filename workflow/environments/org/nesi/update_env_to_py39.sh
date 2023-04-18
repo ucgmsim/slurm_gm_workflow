@@ -8,7 +8,7 @@ export myenv=$envs/$env_name
 if [[ `hostname` =~ 'mahuika' ]] || [[ $HOSTNAME =~ 'wb' ]];then
     module load Python/3.9.9-gimkl-2020a
 
-    python $myenv/workflow/environments/org/nesi/edit_cfg.py $myenv/virt_envs/python3_mahuika/pyvenv.cfg include-system-site-packages true
+    python $myenv/workflow/workflow/environments/org/nesi/edit_cfg.py $myenv/virt_envs/python3_mahuika/pyvenv.cfg include-system-site-packages true
 
     ln -sf /opt/nesi/CS400_centos7_bdw/Python/3.9.9-gimkl-2020a/bin/python3.9 $myenv/virt_envs/python3_mahuika/bin/python3.9
     ln -sf $myenv/virt_envs/python3_mahuika/bin/python3.9 $myenv/virt_envs/python3_mahuika/bin/python3
@@ -24,7 +24,7 @@ if [[ `hostname` =~ 'mahuika' ]] || [[ $HOSTNAME =~ 'wb' ]];then
 elif [[ `hostname` =~ 'maui' ]] || [[ $HOSTNAME =~ 'ni' ]];then
     module load cray-python
 
-    python $myenv/workflow/environments/org/nesi/edit_cfg.py $myenv/virt_envs/python3_maui/pyvenv.cfg include-system-site-packages true
+    python $myenv/workflow/workflow/environments/org/nesi/edit_cfg.py $myenv/virt_envs/python3_maui/pyvenv.cfg include-system-site-packages true
 
     ln -sf /opt/python/3.9.13.2/bin/python3.9 $myenv/virt_envs/python3_maui/bin/python3.9
     ln -sf $myenv/virt_envs/python3_maui/bin/python3.9 $myenv/virt_envs/python3_maui/bin/python3
