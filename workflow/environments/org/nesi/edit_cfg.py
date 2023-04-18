@@ -1,3 +1,10 @@
+"""
+Script to edit a single value in a pyvenv.cfg file.
+Each line has the following format:
+<key> = <value>
+Example use:
+python edit_cfg.py pyvenv.cfg include-system-site-packages true
+"""
 import argparse
 from pathlib import Path
 
