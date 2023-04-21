@@ -33,6 +33,7 @@ def get_vm_pert_cores_and_wct(vm_params, ncpus, logger: Logger = get_basic_logge
         max_core_count=est.PHYSICAL_NCORES_PER_NODE,
         hyperthreaded=const.ProcessType.VM_PERT.is_hyperth,
         can_checkpoint=False,  # hard coded for now as this is not available programatically
+        preserve_core_count=True,
         logger=logger,
     )
     wct_string = estimate_wct.convert_to_wct(wct)
