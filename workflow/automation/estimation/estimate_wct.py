@@ -75,9 +75,11 @@ def confine_wct_node_parameters(
     ch = run_time * core_count * ch_safety_factor
 
     if full_node_only:
-        scale_cc = lambda ch, max_wct: cores_per_node * np.ceil((ch / max_wct) / cores_per_node)
+        scale_cc = lambda ch, max_wct: cores_per_node * np.ceil(
+            (ch / max_wct) / cores_per_node
+        )
     else:
-        scale_cc = lambda ch, max_wct: np.ceil(ch/max_wct)
+        scale_cc = lambda ch, max_wct: np.ceil(ch / max_wct)
 
     if ch > max_core_hours:
         if run_time * core_count > max_core_hours and not can_checkpoint:
