@@ -33,6 +33,7 @@ def confine_wct_node_parameters(
     max_core_hours: int = MAX_CH_PER_JOB,
     cores_per_node: int = PHYSICAL_NCORES_PER_NODE,
     preserve_core_count: bool = False,
+    full_node_only: bool = True,
     can_checkpoint: bool = False,
     hyperthreaded: bool = False,
     ch_safety_factor: float = CH_SAFETY_FACTOR,
@@ -58,6 +59,8 @@ def confine_wct_node_parameters(
     :param max_core_hours: The maximum core hours possible for a single job in the current queue
     :param cores_per_node: The number of cores on each node
     :param preserve_core_count: Maintain the number of cores to be used. Used for jobs that are being retried
+    :param full_node_only: Set to False if the job can run on partial nodes,
+    otherwise only whole nodes will be allocated
     :param hyperthreaded: If the core count given is hyperthreaded this must be taken into account
     :param can_checkpoint: If the job cannot checkpoint and the requested CH is greater than the available CH the job
     cannot run
@@ -70,6 +73,11 @@ def confine_wct_node_parameters(
         core_count /= 2
 
     ch = run_time * core_count * ch_safety_factor
+
+    if full_node_only:
+        scale_cc = lambda ch, max_wct: cores_per_node * np.ceil((ch / max_wct) / cores_per_node)
+    else:
+        scale_cc = lambda ch, max_wct: np.ceil(ch/max_wct)
 
     if ch > max_core_hours:
         if run_time * core_count > max_core_hours and not can_checkpoint:
@@ -107,7 +115,7 @@ def confine_wct_node_parameters(
         )
         if not preserve_core_count:
             core_count = min(
-                cores_per_node * np.ceil((ch / max_wct) / cores_per_node),
+                scale_cc(ch, max_wct),
                 max_core_count,
             )
         run_time = min(ch / core_count, max_wct)
@@ -125,7 +133,7 @@ def confine_wct_node_parameters(
         run_time = min(ch / core_count, max_wct)
         if not preserve_core_count:
             core_count = min(
-                cores_per_node * np.ceil((ch / run_time) / cores_per_node),
+                scale_cc(ch, max_wct),
                 max_core_count,
             )
 
