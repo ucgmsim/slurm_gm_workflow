@@ -12,16 +12,16 @@ from qcore import utils
 from qcore import constants as const
 from qcore.qclogging import get_basic_logger
 from qcore import simulation_structure as sim_struct
-from workflow.automation.platform_config import (
-    platform_config,
-    get_platform_specific_script,
-    get_target_machine,
-)
+from workflow.automation import platform_config
 
-DEFAULT_CPUS = platform_config[const.PLATFORM_CONFIG.VM_PERT_DEFAULT_NCORES.name]
+VM_PERT_TARGET_MACHINE = platform_config.get_target_machine(
+    const.ProcessType.VM_PERT
+).name
+DEFAULT_CPUS = platform_config.platform_config[
+    const.PLATFORM_CONFIG.VM_PERT_DEFAULT_NCORES.name
+]
 
 
-# def estimate_wc:
 def get_vm_pert_cores_and_wct(vm_params, ncpus, logger: Logger = get_basic_logger()):
     est_core_hours, est_run_time = est.est_VM_PERT_chours_single(
         vm_params["nx"], vm_params["ny"], vm_params["nz"], ncpus
@@ -30,9 +30,9 @@ def get_vm_pert_cores_and_wct(vm_params, ncpus, logger: Logger = get_basic_logge
     ncpus, wct = estimate_wct.confine_wct_node_parameters(
         ncpus,
         est_run_time,
-        max_core_count=est.PHYSICAL_NCORES_PER_NODE,
         hyperthreaded=const.ProcessType.VM_PERT.is_hyperth,
         can_checkpoint=False,  # hard coded for now as this is not available programatically
+        preserve_core_count=True,
         logger=logger,
     )
     wct_string = estimate_wct.convert_to_wct(wct)
@@ -52,7 +52,7 @@ def submit_vm_pert_main(
     est_wct, ncpus = get_vm_pert_cores_and_wct(vm_params, ncpus, logger)
 
     submit_script_to_scheduler(
-        get_platform_specific_script(
+        platform_config.get_platform_specific_script(
             # ProcessType
             const.ProcessType.VM_PERT,
             # arguments dictionary
@@ -82,6 +82,6 @@ def submit_vm_pert_main(
         sim_struct.get_mgmt_db_queue(root_folder),
         sim_dir=sim_dir,
         run_name=run_name,
-        target_machine=get_target_machine(const.ProcessType.VM_PERT).name,
+        target_machine=VM_PERT_TARGET_MACHINE,
         logger=logger,
     )
