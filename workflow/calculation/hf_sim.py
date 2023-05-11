@@ -160,7 +160,7 @@ def args_parser(cmd=None):
         help="dir containing site specific velocity models (1D). requires --site_specific",
     )
     # HF IN, line 14
-    arg("--vs-moho", help="depth to moho, < 0 for 999.9", type=float, default=999.9)
+    arg("--vs-moho", help="vs of moho layer, < 0 for 999.9", type=float, default=999.9)
     # HF IN, line 17
     arg("--fa_sig1", help="fourier amplitute uncertainty (1)", type=float, default=0.0)
     arg("--fa_sig2", help="fourier amplitude uncertainty (2)", type=float, default=0.0)
