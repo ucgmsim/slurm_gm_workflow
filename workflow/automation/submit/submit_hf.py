@@ -42,13 +42,11 @@ def gen_command_template(params, machine, seed=const.HF_DEFAULT_SEED):
             params["hf"]["version"], get_machine_config(machine)["tools_dir"]
         ),
     }
-    add_args = {}
+    add_args = {const.RootParams.seed.value: seed}
     for k, v in params["hf"].items():
         if v is False or v is None:
             continue
         add_args[k] = " ".join(map(str, v)) if (type(v) is list) else v
-
-    add_args.update({const.RootParams.seed.value: seed})
 
     return command_template_parameters, add_args
 
