@@ -69,7 +69,9 @@ def create_run_params(
         e3d_dict["h"] = params["hh"]
         e3d_dict["dt"] = params["dt"]
 
-        e3d_dict["nt"] = e3d_dict["dump_itinc"] = str(int(round(extended_sim_duration / float(params["dt"]))))
+        e3d_dict["nt"] = e3d_dict["dump_itinc"] = (
+            int(round(extended_sim_duration / float(params["dt"])))
+        )
         e3d_dict["flo"] = float(params["flo"])
 
         e3d_dict["faultfile"] = params["srf_file"]
@@ -87,7 +89,7 @@ def create_run_params(
             e3d_dict["user_scratch"], params["run_name"], srf_file_basename, "SeismoBin"
         )
 
-        e3d_dict["ts_total"] = str(
+        e3d_dict["ts_total"] = (
             int(
                 extended_sim_duration
                 / (float(e3d_dict["dt"]) * float(e3d_dict["dtts"]))
