@@ -69,7 +69,9 @@ def create_run_params(
         e3d_dict["h"] = params["hh"]
         e3d_dict["dt"] = params["dt"]
 
-        e3d_dict["nt"] = str(int(round(extended_sim_duration / float(params["dt"]))))
+        e3d_dict["nt"] = e3d_dict["dump_itinc"] = int(
+            round(extended_sim_duration / float(params["dt"]))
+        )
         e3d_dict["flo"] = float(params["flo"])
 
         e3d_dict["faultfile"] = params["srf_file"]
@@ -87,11 +89,8 @@ def create_run_params(
             e3d_dict["user_scratch"], params["run_name"], srf_file_basename, "SeismoBin"
         )
 
-        e3d_dict["ts_total"] = str(
-            int(
-                extended_sim_duration
-                / (float(e3d_dict["dt"]) * float(e3d_dict["dtts"]))
-            )
+        e3d_dict["ts_total"] = int(
+            extended_sim_duration / (float(e3d_dict["dt"]) * float(e3d_dict["dtts"]))
         )
         e3d_dict["ts_file"] = os.path.join(
             e3d_dict["main_dump_dir"], params["run_name"] + "_xyts.e3d"
@@ -102,9 +101,7 @@ def create_run_params(
 
         e3d_dict["restartdir"] = os.path.join(params["sim_dir"], "LF", "Restart")
         if steps_per_checkpoint:
-            e3d_dict["dump_itinc"] = e3d_dict["restart_itinc"] = int(
-                steps_per_checkpoint
-            )
+            e3d_dict["restart_itinc"] = int(steps_per_checkpoint)
 
         e3d_dict["restartname"] = params["run_name"]
         e3d_dict["logdir"] = os.path.join(params["sim_dir"], "LF", "Rlog")
