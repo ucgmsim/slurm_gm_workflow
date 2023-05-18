@@ -359,12 +359,12 @@ if __name__ == "__main__":
                         hff,
                         count=stations.size,
                         dtype={
-                            "names": ["vs"],
+                            "names": ["e_dist"],
                             "formats": ["f4"],
-                            "offsets": [20],
+                            "offsets": [16],
                             "itemsize": HEAD_STAT,
                         },
-                    )["vs"]
+                    )["e_dist"]
                     > 0
                 )
         except IOError:
