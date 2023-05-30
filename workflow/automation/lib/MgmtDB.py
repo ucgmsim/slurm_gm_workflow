@@ -3,7 +3,7 @@ from contextlib import contextmanager
 from logging import Logger
 import os
 import sqlite3 as sql
-from typing import List, Union
+from typing import List, Union, Dict
 from dataclasses import dataclass
 
 import qcore.constants as const
@@ -311,7 +311,7 @@ class MgmtDB:
     def find_dependant_task(cur, entry):
         tasks = []
         for process in const.ProcessType:
-            for dependency in process.dependencies:
+            for dependency in process.dependencies[0]:
                 if entry.proc_type == dependency.process.value:
                     job_id = cur.execute(
                         "SELECT `job_id` FROM `state` WHERE proc_type = ? and status = ? and run_name = ?",
@@ -565,14 +565,15 @@ class MgmtDB:
                 (entry.proc_type, entry.run_name, entry.error),
             )
 
-    def populate(self, realisations, srf_files: Union[List[str], str] = []):
+    def populate(self, realisations, fault_selection: Dict[str, int]):
         """Initial population of the database with all realisations"""
-        # for manual install, only one srf will be passed to srf_files as a string
-        if isinstance(srf_files, str):
-            srf_files = [srf_files]
-
+        realisations.extend(fault_selection.keys())
         realisations.extend(
-            [os.path.splitext(os.path.basename(srf))[0] for srf in srf_files]
+            [
+                simulation_structure.get_realisation_name(event, i)
+                for event, rel_count in fault_selection.items()
+                for i in range(1, rel_count + 1)
+            ]
         )
 
         if len(realisations) == 0:
@@ -672,6 +673,7 @@ class MgmtDB:
         blocked_states: List[const.Status] = None,
         allowed_ids: List[int] = None,
         blocked_ids: List[int] = None,
+        realisation_only: bool = False,
     ):
         """
         Allows for retrieving custom collections of database entries
@@ -680,6 +682,7 @@ class MgmtDB:
         :param allowed_tasks, blocked_tasks: a list of process types to either block or exclusively allow
         :param allowed_states, blocked_states: a list of states to either block or exclusively allow
         :param allowed_ids, blocked_ids: a list of job ids to either block or exclusively allow
+        :param realisation_only: Only select realisation jobs, not median jobs
         :return: A list of Entry objects
         """
 
@@ -728,6 +731,10 @@ class MgmtDB:
                 ",".join("?" * len(blocked_ids))
             )
             arguments.extend(blocked_ids)
+
+        if realisation_only is True:
+            base_command += " AND state.run_name LIKE (?)"
+            arguments.append("%_REL%")
 
         with connect_db_ctx(self._db_file) as cur:
             result = cur.execute(base_command, arguments).fetchall()

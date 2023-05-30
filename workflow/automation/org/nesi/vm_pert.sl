@@ -57,6 +57,8 @@ if [[ $pass == 0 ]]; then
 
     python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $REL_NAME VM_PERT completed $SLURM_JOB_ID --end_time "$end_time"
 
+    python -c "from qcore import utils;d=utils.load('${SIM_DIR}/sim_params.yaml');d['emod3d']['model_style']=3;d['emod3d']['pertbfile']='$OUT_DIR/$REL_NAME.pertb';utils.dump_yaml(d,'${SIM_DIR}/sim_params.yaml')"
+
     if [[ ! -d $CH_LOG_FFP ]]; then
         mkdir $CH_LOG_FFP
     fi

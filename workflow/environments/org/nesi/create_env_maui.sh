@@ -50,8 +50,6 @@ pip install --upgrade pip
 # packages are still installed. However, this is slower.
 xargs -n 1 -a ${env_path}/workflow/workflow/environments/org/nesi/maui_python3_requirements.txt pip install -U
 
-#source "${env_path}/workflow/workflow/environments//create_env_common_post.sh"
-
 for pkg in "${inhouse_pkgs[@]}";
 do
     cd ${env_path}/${pkg}
