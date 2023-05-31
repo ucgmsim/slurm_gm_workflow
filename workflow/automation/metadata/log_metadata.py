@@ -211,23 +211,23 @@ def main(args):
         os.path.join(args.sim_dir, "sim_params.yaml"), load_vm=True
     )
 
-    if "dt" in params.bb:
-        bb_dt = params.bb.dt
+    if "dt" in params["bb"]:
+        bb_dt = params["bb"]["dt"]
     else:
-        bb_dt = min(params.dt, params.hf.dt)
+        bb_dt = min(params["dt"], params["hf"]["dt"])
 
     # params metadata for LF
     if args.proc_type == const.ProcessType.EMOD3D.str_value:
         metadata_dict[const.MetadataField.nt.value] = int(
-            float(params.sim_duration) / float(params.dt)
+            float(params["sim_duration"]) / float(params["dt"])
         )
-        metadata_dict[const.MetadataField.nx.value] = params.nx
-        metadata_dict[const.MetadataField.ny.value] = params.ny
-        metadata_dict[const.MetadataField.nz.value] = params.nz
+        metadata_dict[const.MetadataField.nx.value] = params["nx"]
+        metadata_dict[const.MetadataField.ny.value] = params["ny"]
+        metadata_dict[const.MetadataField.nz.value] = params["nz"]
     # HF
     elif args.proc_type == const.ProcessType.HF.str_value:
         metadata_dict[const.MetadataField.nt.value] = int(
-            float(params.sim_duration) / float(params.hf.dt)
+            float(params["sim_duration"]) / float(params["hf"]["dt"])
         )
         metadata_dict[const.MetadataField.nsub_stoch.value] = get_nsub_stoch(
             params["hf"]["slip"], get_area=False
@@ -238,7 +238,7 @@ def main(args):
     # IM_calc
     elif args.proc_type == const.ProcessType.IM_calculation.str_value:
         metadata_dict[const.MetadataField.nt.value] = int(
-            float(params.sim_duration) / float(bb_dt)
+            float(params["sim_duration"]) / float(bb_dt)
         )
         # This should come from a constants file
         im_calc_csv_file = os.path.join(
@@ -251,7 +251,7 @@ def main(args):
     # Advanced_IM
     elif args.proc_type == const.ProcessType.advanced_IM.str_value:
         metadata_dict[const.MetadataField.nt.value] = int(
-            float(params.sim_duration) / float(bb_dt)
+            float(params["sim_duration"]) / float(bb_dt)
         )
 
     store_metadata(

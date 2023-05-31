@@ -37,8 +37,9 @@ echo $start_time
 
 python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $REL_NAME INSTALL_FAULT running $SLURM_JOB_ID --start_time "$start_time" --nodes $SLURM_NNODES --cores $SLURM_CPUS_PER_TASK --wct 00:30:00
 
-echo python $gmsim/workflow/workflow/automation/install_scripts/gen_fd.py $VM_PARAMS_YAML $STAT_FILE $FAULT_DIR
-python $gmsim/workflow/workflow/automation/install_scripts/gen_fd.py $VM_PARAMS_YAML $STAT_FILE $FAULT_DIR
+CMD="python $gmsim/workflow/workflow/automation/install_scripts/install_fault.py $MGMT_DB_LOC $REL_NAME"
+echo "${CMD}"
+$CMD
 
 end_time=`date +$runtime_fmt`
 echo $end_time
