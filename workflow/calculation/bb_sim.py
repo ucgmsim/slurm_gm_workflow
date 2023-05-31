@@ -8,7 +8,14 @@ import os
 import logging
 import numpy as np
 
-from qcore.siteamp_models import nt2n, cb_amp, ba18_amp, init_ba18, get_ft_freq, amplification_uncertainty
+from qcore.siteamp_models import (
+    nt2n,
+    cb_amp,
+    ba18_amp,
+    init_ba18,
+    get_ft_freq,
+    amplification_uncertainty,
+)
 from qcore import timeseries, utils
 from qcore.constants import VM_PARAMS_FILE_NAME, Components, PLATFORM_CONFIG
 from workflow.calculation.site_response_BB import site_response
@@ -475,9 +482,13 @@ def main():
                     else:
                         hf_seed = args.site_amp_uncertainty + stations_todo_idx[i]
                         lf_seed = hf_seed + hf.stations.size
-                    hf_amp_val = amplification_uncertainty(hf_amp_val, freqs, seed=hf_seed)
+                    hf_amp_val = amplification_uncertainty(
+                        hf_amp_val, freqs, seed=hf_seed
+                    )
                     if lf_amp_val is not None:
-                        lf_amp_val = amplification_uncertainty(lf_amp_val, freqs, seed=lf_seed)
+                        lf_amp_val = amplification_uncertainty(
+                            lf_amp_val, freqs, seed=lf_seed
+                        )
                 hf_filtered = bwfilter(
                     ampdeamp(
                         hf_acc[:, c],

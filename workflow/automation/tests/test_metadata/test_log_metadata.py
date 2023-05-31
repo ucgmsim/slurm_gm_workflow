@@ -13,7 +13,6 @@ from qcore.constants import ProcessType, METADATA_LOG_FILENAME
 
 
 class TestLogMetadata:
-
     test_file_name = METADATA_LOG_FILENAME
 
     def check_values(
