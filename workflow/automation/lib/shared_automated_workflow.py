@@ -148,9 +148,7 @@ def check_mgmt_queue(
     return False
 
 
-def parse_config_file(
-        task_config: str, logger: Logger = qclogging.get_basic_logger()
-):
+def parse_config_file(task_config: str, logger: Logger = qclogging.get_basic_logger()):
     """Takes in the location of a wrapper config file and creates the tasks to be run.
     Requires that the file contains the keys 'run_all_tasks' and 'run_some', even if they are empty
     If the dependencies for a run_some task overlap with those in the tasks_to_run_for_all, as a race condition is

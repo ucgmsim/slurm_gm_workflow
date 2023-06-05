@@ -32,13 +32,19 @@ def main():
     cs_root = args.cybershake_root.absolute()
 
     # Load config
-    config: Dict[str, Dict[str, Union[str, List[str]]]] = utils.load_yaml(db_task_config)
+    config: Dict[str, Dict[str, Union[str, List[str]]]] = utils.load_yaml(
+        db_task_config
+    )
     errors = []
     for state in config.keys():
         if not constants.Status.has_str_value(state):
-            errors.append(f"State {state} in db_task_config not valid. Valid states are {list(constants.Status.iterate_str_values())}.")
+            errors.append(
+                f"State {state} in db_task_config not valid. Valid states are {list(constants.Status.iterate_str_values())}."
+            )
     if errors:
-        raise ValueError(f"Error(s) were found, please correct these before re-running: {', '.join(errors)}")
+        raise ValueError(
+            f"Error(s) were found, please correct these before re-running: {', '.join(errors)}"
+        )
 
     config = {
         state: shared_automated_workflow.parse_config_file(tree)
