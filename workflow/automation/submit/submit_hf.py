@@ -106,8 +106,8 @@ def main(
         try:
             from qcore.timeseries import HFSeis
 
-            bin = HFSeis(sim_struct.get_hf_bin_path(sim_dir))
-        except:
+            HFSeis(sim_struct.get_hf_bin_path(sim_dir))
+        except Exception:
             logger.debug("Retried count > 0 but HF.bin is not readable")
         else:
             est_run_time_scaled = est_run_time * (retries + 1)
