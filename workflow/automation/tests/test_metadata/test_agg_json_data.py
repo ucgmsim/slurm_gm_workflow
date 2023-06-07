@@ -20,7 +20,6 @@ import qcore.constants as const
 
 
 class TestAggJsonData:
-
     test_dir = "./metadata_test_dir"
     test_output_file = "metadata.csv"
     test_input_file_template = "log_{}.json"

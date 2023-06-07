@@ -19,7 +19,6 @@ def test_main(set_up, mocker):
     )
 
     for root_path, realisation in set_up:
-
         rel_dir = os.path.join(
             root_path, "CSRoot", "Runs", get_fault_from_rel(realisation), realisation
         )

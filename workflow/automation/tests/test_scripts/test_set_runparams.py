@@ -120,7 +120,7 @@ def test_create_run_params(set_up, mocker):
         outp = StringIO()
 
         def write_e3d(vardict):
-            for (key, value) in vardict.items():
+            for key, value in vardict.items():
                 if isinstance(value, str):
                     outp.write('%s="%s"\n' % (key, value))
                 else:
