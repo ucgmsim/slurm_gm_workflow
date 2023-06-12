@@ -9,7 +9,6 @@ import logging
 import numpy as np
 from pathlib import Path
 
-
 from qcore.siteamp_models import (
     nt2n,
     cb_amp,
@@ -58,6 +57,7 @@ def args_parser(cmd=None):
     arg("--lfvsref", help="Override LF Vs30 reference value (m/s)", type=float)
     arg("--dt", help="timestep (seconds)", type=float)
     arg("--z1-file", help="Z1 file", type=Path)
+
     arg(
         "--no-lf-amp",
         help="Disable site amplification for LF component",
@@ -68,6 +68,7 @@ def args_parser(cmd=None):
         help="Choose the site-amp model to be used",
         default="CB14",
         choices=["CB08", "CB14", "BA18", "BSSA14"],
+
     )
     arg(
         "--site_response_dir",
@@ -86,6 +87,7 @@ def args_parser(cmd=None):
         nargs="?",
         type=int,
     )
+
 
 
     args = parser.parse_args(cmd)
@@ -129,10 +131,9 @@ def main():
             opt_args['version'] = "2008"
         else:
             opt_args['version'] = "2014"
-    elif args.site_amp.startswith("BA18"):
+    elif args.site_amp == "BA18":
         init_ba18()
         amp_function = ba18_amp
-           
     elif args.site_amp == "BSSA14":
         amp_function = bssa14_amp
 
@@ -276,6 +277,7 @@ def main():
             logger.debug("vs30 loaded successfully.")
 
     # load z1
+
     z1s = None
     if args.z1_file is not None:
         try:
@@ -297,6 +299,7 @@ def main():
         else:
             if is_master:
                 logger.debug("z1 loaded successfully.")
+
 
     # initialise output with general metadata
     def initialise(check_only=False):
@@ -500,7 +503,6 @@ def main():
                     fmin=fmin,
                     fmidbot=fmidbot,
                     **opt_args, # version or z1 will be passed here
-
                 )
                 lf_amp_val = lf_amp_function(
                     bb_dt,
