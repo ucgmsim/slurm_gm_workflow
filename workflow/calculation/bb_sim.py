@@ -7,6 +7,8 @@ from argparse import ArgumentParser
 import os
 import logging
 import numpy as np
+from pathlib import Path
+
 
 from qcore.siteamp_models import (
     nt2n,
@@ -15,7 +17,9 @@ from qcore.siteamp_models import (
     init_ba18,
     get_ft_freq,
     amplification_uncertainty,
+    bssa14_amp, init_bssa14
 )
+
 from qcore import timeseries, utils
 from qcore.constants import VM_PARAMS_FILE_NAME, Components, PLATFORM_CONFIG
 from workflow.calculation.site_response_BB import site_response
@@ -53,6 +57,7 @@ def args_parser(cmd=None):
     arg("--fmidbot", help="fmidbot for site amplification", type=float, default=0.5)
     arg("--lfvsref", help="Override LF Vs30 reference value (m/s)", type=float)
     arg("--dt", help="timestep (seconds)", type=float)
+    arg("--z1-file", help="Z1 file", type=Path)
     arg(
         "--no-lf-amp",
         help="Disable site amplification for LF component",
@@ -62,7 +67,7 @@ def args_parser(cmd=None):
         "--site-amp",
         help="Choose the site-amp model to be used",
         default="CB14",
-        choices=["CB08", "CB14", "BA18"],
+        choices=["CB08", "CB14", "BA18", "BSSA14"],
     )
     arg(
         "--site_response_dir",
@@ -73,6 +78,7 @@ def args_parser(cmd=None):
         ],
         nargs="?",
     )
+
     arg(
         "--site-amp-uncertainty",
         help="Use site amplification uncertainty. Optionally provide a seed to give reproducible behaviour. Maximum seed value is 2^64-1",
@@ -80,6 +86,7 @@ def args_parser(cmd=None):
         nargs="?",
         type=int,
     )
+
 
     args = parser.parse_args(cmd)
     return args
@@ -114,17 +121,21 @@ def main():
     mh.setFormatter(formatter)
     logger.addHandler(mh)
 
-    site_amp_version = None
+    opt_args = {}
     amp_function = None
     if args.site_amp == "CB14" or args.site_amp == "CB08":
         amp_function = cb_amp
         if args.site_amp == "CB08":
-            site_amp_version = "2008"
+            opt_args['version'] = "2008"
         else:
-            site_amp_version = "2014"
-    elif args.site_amp == "BA18":
+            opt_args['version'] = "2014"
+    elif args.site_amp.startswith("BA18"):
         init_ba18()
         amp_function = ba18_amp
+           
+    elif args.site_amp == "BSSA14":
+        amp_function = bssa14_amp
+
 
     if args.no_lf_amp:
 
@@ -263,6 +274,29 @@ def main():
     else:
         if is_master:
             logger.debug("vs30 loaded successfully.")
+
+    # load z1
+    z1s = None
+    if args.z1_file is not None:
+        try:
+            # has to be a numpy array of np.float32 as written directly to binary
+            z1s = np.vectorize(
+                dict(
+                    np.loadtxt(
+                        args.z1_file,
+                        dtype=[("name", "|U8"), ("z1", "f4")],
+                        comments=("#", "%"),
+                    )
+                ).get
+            )(lf.stations.name)
+            assert not np.isnan(z1s).any()
+        except AssertionError:
+            if is_master:
+                logger.error("z1 file is missing stations.")
+                comm.Abort()
+        else:
+            if is_master:
+                logger.debug("z1 loaded successfully.")
 
     # initialise output with general metadata
     def initialise(check_only=False):
@@ -451,6 +485,9 @@ def main():
                     f"Site specific response not being used. Running vs30 based amplification for {stat.name}"
                 )
             pga = np.max(np.abs(hf_acc), axis=0) / 981.0
+            if z1s is not None:
+                opt_args["z1"] = z1s[stations_todo_idx[i]]
+
             # ideally remove loop # Could reduce to single components?
             for c in range(N_COMPONENTS):
                 hf_amp_val = amp_function(
@@ -462,7 +499,8 @@ def main():
                     pga[c],
                     fmin=fmin,
                     fmidbot=fmidbot,
-                    version=site_amp_version,
+                    **opt_args, # version or z1 will be passed here
+
                 )
                 lf_amp_val = lf_amp_function(
                     bb_dt,
@@ -473,7 +511,7 @@ def main():
                     pga[c],
                     fmin=fmin,
                     fmidbot=fmidbot,
-                    version=site_amp_version,
+                    **opt_args, # version or z1 will be passed here
                 )
                 if args.site_amp_uncertainty is not False:
                     freqs = get_ft_freq(bb_dt, n2)
