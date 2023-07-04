@@ -7,7 +7,6 @@ import qcore.constants as const
 from qcore.utils import load_sim_params
 from workflow.automation.lib.schedulers.scheduler_factory import Scheduler
 from workflow.automation.platform_config import platform_config
-from workflow.automation.lib.shared import write_file
 
 
 def write_sl_script(
@@ -32,8 +31,8 @@ def write_sl_script(
     }
     common_template_params = {
         "sim_dir": sim_dir,
-        "srf_name": os.path.splitext(os.path.basename(params.srf_file))[0],
-        "mgmt_db_location": params.mgmt_db_location,
+        "srf_name": os.path.splitext(os.path.basename(params["srf_file"]))[0],
+        "mgmt_db_location": params["mgmt_db_location"],
         "submit_command": generate_command(
             process,
             sim_dir,
@@ -64,9 +63,16 @@ def write_sl_script(
             ),
         )
     )
-    write_file(script_name, [header, body])
+
+    content = "\n".join([header, body])
+    write_to_file(content, script_name)
 
     return script_name
+
+
+def write_to_file(content, script_name):
+    with open(script_name, "w") as f:
+        f.write(content)
 
 
 def generate_command(

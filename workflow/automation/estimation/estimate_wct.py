@@ -18,22 +18,134 @@ from qcore.qclogging import get_basic_logger
 MAX_JOB_WCT = config.qconfig[config.ConfigKeys.MAX_JOB_WCT.name]
 MAX_NODES_PER_JOB = config.qconfig[config.ConfigKeys.MAX_NODES_PER_JOB.name]
 PHYSICAL_NCORES_PER_NODE = config.qconfig[config.ConfigKeys.cores_per_node.name]
+MAX_CH_PER_JOB = config.qconfig[config.ConfigKeys.MAX_CH_PER_JOB.name]
 
 CH_SAFETY_FACTOR = 1.5
 ERROR_MSG_SHAPE_MISMATCH = "Invalid input data, has to be {required_column_count} columns. One for each feature."
 
 
-def get_wct(run_time, ch_safety_factor=CH_SAFETY_FACTOR):
-    """Pad the run time (in hours) by the specified factor.
-    Then convert to wall clock time.
-
-    Use this when estimation as max run time in a slurm script.
+def confine_wct_node_parameters(
+    core_count: int,
+    run_time: float,
+    max_wct: float = float(MAX_JOB_WCT),
+    min_wct: float = (const.CHECKPOINT_DURATION * 3) / 60.0,
+    max_core_count: int = MAX_NODES_PER_JOB * PHYSICAL_NCORES_PER_NODE,
+    max_core_hours: int = MAX_CH_PER_JOB,
+    cores_per_node: int = PHYSICAL_NCORES_PER_NODE,
+    preserve_core_count: bool = False,
+    full_node_only: bool = True,
+    can_checkpoint: bool = False,
+    hyperthreaded: bool = False,
+    ch_safety_factor: float = CH_SAFETY_FACTOR,
+    logger=get_basic_logger(),
+):
     """
-    wct_with_safety_factor = run_time * ch_safety_factor
-    if wct_with_safety_factor < ((const.CHECKPOINT_DURATION * 3) / 60.0):
-        return convert_to_wct((const.CHECKPOINT_DURATION * 3) / 60.0)
+    Confines the parameters of a job to those of the queue it is to be submitted to.
+    Assumes that a job requires a constant number of core hours regardless of core count
+    (This is not true, as most jobs have a fixed start-up time, which will consume more CH with increasing core count).
+    This function performs a three-step process:
+    1) It ensures the total core hours is within the maximum allowed for a single job,
+    2) If either of run time or core count are beyond the individual parameter limit it reduces that parameter to
+    the limit.
+    3) If the individual parameters are still beyond the maximum total core hours for the job then the wall
+    clock time is reduced so that for the same job less total WCT will be required (ignoring time spent in the queue)
+    :param run_time: The currently requested wall clock time to run for in hours
+    :param core_count: The currently requested number of cores to use
+    :param max_wct: The maximum wall clock time available for the current queue
+    :param min_wct: The minimum wall clock time for a given job. Based on desired frequency of checkpointing, even if
+    the job does not support checkpointing.
+    :param max_core_count: The maximum core count possible for the current queue or job. Set to
+    PHYSICAL_NCORES_PER_NODE to only use one node
+    :param max_core_hours: The maximum core hours possible for a single job in the current queue
+    :param cores_per_node: The number of cores on each node
+    :param preserve_core_count: Maintain the number of cores to be used. Used for jobs that are being retried
+    :param full_node_only: Set to False if the job can run on partial nodes,
+    otherwise only whole nodes will be allocated
+    :param hyperthreaded: If the core count given is hyperthreaded this must be taken into account
+    :param can_checkpoint: If the job cannot checkpoint and the requested CH is greater than the available CH the job
+    cannot run
+    :param ch_safety_factor: A ch safety factor to add where possible, to try and ensure the job doesn't take just
+    slightly longer than estimation calculates, significantly increasing the time required to complete
+    :param logger: The logger to send messages to
+    :return: A tuple containing the constrained core count and run time
+    """
+    if hyperthreaded:
+        core_count /= 2
+
+    ch = run_time * core_count * ch_safety_factor
+
+    if full_node_only:
+        scale_cc = lambda ch, max_wct: cores_per_node * np.ceil(
+            (ch / max_wct) / cores_per_node
+        )
     else:
-        return convert_to_wct(wct_with_safety_factor)
+        scale_cc = lambda ch, max_wct: np.ceil(ch / max_wct)
+
+    if ch > max_core_hours:
+        if run_time * core_count > max_core_hours and not can_checkpoint:
+            raise AssertionError(
+                f"Job has greater core hours ({ch}) required than are available for a single job on this platform "
+                f"({max_core_hours}). This job is unable to run successfully on this platform."
+            )
+        logger.debug(
+            f"Job requires {ch} core hours, but the queue only allows {max_core_hours}, reducing. "
+            f"This job will have to rely on checkpointing to complete across multiple submissions."
+        )
+        ch = max_core_hours
+
+    if core_count > max_core_count:
+        if preserve_core_count:
+            raise AssertionError(
+                f"Core count ({core_count}) greater than maximum core count ({max_core_count}), "
+                f"but preserve_core_count is True."
+            )
+        logger.debug(
+            f"Job had {core_count} cores which is greater than max allowed core count of {max_core_count}, "
+            f"reducing core count and increasing wall clock time"
+        )
+        core_count = max_core_count
+        run_time = min(ch / max_core_count, max_wct)
+    elif run_time > max_wct:
+        logger.debug(
+            f"Job had {run_time} wall clock time which is greater than max allowed run time of {max_wct}, "
+            f"reducing wall clock time"
+            + (
+                " and potentially increasing core count"
+                if not preserve_core_count
+                else ""
+            )
+        )
+        if not preserve_core_count:
+            core_count = min(
+                scale_cc(ch, max_wct),
+                max_core_count,
+            )
+        run_time = min(ch / core_count, max_wct)
+    elif core_count * run_time > max_core_hours:
+        logger.debug(
+            f"Job parameters total ch ({core_count*run_time}) still beyond max core-hour bounds ({max_core_hours}). "
+            f"Reducing wall clock time to fit."
+        )
+        run_time = max_core_hours / core_count
+    elif core_count * run_time < ch:
+        logger.debug(
+            f"Job parameters total ch ({core_count * run_time}) below minimum core-hour bounds ({max_core_hours}). "
+            f"Reducing wall clock time to fit."
+        )
+        run_time = min(ch / core_count, max_wct)
+        if not preserve_core_count:
+            core_count = min(
+                scale_cc(ch, max_wct),
+                max_core_count,
+            )
+
+    if run_time < min_wct:
+        run_time = min_wct
+
+    if hyperthreaded:
+        core_count *= 2
+
+    return int(core_count), run_time
 
 
 def convert_to_wct(run_time):
@@ -405,7 +517,6 @@ def est_VM_PERT_chours_single(nx: int, ny: int, nz: int, n_cores: int):
 
 
 def est_VM_PERT_chours(data: np.ndarray):
-
     required_column_count = 2
     if data.shape[1] != required_column_count:
         raise Exception(
@@ -429,14 +540,16 @@ def est_VM_PERT_chours(data: np.ndarray):
     return core_hours, core_hours / data[:, -1]
 
 
-def est_IM_chours_single(
+def est_IM_chours(
     fd_count: int,
     nt: Union[int, np.ndarray],
     comp: Union[List[str], int],
     pSA_count: int,
     n_cores: int,
+    scale_ncores: bool = True,
+    node_time_th_factor: int = 1,
 ):
-    """Convenience function to make a single estimation
+    """Convenience function to make either a single or multiple estimations
 
     If the input parameters (or even just the order) of the model
     is ever changed, then this function has to be adjusted accordingly.
@@ -480,8 +593,21 @@ def est_IM_chours_single(
         )
 
     if config is not None and hasattr(config, "host") and config.host == "nurion":
-        core_hours *= 45
-    return core_hours, core_hours / n_cores
+        core_hours *= 15
+
+    wct = core_hours / n_cores
+    if scale_ncores and np.any(
+        wct > (node_time_th_factor * n_cores / PHYSICAL_NCORES_PER_NODE)
+    ):
+        # Make a numpy array of the input data in the right shape
+        data = np.array([int(n_cores)]).reshape(1, 1)
+        core_hours, wct, n_cores = scale_core_hours(
+            core_hours, data, node_time_th_factor
+        )
+        if not hasattr(nt, "__iter__"):
+            core_hours, n_cores = float(core_hours), int(n_cores)
+
+    return core_hours, core_hours / n_cores, n_cores
 
 
 def get_IM_comp_count(comp: List[str]):

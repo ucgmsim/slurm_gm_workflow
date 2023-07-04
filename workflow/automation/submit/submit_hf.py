@@ -10,14 +10,15 @@ from qcore.config import host, get_machine_config
 import qcore.constants as const
 from qcore.qclogging import get_basic_logger
 import qcore.simulation_structure as sim_struct
-from workflow.automation.install_scripts.install_shared import HF_VEL_MOD_1D
+from workflow.automation.estimation import estimate_wct
+from workflow.automation.lib.constants import HF_VEL_MOD_1D
 from workflow.automation.lib.schedulers.scheduler_factory import Scheduler
 from workflow.automation.platform_config import (
     platform_config,
     get_platform_node_requirements,
 )
 
-from workflow.automation.lib.shared import confirm, set_wct, get_hf_nt
+from workflow.automation.lib.shared import get_hf_nt
 from workflow.automation.lib.shared_automated_workflow import submit_script_to_scheduler
 from workflow.automation.lib.shared_template import write_sl_script
 
@@ -31,23 +32,21 @@ default_wct = "00:30:00"
 def gen_command_template(params, machine, seed=const.HF_DEFAULT_SEED):
     command_template_parameters = {
         "run_command": platform_config[const.PLATFORM_CONFIG.RUN_COMMAND.name],
-        "fd_statlist": params.FD_STATLIST,
-        "hf_bin_path": sim_struct.get_hf_bin_path(params.sim_dir),
+        "fd_statlist": params["FD_STATLIST"],
+        "hf_bin_path": sim_struct.get_hf_bin_path(params["sim_dir"]),
         HF_VEL_MOD_1D: params["hf"][HF_VEL_MOD_1D],
         "duration": params.get("sim_duration", 0),
-        "dt": params.hf.dt,
-        "version": params.hf.version,
+        "dt": params["hf"]["dt"],
+        "version": params["hf"]["version"],
         "sim_bin_path": binary_version.get_hf_binmod(
-            params.hf.version, get_machine_config(machine)["tools_dir"]
+            params["hf"]["version"], get_machine_config(machine)["tools_dir"]
         ),
     }
-    add_args = {}
-    for k, v in params.hf.items():
+    add_args = {const.RootParams.seed.value: seed}
+    for k, v in params["hf"].items():
         if v is False or v is None:
             continue
         add_args[k] = " ".join(map(str, v)) if (type(v) is list) else v
-
-    add_args.update({const.RootParams.seed.value: seed})
 
     return command_template_parameters, add_args
 
@@ -71,7 +70,7 @@ def main(
         logger.error(f"Error: sim_params.yaml doesn't exist in {rel_dir}")
         raise
 
-    sim_dir = Path(params.sim_dir).resolve()
+    sim_dir = Path(params["sim_dir"]).resolve()
 
     if version in ["mpi", "run_hf_mpi"]:
         ll_name_prefix = "run_hf_mpi"
@@ -87,13 +86,13 @@ def main(
         ll_name_prefix = version_default
     logger.debug(f"version: {version}")
 
-    srf_name = Path(params.srf_file).stem
+    srf_name = Path(params["srf_file"]).stem
 
     nt = get_hf_nt(params)
-    fd_count = len(shared.get_stations(params.FD_STATLIST))
+    fd_count = len(shared.get_stations(params["FD_STATLIST"]))
     # TODO:make it read through the whole list
     #  instead of assuming every stoch has same size
-    nsub_stoch, sub_fault_area = srf.get_nsub_stoch(params.hf.slip, get_area=True)
+    nsub_stoch, sub_fault_area = srf.get_nsub_stoch(params["hf"]["slip"], get_area=True)
 
     est_core_hours, est_run_time, est_cores = est.est_HF_chours_single(
         fd_count, nsub_stoch, nt, ncores, scale_ncores=SCALE_NCORES, logger=logger
@@ -107,13 +106,22 @@ def main(
         try:
             from qcore.timeseries import HFSeis
 
-            bin = HFSeis(sim_struct.get_hf_bin_path(sim_dir))
-        except:
+            HFSeis(sim_struct.get_hf_bin_path(sim_dir))
+        except Exception:
             logger.debug("Retried count > 0 but HF.bin is not readable")
         else:
             est_run_time_scaled = est_run_time * (retries + 1)
 
-    wct = set_wct(est_run_time_scaled, est_cores, submit)
+    est_cores, wct = estimate_wct.confine_wct_node_parameters(
+        est_cores,
+        est_run_time_scaled,
+        preserve_core_count=retries > 0,
+        hyperthreaded=const.ProcessType.HF.is_hyperth,
+        can_checkpoint=True,  # hard coded for now as this is not available programatically
+        logger=logger,
+    )
+    wct_string = estimate_wct.convert_to_wct(wct)
+
     hf_sim_dir = sim_struct.get_hf_dir(sim_dir)
     if write_directory is None:
         write_directory = sim_dir
@@ -122,7 +130,7 @@ def main(
 
     header_dict = {
         "platform_specific_args": get_platform_node_requirements(est_cores),
-        "wallclock_limit": wct,
+        "wallclock_limit": wct_string,
         "job_name": f"hf.{underscored_srf}",
         "job_description": "HF calculation",
         "additional_lines": "",
@@ -154,7 +162,7 @@ def main(
         submit_script_to_scheduler(
             script_file_path,
             const.ProcessType.HF.value,
-            sim_struct.get_mgmt_db_queue(params.mgmt_db_location),
+            sim_struct.get_mgmt_db_queue(params["mgmt_db_location"]),
             sim_dir,
             srf_name,
             target_machine=machine,
@@ -232,7 +240,6 @@ def load_args():
 
 
 if __name__ == "__main__":
-
     args = load_args()
     # The name parameter is only used to check user tasks in the queue monitor
     Scheduler.initialise_scheduler("", args.account)

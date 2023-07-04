@@ -16,13 +16,13 @@ import qcore.simulation_structure as sim_struct
 
 import workflow.automation.estimation.estimate_wct as est
 import workflow.calculation.create_e3d as set_runparams
+from workflow.automation.estimation import estimate_wct
 from workflow.calculation.verification.check_emod3d_subdomains import test_domain
 from workflow.automation.lib.schedulers.scheduler_factory import Scheduler
 from workflow.automation.platform_config import (
     platform_config,
     get_platform_node_requirements,
 )
-from workflow.automation.lib.shared import confirm, set_wct
 from workflow.automation.lib.shared_automated_workflow import submit_script_to_scheduler
 from workflow.automation.lib.shared_template import write_sl_script
 
@@ -44,18 +44,18 @@ def main(
         logger.error(f"Error: sim_params.yaml doesn't exist in {rel_dir}")
         raise
 
-    sim_dir = Path(params.sim_dir).resolve()
+    sim_dir = Path(params["sim_dir"]).resolve()
 
-    logger.debug(f"params.srf_file {params.srf_file}")
+    logger.debug(f"params.srf_file {params['srf_file']}")
 
     # Get the srf(rup) name without extensions
-    srf_name = Path(params.srf_file).stem
+    srf_name = Path(params["srf_file"]).stem
 
     logger.debug("not set_params_only")
     # get lf_sim_dir
     lf_sim_dir = sim_struct.get_lf_dir(sim_dir)
 
-    nt = int(float(params.sim_duration) / float(params.dt))
+    nt = int(float(params["sim_duration"]) / float(params["dt"]))
 
     target_qconfig = get_machine_config(machine)
 
@@ -64,7 +64,7 @@ def main(
     )
 
     binary_path = binary_version.get_lf_bin(
-        params.emod3d.emod3d_version, target_qconfig["tools_dir"]
+        params["emod3d"]["emod3d_version"], target_qconfig["tools_dir"]
     )
     # use the original estimated run time for determining the checkpoint, or uses a minimum of 3 checkpoints
     steps_per_checkpoint = int(
@@ -107,7 +107,7 @@ def main(
         submit_script_to_scheduler(
             script_file_path,
             const.ProcessType.EMOD3D.value,
-            sim_struct.get_mgmt_db_queue(params.mgmt_db_location),
+            sim_struct.get_mgmt_db_queue(params["mgmt_db_location"]),
             sim_dir,
             srf_name,
             target_machine=machine,
@@ -118,9 +118,15 @@ def main(
 def get_lf_cores_and_wct(
     logger, nt, params, sim_dir, srf_name, target_qconfig, ncores, retries=None
 ):
-    fd_count = len(shared.get_stations(params.FD_STATLIST))
+    fd_count = len(shared.get_stations(params["FD_STATLIST"]))
     est_core_hours, est_run_time, est_cores = est.est_LF_chours_single(
-        int(params.nx), int(params.ny), int(params.nz), nt, fd_count, ncores, True
+        int(params["nx"]),
+        int(params["ny"]),
+        int(params["nz"]),
+        nt,
+        fd_count,
+        ncores,
+        True,
     )
     # scale up the est_run_time if it is a re-run (with check-pointing)
     # otherwise do nothing
@@ -157,8 +163,16 @@ def get_lf_cores_and_wct(
             f"Event {srf_name} needed {extra_nodes} extra nodes assigned in order to prevent station(s) "
             f"not being assigned to a sub domain."
         )
-    wct = set_wct(est_run_time_scaled, est_cores, True)
-    return est_cores, est_run_time, wct
+    ncores, wct = estimate_wct.confine_wct_node_parameters(
+        est_cores,
+        est_run_time_scaled,
+        preserve_core_count=(retries is not None and int(retries) > 0),
+        hyperthreaded=const.ProcessType.EMOD3D.is_hyperth,
+        can_checkpoint=True,  # hard coded for now as this is not available programatically
+        logger=logger,
+    )
+    wct_string = estimate_wct.convert_to_wct(wct)
+    return ncores, wct, wct_string
 
 
 def load_args():
@@ -204,7 +218,6 @@ def load_args():
 
 
 if __name__ == "__main__":
-
     args = load_args()
     # The name parameter is only used to check user tasks in the queue monitor
     Scheduler.initialise_scheduler("", args.account)

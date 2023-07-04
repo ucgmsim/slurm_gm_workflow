@@ -17,7 +17,7 @@ import qcore.simulation_structure as sim_struct
 
 
 from workflow.automation.metadata.log_metadata import store_metadata
-from workflow.automation.lib.MgmtDB import MgmtDB
+from workflow.automation.lib.MgmtDB import MgmtDB, ComparisonOperator
 from workflow.automation.lib.schedulers.scheduler_factory import Scheduler
 from workflow.automation.submit.submit_emod3d import main as submit_lf_main
 from workflow.automation.submit.submit_empirical import generate_empirical_script
@@ -47,16 +47,36 @@ def submit_task(
     hf_seed=const.HF_DEFAULT_SEED,
 ):
     task_logger = qclogging.get_task_logger(parent_logger, run_name, proc_type)
-    verification_dir = sim_struct.get_verification_dir(sim_dir)
+
     # Metadata logging setup
     ch_log_dir = os.path.abspath(os.path.join(sim_dir, "ch_log"))
     if not os.path.isdir(ch_log_dir):
         os.mkdir(ch_log_dir)
 
-    load_vm_params = const.ProcessType(proc_type) is not const.ProcessType.VM_PARAMS
+    runs_dir = sim_struct.get_runs_dir(root_folder)
+
+    sim_params_path = Path(sim_struct.get_sim_params_yaml_path(sim_dir))
+    fault_params_path = Path(
+        sim_struct.get_fault_yaml_path(
+            runs_dir,
+            sim_struct.get_fault_from_realisation(run_name),
+        )
+    )
+    vm_params_path = Path(sim_struct.get_vm_params_path(root_folder, run_name))
+    root_params_path = Path(sim_struct.get_root_yaml_path(runs_dir))
+
+    if not sim_params_path.exists():
+        sim_params_path = False
+    if not fault_params_path.exists():
+        fault_params_path = False
+    if not vm_params_path.exists() or proc_type == const.ProcessType.VM_PARAMS.value:
+        vm_params_path = False
 
     params = utils.load_sim_params(
-        sim_struct.get_sim_params_yaml_path(sim_dir), load_vm=load_vm_params
+        sim_params_path,
+        load_fault=fault_params_path,
+        load_vm=vm_params_path,
+        load_root=root_params_path,
     )
 
     submitted_time = datetime.now().strftime(const.METADATA_TIMESTAMP_FMT)
@@ -111,6 +131,7 @@ def submit_task(
     elif proc_type == const.ProcessType.plot_ts.value:
         # plot_ts.py does not mkdir dir if output dir does not exist,
         # whereas im_plot does.
+        verification_dir = sim_struct.get_verification_dir(sim_dir)
         if not os.path.isdir(verification_dir):
             os.mkdir(verification_dir)
         arguments = OrderedDict(
@@ -173,6 +194,7 @@ def submit_task(
         submit_im_calc_slurm(
             sim_dir=sim_dir,
             simple_out=True,
+            retries=retries,
             target_machine=get_target_machine(const.ProcessType.IM_calculation).name,
             logger=task_logger,
         )
@@ -186,15 +208,16 @@ def submit_task(
             logger=task_logger,
         )
     elif proc_type == const.ProcessType.IM_plot.value:
+        plot_dir = sim_struct.get_im_plot_dir(sim_dir)
         arguments = OrderedDict(
             {
                 "CSV_PATH": sim_struct.get_IM_csv(sim_dir),
-                "STATION_FILE_PATH": params.stat_file,
-                "OUTPUT_XYZ_PARENT_DIR": os.path.join(verification_dir, "IM_plot"),
+                "STATION_FILE_PATH": params["stat_file"],
+                "OUTPUT_XYZ_PARENT_DIR": plot_dir,
                 "SRF_PATH": sim_struct.get_srf_path(root_folder, run_name),
                 "MODEL_PARAMS": os.path.join(
                     sim_struct.get_fault_VM_dir(root_folder, run_name),
-                    os.path.basename(params.MODEL_PARAMS),
+                    os.path.basename(params["MODEL_PARAMS"]),
                 ),
                 "MGMT_DB_LOC": root_folder,
                 "SRF_NAME": run_name,
@@ -250,7 +273,7 @@ def submit_task(
                         + " ".join(
                             [
                                 "--{} {}".format(key, item)
-                                for key, item in params.bb.items()
+                                for key, item in params["bb"].items()
                             ]
                         )
                         + "'",
@@ -271,7 +294,7 @@ def submit_task(
                         + " ".join(
                             [
                                 "--{} {}".format(key, item)
-                                for key, item in params.bb.items()
+                                for key, item in params["bb"].items()
                             ]
                         )
                         + "'",
@@ -363,27 +386,67 @@ def submit_task(
     elif proc_type == const.ProcessType.VM_PERT.value:
         submit_vm_pert_main(root_folder, run_name, sim_dir, logger=task_logger)
     elif proc_type == const.ProcessType.INSTALL_FAULT.value:
-        fault_dir = sim_struct.get_fault_dir(
-            root_folder, sim_struct.get_fault_from_realisation(run_name)
+        fd_stat = (
+            Path(
+                sim_struct.get_fault_dir(
+                    root_folder, sim_struct.get_fault_from_realisation(run_name)
+                )
+            )
+            / f"fd{str(params['sufx'])}.ll"
         )
         submit_script_to_scheduler(
             get_platform_specific_script(
                 const.ProcessType.INSTALL_FAULT,
                 OrderedDict(
                     {
-                        "VM_PARAMS_YAML": str(
-                            Path(sim_struct.get_fault_VM_dir(root_folder, run_name))
-                            / "vm_params.yaml"
+                        "FAULT": run_name,
+                        "MGMT_DB_LOC": root_folder,
+                        "FDSTATLIST": str(fd_stat),
+                    }
+                ),
+            ),
+            target_machine=get_target_machine(const.ProcessType.INSTALL_FAULT).name,
+        )
+    elif proc_type == const.ProcessType.NO_VM_PERT.value:
+        # Just set the task to completed instantly, just a checkpoint as an alternative step to VM_PERT
+        shared_automated_workflow.add_to_queue(
+            sim_struct.get_mgmt_db_queue(root_folder),
+            run_name,
+            proc_type,
+            const.Status.completed.value,
+            logger=task_logger,
+        )
+    elif proc_type == const.ProcessType.INSTALL_REALISATION.value:
+        submit_script_to_scheduler(
+            get_platform_specific_script(
+                const.ProcessType.INSTALL_REALISATION,
+                OrderedDict(
+                    {
+                        "REL_NAME": run_name,
+                        "MGMT_DB_LOC": root_folder,
+                    }
+                ),
+            ),
+            target_machine=get_target_machine(
+                const.ProcessType.INSTALL_REALISATION
+            ).name,
+        )
+    elif proc_type == const.ProcessType.SRF_GEN.value:
+        submit_script_to_scheduler(
+            get_platform_specific_script(
+                const.ProcessType.SRF_GEN,
+                OrderedDict(
+                    {
+                        "REL_YAML": str(
+                            Path(sim_struct.get_srf_path(root_folder, run_name)).parent
+                            / f"{run_name}.csv"
                         ),
-                        "STAT_FILE": str(params.stat_file),
-                        "FAULT_DIR": fault_dir,
-                        "FDSTATLIST": str(Path(fault_dir) / f"fd{str(params.sufx)}.ll"),
                         "MGMT_DB_LOC": root_folder,
                         "REL_NAME": run_name,
                     }
                 ),
             ),
-            target_machine=get_target_machine(const.ProcessType.INSTALL_FAULT).name,
+            target_machine=get_target_machine(const.ProcessType.SRF_GEN).name,
         )
 
     qclogging.clean_up_logger(task_logger)
@@ -395,6 +458,7 @@ def run_main_submit_loop(
     rels_to_run: str,
     given_tasks_to_run: List[const.ProcessType],
     sleep_time: int,
+    matcher: ComparisonOperator = ComparisonOperator.LIKE,
     main_logger: Logger = qclogging.get_basic_logger(),
     cycle_timeout=1,
 ):
@@ -451,6 +515,7 @@ def run_main_submit_loop(
             rels_to_run,
             sum(n_runs.values()),
             os.listdir(sim_struct.get_mgmt_db_queue(root_folder)),
+            matcher,
             given_tasks_to_run,
             main_logger,
         )
@@ -465,7 +530,6 @@ def run_main_submit_loop(
         # for mgmt db updates (i.e. items in the queue)
         tasks_to_run, task_counter = [], {key: 0 for key in HPC}
         for cur_proc_type, cur_run_name, retries in runnable_tasks:
-
             cur_hpc = get_target_machine(cur_proc_type)
             # Add task if limit has not been reached and there are no
             # outstanding mgmt db updates
@@ -503,7 +567,6 @@ def run_main_submit_loop(
 
         # Submit the runnable tasks
         for proc_type, run_name, retries in tasks_to_run:
-
             # Special handling for merge-ts
             if proc_type == const.ProcessType.merge_ts.value:
                 # Check if clean up has already run
@@ -579,9 +642,18 @@ def main():
         help="An SQLite formatted query to match the realisations that should run.",
         default="%",
     )
+    parser.add_argument(
+        "--matcher",
+        help="Type of SQL match to make. Either: "
+        "EXACT for exact only match, "
+        "LIKE to match any '%' or '_' symbols, or "
+        "NOTLIKE to match everything except the --rels_to_run argument",
+        default=ComparisonOperator.LIKE.name,
+        options=ComparisonOperator.get_names(),
+    )
 
     args = parser.parse_args()
-
+    args.matcher = ComparisonOperator[args.matcher]
     root_folder = os.path.abspath(args.root_folder)
 
     if args.log_file is None:
@@ -634,28 +706,27 @@ def main():
         n_runs = platform_config[const.PLATFORM_CONFIG.DEFAULT_N_RUNS.name]
 
     logger.debug(
-        "Processes to be run were: {}. Getting all required dependencies now.".format(
+        "Processes to be run were: {}. "
+        "Getting all required dependencies now. "
+        "Assuming all given tasks are to be run for all realisations (including median, as per --rels_to_run)".format(
             args.task_types_to_run
         )
     )
-    task_types_to_run = [
-        const.ProcessType.from_str(proc) for proc in args.task_types_to_run
-    ]
-    for task in task_types_to_run:
+    task_types_to_run = [const.Dependency(proc) for proc in args.task_types_to_run]
+    for dependency in task_types_to_run:
         logger.debug(
-            "Process {} in processes to be run, adding dependencies now.".format(
-                task.str_value
-            )
+            f"Process {dependency} in processes to be run, adding dependencies now."
         )
-        for proc_num in task.get_remaining_dependencies(task_types_to_run):
-            proc = const.ProcessType(proc_num)
-            if proc not in task_types_to_run:
+        for sub_dependency in dependency.process.get_remaining_dependencies(
+            task_types_to_run
+        ):
+            target = sub_dependency
+            if target not in task_types_to_run:
                 logger.debug(
-                    "Process {} added as a dependency of process {}".format(
-                        proc.str_value, task.str_value
-                    )
+                    f"Dependency {target.process} added as a dependency of process {dependency.process}"
                 )
-                task_types_to_run.append(proc)
+                task_types_to_run.append(target)
+    task_types_to_run = [x.process for x in task_types_to_run]
 
     mutually_exclusive_task_error = const.ProcessType.check_mutually_exclusive_tasks(
         task_types_to_run
@@ -668,13 +739,13 @@ def main():
 
     scheduler_logger = qclogging.get_logger(name=f"{logger.name}.scheduler")
     Scheduler.initialise_scheduler(user=args.user, logger=scheduler_logger)
-
     run_main_submit_loop(
         root_folder,
         n_runs,
         args.rels_to_run,
         task_types_to_run,
         args.sleep_time,
+        args.matcher,
         main_logger=logger,
     )
 

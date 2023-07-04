@@ -4,7 +4,6 @@ import pytest
 
 from qcore.utils import load_sim_params as mocked_load_sim_params
 from qcore.utils import load_yaml as mocked_load_yaml
-from workflow.automation.lib.shared import set_wct as mocked_set_wct
 
 from workflow.automation.tests.test_common_set_up import get_fault_from_rel, set_up
 
@@ -17,11 +16,6 @@ import workflow.automation.submit.submit_emod3d
 def test_main(set_up, mocker):
     """No return value. Just check that it runs without crashing"""
 
-    mocker.patch(
-        "workflow.automation.submit.submit_emod3d.set_wct",
-        lambda x, y, z: mocked_set_wct(x, y, True),
-    )
-    mocker.patch("workflow.automation.submit.submit_emod3d.confirm", lambda x: False)
     mocker.patch(
         "workflow.automation.submit.submit_emod3d.est.est_LF_chours_single",
         lambda a, b, c, d, e, f, g: (2, 0.05, 40),

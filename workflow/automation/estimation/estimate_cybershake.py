@@ -12,7 +12,6 @@ from typing import List
 
 import qcore.constants as const
 from qcore import shared, srf, utils, simulation_structure
-from workflow.automation.lib.shared import get_stations
 from workflow.automation.estimation import estimate_wct
 from workflow.automation.platform_config import platform_config
 
@@ -121,10 +120,18 @@ def run_estimations(
     and returns a dataframe containing the results for
     each fault/realisation combination.
     """
-    print("Running estimation for LF")
-    lf_core_hours, lf_run_time, lf_ncores = estimate_wct.estimate_LF_chours(
-        lf_input_data, True
-    )
+    if lf_input_data is not None:
+        print("Running estimation for LF")
+        lf_core_hours, lf_run_time, lf_ncores = estimate_wct.estimate_LF_chours(
+            lf_input_data, True
+        )
+    else:
+        lf_core_hours, lf_run_time, lf_ncores = (
+            np.full(len(fault_names), np.nan),
+            np.full(len(fault_names), np.nan),
+            np.full(len(fault_names), np.nan),
+        )
+
     lf_result_data = np.concatenate(
         (lf_core_hours[:, None], lf_run_time[:, None], lf_ncores[:, None]), axis=1
     )
@@ -191,10 +198,11 @@ def run_estimations(
 
     if im_calc_input_data is not None:
         print("Running IM_calc estimation")
-        im_calc_core_hours, im_calc_run_time = estimate_wct.est_IM_chours_single(
-            *im_calc_input_data
-        )
-        im_calc_cores = [im_calc_input_data[-1]] * sum(r_counts)
+        (
+            im_calc_core_hours,
+            im_calc_run_time,
+            im_calc_cores,
+        ) = estimate_wct.est_IM_chours(*im_calc_input_data)
     else:
         im_calc_core_hours, im_calc_run_time, im_calc_cores = np.nan, np.nan, np.nan
 
@@ -237,7 +245,6 @@ def main(
         .astype(np.float32)
     )
 
-    config_dt, config_hf_dt = None, None
     print("Loading df and hf_dt from root_params.yaml")
     root_config = utils.load_yaml(f"{runs_dir}/root_params.yaml")
 
@@ -283,6 +290,8 @@ def main(
         fault_names, realisations = fault_names[~nan_mask], realisations[~nan_mask]
         vm_params, dt = vm_params[~nan_mask], dt[~nan_mask]
 
+    r_counts = [len(cur_r_list) for cur_r_list in realisations]
+
     print("Preparing LF input data")
     fault_sim_durations = vm_params[:, 3]
     nt = fault_sim_durations / dt
@@ -291,24 +300,27 @@ def main(
         np.ones(fault_names.shape[0], dtype=np.float32)
         * platform_config[const.PLATFORM_CONFIG.LF_DEFAULT_NCORES.name]
     )
-
-    # Get fd_count for each fault
-    fd_counts = np.asarray(
-        [
-            len(shared.get_stations(fd_statlist))
-            for fd_statlist in runs_params.fd_statlist
-        ]
-    )
-    r_counts = [len(cur_r_list) for cur_r_list in realisations]
-    lf_input_data = np.concatenate(
-        (
-            vm_params[:, :3],
-            nt.reshape(-1, 1),
-            fd_counts.reshape(-1, 1),
-            lf_ncores.reshape(-1, 1),
-        ),
-        axis=1,
-    )
+    try:
+        # Get fd_count for each fault
+        fd_counts = np.asarray(
+            [
+                len(shared.get_stations(fd_statlist))
+                for fd_statlist in runs_params.fd_statlist
+            ]
+        )
+    except FileNotFoundError:
+        print("Encountered error preparing LF input data")
+        lf_input_data = None
+    else:
+        lf_input_data = np.concatenate(
+            (
+                vm_params[:, :3],
+                nt.reshape(-1, 1),
+                fd_counts.reshape(-1, 1),
+                lf_ncores.reshape(-1, 1),
+            ),
+            axis=1,
+        )
 
     print("Preparing HF estimation input data")
     # Have to repeat/extend the fault sim_durations to per realisation
@@ -318,27 +330,30 @@ def main(
         r_counts,
     )
 
-    # Get fd_count and nsub_stoch for each realization
-    r_fd_counts = np.repeat(fd_counts, r_counts)
-    r_nsub_stochs = np.repeat(
-        np.asarray(
-            [srf.get_nsub_stoch(slip, get_area=False) for slip in runs_params.slip]
-        ),
-        r_counts,
-    )
-
     # Calculate nt
     r_hf_nt = np.repeat(fault_sim_durations / runs_params.hf_dt, r_counts)
-
-    hf_input_data = np.concatenate(
-        (
-            r_fd_counts[:, None],
-            r_nsub_stochs[:, None],
-            r_hf_nt[:, None],
-            r_hf_ncores[:, None],
-        ),
-        axis=1,
-    )
+    try:
+        # Get fd_count and nsub_stoch for each realization
+        r_fd_counts = np.repeat(fd_counts, r_counts)
+        r_nsub_stochs = np.repeat(
+            np.asarray(
+                [srf.get_nsub_stoch(slip, get_area=False) for slip in runs_params.slip]
+            ),
+            r_counts,
+        )
+    except UnboundLocalError or FileNotFoundError:
+        print("Encountered error preparing HF estimation input data")
+        hf_input_data = None
+    else:
+        hf_input_data = np.concatenate(
+            (
+                r_fd_counts[:, None],
+                r_nsub_stochs[:, None],
+                r_hf_nt[:, None],
+                r_hf_ncores[:, None],
+            ),
+            axis=1,
+        )
 
     print("Preparing BB estimation input data")
     r_bb_ncores = np.repeat(
@@ -346,25 +361,34 @@ def main(
         * platform_config[const.PLATFORM_CONFIG.BB_DEFAULT_NCORES.name],
         r_counts,
     )
-
-    bb_input_data = np.concatenate(
-        (r_fd_counts[:, None], r_hf_nt[:, None], r_bb_ncores[:, None]), axis=1
-    )
+    try:
+        bb_input_data = np.concatenate(
+            (r_fd_counts[:, None], r_hf_nt[:, None], r_bb_ncores[:, None]), axis=1
+        )
+    except NameError:
+        print("Encountered error preparing BB estimation input data")
+        bb_input_data = None
 
     print("Preparing IM_calc input data")
-    if root_config["ims"][const.RootParams.extended_period.name]:
-        period_count = len(
-            np.unique(np.append(root_config["ims"]["pSA_periods"], const.EXT_PERIOD))
-        )
-    else:
-        period_count = len(root_config["ims"]["pSA_periods"])
-    im_calc_input_data = [
-        len(get_stations(root_config["stat_file"])),
-        np.repeat(fault_sim_durations / float(root_config["dt"]), r_counts),
-        root_config["ims"][const.SlBodyOptConsts.component.value],
-        period_count,
-        platform_config[const.PLATFORM_CONFIG.IM_CALC_DEFAULT_N_CORES.name],
-    ]
+    try:
+        if root_config["ims"][const.RootParams.extended_period.name]:
+            period_count = len(
+                np.unique(
+                    np.append(root_config["ims"]["pSA_periods"], const.EXT_PERIOD)
+                )
+            )
+        else:
+            period_count = len(root_config["ims"]["pSA_periods"])
+        im_calc_input_data = [
+            np.repeat(fd_counts, r_counts),
+            np.repeat(fault_sim_durations / float(root_config["dt"]), r_counts),
+            root_config["ims"][const.SlBodyOptConsts.component.value],
+            period_count,
+            platform_config[const.PLATFORM_CONFIG.IM_CALC_DEFAULT_N_CORES.name],
+        ]
+    except FileNotFoundError or KeyError or UnboundLocalError:
+        print("Encountered error preparing IM_calc input data")
+        im_calc_input_data = None
 
     results_df = run_estimations(
         fault_names,
@@ -468,7 +492,14 @@ def get_runs_dir_params(
             os.path.join(runs_dir, fault_name, r, "sim_params.yaml")
         )
 
-        data.append((params.dt, params.hf.dt, params.FD_STATLIST, params.hf.slip))
+        data.append(
+            (
+                params["dt"],
+                params["hf"]["dt"],
+                params["FD_STATLIST"],
+                params["hf"]["slip"],
+            )
+        )
 
     return np.rec.array(
         data,

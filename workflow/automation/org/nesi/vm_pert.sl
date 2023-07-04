@@ -40,9 +40,14 @@ start_time=`date +$runtime_fmt`
 echo $start_time
 
 python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $REL_NAME VM_PERT running $SLURM_JOB_ID --start_time "$start_time" --nodes $SLURM_NNODES --cores $SLURM_CPUS_PER_TASK --wct "$WCT"
+if [ -f $OUT_DIR/$REL_NAME.pertb.csv ]; then
+  echo time python $gmsim/Pre-processing/srf_generation/velocity_model_generation/generate_perturbation_file.py $OUT_DIR/$REL_NAME.pertb $VM_PARAMS_YAML -n 1 -v --perturbation --parameter_file $OUT_DIR/$REL_NAME.pertb.csv
+  time python $gmsim/Pre-processing/srf_generation/velocity_model_generation/generate_perturbation_file.py $OUT_DIR/$REL_NAME.pertb $VM_PARAMS_YAML -n 1 -v --perturbation --parameter_file $OUT_DIR/$REL_NAME.pertb.csv
+else
+  echo time python $gmsim/Pre-processing/srf_generation/velocity_model_generation/generate_perturbation_file.py $OUT_DIR/$REL_NAME.pertb $VM_PARAMS_YAML -n 1 -v --perturbation --model $gmsim/Pre-processing/srf_generation/velocity_model_generation/config_files/graves_pitarka_2016_model_modified.csv
+  time python $gmsim/Pre-processing/srf_generation/velocity_model_generation/generate_perturbation_file.py $OUT_DIR/$REL_NAME.pertb $VM_PARAMS_YAML -n 1 -v --perturbation --model $gmsim/Pre-processing/srf_generation/velocity_model_generation/config_files/graves_pitarka_2016_model_modified.csv
+fi
 
-echo time python $gmsim/Pre-processing/srf_generation/velocity_model_generation/generate_perturbation_file.py $OUT_DIR/$REL_NAME.pertb $VM_PARAMS_YAML -n 1 -v --perturbation --model $gmsim/Pre-processing/srf_generation/velocity_model_generation/config_files/graves_pitarka_2016_model_modified.csv
-time python $gmsim/Pre-processing/srf_generation/velocity_model_generation/generate_perturbation_file.py $OUT_DIR/$REL_NAME.pertb $VM_PARAMS_YAML -n 1 -v --perturbation --model $gmsim/Pre-processing/srf_generation/velocity_model_generation/config_files/graves_pitarka_2016_model_modified.csv
 
 end_time=`date +$runtime_fmt`
 echo $end_time
@@ -56,6 +61,8 @@ if [[ $pass == 0 ]]; then
     #passed - file is non-zero
 
     python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $REL_NAME VM_PERT completed $SLURM_JOB_ID --end_time "$end_time"
+
+    python -c "from qcore import utils;d=utils.load('${SIM_DIR}/sim_params.yaml');d['emod3d']['model_style']=3;d['emod3d']['pertbfile']='$OUT_DIR/$REL_NAME.pertb';utils.dump_yaml(d,'${SIM_DIR}/sim_params.yaml')"
 
     if [[ ! -d $CH_LOG_FFP ]]; then
         mkdir $CH_LOG_FFP

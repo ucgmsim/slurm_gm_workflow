@@ -8,14 +8,17 @@ from logging import Logger
 from typing import List
 
 import qcore.constants as const
-from qcore.utils import load_yaml
+from qcore import utils as qc_utils
+from qcore import qclogging
+
 from workflow.automation.lib.MgmtDB import MgmtDB
-from qcore.qclogging import get_basic_logger, NOPRINTCRITICAL
 from workflow.automation.lib.schedulers.scheduler_factory import Scheduler
 
 ALL = "ALL"
-ONCE = "ONCE"
-ONCE_PATTERN = "%_REL01"
+MEDIAN_ONLY = "MEDIAN"
+# MEDIAN_ONLY_PATTERN is negation of REL_ONLY_PATTERN. Has to be done in SQL
+REL_ONLY = "REL_ONLY"
+REL_ONLY_PATTERN = "%_REL%"
 NONE = "NONE"
 
 
@@ -26,7 +29,7 @@ def submit_script_to_scheduler(
     sim_dir: str,
     run_name: str,
     target_machine: str = None,
-    logger: Logger = get_basic_logger(),
+    logger: Logger = qclogging.get_basic_logger(),
 ):
     """
     Submits the slurm script and updates the management db.
@@ -66,7 +69,7 @@ def add_to_queue(
     cores: int = None,
     memory: int = None,
     wct: int = None,
-    logger: Logger = get_basic_logger(),
+    logger: Logger = qclogging.get_basic_logger(),
 ):
     """Adds an update entry to the queue"""
     logger.debug(
@@ -83,7 +86,7 @@ def add_to_queue(
 
     if os.path.exists(filename):
         logger.log(
-            NOPRINTCRITICAL,
+            qclogging.NOPRINTCRITICAL,
             "An update with the name {} already exists. This should never happen. Quitting!".format(
                 os.path.basename(filename)
             ),
@@ -122,7 +125,10 @@ def add_to_queue(
 
 
 def check_mgmt_queue(
-    queue_entries: List[str], run_name: str, proc_type: int, logger=get_basic_logger()
+    queue_entries: List[str],
+    run_name: str,
+    proc_type: int,
+    logger=qclogging.get_basic_logger(),
 ):
     """Returns True if there are any queued entries for this run_name and process type,
     otherwise returns False.
@@ -142,38 +148,54 @@ def check_mgmt_queue(
     return False
 
 
-def parse_config_file(config_file_location: str, logger: Logger = get_basic_logger()):
+def parse_config_file(task_config: str, logger: Logger = qclogging.get_basic_logger()):
     """Takes in the location of a wrapper config file and creates the tasks to be run.
-    Each task that is desired to be run should have its name as given in qcore.constants followed by the relevant
-    keyword or sqlite formatted query string, which uses % as the wildcard character.
-    The keywords NONE, ONCE and ALL correspond to the patterns nothing, "%_REL01", "%" respectively.
-    :param config_file_location: The location of the config file
-    :param logger: The logger object used to record messages
-    :return: A list containing the tasks to be run on all processes and a dictionary of pattern, task list pairs which
-    state which query patterns should run which tasks
+    Requires that the file contains the keys 'run_all_tasks' and 'run_some', even if they are empty
+    If the dependencies for a run_some task overlap with those in the tasks_to_run_for_all, as a race condition is
+    possible if multiple auto_submit scripts have the same tasks. If multiple run_some instances have the same
+    dependencies then this is not an issue as they run sequentially, rather than simultaneously
+    :param config_file: The location of the config file
+    :return: A tuple containing the tasks to be run on all processes and a list of pattern, tasks tuples which state
+    which tasks can be run with which patterns
     """
-    config = load_yaml(config_file_location)
+    if isinstance(task_config, str):
+        config = qc_utils.load_yaml(task_config)
+    else:
+        config = task_config
 
     tasks_to_run_for_all = []
     tasks_with_pattern_match = {}
+    tasks_with_anti_pattern_match = {}
 
-    for proc_name, patterns in config.items():
+    for proc_name, pattern in config.items():
         proc = const.ProcessType.from_str(proc_name)
-        if not isinstance(patterns, list):
-            patterns = [patterns]
-        for pattern in patterns:
-            if pattern == ALL:
-                tasks_to_run_for_all.append(proc)
-            elif pattern == NONE:
+        if pattern == ALL or ALL in pattern:
+            tasks_to_run_for_all.append(proc)
+            # If something has ALL it should only be added to the main runner and no other
+            continue
+        if isinstance(pattern, str):
+            pattern = [pattern]
+        for subpattern in pattern:
+            if subpattern == REL_ONLY:
+                add_to_dict_list(proc, tasks_with_pattern_match)
+            elif subpattern == MEDIAN_ONLY:
+                add_to_dict_list(proc, tasks_with_anti_pattern_match)
+            elif subpattern == NONE:
                 pass
             else:
-                if pattern == ONCE:
-                    pattern = ONCE_PATTERN
-                if pattern not in tasks_with_pattern_match.keys():
-                    tasks_with_pattern_match.update({pattern: []})
-                tasks_with_pattern_match[pattern].append(proc)
+                add_to_dict_list(proc, tasks_with_pattern_match, subpattern)
     logger.info("Master script will run {}".format(tasks_to_run_for_all))
     for pattern, tasks in tasks_with_pattern_match.items():
         logger.info("Pattern {} will run tasks {}".format(pattern, tasks))
 
-    return tasks_to_run_for_all, tasks_with_pattern_match.items()
+    return (
+        tasks_to_run_for_all,
+        tasks_with_pattern_match.items(),
+        tasks_with_anti_pattern_match.items(),
+    )
+
+
+def add_to_dict_list(proc_to_add, dict_to_add_to, pattern=REL_ONLY_PATTERN):
+    if pattern not in dict_to_add_to:
+        dict_to_add_to.update({pattern: []})
+    dict_to_add_to[pattern].append(proc_to_add)

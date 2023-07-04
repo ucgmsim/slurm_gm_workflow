@@ -1,17 +1,23 @@
 import datetime
-from collections import namedtuple
 from contextlib import contextmanager
 from logging import Logger
 import os
 import sqlite3 as sql
-from typing import List, Union
+from typing import List, Union, Dict
 from dataclasses import dataclass
 
 import qcore.constants as const
 from workflow.automation.lib.constants import ChCountType
 from qcore.qclogging import get_basic_logger
+from qcore import simulation_structure
 
 Process = const.ProcessType
+
+
+class ComparisonOperator(const.ExtendedEnum):
+    LIKE = "LIKE"
+    EXACT = "="
+    NOTLIKE = "NOT LIKE"
 
 
 @dataclass
@@ -92,11 +98,12 @@ class MgmtDB:
     def db_file(self):
         return self._db_file
 
-    def get_retries(self, process, realisation_name):
+    def get_retries(self, process, realisation_name, get_WCT=False):
+        get_WCT_symbol = "=" if get_WCT else "!="
         with connect_db_ctx(self._db_file) as cur:
             return cur.execute(
                 "SELECT COUNT(*) from state "
-                "WHERE run_name = ? AND proc_type = ? and status != ?",
+                f"WHERE run_name = ? AND proc_type = ? and status {get_WCT_symbol} ?",
                 (realisation_name, process, const.Status.killed_WCT.value),
             ).fetchone()[0]
 
@@ -136,7 +143,7 @@ class MgmtDB:
                         entry.queued_time,
                     )
 
-                if entry.status == const.Status.running.value:
+                elif entry.status == const.Status.running.value:
                     # Add general metadata to the job log when the task has started running
                     logger.debug("Logging running task to the db")
                     self.update_job_log(
@@ -149,7 +156,7 @@ class MgmtDB:
                         entry.wct,
                     )
 
-                if entry.status == const.Status.created.value:
+                elif entry.status == const.Status.created.value:
                     # Something has attempted to set a task to created
                     # Make a new task with created status and move to the next task
                     logger.debug("Adding new task to the db")
@@ -182,16 +189,27 @@ class MgmtDB:
                     )
 
                 if (
-                    entry.status == const.Status.failed.value
-                    or entry.status == const.Status.killed_WCT.value
+                    entry.status == const.Status.killed_WCT.value
+                    and self.get_retries(process, realisation_name, get_WCT=True) + 1
+                    < retry_max
                 ):
-                    if self.get_retries(process, realisation_name) < retry_max:
-                        # The task was failed. If there have been few enough other attempts at the task make another one
-                        logger.debug(
-                            "Task failed but is able to be retried. Adding new task to the db"
-                        )
-                        self._insert_task(cur, realisation_name, process)
-                        logger.debug("New task added to the db")
+                    # The task was killed_WCT. If there have been few enough other attempts at the task make another one
+                    logger.debug(
+                        "Task hit WCT but is able to be retried. Adding new task to the db"
+                    )
+                    self._insert_task(cur, realisation_name, process)
+                    logger.debug("New task added to the db")
+                elif (
+                    entry.status == const.Status.failed.value
+                    and self.get_retries(process, realisation_name, get_WCT=False) + 1
+                    < retry_max
+                ):
+                    # The task was failed. If there have been few enough other attempts at the task make another one
+                    logger.debug(
+                        "Task failed but is able to be retried. Adding new task to the db"
+                    )
+                    self._insert_task(cur, realisation_name, process)
+                    logger.debug("New task added to the db")
 
                 if entry.status == const.Status.failed.value:
                     tasks = MgmtDB.find_dependant_task(cur, entry)
@@ -293,10 +311,8 @@ class MgmtDB:
     def find_dependant_task(cur, entry):
         tasks = []
         for process in const.ProcessType:
-            for dependency in process.dependencies:
-                if isinstance(dependency, tuple):
-                    dependency = dependency[0]
-                if entry.proc_type == dependency:
+            for dependency in process.dependencies[0]:
+                if entry.proc_type == dependency.process.value:
                     job_id = cur.execute(
                         "SELECT `job_id` FROM `state` WHERE proc_type = ? and status = ? and run_name = ?",
                         (process.value, const.Status.completed.value, entry.run_name),
@@ -319,7 +335,7 @@ class MgmtDB:
         n_max_retries: The maximum number of retries a task can have"""
         with connect_db_ctx(self._db_file) as cur:
             errored = cur.execute(
-                "SELECT run_name, proc_type "
+                "SELECT run_name, proc_type, state "
                 "FROM state, status_enum "
                 "WHERE state.status = status_enum.id "
                 "AND (status_enum.state  = 'failed' "
@@ -327,15 +343,15 @@ class MgmtDB:
             ).fetchall()
 
         failure_count = {}
-        for run_name, proc_type in errored:
+        for run_name, proc_type, state in errored:
             key = "{}__{}".format(run_name, proc_type)
             if key not in failure_count.keys():
-                failure_count.update({key: 0})
-            failure_count[key] += 1
+                failure_count.update({key: {"killed_WCT": 0, "failed": 0}})
+            failure_count[key][state] += 1
 
         with connect_db_ctx(self._db_file) as cur:
             for key, fail_count in failure_count.items():
-                if fail_count >= n_max_retries:
+                if any([x >= n_max_retries for x in fail_count.values()]):
                     continue
                 run_name, proc_type = key.split("__")
                 # Gets the number of entries for the task with state in [created, queued, running or completed]
@@ -371,6 +387,7 @@ class MgmtDB:
         allowed_rels,
         task_limit,
         update_files,
+        matcher: ComparisonOperator,
         allowed_tasks=None,
         logger=get_basic_logger(),
     ):
@@ -402,9 +419,9 @@ class MgmtDB:
                           FROM status_enum, state 
                           WHERE state.status = status_enum.id
                            AND proc_type IN (?{})
-                           AND run_name LIKE (?)
+                           AND run_name {} (?)
                            AND status_enum.state = 'created'""".format(
-                    ",?" * (len(allowed_tasks) - 1)
+                    ",?" * (len(allowed_tasks) - 1), matcher.value
                 ),
                 (*allowed_tasks, allowed_rels),
             ).fetchone()[0]
@@ -415,16 +432,16 @@ class MgmtDB:
                               FROM status_enum, state 
                               WHERE state.status = status_enum.id
                                AND proc_type IN (?{})
-                               AND run_name LIKE (?)
+                               AND run_name {} (?)
                                    AND status_enum.state = 'created'
                                    LIMIT 100 OFFSET ?""".format(
-                        ",?" * (len(allowed_tasks) - 1)
+                        ",?" * (len(allowed_tasks) - 1), matcher.value
                     ),
                     (*allowed_tasks, allowed_rels, offset),
                 ).fetchall()
                 runnable_tasks.extend(
                     [
-                        (*task, self.get_retries(*task))
+                        (*task, self.get_retries(*task, get_WCT=True))
                         for task in db_tasks
                         if self._check_dependancy_met(task, logger)
                         and "{}__{}".format(*task) not in tasks_waiting_for_updates
@@ -434,11 +451,12 @@ class MgmtDB:
 
         return runnable_tasks
 
-    def num_task_complete(self, task, like=False):
+    def num_task_complete(
+        self, task, matcher: ComparisonOperator = ComparisonOperator.EXACT
+    ):
         process, run_name = task
-        op = "LIKE" if like else "="
 
-        query = f"SELECT COUNT (*) FROM state WHERE run_name {op} ? AND proc_type = ? AND status = ?"
+        query = f"SELECT COUNT (*) FROM state WHERE run_name {matcher.value} ? AND proc_type = ? AND status = ?"
         with connect_db_ctx(self._db_file) as cur:
             completed_tasks = cur.execute(
                 query, (run_name, process, const.Status.completed.value)
@@ -451,10 +469,11 @@ class MgmtDB:
     def _check_dependancy_met(self, task, logger=get_basic_logger()):
         """Checks if all dependencies for the specified are met"""
         process, run_name = task
+        median_name = simulation_structure.get_fault_from_realisation(run_name)
         process = Process(process)
 
         with connect_db_ctx(self._db_file) as cur:
-            completed_tasks = cur.execute(
+            completed_rel_tasks = cur.execute(
                 """SELECT proc_type 
                           FROM status_enum, state 
                           WHERE state.status = status_enum.id
@@ -462,14 +481,27 @@ class MgmtDB:
                            AND status_enum.state = 'completed'""",
                 (run_name,),
             ).fetchall()
+            completed_median_tasks = cur.execute(
+                """SELECT proc_type 
+                          FROM status_enum, state 
+                          WHERE state.status = status_enum.id
+                           AND run_name = (?)
+                           AND status_enum.state = 'completed'""",
+                (median_name,),
+            ).fetchall()
         logger.debug(
-            "Considering task {} for realisation {}. Completed tasks as follows: {}".format(
-                process, run_name, completed_tasks
+            "Considering task {} for realisation {}. Completed realisation tasks as follows: {}. Completed median tasks as follows: {}".format(
+                process, run_name, completed_rel_tasks, completed_median_tasks
             )
         )
-        remaining_deps = process.get_remaining_dependencies(
-            [const.ProcessType(x[0]) for x in completed_tasks]
-        )
+        completed_deps = [
+            const.Dependency(x[0], dependency_target=const.DependencyTarget.REL)
+            for x in completed_rel_tasks
+        ] + [
+            const.Dependency(x[0], dependency_target=const.DependencyTarget.MEDIAN)
+            for x in completed_median_tasks
+        ]
+        remaining_deps = process.get_remaining_dependencies(completed_deps)
         logger.debug("{} has remaining deps: {}".format(task, remaining_deps))
         return len(remaining_deps) == 0
 
@@ -533,14 +565,15 @@ class MgmtDB:
                 (entry.proc_type, entry.run_name, entry.error),
             )
 
-    def populate(self, realisations, srf_files: Union[List[str], str] = []):
+    def populate(self, realisations, fault_selection: Dict[str, int]):
         """Initial population of the database with all realisations"""
-        # for manual install, only one srf will be passed to srf_files as a string
-        if isinstance(srf_files, str):
-            srf_files = [srf_files]
-
+        realisations.extend(fault_selection.keys())
         realisations.extend(
-            [os.path.splitext(os.path.basename(srf))[0] for srf in srf_files]
+            [
+                simulation_structure.get_realisation_name(event, i)
+                for event, rel_count in fault_selection.items()
+                for i in range(1, rel_count + 1)
+            ]
         )
 
         if len(realisations) == 0:
@@ -640,6 +673,7 @@ class MgmtDB:
         blocked_states: List[const.Status] = None,
         allowed_ids: List[int] = None,
         blocked_ids: List[int] = None,
+        realisation_only: bool = False,
     ):
         """
         Allows for retrieving custom collections of database entries
@@ -648,6 +682,7 @@ class MgmtDB:
         :param allowed_tasks, blocked_tasks: a list of process types to either block or exclusively allow
         :param allowed_states, blocked_states: a list of states to either block or exclusively allow
         :param allowed_ids, blocked_ids: a list of job ids to either block or exclusively allow
+        :param realisation_only: Only select realisation jobs, not median jobs
         :return: A list of Entry objects
         """
 
@@ -696,6 +731,10 @@ class MgmtDB:
                 ",".join("?" * len(blocked_ids))
             )
             arguments.extend(blocked_ids)
+
+        if realisation_only is True:
+            base_command += " AND state.run_name LIKE (?)"
+            arguments.append("%_REL%")
 
         with connect_db_ctx(self._db_file) as cur:
             result = cur.execute(base_command, arguments).fetchall()
