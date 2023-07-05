@@ -14,9 +14,13 @@ from qcore.siteamp_models import (
     cb_amp,
     ba18_amp,
     init_ba18,
+    bssa14_amp,
+    init_bssa14,
+    bcs19_amp,
+    init_bcs19,
     get_ft_freq,
     amplification_uncertainty,
-    bssa14_amp, init_bssa14
+
 )
 
 from qcore import timeseries, utils
@@ -67,7 +71,7 @@ def args_parser(cmd=None):
         "--site-amp",
         help="Choose the site-amp model to be used",
         default="CB14",
-        choices=["CB08", "CB14", "BA18", "BSSA14"],
+        choices=["CB08", "CB14", "BA18", "BSSA14", "BCS19"],
 
     )
     arg(
@@ -135,7 +139,11 @@ def main():
         init_ba18()
         amp_function = ba18_amp
     elif args.site_amp == "BSSA14":
+        init_bssa14()
         amp_function = bssa14_amp
+    elif args.site_amp == "BCS19":
+        init_bcs19()
+        amp_function = bcs19_amp
 
 
     if args.no_lf_amp:
