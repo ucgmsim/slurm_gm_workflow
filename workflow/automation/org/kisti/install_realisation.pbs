@@ -1,0 +1,52 @@
+#!/bin/bash
+# script version: pbs
+# must be run with qsub -v REL_NAME=A,MGMT_DB_LOC=B -V install_realisation.pbs
+
+#PBS -N VM_GEN
+#PBS -V
+#PBS -q normal
+#PBS -A inhouse
+#PBS -l select=1:ncpus=1:ompthreads=1
+#PBS -l walltime=00:15:00
+#PBS -W sandbox=PRIVATE
+export SLURM_JOB_ID="${PBS_JOBID/.pbs/}"
+export SLURM_CPUS_PER_TASK=$(qstat $SLURM_JOB_ID -f | grep "used.ncpus" | cut -d"=" -f2 | bc)
+export SLURM_NNODES=$(qstat $SLURM_JOB_ID -f | grep "List.nodect" | cut -d"=" -f2 | bc)
+
+FAULT=$(echo $REL_NAME | cut -d"_" -f1)
+SIM_DIR=$MGMT_DB_LOC/Runs/$FAULT/$REL_NAME
+CH_LOG_FFP=$SIM_DIR/ch_log
+
+
+mkdir -p $SIM_DIR
+mkdir -p $MGMT_DB_LOC/mgmt_db_queue
+
+timestamp=`date +%Y%m%d_%H%M%S`
+runtime_fmt="%Y-%m-%d_%H:%M:%S"
+start_time=`date +$runtime_fmt`
+echo $start_time
+
+python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $REL_NAME INSTALL_REALISATION running $SLURM_JOB_ID --start_time "$start_time" --nodes $SLURM_NNODES --cores $SLURM_CPUS_PER_TASK --wct 00:15:00
+
+CMD="python $gmsim/workflow/workflow/automation/install_scripts/install_realisation.py $MGMT_DB_LOC $REL_NAME"
+echo "${CMD}"
+$CMD
+
+end_time=`date +$runtime_fmt`
+echo $end_time
+
+timestamp=`date +%Y%m%d_%H%M%S`
+if [[ -f $SIM_DIR/sim_params.yaml ]] & [[ -s $SIM_DIR/sim_params.yaml ]]; then
+    # File exists and is not empty. Passed
+
+    python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $REL_NAME INSTALL_REALISATION completed $SLURM_JOB_ID --end_time "$end_time"
+
+    mkdir -p $CH_LOG_FFP
+
+    # save meta data
+    python $gmsim/workflow/workflow/automation/metadata/log_metadata.py $SIM_DIR INSTALL_REALISATION cores=$SLURM_CPUS_PER_TASK start_time=$start_time end_time=$end_time
+else
+    #reformat $res to remove '\n'
+    res=`echo $res | tr -d '\n'`
+    python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $REL_NAME INSTALL_REALISATION failed $SLURM_JOB_ID --error "$res" --end_time "$end_time"
+fi
