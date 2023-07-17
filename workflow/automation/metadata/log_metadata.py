@@ -206,7 +206,7 @@ def main(args):
         )
         metadata_dict[const.MetadataField.run_time.value] = tdelta.total_seconds()
 
-    # Skip loading fault_params.yaml, as it is yet to exist
+    # Skip loading sim_params/fault_params/vm_params, as there are yet to exist
     if args.proc_type in [
         const.ProcessType.SRF_GEN.str_value,
         const.ProcessType.INSTALL_REALISATION.str_value,
@@ -215,15 +215,11 @@ def main(args):
         const.ProcessType.VM_PERT.str_value,
         const.ProcessType.NO_VM_PERT.str_value,
     ]:
-        load_fault = False
-    else:
-        load_fault = True
-
+        return
     # Load the params
     params = utils.load_sim_params(
         os.path.join(args.sim_dir, "sim_params.yaml"),
         load_vm=True,
-        load_fault=load_fault,
     )
 
     if "dt" in params["bb"]:
