@@ -132,12 +132,12 @@ def confine_wct_node_parameters(
             f"Job parameters total ch ({core_count * run_time}) below minimum core-hour bounds ({max_core_hours}). "
             f"Reducing wall clock time to fit."
         )
-        run_time = min(ch / core_count, max_wct)
         if not preserve_core_count:
             core_count = min(
                 scale_cc(ch, max_wct),
                 max_core_count,
             )
+        run_time = min(ch / core_count, max_wct)
 
     if run_time < min_wct:
         run_time = min_wct
