@@ -10,7 +10,6 @@ Where each of "process name" and "SQL" are repeatable if there are multiple thin
 No database state can be repeated
 """
 import argparse
-from collections import dict_items
 from pathlib import Path
 from typing import Dict, Union, List
 
@@ -47,12 +46,12 @@ def main():
         )
 
     config = {
-        state: shared_automated_workflow.parse_config_file(tree)
+        constants.Status.from_str(state): shared_automated_workflow.parse_config_file(tree)
         for state, tree in config.items()
     }
 
     db = MgmtDB.MgmtDB(simulation_structure.get_mgmt_db(cs_root))
-    with MgmtDB.connect_db_ctx(db.db_file) as db_cur:
+    with MgmtDB.connect_db_ctx(db.db_file, verbose=True) as db_cur:
         db_cur.execute("BEGIN")
         for state, (
             apply_to_all,
@@ -64,8 +63,8 @@ def main():
                     f"UPDATE state SET {db.col_status} = ?, last_modified = strftime('%s','now') "
                     f"WHERE proc_type IN ({', '.join('?'*len(apply_to_all))})",
                     (
-                        state,
-                        *[x.str_value for x in apply_to_all],
+                        state.value,
+                        *[x.value for x in apply_to_all],
                     ),
                 )
             if len(apply_to_pattern) > 0:
@@ -74,9 +73,9 @@ def main():
                         f"UPDATE state SET {db.col_status} = ?, last_modified = strftime('%s','now') "
                         f"WHERE run_name LIKE ? AND proc_type IN ({', '.join('?'*len(task_set))})",
                         (
-                            state,
+                            state.value,
                             pattern,
-                            *[x.str_value for x in task_set],
+                            *[x.value for x in task_set],
                         ),
                     )
             if len(apply_to_not_pattern) > 0:
@@ -85,13 +84,11 @@ def main():
                         f"UPDATE state SET {db.col_status} = ?, last_modified = strftime('%s','now') "
                         f"WHERE run_name NOT LIKE ? AND proc_type IN ({', '.join('?'*len(task_set))})",
                         (
-                            state,
+                            state.value,
                             pattern,
-                            *[x.str_value for x in task_set],
+                            *[x.value for x in task_set],
                         ),
                     )
-        db_cur.commit()
-
 
 if __name__ == "__main__":
     main()
