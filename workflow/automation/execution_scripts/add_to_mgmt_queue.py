@@ -106,7 +106,7 @@ if __name__ == "__main__":
     )
 
 
-    logger= qclogging.get_basic_logger(args.stdout)
+    logger= qclogging.get_logger(f"{args.run_name}.{args.proc_type}", stdout_printer=True)
 
     add_to_queue(
         args.queue_folder,
