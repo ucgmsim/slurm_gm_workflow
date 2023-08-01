@@ -301,16 +301,7 @@ def queue_monitor_loop(
                 )
                 entry_files.remove(file_name)
             else:
-                if str(entry.job_id) in queued_tasks.keys() and entry.status > 3:
-                    # This will prevent race conditions if the failure/completion state file is made and picked up before the job actually finishes
-                    # Most notabley happens on Kisti
-                    # The queued and running states are allowed
-                    queue_logger.debug(
-                        "Job {} is still running on the HPC, skipping this iteration".format(
-                            entry
-                        )
-                    )
-                    entry_files.remove(file_name)
+
                 else:
                     queue_logger.debug("Adding {} to the list of updates".format(entry))
                     entries.insert(0, entry)
