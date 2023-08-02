@@ -86,12 +86,6 @@ if __name__ == "__main__":
         default=None,
     )
 
-    parser.add_argument(
-        "--stdout",
-        action="store_true",
-        help="Logger output all to stdout",
-    )
-
     args = parser.parse_args()
     wct = (
         int(
