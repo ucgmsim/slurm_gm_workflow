@@ -29,6 +29,7 @@ def confine_wct_node_parameters(
     run_time: float,
     max_wct: float = float(MAX_JOB_WCT),
     min_wct: float = (const.CHECKPOINT_DURATION * 3) / 60.0,
+    min_core_count: int = PHYSICAL_NCORES_PER_NODE,
     max_core_count: int = MAX_NODES_PER_JOB * PHYSICAL_NCORES_PER_NODE,
     max_core_hours: int = MAX_CH_PER_JOB,
     cores_per_node: int = PHYSICAL_NCORES_PER_NODE,
@@ -54,6 +55,8 @@ def confine_wct_node_parameters(
     :param max_wct: The maximum wall clock time available for the current queue
     :param min_wct: The minimum wall clock time for a given job. Based on desired frequency of checkpointing, even if
     the job does not support checkpointing.
+    :param min_core_count: The minimum core count possible for the current queue or job.
+    (Can be set higher for when you need certain memory requirements)
     :param max_core_count: The maximum core count possible for the current queue or job. Set to
     PHYSICAL_NCORES_PER_NODE to only use one node
     :param max_core_hours: The maximum core hours possible for a single job in the current queue
@@ -117,7 +120,7 @@ def confine_wct_node_parameters(
         )
         if not preserve_core_count:
             core_count = min(
-                scale_cc(ch, max_wct),
+                max(min_core_count, scale_cc(ch, max_wct)),
                 max_core_count,
             )
         run_time = min(ch / core_count, max_wct)
@@ -134,7 +137,7 @@ def confine_wct_node_parameters(
         )
         if not preserve_core_count:
             core_count = min(
-                scale_cc(ch, max_wct),
+                max(min_core_count, scale_cc(ch, max_wct)),
                 max_core_count,
             )
         run_time = min(ch / core_count, max_wct)
@@ -151,6 +154,25 @@ def confine_wct_node_parameters(
 def convert_to_wct(run_time):
     """Converts the run time (in hours) to a wall clock string"""
     return "{0:02.0f}:{1:02.0f}:00".format(*divmod(run_time * 60, 60))
+
+
+def est_min_ncores_LF(data: np.ndarray):
+    """
+    Estimate the minimum number of cores required to run based on memory requirements per grid point
+    :param data: The data to use to estimate the number of cores required
+    :return: The estimated number of cores required
+    """
+    mem_cap_per_core = 1.5  # In Gb
+    mem_per_gp = 20 * 4 / 1e9  # In Gb
+    n_grid_points = data[:, 0] * data[:, 1] * data[:, 2]
+
+    # Estimate the number of cores required for memory
+    n_cores = np.ceil(mem_per_gp * n_grid_points / mem_cap_per_core)
+
+    # Ensure we scale up to fill a full node
+    n_cores = np.ceil(n_cores / PHYSICAL_NCORES_PER_NODE) * PHYSICAL_NCORES_PER_NODE
+
+    return n_cores
 
 
 def est_LF_chours_single(
@@ -264,7 +286,9 @@ def estimate_LF_chours(
         wct > (node_time_th_factor * data[:, -1] / PHYSICAL_NCORES_PER_NODE)
     ):
         # Want to scale, and at least one job exceeds the allowable time for the given number of cores
-        return scale_core_hours(core_hours, data, node_time_th_factor)
+        ch, _, _ = scale_core_hours(core_hours, data, node_time_th_factor)
+        est_ncores = est_min_ncores_LF(data)
+        return ch, ch / est_ncores, est_ncores
     else:
         return core_hours, core_hours / data[:, -1], (data[:, -1])
 
