@@ -166,6 +166,7 @@ def get_lf_cores_and_wct(
     ncores, wct = estimate_wct.confine_wct_node_parameters(
         est_cores,
         est_run_time_scaled,
+        min_core_count=est_cores,
         preserve_core_count=(retries is not None and int(retries) > 0),
         hyperthreaded=const.ProcessType.EMOD3D.is_hyperth,
         can_checkpoint=True,  # hard coded for now as this is not available programatically
