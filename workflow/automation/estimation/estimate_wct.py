@@ -18,8 +18,10 @@ from qcore.qclogging import get_basic_logger
 MAX_JOB_WCT = config.qconfig[config.ConfigKeys.MAX_JOB_WCT.name]
 MAX_NODES_PER_JOB = config.qconfig[config.ConfigKeys.MAX_NODES_PER_JOB.name]
 PHYSICAL_NCORES_PER_NODE = config.qconfig[config.ConfigKeys.cores_per_node.name]
+MEMORY_PER_NODE = config.qconfig[config.ConfigKeys.memory_per_node.name]  # In Gb
 MAX_CH_PER_JOB = config.qconfig[config.ConfigKeys.MAX_CH_PER_JOB.name]
 
+MEMORY_PER_GRID_POINT = 150 / 1e9  # In Gb
 CH_SAFETY_FACTOR = 1.5
 ERROR_MSG_SHAPE_MISMATCH = "Invalid input data, has to be {required_column_count} columns. One for each feature."
 
@@ -162,12 +164,10 @@ def est_min_ncores_LF(data: np.ndarray):
     :param data: The data to use to estimate the number of cores required
     :return: The estimated number of cores required
     """
-    mem_cap_per_core = 1.5  # In Gb
-    mem_per_gp = 20 * 4 / 1e9  # In Gb
     n_grid_points = data[:, 0] * data[:, 1] * data[:, 2]
 
     # Estimate the number of cores required for memory
-    n_cores = np.ceil(mem_per_gp * n_grid_points / mem_cap_per_core)
+    n_cores = np.ceil(MEMORY_PER_GRID_POINT * n_grid_points / MEMORY_PER_NODE)
 
     # Ensure we scale up to fill a full node
     n_cores = np.ceil(n_cores / PHYSICAL_NCORES_PER_NODE) * PHYSICAL_NCORES_PER_NODE
