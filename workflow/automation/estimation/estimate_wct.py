@@ -18,7 +18,7 @@ from qcore.qclogging import get_basic_logger
 MAX_JOB_WCT = config.qconfig[config.ConfigKeys.MAX_JOB_WCT.name]
 MAX_NODES_PER_JOB = config.qconfig[config.ConfigKeys.MAX_NODES_PER_JOB.name]
 PHYSICAL_NCORES_PER_NODE = config.qconfig[config.ConfigKeys.cores_per_node.name]
-MEMORY_PER_NODE = config.qconfig[config.ConfigKeys.memory_per_node.name]  # In Gb
+MEMORY_PER_CORE = config.qconfig[config.ConfigKeys.memory_per_core.name]  # In Gb
 MAX_CH_PER_JOB = config.qconfig[config.ConfigKeys.MAX_CH_PER_JOB.name]
 
 MEMORY_PER_GRID_POINT = 150 / 1e9  # In Gb
@@ -167,7 +167,7 @@ def est_min_ncores_LF(data: np.ndarray):
     n_grid_points = data[:, 0] * data[:, 1] * data[:, 2]
 
     # Estimate the number of cores required for memory
-    n_cores = np.ceil(MEMORY_PER_GRID_POINT * n_grid_points / MEMORY_PER_NODE)
+    n_cores = np.ceil(MEMORY_PER_GRID_POINT * n_grid_points / MEMORY_PER_CORE)
 
     # Ensure we scale up to fill a full node
     n_cores = np.ceil(n_cores / PHYSICAL_NCORES_PER_NODE) * PHYSICAL_NCORES_PER_NODE
