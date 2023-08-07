@@ -102,7 +102,7 @@ if __name__ == "__main__":
 
     logger= qclogging.get_logger(f"{args.run_name}.{args.proc_type}", stdout_printer=True)
 
-    msg= add_to_queue(
+    msg = add_to_queue(
         args.queue_folder,
         args.run_name,
         const.ProcessType.from_str(args.proc_type).value,
@@ -118,9 +118,4 @@ if __name__ == "__main__":
         logger=logger,
     )
 
-    from pathlib import Path
-    print(Path.cwd())
     print(msg)
-    with open(Path.cwd()/f"{args.run_name}.{args.proc_type}-{args.job_id}.log") as f:
-        f.write(msg)
-
