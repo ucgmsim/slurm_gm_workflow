@@ -1,4 +1,5 @@
 #
+SUCCESS_CODE=0
 
 #updating the stats in managementDB
 if [[ ! -d {{mgmt_db_location}}/mgmt_db_queue ]]; then
@@ -19,7 +20,8 @@ echo $end_time
 timestamp=`date +%Y%m%d_%H%M%S`
 #test before update
 res=`$gmsim/workflow/workflow/calculation/verification/{{test_hf_script}} {{sim_dir}} `
-if [[ $? == 0 ]]; then
+success=$?
+if [[ $success == $SUCCESS_CODE ]]; then
     #passed
     python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py {{mgmt_db_location}}/mgmt_db_queue {{srf_name}} HF completed $SLURM_JOB_ID --end_time "$end_time"
 
