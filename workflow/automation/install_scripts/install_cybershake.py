@@ -145,7 +145,7 @@ def main():
 
     root_params = generate_root_params(
         args.version,
-        args.stat_file_path,
+        Path(args.stat_file_path).resolve(),
         cybershake_root,
         seed=args.seed,
         logger=logger,
