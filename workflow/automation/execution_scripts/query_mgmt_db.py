@@ -147,7 +147,7 @@ def get_all_entries(db, run_name, query_mode):
 def get_all_entries_from_config(config_file, db, query_mode):
     extra_query = ""
     if query_mode.todo:
-        extra_query = """AND status_enum.state = 'created'"""
+        extra_query = """AND status_enum.state != 'completed'"""
     elif query_mode.retry_max:
         extra_query = RETRY_MAX_FILTER
     tasks_n, tasks_to_match, tasks_to_not_match = parse_config_file(config_file)
