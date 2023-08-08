@@ -125,7 +125,7 @@ def print_run_status(db, run_name, query_mode: QueryModes, config_file=None):
 def get_all_entries(db, run_name, query_mode):
     extra_query = ""
     if query_mode.todo:
-        extra_query = """AND status_enum.state = 'created'"""
+        extra_query = """AND status_enum.state != 'completed'"""
     elif query_mode.retry_max:
         extra_query = RETRY_MAX_FILTER
 
