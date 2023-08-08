@@ -1,7 +1,7 @@
 #!/bin/bash
 # script version: slurm
 #
-# must be run with sbatch install_fault.sl [VM_PARAMS] [STAT_FILE] [FAULT_DIR] [FDSTATLIST] [MGMT_DB_LOC] [REL_NAME]
+# must be run with sbatch install_fault.sl [FAULT] [SIMULATION_ROOT] [FDSTATLIST]
 
 #SBATCH --job-name=install_fault
 #SBATCH --time=00:15:00
