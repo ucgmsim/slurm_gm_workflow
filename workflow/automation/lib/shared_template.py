@@ -7,7 +7,7 @@ import qcore.constants as const
 from qcore.utils import load_sim_params
 from workflow.automation.lib.schedulers.scheduler_factory import Scheduler
 from workflow.automation.platform_config import platform_config
-
+from qcore import config
 
 def write_sl_script(
     write_directory,
@@ -133,6 +133,9 @@ def resolve_header(
         template_path = platform_config[const.PLATFORM_CONFIG.HEADER_FILE.name]
 
     j2_env = Environment(loader=FileSystemLoader(template_dir), trim_blocks=True)
+
+    wallclock_limit = min(wallclock_limit, str(config.qconfig[config.ConfigKeys.MAX_JOB_WCT.name]))
+
     header = j2_env.get_template(template_path).render(
         version=version,
         job_description=job_description,
