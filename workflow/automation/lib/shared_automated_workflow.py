@@ -71,12 +71,13 @@ def add_to_queue(
     wct: int = None,
     logger: Logger = qclogging.get_basic_logger(),
 ):
+    ret_msg = ""
     """Adds an update entry to the queue"""
-    logger.debug(
-        "Adding task to the queue. Realisation: {}, process type: {}, status: {}, job_id: {}, error: {}".format(
-            run_name, proc_type, status, job_id, error
-        )
-    )
+    msg = "Adding task to the queue. Realisation: {}, process type: {}, status: {}, job_id: {}, error: {}".format(
+        run_name, proc_type, status, job_id, error)
+    ret_msg += msg
+    logger.debug(msg)
+
     filename = os.path.join(
         queue_folder,
         "{}.{}.{}".format(
@@ -85,19 +86,16 @@ def add_to_queue(
     )
 
     if os.path.exists(filename):
+        msg = "An update with the name {} already exists. This should never happen. Quitting!".format(
+            os.path.basename(filename))
+        ret_msg += msg
         logger.log(
-            qclogging.NOPRINTCRITICAL,
-            "An update with the name {} already exists. This should never happen. Quitting!".format(
-                os.path.basename(filename)
-            ),
-        )
-        raise Exception(
-            "An update with the name {} already exists. This should never happen. Quitting!".format(
-                os.path.basename(filename)
-            )
-        )
+            qclogging.NOPRINTCRITICAL,msg)
+        raise Exception(msg)
 
-    logger.debug("Writing update file to {}".format(filename))
+    msg = "Writing update file to {}".format(filename)
+    ret_msg += msg
+    logger.debug(msg)
 
     with open(filename, "w") as f:
         json.dump(
@@ -119,10 +117,14 @@ def add_to_queue(
         )
 
     if not os.path.isfile(filename):
-        logger.critical("File {} did not successfully write".format(filename))
+        msg = "File {} did not successfully write".format(filename)
+        logger.critical(msg)
     else:
-        logger.debug("Successfully wrote task update file")
+        msg = "Successfully wrote task update file"
+        logger.debug(msg)
+    ret_msg += msg
 
+    return ret_msg
 
 def check_mgmt_queue(
     queue_entries: List[str],

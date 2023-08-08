@@ -97,7 +97,8 @@ if __name__ == "__main__":
         if args.wct is not None
         else None
     )
-    add_to_queue(
+    # When this script is executed, it can't utilize the add_to_queue()'s logger
+    msg = add_to_queue(
         args.queue_folder,
         args.run_name,
         const.ProcessType.from_str(args.proc_type).value,
@@ -111,3 +112,4 @@ if __name__ == "__main__":
         memory=args.memory,
         wct=wct,
     )
+    print(msg)
