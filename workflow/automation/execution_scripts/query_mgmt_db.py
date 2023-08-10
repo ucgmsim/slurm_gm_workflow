@@ -198,7 +198,7 @@ def get_all_entries_from_config(config_file, db, query_mode):
         status.extend(
             db.execute(
                 base_command.format(
-                    "AND s.run_name NOT LIKE ?", ",?" * (len(tasks) - 1)
+                    "s.run_name NOT LIKE ?", ",?" * (len(tasks) - 1)
                 ),
                 (pattern, *tasks),
             ).fetchall()
