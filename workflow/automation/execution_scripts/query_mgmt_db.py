@@ -128,8 +128,8 @@ def get_all_entries(db, run_name, query_mode):
         extra_query = """AND NOT EXISTS (
         SELECT 1 FROM state s_inner
         WHERE s_inner.run_name = state.run_name AND s_inner.proc_type = state.proc_type AND s_inner.status = 5)
-        AND (s.job_id, s.last_modified) IN (
-        SELECT MAX(job_id), MAX(last_modified) FROM state WHERE run_name = s.run_name AND proc_type = s.proc_type
+        AND s.last_modified IN (
+        SELECT MAX(last_modified) FROM state WHERE run_name = s.run_name AND proc_type = s.proc_type
         )
         """
     elif query_mode.retry_max:
@@ -157,8 +157,8 @@ def get_all_entries_from_config(config_file, db, query_mode):
         extra_query = """AND NOT EXISTS (
         SELECT 1 FROM state s_inner
         WHERE s_inner.run_name = s.run_name AND s_inner.proc_type = s.proc_type AND s_inner.status = 5)
-        AND (s.job_id, s.last_modified) IN (
-        SELECT MAX(job_id), MAX(last_modified) FROM state WHERE run_name = s.run_name AND proc_type = s.proc_type
+        AND s.last_modified IN (
+        SELECT MAX(last_modified) FROM state WHERE run_name = s.run_name AND proc_type = s.proc_type
         )
         """
     elif query_mode.retry_max:
