@@ -127,7 +127,7 @@ def get_all_entries(db, run_name, query_mode):
     if query_mode.todo:
         extra_query = """AND NOT EXISTS (
         SELECT 1 FROM state s_inner
-        WHERE s_inner.run_name = state.run_name AND s_inner.proc_type = state.proc_type AND s_inner.status = 5)
+        WHERE s_inner.run_name = s.run_name AND s_inner.proc_type = s.proc_type AND s_inner.status = 5)
         AND s.last_modified IN (
         SELECT MAX(last_modified) FROM state WHERE run_name = s.run_name AND proc_type = s.proc_type
         )
@@ -171,15 +171,15 @@ def get_all_entries_from_config(config_file, db, query_mode):
                         JOIN status_enum se ON s.status = se.id
                         JOIN proc_type_enum pe ON s.proc_type = pe.id
                         WHERE
+                        s.proc_type IN (?{{}})
                         {{}}
-                        AND s.proc_type IN (?{{}})
                         {extra_query}
                         ORDER BY s.run_name, pe.proc_type, se.state"""
 
     if len(tasks_n) > 0:
         status.extend(
             db.execute(
-                base_command.format("", ",?" * (len(tasks_n) - 1)),
+                base_command.format(",?" * (len(tasks_n) - 1),""),
                 [i.value for i in tasks_n],
             ).fetchall()
         )
@@ -187,16 +187,16 @@ def get_all_entries_from_config(config_file, db, query_mode):
         tasks = [i.value for i in tasks]
         status.extend(
             db.execute(
-                base_command.format("s.run_name LIKE ?", ",?" * (len(tasks) - 1)),
-                (pattern, *tasks),
+                base_command.format(",?" * (len(tasks) - 1),"AND s.run_name LIKE ?"),
+                (*tasks, pattern),
             ).fetchall()
         )
     for pattern, tasks in tasks_to_not_match:
         tasks = [i.value for i in tasks]
         status.extend(
             db.execute(
-                base_command.format("s.run_name NOT LIKE ?", ",?" * (len(tasks) - 1)),
-                (pattern, *tasks),
+                base_command.format(",?" * (len(tasks) - 1),"AND s.run_name NOT LIKE ?"),
+                (*tasks, pattern),
             ).fetchall()
         )
     return status
