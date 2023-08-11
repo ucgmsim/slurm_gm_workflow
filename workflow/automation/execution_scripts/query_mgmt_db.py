@@ -17,8 +17,8 @@ RETRY_MAX_FILTER = """AND (SELECT count(*)
                     FROM state as state2, status_enum as status_enum2 
                     WHERE state2.status = status_enum2.id 
                     AND status_enum2.state <> 'failed' 
-                    AND state2.run_name = state.run_name 
-                    AND state.proc_type = state2.proc_type)
+                    AND state2.run_name = s.run_name
+                    AND s.proc_type = state2.proc_type)
                  = 0"""
 
 
@@ -125,19 +125,26 @@ def print_run_status(db, run_name, query_mode: QueryModes, config_file=None):
 def get_all_entries(db, run_name, query_mode):
     extra_query = ""
     if query_mode.todo:
-        extra_query = """AND status_enum.state != 'completed'"""
+        extra_query = """AND NOT EXISTS (
+        SELECT 1 FROM state s_inner
+        WHERE s_inner.run_name = state.run_name AND s_inner.proc_type = state.proc_type AND s_inner.status = 5)
+        AND s.last_modified IN (
+        SELECT MAX(last_modified) FROM state WHERE run_name = s.run_name AND proc_type = s.proc_type
+        )
+        """
     elif query_mode.retry_max:
         extra_query = RETRY_MAX_FILTER
+    base_command = f"""SELECT s.run_name, pe.proc_type, se.state, s.job_id, datetime(last_modified,'unixepoch') lm_time
+                        FROM state s
+                        JOIN status_enum se ON s.status = se.id
+                        JOIN proc_type_enum pe ON s.proc_type = pe.id
+                        WHERE
+                        UPPER(s.run_name) LIKE UPPER(?)
+                        {extra_query}
+                        ORDER BY s.run_name, pe.proc_type, se.state"""
 
     db.execute(
-        f"""SELECT state.run_name, proc_type_enum.proc_type, status_enum.state, state.job_id, datetime(last_modified,'unixepoch')
-                FROM state, status_enum, proc_type_enum
-                WHERE state.proc_type = proc_type_enum.id 
-                AND state.status = status_enum.id
-                AND UPPER(state.run_name) LIKE UPPER(?)
-                {extra_query}
-                ORDER BY state.run_name, status_enum.id
-                """,
+        base_command,
         (run_name,),
     )
     status = db.fetchall()
@@ -147,20 +154,27 @@ def get_all_entries(db, run_name, query_mode):
 def get_all_entries_from_config(config_file, db, query_mode):
     extra_query = ""
     if query_mode.todo:
-        extra_query = """AND status_enum.state = 'created'"""
+        extra_query = """AND NOT EXISTS (
+        SELECT 1 FROM state s_inner
+        WHERE s_inner.run_name = s.run_name AND s_inner.proc_type = s.proc_type AND s_inner.status = 5)
+        AND s.last_modified IN (
+        SELECT MAX(last_modified) FROM state WHERE run_name = s.run_name AND proc_type = s.proc_type
+        )
+        """
     elif query_mode.retry_max:
         extra_query = RETRY_MAX_FILTER
     tasks_n, tasks_to_match, tasks_to_not_match = parse_config_file(config_file)
     status = []
 
-    base_command = f""" SELECT state.run_name, proc_type_enum.proc_type, status_enum.state, state.job_id, datetime(last_modified,'unixepoch')
-                        FROM state, status_enum, proc_type_enum
-                        WHERE state.proc_type = proc_type_enum.id 
-                        AND state.status = status_enum.id
+    base_command = f""" SELECT s.run_name, pe.proc_type, se.state, s.job_id, datetime(last_modified,'unixepoch') lm_time
+                        FROM state s
+                        JOIN status_enum se ON s.status = se.id
+                        JOIN proc_type_enum pe ON s.proc_type = pe.id
+                        WHERE
                         {{}}
-                        AND state.proc_type IN (?{{}})
+                        AND s.proc_type IN (?{{}})
                         {extra_query}
-                        ORDER BY state.run_name, status_enum.id"""
+                        ORDER BY s.run_name, pe.proc_type, se.state"""
 
     if len(tasks_n) > 0:
         status.extend(
@@ -173,9 +187,7 @@ def get_all_entries_from_config(config_file, db, query_mode):
         tasks = [i.value for i in tasks]
         status.extend(
             db.execute(
-                base_command.format(
-                    "AND state.run_name LIKE ?", ",?" * (len(tasks) - 1)
-                ),
+                base_command.format("s.run_name LIKE ?", ",?" * (len(tasks) - 1)),
                 (pattern, *tasks),
             ).fetchall()
         )
@@ -183,9 +195,7 @@ def get_all_entries_from_config(config_file, db, query_mode):
         tasks = [i.value for i in tasks]
         status.extend(
             db.execute(
-                base_command.format(
-                    "AND state.run_name NOT LIKE ?", ",?" * (len(tasks) - 1)
-                ),
+                base_command.format("s.run_name NOT LIKE ?", ",?" * (len(tasks) - 1)),
                 (pattern, *tasks),
             ).fetchall()
         )
@@ -311,16 +321,16 @@ def show_all_error_entries(db, run_name, max_retries=False):
     if max_retries:
         extra_query = RETRY_MAX_FILTER
     db.execute(
-        """SELECT state.run_name, proc_type_enum.proc_type, status_enum.state, state.job_id, datetime(last_modified,'unixepoch'), error.error
-            FROM state, status_enum, proc_type_enum, error
-            WHERE state.proc_type = proc_type_enum.id 
-            AND state.status = status_enum.id
-            AND UPPER(state.run_name) LIKE UPPER(?) 
-            AND error.task_id = state.id
+        """SELECT s.run_name, pe.proc_type, se.state, s.job_id, datetime(last_modified,'unixepoch') lm_time, e.error
+            FROM state s
+            JOIN status_enum se ON s.status = se.id
+            JOIN proc_type_enum pe ON s.proc_type = pe.id
+            JOIN error e ON s.id = e.task_id
+            WHERE UPPER(s.run_name) LIKE UPPER(?) 
             """
         + extra_query
         + """
-            ORDER BY state.run_name, status_enum.id
+            ORDER BY s.run_name, se.id
         """,
         (run_name,),
     )
@@ -363,7 +373,7 @@ def print_mode_help():
               Filters the tasks that have reached the retry count
               Cannot be used with count / todo
           Todo:
-              Filters the tasks that are in the created state
+              Prints out all the non-complete tasks - only shows the latest status
               Cannot be used with retry max
              """
     )

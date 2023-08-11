@@ -96,6 +96,7 @@ MAX_JOB_WCT = qconfig[config.ConfigKeys.MAX_JOB_WCT.name]
 MAX_NODES_PER_JOB = qconfig[config.ConfigKeys.MAX_NODES_PER_JOB.name]
 PHYSICAL_NCORES_PER_NODE = qconfig[config.ConfigKeys.cores_per_node.name]
 MAX_CH_PER_JOB = qconfig[config.ConfigKeys.MAX_CH_PER_JOB.name]
+CH_SAFTEY_FACTOR = 1.5
 
 
 @pytest.mark.parametrize(
@@ -104,12 +105,12 @@ MAX_CH_PER_JOB = qconfig[config.ConfigKeys.MAX_CH_PER_JOB.name]
         (
             (PHYSICAL_NCORES_PER_NODE * 2, MAX_JOB_WCT / 2),
             PHYSICAL_NCORES_PER_NODE * 2,
-            MAX_JOB_WCT / 2,
+            MAX_JOB_WCT / (2 / CH_SAFTEY_FACTOR),
         ),
         (
             (PHYSICAL_NCORES_PER_NODE, MAX_JOB_WCT + 1),
             PHYSICAL_NCORES_PER_NODE * 2,
-            (MAX_JOB_WCT + 1) / 2,
+            (MAX_JOB_WCT + 1) / (2 / CH_SAFTEY_FACTOR),
         ),
         (
             (PHYSICAL_NCORES_PER_NODE * MAX_NODES_PER_JOB * 2, MAX_JOB_WCT / 2),
@@ -140,7 +141,7 @@ def test_confine_wct_node_parameters(in_params, out_count, out_time):
         cores_per_node=PHYSICAL_NCORES_PER_NODE,
         hyperthreaded=False,
         can_checkpoint=True,
-        ch_safety_factor=1.0,
+        ch_safety_factor=CH_SAFTEY_FACTOR,
     )
 
     assert np.isclose(test_count, out_count)
