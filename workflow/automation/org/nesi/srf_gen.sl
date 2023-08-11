@@ -1,7 +1,7 @@
 #!/bin/bash
 # script version: slurm
 #
-# must be run with sbatch vm_gen.sl [REL_CSV] [MGMT_DB_LOC] [REL_NAME]
+# must be run with sbatch srf_gen.sl [REL_CSV] [MGMT_DB_LOC] [REL_NAME]
 
 #SBATCH --job-name=SRF_GEN
 #SBATCH --time=01:00:00
