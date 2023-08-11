@@ -187,9 +187,7 @@ def get_all_entries_from_config(config_file, db, query_mode):
         tasks = [i.value for i in tasks]
         status.extend(
             db.execute(
-                base_command.format(
-                    "s.run_name LIKE ?", ",?" * (len(tasks) - 1)
-                ),
+                base_command.format("s.run_name LIKE ?", ",?" * (len(tasks) - 1)),
                 (pattern, *tasks),
             ).fetchall()
         )
@@ -197,9 +195,7 @@ def get_all_entries_from_config(config_file, db, query_mode):
         tasks = [i.value for i in tasks]
         status.extend(
             db.execute(
-                base_command.format(
-                    "s.run_name NOT LIKE ?", ",?" * (len(tasks) - 1)
-                ),
+                base_command.format("s.run_name NOT LIKE ?", ",?" * (len(tasks) - 1)),
                 (pattern, *tasks),
             ).fetchall()
         )
