@@ -617,7 +617,7 @@ def est_IM_chours(
         )
 
     if config is not None and hasattr(config, "host") and config.host == "nurion":
-        core_hours *= 7.5
+        core_hours *= 15
 
     wct = core_hours / n_cores
     if scale_ncores and np.any(
