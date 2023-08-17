@@ -9,7 +9,7 @@
 #PBS -q normal
 #PBS -A inhouse
 #PBS -l select=1:ncpus=64:ompthreads=64
-#PBS -l walltime=03:00:00
+#PBS -l walltime=24:00:00
 #PBS -W sandbox=PRIVATE
 export SLURM_JOB_ID="${PBS_JOBID/.pbs/}"
 export SLURM_CPUS_PER_TASK=$(qstat $SLURM_JOB_ID -f | grep "used.ncpus" | cut -d"=" -f2 | bc)

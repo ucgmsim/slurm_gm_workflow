@@ -14,6 +14,8 @@ import shutil
 import sys
 from datetime import datetime
 from logging import Logger, DEBUG, INFO
+from pathlib import Path
+import shutil
 
 from qcore.qclogging import get_basic_logger
 
@@ -25,6 +27,7 @@ def dict_to_e3d_par(pyfile, vardict):
                 fp.write('%s="%s"\n' % (key, value))
             else:
                 fp.write("%s=%s\n" % (key, value))
+    
 
 
 def verify_strings(string_list):
