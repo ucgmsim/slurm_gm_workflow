@@ -1,7 +1,7 @@
 #!/bin/bash
 # script version: pbs
 #
-# must be run with qsub -v VM_PARAMS_YAML=A,STAT_FILE=B,FAULT_DIR=C,FDSTATLIST=D,MGMT_DB_LOC=E,REL_NAME=F -V install_fault.pbs
+# must be run with qsub -v FAULT=A,MGMT_DB_LOC=B,FDSTATLIST=C -V install_fault.pbs
 
 #PBS -N install_fault
 #PBS -V
@@ -15,11 +15,9 @@ export SLURM_JOB_ID="${PBS_JOBID/.pbs/}"
 export SLURM_CPUS_PER_TASK=$(qstat $SLURM_JOB_ID -f | grep "used.ncpus" | cut -d"=" -f2 | bc)
 export SLURM_NNODES=$(qstat $SLURM_JOB_ID -f | grep "List.nodect" | cut -d"=" -f2 | bc)
 
-
-FAULT=$(echo $REL_NAME | cut -d"_" -f1)
-SIM_DIR=$MGMT_DB_LOC/Runs/$FAULT/$REL_NAME
+FAULT=$(echo $FAULT | cut -d"_" -f1)
+SIM_DIR=$MGMT_DB_LOC/Runs/$FAULT/$FAULT
 CH_LOG_FFP=$SIM_DIR/ch_log
-
 
 if [[ ! -d $FAULT_DIR ]]; then
     mkdir -p $FAULT_DIR
@@ -35,9 +33,9 @@ runtime_fmt="%Y-%m-%d_%H:%M:%S"
 start_time=`date +$runtime_fmt`
 echo $start_time
 
-python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $REL_NAME INSTALL_FAULT running $SLURM_JOB_ID --start_time "$start_time" --nodes $SLURM_NNODES --cores $SLURM_CPUS_PER_TASK --wct 00:30:00
+python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $FAULT INSTALL_FAULT running $SLURM_JOB_ID --start_time "$start_time" --nodes $SLURM_NNODES --cores $SLURM_CPUS_PER_TASK --wct 00:30:00
 
-CMD="python $gmsim/workflow/workflow/automation/install_scripts/install_fault.py $MGMT_DB_LOC $REL_NAME"
+CMD="python $gmsim/workflow/workflow/automation/install_scripts/install_fault.py $MGMT_DB_LOC $FAULT"
 echo "${CMD}"
 $CMD
 
@@ -50,7 +48,7 @@ timestamp=`date +%Y%m%d_%H%M%S`
 if [[ -f $FDSTATLIST ]]; then
     #passed
 
-    python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $REL_NAME INSTALL_FAULT completed $SLURM_JOB_ID --end_time "$end_time"
+    python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $FAULT INSTALL_FAULT completed $SLURM_JOB_ID --end_time "$end_time"
 
     if [[ ! -d $CH_LOG_FFP ]]; then
         mkdir $CH_LOG_FFP
@@ -61,5 +59,5 @@ if [[ -f $FDSTATLIST ]]; then
 else
     #reformat $res to remove '\n'
     res=`echo $res | tr -d '\n'`
-    python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $REL_NAME INSTALL_FAULT failed $SLURM_JOB_ID --error "$res" --end_time "$end_time"
+    python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $FAULT INSTALL_FAULT failed $SLURM_JOB_ID --error "$res" --end_time "$end_time"
 fi

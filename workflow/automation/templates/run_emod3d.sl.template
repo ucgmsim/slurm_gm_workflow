@@ -24,7 +24,7 @@ echo $end_time
 
 #run test script and update mgmt_db
 #test before update
-ln -s {{sim_dir}}/LF/e3d.par {{sim_dir}}/LF/OutBin/e3d.par
+ln -sf {{sim_dir}}/LF/e3d.par {{sim_dir}}/LF/OutBin/e3d.par
 timestamp=`date +%Y%m%d_%H%M%S`
 res=`$gmsim/workflow/workflow/calculation/verification/test_emod3d.sh {{sim_dir}} {{srf_name}}`
 success=$?
