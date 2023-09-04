@@ -144,7 +144,8 @@ def get_all_entries(db, run_name, query_mode):
                         ORDER BY s.run_name, pe.proc_type, se.state"""
 
     db.execute(
-        base_command, (run_name,),
+        base_command,
+        (run_name,),
     )
     status = db.fetchall()
     return status
