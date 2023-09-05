@@ -74,7 +74,8 @@ def add_to_queue(
     ret_msg = ""
     """Adds an update entry to the queue"""
     msg = "Adding task to the queue. Realisation: {}, process type: {}, status: {}, job_id: {}, error: {}".format(
-        run_name, proc_type, status, job_id, error)
+        run_name, proc_type, status, job_id, error
+    )
     ret_msg += msg
     logger.debug(msg)
 
@@ -87,10 +88,10 @@ def add_to_queue(
 
     if os.path.exists(filename):
         msg = "An update with the name {} already exists. This should never happen. Quitting!".format(
-            os.path.basename(filename))
+            os.path.basename(filename)
+        )
         ret_msg += msg
-        logger.log(
-            qclogging.NOPRINTCRITICAL,msg)
+        logger.log(qclogging.NOPRINTCRITICAL,msg)
         raise Exception(msg)
 
     msg = "Writing update file to {}".format(filename)
@@ -125,6 +126,7 @@ def add_to_queue(
     ret_msg += msg
 
     return ret_msg
+
 
 def check_mgmt_queue(
     queue_entries: List[str],
