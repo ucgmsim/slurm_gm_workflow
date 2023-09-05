@@ -91,7 +91,7 @@ def add_to_queue(
             os.path.basename(filename)
         )
         ret_msg += msg
-        logger.log(qclogging.NOPRINTCRITICAL,msg)
+        logger.log(qclogging.NOPRINTCRITICAL, msg)
         raise Exception(msg)
 
     msg = "Writing update file to {}".format(filename)
