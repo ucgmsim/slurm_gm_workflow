@@ -126,7 +126,7 @@ def main():
 
     fault_selection = formats.load_fault_selection_file(args.fault_selection_list)
 
-    cybershake_root = args.cybershake_root
+    cybershake_root = Path(args.cybershake_root).resolve()
     runs_dir = simulation_structure.get_runs_dir(cybershake_root)
     create_mgmt_db.create_mgmt_db(
         [],
@@ -145,7 +145,7 @@ def main():
 
     root_params = generate_root_params(
         args.version,
-        args.stat_file_path,
+        Path(args.stat_file_path).resolve(),
         cybershake_root,
         seed=args.seed,
         logger=logger,
