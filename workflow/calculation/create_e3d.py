@@ -128,6 +128,9 @@ def create_run_params(
                         )
                     )
 
+        # temporary checkpointing disabled
+        e3d_dict['enable_restart'] = 0
+
         shared.dict_to_e3d_par(
             os.path.join(params["sim_dir"], "LF", "e3d.par"), e3d_dict
         )
