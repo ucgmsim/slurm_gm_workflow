@@ -4,6 +4,7 @@ import argparse
 from datetime import datetime, timedelta
 
 import qcore.constants as const
+from qcore import qclogging
 from workflow.automation.lib.shared_automated_workflow import add_to_queue
 
 
@@ -97,7 +98,11 @@ if __name__ == "__main__":
         if args.wct is not None
         else None
     )
-    add_to_queue(
+
+
+    logger= qclogging.get_logger(f"{args.run_name}.{args.proc_type}", stdout_printer=True)
+
+    msg = add_to_queue(
         args.queue_folder,
         args.run_name,
         const.ProcessType.from_str(args.proc_type).value,
@@ -110,4 +115,7 @@ if __name__ == "__main__":
         cores=args.cores,
         memory=args.memory,
         wct=wct,
+        logger=logger,
     )
+
+    print(msg)
