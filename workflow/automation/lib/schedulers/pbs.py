@@ -85,9 +85,11 @@ class Pbs(AbstractScheduler):
 
         cwd = os.getcwd()
         os.chdir(sim_dir)  # KISTI doesn't allow job submission from home
+
         out, err = self._run_command_and_wait(
             [f"qsub -W umask=002 -V {script_location}"], shell=True
         )
+
         os.chdir(cwd)
         self.logger.debug((out, err))
 
@@ -227,6 +229,7 @@ class Pbs(AbstractScheduler):
         # script related args
         # construct a string
         args_string = ",".join([f'{k}="{v}"' for k, v in arguments.items()])
+
         return (
             f"{scheduler_args_commands} -W umask=002 -v {args_string} -V {script_path} "
         )

@@ -215,6 +215,7 @@ def main(args):
         const.ProcessType.VM_PERT.str_value,
         const.ProcessType.NO_VM_PERT.str_value,
     ]:
+
         # Load the params
         params = utils.load_sim_params(
             os.path.join(args.sim_dir, "sim_params.yaml"),
