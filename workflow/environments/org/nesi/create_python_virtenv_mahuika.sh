@@ -10,10 +10,27 @@ inhouse_pkgs=(qcore IM_calculation Pre-processing Empirical_Engine visualization
 
 # Create virtual environment
 cd ${env_path}
+
+which python
+echo "^ this must be coming from the correct python module"
+
 python3 -m venv --system-site-packages virt_envs/python3_mahuika
 
 # Activate new python env
 source ./virt_envs/python3_mahuika/bin/activate
+which python # this must be coming from the virtual env just created
+echo "^ This must be coming from the virtual env just created"
+python --version
+echo "^ double check the python version"
+
+
+# update pip. python3 come with a v9.0 which is too old.
+python -m pip install --upgrade pip
+
+#pip install --upgrade pip
+which pip 
+echo "^ double check  pip is coming from the new virt_env"
+
 
 # Sanity check
 if [[ `which python` != *"${name}"* && `which pip` != *"${name}"* ]]; then
@@ -22,8 +39,7 @@ if [[ `which python` != *"${name}"* && `which pip` != *"${name}"* ]]; then
     exit
 fi
 
-# update pip. python3 come with a v9.0 which is too old.
-pip install --upgrade pip
+
 pip install --upgrade setuptools
 
 # Install python packages
