@@ -268,7 +268,7 @@ def submit_task(
                     {
                         "REL_LOC": sim_dir,
                         "MGMT_DB_LOC": root_folder,
-                        "VSITE_FILE": params.stat_vs_est,
+                        "VSITE_FILE": params["stat_vs_est"],
                         "REM_ARGS": "'"
                         + " ".join(
                             [
