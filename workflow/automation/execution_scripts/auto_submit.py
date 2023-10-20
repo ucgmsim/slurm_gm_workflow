@@ -50,8 +50,7 @@ def submit_task(
 
     # Metadata logging setup
     ch_log_dir = os.path.abspath(os.path.join(sim_dir, "ch_log"))
-    if not os.path.isdir(ch_log_dir):
-        os.mkdir(ch_log_dir)
+    os.makedirs(ch_log_dir, exist_ok=True)
 
     runs_dir = sim_struct.get_runs_dir(root_folder)
 
