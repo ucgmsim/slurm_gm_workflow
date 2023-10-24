@@ -22,7 +22,7 @@ SUBMISSION_FILES = [
     "*py",
     "*.pyc",
 ]
-SUBMISSION_SL_LOGS = ["*.pbs","*.sl", "*.err", "*.out"]
+SUBMISSION_SL_LOGS = ["*.pbs", "*.sl", "*.err", "*.out"]
 
 LF_DIR_NAME = "LF_temp"
 LF_SUB_DIR_NAME = "OutBin"
