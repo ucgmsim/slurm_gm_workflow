@@ -22,7 +22,7 @@ A user specific environment of workflow, qcore, IMCalc, Empirical Engine and Pre
 can be created as follows:  
 1) Go to an existing copy of workflow (eg. can be your home) - it is a good idea to update this copy
 2) Navigate to ".../slurm_gm_workflow/workflow/environments/org/nesi"
-3) Load the correct version of Python module. (** IMPORTANT **)
+3) Load the correct version of Python module. (** IMPORTANT **) (eg. for Python 3.9, try `module load cray-python cray-hdf5-parallel/1.12.2.3`)
 4) Run   in /nesi/project/nesi00213/Environments/
     ```bash
     ./create_env_maui.sh environment_name config_to_use
