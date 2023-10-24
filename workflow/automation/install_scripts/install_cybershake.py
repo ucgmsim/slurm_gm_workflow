@@ -176,8 +176,7 @@ def generate_root_params(
     root_params_dict = utils.load_yaml(
         template_path / constants.ROOT_DEFAULTS_FILE_NAME
     )
-
-    vs30_file_path = stat_file_path.replace(".ll", ".vs30")
+    vs30_file_path = Path(str(stat_file_path).replace(".ll", ".vs30"))
     v1d_full_path = (
         Path(platform_config[constants.PLATFORM_CONFIG.VELOCITY_MODEL_DIR.name])
         / "Mod-1D"
