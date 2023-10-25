@@ -20,9 +20,10 @@ Requirements: Setup github SSH keys for maui,
 
 A user specific environment of workflow, qcore, IMCalc, Empirical Engine and Pre-processing 
 can be created as follows:  
-1) Go to an existing workflow repository
-2) Navigate to ".../slurm_gm_workflow/workflow/environments/org/nesi" 
-3) Run 
+1) Go to an existing copy of workflow (eg. can be your home) - it is a good idea to update this copy
+2) Navigate to ".../slurm_gm_workflow/workflow/environments/org/nesi"
+3) Load the correct version of Python module. (** IMPORTANT **) (eg. for Python 3.9, try `module load cray-python cray-hdf5-parallel/1.12.2.3`)
+4) Run   in /nesi/project/nesi00213/Environments/
     ```bash
     ./create_env_maui.sh environment_name config_to_use
     ```
@@ -31,11 +32,12 @@ can be created as follows:
     Note: The environment is installed into /nesi/project/nesi00213/Environments/
     so if an environment with the same already exists the script will exit.
 
-4) Check that the script ran to completion without any errors, 
+5) Check that the script ran to completion without any errors, 
 apart from the IM_calculation setup warning and the pip qcore error.
-5) Log into mahuika
-6) Navigate to the new environment, and into the slurm_gm_workflow/workflow/environments/org/nesi
-7) Run
+6) Log into mahuika
+7) Navigate to the new environment, and into the slurm_gm_workflow/workflow/environments/org/nesi
+8) Make sure you load the correct version of Python module. (eg. `module purge --force NeSI;module add NeSI Python/3.9.9-gimkl-2020a` )
+9) Run
     ```bash
     ./create_python_virtenv_mahuika.sh env_path
     ```
