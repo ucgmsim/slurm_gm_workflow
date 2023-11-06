@@ -33,9 +33,6 @@ which pip
 echo "===================================================="
 echo "^ double check  pip is coming from the new virt_env"
 
-exit
-
-
 # Sanity check
 if [[ `which python` != *"${name}"* && `which pip` != *"${name}"* ]]; then
     echo "Something went wrong, the current python used is not from the new virtual
