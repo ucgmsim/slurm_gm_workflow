@@ -48,6 +48,7 @@ Notes:
 These will be reset to the default shared bashrc when deactivating the environment.
 - Activating an environment will also set a CUR_ENV and CUR_HPC environment variable,
 these are required for cross platform submission when using an environment.
+- On Maui, the 3.8 python version does not have mpi4py installed in the system environment, whereas 3.9 does. It is possible to install mpi4py for the 3.8 version, it just has to be installed manually after the install script.
 
 #### Updating local packages
 Packages that are cloned into the environment (such as qcore) can be updated using
