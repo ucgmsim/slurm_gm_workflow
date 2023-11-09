@@ -25,11 +25,11 @@ can be created as follows:
 3) Load the correct version of Python module. (** IMPORTANT **) (eg. for Python 3.9, try `module load cray-python cray-hdf5-parallel/1.12.2.3`)
 4) Run   in /nesi/project/nesi00213/Environments/
     ```bash
-    ./create_env_maui.sh environment_name config_to_use
+    ./create_env_maui.sh ENV_NAME ./env_config.json
     ```
     where a default config (env_config.json) is located in the same directory, which should
-    work without requiring any changes.  
-    Note: The environment is installed into /nesi/project/nesi00213/Environments/
+    work without requiring any changes. 
+    Note: The environment is created at /nesi/project/nesi00213/Environments/ENV_NAME
     so if an environment with the same already exists the script will exit.
 
 5) Check that the script ran to completion without any errors, 
