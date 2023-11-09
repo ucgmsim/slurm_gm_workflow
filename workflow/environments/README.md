@@ -35,10 +35,10 @@ can be created as follows:
     Note: The environment is created at /nesi/project/nesi00213/Environments/ENV_NAME
     so if an environment with the same already exists the script will exit.
 
-5) Check that the script ran to completion and gave any error messages.
--  You may first encounter some errors and issues with numpy, scipy etc., as it can't uninstall the existing pre-installed modules from the system python, which will mostly reconcile automatically as it progresses.
+5) Check if the script ran to completion. You may see a few error messages. Don't panic.
+- You may first encounter some errors and issues with numpy, scipy etc., as it can't uninstall the existing pre-installed modules from the system python, which will mostly reconcile automatically as it progresses.
 - You will most likely to have an issue with mpi4py, complaining about `mpi.h`. It is ok, as mpi4py is already pre-installed in the system python 3.9 (Note: python 3.8 does not have mpi4py installed in the system environment and needs to be manually installed) 
-- You may have an issue with the IM_calculation setup warning and the pip qcore error. If you need to retry pip install, make sure you activate the new environment.
+- You may have an issue with the IM_calculation setup warning and the pip qcore error. You can try to reinstall afterwards. If you need to retry pip install, make sure you activate the new environment first.
 ```bash
 source /nesi/project/nesi00213/Environments/sjn872033/virt_envs/python3_maui/bin/activate 
 pip install XXX --upgrade
