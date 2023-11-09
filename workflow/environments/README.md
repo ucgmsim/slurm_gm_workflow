@@ -32,12 +32,14 @@ can be created as follows:
     Note: The environment is created at /nesi/project/nesi00213/Environments/ENV_NAME
     so if an environment with the same already exists the script will exit.
 
-5) Check that the script ran to completion without any errors apart from the IM_calculation setup warning and the pip qcore error. We may encounter some errors and issues with numpy, mpi4py. You may wish to upgrade wheel and setuptools and re-install modules that you had an issue.
-6) We don't expect any of the pip packages including in-house libraries (eg. qcore) are installed under `$HOME/.local/` Double-check if it is not the case. Anything installed there can get in the way, and loaded instead of the one installed in the environment.
-7) Log into mahuika
-8) Navigate to the new environment, and into the slurm_gm_workflow/workflow/environments/org/nesi
-9) Make sure you load the correct version of Python module. (eg. `module purge --force NeSI;module add NeSI Python/3.9.9-gimkl-2020a` )
-10) Run
+5) Check that the script ran to completion without any errors apart from the IM_calculation setup warning and the pip qcore error.
+   We may encounter some errors and issues with numpy, scipy, dask as it can't uninstall the existing pre-installed modules in the system python.
+   You will most likely to have an issue with mpi4py. You may wish to upgrade wheel and setuptools and re-install modules that you had an issue.
+7) We don't expect any of the pip packages including in-house libraries (eg. qcore) are installed under `$HOME/.local/` Double-check if it is not the case. Anything installed there can get in the way, and loaded instead of the one installed in the environment.
+8) Log into mahuika
+9) Navigate to the new environment, and into the slurm_gm_workflow/workflow/environments/org/nesi
+10) Make sure you load the correct version of Python module. (eg. `module purge --force NeSI;module add NeSI Python/3.9.9-gimkl-2020a` )
+11) Run
     ```bash
     ./create_python_virtenv_mahuika.sh env_path
     ```
