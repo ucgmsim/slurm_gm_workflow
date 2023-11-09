@@ -33,7 +33,7 @@ can be created as follows:
     so if an environment with the same already exists the script will exit.
 
 5) Check that the script ran to completion without any errors apart from the IM_calculation setup warning and the pip qcore error.
-   We may encounter some errors and issues with numpy, scipy, dask as it can't uninstall the existing pre-installed modules in the system python.
+   We may first encounter some errors and issues with numpy, scipy etc., as it can't uninstall the existing pre-installed modules in the system python, which will reconcile automatically as it progresses.
    You will most likely to have an issue with mpi4py. You may wish to upgrade wheel and setuptools and re-install modules that you had an issue.
 7) We don't expect any of the pip packages including in-house libraries (eg. qcore) are installed under `$HOME/.local/` Double-check if it is not the case. Anything installed there can get in the way, and loaded instead of the one installed in the environment.
 8) Log into mahuika
