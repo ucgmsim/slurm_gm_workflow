@@ -45,11 +45,25 @@ pip install XXX --upgrade
 ```
 Failing to activating the environemt and running `pip install` will end up with the packages installed under `$HOME/.local/lib`. Double-check if this directory has anything installed. Anything installed there can get in the way, and loaded instead of the one installed in the environment.
 8) Log into mahuika
-9) Navigate to the `slurm_gm_workflow/workflow/environments/org/nesi`. This can be the one you used to make Maui environment in your home directory.
-10) Make sure you load the correct version of Python module. For Python 3.9, it will be
+9) Make sure you load the correct version of Python module. For Python 3.9, it will be
 ```bash
 module purge --force NeSI;module add NeSI Python/3.9.9-gimkl-2020a
 ```
+Another option is to add this line in your .bashrc
+```
+export PYTHON_VER=3.9
+```
+above the line of
+```
+source /nesi/project/nesi00213/share/bashrc.uceq
+```
+Log out and log back in to Mahuika. When you are in, make sure the version you want is correctly loaded
+```bash
+which python
+/opt/nesi/CS400_centos7_bdw/Python/3.9.9-gimkl-2020a/bin/python
+```
+
+10) Navigate to the `slurm_gm_workflow/workflow/environments/org/nesi`. This can be the one you used to make Maui environment in your home directory.
 11) Run
     ```bash
     ./create_python_virtenv_mahuika.sh env_path
