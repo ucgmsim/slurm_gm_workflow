@@ -4,6 +4,8 @@
 
 env_path=${1?Error: "The environment path has to be given"}
 name=`basename ${env_path}`
+#get the absolute path of this script
+DIR=$( dirname "$( realpath "${BASH_SOURCE[0]}")" )
 
 inhouse_pkgs=(qcore IM_calculation Pre-processing Empirical_Engine visualization) #TODO: rename slurm_gm_workflow to workflow and add here
 
@@ -41,12 +43,12 @@ if [[ `which python` != *"${name}"* && `which pip` != *"${name}"* ]]; then
 fi
 
 pip install --upgrade setuptools
-
+pip install wheel==0.36.2
 # Install python packages
 # Using xargs means that each package is installed individually, which
 # means that if there is an error (i.e. can't find qcore), then the other
 # packages are still installed. However, this is slower.
-xargs -n 1 -a ${env_path}/workflow/workflow/environments/org/nesi/mahuika_python3_requirements.txt pip install -U
+xargs -n 1 -a $DIR/nesi/mahuika_python3_requirements.txt pip install -U
 
 for pkg in "${inhouse_pkgs[@]}";
 do
