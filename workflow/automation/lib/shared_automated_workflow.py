@@ -45,15 +45,15 @@ def submit_script_to_scheduler(
     :return:
     """
     job_id = Scheduler.get_scheduler().submit_job(sim_dir, script, target_machine)
-    if job_id is not None:
-        add_to_queue(
-            queue_folder,
-            run_name,
-            proc_type,
-            const.Status.queued.value,
-            job_id=job_id,
-            logger=logger,
-        )
+
+    add_to_queue(
+        queue_folder,
+        run_name,
+        proc_type,
+        const.Status.queued.value,
+        job_id=job_id,
+        logger=logger,
+    )
 
 
 def add_to_queue(

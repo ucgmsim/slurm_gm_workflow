@@ -1,5 +1,6 @@
 import argparse
 from datetime import datetime
+from getpass import getuser
 from logging import Logger, DEBUG
 from os.path import abspath, join
 import threading
@@ -204,7 +205,6 @@ def main():
     parser.add_argument(
         "root_folder", help="The root directory of the simulation folder structure"
     )
-    parser.add_argument("user", help="Your username")
     parser.add_argument(
         "config_file",
         help="The location of the config file containing everything to be run",
@@ -285,7 +285,7 @@ def main():
 
     scheduler_logger = qclogging.get_logger(name="scheduler", threaded=True)
     qclogging.add_general_file_handler(scheduler_logger, scheduler_log_file)
-    Scheduler.initialise_scheduler(user=args.user, logger=scheduler_logger)
+    Scheduler.initialise_scheduler(user=getuser(), logger=scheduler_logger)
 
     n_runs = 0
     if args.n_runs is not None:

@@ -22,7 +22,7 @@ class Slurm(AbstractScheduler):
         )
 
         if target_machine is None:
-            target_machine = self.current_machine
+            target_machine = HPC[self.current_machine]  # self.current_machine is str
         if isinstance(self.account, dict):
             account = self.account[target_machine.name]
         else:
@@ -116,14 +116,6 @@ class Slurm(AbstractScheduler):
             raise self.raise_exception(
                 f"An error occurred during job submission: {err}"
             )
-
-            # if "AssocMaxSubmitJobLimit" in err:
-            #     self.logger.debug(f"Maximum number of jobs already submitted: Will retry {script_location}")
-            #     return None
-            # else:
-            #     raise self.raise_exception(
-            #         f"An error occurred during job submission: {err}"
-            #     )
 
     def cancel_job(self, job_id, target_machine=None):
         if target_machine is None:
