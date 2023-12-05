@@ -233,7 +233,7 @@ def main():
         nargs="+",
         help="The number of processes each machine can run at once. If a single value is given this is used for all "
         "machines, otherwise one value per machine must be given. The current order is: {}".format(
-            list(x.value for x in HPC)
+            list(x.name for x in HPC)
         ),
     )
     parser.add_argument(

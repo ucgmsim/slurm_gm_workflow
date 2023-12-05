@@ -113,9 +113,13 @@ class Slurm(AbstractScheduler):
                 raise e
             return jobid
         else:
-            raise self.raise_exception(
-                f"An error occurred during job submission: {err}"
-            )
+            if "AssocMaxSubmitJobLimit" in err:
+                self.logger.debug(f"{err}")
+                return None
+            else:
+                raise self.raise_exception(
+                    f"An error occurred during job submission: {err}"
+                )
 
     def cancel_job(self, job_id, target_machine=None):
         if target_machine is None:
