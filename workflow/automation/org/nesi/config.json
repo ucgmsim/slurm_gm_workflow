@@ -25,8 +25,8 @@
   "EXAMPLES_DIR" : "$workflow/examples",
   "RUN_COMMAND": "srun",
   "DEFAULT_N_RUNS": {
-    "maui": 12,
-    "mahuika": 12
+    "maui": 1000,
+    "mahuika": 1000
   },
   "MACHINE_TASKS": {
     "EMOD3D": "maui",
