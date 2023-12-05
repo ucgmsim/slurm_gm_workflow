@@ -45,6 +45,7 @@ def submit_script_to_scheduler(
     :return:
     """
     job_id = Scheduler.get_scheduler().submit_job(sim_dir, script, target_machine)
+    
     add_to_queue(
         queue_folder,
         run_name,
