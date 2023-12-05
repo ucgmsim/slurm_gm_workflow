@@ -24,7 +24,6 @@ class Slurm(AbstractScheduler):
         if target_machine is None:
             target_machine = HPC[self.current_machine] #self.current_machine is str
 
-        print(f"################# {self.account} {target_machine} {self.current_machine} ###################")
         if isinstance(self.account, dict):
             account = self.account[target_machine.name]
         else:
@@ -115,9 +114,8 @@ class Slurm(AbstractScheduler):
                 raise e
             return jobid
         else:
-            cur_jobs = self.check_queues(True)
             raise self.raise_exception(
-                f"An error occurred during job submission: {err} Currently running {len(cur_jobs)} jobs"
+                f"An error occurred during job submission: {err}"
             )
 
     def cancel_job(self, job_id, target_machine=None):
