@@ -114,7 +114,7 @@ class Slurm(AbstractScheduler):
             return jobid
         else:
             if "AssocMaxSubmitJobLimit" in err:
-                self.logger.debug(f"{err} with {script_location}")
+                self.logger.debug(f"Maximum number of jobs already submitted: Will retry {script_location}")
                 return None
             else:
                 raise self.raise_exception(
