@@ -57,6 +57,8 @@ do
     cd ../
     pip install -e ./${pkg}
 done
+
+pip install -e oq-engine
 #TODO: once inhouse_pkgs includes workflow, remove the following
 cd workflow
 pip install -U -r requirements.txt

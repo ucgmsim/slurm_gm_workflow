@@ -26,6 +26,8 @@ do
     git clone git@github.com:ucgmsim/${pkg}.git
 done
 
+git clone git@github.com:gem/oq-engine.git
+
 # Create virtual environment
 mkdir virt_envs
 # The flag --system-site-packages sets include-system-site-packages to be true in the environment and allows the provided mpi4py to be used
@@ -57,6 +59,8 @@ do
     cd ../
     pip install -e ./${pkg}
 done
+
+pip install -e oq-engine
 
 #TODO: once inhouse_pkgs includes workflow, remove the following
 cd workflow
