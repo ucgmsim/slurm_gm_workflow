@@ -66,12 +66,12 @@ def generate_empirical_script(np, extended, cybershake_folder, realisations, out
     )  # .ll file and .z file are assumed to be at the same directory
     z_switch = f"--z_ffp {z_ffp}" if z_ffp.exists() else ""
     srf_ffp = sim_params["srf_file"]
-    # TODO: if historical, we don't supply srfinfo_ffp
+
     if sim_params.get("historical") is not None and sim_params["historical"] == True:
-        print("=================== historical ================")
+        # If root_params.yaml has "historical : true", this will use NZ GMDB source for the event specific data
         srfinfo_switch = ""
     else:
-        print("=================== cybershake ================")
+        # this is a cybershake (future events). Use srfinfo
         srfinfo_ffp = Path(srf_ffp).with_suffix(".info")
         srfinfo_switch = f"--srfinfo_ffp {srfinfo_ffp}"  # if future_event else ""
 
