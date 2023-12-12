@@ -50,6 +50,7 @@ pip install wheel==0.36.2
 # packages are still installed. However, this is slower.
 xargs -n 1 -a $DIR/nesi/mahuika_python3_requirements.txt pip install -U
 
+inhouse_pkgs+=(oq-engine) # add oq-engine
 for pkg in "${inhouse_pkgs[@]}";
 do
     cd ${env_path}/${pkg}
@@ -58,7 +59,6 @@ do
     pip install -e ./${pkg}
 done
 
-pip install -e oq-engine
 #TODO: once inhouse_pkgs includes workflow, remove the following
 cd workflow
 pip install -U -r requirements.txt

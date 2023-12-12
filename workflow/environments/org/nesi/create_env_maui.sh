@@ -52,6 +52,7 @@ pip install --upgrade setuptools wheel
 # packages are still installed. However, this is slower.
 xargs -n 1 -a $DIR/maui_python3_requirements.txt pip install -U
 
+inhouse_pkgs+=(oq-engine) # add oq-engine here
 for pkg in "${inhouse_pkgs[@]}";
 do
     cd ${env_path}/${pkg}
@@ -59,8 +60,6 @@ do
     cd ../
     pip install -e ./${pkg}
 done
-
-pip install -e oq-engine
 
 #TODO: once inhouse_pkgs includes workflow, remove the following
 cd workflow
