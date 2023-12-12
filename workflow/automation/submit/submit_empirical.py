@@ -23,8 +23,10 @@ def write_sl(sl_name, content):
         f.write(content)
 
 
-def generate_empirical_script(np, extended, cybershake_folder, realisations, out_dir):
-    # extended is '-e' or ''
+def generate_empirical_script(
+    np, extended_switch, cybershake_folder, realisations, out_dir
+):
+    # extended_switch is '-e' or ''
 
     faults = map(simulation_structure.get_fault_from_realisation, realisations)
     run_data = zip(realisations, faults)
@@ -67,13 +69,13 @@ def generate_empirical_script(np, extended, cybershake_folder, realisations, out
     z_switch = f"--z_ffp {z_ffp}" if z_ffp.exists() else ""
     srf_ffp = sim_params["srf_file"]
 
-    if sim_params.get("historical") is not None and sim_params["historical"] == True:
+    if sim_params.get("historical") == True:
         # If root_params.yaml has "historical : true", this will use NZ GMDB source for the event specific data
         srfinfo_switch = ""
     else:
-        # this is a cybershake (future events). Use srfinfo
+        # this is a cybershake (future) event. We need srfinfo
         srfinfo_ffp = Path(srf_ffp).with_suffix(".info")
-        srfinfo_switch = f"--srfinfo_ffp {srfinfo_ffp}"  # if future_event else ""
+        srfinfo_switch = f"--srfinfo_ffp {srfinfo_ffp}"
 
     context = generate_context(
         template_dir,
