@@ -66,7 +66,9 @@ def generate_empirical_script(
     z_ffp = Path(ll_ffp).with_suffix(
         ".z"
     )  # .ll file and .z file are assumed to be at the same directory
-    z_switch = f"--z_ffp {z_ffp}" if z_ffp.exists() else ""
+    z_switch = (
+        f"--z_ffp {z_ffp}" if z_ffp.exists() else ""
+    )  #  empty z_switch -> z values to be estimated
     srf_ffp = sim_params["srf_file"]
 
     if sim_params.get("historical") == True:
@@ -75,6 +77,7 @@ def generate_empirical_script(
     else:
         # this is a cybershake (future) event. We need srfinfo
         srfinfo_ffp = Path(srf_ffp).with_suffix(".info")
+        assert srfinfo_ffp.exists(), "SRF info {srfinfo_ffp} not found"
         srfinfo_switch = f"--srfinfo_ffp {srfinfo_ffp}"
 
     context = generate_context(
