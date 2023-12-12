@@ -71,7 +71,7 @@ def generate_empirical_script(np, extended, cybershake_folder, realisations, out
         # If root_params.yaml has "historical : true", this will use NZ GMDB source for the event specific data
         srfinfo_switch = ""
     else:
-        #this is a cybershake (future events). Use srfinfo
+        # this is a cybershake (future events). Use srfinfo
         srfinfo_ffp = Path(srf_ffp).with_suffix(".info")
         srfinfo_switch = f"--srfinfo_ffp {srfinfo_ffp}"  # if future_event else ""
 
