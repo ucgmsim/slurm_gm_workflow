@@ -28,10 +28,7 @@ def generate_empirical_script(np, extended, cybershake_folder, realisations, out
 
     faults = map(simulation_structure.get_fault_from_realisation, realisations)
     run_data = zip(realisations, faults)
-    run_data = [
-        (rel, fault)
-        for (rel, fault) in run_data
-    ]
+    run_data = [(rel, fault) for (rel, fault) in run_data]
 
     # determine NP
     # TODO: empirical are currently not parallel, update this when they are
@@ -64,12 +61,14 @@ def generate_empirical_script(np, extended, cybershake_folder, realisations, out
         platform_specific_args={"n_tasks": np},
     )
     ll_ffp = sim_params["stat_file"]
-    z_ffp = Path(ll_ffp).with_suffix(".z") # .ll file and .z file are assumed to be at the same directory
+    z_ffp = Path(ll_ffp).with_suffix(
+        ".z"
+    )  # .ll file and .z file are assumed to be at the same directory
     z_switch = f"--z_ffp {z_ffp}" if z_ffp.exists() else ""
     srf_ffp = sim_params["srf_file"]
-    #TODO: if historical, we don't supply srfinfo_ffp
+    # TODO: if historical, we don't supply srfinfo_ffp
     srfinfo_ffp = Path(srf_ffp).with_suffix(".info")
-    srfinfo_switch = f"--srfinfo_ffp {srfinfo_ffp}" #if future_event else ""
+    srfinfo_switch = f"--srfinfo_ffp {srfinfo_ffp}"  # if future_event else ""
 
     context = generate_context(
         template_dir,
