@@ -26,8 +26,6 @@ do
     git clone git@github.com:ucgmsim/${pkg}.git
 done
 
-git clone git@github.com:gem/oq-engine.git
-
 # Create virtual environment
 mkdir virt_envs
 # The flag --system-site-packages sets include-system-site-packages to be true in the environment and allows the provided mpi4py to be used
@@ -52,7 +50,6 @@ pip install --upgrade setuptools wheel
 # packages are still installed. However, this is slower.
 xargs -n 1 -a $DIR/maui_python3_requirements.txt pip install -U
 
-inhouse_pkgs+=(oq-engine) # add oq-engine here
 for pkg in "${inhouse_pkgs[@]}";
 do
     cd ${env_path}/${pkg}

@@ -50,7 +50,6 @@ pip install wheel==0.36.2
 # packages are still installed. However, this is slower.
 xargs -n 1 -a $DIR/mahuika_python3_requirements.txt pip install -U
 
-inhouse_pkgs+=(oq-engine) # add oq-engine
 for pkg in "${inhouse_pkgs[@]}";
 do
     cd ${env_path}/${pkg}
