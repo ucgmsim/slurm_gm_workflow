@@ -26,4 +26,3 @@ Werkzeug
 numba
 Cython
 jinja2
-fiona
