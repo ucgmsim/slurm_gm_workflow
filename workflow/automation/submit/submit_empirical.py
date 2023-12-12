@@ -85,7 +85,7 @@ def generate_empirical_script(
         "empirical.sl.template",
         {
             "np": np,
-            "extended": extended,
+            "extended_switch": extended_switch,
             "run_data": run_data,
             "ll_ffp": ll_ffp,
             "vs30_ffp": sim_params["stat_vs_est"],
