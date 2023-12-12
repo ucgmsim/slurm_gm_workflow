@@ -235,8 +235,7 @@ def submit_task(
             target_machine=get_target_machine(const.ProcessType.rrup).name,
         )
     elif proc_type == const.ProcessType.Empirical.value:
-        #extended_period_switch = "-e" if params["ims"]["extended_period"] else ""
-        extended_period_switch = ""
+        extended_period_switch = "-e" if params["ims"]["extended_period"] else ""
         sl_script = generate_empirical_script(
             1, extended_period_switch, root_folder, [run_name], sim_dir
         )

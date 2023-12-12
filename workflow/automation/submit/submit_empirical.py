@@ -67,8 +67,13 @@ def generate_empirical_script(np, extended, cybershake_folder, realisations, out
     z_switch = f"--z_ffp {z_ffp}" if z_ffp.exists() else ""
     srf_ffp = sim_params["srf_file"]
     # TODO: if historical, we don't supply srfinfo_ffp
-    srfinfo_ffp = Path(srf_ffp).with_suffix(".info")
-    srfinfo_switch = f"--srfinfo_ffp {srfinfo_ffp}"  # if future_event else ""
+    if sim_params.get("historical") is not None and sim_params["historical"] == True:
+        print("=================== historical ================")
+        srfinfo_switch = ""
+    else:
+        print("=================== cybershake ================")
+        srfinfo_ffp = Path(srf_ffp).with_suffix(".info")
+        srfinfo_switch = f"--srfinfo_ffp {srfinfo_ffp}"  # if future_event else ""
 
     context = generate_context(
         template_dir,
