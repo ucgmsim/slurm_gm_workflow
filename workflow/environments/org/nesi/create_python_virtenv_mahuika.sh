@@ -48,7 +48,7 @@ pip install wheel==0.36.2
 # Using xargs means that each package is installed individually, which
 # means that if there is an error (i.e. can't find qcore), then the other
 # packages are still installed. However, this is slower.
-xargs -n 1 -a $DIR/nesi/mahuika_python3_requirements.txt pip install -U
+xargs -n 1 -a $DIR/mahuika_python3_requirements.txt pip install -U
 
 for pkg in "${inhouse_pkgs[@]}";
 do
@@ -57,6 +57,7 @@ do
     cd ../
     pip install -e ./${pkg}
 done
+
 #TODO: once inhouse_pkgs includes workflow, remove the following
 cd workflow
 pip install -U -r requirements.txt
