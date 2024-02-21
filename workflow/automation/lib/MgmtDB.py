@@ -349,14 +349,15 @@ class MgmtDB:
                 failure_count.update({key: {"killed_WCT": 0, "failed": 0}})
             failure_count[key][state] += 1
 
-        with connect_db_ctx(self._db_file) as cur:
-            for key, fail_count in failure_count.items():
-                if any([x >= n_max_retries for x in fail_count.values()]):
-                    continue
-                run_name, proc_type = key.split("__")
-                # Gets the number of entries for the task with state in [created, queued, running or completed]
-                # Where completed has enum index 5, and the other 4 less than this
-                # If any are found then don't add another entry
+
+        for key, fail_count in failure_count.items():
+            if any([x >= n_max_retries for x in fail_count.values()]):
+                continue
+            run_name, proc_type = key.split("__")
+            # Gets the number of entries for the task with state in [created, queued, running or completed]
+            # Where completed has enum index 5, and the other 4 less than this
+            # If any are found then don't add another entry
+            with connect_db_ctx(self._db_file) as cur:
                 not_failed_count = cur.execute(
                     "SELECT COUNT(*) "
                     "FROM state "
@@ -365,8 +366,8 @@ class MgmtDB:
                     "AND status <= (SELECT id FROM status_enum WHERE state = 'completed') ",
                     (run_name, proc_type),
                 ).fetchone()[0]
-                if not_failed_count == 0:
-                    self._insert_task(cur, run_name, proc_type)
+            if not_failed_count == 0:
+                self._insert_task(cur, run_name, proc_type)
 
     def close_conn(self):
         """Close the db connection. Note, this ONLY has to be done if
@@ -426,7 +427,8 @@ class MgmtDB:
                 (*allowed_tasks, allowed_rels),
             ).fetchone()[0]
 
-            while len(runnable_tasks) < task_limit and offset < entries:
+        while len(runnable_tasks) < task_limit and offset < entries:
+            with connect_db_ctx(self._db_file) as cur:
                 db_tasks = cur.execute(
                     """SELECT proc_type, run_name 
                               FROM status_enum, state 
@@ -439,15 +441,15 @@ class MgmtDB:
                     ),
                     (*allowed_tasks, allowed_rels, offset),
                 ).fetchall()
-                runnable_tasks.extend(
-                    [
-                        (*task, self.get_retries(*task, get_WCT=True))
-                        for task in db_tasks
-                        if self._check_dependancy_met(task, logger)
-                        and "{}__{}".format(*task) not in tasks_waiting_for_updates
-                    ]
-                )
-                offset += 100
+            runnable_tasks.extend(
+                [
+                    (*task, self.get_retries(*task, get_WCT=True))
+                    for task in db_tasks
+                    if self._check_dependancy_met(task, logger)
+                    and "{}__{}".format(*task) not in tasks_waiting_for_updates
+                ]
+            )
+            offset += 100
 
         return runnable_tasks
 
@@ -481,6 +483,7 @@ class MgmtDB:
                            AND status_enum.state = 'completed'""",
                 (run_name,),
             ).fetchall()
+        with connect_db_ctx(self._db_file) as cur:
             completed_median_tasks = cur.execute(
                 """SELECT proc_type 
                           FROM status_enum, state 
