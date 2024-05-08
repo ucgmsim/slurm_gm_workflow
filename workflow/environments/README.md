@@ -71,7 +71,7 @@ which python
     ```bash
     ./create_python_virtenv_mahuika.sh env_path
     ```
-    where env_path is the full path of /nesi/projects/nesi00213/Environments/ENV_NAME
+    where env_path is the full path of /nesi/project/nesi00213/Environments/ENV_NAME
 
 Notes: 
 - Activating an environment will update your $PYTHONPATH and $gmsim variables
