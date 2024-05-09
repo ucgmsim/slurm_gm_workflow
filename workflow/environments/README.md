@@ -20,13 +20,16 @@ Requirements: Setup github SSH keys for maui,
 
 A user specific environment of workflow, qcore, IMCalc, Empirical Engine and Pre-processing 
 can be created as follows:  
-1) Log in to Maui, and go to an existing copy of workflow (eg. can be your home) - it is a good idea to update this copy. If you don't have it, `git clone` now.
+1) Log in to Maui, and go to an existing copy of workflow (eg. can be your home) - it is a good idea to update this copy. If you don't have it, 
+```bash
+git clone git@github.com:ucgmsim/slurm_gm_workflow.git
+```
 2) Navigate to ".../slurm_gm_workflow/workflow/environments/org/nesi"
 3) Load the correct version of Python module. (** IMPORTANT **). For example, Python 3.9, try the following.
    ```bash
    module load cray-python cray-hdf5-parallel/1.12.2.3
    ```
-4) Run   in /nesi/project/nesi00213/Environments/
+4) Run the following command.
     ```bash
     ./create_env_maui.sh ENV_NAME ./env_config.json
     ```
