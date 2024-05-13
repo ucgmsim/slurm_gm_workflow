@@ -50,9 +50,11 @@ def submit_im_calc_slurm(
         const.SlHdrOptConsts.memory.value: "2G",
         const.SlHdrOptConsts.version.value: "slurm",
         "exe_time": const.timestamp,
-        const.SlHdrOptConsts.additional.value: "#SBATCH --hint=nomultithread"
-        if platform_config[const.PLATFORM_CONFIG.SCHEDULER.name] == "slurm"
-        else [""],
+        const.SlHdrOptConsts.additional.value: (
+            "#SBATCH --hint=nomultithread"
+            if platform_config[const.PLATFORM_CONFIG.SCHEDULER.name] == "slurm"
+            else [""]
+        ),
     }
 
     body_options = {
@@ -99,9 +101,9 @@ def submit_im_calc_slurm(
         body_options["models"] = " ".join(
             params[const.SlBodyOptConsts.advanced_IM.value]["models"]
         )
-        command_options[
-            const.SlBodyOptConsts.advanced_IM.value
-        ] = f"-a {body_options['models']} --OpenSees {qconfig['OpenSees']} "
+        command_options[const.SlBodyOptConsts.advanced_IM.value] = (
+            f"-a {body_options['models']} --OpenSees {qconfig['OpenSees']} "
+        )
 
         # create temporary station list if "match_obs_stations" is directory
         if path.isdir(
@@ -164,9 +166,9 @@ def submit_im_calc_slurm(
             period_count = len(params["ims"]["pSA_periods"])
 
         if "pSA_periods" in params["ims"]:
-            command_options[
-                "pSA_periods"
-            ] = f"-p {' '.join(str(p) for p in params['ims']['pSA_periods'])}"
+            command_options["pSA_periods"] = (
+                f"-p {' '.join(str(p) for p in params['ims']['pSA_periods'])}"
+            )
 
         comps_to_store = params["ims"][const.SlBodyOptConsts.component.value]
         command_options[const.SlBodyOptConsts.component.value] = "-c " + " ".join(
