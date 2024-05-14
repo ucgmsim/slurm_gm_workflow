@@ -4,6 +4,7 @@
 A script that creates a database and populates it with the status of 
 each stage of the run
 """
+
 import argparse
 import os
 

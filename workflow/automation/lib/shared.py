@@ -5,6 +5,7 @@ Module which contains shared functions/values.
 @author Viktor Polak
 @contact viktor.polak@canterbury.ac.nz
 """
+
 from __future__ import print_function
 
 import glob
