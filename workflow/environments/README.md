@@ -20,13 +20,16 @@ Requirements: Setup github SSH keys for maui,
 
 A user specific environment of workflow, qcore, IMCalc, Empirical Engine and Pre-processing 
 can be created as follows:  
-1) Go to an existing copy of workflow (eg. can be your home) - it is a good idea to update this copy
-2) Navigate to ".../slurm_gm_workflow/workflow/environments/org/nesi"
-3) Load the correct version of Python module. (** IMPORTANT **). For example, Python 3.9, try the following.
+1) Log in to Maui, and go to an existing copy of workflow (eg. can be your home) - it is a good idea to update this copy. If you don't have it, 
+```bash
+git clone git@github.com:ucgmsim/slurm_gm_workflow.git
+```
+2) Navigate to the copy of your workflow "slurm_gm_workflow/workflow/environments/org/nesi"
+3) Load the correct version of Python module. (**IMPORTANT**). For example, Python 3.9, try the following.
    ```bash
    module load cray-python cray-hdf5-parallel/1.12.2.3
    ```
-4) Run   in /nesi/project/nesi00213/Environments/
+4) Run the following command.
     ```bash
     ./create_env_maui.sh ENV_NAME ./env_config.json
     ```
@@ -38,7 +41,7 @@ can be created as follows:
 5) Check if the script ran to completion. You may see a few error messages. Don't panic.
 - You may first encounter some errors and issues with numpy, scipy etc., as it can't uninstall the existing pre-installed modules from the system python, which will mostly reconcile automatically as it progresses.
 - You will most likely to have an issue with mpi4py, complaining about `mpi.h`. It is ok, as mpi4py is already pre-installed in the system python 3.9 (Note: python 3.8 does not have mpi4py installed in the system environment and needs to be manually installed) 
-- You may have an issue with the IM_calculation setup warning and the pip qcore error. You can try to reinstall afterwards. If you need to retry pip install, make sure you activate the new environment first.
+- You may have an issue with the IM_calculation setup warning and the pip qcore error. You can try to reinstall afterwards. If you need to retry pip install, make sure you activate the new environment first. For example, if your environment is located at `/nesi/project/nesi00213/Environments/sjn872033`, and you wish to reinstall `XXX`,
 ```bash
 source /nesi/project/nesi00213/Environments/sjn872033/virt_envs/python3_maui/bin/activate 
 pip install XXX --upgrade
@@ -71,7 +74,7 @@ which python
     ```bash
     ./create_python_virtenv_mahuika.sh env_path
     ```
-    where env_path is the full path of /nesi/projects/nesi00213/Environments/ENV_NAME
+    where env_path is the full path of /nesi/project/nesi00213/Environments/ENV_NAME
 
 Notes: 
 - Activating an environment will update your $PYTHONPATH and $gmsim variables

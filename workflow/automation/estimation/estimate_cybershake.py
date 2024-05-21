@@ -172,12 +172,12 @@ def run_estimations(
     results_df[
         (const.ProcessType.HF.str_value, const.MetadataField.core_hours.value)
     ] = hf_core_hours
-    results_df[
-        (const.ProcessType.HF.str_value, const.MetadataField.run_time.value)
-    ] = hf_run_time
-    results_df[
-        (const.ProcessType.HF.str_value, const.MetadataField.n_cores.value)
-    ] = hf_cores
+    results_df[(const.ProcessType.HF.str_value, const.MetadataField.run_time.value)] = (
+        hf_run_time
+    )
+    results_df[(const.ProcessType.HF.str_value, const.MetadataField.n_cores.value)] = (
+        hf_cores
+    )
 
     if bb_input_data is not None:
         print("Running BB estimation")
@@ -189,12 +189,12 @@ def run_estimations(
     results_df[
         (const.ProcessType.BB.str_value, const.MetadataField.core_hours.value)
     ] = bb_core_hours
-    results_df[
-        (const.ProcessType.BB.str_value, const.MetadataField.run_time.value)
-    ] = bb_run_time
-    results_df[
-        (const.ProcessType.BB.str_value, const.MetadataField.n_cores.value)
-    ] = bb_cores
+    results_df[(const.ProcessType.BB.str_value, const.MetadataField.run_time.value)] = (
+        bb_run_time
+    )
+    results_df[(const.ProcessType.BB.str_value, const.MetadataField.n_cores.value)] = (
+        bb_cores
+    )
 
     if im_calc_input_data is not None:
         print("Running IM_calc estimation")
