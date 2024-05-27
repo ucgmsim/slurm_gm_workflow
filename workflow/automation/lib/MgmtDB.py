@@ -53,7 +53,11 @@ def connect_db_ctx(db_file, verbose=False):
 
     A commit is run at the end of the context.
     """
-    conn = sql.connect(db_file)
+    # timeout parameter specifies how long the connection should wait for the lock to 
+    # go away until raising an exception. Default is 5 secs
+    # https://stackoverflow.com/a/8618328/2005856
+    # https://docs.python.org/2/library/sqlite3.html#sqlite3.connect
+    conn = sql.connect(db_file, timeout=10)
     if verbose:
         conn.set_trace_callback(print)
 
