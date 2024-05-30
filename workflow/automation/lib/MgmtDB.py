@@ -53,7 +53,7 @@ def connect_db_ctx(db_file, verbose=False):
 
     A commit is run at the end of the context.
     """
-    # timeout parameter specifies how long the connection should wait for the lock to 
+    # timeout parameter specifies how long the connection should wait for the lock to
     # go away until raising an exception. Default is 5 secs
     # https://stackoverflow.com/a/8618328/2005856
     # https://docs.python.org/2/library/sqlite3.html#sqlite3.connect
@@ -354,7 +354,6 @@ class MgmtDB:
             if key not in failure_count.keys():
                 failure_count.update({key: {"killed_WCT": 0, "failed": 0}})
             failure_count[key][state] += 1
-
 
         for key, fail_count in failure_count.items():
             if any([x >= n_max_retries for x in fail_count.values()]):
