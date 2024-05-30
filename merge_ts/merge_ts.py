@@ -6,7 +6,7 @@ This module provides functionality for merging XYTS files. It takes multiple
 input XYTS files, representing small patches of a larger simulation domain, and
 merges them into one large output.
 
-$ python merge_ts.py input1.e3d input2.e3d -o output.xyts
+$ merge_ts XYTS_DIRECTORY XYTS_DIRECTORY/output.e3d
 
 Note:
     This module assumes the input XYTS files have the same temporal dimensions
