@@ -1,25 +1,23 @@
 #!/usr/bin/env python3
 """Script to create and submit a slurm script for LF"""
-import os
-import glob
 import argparse
+import glob
+import os
 from logging import Logger
 from pathlib import Path
 
-from qcore import utils, binary_version
-from qcore.config import get_machine_config, host
 import qcore.constants as const
-from qcore.qclogging import get_basic_logger
 import qcore.simulation_structure as sim_struct
+from qcore import binary_version, utils
+from qcore.config import get_machine_config, host
+from qcore.qclogging import get_basic_logger
+
 from workflow.automation.lib.schedulers.scheduler_factory import Scheduler
-
-from workflow.automation.platform_config import (
-    platform_config,
-    get_platform_node_requirements,
-)
-from workflow.automation.lib.shared_automated_workflow import submit_script_to_scheduler
+from workflow.automation.lib.shared_automated_workflow import \
+    submit_script_to_scheduler
 from workflow.automation.lib.shared_template import write_sl_script
-
+from workflow.automation.platform_config import (
+    get_platform_node_requirements, platform_config)
 
 merge_ts_name_prefix = "post_emod3d_merge_ts"
 
@@ -69,13 +67,6 @@ def main(
         "additional_lines": "",
     }
 
-    command_template_parameters = {
-        "run_command": platform_config[const.PLATFORM_CONFIG.RUN_COMMAND.name],
-        "merge_ts_path": binary_version.get_unversioned_bin(
-            "merge_tsP3_par", get_machine_config(machine)["tools_dir"]
-        ),
-    }
-
     body_template_params = (
         "{}.sl.template".format(merge_ts_name_prefix),
         {"lf_sim_dir": lf_sim_dir},
@@ -89,7 +80,7 @@ def main(
         script_prefix,
         header_dict,
         body_template_params,
-        command_template_parameters,
+        {},
     )
     if submit:
         submit_script_to_scheduler(
