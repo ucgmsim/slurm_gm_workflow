@@ -132,20 +132,22 @@ def test_create_run_params(set_up, mocker):
         )
         mocker.patch(
             "workflow.calculation.create_e3d.utils.load_yaml",
-            lambda x: mocked_load_yaml(
-                os.path.join(
-                    os.path.dirname(os.path.realpath(__file__)),
-                    "..",
-                    "..",
-                    "..",
-                    "calculation",
-                    "gmsim_templates",
-                    "16.1",
-                    "emod3d_defaults.yaml",
+            lambda x: (
+                mocked_load_yaml(
+                    os.path.join(
+                        os.path.dirname(os.path.realpath(__file__)),
+                        "..",
+                        "..",
+                        "..",
+                        "calculation",
+                        "gmsim_templates",
+                        "16.1",
+                        "emod3d_defaults.yaml",
+                    )
                 )
-            )
-            if "emod3d_defaults.yaml" in x
-            else mocked_load_yaml(x),
+                if "emod3d_defaults.yaml" in x
+                else mocked_load_yaml(x)
+            ),
         )
 
         create_e3d.create_run_params("PangopangoF29_HYP01-10_S1244", None, 186802)
