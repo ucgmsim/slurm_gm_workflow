@@ -1,43 +1,43 @@
 #!/usr/bin/env python3
 """Script to create and submit a slurm script for LF"""
-# TODO: import the CONFIG here
-# Section for parser to determine if using automate wct
-import os
 import argparse
+import glob
+import os
 from logging import Logger
 from pathlib import Path
-from numpy import hstack
 
-from qcore import utils, shared, binary_version
-from qcore.config import get_machine_config, host
-from qcore.qclogging import get_basic_logger
 import qcore.constants as const
 import qcore.simulation_structure as sim_struct
+from qcore import utils
+from qcore.config import host
+from qcore.qclogging import get_basic_logger
 
-import workflow.automation.estimation.estimate_wct as est
-import workflow.calculation.create_e3d as set_runparams
-from workflow.automation.estimation import estimate_wct
-from workflow.calculation.verification.check_emod3d_subdomains import test_domain
 from workflow.automation.lib.schedulers.scheduler_factory import Scheduler
-from workflow.automation.platform_config import (
-    platform_config,
-    get_platform_node_requirements,
-)
-from workflow.automation.lib.shared_automated_workflow import submit_script_to_scheduler
+from workflow.automation.lib.shared_automated_workflow import \
+    submit_script_to_scheduler
 from workflow.automation.lib.shared_template import write_sl_script
+from workflow.automation.platform_config import (
+    get_platform_node_requirements, platform_config)
+
+merge_ts_name_prefix = "merge_ts"
+
+default_run_time_merge_ts = "00:30:00"
+
+
+def get_seis_len(seis_path):
+    filepattern = os.path.join(seis_path, "*_seis*.e3d")
+    seis_file_list = sorted(glob.glob(filepattern))
+    return len(seis_file_list)
 
 
 def main(
     submit: bool = False,
     machine: str = host,
-    ncores: int = platform_config[const.PLATFORM_CONFIG.LF_DEFAULT_NCORES.name],
     rel_dir: str = ".",
-    retries: int = 0,
     write_directory: str = None,
     logger: Logger = get_basic_logger(),
 ):
     rel_dir = Path(rel_dir).resolve()
-
     try:
         params = utils.load_sim_params(rel_dir / "sim_params.yaml")
     except FileNotFoundError:
@@ -46,56 +46,41 @@ def main(
 
     sim_dir = Path(params["sim_dir"]).resolve()
 
-    logger.debug(f"params.srf_file {params['srf_file']}")
+    mgmt_db_loc = params["mgmt_db_location"]
 
-    # Get the srf(rup) name without extensions
+    # get the srf(rup) name without extensions
     srf_name = Path(params["srf_file"]).stem
 
-    logger.debug("not set_params_only")
-    # get lf_sim_dir
-    lf_sim_dir = sim_struct.get_lf_dir(sim_dir)
-
-    nt = int(float(params["sim_duration"]) / float(params["dt"]))
-
-    target_qconfig = get_machine_config(machine)
-
-    est_cores, est_run_time, wct = get_lf_cores_and_wct(
-        logger, nt, params, sim_dir, srf_name, target_qconfig, ncores, retries
-    )
-
-    binary_path = binary_version.get_lf_bin(
-        params["emod3d"]["emod3d_version"], target_qconfig["tools_dir"]
-    )
-    # checkpoint 3 times
-    steps_per_checkpoint = int(nt // 3)
     if write_directory is None:
         write_directory = sim_dir
 
-    set_runparams.create_run_params(
-        sim_dir, steps_per_checkpoint=steps_per_checkpoint, logger=logger
-    )
+    # get lf_sim_dir
+    lf_sim_dir = sim_dir / "LF"
 
     header_dict = {
-        "wallclock_limit": wct,
-        "job_name": "emod3d.{}".format(srf_name),
-        "job_description": "emod3d slurm script",
-        "additional_lines": "#SBATCH --hint=nomultithread",
-        "platform_specific_args": get_platform_node_requirements(est_cores),
+        "platform_specific_args": get_platform_node_requirements(
+            platform_config[const.PLATFORM_CONFIG.MERGE_TS_DEFAULT_NCORES.name]
+        ),
+        "wallclock_limit": default_run_time_merge_ts,
+        "job_name": "merge_ts.{}".format(srf_name),
+        "job_description": "merge_ts",
+        "additional_lines": "",
     }
 
+    body_template_params = (
+        "{}.sl.template".format(merge_ts_name_prefix),
+        {"lf_sim_dir": lf_sim_dir},
+    )
     command_template_parameters = {
         "run_command": platform_config[const.PLATFORM_CONFIG.RUN_COMMAND.name],
-        "emod3d_bin": binary_path,
-        "lf_sim_dir": lf_sim_dir,
+        "merge_ts_path": "merge_ts",
     }
 
-    body_template_params = ("run_emod3d.sl.template", {})
-
-    script_prefix = f"run_emod3d_{srf_name}"
+    script_prefix = "{}_{}".format(merge_ts_name_prefix, srf_name)
     script_file_path = write_sl_script(
         write_directory,
         sim_dir,
-        const.ProcessType.EMOD3D,
+        const.ProcessType.merge_ts,
         script_prefix,
         header_dict,
         body_template_params,
@@ -104,8 +89,8 @@ def main(
     if submit:
         submit_script_to_scheduler(
             script_file_path,
-            const.ProcessType.EMOD3D.value,
-            sim_struct.get_mgmt_db_queue(params["mgmt_db_location"]),
+            const.ProcessType.merge_ts.value,
+            sim_struct.get_mgmt_db_queue(mgmt_db_loc),
             sim_dir,
             srf_name,
             target_machine=machine,
@@ -113,74 +98,11 @@ def main(
         )
 
 
-def get_lf_cores_and_wct(
-    logger, nt, params, sim_dir, srf_name, target_qconfig, ncores, retries=None
-):
-    fd_count = len(shared.get_stations(params["FD_STATLIST"]))
-    est_core_hours, est_run_time, est_cores = est.est_LF_chours_single(
-        int(params["nx"]),
-        int(params["ny"]),
-        int(params["nz"]),
-        nt,
-        fd_count,
-        ncores,
-        True,
-    )
-    # scale up the est_run_time if it is a re-run (with check-pointing)
-    # otherwise do nothing
-    est_run_time_scaled = est_run_time
-
-    if retries is not None:
-        # quick sanity check
-        # TODO: combine this function with 'restart' check in run_emod3d.sl.template
-        lf_restart_dir = sim_struct.get_lf_restart_dir(sim_dir)
-        # check if the restart folder exist and has checkpointing files in it
-        if os.path.isdir(lf_restart_dir) and (len(os.listdir(lf_restart_dir)) > 0):
-            # scale up the wct with retried count
-            est_run_time_scaled = est_run_time * (int(retries) + 1)
-        else:
-            logger.debug(
-                "retries has been set, but no check-pointing files exist. not scaling wct"
-            )
-
-    extra_nodes = 0
-    while (
-        hstack(
-            test_domain(
-                int(params["nx"]), int(params["ny"]), int(params["nz"]), est_cores
-            )
-        ).size
-        > 0
-    ):
-        # TODO: Make sure we don't go over our queue limits
-        est_cores += target_qconfig["cores_per_node"]
-        extra_nodes += 1
-    if extra_nodes >= 10:
-        # Arbitrary threshold
-        logger.info(
-            f"Event {srf_name} needed {extra_nodes} extra nodes assigned in order to prevent station(s) "
-            f"not being assigned to a sub domain."
-        )
-    ncores, wct = estimate_wct.confine_wct_node_parameters(
-        est_cores,
-        est_run_time_scaled,
-        min_core_count=est_cores,
-        preserve_core_count=(retries is not None and int(retries) > 0),
-        hyperthreaded=const.ProcessType.EMOD3D.is_hyperth,
-        can_checkpoint=True,  # hard coded for now as this is not available programatically
-        logger=logger,
-    )
-    wct_string = estimate_wct.convert_to_wct(wct)
-    return ncores, wct, wct_string
-
-
 def load_args():
     parser = argparse.ArgumentParser(
-        description="Create (and submit if specified) the slurm script for LF"
+        description="Create (and submit if specified) the slurm script for merge_ts"
     )
-
-    parser.add_argument("--submit", action="store_true", default=False)
-
+    parser.add_argument("--submit", nargs="?", type=str, const=True)
     parser.add_argument(
         "--account",
         type=str,
@@ -191,25 +113,16 @@ def load_args():
         "--machine",
         type=str,
         default=host,
-        help="The machine emod3d is to be submitted to.",
+        help="The machine merge_ts is to be submitted to.",
     )
-    parser.add_argument(
-        "--ncores",
-        type=int,
-        default=platform_config[const.PLATFORM_CONFIG.LF_DEFAULT_NCORES.name],
-    )
-    parser.add_argument(
-        "--rel_dir", default=".", type=str, help="The path to the realisation directory"
-    )
-    parser.add_argument(
-        "--retries", default=0, type=int, help="Number of retries if fails"
-    )
-
     parser.add_argument(
         "--write_directory",
         type=str,
         help="The directory to write the slurm script to.",
         default=None,
+    )
+    parser.add_argument(
+        "--rel_dir", default=".", type=str, help="The path to the realisation directory"
     )
 
     args = parser.parse_args()
@@ -221,11 +134,4 @@ if __name__ == "__main__":
     # The name parameter is only used to check user tasks in the queue monitor
     Scheduler.initialise_scheduler("", args.account)
 
-    main(
-        args.submit,
-        args.machine,
-        args.ncores,
-        args.rel_dir,
-        args.retries,
-        args.write_directory,
-    )
+    main(args.submit, args.machine, args.rel_dir, args.write_directory)
