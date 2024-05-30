@@ -72,7 +72,8 @@ def main(
         {"lf_sim_dir": lf_sim_dir},
     )
     command_template_parameters = {
-        "run_command": platform_config[const.PLATFORM_CONFIG.RUN_COMMAND.name]
+        "run_command": platform_config[const.PLATFORM_CONFIG.RUN_COMMAND.name],
+        "merge_ts_path": "merge_ts",
     }
 
     script_prefix = "{}_{}".format(merge_ts_name_prefix, srf_name)
