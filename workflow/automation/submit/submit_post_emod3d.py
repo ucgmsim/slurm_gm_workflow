@@ -71,6 +71,9 @@ def main(
         "{}.sl.template".format(merge_ts_name_prefix),
         {"lf_sim_dir": lf_sim_dir},
     )
+    command_template_parameters = {
+        "run_command": platform_config[const.PLATFORM_CONFIG.RUN_COMMAND.name]
+    }
 
     script_prefix = "{}_{}".format(merge_ts_name_prefix, srf_name)
     script_file_path = write_sl_script(
@@ -80,7 +83,7 @@ def main(
         script_prefix,
         header_dict,
         body_template_params,
-        {},
+        command_template_parameters,
     )
     if submit:
         submit_script_to_scheduler(
