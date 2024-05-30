@@ -51,7 +51,7 @@ if [ "${REL_FILEPATH##*.}" == "csv" ]; then
     python "$gmsim/Pre-processing/VM/rel2vm_params.py" -o "$OUT_DIR" --hh "$HH" --vm-version "$VM_VERSION" --vm-topo "$VM_TOPO" --pgv "$PGV_THRESHOLD" --ds-multiplier "$DS_MULTIPLIER" "$REL_FILEPATH"
 else
     echo "python $gmsim/Pre-processing/VM/type5_rel2vm_params.py --resolution $HH --vm-version $VM_VERSION --vm-topo  $VM_TOPO --pgv $PGV_THRESHOLD --ds-multiplier $DS_MULTIPLIER $REL_FILEPATH $OUT_DIR/${REL_NAME}_vm_parms.yaml"
-    python "$gmsim/Pre-processing/VM/type5_rel2vm_params.py" --resolution "$HH" --vm-version "$VM_VERSION" --vm-topo  "$VM_TOPO" --pgv "$PGV_THRESHOLD" --ds-multiplier "$DS_MULTIPLIER" "$REL_FILEPATH" "$OUT_DIR/vm_params.yaml"
+    python "$gmsim/Pre-processing/VM/type5_rel2vm_params.py" --resolution "$HH" --vm-version "$VM_VERSION" --vm-topo  "$VM_TOPO" --ds-multiplier "$DS_MULTIPLIER" "$REL_FILEPATH" "$OUT_DIR/vm_params.yaml"
 fi
 
 end_time=$(date +$runtime_fmt)
