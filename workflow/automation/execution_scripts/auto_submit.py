@@ -344,7 +344,7 @@ def submit_task(
                     {
                         "realisationCSV": str(
                             Path(sim_struct.get_srf_dir(root_folder, run_name))
-                            / (run_name + ".csv")
+                            / (run_name + ".yaml")
                         ),
                         "OUTPUT_DIR": sim_struct.get_fault_VM_dir(
                             root_folder, run_name
@@ -438,7 +438,7 @@ def submit_task(
                     {
                         "REL_YAML": str(
                             Path(sim_struct.get_srf_path(root_folder, run_name)).parent
-                            / f"{run_name}.csv"
+                            / f"{run_name}.yaml"
                         ),
                         "MGMT_DB_LOC": root_folder,
                         "REL_NAME": run_name,
