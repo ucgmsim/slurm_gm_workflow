@@ -371,7 +371,8 @@ class MgmtDB:
                     "AND status <= (SELECT id FROM status_enum WHERE state = 'completed') ",
                     (run_name, proc_type),
                 ).fetchone()[0]
-                if not_failed_count == 0:
+            if not_failed_count == 0:
+                with connect_db_ctx(self._db_file) as cur:
                     self._insert_task(cur, run_name, proc_type)
 
     def close_conn(self):
@@ -592,8 +593,9 @@ class MgmtDB:
                     """select * from proc_type_enum"""
                 ).fetchall()
 
-                for run_name in realisations:
-                    for proc in procs_to_be_done:
+            for run_name in realisations:
+                for proc in procs_to_be_done:
+                    with connect_db_ctx(self._db_file) as cur:
                         if not self._does_task_exists(cur, run_name, proc[0]):
                             self._insert_task(cur, run_name, proc[0])
 
