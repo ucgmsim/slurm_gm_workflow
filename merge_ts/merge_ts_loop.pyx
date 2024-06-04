@@ -45,7 +45,7 @@ def merge_fds(
 
     # The lists _component_xyts_files, ... are CPython lists.
     # If we access these inside our copying loop everything becomes very slow
-    # because we need to go to the Python interpreter. So we first copy the each
+    # because we need to go to the Python interpreter. So we first copy each
     # list into an equivalent C list.
     component_xyts_files = <int *> malloc(len(_component_xyts_files) * cython.sizeof(int))
     local_nxs = <int *> malloc(len(_local_nxs) * cython.sizeof(int))
