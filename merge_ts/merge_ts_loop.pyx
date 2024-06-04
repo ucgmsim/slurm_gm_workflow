@@ -70,7 +70,7 @@ def merge_fds(
                         break
                     if cur_y >= y0 + local_ny:
                         continue
-                    # By passing None as the offset, sendfile() will read from
+                    # By passing NULL as the offset, sendfile() will read from
                     # the current position in xyts_fd
                     sendfile(merged_fd, xyts_fd, NULL, local_nx * 4)
     free(component_xyts_files)
