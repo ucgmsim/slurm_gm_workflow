@@ -371,8 +371,8 @@ class MgmtDB:
                     "AND status <= (SELECT id FROM status_enum WHERE state = 'completed') ",
                     (run_name, proc_type),
                 ).fetchone()[0]
-            if not_failed_count == 0:
-                self._insert_task(cur, run_name, proc_type)
+                if not_failed_count == 0:
+                    self._insert_task(cur, run_name, proc_type)
 
     def close_conn(self):
         """Close the db connection. Note, this ONLY has to be done if
