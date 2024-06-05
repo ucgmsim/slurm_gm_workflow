@@ -49,11 +49,28 @@ def connect_db(path):
 
 @contextmanager
 def connect_db_ctx(db_file, verbose=False):
-    """Returns a db cursor. Use with a context (i.e. with statement)
-
-    A commit is run at the end of the context.
     """
-    conn = sql.connect(db_file)
+    Connects to the database at the specified path and yields a cursor to be used within a context manager.
+    Additionally, commit is run at the end of the context.
+
+    Parameters
+    ----------
+    db_file: str
+        The path to the database
+    verbose: bool
+        If True, the connection will be set to print all queries
+
+    Yields
+    -------
+    sql.Cursor
+        The cursor to the database
+
+    """
+    # timeout parameter specifies how long the connection should wait for the lock to
+    # go away until raising an exception. Default is 5 secs
+    # https://stackoverflow.com/a/8618328/2005856
+    # https://docs.python.org/3/library/sqlite3.html#sqlite3.connect
+    conn = sql.connect(db_file, timeout=10)
     if verbose:
         conn.set_trace_callback(print)
 
