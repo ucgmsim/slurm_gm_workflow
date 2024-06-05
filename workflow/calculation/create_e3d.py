@@ -9,16 +9,19 @@ ISSUES: remove default values in e3d_default.par where not needed.
 """
 
 from __future__ import print_function
-import sys
+
 import os.path
+import sys
 from logging import Logger
 from os.path import basename
 
+from qcore import binary_version, constants, utils
 from qcore.constants import MAXIMUM_EMOD3D_TIMESHIFT_1_VERSION
-from qcore.utils import compare_versions
-from workflow.automation.lib import shared
-from qcore import utils, binary_version, constants
 from qcore.qclogging import get_basic_logger
+from qcore.utils import compare_versions
+
+from workflow import sim_params
+from workflow.automation.lib import shared
 from workflow.automation.platform_config import platform_config
 
 sys.path.append(os.path.abspath(os.path.curdir))
@@ -30,7 +33,7 @@ def create_run_params(
     steps_per_checkpoint=None,
     logger: Logger = get_basic_logger(),
 ):
-    params = utils.load_sim_params(os.path.join(sim_dir, "sim_params.yaml"))
+    params = sim_params.load_sim_params(os.path.join(sim_dir, "sim_params.yaml"))
 
     emod3d_version = params["emod3d"]["emod3d_version"]
     emod3d_filepath = binary_version.get_lf_bin(emod3d_version)

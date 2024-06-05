@@ -6,9 +6,10 @@ import argparse
 
 import numpy as np
 import pandas as pd
-
-from qcore import utils, simulation_structure, shared
 from qcore import constants as const
+from qcore import shared, simulation_structure
+
+from workflow import sim_params
 from workflow.automation.lib import MgmtDB, constants
 
 COLUMNS = [
@@ -141,7 +142,7 @@ def get_rel_info(
     Loads the given relisations info and populates the dataframe row
     """
     fault_name = simulation_structure.get_fault_from_realisation(rel_name)
-    params = utils.load_sim_params(
+    params = sim_params.load_sim_params(
         simulation_structure.get_sim_params_yaml_path(
             f"{root_dir}/Runs/{fault_name}/{rel_name}"
         ),

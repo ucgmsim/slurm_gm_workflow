@@ -12,7 +12,7 @@ if [[ ! -z ${CUR_ENV} && ${CUR_HPC} != "mahuika" ]]; then
 fi
 
 function getFromYaml {
-    echo $(python -c "from qcore.utils import load_sim_params; print(load_sim_params('$1')['$2'])")
+    echo $(python -c "from workflow.sim_params import load_sim_params; print(load_sim_params('$1')['$2'])")
 }
 export IMPATH=${gmsim}/IM_calculation/IM_calculation/scripts
 export PYTHONPATH=$gmsim/qcore:/${PYTHONPATH}:${IMPATH}

@@ -5,21 +5,21 @@ import argparse
 from logging import Logger
 from pathlib import Path
 
-import workflow.automation.estimation.estimate_wct as est
 import qcore.constants as const
-from qcore import simulation_structure
-from qcore import utils, shared
+from qcore import shared, simulation_structure
 from qcore.config import host
 from qcore.qclogging import get_basic_logger
+
+import workflow.automation.estimation.estimate_wct as est
+from workflow import sim_params
 from workflow.automation.estimation import estimate_wct
-from workflow.automation.platform_config import (
-    platform_config,
-    get_platform_node_requirements,
-)
-from workflow.automation.lib.shared import get_hf_nt
-from workflow.automation.lib.shared_automated_workflow import submit_script_to_scheduler
-from workflow.automation.lib.shared_template import write_sl_script
 from workflow.automation.lib.schedulers.scheduler_factory import Scheduler
+from workflow.automation.lib.shared import get_hf_nt
+from workflow.automation.lib.shared_automated_workflow import \
+    submit_script_to_scheduler
+from workflow.automation.lib.shared_template import write_sl_script
+from workflow.automation.platform_config import (
+    get_platform_node_requirements, platform_config)
 
 default_wct = "00:30:00"
 
@@ -50,7 +50,7 @@ def main(
 ):
     rel_dir = Path(rel_dir).resolve()
     try:
-        params = utils.load_sim_params(rel_dir / "sim_params.yaml")
+        params = sim_params.load_sim_params(rel_dir / "sim_params.yaml")
     except FileNotFoundError:
         logger.error(f"Error: sim_params.yaml doesn't exist in {rel_dir}")
         raise

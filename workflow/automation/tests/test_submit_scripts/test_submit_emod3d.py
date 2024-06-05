@@ -1,15 +1,15 @@
 import os
+
 import pytest
-
-
-from qcore.utils import load_sim_params as mocked_load_sim_params
 from qcore.utils import load_yaml as mocked_load_yaml
 
-from workflow.automation.tests.test_common_set_up import get_fault_from_rel, set_up
+import workflow.automation.submit.submit_emod3d
+from workflow.automation.tests.test_common_set_up import (get_fault_from_rel,
+                                                          set_up)
+from workflow.sim_params import load_sim_params as mocked_load_sim_params
 
 # from testing.conftest import init_scheduler
 
-import workflow.automation.submit.submit_emod3d
 
 
 @pytest.mark.usefixtures("init_scheduler")
@@ -23,20 +23,22 @@ def test_main(set_up, mocker):
 
     mocker.patch(
         "workflow.calculation.create_e3d.utils.load_yaml",
-        lambda x: mocked_load_yaml(
-            os.path.join(
-                os.path.dirname(os.path.realpath(__file__)),
-                "..",
-                "..",
-                "..",
-                "calculation",
-                "gmsim_templates",
-                "16.1",
-                "emod3d_defaults.yaml",
+        lambda x: (
+            mocked_load_yaml(
+                os.path.join(
+                    os.path.dirname(os.path.realpath(__file__)),
+                    "..",
+                    "..",
+                    "..",
+                    "calculation",
+                    "gmsim_templates",
+                    "16.1",
+                    "emod3d_defaults.yaml",
+                )
             )
-        )
-        if "emod3d_defaults.yaml" in x
-        else mocked_load_yaml(x),
+            if "emod3d_defaults.yaml" in x
+            else mocked_load_yaml(x)
+        ),
     )
     for root_path, realisation in set_up:
         rel_dir = os.path.join(

@@ -4,23 +4,23 @@ import argparse
 from logging import Logger
 from pathlib import Path
 
-import workflow.automation.estimation.estimate_wct as est
-from qcore import utils, shared, srf, binary_version
-from qcore.config import host, get_machine_config
 import qcore.constants as const
-from qcore.qclogging import get_basic_logger
 import qcore.simulation_structure as sim_struct
+from qcore import binary_version, shared, srf
+from qcore.config import get_machine_config, host
+from qcore.qclogging import get_basic_logger
+
+import workflow.automation.estimation.estimate_wct as est
+from workflow import sim_params
 from workflow.automation.estimation import estimate_wct
 from workflow.automation.lib.constants import HF_VEL_MOD_1D
 from workflow.automation.lib.schedulers.scheduler_factory import Scheduler
-from workflow.automation.platform_config import (
-    platform_config,
-    get_platform_node_requirements,
-)
-
 from workflow.automation.lib.shared import get_hf_nt
-from workflow.automation.lib.shared_automated_workflow import submit_script_to_scheduler
+from workflow.automation.lib.shared_automated_workflow import \
+    submit_script_to_scheduler
 from workflow.automation.lib.shared_template import write_sl_script
+from workflow.automation.platform_config import (
+    get_platform_node_requirements, platform_config)
 
 # default values
 # Scale the number of nodes to be used for the simulation component
@@ -65,7 +65,7 @@ def main(
     rel_dir = Path(rel_dir).resolve()
 
     try:
-        params = utils.load_sim_params(rel_dir / "sim_params.yaml")
+        params = sim_params.load_sim_params(rel_dir / "sim_params.yaml")
     except FileNotFoundError:
         logger.error(f"Error: sim_params.yaml doesn't exist in {rel_dir}")
         raise

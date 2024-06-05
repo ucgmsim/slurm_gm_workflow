@@ -1,25 +1,24 @@
 #!/usr/bin/env python3
 """Script to create and submit a slurm script for LF"""
-import os
-import glob
 import argparse
+import glob
+import os
 from logging import Logger
 from pathlib import Path
 
-from qcore import utils, binary_version
-from qcore.config import get_machine_config, host
 import qcore.constants as const
-from qcore.qclogging import get_basic_logger
 import qcore.simulation_structure as sim_struct
+from qcore import binary_version
+from qcore.config import get_machine_config, host
+from qcore.qclogging import get_basic_logger
+
+from workflow import sim_params
 from workflow.automation.lib.schedulers.scheduler_factory import Scheduler
-
-from workflow.automation.platform_config import (
-    platform_config,
-    get_platform_node_requirements,
-)
-from workflow.automation.lib.shared_automated_workflow import submit_script_to_scheduler
+from workflow.automation.lib.shared_automated_workflow import \
+    submit_script_to_scheduler
 from workflow.automation.lib.shared_template import write_sl_script
-
+from workflow.automation.platform_config import (
+    get_platform_node_requirements, platform_config)
 
 merge_ts_name_prefix = "post_emod3d_merge_ts"
 
@@ -41,7 +40,7 @@ def main(
 ):
     rel_dir = Path(rel_dir).resolve()
     try:
-        params = utils.load_sim_params(rel_dir / "sim_params.yaml")
+        params = sim_params.load_sim_params(rel_dir / "sim_params.yaml")
     except FileNotFoundError:
         logger.error(f"Error: sim_params.yaml doesn't exist in {rel_dir}")
         raise

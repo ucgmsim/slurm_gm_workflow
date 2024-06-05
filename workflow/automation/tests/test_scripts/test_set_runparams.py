@@ -1,12 +1,12 @@
 import os
 from io import StringIO
 
-from qcore.utils import load_sim_params as mocked_load_sim_params
 from qcore.utils import load_yaml as mocked_load_yaml
 
+from workflow.automation.tests.test_common_set_up import (get_fault_from_rel,
+                                                          set_up)
 from workflow.calculation import create_e3d
-from workflow.automation.tests.test_common_set_up import get_fault_from_rel, set_up
-
+from workflow.sim_params import load_sim_params as mocked_load_sim_params
 
 EXPECTED_DATA = """all_in_one=1
 bfilt=4
@@ -132,20 +132,22 @@ def test_create_run_params(set_up, mocker):
         )
         mocker.patch(
             "workflow.calculation.create_e3d.utils.load_yaml",
-            lambda x: mocked_load_yaml(
-                os.path.join(
-                    os.path.dirname(os.path.realpath(__file__)),
-                    "..",
-                    "..",
-                    "..",
-                    "calculation",
-                    "gmsim_templates",
-                    "16.1",
-                    "emod3d_defaults.yaml",
+            lambda x: (
+                mocked_load_yaml(
+                    os.path.join(
+                        os.path.dirname(os.path.realpath(__file__)),
+                        "..",
+                        "..",
+                        "..",
+                        "calculation",
+                        "gmsim_templates",
+                        "16.1",
+                        "emod3d_defaults.yaml",
+                    )
                 )
-            )
-            if "emod3d_defaults.yaml" in x
-            else mocked_load_yaml(x),
+                if "emod3d_defaults.yaml" in x
+                else mocked_load_yaml(x)
+            ),
         )
 
         create_e3d.create_run_params("PangopangoF29_HYP01-10_S1244", None, 186802)

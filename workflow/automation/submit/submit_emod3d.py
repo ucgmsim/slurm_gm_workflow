@@ -2,29 +2,30 @@
 """Script to create and submit a slurm script for LF"""
 # TODO: import the CONFIG here
 # Section for parser to determine if using automate wct
-import os
 import argparse
+import os
 from logging import Logger
 from pathlib import Path
-from numpy import hstack
 
-from qcore import utils, shared, binary_version
-from qcore.config import get_machine_config, host
-from qcore.qclogging import get_basic_logger
 import qcore.constants as const
 import qcore.simulation_structure as sim_struct
+from numpy import hstack
+from qcore import binary_version, shared
+from qcore.config import get_machine_config, host
+from qcore.qclogging import get_basic_logger
 
 import workflow.automation.estimation.estimate_wct as est
 import workflow.calculation.create_e3d as set_runparams
+from workflow import sim_params
 from workflow.automation.estimation import estimate_wct
-from workflow.calculation.verification.check_emod3d_subdomains import test_domain
 from workflow.automation.lib.schedulers.scheduler_factory import Scheduler
-from workflow.automation.platform_config import (
-    platform_config,
-    get_platform_node_requirements,
-)
-from workflow.automation.lib.shared_automated_workflow import submit_script_to_scheduler
+from workflow.automation.lib.shared_automated_workflow import \
+    submit_script_to_scheduler
 from workflow.automation.lib.shared_template import write_sl_script
+from workflow.automation.platform_config import (
+    get_platform_node_requirements, platform_config)
+from workflow.calculation.verification.check_emod3d_subdomains import \
+    test_domain
 
 
 def main(
@@ -39,7 +40,7 @@ def main(
     rel_dir = Path(rel_dir).resolve()
 
     try:
-        params = utils.load_sim_params(rel_dir / "sim_params.yaml")
+        params = sim_params.load_sim_params(rel_dir / "sim_params.yaml")
     except FileNotFoundError:
         logger.error(f"Error: sim_params.yaml doesn't exist in {rel_dir}")
         raise

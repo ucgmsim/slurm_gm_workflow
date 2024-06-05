@@ -1,12 +1,12 @@
 import os
 from datetime import datetime
 
+import qcore.constants as const
 from jinja2 import Environment, FileSystemLoader
 
-import qcore.constants as const
-from qcore.utils import load_sim_params
 from workflow.automation.lib.schedulers.scheduler_factory import Scheduler
 from workflow.automation.platform_config import platform_config
+from workflow.sim_params import load_sim_params
 
 
 def write_sl_script(

@@ -4,21 +4,21 @@ json file.
 Example:
 python3 log_metadata.py ./log_dir LF cores=12 run_time=12.5
 """
+import argparse
+import json
 import os
 import sys
-import json
-import argparse
-from typing import Dict, List
 from datetime import datetime
 from logging import Logger
+from typing import Dict, List
 
 import pandas as pd
-from filelock import SoftFileLock, Timeout
-
-from qcore import utils
 import qcore.constants as const
-from qcore.srf import get_nsub_stoch
+from filelock import SoftFileLock, Timeout
 from qcore.qclogging import get_basic_logger
+from qcore.srf import get_nsub_stoch
+
+from workflow import sim_params
 
 METADATA_VALUES = "metadata_values"
 LOCK_FILENAME = "{}.lock".format(const.METADATA_LOG_FILENAME)
@@ -216,7 +216,7 @@ def main(args):
         const.ProcessType.NO_VM_PERT.str_value,
     ]:
         # Load the params
-        params = utils.load_sim_params(
+        params = sim_params.load_sim_params(
             os.path.join(args.sim_dir, "sim_params.yaml"),
             load_vm=True,
         )

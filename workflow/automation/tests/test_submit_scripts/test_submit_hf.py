@@ -1,12 +1,11 @@
 import os
+
 import pytest
 
-
-from qcore.utils import load_sim_params as mocked_load_sim_params
-
-from workflow.automation.tests.test_common_set_up import get_fault_from_rel, set_up
-
 import workflow.automation.submit.submit_hf
+from workflow.automation.tests.test_common_set_up import (get_fault_from_rel,
+                                                          set_up)
+from workflow.sim_params import load_sim_params as mocked_load_sim_params
 
 
 @pytest.mark.usefixtures("init_scheduler")
