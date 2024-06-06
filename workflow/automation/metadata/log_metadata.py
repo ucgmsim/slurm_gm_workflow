@@ -18,7 +18,7 @@ from filelock import SoftFileLock, Timeout
 from qcore.qclogging import get_basic_logger
 from qcore.srf import get_nsub_stoch
 
-from workflow import sim_params
+from workflow.automation import sim_params
 
 METADATA_VALUES = "metadata_values"
 LOCK_FILENAME = "{}.lock".format(const.METADATA_LOG_FILENAME)

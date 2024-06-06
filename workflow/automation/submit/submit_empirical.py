@@ -8,7 +8,7 @@ from pathlib import Path
 from qcore import constants as const
 from qcore import simulation_structure
 
-from workflow import sim_params
+from workflow.automation import sim_params
 from workflow.automation.lib.schedulers.scheduler_factory import Scheduler
 from workflow.automation.lib.shared_template import (generate_context,
                                                      resolve_header)

@@ -11,7 +11,7 @@ from qcore.config import get_machine_config, host
 from qcore.qclogging import get_basic_logger
 
 import workflow.automation.estimation.estimate_wct as est
-from workflow import sim_params
+from workflow.automation import sim_params
 from workflow.automation.estimation import estimate_wct
 from workflow.automation.lib.constants import HF_VEL_MOD_1D
 from workflow.automation.lib.schedulers.scheduler_factory import Scheduler

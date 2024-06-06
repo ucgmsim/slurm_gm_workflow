@@ -12,7 +12,7 @@ from qcore import binary_version
 from qcore.config import get_machine_config, host
 from qcore.qclogging import get_basic_logger
 
-from workflow import sim_params
+from workflow.automation import sim_params
 from workflow.automation.lib.schedulers.scheduler_factory import Scheduler
 from workflow.automation.lib.shared_automated_workflow import \
     submit_script_to_scheduler

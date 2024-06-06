@@ -20,7 +20,7 @@ from qcore.constants import MAXIMUM_EMOD3D_TIMESHIFT_1_VERSION
 from qcore.qclogging import get_basic_logger
 from qcore.utils import compare_versions
 
-from workflow import sim_params
+from workflow.automation import sim_params
 from workflow.automation.lib import shared
 from workflow.automation.platform_config import platform_config
 

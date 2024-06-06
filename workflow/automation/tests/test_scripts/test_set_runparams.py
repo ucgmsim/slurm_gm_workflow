@@ -6,7 +6,7 @@ from qcore.utils import load_yaml as mocked_load_yaml
 from workflow.automation.tests.test_common_set_up import (get_fault_from_rel,
                                                           set_up)
 from workflow.calculation import create_e3d
-from workflow.sim_params import load_sim_params as mocked_load_sim_params
+from workflow.automation.sim_params import load_sim_params as mocked_load_sim_params
 
 EXPECTED_DATA = """all_in_one=1
 bfilt=4

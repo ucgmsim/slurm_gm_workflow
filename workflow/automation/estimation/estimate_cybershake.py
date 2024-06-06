@@ -12,7 +12,7 @@ import pandas as pd
 import qcore.constants as const
 from qcore import shared, simulation_structure, srf, utils
 
-from workflow import sim_params
+from workflow.automation import sim_params
 from workflow.automation.estimation import estimate_wct
 from workflow.automation.platform_config import platform_config
 

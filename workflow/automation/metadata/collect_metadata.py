@@ -9,7 +9,7 @@ import pandas as pd
 from qcore import constants as const
 from qcore import shared, simulation_structure
 
-from workflow import sim_params
+from workflow.automation import sim_params
 from workflow.automation.lib import MgmtDB, constants
 
 COLUMNS = [

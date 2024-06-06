@@ -12,7 +12,7 @@ sim_dir=$1
 #srf_name=$3
 
 cd $sim_dir
-fd_ll=`python -c "from workflow import sim_params; p = sim_params.load_sim_params('sim_params.yaml'); print(p['FD_STATLIST'])"`
+fd_ll=`python -c "from workflow.automation import sim_params; p = sim_params.load_sim_params('sim_params.yaml'); print(p['FD_STATLIST'])"`
 
 bb_sim_dir=$sim_dir/BB
 bb_acc_dir=$bb_sim_dir/Acc

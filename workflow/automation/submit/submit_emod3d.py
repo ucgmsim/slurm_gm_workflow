@@ -16,7 +16,7 @@ from qcore.qclogging import get_basic_logger
 
 import workflow.automation.estimation.estimate_wct as est
 import workflow.calculation.create_e3d as set_runparams
-from workflow import sim_params
+from workflow.automation import sim_params
 from workflow.automation.estimation import estimate_wct
 from workflow.automation.lib.schedulers.scheduler_factory import Scheduler
 from workflow.automation.lib.shared_automated_workflow import \

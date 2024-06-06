@@ -14,7 +14,7 @@ import qcore.constants as const
 import qcore.simulation_structure as sim_struct
 from qcore import qclogging, utils
 
-from workflow import sim_params
+from workflow.automation import sim_params
 from workflow.automation.lib import shared_automated_workflow
 from workflow.automation.lib.MgmtDB import ComparisonOperator, MgmtDB
 from workflow.automation.lib.schedulers.scheduler_factory import Scheduler
