@@ -11,6 +11,7 @@ from qcore.formats import load_station_file
 from qcore.qclogging import get_basic_logger
 from qcore.timeseries import BBSeis, get_observed_stations
 
+from workflow.automation import sim_params
 from workflow.automation.estimation import estimate_wct
 from workflow.automation.lib.shared_automated_workflow import \
     submit_script_to_scheduler
