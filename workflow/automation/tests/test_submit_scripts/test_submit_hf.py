@@ -3,8 +3,10 @@ import os
 import pytest
 
 import workflow.automation.submit.submit_hf
-from workflow.automation.tests.test_common_set_up import get_fault_from_rel, set_up
-from workflow.automation.sim_params import load_sim_params as mocked_load_sim_params
+from workflow.automation.sim_params import \
+    load_sim_params as mocked_load_sim_params
+from workflow.automation.tests.test_common_set_up import (get_fault_from_rel,
+                                                          set_up)
 
 
 @pytest.mark.usefixtures("init_scheduler")
@@ -22,7 +24,7 @@ def test_main(set_up, mocker):
         )
         # Fault will probably change on each set of data, so reset this every time
         mocker.patch(
-            "workflow.automation.submit.submit_hf.utils.load_sim_params",
+            "workflow.automation.submit.submit_hf.sim_params.load_sim_params",
             lambda x: mocked_load_sim_params(os.path.join(rel_dir, x)),
         )
 
