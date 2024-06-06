@@ -8,19 +8,20 @@ from pathlib import Path
 
 import qcore.constants as const
 import qcore.simulation_structure as sim_struct
-from qcore import binary_version
-from qcore.config import get_machine_config, host
+from qcore import utils
+from qcore.config import host
 from qcore.qclogging import get_basic_logger
 
 from workflow.automation import sim_params
 from workflow.automation.lib.schedulers.scheduler_factory import Scheduler
-from workflow.automation.lib.shared_automated_workflow import \
-    submit_script_to_scheduler
+from workflow.automation.lib.shared_automated_workflow import submit_script_to_scheduler
 from workflow.automation.lib.shared_template import write_sl_script
 from workflow.automation.platform_config import (
-    get_platform_node_requirements, platform_config)
+    get_platform_node_requirements,
+    platform_config,
+)
 
-merge_ts_name_prefix = "post_emod3d_merge_ts"
+merge_ts_name_prefix = "merge_ts"
 
 default_run_time_merge_ts = "00:30:00"
 
@@ -64,21 +65,18 @@ def main(
         ),
         "wallclock_limit": default_run_time_merge_ts,
         "job_name": "merge_ts.{}".format(srf_name),
-        "job_description": "post emod3d: merge_ts",
+        "job_description": "merge_ts",
         "additional_lines": "",
-    }
-
-    command_template_parameters = {
-        "run_command": platform_config[const.PLATFORM_CONFIG.RUN_COMMAND.name],
-        "merge_ts_path": binary_version.get_unversioned_bin(
-            "merge_tsP3_par", get_machine_config(machine)["tools_dir"]
-        ),
     }
 
     body_template_params = (
         "{}.sl.template".format(merge_ts_name_prefix),
         {"lf_sim_dir": lf_sim_dir},
     )
+    command_template_parameters = {
+        "run_command": platform_config[const.PLATFORM_CONFIG.RUN_COMMAND.name],
+        "merge_ts_path": "merge_ts",
+    }
 
     script_prefix = "{}_{}".format(merge_ts_name_prefix, srf_name)
     script_file_path = write_sl_script(
@@ -117,7 +115,7 @@ def load_args():
         "--machine",
         type=str,
         default=host,
-        help="The machine post_emod3d is to be submitted to.",
+        help="The machine merge_ts is to be submitted to.",
     )
     parser.add_argument(
         "--write_directory",

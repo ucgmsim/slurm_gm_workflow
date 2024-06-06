@@ -14,14 +14,7 @@ start_time=`date +$runtime_fmt`
 
 python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py {{mgmt_db_location}}/mgmt_db_queue {{srf_name}} merge_ts running $SLURM_JOB_ID  --start_time "$start_time" --nodes $SLURM_NNODES --cores $SLURM_NTASKS --wct "$wct"
 
-filelist={{sim_dir}}/LF/flist_{{srf_name}}
-#get tools dir from shared_defaults
-#exe=$E3D_TOOLS_DIR/merge_tsP3_par
-ls -X {{sim_dir}}/LF/OutBin/*xyts-?????.e3d >$filelist
-NFILES=`cat $filelist |wc -l|sed -e 's/ //g'`
-OUTFILE=`head -1 $filelist  |sed -e 's/-[0-9]*.e3d/.e3d/g'`
-echo "NFILES=$NFILES OUTFILE=$OUTFILE"
-{{submit_command}}
+merge_ts {{sim_dir}}/LF/OutBin {{sim_dir}}/LF/OutBin/{{srf_name}}_xyts.e3d
 
 timestamp=`date +%Y%m%d_%H%M%S`
 end_time=`date +$runtime_fmt`
