@@ -452,8 +452,13 @@ class MgmtDB:
                 ).fetchall()
             for task in db_tasks:
                 # task is a tuple like (11, 'TaieriR_REL21'), tasks_waiting_for_updates is a list of strings like ['TaieriR_REL21__11']
-                if self._check_dependancy_met(task, logger) and f"{task[1]}__{task[0]}" not in tasks_waiting_for_updates:
-                    runnable_tasks.append((*task, self.get_retries(*task, get_WCT=True)))
+                if (
+                    self._check_dependancy_met(task, logger)
+                    and f"{task[1]}__{task[0]}" not in tasks_waiting_for_updates
+                ):
+                    runnable_tasks.append(
+                        (*task, self.get_retries(*task, get_WCT=True))
+                    )
 
             offset += 100
 
