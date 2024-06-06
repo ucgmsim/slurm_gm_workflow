@@ -1,25 +1,25 @@
 import glob
-from logging import Logger
-import numpy as np
-from os import path
 import sys
+from logging import Logger
+from os import path
 
+import numpy as np
 from qcore import constants as const
-from qcore import utils
+from qcore import simulation_structure as sim_struct
+from qcore.config import qconfig
 from qcore.formats import load_station_file
 from qcore.qclogging import get_basic_logger
-from qcore import simulation_structure as sim_struct
-from qcore.timeseries import get_observed_stations, BBSeis
-from qcore.config import qconfig
+from qcore.timeseries import BBSeis, get_observed_stations
 
+from workflow.automation import sim_params
 from workflow.automation.estimation import estimate_wct
-from workflow.automation.platform_config import (
-    platform_config,
-    get_platform_node_requirements,
-    get_target_machine,
-)
 from workflow.automation.lib.shared_automated_workflow import submit_script_to_scheduler
 from workflow.automation.lib.shared_template import write_sl_script
+from workflow.automation.platform_config import (
+    get_platform_node_requirements,
+    get_target_machine,
+    platform_config,
+)
 
 
 def submit_im_calc_slurm(
@@ -38,7 +38,7 @@ def submit_im_calc_slurm(
     two dictionaries, the passed in one has higher priority.
     """
     # Load the yaml params
-    params = utils.load_sim_params(
+    params = sim_params.load_sim_params(
         sim_struct.get_sim_params_yaml_path(sim_dir), load_vm=True
     )
     realisation_name = params[const.SimParams.run_name.value]

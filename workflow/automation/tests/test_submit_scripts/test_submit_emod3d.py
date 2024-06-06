@@ -1,15 +1,15 @@
 import os
+
 import pytest
-
-
-from qcore.utils import load_sim_params as mocked_load_sim_params
 from qcore.utils import load_yaml as mocked_load_yaml
 
-from workflow.automation.tests.test_common_set_up import get_fault_from_rel, set_up
+import workflow.automation.submit.submit_emod3d
+from workflow.automation.sim_params import \
+    load_sim_params as mocked_load_sim_params
+from workflow.automation.tests.test_common_set_up import (get_fault_from_rel,
+                                                          set_up)
 
 # from testing.conftest import init_scheduler
-
-import workflow.automation.submit.submit_emod3d
 
 
 @pytest.mark.usefixtures("init_scheduler")
@@ -46,7 +46,7 @@ def test_main(set_up, mocker):
         )
         # Fault will probably change on each set of data, so reset these every time
         mocker.patch(
-            "workflow.automation.submit.submit_emod3d.utils.load_sim_params",
+            "workflow.automation.submit.submit_emod3d.sim_params.load_sim_params",
             lambda x: mocked_load_sim_params(os.path.join(rel_dir, x)),
         )
 

@@ -8,10 +8,10 @@ from pathlib import Path
 
 import qcore.constants as const
 import qcore.simulation_structure as sim_struct
-from qcore import utils
 from qcore.config import host
 from qcore.qclogging import get_basic_logger
 
+from workflow.automation import sim_params
 from workflow.automation.lib.schedulers.scheduler_factory import Scheduler
 from workflow.automation.lib.shared_automated_workflow import submit_script_to_scheduler
 from workflow.automation.lib.shared_template import write_sl_script
@@ -40,7 +40,7 @@ def main(
 ):
     rel_dir = Path(rel_dir).resolve()
     try:
-        params = utils.load_sim_params(rel_dir / "sim_params.yaml")
+        params = sim_params.load_sim_params(rel_dir / "sim_params.yaml")
     except FileNotFoundError:
         logger.error(f"Error: sim_params.yaml doesn't exist in {rel_dir}")
         raise

@@ -14,16 +14,11 @@ import qcore.constants as const
 import qcore.simulation_structure as sim_struct
 from qcore import qclogging, utils
 
+from workflow.automation import sim_params
 from workflow.automation.lib import shared_automated_workflow
 from workflow.automation.lib.MgmtDB import ComparisonOperator, MgmtDB
 from workflow.automation.lib.schedulers.scheduler_factory import Scheduler
 from workflow.automation.metadata.log_metadata import store_metadata
-from workflow.automation.platform_config import (
-    HPC,
-    get_platform_specific_script,
-    get_target_machine,
-    platform_config,
-)
 from workflow.automation.submit.submit_bb import main as submit_bb_main
 from workflow.automation.submit.submit_emod3d import main as submit_lf_main
 from workflow.automation.submit.submit_empirical import generate_empirical_script
@@ -31,6 +26,13 @@ from workflow.automation.submit.submit_hf import main as submit_hf_main
 from workflow.automation.submit.submit_merge_ts import main as submit_merge_ts_main
 from workflow.automation.submit.submit_sim_imcalc import submit_im_calc_slurm
 from workflow.automation.submit.submit_vm_pert import submit_vm_pert_main
+from workflow.automation.lib import shared_automated_workflow
+from workflow.automation.platform_config import (
+    HPC,
+    platform_config,
+    get_platform_specific_script,
+    get_target_machine,
+)
 
 AUTO_SUBMIT_LOG_FILE_NAME = "auto_submit_log_{}.txt"
 
@@ -69,7 +71,7 @@ def submit_task(
     if not vm_params_path.exists() or proc_type == const.ProcessType.VM_PARAMS.value:
         vm_params_path = False
 
-    params = utils.load_sim_params(
+    params = sim_params.load_sim_params(
         sim_params_path,
         load_fault=fault_params_path,
         load_vm=vm_params_path,
