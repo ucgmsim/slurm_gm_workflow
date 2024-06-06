@@ -68,7 +68,7 @@ if [[ $? == 0 ]]; then
     if [[ ! -d $REL_LOC/ch_log ]]; then
         mkdir $REL_LOC/ch_log
     fi
-    fd_name=`python -c "from qcore import utils; pb = utils.load_sim_params('$REL_LOC/sim_params.yaml'); print(pb['FD_STATLIST'])"`
+    fd_name=`python -c "from workflow.automation import sim_params; pb = sim_params.load_sim_params('$REL_LOC/sim_params.yaml'); print(pb['FD_STATLIST'])"`
     fd_count=`cat $fd_name | wc -l`
     
     # save meta data
