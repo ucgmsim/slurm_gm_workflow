@@ -15,11 +15,12 @@ from workflow.automation import sim_params
 from workflow.automation.estimation import estimate_wct
 from workflow.automation.lib.schedulers.scheduler_factory import Scheduler
 from workflow.automation.lib.shared import get_hf_nt
-from workflow.automation.lib.shared_automated_workflow import \
-    submit_script_to_scheduler
+from workflow.automation.lib.shared_automated_workflow import submit_script_to_scheduler
 from workflow.automation.lib.shared_template import write_sl_script
 from workflow.automation.platform_config import (
-    get_platform_node_requirements, platform_config)
+    get_platform_node_requirements,
+    platform_config,
+)
 
 default_wct = "00:30:00"
 

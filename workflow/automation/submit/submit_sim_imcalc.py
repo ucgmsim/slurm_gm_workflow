@@ -13,11 +13,13 @@ from qcore.timeseries import BBSeis, get_observed_stations
 
 from workflow.automation import sim_params
 from workflow.automation.estimation import estimate_wct
-from workflow.automation.lib.shared_automated_workflow import \
-    submit_script_to_scheduler
+from workflow.automation.lib.shared_automated_workflow import submit_script_to_scheduler
 from workflow.automation.lib.shared_template import write_sl_script
 from workflow.automation.platform_config import (
-    get_platform_node_requirements, get_target_machine, platform_config)
+    get_platform_node_requirements,
+    get_target_machine,
+    platform_config,
+)
 
 
 def submit_im_calc_slurm(

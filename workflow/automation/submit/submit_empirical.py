@@ -10,8 +10,7 @@ from qcore import simulation_structure
 
 from workflow.automation import sim_params
 from workflow.automation.lib.schedulers.scheduler_factory import Scheduler
-from workflow.automation.lib.shared_template import (generate_context,
-                                                     resolve_header)
+from workflow.automation.lib.shared_template import generate_context, resolve_header
 from workflow.automation.platform_config import platform_config
 
 

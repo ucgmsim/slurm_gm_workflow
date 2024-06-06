@@ -16,11 +16,12 @@ from workflow.automation.estimation import estimate_wct
 from workflow.automation.lib.constants import HF_VEL_MOD_1D
 from workflow.automation.lib.schedulers.scheduler_factory import Scheduler
 from workflow.automation.lib.shared import get_hf_nt
-from workflow.automation.lib.shared_automated_workflow import \
-    submit_script_to_scheduler
+from workflow.automation.lib.shared_automated_workflow import submit_script_to_scheduler
 from workflow.automation.lib.shared_template import write_sl_script
 from workflow.automation.platform_config import (
-    get_platform_node_requirements, platform_config)
+    get_platform_node_requirements,
+    platform_config,
+)
 
 # default values
 # Scale the number of nodes to be used for the simulation component

@@ -19,13 +19,13 @@ import workflow.calculation.create_e3d as set_runparams
 from workflow.automation import sim_params
 from workflow.automation.estimation import estimate_wct
 from workflow.automation.lib.schedulers.scheduler_factory import Scheduler
-from workflow.automation.lib.shared_automated_workflow import \
-    submit_script_to_scheduler
+from workflow.automation.lib.shared_automated_workflow import submit_script_to_scheduler
 from workflow.automation.lib.shared_template import write_sl_script
 from workflow.automation.platform_config import (
-    get_platform_node_requirements, platform_config)
-from workflow.calculation.verification.check_emod3d_subdomains import \
-    test_domain
+    get_platform_node_requirements,
+    platform_config,
+)
+from workflow.calculation.verification.check_emod3d_subdomains import test_domain
 
 
 def main(
