@@ -6,7 +6,7 @@ from jinja2 import Environment, FileSystemLoader
 
 from workflow.automation.lib.schedulers.scheduler_factory import Scheduler
 from workflow.automation.platform_config import platform_config
-from workflow.sim_params import load_sim_params
+from workflow.automation.sim_params import load_sim_params
 
 
 def write_sl_script(
