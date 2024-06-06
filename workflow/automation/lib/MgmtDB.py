@@ -415,11 +415,13 @@ class MgmtDB:
         runnable_tasks = []
         offset = 0
 
+        tasks_waiting_for_updates = []
         # To prevent running a task that has already been submitted, but yet to be posted to the db,
         # we check the update files for any tasks that are waiting for DB updates
-        tasks_waiting_for_updates = [
-            "__".join(entry.split(".")[1:3]) for entry in update_files
-        ]  # each entry is {timestamp}.{run_name}.{proc_type} format. convert to "{run name}__{proc_type}" format
+        for entry in update_files:
+            run_name, proc_type = entry.split(".")[1:3]
+            tasks_waiting_for_updates.append(f"{run_name}__{proc_type}")
+        # each entry is {timestamp}.{run_name}.{proc_type} format. convert to "{run name}__{proc_type}" format
 
         with connect_db_ctx(self._db_file) as cur:
             entries = cur.execute(
@@ -448,14 +450,10 @@ class MgmtDB:
                     ),
                     (*allowed_tasks, allowed_rels, offset),
                 ).fetchall()
-            runnable_tasks.extend(
-                [
-                    (*task, self.get_retries(*task, get_WCT=True))
-                    for task in db_tasks
-                    if self._check_dependancy_met(task, logger)
-                    and "__".join(task) not in tasks_waiting_for_updates
-                ]
-            )
+            for task in db_tasks:
+                if self._check_dependancy_met(task, logger) and f"{task[1]}__{task[0]}" not in tasks_waiting_for_updates:
+                    runnable_tasks.append((*task, self.get_retries(*task, get_WCT=True)))
+
             offset += 100
 
         return runnable_tasks
