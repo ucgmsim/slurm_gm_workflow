@@ -8,18 +8,16 @@ from pathlib import Path
 
 import qcore.constants as const
 import qcore.simulation_structure as sim_struct
-from qcore import utils
 from qcore.config import host
 from qcore.qclogging import get_basic_logger
 
 from workflow.automation import sim_params
 from workflow.automation.lib.schedulers.scheduler_factory import Scheduler
-from workflow.automation.lib.shared_automated_workflow import submit_script_to_scheduler
+from workflow.automation.lib.shared_automated_workflow import \
+    submit_script_to_scheduler
 from workflow.automation.lib.shared_template import write_sl_script
 from workflow.automation.platform_config import (
-    get_platform_node_requirements,
-    platform_config,
-)
+    get_platform_node_requirements, platform_config)
 
 merge_ts_name_prefix = "merge_ts"
 
