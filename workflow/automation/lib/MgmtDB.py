@@ -439,7 +439,7 @@ class MgmtDB:
         while len(runnable_tasks) < task_limit and offset < entries:
             with connect_db_ctx(self._db_file) as cur:
                 db_tasks = cur.execute(
-                    """SELECT run_name, proc_type 
+                    """SELECT proc_type, run_name 
                               FROM status_enum, state 
                               WHERE state.status = status_enum.id
                                AND proc_type IN (?{})
@@ -451,8 +451,8 @@ class MgmtDB:
                     (*allowed_tasks, allowed_rels, offset),
                 ).fetchall()
             for task in db_tasks:
-                # task is a tuple like ('TaieriR_REL21', 11), tasks_waiting_for_updates is a list of strings like ['TaieriR_REL21__11']
-                if self._check_dependancy_met(task, logger) and f"{task[0]}__{task[1]}" not in tasks_waiting_for_updates:
+                # task is a tuple like (11, 'TaieriR_REL21'), tasks_waiting_for_updates is a list of strings like ['TaieriR_REL21__11']
+                if self._check_dependancy_met(task, logger) and f"{task[1]}__{task[0]}" not in tasks_waiting_for_updates:
                     runnable_tasks.append((*task, self.get_retries(*task, get_WCT=True)))
 
             offset += 100
