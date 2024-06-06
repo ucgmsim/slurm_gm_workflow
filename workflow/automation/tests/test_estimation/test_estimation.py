@@ -1,6 +1,7 @@
 """Unitests for estimation, the aim is to
 a) ensure that the estimate_wct workflow works 
 """
+
 import numpy as np
 import pytest
 from qcore import config
