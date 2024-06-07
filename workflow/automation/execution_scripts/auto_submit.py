@@ -1,29 +1,29 @@
 #!/usr/bin/env python3
 """Script for automatic submission of gm simulation jobs"""
-from collections import OrderedDict
-from pathlib import Path
 import argparse
 import os
 import time
-
+from collections import OrderedDict
 from datetime import datetime
 from logging import Logger
-from typing import List, Dict
-import numpy as np
+from pathlib import Path
+from typing import Dict, List
 
-from qcore import utils, qclogging
+import numpy as np
 import qcore.constants as const
 import qcore.simulation_structure as sim_struct
+from qcore import qclogging, utils
 
-
-from workflow.automation.metadata.log_metadata import store_metadata
-from workflow.automation.lib.MgmtDB import MgmtDB, ComparisonOperator
+from workflow.automation import sim_params
+from workflow.automation.lib import shared_automated_workflow
+from workflow.automation.lib.MgmtDB import ComparisonOperator, MgmtDB
 from workflow.automation.lib.schedulers.scheduler_factory import Scheduler
+from workflow.automation.metadata.log_metadata import store_metadata
+from workflow.automation.submit.submit_bb import main as submit_bb_main
 from workflow.automation.submit.submit_emod3d import main as submit_lf_main
 from workflow.automation.submit.submit_empirical import generate_empirical_script
-from workflow.automation.submit.submit_post_emod3d import main as submit_post_lf_main
 from workflow.automation.submit.submit_hf import main as submit_hf_main
-from workflow.automation.submit.submit_bb import main as submit_bb_main
+from workflow.automation.submit.submit_merge_ts import main as submit_merge_ts_main
 from workflow.automation.submit.submit_sim_imcalc import submit_im_calc_slurm
 from workflow.automation.submit.submit_vm_pert import submit_vm_pert_main
 from workflow.automation.lib import shared_automated_workflow
@@ -71,7 +71,7 @@ def submit_task(
     if not vm_params_path.exists() or proc_type == const.ProcessType.VM_PARAMS.value:
         vm_params_path = False
 
-    params = utils.load_sim_params(
+    params = sim_params.load_sim_params(
         sim_params_path,
         load_fault=fault_params_path,
         load_vm=vm_params_path,
@@ -114,7 +114,7 @@ def submit_task(
         task_logger.debug(
             "Submit post EMOD3D (merge_ts) arguments: {}".format(run_name)
         )
-        submit_post_lf_main(
+        submit_merge_ts_main(
             submit=True,
             machine=get_target_machine(const.ProcessType.merge_ts).name,
             rel_dir=sim_dir,

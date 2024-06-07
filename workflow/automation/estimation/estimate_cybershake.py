@@ -2,19 +2,19 @@
 """Script for estimating core hours and run time for LF, HH, BB
 for the specified srf/vm (and runs) folder
 """
-import sys
 import os
-import pandas as pd
-import numpy as np
-
+import sys
 from argparse import ArgumentParser
 from typing import List
 
+import numpy as np
+import pandas as pd
 import qcore.constants as const
-from qcore import shared, srf, utils, simulation_structure
+from qcore import shared, simulation_structure, srf, utils
+
+from workflow.automation import sim_params
 from workflow.automation.estimation import estimate_wct
 from workflow.automation.platform_config import platform_config
-
 
 VM_PARAMS_FILENAME = "vm_params.yaml"
 
@@ -488,7 +488,7 @@ def get_runs_dir_params(
     for ix, fault_name in enumerate(fault_names):
         r = realisations[ix][0]
 
-        params = utils.load_sim_params(
+        params = sim_params.load_sim_params(
             os.path.join(runs_dir, fault_name, r, "sim_params.yaml")
         )
 
