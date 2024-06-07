@@ -40,7 +40,7 @@ if [ "${REL_FILEPATH##*.}" == "csv" ]; then
     python $gmsim/Pre-processing/srf_generation/input_file_generation/realisation_to_srf.py $REL_FILEPATH
 else
     echo python $gmsim/Pre-processing/srf_generation/input_file_generation/generate_type5_srf.py $REL_FILEPATH $SRF_DIR
-    python $gmsim/Pre-processing/srf_generation/input_file_generation/realisation_to_srf.py $REL_FILEPATH $SRF_DIR
+    python $gmsim/Pre-processing/srf_generation/input_file_generation/generate_type5_srf.py $REL_FILEPATH $SRF_DIR
 fi
 
 
