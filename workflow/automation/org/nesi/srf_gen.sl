@@ -1,7 +1,7 @@
 #!/bin/bash
 # script version: slurm
 #
-# must be run with sbatch srf_gen.sl [REL_CSV] [MGMT_DB_LOC] [REL_NAME]
+# must be run with sbatch srf_gen.sl [REL_FILEPATH] [MGMT_DB_LOC] [REL_NAME]
 
 #SBATCH --job-name=SRF_GEN
 #SBATCH --time=01:00:00
@@ -11,7 +11,7 @@ if [[ -n ${CUR_ENV} && ${CUR_HPC} != "mahuika" ]]; then
     source $CUR_ENV/workflow/workflow/environments/helper_functions/activate_env.sh $CUR_ENV "mahuika"
 fi
 
-REL_FILEPATH=${1:?REL_CSV argument missing}
+REL_FILEPATH=${1:?REL_FILEPATH argument missing}
 MGMT_DB_LOC=${2:?MGMT_DB_LOC argument missing}
 REL_NAME=${3:?REL_NAME argument missing}
 

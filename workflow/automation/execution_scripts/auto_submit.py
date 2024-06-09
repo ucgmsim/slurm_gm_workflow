@@ -352,7 +352,7 @@ def submit_task(
                 const.ProcessType.VM_PARAMS,
                 OrderedDict(
                     {
-                        "realisationCSV": str(realisation_path),
+                        "REL_FILEPATH": str(realisation_path),
                         "OUTPUT_DIR": sim_struct.get_fault_VM_dir(
                             root_folder, run_name
                         ),
@@ -455,7 +455,7 @@ def submit_task(
                 const.ProcessType.SRF_GEN,
                 OrderedDict(
                     {
-                        "REL_YAML": str(realisation_path),
+                        "REL_FILEPATH": str(realisation_path),
                         "MGMT_DB_LOC": root_folder,
                         "REL_NAME": run_name,
                     }
