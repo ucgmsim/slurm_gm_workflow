@@ -62,7 +62,9 @@ if [[ $pass == 0 ]]; then
     mkdir -p $SRF_DIR/../Stoch
     mkdir -p $SRF_DIR/../Sim_params
     mv $STOCH_PATH $SRF_DIR/../Stoch
-    mv $SIM_PARAMS_PATH $SRF_DIR/../Sim_params
+    if [ "${REL_FILEPATH##*.}" == "csv" ]; then 
+        mv $SIM_PARAMS_PATH $SRF_DIR/../Sim_params
+    fi
 
     python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $REL_NAME SRF_GEN completed $SLURM_JOB_ID --end_time "$end_time"
 
