@@ -1,6 +1,7 @@
 import datetime
 from contextlib import contextmanager
 from logging import Logger
+from pathlib import Path
 import sqlite3 as sql
 from typing import List, Dict
 from dataclasses import dataclass
@@ -37,7 +38,7 @@ class SchedulerTask:
 
 @contextmanager
 def connect_db_ctx(
-    db_file: str, pragmas: list[str] = [], verbose: bool = False
+    db_file: Path, pragmas: list[str] = [], verbose: bool = False
 ) -> sql.Cursor:
     """
     Connects to the database at the specified path and yields a cursor to be used within a context manager.
@@ -45,7 +46,7 @@ def connect_db_ctx(
 
     Parameters
     ----------
-    db_file: str
+    db_file: Path
         The path to the database
     pragmas: list[str], optional
         A list of PRAGMA statements to be run on the connection
@@ -96,7 +97,7 @@ class MgmtDB:
     col_wct = "WCT"
 
     def __init__(self, db_file: str):
-        self._db_file = db_file
+        self._db_file = Path(db_file)
 
         # This should only be used when doing actions with the intention of
         # leaving the connection open, otherwise use connect_db_ctx with a "with"
@@ -662,7 +663,7 @@ class MgmtDB:
 
     @classmethod
     def init_db(cls, db_file: str, init_script: str):
-        with connect_db_ctx(db_file) as cur:
+        with connect_db_ctx(Path(db_file)) as cur:
             with open(init_script, "r") as f:
                 cur.executescript(f.read())
 

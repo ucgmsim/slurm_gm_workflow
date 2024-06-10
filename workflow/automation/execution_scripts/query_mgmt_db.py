@@ -5,7 +5,7 @@ A script that queries a slurm mgmt db and returns the status of a task
 """
 
 import argparse
-import os
+from pathlib import Path
 from typing import Union, List
 
 from workflow.automation.lib import MgmtDB
@@ -444,7 +444,7 @@ def main():
         query_mode.retry_max = True
 
     with MgmtDB.connect_db_ctx(
-        os.path.join(args.run_folder, "slurm_mgmt.db"),
+        Path(args.run_folder) / "slurm_mgmt.db",
         pragmas=["synchronous = EXTRA", "integrity_check"],
     ) as cur:
         print_run_status(cur, run_name, query_mode, args.config)
