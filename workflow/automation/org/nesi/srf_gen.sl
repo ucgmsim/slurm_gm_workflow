@@ -51,6 +51,7 @@ echo $end_time
 INFO_PATH=${REL_FILEPATH%.*}.info
 STOCH_PATH=${REL_FILEPATH%.*}.stoch
 SIM_PARAMS_PATH=${REL_FILEPATH%.*}.yaml
+SIM_PARAMS_PATH=$(echo "$SIM_PARAMS_PATH" | sed -e 's/\(.*\)type5_/\1/')
 
 #test non-empty info file exists before update
 res=`[[ -s $INFO_PATH ]]`
@@ -65,9 +66,7 @@ if [[ $pass == 0 ]]; then
     mkdir -p $SRF_DIR/../Stoch
     mkdir -p $SRF_DIR/../Sim_params
     mv $STOCH_PATH $SRF_DIR/../Stoch
-    if [ "${REL_FILEPATH##*.}" == "csv" ]; then 
-        mv $SIM_PARAMS_PATH $SRF_DIR/../Sim_params
-    fi
+    mv $SIM_PARAMS_PATH $SRF_DIR/../Sim_params
 
     python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $REL_NAME SRF_GEN completed $SLURM_JOB_ID --end_time "$end_time"
 
