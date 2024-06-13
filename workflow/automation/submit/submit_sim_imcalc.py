@@ -191,15 +191,18 @@ def submit_im_calc_slurm(
     # Header options requiring upstream settings
     # special treatment for im_calc, as the scaling feature in estimation is not suitable
     # cap the wct, otherwise cannot submit
-    est_run_time = est_run_time * (int(retries) + 1)
+    # est_run_time = est_run_time * (int(retries) + 1)
+
     n_cores, est_run_time = estimate_wct.confine_wct_node_parameters(
         n_cores,
         est_run_time,
-        preserve_core_count=retries > 0,
+        max_core_count=64,
+        preserve_core_count=False,  # retries > 0,
         hyperthreaded=const.ProcessType.IM_calculation.is_hyperth,
         can_checkpoint=True,  # hard coded for now as this is not available programatically
         logger=logger,
     )
+    est_run_time *= 2
     # set ch_safety_factor=1 as we scale it already.
     header_options["wallclock_limit"] = estimate_wct.convert_to_wct(est_run_time)
     logger.debug("Using WCT for IM_calc: {header_options['wallclock_limit']}")
