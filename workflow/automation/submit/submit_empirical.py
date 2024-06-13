@@ -1,14 +1,17 @@
 #!/usr/bin/env python
 
 import argparse
-from datetime import datetime
 import os
+from datetime import datetime
+from pathlib import Path
 
-from workflow.automation.lib.schedulers.scheduler_factory import Scheduler
-from workflow.automation.platform_config import platform_config
-from workflow.automation.lib.shared_template import generate_context, resolve_header
-from qcore import simulation_structure, utils
 from qcore import constants as const
+from qcore import simulation_structure
+
+from workflow.automation import sim_params
+from workflow.automation.lib.schedulers.scheduler_factory import Scheduler
+from workflow.automation.lib.shared_template import generate_context, resolve_header
+from workflow.automation.platform_config import platform_config
 
 
 def rrup_file_exists(cybershake_folder, realisation):
@@ -22,23 +25,22 @@ def write_sl(sl_name, content):
         f.write(content)
 
 
-def generate_empirical_script(np, extended, cybershake_folder, realisations, out_dir):
-    # extended is '-e' or ''
+def generate_empirical_script(
+    np, extended_switch, cybershake_folder, realisations, out_dir
+):
+    # extended_switch is '-e' or ''
 
     faults = map(simulation_structure.get_fault_from_realisation, realisations)
     run_data = zip(realisations, faults)
-    run_data = [
-        (rel, fault)
-        for (rel, fault) in run_data
-        if rrup_file_exists(cybershake_folder, rel)
-    ]
+    run_data = [(rel, fault) for (rel, fault) in run_data]
+
     # determine NP
     # TODO: empirical are currently not parallel, update this when they are
     np = 1
     # load sim_params for vs30_file
     # this is assuming all simulation use the same vs30 in root_params.yaml
     sim_dir = simulation_structure.get_sim_dir(cybershake_folder, run_data[0][0])
-    sim_params = utils.load_sim_params(
+    sim_parameters = sim_params.load_sim_params(
         simulation_structure.get_sim_params_yaml_path(sim_dir)
     )
 
@@ -62,14 +64,36 @@ def generate_empirical_script(np, extended, cybershake_folder, realisations, out
         write_directory=out_dir,
         platform_specific_args={"n_tasks": np},
     )
+    ll_ffp = sim_parameters["stat_file"]
+    z_ffp = Path(ll_ffp).with_suffix(
+        ".z"
+    )  # .ll file and .z file are assumed to be at the same directory
+    z_switch = (
+        f"--z_ffp {z_ffp}" if z_ffp.exists() else ""
+    )  #  empty z_switch -> z values to be estimated
+    srf_ffp = sim_parameters["srf_file"]
+
+    if sim_parameters.get("historical") == True:
+        # If root_params.yaml has "historical : true", this will use NZ GMDB source for the event specific data
+        srfinfo_switch = ""
+    else:
+        # this is a cybershake (future) event. We need srfinfo
+        srfinfo_ffp = Path(srf_ffp).with_suffix(".info")
+        assert srfinfo_ffp.exists(), "SRF info {srfinfo_ffp} not found"
+        srfinfo_switch = f"--srfinfo_ffp {srfinfo_ffp}"
+
     context = generate_context(
         template_dir,
         "empirical.sl.template",
         {
-            "run_data": run_data,
             "np": np,
-            "extended": extended,
-            "vs30_file": sim_params["stat_vs_est"],
+            "extended_switch": extended_switch,
+            "run_data": run_data,
+            "ll_ffp": ll_ffp,
+            "vs30_ffp": sim_parameters["stat_vs_est"],
+            "z_switch": z_switch,
+            "srf_ffp": srf_ffp,
+            "srfinfo_switch": srfinfo_switch,
             "mgmt_db_location": cybershake_folder,
         },
     )

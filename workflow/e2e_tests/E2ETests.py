@@ -1,4 +1,5 @@
 """Contains class and helper functions for end to end test"""
+
 import signal
 import sys
 import os
@@ -99,7 +100,7 @@ class E2ETests(object):
         "run_emod3d.sl.template",
         "run_hf_mpi.sl.template",
         "sim_im_calc.sl.template",
-        "post_emod3d_merge_ts.sl.template",
+        "merge_ts.sl.template",
     ]
 
     def __init__(self, config_file: str):

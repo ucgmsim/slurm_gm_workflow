@@ -7,7 +7,7 @@ export IMPATH_ADVANCED=$gmsim/IM_calculation/IM_calculation/Advanced_IM/scripts
 export PYTHONPATH=$gmsim/qcore:$PYTHONPATH:$IMPATH
 
 function getFromYaml {
-    echo $(python -c "from qcore.utils import load_sim_params; print(load_sim_params('$1').$2)")
+    echo $(python -c "from workflow.automation.sim_params import load_sim_params; print(load_sim_params('$1').$2)")
 }
 
 runtime_fmt="%Y-%m-%d_%H:%M:%S"

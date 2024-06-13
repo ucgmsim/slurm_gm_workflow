@@ -1,3 +1,4 @@
+cloudpickle
 numpy
 black
 Cython
@@ -13,5 +14,3 @@ pyyaml>=4.2b1
 scikit-learn
 scipy
 numba
-
-

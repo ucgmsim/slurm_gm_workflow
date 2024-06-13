@@ -1,4 +1,5 @@
 """Converts the contents of an outbin directory to a BB binary at a given location."""
+
 import os
 import argparse
 import numpy as np

@@ -7,7 +7,7 @@
   "IM_CALC_DEFAULT_N_CORES" : 40,
   "IM_SIM_CALC_TEMPLATE_NAME" : "sim_im_calc.sl.template",
   "IM_SIM_SL_SCRIPT_NAME" : "sim_im_calc_{}.sl",
-  "MERGE_TS_DEFAULT_NCORES" : 4,
+  "MERGE_TS_DEFAULT_NCORES" : 1,
   "VM_PERT_DEFAULT_NCORES" : 4,
   "DEFAULT_ACCOUNT" : {
     "mahuika": "nesi00213",

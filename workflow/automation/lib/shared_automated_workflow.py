@@ -1,6 +1,7 @@
 """
 Shared functions only used by the automated workflow
 """
+
 import json
 import os
 from datetime import datetime
