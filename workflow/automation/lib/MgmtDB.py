@@ -38,7 +38,7 @@ class SchedulerTask:
 
 @contextmanager
 def connect_db_ctx(
-    db_file: Path, pragmas: list[str] = [], verbose: bool = False
+    db_file: Path, pragmas: list = [], verbose: bool = False
 ) -> sql.Cursor:
     """
     Connects to the database at the specified path and yields a cursor to be used within a context manager.
