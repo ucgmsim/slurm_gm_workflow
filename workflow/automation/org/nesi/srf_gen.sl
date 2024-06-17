@@ -1,7 +1,7 @@
 #!/bin/bash
 # script version: slurm
 #
-# must be run with sbatch srf_gen.sl [REL_CSV] [MGMT_DB_LOC] [REL_NAME]
+# must be run with sbatch srf_gen.sl [REL_FILEPATH] [MGMT_DB_LOC] [REL_NAME]
 
 #SBATCH --job-name=SRF_GEN
 #SBATCH --time=01:00:00
@@ -11,12 +11,12 @@ if [[ -n ${CUR_ENV} && ${CUR_HPC} != "mahuika" ]]; then
     source $CUR_ENV/workflow/workflow/environments/helper_functions/activate_env.sh $CUR_ENV "mahuika"
 fi
 
-REL_CSV=${1:?REL_CSV argument missing}
+REL_FILEPATH=${1:?REL_FILEPATH argument missing}
 MGMT_DB_LOC=${2:?MGMT_DB_LOC argument missing}
 REL_NAME=${3:?REL_NAME argument missing}
 
 FAULT=$(echo $REL_NAME | cut -d"_" -f1)
-SRF_DIR=`dirname $REL_CSV`
+SRF_DIR=`dirname $REL_FILEPATH`
 SIM_DIR=$MGMT_DB_LOC/Runs/$FAULT/$REL_NAME
 CH_LOG_FFP=$SIM_DIR/ch_log
 
@@ -33,15 +33,28 @@ echo $start_time
 
 python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $REL_NAME SRF_GEN running $SLURM_JOB_ID --start_time "$start_time" --nodes $SLURM_NNODES --cores $SLURM_CPUS_PER_TASK --wct 01:00:00
 
-echo python $gmsim/Pre-processing/srf_generation/input_file_generation/realisation_to_srf.py $REL_CSV
-python $gmsim/Pre-processing/srf_generation/input_file_generation/realisation_to_srf.py $REL_CSV
+
+
+if [ "${REL_FILEPATH##*.}" == "csv" ]; then 
+    echo python $gmsim/Pre-processing/srf_generation/input_file_generation/realisation_to_srf.py $REL_FILEPATH
+    python $gmsim/Pre-processing/srf_generation/input_file_generation/realisation_to_srf.py $REL_FILEPATH
+else
+    echo python $gmsim/Pre-processing/srf_generation/input_file_generation/generate_type5_srf.py $REL_FILEPATH $SRF_DIR
+    python $gmsim/Pre-processing/srf_generation/input_file_generation/generate_type5_srf.py $REL_FILEPATH $SRF_DIR
+fi
+
+
 
 end_time=`date +$runtime_fmt`
 echo $end_time
 
-INFO_PATH=${REL_CSV%.*}.info
-STOCH_PATH=${REL_CSV%.*}.stoch
-SIM_PARAMS_PATH=${REL_CSV%.*}.yaml
+INFO_PATH=${REL_FILEPATH%.*}.info
+STOCH_PATH=${REL_FILEPATH%.*}.stoch
+SIM_PARAMS_PATH=${REL_FILEPATH%.*}.yaml
+# to avoid clobbering type5 simulations (that look like type5_REL_NAME.yaml)
+# the following sed command strips the last occurence of "type5_" in the full params path.
+# /path/to/type5_realisation/type5_REL01.yaml -> /path/to/type5_realisation/REL01.yaml
+SIM_PARAMS_PATH=$(echo "$SIM_PARAMS_PATH" | sed -e 's/\(.*\)type5_/\1/')
 
 #test non-empty info file exists before update
 res=`[[ -s $INFO_PATH ]]`

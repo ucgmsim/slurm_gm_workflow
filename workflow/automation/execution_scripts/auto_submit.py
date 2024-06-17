@@ -19,6 +19,12 @@ from workflow.automation.lib import shared_automated_workflow
 from workflow.automation.lib.MgmtDB import ComparisonOperator, MgmtDB
 from workflow.automation.lib.schedulers.scheduler_factory import Scheduler
 from workflow.automation.metadata.log_metadata import store_metadata
+from workflow.automation.platform_config import (
+    HPC,
+    get_platform_specific_script,
+    get_target_machine,
+    platform_config,
+)
 from workflow.automation.submit.submit_bb import main as submit_bb_main
 from workflow.automation.submit.submit_emod3d import main as submit_lf_main
 from workflow.automation.submit.submit_empirical import generate_empirical_script
@@ -26,13 +32,6 @@ from workflow.automation.submit.submit_hf import main as submit_hf_main
 from workflow.automation.submit.submit_merge_ts import main as submit_merge_ts_main
 from workflow.automation.submit.submit_sim_imcalc import submit_im_calc_slurm
 from workflow.automation.submit.submit_vm_pert import submit_vm_pert_main
-from workflow.automation.lib import shared_automated_workflow
-from workflow.automation.platform_config import (
-    HPC,
-    platform_config,
-    get_platform_specific_script,
-    get_target_machine,
-)
 
 AUTO_SUBMIT_LOG_FILE_NAME = "auto_submit_log_{}.txt"
 
@@ -337,15 +336,23 @@ def submit_task(
             logger=task_logger,
         )
     elif proc_type == const.ProcessType.VM_PARAMS.value:
+        realisation_yaml_path = Path(sim_struct.get_srf_dir(root_folder, run_name)) / (
+            run_name + ".yaml"
+        )
+        realisation_csv_path = Path(sim_struct.get_srf_dir(root_folder, run_name)) / (
+            run_name + ".csv"
+        )
+        realisation_path = (
+            realisation_yaml_path
+            if realisation_yaml_path.exists()
+            else realisation_csv_path
+        )
         submit_script_to_scheduler(
             get_platform_specific_script(
                 const.ProcessType.VM_PARAMS,
                 OrderedDict(
                     {
-                        "realisationCSV": str(
-                            Path(sim_struct.get_srf_dir(root_folder, run_name))
-                            / (run_name + ".csv")
-                        ),
+                        "REL_FILEPATH": str(realisation_path),
                         "OUTPUT_DIR": sim_struct.get_fault_VM_dir(
                             root_folder, run_name
                         ),
@@ -431,15 +438,24 @@ def submit_task(
             ).name,
         )
     elif proc_type == const.ProcessType.SRF_GEN.value:
+
+        realisation_yaml_path = Path(
+            sim_struct.get_srf_path(root_folder, run_name)
+        ).parent / (run_name + ".yaml")
+        realisation_csv_path = Path(
+            sim_struct.get_srf_path(root_folder, run_name)
+        ).parent / (run_name + ".csv")
+        realisation_path = (
+            realisation_yaml_path
+            if realisation_yaml_path.exists()
+            else realisation_csv_path
+        )
         submit_script_to_scheduler(
             get_platform_specific_script(
                 const.ProcessType.SRF_GEN,
                 OrderedDict(
                     {
-                        "REL_YAML": str(
-                            Path(sim_struct.get_srf_path(root_folder, run_name)).parent
-                            / f"{run_name}.csv"
-                        ),
+                        "REL_FILEPATH": str(realisation_path),
                         "MGMT_DB_LOC": root_folder,
                         "REL_NAME": run_name,
                     }
