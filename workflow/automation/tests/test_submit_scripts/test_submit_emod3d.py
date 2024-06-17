@@ -4,10 +4,8 @@ import pytest
 from qcore.utils import load_yaml as mocked_load_yaml
 
 import workflow.automation.submit.submit_emod3d
-from workflow.automation.sim_params import \
-    load_sim_params as mocked_load_sim_params
-from workflow.automation.tests.test_common_set_up import (get_fault_from_rel,
-                                                          set_up)
+from workflow.automation.sim_params import load_sim_params as mocked_load_sim_params
+from workflow.automation.tests.test_common_set_up import get_fault_from_rel, set_up
 
 # from testing.conftest import init_scheduler
 

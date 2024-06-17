@@ -3,10 +3,8 @@ from io import StringIO
 
 from qcore.utils import load_yaml as mocked_load_yaml
 
-from workflow.automation.sim_params import \
-    load_sim_params as mocked_load_sim_params
-from workflow.automation.tests.test_common_set_up import (get_fault_from_rel,
-                                                          set_up)
+from workflow.automation.sim_params import load_sim_params as mocked_load_sim_params
+from workflow.automation.tests.test_common_set_up import get_fault_from_rel, set_up
 from workflow.calculation import create_e3d
 
 EXPECTED_DATA = """all_in_one=1
