@@ -2,7 +2,7 @@
 # script version: pbs
 # must be run with qsub -v REL_NAME=A,MGMT_DB_LOC=B -V install_realisation.pbs
 
-#PBS -N VM_GEN
+#PBS -N install_rel
 #PBS -V
 #PBS -q normal
 #PBS -A inhouse
