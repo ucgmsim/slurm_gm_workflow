@@ -75,12 +75,12 @@ def generate_empirical_script(
 
     if sim_parameters.get("historical") == True:
         # If root_params.yaml has "historical : true", this will use NZ GMDB source for the event specific data
-        srfinfo_switch = ""
+        srfdata_switch = ""
     else:
-        # this is a cybershake (future) event. We need srfinfo
-        srfinfo_ffp = Path(srf_ffp).with_suffix(".info")
-        assert srfinfo_ffp.exists(), "SRF info {srfinfo_ffp} not found"
-        srfinfo_switch = f"--srfinfo_ffp {srfinfo_ffp}"
+        # this is a cybershake (future) event. We need srf data (.info)
+        srfdata_ffp = Path(srf_ffp).with_suffix(".info")
+        assert srfdata_ffp.exists(), "SRF data (.info) {srfdata_ffp} not found"
+        srfdata_switch = f"--srfdata_ffp {srfdata_ffp}"
 
     context = generate_context(
         template_dir,
@@ -93,7 +93,7 @@ def generate_empirical_script(
             "vs30_ffp": sim_parameters["stat_vs_est"],
             "z_switch": z_switch,
             "srf_ffp": srf_ffp,
-            "srfinfo_switch": srfinfo_switch,
+            "srfdata_switch": srfdata_switch,
             "mgmt_db_location": cybershake_folder,
         },
     )
