@@ -10,12 +10,13 @@ ISSUES: remove default values in e3d_default.par where not needed.
 
 from __future__ import print_function
 
+import argparse
 import os.path
 import sys
 from logging import Logger
 from os.path import basename
 
-from qcore import binary_version, constants, utils
+from qcore import binary_version, constants, simulation_structure, utils
 from qcore.constants import MAXIMUM_EMOD3D_TIMESHIFT_1_VERSION
 from qcore.qclogging import get_basic_logger
 from qcore.utils import compare_versions
@@ -33,7 +34,9 @@ def create_run_params(
     steps_per_checkpoint=None,
     logger: Logger = get_basic_logger(),
 ):
-    params = sim_params.load_sim_params(os.path.join(sim_dir, "sim_params.yaml"))
+    params = sim_params.load_sim_params(
+        simulation_structure.get_sim_params_yaml_path(sim_dir)
+    )
 
     emod3d_version = params["emod3d"]["emod3d_version"]
     emod3d_filepath = binary_version.get_lf_bin(emod3d_version)
@@ -137,5 +140,7 @@ def create_run_params(
 
 
 if __name__ == "__main__":
-    sim_dir = os.getcwd()
-    create_run_params(sim_dir)
+    parser = argparse.ArgumentParser()
+    parser.add_argument("SIM_ROOT")
+    parser.parse_args()
+    create_run_params(parser.sim_root)
