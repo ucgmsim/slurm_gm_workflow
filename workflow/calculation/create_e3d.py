@@ -8,11 +8,9 @@ USAGE: edit params.py (not this file), execute this file from the same directory
 ISSUES: remove default values in e3d_default.par where not needed.
 """
 
-from __future__ import print_function
 
 import argparse
 import os.path
-import sys
 from logging import Logger
 from os.path import basename
 
@@ -20,12 +18,9 @@ from qcore import binary_version, constants, simulation_structure, utils
 from qcore.constants import MAXIMUM_EMOD3D_TIMESHIFT_1_VERSION
 from qcore.qclogging import get_basic_logger
 from qcore.utils import compare_versions
-
 from workflow.automation import sim_params
 from workflow.automation.lib import shared
 from workflow.automation.platform_config import platform_config
-
-sys.path.append(os.path.abspath(os.path.curdir))
 
 
 def create_run_params(
@@ -54,7 +49,7 @@ def create_run_params(
     ):
         # EMOD3D adds a timeshift to the event rupture time
         # this must be accounted for as EMOD3D does not extend the sim duration by the amount of time shift
-        # As flo is in Hz, the sim_duration_extension is in s
+        # As flo is in Hz, the sim_duration_extension is in
         # Version 3.0.4 was the last version of EMOD3D to have a shift of 1/flo,
         # while versions after it have a shift of 3/flo
         sim_duration_extension = 1 / float(params["flo"])
