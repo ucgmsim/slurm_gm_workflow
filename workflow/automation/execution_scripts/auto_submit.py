@@ -10,10 +10,10 @@ from pathlib import Path
 from typing import Dict, List
 
 import numpy as np
+
 import qcore.constants as const
 import qcore.simulation_structure as sim_struct
 from qcore import qclogging, utils
-
 from workflow.automation import sim_params
 from workflow.automation.lib import shared_automated_workflow
 from workflow.automation.lib.MgmtDB import ComparisonOperator, MgmtDB
@@ -336,15 +336,15 @@ def submit_task(
             logger=task_logger,
         )
     elif proc_type == const.ProcessType.VM_PARAMS.value:
-        realisation_yaml_path = Path(sim_struct.get_srf_dir(root_folder, run_name)) / (
-            run_name + ".yaml"
+        realisation_json_path = Path(sim_struct.get_srf_dir(root_folder, run_name)) / (
+            run_name + ".json"
         )
         realisation_csv_path = Path(sim_struct.get_srf_dir(root_folder, run_name)) / (
             run_name + ".csv"
         )
         realisation_path = (
-            realisation_yaml_path
-            if realisation_yaml_path.exists()
+            realisation_json_path
+            if realisation_json_path.exists()
             else realisation_csv_path
         )
         submit_script_to_scheduler(
@@ -439,15 +439,15 @@ def submit_task(
         )
     elif proc_type == const.ProcessType.SRF_GEN.value:
 
-        realisation_yaml_path = Path(
+        realisation_json_path = Path(
             sim_struct.get_srf_path(root_folder, run_name)
-        ).parent / (run_name + ".yaml")
+        ).parent / (run_name + ".json")
         realisation_csv_path = Path(
             sim_struct.get_srf_path(root_folder, run_name)
         ).parent / (run_name + ".csv")
         realisation_path = (
-            realisation_yaml_path
-            if realisation_yaml_path.exists()
+            realisation_json_path
+            if realisation_json_path.exists()
             else realisation_csv_path
         )
         submit_script_to_scheduler(

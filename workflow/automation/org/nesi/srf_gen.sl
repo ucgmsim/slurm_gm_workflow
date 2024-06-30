@@ -51,10 +51,6 @@ echo $end_time
 INFO_PATH=${REL_FILEPATH%.*}.info
 STOCH_PATH=${REL_FILEPATH%.*}.stoch
 SIM_PARAMS_PATH=${REL_FILEPATH%.*}.yaml
-# to avoid clobbering type5 simulations (that look like type5_REL_NAME.yaml)
-# the following sed command strips the last occurence of "type5_" in the full params path.
-# /path/to/type5_realisation/type5_REL01.yaml -> /path/to/type5_realisation/REL01.yaml
-SIM_PARAMS_PATH=$(echo "$SIM_PARAMS_PATH" | sed -e 's/\(.*\)type5_/\1/')
 
 #test non-empty info file exists before update
 res=`[[ -s $INFO_PATH ]]`
