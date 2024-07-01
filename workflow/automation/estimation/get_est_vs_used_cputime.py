@@ -14,6 +14,7 @@ different from the time used, it may indicate that the wall clock time estimatio
 
 import argparse
 from datetime import datetime, timedelta
+import json
 import pandas as pd
 from pathlib import Path
 import sqlite3
@@ -26,8 +27,9 @@ PROCESS_TYPE = dict([(proc.value, proc.name) for proc in ProcessType])
 REVERSE_PROCESS_TYPE = {name: value for value, name in PROCESS_TYPE.items()}
 
 DEFAULT_OUTFILE = "est_vs_used_cpu_time.csv"
+CONFIG_JSON = Path(__file__).parents[1]/"org/nesi/config.json"
 
-
+print(CONFIG_JSON)
 def parse_args():
     parser = argparse.ArgumentParser(
         description="Get estimated vs used CPU time for jobs in the database"
@@ -46,8 +48,37 @@ def parse_args():
         default=DEFAULT_OUTFILE,
     )
 
+    parser.add_argument(
+        "--config",
+        type=Path,
+        help="Path to the config file",
+        default = CONFIG_JSON
+    )
+
     return parser.parse_args()
 
+def read_config(config_file: Path) -> dict:
+    """
+    Read the config file and return the contents as a dictionary
+    Parameters
+    ----------
+    config_file : Path
+        Path to the config file
+
+    Returns
+    -------
+    config_data : dict
+        A dictionary of the config file contents
+
+    """
+
+    with open(config_file, 'r') as config_file:
+        config_data = json.load(config_file)
+
+    # Extract the MACHINE_TASKS dictionary
+    machine_tasks = config_data.get("MACHINE_TASKS", {})
+    print(machine_tasks)
+    return machine_tasks
 
 def read_realization_list(list_file: Path) -> dict:
     """
