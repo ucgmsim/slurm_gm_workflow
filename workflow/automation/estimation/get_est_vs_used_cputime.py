@@ -29,7 +29,6 @@ REVERSE_PROCESS_TYPE = {name: value for value, name in PROCESS_TYPE.items()}
 DEFAULT_OUTFILE = "est_vs_used_cpu_time.csv"
 CONFIG_JSON = Path(__file__).parents[1]/"org/nesi/config.json"
 
-print(CONFIG_JSON)
 def parse_args():
     parser = argparse.ArgumentParser(
         description="Get estimated vs used CPU time for jobs in the database"
@@ -57,7 +56,7 @@ def parse_args():
 
     return parser.parse_args()
 
-def read_config(config_file: Path) -> dict:
+def task_machine_mapping(config_file: Path) -> dict:
     """
     Read the config file and return the contents as a dictionary
     Parameters
@@ -134,6 +133,11 @@ def main():
     if args.list is None:
         args.list = simulation_structure.get_cybershake_list(args.cs_root)
 
+
+    machine_dict = task_machine_mapping(args.config)
+#    print(machine_dict)
+
+
     # Connect to the SQLite database
     conn = sqlite3.connect(simulation_structure.get_mgmt_db(args.cs_root))
     cursor = conn.cursor()
@@ -203,18 +207,20 @@ def main():
 
         # Determine if it's a MEDIAN event (based on run_name)
         is_median_event = "_REL" not in run_name  # otherwise, it is a realization
-        num_rels = realization_data.get(run_name, None) if is_median_event else None
+        num_rels = realization_data.get(run_name, 0) if is_median_event else 0
+        num_rels = 0 if proc_type_str in ["VM_GEN","INSTALL_FAULT"] else num_rels
 
         # Convert time_used time to seconds
         time_used_seconds = convert_time_used_to_seconds(time_used)
 
         # Calculate CPU-seconds used
         cpu_seconds_used = time_used_seconds * int(num_cpus)
-
+        machine = machine_dict[proc_type_str]
         data_list.append(
             {
                 "run_name": run_name,
                 "proc_type": proc_type_str,
+                "machine": machine,
                 "job_id": job_id,
                 "num_cpus": num_cpus,
                 "time_requested": time_requested,
