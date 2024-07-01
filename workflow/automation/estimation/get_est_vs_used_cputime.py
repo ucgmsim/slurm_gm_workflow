@@ -11,6 +11,7 @@ This script is also useful to assess the quality of wall clock time estimation. 
 different from the time used, it may indicate that the wall clock time estimation method needs to be improved.
 
 """
+
 import argparse
 from datetime import datetime, timedelta
 import pandas as pd
@@ -26,15 +27,23 @@ REVERSE_PROCESS_TYPE = {name: value for value, name in PROCESS_TYPE.items()}
 
 DEFAULT_OUTFILE = "est_vs_used_cpu_time.csv"
 
+
 def parse_args():
     parser = argparse.ArgumentParser(
         description="Get estimated vs used CPU time for jobs in the database"
     )
-    parser.add_argument("cs_root", type=Path, help="Path to the Cybershake root directory")
-    parser.add_argument("--list", type=Path, help="Path to the realization list file")
-    parser.add_argument("--update", type=Path, help="Path to the existing CSV file to update")
     parser.add_argument(
-        "--outfile", type=Path, help="Path to the output CSV file", default=DEFAULT_OUTFILE
+        "cs_root", type=Path, help="Path to the Cybershake root directory"
+    )
+    parser.add_argument("--list", type=Path, help="Path to the realization list file")
+    parser.add_argument(
+        "--update", type=Path, help="Path to the existing CSV file to update"
+    )
+    parser.add_argument(
+        "--outfile",
+        type=Path,
+        help="Path to the output CSV file",
+        default=DEFAULT_OUTFILE,
     )
 
     return parser.parse_args()
@@ -101,7 +110,7 @@ def main():
     # Query the run data that has completed successfully
     cursor.execute(
         "SELECT run_name, proc_type, job_id FROM state WHERE status = 5 AND proc_type != 20"
-    ) # status 5 is for the completed jobs. proc_type 20 is for NO_VM_PERT which has no job_id
+    )  # status 5 is for the completed jobs. proc_type 20 is for NO_VM_PERT which has no job_id
 
     rows = cursor.fetchall()
 
@@ -123,7 +132,9 @@ def main():
                 (row["run_name"], REVERSE_PROCESS_TYPE[row["proc_type"]]): row["job_id"]
                 for _, row in existing_df.iterrows()
             }
-            print(f"Record found in {args.update} : {len(jobs_from_csv.keys())} entries")
+            print(
+                f"Record found in {args.update} : {len(jobs_from_csv.keys())} entries"
+            )
 
     jobs_from_db = {(row[0], row[1]): row[2] for row in rows}
     print(f"Record found in DB : {len(jobs_from_db.keys())} entries")
@@ -166,7 +177,7 @@ def main():
         # Convert time_used time to seconds
         time_used_seconds = convert_time_used_to_seconds(time_used)
 
-        # Calculate CPU-seconds used 
+        # Calculate CPU-seconds used
         cpu_seconds_used = time_used_seconds * int(num_cpus)
 
         data_list.append(
