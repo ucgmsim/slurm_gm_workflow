@@ -56,9 +56,9 @@ def parse_args():
 
     return parser.parse_args()
 
-def task_machine_mapping(config_file: Path) -> dict:
+def proc_type_machine_mapping(config_file: Path) -> dict:
     """
-    Read the config file and return the contents as a dictionary
+    Read the config file and return the proc_type/machine mapping as a dictionary
     Parameters
     ----------
     config_file : Path
@@ -66,18 +66,18 @@ def task_machine_mapping(config_file: Path) -> dict:
 
     Returns
     -------
-    config_data : dict
-        A dictionary of the config file contents
+    dict
+        A dictionary of the proc_type: machine mapping
 
     """
-
-    with open(config_file, 'r') as config_file:
-        config_data = json.load(config_file)
+    assert config_file.exists(), f"Config file {config_file} does not exist"
+    with open(config_file, 'r') as f:
+        config_data = json.load(f)
 
     # Extract the MACHINE_TASKS dictionary
-    machine_tasks = config_data.get("MACHINE_TASKS", {})
-    print(machine_tasks)
-    return machine_tasks
+    proc_type_machine_dict = config_data.get("MACHINE_TASKS", {})
+
+    return proc_type_machine_dict
 
 def read_realization_list(list_file: Path) -> dict:
     """
@@ -133,10 +133,8 @@ def main():
     if args.list is None:
         args.list = simulation_structure.get_cybershake_list(args.cs_root)
 
-
-    machine_dict = task_machine_mapping(args.config)
-#    print(machine_dict)
-
+    # Read the config file and get the proc_type/machine mapping
+    proc_type_machine_dict = proc_type_machine_mapping(args.config)
 
     # Connect to the SQLite database
     conn = sqlite3.connect(simulation_structure.get_mgmt_db(args.cs_root))
@@ -180,7 +178,7 @@ def main():
             set(jobs_from_db.keys()) - set(jobs_from_csv.keys())
         )
     }
-    print(f"Records to add to the CSV: {jobs_to_add_dict}")
+    print(f"Records to add to the CSV: {jobs_to_add_dict.keys()[:10]}...")
 
     # Iterate over job_ids
     for (run_name, proc_type_str), job_id in jobs_to_add_dict.items():
@@ -215,7 +213,7 @@ def main():
 
         # Calculate CPU-seconds used
         cpu_seconds_used = time_used_seconds * int(num_cpus)
-        machine = machine_dict[proc_type_str]
+        machine = proc_type_machine_dict[proc_type_str]
         data_list.append(
             {
                 "run_name": run_name,
