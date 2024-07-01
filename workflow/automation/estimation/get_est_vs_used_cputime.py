@@ -27,7 +27,8 @@ PROCESS_TYPE = dict([(proc.value, proc.name) for proc in ProcessType])
 REVERSE_PROCESS_TYPE = {name: value for value, name in PROCESS_TYPE.items()}
 
 DEFAULT_OUTFILE = "est_vs_used_cpu_time.csv"
-CONFIG_JSON = Path(__file__).parents[1]/"org/nesi/config.json"
+CONFIG_JSON = Path(__file__).parents[1] / "org/nesi/config.json"
+
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -48,13 +49,11 @@ def parse_args():
     )
 
     parser.add_argument(
-        "--config",
-        type=Path,
-        help="Path to the config file",
-        default = CONFIG_JSON
+        "--config", type=Path, help="Path to the config file", default=CONFIG_JSON
     )
 
     return parser.parse_args()
+
 
 def proc_type_machine_mapping(config_file: Path) -> dict:
     """
@@ -71,13 +70,14 @@ def proc_type_machine_mapping(config_file: Path) -> dict:
 
     """
     assert config_file.exists(), f"Config file {config_file} does not exist"
-    with open(config_file, 'r') as f:
+    with open(config_file, "r") as f:
         config_data = json.load(f)
 
     # Extract the MACHINE_TASKS dictionary
     proc_type_machine_dict = config_data.get("MACHINE_TASKS", {})
 
     return proc_type_machine_dict
+
 
 def read_realization_list(list_file: Path) -> dict:
     """
@@ -206,7 +206,7 @@ def main():
         # Determine if it's a MEDIAN event (based on run_name)
         is_median_event = "_REL" not in run_name  # otherwise, it is a realization
         num_rels = realization_data.get(run_name, 0) if is_median_event else 0
-        num_rels = 0 if proc_type_str in ["VM_GEN","INSTALL_FAULT"] else num_rels
+        num_rels = 0 if proc_type_str in ["VM_GEN", "INSTALL_FAULT"] else num_rels
 
         # Convert time_used time to seconds
         time_used_seconds = convert_time_used_to_seconds(time_used)
