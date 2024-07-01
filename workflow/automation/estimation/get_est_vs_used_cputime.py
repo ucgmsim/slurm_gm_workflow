@@ -153,7 +153,7 @@ def main():
         assert job_id is not None, f"{run_name} {proc_type_str}"
         # Execute sacct command
         for machine in ["maui", "mahuika"]:
-            cmd = f'sacct -j {job_id} -M {machine} --format="JobName,time_used,time_requested,AllocCPUS"'
+            cmd = f'sacct -j {job_id} -M {machine} --format="JobName,Elapsed,TimeLimit,AllocCPUS"'
             sacct_output = subprocess.check_output(
                 cmd,
                 shell=True,
