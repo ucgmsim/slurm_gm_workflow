@@ -178,7 +178,7 @@ def main():
             set(jobs_from_db.keys()) - set(jobs_from_csv.keys())
         )
     }
-    print(f"Records to add to the CSV: {jobs_to_add_dict.keys()[:10]}...")
+    print(f"Records to add to the CSV: {len(jobs_to_add_dict)}")
 
     # Iterate over job_ids
     for (run_name, proc_type_str), job_id in jobs_to_add_dict.items():
