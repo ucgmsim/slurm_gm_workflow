@@ -185,7 +185,7 @@ def main():
         # 4088784.0      00:03:19                    80
         #
         # The output above has jobid.{batch,extern,0} steps which are not needed.
-        # We will filter them out using ask command
+        # We will filter them out using awk command
         cmd = (
             f'sacct -j {job_ids} -M {machine} --format="JobID,Elapsed,TimeLimit,AllocCPUS" -n '
             + "|awk '{$1=$1} NF==4'"  # squash whitespaces and select lines with 4 fields
