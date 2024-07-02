@@ -8,11 +8,9 @@ the cpu time actually used.
 By multiplying the time_used by the number of realisations, we can accurately estimate the total core hours required
 to run the entire set of simulations.
 
-This script is also useful to assess the quality of wall clock time estimation. If the estimated time is significantly
-different from the time used, it may indicate that the estimation method needs to be improved.
-
-
-
+This script is also useful to assess the quality of wall clock time estimation.
+If the estimated time is significantly different from the time used,
+it may indicate that the estimation method needs to be improved.
 """
 
 import argparse
