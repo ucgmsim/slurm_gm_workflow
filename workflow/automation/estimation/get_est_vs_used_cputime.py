@@ -4,7 +4,7 @@ Collect estimated vs used CPU time for Cybershake-styled runs
 This is particularly useful to accurately estimate the core hours needed for the entire set of Cybershake-styled
 simulations. One can run the MEDIAN simulations only, and then run this script to collect the estimated core hours and
 the cpu time actually used.
-By multiplying the time_used by the number of realisations that is (optionally) supplied with --list argument,
+By multiplying the time_used by the number of realisations,
 we can accurately estimate the total core hours required to run the entire set of simulations.
 
 This script is also useful to assess the quality of wall clock time estimation. If the estimated time is significantly
@@ -37,7 +37,7 @@ def parse_args():
     parser.add_argument(
         "cs_root", type=Path, help="Path to the Cybershake root directory"
     )
-    parser.add_argument("--list", type=Path, help="Path to the realization list file")
+    parser.add_argument("list", type=Path, help="Path to the realization list file")
 
     parser.add_argument(
         "--outfile",
@@ -145,7 +145,7 @@ def main():
 
     rows = cursor.fetchall()
     jobs_from_db = {
-        row[2]: (row[0], PROCESS_TYPE.get(row[1])) for row in rows
+        str(row[2]): (row[0], PROCESS_TYPE.get(row[1])) for row in rows
     }  # job_id : (run_name, proc_type_str)
     print(f"Record found in DB : {len(jobs_from_db.keys())} entries")
 
@@ -157,18 +157,18 @@ def main():
 
     # Iterate over job_ids
     machines = ["maui", "mahuika"]
-    machine_jobs = dict().fromkeys(machines, [])
+    machine_jobs = {machine: [] for machine in machines}
 
     for job_id, (run_name, proc_type_str) in jobs_from_db.items():
         assert job_id is not None, f"{run_name} {proc_type_str}"
         machine = proc_type_machine_dict[proc_type_str]
-        machine_jobs[machine].append(job_id)
+        machine_jobs[machine].append(str(job_id))
 
     for machine in machines:
         job_ids = ",".join(machine_jobs[machine])
         cmd = (
             f'sacct -j {job_ids} -M {machine} --format="JobID,JobName,Elapsed,TimeLimit,AllocCPUS" -n '
-            + "|awk '\{$1=$1\} NF==5'"
+            + "|awk '{$1=$1} NF==5'"
         )
         sacct_output = subprocess.check_output(
             cmd,
@@ -177,7 +177,7 @@ def main():
         sacct_lines = sacct_output.decode().splitlines()
         assert len(sacct_lines) == len(
             machine_jobs[machine]
-        ), f"Something is wrong:  {machine} {sacct_lines} {cmd}"  # make sure the command returned the output we want
+        ), f"Something is wrong:  {len(sacct_lines)} {len(machine_jobs[machine])} {cmd}"  # make sure the command returned the output we want
         for line in sacct_lines:
             job_info = line.split()
             assert len(job_info) == 5
@@ -208,12 +208,13 @@ def main():
                     "time_used": time_used,
                     "cpu_seconds_used": cpu_seconds_used,
                     "num_rels": num_rels,
+                    "cpu_seconds_need_for_all_rels": cpu_seconds_used*num_rels
                 }
             )
 
     # Create a DataFrame from the list of dictionaries
     df = pd.DataFrame(data_list)
-
+    df.sort_values(['run_name','proc_type'], inplace=True)
     # Write to a CSV file
     df.to_csv(args.outfile, index=False)
 
