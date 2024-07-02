@@ -1,7 +1,7 @@
 """
 Collect estimated vs used CPU time for Cybershake-styled runs
 
-This is particularly useful to accurately determine the estimated core hours for the entire set of Cybershake-styled
+This is particularly useful to accurately estimate the core hours needed for the entire set of Cybershake-styled
 simulations. One can run the MEDIAN simulations only, and then run this script to collect the estimated core hours and
 the cpu time actually used.
 By multiplying the time_used by the number of realisations that is (optionally) supplied with --list argument,
@@ -38,9 +38,7 @@ def parse_args():
         "cs_root", type=Path, help="Path to the Cybershake root directory"
     )
     parser.add_argument("--list", type=Path, help="Path to the realization list file")
-    parser.add_argument(
-        "--update", type=Path, help="Path to the existing CSV file to update"
-    )
+
     parser.add_argument(
         "--outfile",
         type=Path,
@@ -146,95 +144,76 @@ def main():
     )  # status 5 is for the completed jobs. proc_type 20 is for NO_VM_PERT which has no job_id
 
     rows = cursor.fetchall()
+    jobs_from_db = {
+        row[2]: (row[0], PROCESS_TYPE.get(row[1])) for row in rows
+    }  # job_id : (run_name, proc_type_str)
+    print(f"Record found in DB : {len(jobs_from_db.keys())} entries")
 
     # Initialize a list to add the data to
     data_list = []
 
     # Read realization data from the list file
-    realization_data = read_realization_list(args.list) if args.list.exists() else {}
-
-    jobs_from_csv = {}
-    existing_df = None
-
-    if args.update is not None:
-        # Read the existing CSV file
-        args.update = Path(args.update)
-        if args.update.exists():
-            existing_df = pd.read_csv(args.update)
-            jobs_from_csv = {
-                (row["run_name"], REVERSE_PROCESS_TYPE[row["proc_type"]]): row["job_id"]
-                for _, row in existing_df.iterrows()
-            }
-            print(
-                f"Record found in {args.update} : {len(jobs_from_csv.keys())} entries"
-            )
-
-    jobs_from_db = {(row[0], row[1]): row[2] for row in rows}
-    print(f"Record found in DB : {len(jobs_from_db.keys())} entries")
-
-    jobs_to_add_dict = {
-        (run_name, PROCESS_TYPE[proc_type]): jobs_from_db[(run_name, proc_type)]
-        for run_name, proc_type in list(
-            set(jobs_from_db.keys()) - set(jobs_from_csv.keys())
-        )
-    }
-    print(f"Records to add to the CSV: {len(jobs_to_add_dict)}")
+    realization_numbers = read_realization_list(args.list) if args.list.exists() else {}
 
     # Iterate over job_ids
-    for (run_name, proc_type_str), job_id in jobs_to_add_dict.items():
+    machines = ["maui", "mahuika"]
+    machine_jobs = dict().fromkeys(machines, [])
 
+    for job_id, (run_name, proc_type_str) in jobs_from_db.items():
         assert job_id is not None, f"{run_name} {proc_type_str}"
-        # Execute sacct command
-        for machine in ["maui", "mahuika"]:
-            cmd = f'sacct -j {job_id} -M {machine} --format="JobName,Elapsed,TimeLimit,AllocCPUS"'
-            sacct_output = subprocess.check_output(
-                cmd,
-                shell=True,
-            )
-            sacct_lines = sacct_output.decode().splitlines()
-            if len(sacct_lines) >= 3:
-                break  # found the wanted result
-
-        assert (
-            len(sacct_lines) >= 3
-        ), f"Something is wrong:  {job_id} {sacct_lines} {cmd}"  # make sure the command returned the output we want
-
-        # Extract relevant info from the first row containing numbers
-        job_info = sacct_lines[2].split()
-        time_used, time_requested, num_cpus = job_info[1], job_info[2], job_info[3]
-
-        # Determine if it's a MEDIAN event (based on run_name)
-        is_median_event = "_REL" not in run_name  # otherwise, it is a realization
-        num_rels = realization_data.get(run_name, 0) if is_median_event else 0
-        num_rels = 0 if proc_type_str in ["VM_GEN", "INSTALL_FAULT"] else num_rels
-
-        # Convert time_used time to seconds
-        time_used_seconds = convert_time_used_to_seconds(time_used)
-
-        # Calculate CPU-seconds used
-        cpu_seconds_used = time_used_seconds * int(num_cpus)
         machine = proc_type_machine_dict[proc_type_str]
-        data_list.append(
-            {
-                "run_name": run_name,
-                "proc_type": proc_type_str,
-                "machine": machine,
-                "job_id": job_id,
-                "num_cpus": num_cpus,
-                "time_requested": time_requested,
-                "time_used": time_used,
-                "cpu_seconds_used": cpu_seconds_used,
-                "num_rels": num_rels,
-            }
+        machine_jobs[machine].append(job_id)
+
+    for machine in machines:
+        job_ids = ",".join(machine_jobs[machine])
+        cmd = (
+            f'sacct -j {job_ids} -M {machine} --format="JobID,JobName,Elapsed,TimeLimit,AllocCPUS" -n '
+            + "|awk '\{$1=$1\} NF==5'"
         )
+        sacct_output = subprocess.check_output(
+            cmd,
+            shell=True,
+        )
+        sacct_lines = sacct_output.decode().splitlines()
+        assert len(sacct_lines) == len(
+            machine_jobs[machine]
+        ), f"Something is wrong:  {machine} {sacct_lines} {cmd}"  # make sure the command returned the output we want
+        for line in sacct_lines:
+            job_info = line.split()
+            assert len(job_info) == 5
+            job_id, _, time_used, time_requested, num_cpus = job_info
+            assert job_id in machine_jobs[machine]
+            run_name, proc_type_str = jobs_from_db[job_id]
+            # Determine if it's a MEDIAN event (based on run_name)
+            is_median_event = "_REL" not in run_name  # otherwise, it is a realization
+
+            num_rels = realization_numbers.get(run_name, 0) if is_median_event else 0
+            # we don't need to consider realisations for VM_GEN or INSTALL_FAULT
+            num_rels = 0 if proc_type_str in ["VM_GEN", "INSTALL_FAULT"] else num_rels
+
+            # Convert time_used time to seconds
+            time_used_seconds = convert_time_used_to_seconds(time_used)
+
+            # Calculate CPU-seconds used
+            cpu_seconds_used = time_used_seconds * int(num_cpus)
+
+            data_list.append(
+                {
+                    "run_name": run_name,
+                    "proc_type": proc_type_str,
+                    "machine": machine,
+                    "job_id": job_id,
+                    "num_cpus": num_cpus,
+                    "time_requested": time_requested,
+                    "time_used": time_used,
+                    "cpu_seconds_used": cpu_seconds_used,
+                    "num_rels": num_rels,
+                }
+            )
 
     # Create a DataFrame from the list of dictionaries
     df = pd.DataFrame(data_list)
-    if existing_df is not None:
-        updated_df = pd.concat([existing_df, df], ignore_index=True)
-        # Sort by run_name and proc_type
-        updated_df.sort_values(by=["run_name", "proc_type"], inplace=True)
-        df = updated_df
+
     # Write to a CSV file
     df.to_csv(args.outfile, index=False)
 
