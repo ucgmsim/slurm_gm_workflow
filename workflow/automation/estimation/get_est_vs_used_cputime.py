@@ -1,15 +1,16 @@
 """
-Collect estimated vs used CPU time for Cybershake-styled runs on NeSI (only works on Maui/Mahuika)
+Collect estimated vs used CPU time for Cybershake-styled runs on NeSI. This only works on Maui/Mahuika running SLURM,
+as it relies on "sacct" command to get the job information.
 
 This is particularly useful to accurately estimate the core hours needed for the entire set of Cybershake-styled
-simulations. One can run the MEDIAN simulations only, and then run this script to collect the estimated core hours and
+simulation. One can run the MEDIAN events only, then run this script to collect the estimated core hours and
 the cpu time actually used.
-By multiplying the time_used by the number of realisations,
-we can accurately estimate the total core hours required to run the entire set of simulations.
+By multiplying the time_used by the number of realisations, we can accurately estimate the total core hours required
+to run the entire set of simulations.
 
-This script is also useful to assess the quality of wall clock time estimation. If the estimated time is significantly
-different from the time used, it may indicate that the wall clock time estimation method needs to be improved.
-
+This script is also useful to assess the quality of wall clock time estimation.
+If the estimated time is significantly different from the time used,
+it may indicate that the estimation method needs to be improved.
 """
 
 import argparse
@@ -169,9 +170,23 @@ def main():
 
     for machine in machines:
         job_ids = ",".join(machine_jobs[machine])
+        # Get the job information from the SLURM database
+        # eg.
+        # $ sacct -j 4088784,4088640 --format="JobID,Elapsed,TimeLimit,AllocCPUS" -n
+        # 4088640        02:10:42   08:17:00        160
+        # 4088640.bat+   02:10:42                    80
+        # 4088640.ext+   02:10:42                   160
+        # 4088640.0      02:10:06                   160
+        # 4088784        00:03:38   00:30:00         80
+        # 4088784.bat+   00:03:38                    80
+        # 4088784.ext+   00:03:38                    80
+        # 4088784.0      00:03:19                    80
+        #
+        # The output above has jobid.{batch,extern,0} steps which are not needed.
+        # We will filter them out using awk command
         cmd = (
-            f'sacct -j {job_ids} -M {machine} --format="JobID,JobName,Elapsed,TimeLimit,AllocCPUS" -n '
-            + "|awk '{$1=$1} NF==5'"
+            f'sacct -j {job_ids} -M {machine} --format="JobID,Elapsed,TimeLimit,AllocCPUS" -n '
+            + "|awk '{$1=$1} NF==4'"  # squash whitespaces and select lines with 4 fields
         )
         sacct_output = subprocess.check_output(
             cmd,
@@ -180,12 +195,14 @@ def main():
         sacct_lines = sacct_output.decode().splitlines()
         assert len(sacct_lines) == len(
             machine_jobs[machine]
-        ), f"Something is wrong:  {len(sacct_lines)} {len(machine_jobs[machine])} {cmd}"  # make sure the command returned the output we want
+        ), f": {cmd}\nReturned incorrect number of records {len(sacct_lines)}, expected {len(machine_jobs[machine])}"
         for line in sacct_lines:
             job_info = line.split()
-            assert len(job_info) == 5
-            job_id, _, time_used, time_requested, num_cpus = job_info
-            assert job_id in machine_jobs[machine]
+            assert len(job_info) == 4, f"Should have exactly 4 fields: {line}"
+            job_id, time_used, time_requested, num_cpus = job_info
+            assert (
+                job_id in machine_jobs[machine]
+            ), f"Job ID {job_id} not found in the list of jobs for {machine}"
             run_name, proc_type_str = jobs_from_db[job_id]
             # Determine if it's a MEDIAN event (based on run_name)
             is_median_event = "_REL" not in run_name  # otherwise, it is a realization
@@ -222,6 +239,12 @@ def main():
     df.to_csv(args.outfile, index=False)
 
     print(f"CSV file {args.outfile} created successfully!")
+    for machine in machines:
+        machine_df = df[df["machine"] == machine]
+        total = machine_df["cpu_seconds_need_for_all_rels"].sum()
+        print(
+            f"Total CPU hours needed for all realisations on {machine} : {total/3600:.2f} hours"
+        )
 
 
 if __name__ == "__main__":
