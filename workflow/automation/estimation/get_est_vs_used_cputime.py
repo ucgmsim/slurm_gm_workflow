@@ -1,5 +1,5 @@
 """
-Collect estimated vs used CPU time for Cybershake-styled runs
+Collect estimated vs used CPU time for Cybershake-styled runs on NeSI (only works on Maui/Mahuika)
 
 This is particularly useful to accurately estimate the core hours needed for the entire set of Cybershake-styled
 simulations. One can run the MEDIAN simulations only, and then run this script to collect the estimated core hours and
@@ -13,19 +13,22 @@ different from the time used, it may indicate that the wall clock time estimatio
 """
 
 import argparse
-from datetime import datetime, timedelta
 import json
-import pandas as pd
-from pathlib import Path
-import sqlite3
 import subprocess
+from datetime import datetime, timedelta
+from pathlib import Path
 
-from qcore.constants import ProcessType
+import pandas as pd
+
 from qcore import simulation_structure
+from qcore.constants import ProcessType
+from workflow.automation.lib import MgmtDB
 
-PROCESS_TYPE = dict([(proc.value, proc.name) for proc in ProcessType])
+PROCESS_TYPE = {proc.value: proc.name for proc in ProcessType}
 REVERSE_PROCESS_TYPE = {name: value for value, name in PROCESS_TYPE.items()}
 
+machines = ["maui", "mahuika"]
+MEDIAN_ONLY_PROCS = ["VM_GEN", "INSTALL_FAULT", "VM_PARAMS"]
 DEFAULT_OUTFILE = "est_vs_used_cpu_time.csv"
 CONFIG_JSON = Path(__file__).parents[1] / "org/nesi/config.json"
 
@@ -135,30 +138,30 @@ def main():
     proc_type_machine_dict = proc_type_machine_mapping(args.config)
 
     # Connect to the SQLite database
-    conn = sqlite3.connect(simulation_structure.get_mgmt_db(args.cs_root))
-    cursor = conn.cursor()
+    with MgmtDB.connect_db_ctx(simulation_structure.get_mgmt_db(args.cs_root)) as cur:
+        # Query the run data that has completed successfully
+        cur.execute(
+            "SELECT run_name, proc_type, job_id FROM state WHERE status = 5 AND proc_type != 20"
+        )  # status 5 is for the completed jobs. proc_type 20 is for NO_VM_PERT which has no job_id
 
-    # Query the run data that has completed successfully
-    cursor.execute(
-        "SELECT run_name, proc_type, job_id FROM state WHERE status = 5 AND proc_type != 20"
-    )  # status 5 is for the completed jobs. proc_type 20 is for NO_VM_PERT which has no job_id
+        rows = cur.fetchall()
 
-    rows = cursor.fetchall()
     jobs_from_db = {
         str(row[2]): (row[0], PROCESS_TYPE.get(row[1])) for row in rows
-    }  # job_id : (run_name, proc_type_str)
-    print(f"Record found in DB : {len(jobs_from_db.keys())} entries")
+    }  # job_id : (run_name, proc_type_str) / ensure job_id is a str
+    print(f"Record found in DB : {len(jobs_from_db)} entries")
 
     # Initialize a list to add the data to
     data_list = []
 
     # Read realization data from the list file
-    realization_numbers = read_realization_list(args.list) if args.list.exists() else {}
+    assert args.list.exists()
+    realization_numbers = read_realization_list(args.list)
 
-    # Iterate over job_ids
-    machines = ["maui", "mahuika"]
+    # initialize an empty list for each machine in machine_jobs dictionary
     machine_jobs = {machine: [] for machine in machines}
 
+    # Iterate over job_ids collected from DB
     for job_id, (run_name, proc_type_str) in jobs_from_db.items():
         assert job_id is not None, f"{run_name} {proc_type_str}"
         machine = proc_type_machine_dict[proc_type_str]
@@ -189,7 +192,7 @@ def main():
 
             num_rels = realization_numbers.get(run_name, 0) if is_median_event else 0
             # we don't need to consider realisations for VM_GEN or INSTALL_FAULT
-            num_rels = 0 if proc_type_str in ["VM_GEN", "INSTALL_FAULT"] else num_rels
+            num_rels = 0 if proc_type_str in MEDIAN_ONLY_PROCS else num_rels
 
             # Convert time_used time to seconds
             time_used_seconds = convert_time_used_to_seconds(time_used)
@@ -208,13 +211,13 @@ def main():
                     "time_used": time_used,
                     "cpu_seconds_used": cpu_seconds_used,
                     "num_rels": num_rels,
-                    "cpu_seconds_need_for_all_rels": cpu_seconds_used*num_rels
+                    "cpu_seconds_need_for_all_rels": cpu_seconds_used * num_rels,
                 }
             )
 
     # Create a DataFrame from the list of dictionaries
     df = pd.DataFrame(data_list)
-    df.sort_values(['run_name','proc_type'], inplace=True)
+    df.sort_values(["run_name", "proc_type"], inplace=True)
     # Write to a CSV file
     df.to_csv(args.outfile, index=False)
 
