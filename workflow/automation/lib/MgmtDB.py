@@ -1,15 +1,15 @@
 import datetime
+import sqlite3 as sql
 from contextlib import contextmanager
+from dataclasses import dataclass
 from logging import Logger
 from pathlib import Path
-import sqlite3 as sql
 from typing import List, Dict
-from dataclasses import dataclass
 
 import qcore.constants as const
-from workflow.automation.lib.constants import ChCountType
-from qcore.qclogging import get_basic_logger
 from qcore import simulation_structure
+from qcore.qclogging import get_basic_logger
+from workflow.automation.lib.constants import ChCountType
 
 Process = const.ProcessType
 
@@ -591,9 +591,8 @@ class MgmtDB:
                     """select * from proc_type_enum"""
                 ).fetchall()
 
-            for run_name in realisations:
-                for proc in procs_to_be_done:
-                    with connect_db_ctx(self._db_file) as cur:
+                for run_name in realisations:
+                    for proc in procs_to_be_done:
                         if not self._does_task_exists(cur, run_name, proc[0]):
                             self._insert_task(cur, run_name, proc[0])
 
