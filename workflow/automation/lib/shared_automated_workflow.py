@@ -9,9 +9,8 @@ from logging import Logger
 from typing import List
 
 import qcore.constants as const
-from qcore import utils as qc_utils
 from qcore import qclogging
-
+from qcore import utils as qc_utils
 from workflow.automation.lib.MgmtDB import MgmtDB
 from workflow.automation.lib.schedulers.scheduler_factory import Scheduler
 
@@ -175,7 +174,7 @@ def parse_config_file(task_config: str, logger: Logger = qclogging.get_basic_log
             # If something has ALL it should only be added to the main runner and no other
             continue
         if isinstance(pattern, str):
-            pattern = [pattern]
+            pattern = pattern.split(",")
         for subpattern in pattern:
             if subpattern == REL_ONLY:
                 add_to_dict_list(proc, tasks_with_pattern_match)

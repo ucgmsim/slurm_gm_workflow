@@ -39,7 +39,14 @@
     "LF2BB": "local",
     "HF2BB": "local",
     "plot_srf": "local",
-    "advanced_IM": "local"
+    "advanced_IM": "local",
+    "SRF_GEN": "local",
+    "INSTALL_REALISATION": "local",
+    "VM_PARAMS": "local",
+    "VM_GEN": "local",
+    "INSTALL_FAULT": "local",
+    "VM_PERT": "local",
+    "NO_VM_PERT": "local"
   },
   "DEFAULT_SITE_RESPONSE_DIR": false
 }
