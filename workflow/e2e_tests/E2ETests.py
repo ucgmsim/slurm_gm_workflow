@@ -1,29 +1,29 @@
 """Contains class and helper functions for end to end test"""
 
-import signal
-import sys
-import os
 import json
+import os
 import shutil
-import time
+import signal
+import sqlite3 as sql
 import subprocess
+import sys
+import time
 from collections import namedtuple
-from typing import List
-from threading import Thread
 from queue import Queue, Empty
+from threading import Thread
+from typing import List
 
 import numpy.random as nprdm
 import pandas as pd
-import sqlite3 as sql
+from VM import gen_coords
 from pandas.testing import assert_frame_equal
 
-from workflow.automation.lib.MgmtDB import MgmtDB, SchedulerTask
 import qcore.constants as const
-from qcore import formats
 import qcore.simulation_structure as sim_struct
+from qcore import formats
 from qcore.shared import non_blocking_exe, exe
+from workflow.automation.lib.MgmtDB import MgmtDB, SchedulerTask
 from workflow.automation.lib.schedulers.scheduler_factory import Scheduler
-from VM import gen_coords
 
 
 def get_sim_dirs(runs_dir):
@@ -226,8 +226,8 @@ class E2ETests(object):
                 const.Status.completed.value,
                 None,
             )
-            for fault, count in faults.items()
-            for i in range(1, count + 1)
+            for fault, (count, start_num) in faults.items()
+            for i in range(start_num, count + 1)
         ]
         db.update_entries_live(entries=entries, retry_max=2)
 

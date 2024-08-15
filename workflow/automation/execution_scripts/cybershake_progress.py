@@ -5,18 +5,18 @@ import argparse
 import json
 from pathlib import Path
 from typing import List
+from urllib.request import urlopen
 
 import numpy as np
 import pandas as pd
-from urllib.request import urlopen
 
+import qcore.constants as const
+import qcore.simulation_structure as sim_struct
+from qcore.formats import load_fault_selection_file
+from qcore.utils import load_yaml
 from workflow.automation.estimation.estimate_cybershake import main as est_cybershake
 from workflow.automation.lib.MgmtDB import MgmtDB, ComparisonOperator
 from workflow.automation.lib.constants import ChCountType
-import qcore.simulation_structure as sim_struct
-import qcore.constants as const
-from qcore.formats import load_fault_selection_file
-from qcore.utils import load_yaml
 
 # The default process types that are used for progress tracking
 DEFAULT_PROCESS_TYPES = [
@@ -80,12 +80,6 @@ def get_chours_used(root_dir: str, fault_names: List[str], proc_types: List[str]
     return df
 
 
-def get_faults_dict(cybershake_list: str):
-    """Gets the fault names and number of realisations from a cybershake fault list."""
-    faults_dict = load_fault_selection_file(cybershake_list)
-    return faults_dict
-
-
 def get_new_progress_df(root_dir, faults_dict, mgmtdb: MgmtDB, proc_types: List[str]):
     """Gets a new progress dataframe, runs the full estimation + collects
     all actual core hours and number of completed realisations
@@ -95,11 +89,16 @@ def get_new_progress_df(root_dir, faults_dict, mgmtdb: MgmtDB, proc_types: List[
     grouped_df = df.groupby("fault_name").sum()
     grouped_df.sort_index(axis=0, level=0, inplace=True)
 
-    fault_names, r_counts = np.asarray(list(faults_dict.keys())), np.asarray(
-        list(faults_dict.values())
-    )
+    fault_names = np.array(list(faults_dict.keys()))
+    r_counts = np.array([v[0] for v in faults_dict.values()])
+    start_nums = np.array([v[1] for v in faults_dict.values()])
+
     sort_ind = np.argsort(fault_names)
-    fault_names, r_counts = fault_names[sort_ind], r_counts[sort_ind]
+    fault_names, r_counts, start_nums = (
+        fault_names[sort_ind],
+        r_counts[sort_ind],
+        start_nums[sort_ind],
+    )
 
     # Ensure the grouped_df only contains faults from the faults_dict
     grouped_df = grouped_df.loc[fault_names]
@@ -156,7 +155,7 @@ def get_new_progress_df(root_dir, faults_dict, mgmtdb: MgmtDB, proc_types: List[
     progress_df["total", NUM_COMPLETED_COL] = progress_df.loc[
         :, idx[:, NUM_COMPLETED_COL]
     ].min(axis=1)
-    progress_df["total", R_COUNT_COL] = r_counts
+    progress_df["total", R_COUNT_COL] = r_counts - start_nums + 1
 
     return progress_df
 
@@ -284,7 +283,7 @@ def main(root_dir: Path, cybershake_list, proc_types, slack_config=None):
             else:
                 faults_dict[flt_name] = 1
     else:
-        faults_dict = get_faults_dict(cybershake_list)
+        faults_dict = load_fault_selection_file(cybershake_list)
 
     # Create new progress df
     progress_df = get_new_progress_df(root_dir, faults_dict, mgmtdb, proc_types)
