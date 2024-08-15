@@ -9,7 +9,6 @@ from qcore.config import (
     get_machine_config,
     host,
     qconfig,
-    MACHINE_MAPPINGS,
 )
 from qcore.constants import PLATFORM_CONFIG, ProcessType
 
@@ -29,21 +28,22 @@ def determine_platform_config(hostname=determine_machine_config()[0]):
     :param hostname: The name of the machine currently being run
     :return: The platform being run, the path to the config for that platform
     """
-    hpc_names = MACHINE_MAPPINGS.values()
 
-    if hostname == "local":
-        hpc_platform = Platforms.LOCAL
-    elif hostname in hpc_names:
-        if hostname == "maui":
-            hpc_platform = Platforms.NESI
-        elif hostname == "mahuika":
-            hpc_platform = Platforms.NESI
-        elif hostname == "stampede2":
-            hpc_platform = Platforms.TACC
-        elif hostname == "nurion":
-            hpc_platform = Platforms.KISTI
-    else:
-        raise ValueError("Unexpected host given")
+    # Dictionary to map hostnames to Platforms
+    # Available HPC machine names are in the qcore.config.MACHINE_MAPPINGS dictionary
+    hostname_to_platform = {
+        "local": Platforms.LOCAL,
+        "maui": Platforms.NESI,
+        "mahuika": Platforms.NESI,
+        "stampede2": Platforms.TACC,
+        "nurion": Platforms.KISTI,
+    }
+
+    try:
+        hpc_platform = hostname_to_platform[hostname]
+    except KeyError:
+        raise ValueError(f"Unexpected host given: {hostname}")
+
     basename = "config.json"
 
     config_path = join(
