@@ -572,14 +572,15 @@ class MgmtDB:
                 (entry.proc_type, entry.run_name, entry.error),
             )
 
-    def populate(self, realisations, fault_selection: Dict[str, int]):
+    def populate(self, realisations, fault_selection: Dict[str, tuple[int,int]]):
         """Initial population of the database with all realisations"""
         realisations.extend(fault_selection.keys())
+        breakpoint()
         realisations.extend(
             [
                 simulation_structure.get_realisation_name(event, i)
-                for event, rel_count in fault_selection.items()
-                for i in range(1, rel_count + 1)
+                for event, (rel_count,start_num) in fault_selection.items()
+                for i in range(start_num, rel_count + 1)
             ]
         )
 
