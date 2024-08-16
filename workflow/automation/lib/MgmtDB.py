@@ -575,6 +575,7 @@ class MgmtDB:
     def populate(self, realisations, fault_selection: Dict[str, tuple[int,int]]):
         """Initial population of the database with all realisations"""
         realisations.extend(fault_selection.keys())
+        breakpoint()
         realisations.extend(
             [
                 simulation_structure.get_realisation_name(event, i)
