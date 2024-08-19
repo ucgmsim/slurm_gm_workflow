@@ -64,6 +64,7 @@ def connect_db_ctx(
     # https://stackoverflow.com/a/8618328/2005856
     # https://docs.python.org/3/library/sqlite3.html#sqlite3.connect
     conn = sql.connect(db_file, timeout=50)
+
     if verbose:
         conn.set_trace_callback(print)
 
