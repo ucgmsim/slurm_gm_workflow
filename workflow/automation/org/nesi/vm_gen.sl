@@ -12,6 +12,8 @@ if [[ -n ${CUR_ENV} && ${CUR_HPC} != "mahuika" ]]; then
     source $CUR_ENV/workflow/workflow/environments/helper_functions/activate_env.sh $CUR_ENV "mahuika"
 fi
 
+module load LegacySystemLibs/7
+
 VM_PARAMS_YAML=${1:?VM_PARAMS_YAML argument missing}
 OUT_DIR=${2:?OUT_DIR argument missing}
 SRF=${3:?SRF argument missing}
