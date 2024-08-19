@@ -3,6 +3,7 @@
 #
 # must be run with sbatch vm_gen.sl [VM_PARAMS_YAML] [OUT_DIR] [SRF]  [MGMT_DB_LOC] [REL_NAME]
 
+##SBATCH --partition=milan
 #SBATCH --job-name=VM_GEN
 #SBATCH --time=01:00:00
 #SBATCH --cpus-per-task=32
