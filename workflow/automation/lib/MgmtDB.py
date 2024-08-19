@@ -63,7 +63,7 @@ def connect_db_ctx(
     # go away until raising an exception. Default is 5 secs
     # https://stackoverflow.com/a/8618328/2005856
     # https://docs.python.org/3/library/sqlite3.html#sqlite3.connect
-    conn = sql.connect(db_file, timeout=10)
+    conn = sql.connect(db_file, timeout=20)
     if verbose:
         conn.set_trace_callback(print)
 
