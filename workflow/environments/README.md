@@ -1,5 +1,15 @@
 ## Environment installation
 
+
+### Prerequisite
+This instruction assumes you want to have the latest Python environment for Maui and Mahuika.
+At the top of your `.bashrc`, add these two lines.
+
+```bash
+export MAUI_PYTHON_VER=3.9
+export MAHUIKA_PYTHON_VER=3.11
+source /nesi/project/nesi00213/share/bashrc.uceq.gcc123
+```
 ### Usage 
 Environment can be activated with 
 ```bash
@@ -16,6 +26,7 @@ deactivate_env
 Requirements: Setup github SSH keys for maui, 
 [guide](https://help.github.com/en/articles/connecting-to-github-with-ssh) for how to do this. 
 
+
 **All paths need to be absolute**
 
 A user specific environment of workflow, qcore, IMCalc, Empirical Engine and Pre-processing 
@@ -25,7 +36,7 @@ can be created as follows:
 git clone git@github.com:ucgmsim/slurm_gm_workflow.git
 ```
 2) Navigate to the copy of your workflow "slurm_gm_workflow/workflow/environments/org/nesi"
-3) Load the correct version of Python module. (**IMPORTANT**). For example, Python 3.9, try the following.
+3) Deactivate if you are currently in a virtual environment. Load the correct version of Python module. (**IMPORTANT**). For example, Python 3.9, try the following.
    ```bash
    module load cray-python cray-hdf5-parallel/1.12.2.3
    ```
@@ -49,24 +60,24 @@ pip install XXX --upgrade
 - Failing to activating the environemt and running `pip install` will end up with the packages installed under `$HOME/.local/lib`. Double-check if this directory has anything installed. Anything installed there can get in the way, and loaded instead of the one installed in the environment.
 
 6) Log into mahuika
-7) Add this line in your .bashrc
+7) Make sure you have this line in your .bashrc
 ```
-export PYTHON_VER=3.9
+export MAHUIKA_PYTHON_VER=3.11
 ```
-above the line of
+and 
 ```
-source /nesi/project/nesi00213/share/bashrc.uceq
+source /nesi/project/nesi00213/share/bashrc.uceq.gcc123
 ```
-Log out and log back in to Mahuika.
+If you just added two lines, log out and log back in to Mahuika.
 This will make sure you load the correct version of Python module. ie, the following command is automatically executed when you log in.
 ```bash
-module purge --force NeSI;module add NeSI Python/3.9.9-gimkl-2020a
+module purge --force NeSI;module add NeSI Python/3.11.6-foss-2023a
 ```
 
 8) When you are logged in, make sure the version you want is correctly loaded.
 ```bash
 which python
-/opt/nesi/CS400_centos7_bdw/Python/3.9.9-gimkl-2020a/bin/python
+/opt/nesi/CS400_centos7_bdw/Python/3.11.6-foss-2023a/bin/python
 ```
 
 9) Navigate to the `slurm_gm_workflow/workflow/environments/org/nesi`. This can be the one you used to make Maui environment in your home directory.
@@ -81,6 +92,16 @@ Notes:
 These will be reset to the default shared bashrc when deactivating the environment.
 - Activating an environment will also set a CUR_ENV and CUR_HPC environment variable,
 these are required for cross platform submission when using an environment.
+
+11) Activate the new environment by:
+```bash
+activate_env /nesi/project/nesi00213/Environments/sarah2024
+```
+It is often useful to have an alias defined in `.bashrc`
+
+```bash
+alias act_env="deactivate;activate_env /nesi/project/nesi00213/Environments/ENV_NAME"
+```
 
 #### Updating local packages
 Packages that are cloned into the environment (such as qcore) can be updated using
