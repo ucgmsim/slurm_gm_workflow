@@ -95,7 +95,7 @@ these are required for cross platform submission when using an environment.
 
 11) Activate the new environment by:
 ```bash
-activate_env /nesi/project/nesi00213/Environments/sarah2024
+activate_env /nesi/project/nesi00213/Environments/ENV_NAME
 ```
 It is often useful to have an alias defined in `.bashrc`
 
