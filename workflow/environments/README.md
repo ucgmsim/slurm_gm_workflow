@@ -102,6 +102,11 @@ It is often useful to have an alias defined in `.bashrc`
 ```bash
 alias act_env="deactivate;activate_env /nesi/project/nesi00213/Environments/ENV_NAME"
 ```
+12) Tie up loose ends
+Go to `$gmsim/qcore/qcore/data` and download the data set.
+```bash
+python download_data.py
+```
 
 #### Updating local packages
 Packages that are cloned into the environment (such as qcore) can be updated using
