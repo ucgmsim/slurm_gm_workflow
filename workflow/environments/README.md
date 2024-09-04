@@ -3,7 +3,7 @@
 
 ### Prerequisite
 This instruction assumes you want to have the latest Python environment for Maui and Mahuika.
-At the top of your `.bashrc`, add these two lines.
+At the top of your `.bashrc`, add the following three lines.
 
 ```bash
 export MAUI_PYTHON_VER=3.9
