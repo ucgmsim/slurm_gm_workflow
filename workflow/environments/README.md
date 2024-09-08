@@ -57,7 +57,7 @@ git clone git@github.com:ucgmsim/slurm_gm_workflow.git
 source /nesi/project/nesi00213/Environments/sjn872033/virt_envs/python3_maui/bin/activate 
 pip install XXX --upgrade
 ```
-- Failing to activating the environemt and running `pip install` will end up with the packages installed under `$HOME/.local/lib`. Double-check if this directory has anything installed. Anything installed there can get in the way, and loaded instead of the one installed in the environment.
+- Failing to activating the environment and running `pip install` will end up with the packages installed under `$HOME/.local/lib`. Double-check if this directory has anything installed. Anything installed there can get in the way, and loaded instead of the one installed in the environment.
 
 6) Log into mahuika
 7) Make sure you have this line in your .bashrc
