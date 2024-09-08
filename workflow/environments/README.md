@@ -24,7 +24,7 @@ deactivate_env
 ### Installation
 
 Requirements: Setup github SSH keys for maui, 
-[guide](https://help.github.com/en/articles/connecting-to-github-with-ssh) for how to do this. 
+see the [guide](https://help.github.com/en/articles/connecting-to-github-with-ssh) for how to do this. 
 
 
 **All paths need to be absolute**
