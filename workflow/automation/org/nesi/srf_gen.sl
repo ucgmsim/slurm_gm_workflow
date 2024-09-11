@@ -7,9 +7,6 @@
 #SBATCH --time=01:00:00
 #SBATCH --cpus-per-task=1
 
-echo $CUR_ENV
-echo $CUR_HPC
-
 # Make sure we use the correct Python and environment on Mahuika
 source $CUR_ENV/workflow/workflow/environments/helper_functions/activate_env.sh $CUR_ENV "mahuika"
 
