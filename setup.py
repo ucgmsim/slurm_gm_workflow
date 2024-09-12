@@ -1,5 +1,7 @@
 import os
-from setuptools import setup, find_packages
+
+from Cython.Build import cythonize
+from setuptools import Extension, find_packages, setup
 
 PACKAGE_NAME = "workflow"
 
@@ -7,6 +9,8 @@ PACKAGE_NAME = "workflow"
 def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
+
+extensions = [Extension("merge_ts.merge_ts_loop", ["merge_ts/merge_ts_loop.pyx"])]
 
 setup(
     name=PACKAGE_NAME,
@@ -27,6 +31,8 @@ setup(
         "workflow.calculation": ["gmsim_templates/*/*.yaml"],
         "workflow": ["*/*.yaml", "*/org/*/*.json", "*/*.json"],
     },
+    entry_points={"console_scripts": ["merge_ts=merge_ts.merge_ts:main"]},
+    ext_modules=cythonize(extensions),
     long_description=read("README.md"),
     classifiers=[
         "Development Status :: 1 - Alpha",
