@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 import shutil
 import pytest
 
@@ -35,7 +36,7 @@ def mgmt_db():
 def get_rows(db_file, table, col_name, col_value, selected_col="*"):
     query = "SELECT {} from {} where {} = ?".format(selected_col, table, col_name)
 
-    with connect_db_ctx(db_file) as cur:
+    with connect_db_ctx(Path(db_file)) as cur:
         rows = cur.execute(query, (col_value,)).fetchall()
     return rows
 

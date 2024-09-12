@@ -3,7 +3,7 @@ export IMPATH=$gmsim/IM_calculation/IM_calculation/scripts
 export PYTHONPATH=$gmsim/qcore:/$PYTHONPATH:$IMPATH
 
 function getFromYaml {
-    echo $(python -c "from qcore.utils import load_sim_params; print(load_sim_params('$1')['$2'])")
+    echo $(python -c "from workflow.automation.sim_params import load_sim_params; print(load_sim_params('$1')['$2'])")
 }
 
 runtime_fmt="%Y-%m-%d_%H:%M:%S"
@@ -50,7 +50,7 @@ if [[ $res == 0 ]]; then
         mkdir {{sim_dir}}/ch_log
     fi
 
-    fd_name=`python -c "from qcore import utils; params = utils.load_sim_params('{{sim_dir}}/sim_params.yaml'); print(params.FD_STATLIST)"`
+    fd_name=`python -c "from workflow.automation import sim_params; params = sim_params.load_sim_params('{{sim_dir}}/sim_params.yaml'); print(params['FD_STATLIST'])"`
     fd_count=`cat $fd_name | wc -l`
     pSA_count=`cat {{sim_dir}}/IM_calc/{{realisation_name}}.csv | head -n 1 | grep -o pSA | wc -l`
 

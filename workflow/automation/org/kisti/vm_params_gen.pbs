@@ -34,8 +34,13 @@ echo $start_time
 
 python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $REL_NAME VM_PARAMS running $SLURM_JOB_ID --start_time "$start_time" --nodes $SLURM_NNODES --cores $SLURM_CPUS_PER_TASK --wct 00:30:00
 
-echo "python $gmsim/Pre-processing/VM/rel2vm_params.py -o $OUTPUT_DIR --hh $HH --vm-version $VM_VERSION --vm-topo  $VM_TOPO --pgv $PGV_THRESHOLD --ds-multiplier $DS_MULTIPLIER $realisationCSV"
-python $gmsim/Pre-processing/VM/rel2vm_params.py -o $OUTPUT_DIR --hh $HH --vm-version $VM_VERSION --vm-topo  $VM_TOPO --pgv $PGV_THRESHOLD --ds-multiplier $DS_MULTIPLIER $realisationCSV
+if [ "${REL_FILEPATH##*.}" == "csv" ]; then 
+    echo "python $gmsim/Pre-processing/VM/rel2vm_params.py -o $OUTPUT_DIR --hh $HH --vm-version $VM_VERSION --vm-topo  $VM_TOPO --pgv $PGV_THRESHOLD --ds-multiplier $DS_MULTIPLIER $REL_FILEPATH"
+    python "$gmsim/Pre-processing/VM/rel2vm_params.py" -o "$OUTPUT_DIR" --hh "$HH" --vm-version "$VM_VERSION" --vm-topo "$VM_TOPO" --pgv "$PGV_THRESHOLD" --ds-multiplier "$DS_MULTIPLIER" "$REL_FILEPATH"
+else
+    echo "python $gmsim/Pre-processing/VM/type5_rel2vm_params.py --resolution $HH --vm-version $VM_VERSION --vm-topo  $VM_TOPO --pgv $PGV_THRESHOLD --ds-multiplier $DS_MULTIPLIER $REL_FILEPATH $OUTPUT_DIR/${REL_NAME}_vm_parms.yaml"
+    python "$gmsim/Pre-processing/VM/type5_rel2vm_params.py" --resolution "$HH" --vm-version "$VM_VERSION" --vm-topo-type  "$VM_TOPO" --ds-multiplier "$DS_MULTIPLIER" "$REL_FILEPATH" "$OUTPUT_DIR/vm_params.yaml"
+fi
 
 end_time=`date +$runtime_fmt`
 echo $end_time
