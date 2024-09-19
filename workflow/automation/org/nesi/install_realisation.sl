@@ -7,15 +7,13 @@
 #SBATCH --time=00:15:00
 #SBATCH --cpus-per-task=1
 
-if [[ -n ${CUR_ENV} && ${CUR_HPC} != "mahuika" ]]; then
-    source $CUR_ENV/workflow/workflow/environments/helper_functions/activate_env.sh $CUR_ENV "mahuika"
-fi
+source $CUR_ENV/workflow/workflow/environments/helper_functions/activate_env.sh $CUR_ENV "mahuika"
 
 
 REL_NAME=${1:?REL_NAME argument missing}
 SIMULATION_ROOT=${2:?SIMULATION_ROOT argument missing}
 
-FAULT=$(echo $REL_NAME | cut -d"_" -f1)
+FAULT=$(echo ${REL_NAME/_REL??/})
 SIM_DIR=$SIMULATION_ROOT/Runs/$FAULT/$REL_NAME
 CH_LOG_FFP=$SIM_DIR/ch_log
 
@@ -38,7 +36,7 @@ end_time=`date +$runtime_fmt`
 echo $end_time
 
 timestamp=`date +%Y%m%d_%H%M%S`
-if [[ -f $SIM_DIR/sim_params.yaml ]] & [[ -s $SIM_DIR/sim_params.yaml ]]; then
+if [[ -f $SIM_DIR/sim_params.yaml ]] && [[ -s $SIM_DIR/sim_params.yaml ]]; then
     # File exists and is not empty. Passed
 
     python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py $SIMULATION_ROOT/mgmt_db_queue $REL_NAME INSTALL_REALISATION completed $SLURM_JOB_ID --end_time "$end_time"
