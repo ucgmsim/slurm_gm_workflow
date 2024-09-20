@@ -53,8 +53,8 @@ else
     backup_directory="$nobackup/tmp/$USER/""$SLURM_JOB_ID""_{{srf_name}}_LF"
     echo "Completion test failed, moving all files to $backup_directory"
     echo "Failure reason: $res"
-    mv {{sim_dir}}/LF $backup_directory
-    mkdir -p {{sim_dir}}/LF/OutBin # create LF directory
-    cp $backup_directory/e3d.par {{sim_dir}}/LF/ # bring back e3d.par
-
+    mkdir -p $backup_directory
+    mv {{sim_dir}}/LF/* $backup_directory
+    mkdir -p {{sim_dir}}/LF # create LF directory
+    cp $backup_directory/e3d.par {{sim_dir}}/LF # bring back e3d.par
 fi
