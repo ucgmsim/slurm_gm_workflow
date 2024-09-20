@@ -52,7 +52,7 @@ else
     echo "Completion test failed, moving all files to $backup_directory"
     echo "Failure reason: $res"
     mkdir -p $backup_directory
-    mv {{sim_dir}}/LF $backup_directory
+    mv {{sim_dir}}/LF/* $backup_directory
     mkdir -p {{sim_dir}}/LF # create LF directory
     cp $backup_directory/e3d.par {{sim_dir}}/LF # bring back e3d.par
 
