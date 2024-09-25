@@ -20,7 +20,7 @@ echo ___calculating empirical___
     timestamp=`date +%Y%m%d_%H%M%S`
     python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py {{mgmt_db_location}}/mgmt_db_queue {{run_name}} Empirical running $SLURM_JOB_ID --start_time "$start_time" --nodes $SLURM_NNODES --cores $SLURM_NTASKS --wct "$wct"
     #run the script
-    time python $EMP_PATH/empirical/scripts/calculate_empirical.py {{output_dir}} {{extended_switch}} --ll_ffp {{ll_ffp}} --vs30_ffp {{vs30_ffp}} {{z_switch}} --srf_ffp {{srf_ffp}} {{srfinfo_switch}}
+    time python $EMP_PATH/empirical/scripts/calculate_empirical.py {{output_dir}} {{extended_switch}} --ll_ffp {{ll_ffp}} --vs30_ffp {{vs30_ffp}} {{z_switch}} --srf_ffp {{srf_ffp}} {{srfdata_switch}}
 
 end_time=`date +$runtime_fmt`
 
