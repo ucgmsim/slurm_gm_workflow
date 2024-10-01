@@ -13,7 +13,7 @@ source $CUR_ENV/workflow/workflow/environments/helper_functions/activate_env.sh 
 REL_NAME=${1:?REL_NAME argument missing}
 SIMULATION_ROOT=${2:?SIMULATION_ROOT argument missing}
 
-FAULT=$(echo ${REL_NAME/_REL??/})
+FAULT=$(echo ${REL_NAME/_REL*/})
 SIM_DIR=$SIMULATION_ROOT/Runs/$FAULT/$REL_NAME
 CH_LOG_FFP=$SIM_DIR/ch_log
 
