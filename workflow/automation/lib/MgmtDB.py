@@ -1,15 +1,15 @@
 import datetime
+import sqlite3 as sql
 from contextlib import contextmanager
+from dataclasses import dataclass
 from logging import Logger
 from pathlib import Path
-import sqlite3 as sql
 from typing import List, Dict
-from dataclasses import dataclass
 
 import qcore.constants as const
-from workflow.automation.lib.constants import ChCountType
-from qcore.qclogging import get_basic_logger
 from qcore import simulation_structure
+from qcore.qclogging import get_basic_logger
+from workflow.automation.lib.constants import ChCountType
 
 Process = const.ProcessType
 
@@ -63,7 +63,7 @@ def connect_db_ctx(
     # go away until raising an exception. Default is 5 secs
     # https://stackoverflow.com/a/8618328/2005856
     # https://docs.python.org/3/library/sqlite3.html#sqlite3.connect
-    conn = sql.connect(db_file, timeout=10)
+    conn = sql.connect(db_file, timeout=50)
     if verbose:
         conn.set_trace_callback(print)
 
@@ -591,9 +591,8 @@ class MgmtDB:
                     """select * from proc_type_enum"""
                 ).fetchall()
 
-            for run_name in realisations:
-                for proc in procs_to_be_done:
-                    with connect_db_ctx(self._db_file) as cur:
+                for run_name in realisations:
+                    for proc in procs_to_be_done:
                         if not self._does_task_exists(cur, run_name, proc[0]):
                             self._insert_task(cur, run_name, proc[0])
 
