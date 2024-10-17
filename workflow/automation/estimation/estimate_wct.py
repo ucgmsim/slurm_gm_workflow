@@ -217,7 +217,11 @@ def est_LF_chours_single(
         data, scale_ncores, node_time_th_factor=node_time_th_factor
     )
 
-    return core_hours[0], run_time[0], int(ncores[0])
+    nc = int(ncores[0])
+
+    nc = (int(nc/PHYSICAL_NCORES_PER_NODE)+1)* PHYSICAL_NCORES_PER_NODE
+
+    return core_hours[0], run_time[0], nc
 
 
 def estimate_LF_chours(
@@ -287,10 +291,12 @@ def estimate_LF_chours(
     ):
         # Want to scale, and at least one job exceeds the allowable time for the given number of cores
         ch, _, _ = scale_core_hours(core_hours, data, node_time_th_factor)
-        est_ncores = est_min_ncores_LF(data)
+        est_ncores = est_min_ncores_LF(data * 1.5)
         return ch, ch / est_ncores, est_ncores
     else:
-        return core_hours, core_hours / data[:, -1], (data[:, -1])
+        ncores = data[:,-1] * 1.5
+        
+        return core_hours, core_hours / ncores, (ncores)
 
 
 def est_HF_chours_single(

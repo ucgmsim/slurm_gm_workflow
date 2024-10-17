@@ -8,7 +8,9 @@ SUCCESS_CODE=0
 
 if [[ -d "{{sim_dir}}/LF/Restart" ]] && [[ `ls -1 {{sim_dir}}/LF/Restart | wc -l` != $SUCCESS_CODE ]]; then
     echo "Checkpointed run found, attempting to resume from checkpoint"
-    sed -i 's/read_restart=.*/read_restart="1"/' {{sim_dir}}/LF/e3d.par
+    sed -i 's/read_restart=.*/read_restart=1/' {{sim_dir}}/LF/e3d.par
+else
+    sed -i 's/read_restart=.*/read_restart=0/' {{sim_dir}}/LF/e3d.par
 fi
 
 timestamp=`date +%Y%m%d_%H%M%S`
@@ -55,5 +57,4 @@ else
     mv {{sim_dir}}/LF/* $backup_directory
     mkdir -p {{sim_dir}}/LF # create LF directory
     cp $backup_directory/e3d.par {{sim_dir}}/LF # bring back e3d.par
-
 fi
