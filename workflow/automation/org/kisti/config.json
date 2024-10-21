@@ -22,7 +22,7 @@
   "EXAMPLES_DIR" : "$workflow/examples",
   "RUN_COMMAND": "mpirun",
   "DEFAULT_N_RUNS": {
-    "nurion": 60
+    "nurion": 200
   },
   "MACHINE_TASKS": {
     "EMOD3D": "nurion",
