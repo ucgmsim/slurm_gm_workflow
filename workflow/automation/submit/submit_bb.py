@@ -26,12 +26,25 @@ default_wct = "00:30:00"
 
 
 def gen_command_template(params):
+
+    vs30 = params["stat_vs_est"]
+    if params["bb"]["vs30_perturbation_dir"]:
+        rel_name=params["run_name"]
+        if "_REL" in rel_name:
+            rel_num=rel_name.split("_REL")[-1]
+            vs30=Path(params["bb"]["vs30_perturbation_dir"]) / f"{Path(vs30).stem}_REL{rel_num}.vs30"
+
+        else: #median
+            pass
+
+    assert vs30, f"Vs30 file not found: {vs30}"
+
     command_template_parameters = {
         "run_command": platform_config[const.PLATFORM_CONFIG.RUN_COMMAND.name],
         "outbin_dir": simulation_structure.get_lf_outbin_dir(params["sim_dir"]),
         "vel_mod_dir": params["vel_mod_dir"],
         "hf_bin_path": simulation_structure.get_hf_bin_path(params["sim_dir"]),
-        "stat_vs_est": params["stat_vs_est"],
+        "stat_vs_est": str(vs30),
         "bb_bin_path": simulation_structure.get_bb_bin_path(params["sim_dir"]),
         "flo": params["flo"],
     }

@@ -10,6 +10,8 @@ def load_args():
     parser.add_argument("realisation")
     parser.add_argument("--log_dir", type=Path)
 
+    parser.add_argument("--vs30_perturbation_dir", type=Path, help="Directory containing Vs30 perturbation files")
+
     vm_pert = parser.add_mutually_exclusive_group()
     vm_pert.add_argument(
         "--vm_perturbations",
@@ -45,6 +47,7 @@ def generate_sim_params_yaml(
     ignore_vm_perturbations=False,
     vm_qpqs_files=False,
     ignore_vm_qpqs_files=False,
+    vs30_perturbation_dir:Path=None,
     logger=qclogging.get_basic_logger(),
 ):
     fault_name = simulation_structure.get_fault_from_realisation(rel_name)
@@ -61,6 +64,7 @@ def generate_sim_params_yaml(
     srf_file = simulation_structure.get_srf_path(cybershake_root, rel_name)
     stoch_file = simulation_structure.get_stoch_path(cybershake_root, rel_name)
 
+
     sim_params_dict = {
         constants.SimParams.user_root.value: str(cybershake_root),
         constants.SimParams.run_dir.value: runs_dir,
@@ -71,7 +75,7 @@ def generate_sim_params_yaml(
         constants.SimParams.vm_params.value: vm_params_path,
         "emod3d": {},
         "hf": {constants.SimParams.slip.value: stoch_file},
-        "bb": {},
+        "bb": {constants.SimParams.vs30_perturbation_dir.value: vs30_perturbation_dir},
     }
 
     vm_pert_file = Path(
@@ -164,6 +168,7 @@ def main():
         args.ignore_vm_perturbations,
         args.vm_qpqs_files,
         args.ignore_vm_qpqs_files,
+        args.vs30_perturbation_dir,
         logger=logger,
     )
 
