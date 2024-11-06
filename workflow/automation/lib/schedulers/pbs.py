@@ -66,7 +66,7 @@ class Pbs(AbstractScheduler):
         return start_time, end_time, run_time, n_cores, status
 
     HEADER_TEMPLATE = "pbs_header.cfg"
-    STATUS_DICT = {"R": 3, "Q": 2, "E": 3, "F": 4}
+    STATUS_DICT = {"R": 3, "Q": 2, "E": 3, "F": 5}
     SCRIPT_EXTENSION = "pbs"
     QUEUE_NAME = "qstat"
 

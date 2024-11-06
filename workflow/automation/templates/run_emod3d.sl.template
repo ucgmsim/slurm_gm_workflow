@@ -38,7 +38,7 @@ fi
 if [[ $success == $SUCCESS_CODE ]]; then
     #passed
     python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py {{mgmt_db_location}}/mgmt_db_queue {{srf_name}} EMOD3D completed $SLURM_JOB_ID --end_time "$end_time"
-    rm -rf{{sim_dir}}/LF/Restart/*
+    rm -rf {{sim_dir}}/LF/Restart/*
 
     if [[ ! -d {{sim_dir}}/ch_log ]]; then
         mkdir {{sim_dir}}/ch_log
