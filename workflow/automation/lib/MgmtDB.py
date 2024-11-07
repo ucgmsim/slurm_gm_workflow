@@ -38,7 +38,7 @@ class SchedulerTask:
 
 @contextmanager
 def connect_db_ctx(
-    db_file: Path, pragmas: list = [], verbose: bool = False
+    db_file: Path, pragmas: list[str] = [], verbose: bool = False
 ) -> sql.Cursor:
     """
     Connects to the database at the specified path and yields a cursor to be used within a context manager.
@@ -572,14 +572,14 @@ class MgmtDB:
                 (entry.proc_type, entry.run_name, entry.error),
             )
 
-    def populate(self, realisations, fault_selection: Dict[str, int]):
+    def populate(self, realisations, fault_selection: Dict[str, tuple[int,int]]):
         """Initial population of the database with all realisations"""
         realisations.extend(fault_selection.keys())
         realisations.extend(
             [
                 simulation_structure.get_realisation_name(event, i)
-                for event, rel_count in fault_selection.items()
-                for i in range(1, rel_count + 1)
+                for event, (rel_count,start_num) in fault_selection.items()
+                for i in range(start_num, rel_count + 1)
             ]
         )
 

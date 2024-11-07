@@ -3,13 +3,16 @@
 #
 # must be run with sbatch im_plot.sl [imcalc csv path] [station file path] [output xyz dir] [srf path] [model params path] [realisation name] [management database location]
 
+#SBATCH --partition=milan
 #SBATCH --job-name=im_plot
 #SBATCH --time=00:30:00
-#SBATCH --cpus-per-task=1
+#SBATCH --cpus-per-task=2
 
 if [[ ! -z ${CUR_ENV} && ${CUR_HPC} != "mahuika" ]]; then
     source $CUR_ENV/workflow/workflow/environments/helper_functions/activate_env.sh $CUR_ENV "mahuika"
 fi
+
+module load LegacySystemLibs/7
 
 CSV_PATH=`realpath $1`
 STATION_FILE_PATH=`realpath $2`

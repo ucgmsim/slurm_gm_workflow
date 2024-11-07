@@ -3,9 +3,11 @@
 #
 # must be run with sbatch srf_gen.sl [REL_FILEPATH] [MGMT_DB_LOC] [REL_NAME]
 
+#SBATCH --partition=milan
 #SBATCH --job-name=SRF_GEN
 #SBATCH --time=01:00:00
 #SBATCH --cpus-per-task=1
+#SBATCH --mem=8G
 
 # Make sure we use the correct Python and environment on Mahuika
 source $CUR_ENV/workflow/workflow/environments/helper_functions/activate_env.sh $CUR_ENV "mahuika"

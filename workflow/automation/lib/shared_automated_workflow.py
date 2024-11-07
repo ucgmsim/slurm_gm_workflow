@@ -9,9 +9,8 @@ from logging import Logger
 from typing import List
 
 import qcore.constants as const
-from qcore import utils as qc_utils
 from qcore import qclogging
-
+from qcore import utils as qc_utils
 from workflow.automation.lib.MgmtDB import MgmtDB
 from workflow.automation.lib.schedulers.scheduler_factory import Scheduler
 
@@ -72,16 +71,12 @@ def add_to_queue(
     wct: int = None,
     logger: Logger = qclogging.get_basic_logger(),
 ):
-    final_msg =""
-
     """Adds an update entry to the queue"""
-    msg = "Adding task to the queue. Realisation: {}, process type: {}, status: {}, job_id: {}, error: {}".format(
+    logger.debug(
+        "Adding task to the queue. Realisation: {}, process type: {}, status: {}, job_id: {}, error: {}".format(
             run_name, proc_type, status, job_id, error
         )
-    logger.debug(msg)
-    final_msg += (msg+"\n")
-
-
+    )
     filename = os.path.join(
         queue_folder,
         "{}.{}.{}".format(
@@ -90,16 +85,19 @@ def add_to_queue(
     )
 
     if os.path.exists(filename):
-        msg = "An update with the name {} already exists. This should never happen. Quitting!".format(
-                os.path.basename(filename))
-        logger.log(qclogging.NOPRINTCRITICAL,msg)
-        final_msg += (msg + "\n")
-        raise Exception(msg)
+        logger.log(
+            qclogging.NOPRINTCRITICAL,
+            "An update with the name {} already exists. This should never happen. Quitting!".format(
+                os.path.basename(filename)
+            ),
+        )
+        raise Exception(
+            "An update with the name {} already exists. This should never happen. Quitting!".format(
+                os.path.basename(filename)
+            )
+        )
 
-    msg = "Writing update file to {}".format(filename)
-    logger.debug(msg)
-    final_msg += (msg + "\n")
-
+    logger.debug("Writing update file to {}".format(filename))
 
     with open(filename, "w") as f:
         json.dump(
@@ -121,16 +119,9 @@ def add_to_queue(
         )
 
     if not os.path.isfile(filename):
-        msg="File {} did not successfully write".format(filename)
-        logger.critical(msg)
-        final_msg += (msg + "\n")
+        logger.critical("File {} did not successfully write".format(filename))
     else:
-        msg="Successfully wrote task update file"
-        logger.debug(msg)
-        final_msg += (msg + "\n")
-
-    return final_msg
-
+        logger.debug("Successfully wrote task update file")
 
 
 def check_mgmt_queue(
@@ -183,7 +174,7 @@ def parse_config_file(task_config: str, logger: Logger = qclogging.get_basic_log
             # If something has ALL it should only be added to the main runner and no other
             continue
         if isinstance(pattern, str):
-            pattern = [pattern]
+            pattern = pattern.split(",")
         for subpattern in pattern:
             if subpattern == REL_ONLY:
                 add_to_dict_list(proc, tasks_with_pattern_match)

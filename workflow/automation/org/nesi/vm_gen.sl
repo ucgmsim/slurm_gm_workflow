@@ -3,6 +3,7 @@
 #
 # must be run with sbatch vm_gen.sl [VM_PARAMS_YAML] [OUTPUT_DIR] [SRF_PATH]  [MGMT_DB_LOC] [REL_NAME]
 
+##SBATCH --partition=milan
 #SBATCH --job-name=VM_GEN
 #SBATCH --time=01:00:00
 #SBATCH --cpus-per-task=32
@@ -10,6 +11,8 @@
 if [[ -n ${CUR_ENV} && ${CUR_HPC} != "mahuika" ]]; then
     source $CUR_ENV/workflow/workflow/environments/helper_functions/activate_env.sh $CUR_ENV "mahuika"
 fi
+
+module load LegacySystemLibs/7
 
 VM_PARAMS_YAML=${1:?VM_PARAMS_YAML argument missing}
 OUTPUT_DIR=${2:?OUTPUT_DIR argument missing}

@@ -4,7 +4,6 @@ from logging import Logger
 from pathlib import Path
 
 from qcore import constants, qclogging, formats, simulation_structure, utils
-
 from workflow.automation.install_scripts import create_mgmt_db
 from workflow.automation.lib import constants as wf_constants
 from workflow.automation.platform_config import platform_config
@@ -134,9 +133,9 @@ def main():
         fault_selection=fault_selection,
     )
 
-    for fault, count in fault_selection.items():
+    for fault, (count, start_num) in fault_selection.items():
         utils.setup_dir(simulation_structure.get_sim_dir(cybershake_root, fault))
-        for i in range(1, count + 1):
+        for i in range(start_num, count + 1):
             rel_name = simulation_structure.get_realisation_name(fault, i)
             utils.setup_dir(simulation_structure.get_sim_dir(cybershake_root, rel_name))
 
