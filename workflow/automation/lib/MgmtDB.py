@@ -4,7 +4,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from logging import Logger
 from pathlib import Path
-from typing import List, Dict
+from typing import List, Dict, Tuple
 
 import qcore.constants as const
 from qcore import simulation_structure
@@ -38,7 +38,7 @@ class SchedulerTask:
 
 @contextmanager
 def connect_db_ctx(
-    db_file: Path, pragmas: list[str] = [], verbose: bool = False
+    db_file: Path, pragmas: List[str] = [], verbose: bool = False
 ) -> sql.Cursor:
     """
     Connects to the database at the specified path and yields a cursor to be used within a context manager.
@@ -573,7 +573,7 @@ class MgmtDB:
                 (entry.proc_type, entry.run_name, entry.error),
             )
 
-    def populate(self, realisations, fault_selection: Dict[str, tuple[int,int]]):
+    def populate(self, realisations, fault_selection: Dict[str, Tuple[int,int]]):
         """Initial population of the database with all realisations"""
         realisations.extend(fault_selection.keys())
         realisations.extend(
