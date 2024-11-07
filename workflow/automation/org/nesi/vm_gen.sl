@@ -1,7 +1,7 @@
 #!/bin/bash
 # script version: slurm
 #
-# must be run with sbatch vm_gen.sl [VM_PARAMS_YAML] [OUT_DIR] [SRF]  [MGMT_DB_LOC] [REL_NAME]
+# must be run with sbatch vm_gen.sl [VM_PARAMS_YAML] [OUTPUT_DIR] [SRF_PATH]  [MGMT_DB_LOC] [REL_NAME]
 
 #SBATCH --job-name=VM_GEN
 #SBATCH --time=01:00:00
@@ -12,8 +12,8 @@ if [[ -n ${CUR_ENV} && ${CUR_HPC} != "mahuika" ]]; then
 fi
 
 VM_PARAMS_YAML=${1:?VM_PARAMS_YAML argument missing}
-OUT_DIR=${2:?OUT_DIR argument missing}
-SRF=${3:?SRF argument missing}
+OUTPUT_DIR=${2:?OUTPUT_DIR argument missing}
+SRF_PATH=${3:?SRF_PATH argument missing}
 MGMT_DB_LOC=${4:?MGMT_DB_LOC argument missing}
 REL_NAME=${5:?REL_NAME argument missing}
 
@@ -21,8 +21,8 @@ FAULT=$(echo $REL_NAME | cut -d"_" -f1)
 SIM_DIR=$MGMT_DB_LOC/Runs/$FAULT/$REL_NAME
 CH_LOG_FFP=$SIM_DIR/ch_log
 
-if [[ ! -d $OUT_DIR ]]; then
-    mkdir -p $OUT_DIR
+if [[ ! -d $OUTPUT_DIR ]]; then
+    mkdir -p $OUTPUT_DIR
 fi
 
 #updating the stats in managementDB
@@ -37,18 +37,18 @@ echo $start_time
 
 python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $REL_NAME VM_GEN running $SLURM_JOB_ID --start_time "$start_time" --nodes $SLURM_NNODES --cores $SLURM_CPUS_PER_TASK --wct 01:00:00
 
-echo python $gmsim/Pre-processing/VM/vm_params2vm.py -t 18 $REL_NAME $VM_PARAMS_YAML -o $OUT_DIR
-python $gmsim/Pre-processing/VM/vm_params2vm.py -t 18 $REL_NAME $VM_PARAMS_YAML -o $OUT_DIR
+echo python $gmsim/Pre-processing/VM/vm_params2vm.py -t 18 $REL_NAME $VM_PARAMS_YAML -o $OUTPUT_DIR
+python $gmsim/Pre-processing/VM/vm_params2vm.py -t 18 $REL_NAME $VM_PARAMS_YAML -o $OUTPUT_DIR
 
-chmod g+rwXs -R $OUT_DIR
-chgrp nesi00213 -R $OUT_DIR
+chmod g+rwXs -R $OUTPUT_DIR
+chgrp nesi00213 -R $OUTPUT_DIR
 
 end_time=`date +$runtime_fmt`
 echo $end_time
 
 timestamp=`date +%Y%m%d_%H%M%S`
 #test before update
-res=`python $gmsim/qcore/qcore/validate_vm.py NZVM $OUT_DIR`
+res=`python $gmsim/qcore/qcore/validate_vm.py NZVM $OUTPUT_DIR $SRF_PATH`
 pass=$?
 
 if [[ $pass == 0 ]]; then
