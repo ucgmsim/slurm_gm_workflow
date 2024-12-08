@@ -136,6 +136,6 @@ def create_run_params(
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("SIM_ROOT")
-    parser.parse_args()
-    create_run_params(parser.sim_root)
+    parser.add_argument("sim_root")
+    args = parser.parse_args()
+    create_run_params(args.sim_root)
