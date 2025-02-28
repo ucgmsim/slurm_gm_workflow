@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""Prints out the current cybershake status.
-"""
+"""Prints out the current cybershake status."""
 import argparse
 import json
 from pathlib import Path
