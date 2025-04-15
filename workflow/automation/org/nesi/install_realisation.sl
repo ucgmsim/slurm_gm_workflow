@@ -1,7 +1,7 @@
 #!/bin/bash
 # script version: slurm
 #
-# must be run with sbatch install_realisation.sl [REL_NAME] [SIMULATION_ROOT]
+# must be run with sbatch install_realisation.sl [REL_NAME] [SIMULATION_ROOT] [VS30_PERTURBATION_DIR]
 
 #SBATCH --job-name=install_rel
 #SBATCH --time=00:15:00
@@ -12,6 +12,7 @@ source $CUR_ENV/workflow/workflow/environments/helper_functions/activate_env.sh 
 
 REL_NAME=${1:?REL_NAME argument missing}
 SIMULATION_ROOT=${2:?SIMULATION_ROOT argument missing}
+VS30_PERTURBATION_DIR=${3:-""}
 
 FAULT=$(echo ${REL_NAME/_REL*/})
 SIM_DIR=$SIMULATION_ROOT/Runs/$FAULT/$REL_NAME
@@ -29,6 +30,10 @@ echo $start_time
 python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py $SIMULATION_ROOT/mgmt_db_queue $REL_NAME INSTALL_REALISATION running $SLURM_JOB_ID --start_time "$start_time" --nodes $SLURM_NNODES --cores $SLURM_CPUS_PER_TASK --wct 00:15:00
 
 CMD="python $gmsim/workflow/workflow/automation/install_scripts/install_realisation.py $SIMULATION_ROOT $REL_NAME"
+if [[ -n $VS30_PERTURBATION_DIR ]]; then
+    CMD+=" --vs30_perturbation_dir $VS30_PERTURBATION_DIR"
+fi
+
 echo "${CMD}"
 $CMD
 

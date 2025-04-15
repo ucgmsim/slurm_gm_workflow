@@ -6,11 +6,10 @@ from logging import Logger
 from pathlib import Path
 
 import qcore.constants as const
+import workflow.automation.estimation.estimate_wct as est
 from qcore import shared, simulation_structure
 from qcore.config import host
 from qcore.qclogging import get_basic_logger
-
-import workflow.automation.estimation.estimate_wct as est
 from workflow.automation import sim_params
 from workflow.automation.estimation import estimate_wct
 from workflow.automation.lib.schedulers.scheduler_factory import Scheduler
@@ -28,16 +27,22 @@ default_wct = "00:30:00"
 def gen_command_template(params):
 
     vs30 = params["stat_vs_est"]
-    if params["bb"]["vs30_perturbation_dir"]:
+    try:
+        vs30_perturabtion_dir = params["bb"]["vs30_perturbation_dir"]
+    except KeyError:
+        print(f"Vs30 perturbation is not installed: Median Vs30 {vs30} is used")
+    else:
         rel_name=params["run_name"]
         if "_REL" in rel_name:
             rel_num=rel_name.split("_REL")[-1]
-            vs30=Path(params["bb"]["vs30_perturbation_dir"]) / f"{Path(vs30).stem}_REL{rel_num}.vs30"
+            vs30=Path(vs30_perturabtion_dir) / f"{Path(vs30).stem}_REL{rel_num}.vs30"
+            print(f"Vs30 perturbation is installed: {vs30} is used")
 
         else: #median
-            pass
+            print(f"Vs30 perturbation installed, but Median event: Vs30 {vs30} is used")
 
-    assert vs30, f"Vs30 file not found: {vs30}"
+    assert vs30.exists(), f"Vs30 file not found: {vs30}"
+
 
     command_template_parameters = {
         "run_command": platform_config[const.PLATFORM_CONFIG.RUN_COMMAND.name],

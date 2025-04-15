@@ -10,10 +10,10 @@ from pathlib import Path
 from typing import Dict, List
 
 import numpy as np
+
 import qcore.constants as const
 import qcore.simulation_structure as sim_struct
 from qcore import qclogging, utils
-
 from workflow.automation import sim_params
 from workflow.automation.lib import shared_automated_workflow
 from workflow.automation.lib.MgmtDB import ComparisonOperator, MgmtDB
@@ -430,6 +430,7 @@ def submit_task(
                     {
                         "REL_NAME": run_name,
                         "MGMT_DB_LOC": root_folder,
+                        "VS30_PERTURBATION_DIR": params.get("vs30_perturbation_dir", ""),
                     }
                 ),
             ),
