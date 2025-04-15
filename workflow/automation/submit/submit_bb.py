@@ -26,7 +26,7 @@ default_wct = "00:30:00"
 
 def gen_command_template(params):
 
-    vs30 = params["stat_vs_est"]
+    vs30 = Path(params["stat_vs_est"])
     try:
         vs30_perturabtion_dir = params["bb"]["vs30_perturbation_dir"]
     except KeyError:
@@ -234,7 +234,6 @@ if __name__ == "__main__":
         args.ncores,
         args.rel_dir,
         args.retries,
-        args.srf,
         args.version,
         args.write_directory,
     )

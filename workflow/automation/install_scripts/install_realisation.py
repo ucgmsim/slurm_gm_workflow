@@ -75,7 +75,7 @@ def generate_sim_params_yaml(
         constants.SimParams.vm_params.value: vm_params_path,
         "emod3d": {},
         "hf": {constants.SimParams.slip.value: stoch_file},
-        "bb": {constants.SimParams.vs30_perturbation_dir.value: vs30_perturbation_dir},
+        "bb": {constants.RootParams.vs30_perturbation_dir.value: str(vs30_perturbation_dir)},
     }
 
     vm_pert_file = Path(
