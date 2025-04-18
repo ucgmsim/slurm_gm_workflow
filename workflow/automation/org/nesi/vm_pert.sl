@@ -44,7 +44,7 @@ python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.p
 # (symlinked to /scale_wlg_persistent/filesets/project/nesi00213/opt/mahuika/hybrid_sim_tools)
 # We have GCC920-built tools but we stick to old ones as random numbers will be different
 
-module load GCC/7.4.0
+#module load GCC/7.4.0
 if [ -f $OUT_DIR/$REL_NAME.pertb.csv ]; then
   echo time python $gmsim/Pre-processing/srf_generation/velocity_model_generation/generate_perturbation_file.py $OUT_DIR/$REL_NAME.pertb $VM_PARAMS_YAML -n 1 -v --perturbation --parameter_file $OUT_DIR/$REL_NAME.pertb.csv
   time python $gmsim/Pre-processing/srf_generation/velocity_model_generation/generate_perturbation_file.py $OUT_DIR/$REL_NAME.pertb $VM_PARAMS_YAML -n 1 -v --perturbation --parameter_file $OUT_DIR/$REL_NAME.pertb.csv
@@ -60,7 +60,7 @@ echo $end_time
 timestamp=`date +%Y%m%d_%H%M%S`
 #test before update
 # Normal Python modules are built with GCC/9.2.0
-module load GCC/9.2.0
+#module load GCC/9.2.0
 res=`python $gmsim/qcore/qcore/validate_vm.py file $OUT_DIR/$REL_NAME.pertb $VM_PARAMS_YAML`
 pass=$?
 
@@ -69,7 +69,7 @@ if [[ $pass == 0 ]]; then
 
     python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $REL_NAME VM_PERT completed $SLURM_JOB_ID --end_time "$end_time"
 
-    python -c "from qcore import utils;d=utils.load('${SIM_DIR}/sim_params.yaml');d['emod3d']['model_style']=3;d['emod3d']['pertbfile']='$OUT_DIR/$REL_NAME.pertb';utils.dump_yaml(d,'${SIM_DIR}/sim_params.yaml')"
+    python -c "from qcore import utils;d=utils.load_yaml('${SIM_DIR}/sim_params.yaml');d['emod3d']['model_style']=3;d['emod3d']['pertbfile']='$OUT_DIR/$REL_NAME.pertb';utils.dump_yaml(d,'${SIM_DIR}/sim_params.yaml')"
 
     if [[ ! -d $CH_LOG_FFP ]]; then
         mkdir $CH_LOG_FFP
