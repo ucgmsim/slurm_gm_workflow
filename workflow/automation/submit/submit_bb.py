@@ -28,7 +28,7 @@ def gen_command_template(params):
 
     vs30 = Path(params["stat_vs_est"])
     try:
-        vs30_perturabtion_dir = params["bb"]["vs30_perturbation_dir"]
+        vs30_perturabtion_dir = params["bb"].pop("vs30_perturbation_dir")
     except KeyError:
         print(f"Vs30 perturbation is not installed: Median Vs30 {vs30} is used")
     else:
