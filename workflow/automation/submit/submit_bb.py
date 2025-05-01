@@ -27,15 +27,17 @@ default_wct = "00:30:00"
 def gen_command_template(params):
 
     vs30 = Path(params["stat_vs_est"])
-    try:
-        vs30_perturabtion_dir = params["bb"].pop("vs30_perturbation_dir")
-    except KeyError:
+    print(f"Median vs30: {vs30}")
+    vs30_perturbation_dir = params["bb"].pop("vs30_perturbation_dir")
+    if vs30_perturbation_dir in [None,"None"]: #sometimes it is returned as string"None"
         print(f"Vs30 perturbation is not installed: Median Vs30 {vs30} is used")
     else:
         rel_name=params["run_name"]
+        print(f"vs30_perturbation_dir: {vs30_perturbation_dir} {type(vs30_perturbation_dir)}")
+        print(f"rel_name: {rel_name}")
         if "_REL" in rel_name:
             rel_num=rel_name.split("_REL")[-1]
-            vs30=Path(vs30_perturabtion_dir) / f"{Path(vs30).stem}_REL{rel_num}.vs30"
+            vs30=Path(vs30_perturbation_dir) / f"{Path(vs30).stem}_REL{rel_num}.vs30"
             print(f"Vs30 perturbation is installed: {vs30} is used")
 
         else: #median
