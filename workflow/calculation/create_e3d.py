@@ -120,14 +120,14 @@ def create_run_params(
 
         if params["emod3d"]:
             for key, value in params["emod3d"].items():
-                if key in e3d_dict:
-                    e3d_dict[key] = value
-                else:
+                if key not in e3d_dict:
                     logger.debug(
-                        "{} not found as a key in e3d file. Ignoring variable. Value is {}.".format(
+                        "{} not found as a key in e3d file. adding the value {}.".format(
                             key, value
                         )
                     )
+
+                e3d_dict[key] = value
 
         shared.dict_to_e3d_par(
             os.path.join(params["sim_dir"], "LF", "e3d.par"), e3d_dict
