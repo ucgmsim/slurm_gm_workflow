@@ -1,6 +1,6 @@
 absl-py
 astor
-filelock==3.4.2
+filelock==3.20.3
 cycler
 gast
 grpcio
