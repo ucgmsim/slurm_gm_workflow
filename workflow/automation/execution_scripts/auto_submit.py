@@ -65,6 +65,7 @@ def submit_task(
     vm_params_path = Path(sim_struct.get_vm_params_path(root_folder, run_name))
     root_params_path = Path(sim_struct.get_root_yaml_path(runs_dir))
 
+    print(f"!!! DEBUG vm_params_path : {vm_params_path} and it exists : {vm_params_path.exists()}")
     if not sim_params_path.exists():
         sim_params_path = False
     if not fault_params_path.exists():
@@ -386,6 +387,7 @@ def submit_task(
     elif proc_type == const.ProcessType.VM_PERT.value:
         submit_vm_pert_main(root_folder, run_name, sim_dir, logger=task_logger)
     elif proc_type == const.ProcessType.INSTALL_FAULT.value:
+        print(params)
         fd_stat = (
             Path(
                 sim_struct.get_fault_dir(

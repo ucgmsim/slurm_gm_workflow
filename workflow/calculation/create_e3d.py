@@ -19,7 +19,7 @@ from qcore.utils import compare_versions
 from workflow.automation.lib import shared
 from qcore import utils, binary_version, constants
 from qcore.qclogging import get_basic_logger
-from workflow.automation.platform_config import platform_config
+#from workflow.automation.platform_config import platform_config
 
 sys.path.append(os.path.abspath(os.path.curdir))
 
@@ -36,7 +36,8 @@ def create_run_params(
     emod3d_filepath = binary_version.get_lf_bin(emod3d_version)
 
     e3d_yaml = os.path.join(
-        platform_config[constants.PLATFORM_CONFIG.GMSIM_TEMPLATES_DIR.name],
+        "/home/arr65/src/workflow/workflow/calculation/gmsim_templates",
+        #platform_config[constants.PLATFORM_CONFIG.GMSIM_TEMPLATES_DIR.name],
         params["version"],
         "emod3d_defaults.yaml",
     )

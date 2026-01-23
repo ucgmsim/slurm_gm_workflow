@@ -4,7 +4,7 @@
 # must be run with sbatch plot_srf.sl [srf dir] [output folder] [management database location] [realization name]
 
 #SBATCH --job-name=plot_srf
-#SBATCH --time=00:30:00
+#SBATCH --time=02:00:00
 #SBATCH --cpus-per-task=1
 
 if [[ ! -z ${CUR_ENV} && ${CUR_HPC} != "mahuika" ]]; then
@@ -31,7 +31,7 @@ python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.p
 res=`python $gmsim/visualization/sources/plot_srf_slip_rise_rake.py "$SRF_PATH" --out-dir "$OUTPUT_DIR"`
 exit_val=$?
 
-res2=`python $gmsim/visualization/sources/plot_srf_map.py "$SRF_PATH" --dpi 300 --active-faults`
+res2=`python $gmsim/visualization/sources/plot_srf_map.py "$SRF_PATH" --active-faults`
 exit_val2=$?
 
 end_time=`date +$runtime_fmt`
