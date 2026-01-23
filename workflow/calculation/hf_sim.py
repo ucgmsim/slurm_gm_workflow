@@ -493,7 +493,11 @@ if __name__ == "__main__":
             vs = np.float32(float(f.readline().split()[2]) * 1000.0)
 
         # e_dist is the only other variable that HF calculates
-        e_dist = np.fromstring(stderr, dtype="f4", sep="\n")
+        try:
+            e_dist = np.fromstring(stderr, dtype="f4", sep="\n")
+        except:
+            raise ValueError(f"The problematic string from stderr is as follows: {stderr}")
+
         try:
             assert e_dist.size == n_stat
         except AssertionError:
