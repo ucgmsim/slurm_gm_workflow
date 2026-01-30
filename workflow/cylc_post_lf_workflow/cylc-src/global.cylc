@@ -1,0 +1,13 @@
+[scheduler]
+    [[events]]
+        stall timeout = PT30S
+        abort on stall timeout = True
+
+[platforms]
+    [[rch-slurm]]
+        hosts = localhost
+        job runner = slurm
+        install target = localhost
+        communication method = poll
+        submission polling intervals = PT10S
+        execution polling intervals = PT10S
