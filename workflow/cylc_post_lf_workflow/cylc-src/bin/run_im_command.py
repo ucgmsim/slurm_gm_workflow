@@ -39,7 +39,7 @@ def main():
         print(f"Output directory: {im_out_dir}")
 
         # Get version from params if available
-        version = params.get("version", "XXpY")
+        version = params.get("version")
 
         gmsim = "/home/arr65/src"
         
