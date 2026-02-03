@@ -105,7 +105,7 @@ echo "Run directory: $RUN_DIR"
 # Report HF command started
 cylc message -- "${CYLC_TASK_ID}" "hf_started"
 
-if ! python /scratch/projects/rch-quakecore/Cybershake/cylc-src/wf/bin/run_hf_command.py "$RUN_DIR" 2>&1; then
+if ! python /scratch/projects/rch-quakecore/Cybershake/cylc-src/wf/bin/run_hf_command_for_realisation.py "$RUN_DIR" 2>&1; then
     echo "ERROR: HF command failed for {{ fault_name }} {{ realisation }}"
     exit 1
 fi
@@ -175,7 +175,7 @@ echo "Run directory: $RUN_DIR"
 # Report BB command started
 cylc message -- "${CYLC_TASK_ID}" "bb_started"
 
-if ! python /scratch/projects/rch-quakecore/Cybershake/cylc-src/wf/bin/run_bb_command.py "$RUN_DIR" 2>&1; then
+if ! python /scratch/projects/rch-quakecore/Cybershake/cylc-src/wf/bin/run_bb_command_for_realisation.py "$RUN_DIR" 2>&1; then
     echo "ERROR: BB command failed for {{ fault_name }} {{ realisation }}"
     exit 1
 fi
@@ -254,7 +254,7 @@ echo "BB.bin found: $BB_BIN"
 # Report IM command started
 cylc message -- "${CYLC_TASK_ID}" "im_started"
 
-if ! python /scratch/projects/rch-quakecore/Cybershake/cylc-src/wf/bin/run_im_command.py "$RUN_DIR" 2>&1; then
+if ! python /scratch/projects/rch-quakecore/Cybershake/cylc-src/wf/bin/run_im_command_for_realisation.py "$RUN_DIR" 2>&1; then
     echo "ERROR: IM command failed for {{ fault_name }} {{ realisation }}"
     exit 1
 fi
