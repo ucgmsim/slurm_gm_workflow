@@ -1,5 +1,7 @@
 #!Jinja2
 
+{% set version = "v25p11" %}
+
 [meta]
 title = old_cybershake_hf_bb_im
 description = """HF → BB → IM workflow for multiple faults and realizations"""
@@ -19,7 +21,10 @@ UTC mode = True
     "MS09": {
         "hf": {"nodes":1, "ntasks":20, "time":"01:00:00"},
         "bb": {"nodes":1, "ntasks":20, "time":"01:00:00"},
-        "im": {"nodes":1, "ntasks":20, "time":"01:00:00"}
+        "im": {"nodes":1, "ntasks":20, "time":"01:00:00"},
+        "upload": {"nodes":1, "ntasks":1, "time":"02:00:00"},
+        "delete_realisation_run_dir": {"nodes":1, "ntasks":1, "time":"00:30:00"},
+        "delete_fault_input_data": {"nodes":1, "ntasks":1, "time":"00:30:00"}
     }
 } %}
 
@@ -30,9 +35,11 @@ UTC mode = True
 
 [[graph]]
 R1 = """
-{% for fault, reals in realizations.items() %}
-    {% for r in reals %}
-run_hf-{{fault}}-{{r}} => run_bb-{{fault}}-{{r}} => run_im-{{fault}}-{{r}}
+{% for fault_name, realisation_list in realizations.items() %}
+    {% for realisation in realisation_list %}
+{# In Cylc, referencing the same task multiple times doesn't create duplicate tasks—it just defines multiple dependency edges for that task. #}
+run_hf-{{ fault_name }}-{{ realisation }} => run_bb-{{ fault_name }}-{{ realisation }} => run_im-{{ fault_name }}-{{ realisation }} => upload_results-{{ fault_name }}-{{ realisation }} => delete_realisation_run_dir-{{ fault_name }}-{{ realisation }}
+delete_realisation_run_dir-{{ fault_name }}-{{ realisation }} => delete_fault_input_data-{{ fault_name }}
     {% endfor %}
 {% endfor %}
 """
@@ -43,15 +50,15 @@ run_hf-{{fault}}-{{r}} => run_bb-{{fault}}-{{r}} => run_im-{{fault}}-{{r}}
     [[[directives]]]
         --exclude=n03
 
-{% for fault, reals in realizations.items() %}
-    {% for r in reals %}
-[[run_hf-{{fault}}-{{r}}]]
+{% for fault_name, realisation_list in realizations.items() %}
+    {% for realisation in realisation_list %}
+[[run_hf-{{ fault_name }}-{{ realisation }}]]
     script = """
 set -e  # Exit on error
 set -u  # Exit on undefined variable
 set -o pipefail  # Exit on pipe failure
 
-echo "=== HF Task Started: {{fault}} {{r}} ==="
+echo "=== HF Task Started: {{ fault_name }} {{ realisation }} ==="
 echo "Task: $CYLC_TASK_NAME"
 echo "Cycle: $CYLC_TASK_CYCLE_POINT"
 echo "Workflow: $CYLC_WORKFLOW_ID"
@@ -89,19 +96,19 @@ which python
 cylc message -- "${CYLC_TASK_ID}" "environment_ready"
 
 # Run HF command
-echo "Running HF simulation for {{fault}} {{r}}"
-RUN_DIR="/scratch/projects/rch-quakecore/Cybershake/v25p11/Runs/{{fault}}/{{r}}"
+echo "Running HF simulation for {{ fault_name }} {{ realisation }}"
+RUN_DIR="/scratch/projects/rch-quakecore/Cybershake/{{ version }}/Runs/{{ fault_name }}/{{ realisation }}"
 echo "Run directory: $RUN_DIR"
 
 # Report HF command started
 cylc message -- "${CYLC_TASK_ID}" "hf_started"
 
 if ! python /scratch/projects/rch-quakecore/Cybershake/cylc-src/wf/bin/run_hf_command.py "$RUN_DIR" 2>&1; then
-    echo "ERROR: HF command failed for {{fault}} {{r}}"
+    echo "ERROR: HF command failed for {{ fault_name }} {{ realisation }}"
     exit 1
 fi
 
-echo "HF simulation completed successfully for {{fault}} {{r}}"
+echo "HF simulation completed successfully for {{ fault_name }} {{ realisation }}"
 echo "Completed at: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
 """
     [[[outputs]]]
@@ -109,17 +116,17 @@ echo "Completed at: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
         hf_started = "hf_started"
 
     [[[directives]]]
-        --nodes={{ slurm_params[fault].hf.nodes }}
-        --ntasks={{ slurm_params[fault].hf.ntasks }}
-        --time={{ slurm_params[fault].hf.time }}
+        --nodes={{ slurm_params[fault_name].hf.nodes }}
+        --ntasks={{ slurm_params[fault_name].hf.ntasks }}
+        --time={{ slurm_params[fault_name].hf.time }}
 
-[[run_bb-{{fault}}-{{r}}]]
+[[run_bb-{{ fault_name }}-{{ realisation }}]]
     script = """
 set -e  # Exit on error
 set -u  # Exit on undefined variable
 set -o pipefail  # Exit on pipe failure
 
-echo "=== BB Task Started: {{fault}} {{r}} ==="
+echo "=== BB Task Started: {{ fault_name }} {{ realisation }} ==="
 echo "Task: $CYLC_TASK_NAME"
 echo "Cycle: $CYLC_TASK_CYCLE_POINT"
 echo "Workflow: $CYLC_WORKFLOW_ID"
@@ -157,19 +164,19 @@ which python
 cylc message -- "${CYLC_TASK_ID}" "environment_ready"
 
 # Run BB command
-echo "Running BB simulation for {{fault}} {{r}}"
-RUN_DIR="/scratch/projects/rch-quakecore/Cybershake/v25p11/Runs/{{fault}}/{{r}}"
+echo "Running BB simulation for {{ fault_name }} {{ realisation }}"
+RUN_DIR="/scratch/projects/rch-quakecore/Cybershake/{{ version }}/Runs/{{ fault_name }}/{{ realisation }}"
 echo "Run directory: $RUN_DIR"
 
 # Report BB command started
 cylc message -- "${CYLC_TASK_ID}" "bb_started"
 
 if ! python /scratch/projects/rch-quakecore/Cybershake/cylc-src/wf/bin/run_bb_command.py "$RUN_DIR" 2>&1; then
-    echo "ERROR: BB command failed for {{fault}} {{r}}"
+    echo "ERROR: BB command failed for {{ fault_name }} {{ realisation }}"
     exit 1
 fi
 
-echo "BB simulation completed successfully for {{fault}} {{r}}"
+echo "BB simulation completed successfully for {{ fault_name }} {{ realisation }}"
 echo "Completed at: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
 """
     [[[outputs]]]
@@ -177,17 +184,17 @@ echo "Completed at: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
         bb_started = "bb_started"
 
     [[[directives]]]
-        --nodes={{ slurm_params[fault].bb.nodes }}
-        --ntasks={{ slurm_params[fault].bb.ntasks }}
-        --time={{ slurm_params[fault].bb.time }}
+        --nodes={{ slurm_params[fault_name].bb.nodes }}
+        --ntasks={{ slurm_params[fault_name].bb.ntasks }}
+        --time={{ slurm_params[fault_name].bb.time }}
 
-[[run_im-{{fault}}-{{r}}]]
+[[run_im-{{ fault_name }}-{{ realisation }}]]
     script = """
 set -e  # Exit on error
 set -u  # Exit on undefined variable
 set -o pipefail  # Exit on pipe failure
 
-echo "=== IM Task Started: {{fault}} {{r}} ==="
+echo "=== IM Task Started: {{ fault_name }} {{ realisation }} ==="
 echo "Task: $CYLC_TASK_NAME"
 echo "Cycle: $CYLC_TASK_CYCLE_POINT"
 echo "Workflow: $CYLC_WORKFLOW_ID"
@@ -225,8 +232,8 @@ which python
 cylc message -- "${CYLC_TASK_ID}" "environment_ready"
 
 # Run IM command
-echo "Running IM calculation for {{fault}} {{r}}"
-RUN_DIR="/scratch/projects/rch-quakecore/Cybershake/v25p11/Runs/{{fault}}/{{r}}"
+echo "Running IM calculation for {{ fault_name }} {{ realisation }}"
+RUN_DIR="/scratch/projects/rch-quakecore/Cybershake/{{ version }}/Runs/{{ fault_name }}/{{ realisation }}"
 echo "Run directory: $RUN_DIR"
 
 # Verify BB.bin exists (prerequisite for IM calculation)
@@ -242,11 +249,11 @@ echo "BB.bin found: $BB_BIN"
 cylc message -- "${CYLC_TASK_ID}" "im_started"
 
 if ! python /scratch/projects/rch-quakecore/Cybershake/cylc-src/wf/bin/run_im_command.py "$RUN_DIR" 2>&1; then
-    echo "ERROR: IM command failed for {{fault}} {{r}}"
+    echo "ERROR: IM command failed for {{ fault_name }} {{ realisation }}"
     exit 1
 fi
 
-echo "IM calculation completed successfully for {{fault}} {{r}}"
+echo "IM calculation completed successfully for {{ fault_name }} {{ realisation }}"
 echo "Completed at: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
 """
     [[[outputs]]]
@@ -254,9 +261,170 @@ echo "Completed at: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
         im_started = "im_started"
 
     [[[directives]]]
-        --nodes={{ slurm_params[fault].im.nodes }}
-        --ntasks={{ slurm_params[fault].im.ntasks }}
-        --time={{ slurm_params[fault].im.time }}
+        --nodes={{ slurm_params[fault_name].im.nodes }}
+        --ntasks={{ slurm_params[fault_name].im.ntasks }}
+        --time={{ slurm_params[fault_name].im.time }}
+
+[[upload_results-{{ fault_name }}-{{ realisation }}]]
+    script = """
+set -e  # Exit on error
+set -u  # Exit on undefined variable
+set -o pipefail  # Exit on pipe failure
+
+echo "=== Upload Results Task Started: {{ fault_name }} {{ realisation }} ==="
+echo "Task: $CYLC_TASK_NAME"
+echo "Cycle: $CYLC_TASK_CYCLE_POINT"
+echo "Workflow: $CYLC_WORKFLOW_ID"
+echo "Job ID: $CYLC_TASK_JOB"
+echo "Started at: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+
+# Environment activation with error checking
+echo "Activating Python environment..."
+if ! source /home/arr65/venvs/ompi5_venv/bin/activate 2>&1; then
+    echo "ERROR: Failed to activate Python environment"
+    exit 1
+fi
+echo "Python environment activated successfully"
+
+# Verify Python and required modules
+echo "Environment check:"
+python --version
+which python
+
+# Report environment ready
+cylc message -- "${CYLC_TASK_ID}" "environment_ready"
+
+# Run upload command
+echo "Running upload for {{ fault_name }} {{ realisation }}"
+RUN_DIR="/scratch/projects/rch-quakecore/Cybershake/{{ version }}/Runs/{{ fault_name }}/{{ realisation }}"
+echo "Run directory: $RUN_DIR"
+
+# Report upload command started
+cylc message -- "${CYLC_TASK_ID}" "upload_started"
+
+if ! python /scratch/projects/rch-quakecore/Cybershake/cylc-src/wf/bin/upload_post_lf_output_for_realisation.py "$RUN_DIR" 2>&1; then
+    echo "ERROR: Upload command failed for {{ fault_name }} {{ realisation }}"
+    exit 1
+fi
+
+echo "Upload completed successfully for {{ fault_name }} {{ realisation }}"
+echo "Completed at: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+"""
+    [[[outputs]]]
+        environment_ready = "environment_ready"
+        upload_started = "upload_started"
+
+    [[[directives]]]
+        --nodes={{ slurm_params[fault_name].upload.nodes }}
+        --ntasks={{ slurm_params[fault_name].upload.ntasks }}
+        --time={{ slurm_params[fault_name].upload.time }}
+
+[[delete_realisation_run_dir-{{ fault_name }}-{{ realisation }}]]
+    script = """
+set -e  # Exit on error
+set -u  # Exit on undefined variable
+set -o pipefail  # Exit on pipe failure
+
+echo "=== Delete Realisation Run Dir Task Started: {{ fault_name }} {{ realisation }} ==="
+echo "Task: $CYLC_TASK_NAME"
+echo "Cycle: $CYLC_TASK_CYCLE_POINT"
+echo "Workflow: $CYLC_WORKFLOW_ID"
+echo "Job ID: $CYLC_TASK_JOB"
+echo "Started at: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+
+# Environment activation with error checking
+echo "Activating Python environment..."
+if ! source /home/arr65/venvs/ompi5_venv/bin/activate 2>&1; then
+    echo "ERROR: Failed to activate Python environment"
+    exit 1
+fi
+echo "Python environment activated successfully"
+
+# Verify Python and required modules
+echo "Environment check:"
+python --version
+which python
+
+# Report environment ready
+cylc message -- "${CYLC_TASK_ID}" "environment_ready"
+
+# Run delete command
+echo "Deleting realisation run directory for {{ fault_name }} {{ realisation }}"
+RUN_DIR="/scratch/projects/rch-quakecore/Cybershake/{{ version }}/Runs/{{ fault_name }}/{{ realisation }}"
+echo "Run directory: $RUN_DIR"
+
+# Report delete command started
+cylc message -- "${CYLC_TASK_ID}" "delete_started"
+
+if ! python /scratch/projects/rch-quakecore/Cybershake/cylc-src/wf/bin/delete_realisation_run_dir.py "$RUN_DIR" 2>&1; then
+    echo "ERROR: Delete realisation run dir failed for {{ fault_name }} {{ realisation }}"
+    exit 1
+fi
+
+echo "Delete realisation run dir completed successfully for {{ fault_name }} {{ realisation }}"
+echo "Completed at: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+"""
+    [[[outputs]]]
+        environment_ready = "environment_ready"
+        delete_started = "delete_started"
+
+    [[[directives]]]
+        --nodes={{ slurm_params[fault_name].delete_realisation_run_dir.nodes }}
+        --ntasks={{ slurm_params[fault_name].delete_realisation_run_dir.ntasks }}
+        --time={{ slurm_params[fault_name].delete_realisation_run_dir.time }}
 
     {% endfor %}
+
+[[delete_fault_input_data-{{ fault_name }}]]
+    script = """
+set -e  # Exit on error
+set -u  # Exit on undefined variable
+set -o pipefail  # Exit on pipe failure
+
+echo "=== Delete Fault Input Data Task Started: {{ fault_name }} ==="
+echo "Task: $CYLC_TASK_NAME"
+echo "Cycle: $CYLC_TASK_CYCLE_POINT"
+echo "Workflow: $CYLC_WORKFLOW_ID"
+echo "Job ID: $CYLC_TASK_JOB"
+echo "Started at: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+
+# Environment activation with error checking
+echo "Activating Python environment..."
+if ! source /home/arr65/venvs/ompi5_venv/bin/activate 2>&1; then
+    echo "ERROR: Failed to activate Python environment"
+    exit 1
+fi
+echo "Python environment activated successfully"
+
+# Verify Python and required modules
+echo "Environment check:"
+python --version
+which python
+
+# Report environment ready
+cylc message -- "${CYLC_TASK_ID}" "environment_ready"
+
+# Run delete command
+echo "Deleting fault input data for {{ fault_name }}"
+
+# Report delete command started
+cylc message -- "${CYLC_TASK_ID}" "delete_started"
+
+if ! python /scratch/projects/rch-quakecore/Cybershake/cylc-src/wf/bin/delete_fault_input_data.py "{{ version }}" "{{ fault_name }}" 2>&1; then
+    echo "ERROR: Delete fault input data command failed for {{ fault_name }}"
+    exit 1
+fi
+
+echo "Delete fault input data completed successfully for {{ fault_name }}"
+echo "Completed at: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+"""
+    [[[outputs]]]
+        environment_ready = "environment_ready"
+        delete_started = "delete_started"
+
+    [[[directives]]]
+        --nodes={{ slurm_params[fault_name].delete_fault_input_data.nodes }}
+        --ntasks={{ slurm_params[fault_name].delete_fault_input_data.ntasks }}
+        --time={{ slurm_params[fault_name].delete_fault_input_data.time }}
+
 {% endfor %}
