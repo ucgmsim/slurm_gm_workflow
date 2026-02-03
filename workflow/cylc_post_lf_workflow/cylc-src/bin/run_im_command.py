@@ -26,7 +26,7 @@ def main():
 
         # Construct paths
         bb_bin = os.path.realpath(os.path.join(args.rel_dir, "BB", "Acc", "BB.bin"))
-        im_out_dir = os.path.realpath(os.path.join(args.rel_dir, "IM_calc"))
+        im_out_dir = os.path.realpath(os.path.join(args.rel_dir, "IM"))
 
         # Verify BB.bin exists
         if not os.path.isfile(bb_bin):
