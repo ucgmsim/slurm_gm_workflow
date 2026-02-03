@@ -76,48 +76,60 @@ E3D_PAR_FIXED_VALUES = {
     "model_params": '""',
 }
 
-cybershake_base_dir = Path("/home/arr65/data/Cybershake_mock_dir_structure/Cybershake")
-
 version = "v25p11"
-fault = "MS09"
+fault = "WhiteCk"
 
-realizations = ["MS09",
-                "MS09_REL01", 
-                "MS09_REL02",
-                "MS09_REL03",
-                "MS09_REL04",
-                "MS09_REL05",
-                "MS09_REL06",
-                "MS09_REL07",
-                "MS09_REL08",
-                "MS09_REL09",
-                "MS09_REL10",
-                "MS09_REL11",
-                "MS09_REL12",
-                "MS09_REL13",
-                "MS09_REL14",
-                "MS09_REL15",
-                "MS09_REL16",
-                "MS09_REL17",
-                "MS09_REL18",
-                "MS09_REL19",
-                "MS09_REL20",
-                "MS09_REL21",
-                "MS09_REL22",
-                "MS09_REL23",
-                "MS09_REL24",
-                "MS09_REL25",
-                "MS09_REL26",
-                "MS09_REL27"]
+realizations = ["WhiteCk"]
+
+# realizations = ["WhiteCk",
+#                 "WhiteCk_REL01", 
+#                 "WhiteCk_REL02",
+#                 "WhiteCk_REL03",
+#                 "WhiteCk_REL04",
+#                 "WhiteCk_REL05",
+#                 "WhiteCk_REL06",
+#                 "WhiteCk_REL07",
+#                 "WhiteCk_REL08",
+#                 "WhiteCk_REL09",
+#                 "WhiteCk_REL10",
+#                 "WhiteCk_REL11",
+#                 "WhiteCk_REL12",
+#                 "WhiteCk_REL13",
+#                 "WhiteCk_REL14",
+#                 "WhiteCk_REL15",
+#                 "WhiteCk_REL16",
+#                 "WhiteCk_REL17",
+#                 "WhiteCk_REL18",
+#                 "WhiteCk_REL19",
+#                 "WhiteCk_REL20",
+#                 "WhiteCk_REL21",
+#                 "WhiteCk_REL22",
+#                 "WhiteCk_REL23",
+#                 "WhiteCk_REL24",
+#                 "WhiteCk_REL25",
+#                 "WhiteCk_REL26",
+#                 "WhiteCk_REL27",
+#                 "WhiteCk_REL28",
+#                 "WhiteCk_REL29",
+#                 "WhiteCk_REL30",
+#                 "WhiteCk_REL31",
+#                 "WhiteCk_REL32",
+#                 "WhiteCk_REL33",
+#                 "WhiteCk_REL34",
+#                 "WhiteCk_REL35",
+#                 "WhiteCk_REL36",
+#                 "WhiteCk_REL37",
+#                 "WhiteCk_REL38",
+#                 "WhiteCk_REL39"]
 
 
 # realizations = ["MS09",
 #                 "MS09_REL01"]
 
-base_cybershake_dir = Path("/home/arr65/data/Cybershake_mock_dir_structure/Cybershake")
+base_cybershake_dir = Path("/scratch/projects/rch-quakecore/Cybershake")
 old_base_path_to_replace = "/uoc/project/uoc40001/scratch/baes/Cybershake"
-rch_base_path = Path("/scratch/projects/rch-quakecore/Cybershake")
-
+#rch_base_path = Path("/scratch/projects/rch-quakecore/Cybershake")
+rch_base_path = base_cybershake_dir
 # =============================================================================
 # Operations that depend only on version (not fault or realization)
 # =============================================================================
