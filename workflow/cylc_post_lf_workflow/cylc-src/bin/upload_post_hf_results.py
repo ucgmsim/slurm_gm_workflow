@@ -2,32 +2,30 @@
 
 import argparse
 import os
-import shutil
 import subprocess
-import sys
 import tarfile
-from qcore import utils
 
 # Base path for Cybershake data
 CYBERSHAKE_BASE = "/scratch/projects/rch-quakecore/Cybershake"
 STAGED_BASE = f"{CYBERSHAKE_BASE}/staged_for_upload"
+DROPBOX_BASE = "dropbox:/QuakeCoRE/gmsim_scratch"
 
-# Placeholder for Dropbox upload location
-DROPBOX_REMOTE = "dropbox:Cybershake/uploads"
-
-
-def create_tarball(source_dir, tarball_path, arcname_prefix):
+def create_flat_tarball(source_dir, tarball_path):
     """
-    Create a tarball of source_dir with arcname_prefix as the root directory in the archive.
+    Create a tarball of files in source_dir with no directory structure.
+    When extracted, files will be placed directly without any path prefix.
     
     Args:
-        source_dir: The directory to tar
+        source_dir: The directory containing files to tar
         tarball_path: Where to save the tarball
-        arcname_prefix: The path prefix to use inside the tarball
     """
     print(f"Creating tarball: {tarball_path}")
-    with tarfile.open(tarball_path, "w:gz") as tar:
-        tar.add(source_dir, arcname=arcname_prefix)
+    with tarfile.open(tarball_path, "w") as tar:
+        for item in os.listdir(source_dir):
+            item_path = os.path.join(source_dir, item)
+            # Use just the filename as arcname (no directory structure)
+            tar.add(item_path, arcname=item)
+            print(f"  Added: {item}")
     print(f"Tarball created successfully: {tarball_path}")
 
 
@@ -48,6 +46,21 @@ def upload_to_dropbox(tarball_path, remote_path):
     print(f"Upload completed: {tarball_path}")
 
 
+def rename_items_with_prefix(directory, prefix):
+    """Rename all files and subdirectories in a directory by adding a prefix."""
+    if not os.path.exists(directory):
+        print(f"Warning: Directory does not exist: {directory}")
+        return
+    
+    print(f"\n=== Renaming items in {directory} ===")
+    for name in os.listdir(directory):
+        src = os.path.join(directory, name)
+        dst = os.path.join(directory, f"{prefix}{name}")
+        os.rename(src, dst)
+        item_type = "dir" if os.path.isdir(dst) else "file"
+        print(f"Renamed {item_type}: {name} -> {prefix}{name}")
+
+
 def main():
     parser = argparse.ArgumentParser(description="Stage and upload post-HF results to Dropbox")
     parser.add_argument("rel_dir", help="Path to REL_DIR containing sim_params.yaml")
@@ -66,80 +79,44 @@ def main():
     fault_dir = os.path.dirname(args.rel_dir)
     fault_name = os.path.basename(fault_dir)   # e.g., "MS09"
 
-    # Source directories
-    hf_src_dir = f"{CYBERSHAKE_BASE}/{version}/Runs/{fault_name}/{rel_name}/HF/Acc"
-    bb_src_dir = f"{CYBERSHAKE_BASE}/{version}/Runs/{fault_name}/{rel_name}/BB/Acc"
-    im_src_dir = f"{CYBERSHAKE_BASE}/{version}/Runs/{fault_name}/{rel_name}/IM_calc"
-
-    # Staged destination directories
-    hf_staged_dir = f"{STAGED_BASE}/{version}/Runs/{fault_name}/{rel_name}/HF/Acc"
-    bb_staged_dir = f"{STAGED_BASE}/{version}/Runs/{fault_name}/{rel_name}/BB/Acc"
-    im_staged_dir = f"{STAGED_BASE}/Runs/{fault_name}/{rel_name}/IM_calc"
-
-    # Archive name prefixes (path structure inside tarballs)
-    hf_arcname = f"{version}/Runs/{fault_name}/{rel_name}/HF/Acc"
-    bb_arcname = f"{version}/Runs/{fault_name}/{rel_name}/BB/Acc"
-    im_arcname = f"Runs/{fault_name}/{rel_name}/IM_calc"
-
-    # Tarball paths (stored alongside the staged directories)
-    hf_tarball = f"{STAGED_BASE}/{version}/Runs/{fault_name}/{rel_name}_HF_Acc.tar.gz"
-    bb_tarball = f"{STAGED_BASE}/{version}/Runs/{fault_name}/{rel_name}_BB_Acc.tar.gz"
-    im_tarball = f"{STAGED_BASE}/Runs/{fault_name}/{rel_name}_IM_calc.tar.gz"
-
     prefix = f"{rel_name}_"
 
-    # Rename HF files in source directory
-    print("\n=== Renaming HF files ===")
-    for fname in ("HF.bin", "HF.log", "SEED"):
-        src = os.path.join(hf_src_dir, fname)
-        dst = os.path.join(hf_src_dir, f"{prefix}{fname}")
-        if os.path.exists(src):
-            os.rename(src, dst)
-            print(f"Renamed: {fname} -> {prefix}{fname}")
-
-    # Rename BB files in source directory
-    print("\n=== Renaming BB files ===")
-    for fname in ("BB.bin", "BB.log"):
-        src = os.path.join(bb_src_dir, fname)
-        dst = os.path.join(bb_src_dir, f"{prefix}{fname}")
-        if os.path.exists(src):
-            os.rename(src, dst)
-            print(f"Renamed: {fname} -> {prefix}{fname}")
-
-    # Step 1: Copy directories to staged_for_upload
-    print("\n=== Copying directories to staged_for_upload ===")
-    
-    dirs_to_process = [
-        (hf_src_dir, hf_staged_dir, hf_arcname, hf_tarball, "HF/Acc"),
-        (bb_src_dir, bb_staged_dir, bb_arcname, bb_tarball, "BB/Acc"),
-        (im_src_dir, im_staged_dir, im_arcname, im_tarball, "IM_calc"),
+    # Types to process: (type_name, source_subdir, should_rename)
+    types_to_process = [
+        ("HF", "HF/Acc", True),
+        ("BB", "BB/Acc", True),
+        ("IM", "IM", False),
     ]
 
-    for src_dir, staged_dir, arcname, tarball_path, desc in dirs_to_process:
+    # Process each type: rename, create tarball, and upload
+    print("\n=== Processing directories ===")
+
+    for type_name, src_subdir, should_rename in types_to_process:
+        src_dir = f"{CYBERSHAKE_BASE}/{version}/Runs/{fault_name}/{rel_name}/{src_subdir}"
+        tarball_path = f"{STAGED_BASE}/{version}/{type_name}/{fault_name}/{rel_name}_{type_name}.tar"
+        remote_path = f"{DROPBOX_BASE}/{version}/{type_name}/{fault_name}"
         if not os.path.exists(src_dir):
             print(f"Warning: Source directory does not exist: {src_dir}")
             continue
 
-        # Create parent directories if needed
-        os.makedirs(os.path.dirname(staged_dir), exist_ok=True)
+        # Rename files and subdirectories if needed
+        if should_rename:
+            rename_items_with_prefix(src_dir, prefix)
 
-        # Copy directory
-        print(f"\nCopying {desc}: {src_dir} -> {staged_dir}")
-        shutil.copytree(src_dir, staged_dir)
-        print(f"Copy completed: {desc}")
+        # Create parent directories for tarball if needed
+        os.makedirs(os.path.dirname(tarball_path), exist_ok=True)
 
-        # Step 2: Create tarball
-        print(f"\nCreating tarball for {desc}")
-        create_tarball(staged_dir, tarball_path, arcname)
+        # Create tarball directly from source directory (flat, no directory structure)
+        print(f"\nCreating tarball from {src_dir}")
+        create_flat_tarball(src_dir, tarball_path)
 
-        # Step 3: Delete the copied directory (not the original)
-        print(f"\nRemoving staged directory: {staged_dir}")
-        shutil.rmtree(staged_dir)
-        print(f"Removed staged directory: {staged_dir}")
+        # Upload to Dropbox
+        print(f"\nUploading {tarball_path} to {remote_path}")
+        upload_to_dropbox(tarball_path, remote_path)
 
-        # Step 4: Upload to Dropbox
-        print(f"\nUploading {desc} tarball to Dropbox")
-        upload_to_dropbox(tarball_path, DROPBOX_REMOTE)
+        # Delete tarball after successful upload
+        print(f"Deleting staged tarball: {tarball_path}")
+        os.remove(tarball_path)
 
     print("\n=== All uploads completed successfully ===")
 
