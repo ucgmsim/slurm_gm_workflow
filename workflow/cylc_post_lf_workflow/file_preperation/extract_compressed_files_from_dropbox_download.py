@@ -16,7 +16,7 @@ import lzma
 from pathlib import Path
 
 
-setup_files_base_dir = Path("/home/arr65/data/Cybershake_mock_dir_structure/Cybershake/setup_files_from_dropbox/v25p11")
+setup_files_base_dir = Path("/scratch/projects/rch-quakecore/Cybershake/setup_files_from_dropbox/v25p11")
 
 tar_original_setup_files_from_dropbox = setup_files_base_dir / "tar_original_setup_files_from_dropbox"
 
