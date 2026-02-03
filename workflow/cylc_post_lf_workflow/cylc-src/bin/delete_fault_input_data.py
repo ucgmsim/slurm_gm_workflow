@@ -14,6 +14,7 @@ def main():
     base_dirs_to_delete = [
         f"{base_dir}/Data/Sources",
         f"{base_dir}/Data/VMs",
+        f"{base_dir}/Runs",
     ]
 
     for dir in base_dirs_to_delete:
