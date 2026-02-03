@@ -67,12 +67,14 @@ echo "Started at: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
 
 # Module loading with error checking
 echo "Loading modules..."
+echo "Trying to load module GCC/13.3.0..."
 if ! module load GCC/13.3.0 2>&1; then
     echo "ERROR: Failed to load GCC module"
     exit 1
 fi
 echo "GCC module loaded successfully"
 
+echo "Trying to load module OpenMPI/5.0.3-GCC-13.3.0..."
 if ! module load OpenMPI/5.0.3-GCC-13.3.0 2>&1; then
     echo "ERROR: Failed to load OpenMPI module"
     exit 1
@@ -80,7 +82,7 @@ fi
 echo "OpenMPI module loaded successfully"
 
 # Environment activation with error checking
-echo "Activating Python environment..."
+echo "Trying to activate Python environment at /home/arr65/venvs/ompi5_venv/bin/activate..."
 if ! source /home/arr65/venvs/ompi5_venv/bin/activate 2>&1; then
     echo "ERROR: Failed to activate Python environment"
     exit 1
@@ -135,12 +137,14 @@ echo "Started at: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
 
 # Module loading with error checking
 echo "Loading modules..."
+echo "Trying to load module GCC/13.3.0..."
 if ! module load GCC/13.3.0 2>&1; then
     echo "ERROR: Failed to load GCC module"
     exit 1
 fi
 echo "GCC module loaded successfully"
 
+echo "Trying to load module OpenMPI/5.0.3-GCC-13.3.0..."
 if ! module load OpenMPI/5.0.3-GCC-13.3.0 2>&1; then
     echo "ERROR: Failed to load OpenMPI module"
     exit 1
@@ -148,7 +152,7 @@ fi
 echo "OpenMPI module loaded successfully"
 
 # Environment activation with error checking
-echo "Activating Python environment..."
+echo "Trying to activate Python environment at /home/arr65/venvs/ompi5_venv/bin/activate..."
 if ! source /home/arr65/venvs/ompi5_venv/bin/activate 2>&1; then
     echo "ERROR: Failed to activate Python environment"
     exit 1
@@ -203,12 +207,14 @@ echo "Started at: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
 
 # Module loading with error checking
 echo "Loading modules..."
+echo "Trying to load module GCC/13.3.0..."
 if ! module load GCC/13.3.0 2>&1; then
     echo "ERROR: Failed to load GCC module"
     exit 1
 fi
 echo "GCC module loaded successfully"
 
+echo "Trying to load module OpenMPI/5.0.3-GCC-13.3.0..."
 if ! module load OpenMPI/5.0.3-GCC-13.3.0 2>&1; then
     echo "ERROR: Failed to load OpenMPI module"
     exit 1
@@ -216,7 +222,7 @@ fi
 echo "OpenMPI module loaded successfully"
 
 # Environment activation with error checking
-echo "Activating Python environment..."
+echo "Trying to activate Python environment at /home/arr65/venvs/ompi5_venv/bin/activate..."
 if ! source /home/arr65/venvs/ompi5_venv/bin/activate 2>&1; then
     echo "ERROR: Failed to activate Python environment"
     exit 1
@@ -279,7 +285,7 @@ echo "Job ID: $CYLC_TASK_JOB"
 echo "Started at: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
 
 # Environment activation with error checking
-echo "Activating Python environment..."
+echo "Trying to activate Python environment at /home/arr65/venvs/ompi5_venv/bin/activate..."
 if ! source /home/arr65/venvs/ompi5_venv/bin/activate 2>&1; then
     echo "ERROR: Failed to activate Python environment"
     exit 1
@@ -333,7 +339,7 @@ echo "Job ID: $CYLC_TASK_JOB"
 echo "Started at: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
 
 # Environment activation with error checking
-echo "Activating Python environment..."
+echo "Trying to activate Python environment at /home/arr65/venvs/ompi5_venv/bin/activate..."
 if ! source /home/arr65/venvs/ompi5_venv/bin/activate 2>&1; then
     echo "ERROR: Failed to activate Python environment"
     exit 1
@@ -389,7 +395,7 @@ echo "Job ID: $CYLC_TASK_JOB"
 echo "Started at: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
 
 # Environment activation with error checking
-echo "Activating Python environment..."
+echo "Trying to activate Python environment at /home/arr65/venvs/ompi5_venv/bin/activate..."
 if ! source /home/arr65/venvs/ompi5_venv/bin/activate 2>&1; then
     echo "ERROR: Failed to activate Python environment"
     exit 1
