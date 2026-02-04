@@ -56,9 +56,9 @@ UTC mode = True
         "hf": {"nodes":1, "ntasks":144, "time":"06:00:00"},
         "bb": {"nodes":1, "ntasks":144, "time":"06:00:00"},
         "im": {"nodes":1, "ntasks":144, "time":"06:00:00"},
-        "upload": {"nodes":1, "ntasks":1, "time":"02:00:00"},
-        "delete_realisation_run_dir": {"nodes":1, "ntasks":1, "time":"02:00:00"},
-        "delete_fault_input_data": {"nodes":1, "ntasks":1, "time":"02:00:00"}
+        "upload": {"nodes":1, "ntasks":1, "time":"06:00:00"},
+        "delete_realisation_run_dir": {"nodes":1, "ntasks":1, "time":"06:00:00"},
+        "delete_fault_input_data": {"nodes":1, "ntasks":1, "time":"06:00:00"}
     }
 } %}
 
