@@ -67,19 +67,18 @@ def create_modified_config_file(original_file_path, modified_file_path, old_base
     with open(modified_file_path, 'w') as f:
         f.write(modified_content)
 
-
-# Fixed value overrides for e3d.par files
-E3D_PAR_FIXED_VALUES = {
-    "wcc_prog_dir": '"/scratch/projects/rch-quakecore/EMOD3D_old_Cybershake/tools/emod3d-mpi_v3.0.8"',
-    "vel_mod_params_dir": '"/scratch/projects/rch-quakecore/Cybershake/v25p11/Data/VMs/MS09"',
-    "grid_file": '""',
-    "model_params": '""',
-}
-
 version = "v25p11"
 fault = "WhiteCk"
 
 realizations = ["WhiteCk"]
+
+# Fixed value overrides for e3d.par files
+E3D_PAR_FIXED_VALUES = {
+    "wcc_prog_dir": '"/scratch/projects/rch-quakecore/EMOD3D_old_Cybershake/tools/emod3d-mpi_v3.0.8"',
+    "vel_mod_params_dir": f'"/scratch/projects/rch-quakecore/Cybershake/{version}/Data/VMs/{fault}"',
+    "grid_file": '""',
+    "model_params": '""',
+}
 
 # realizations = ["WhiteCk",
 #                 "WhiteCk_REL01", 
@@ -185,21 +184,21 @@ original_ll_statcords_source_path = (base_cybershake_dir / "setup_files_from_dro
 shutil.copy(original_ll_statcords_source_path/"fd_rt01-h0.100.ll", destination_fault_params_base_base)
 shutil.copy(original_ll_statcords_source_path/"fd_rt01-h0.100.statcords", destination_fault_params_base_base)
 
-# Copy Sources
+# Move Sources
 original_source_files_source_path = (base_cybershake_dir / "setup_files_from_dropbox"/ version / 
                                     "extracted_original_setup_files_from_dropbox" / version / 
                                     "Sources" / fault / fault )
 
 destination_source_files_path = base_cybershake_dir / version / "Data" / "Sources" / fault
-shutil.copytree(original_source_files_source_path, destination_source_files_path)
+shutil.move(original_source_files_source_path, destination_source_files_path)
 
-# Copy VMs
+# Move VMs
 original_vms_source_path = (base_cybershake_dir / "setup_files_from_dropbox"/ version / 
                                     "extracted_original_setup_files_from_dropbox" / version / 
                                     "VMs" / "VMs_meta_data" / fault )
 
 destination_vms_path = base_cybershake_dir / version / "Data" / "VMs" / fault
-shutil.copytree(original_vms_source_path, destination_vms_path)
+shutil.move(original_vms_source_path, destination_vms_path)
 
 create_modified_config_file(original_file_path=destination_vms_path / "vm_params.yaml",
                             modified_file_path=destination_vms_path / "vm_params.yaml", 
