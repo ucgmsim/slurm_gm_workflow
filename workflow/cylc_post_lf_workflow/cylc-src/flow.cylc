@@ -10,14 +10,52 @@ description = """HF → BB → IM workflow for multiple faults and realizations"
 UTC mode = True
 
 {% set realizations = {
-    "WhiteCk": ["WhiteCk"]
+    "WhiteCk": ["WhiteCk_REL01", 
+                "WhiteCk_REL02",
+                "WhiteCk_REL03",
+                "WhiteCk_REL04",
+                "WhiteCk_REL05",
+                "WhiteCk_REL06",
+                "WhiteCk_REL07",
+                "WhiteCk_REL08",
+                "WhiteCk_REL09",
+                "WhiteCk_REL10",
+                "WhiteCk_REL11",
+                "WhiteCk_REL12",
+                "WhiteCk_REL13",
+                "WhiteCk_REL14",
+                "WhiteCk_REL15",
+                "WhiteCk_REL16",
+                "WhiteCk_REL17",
+                "WhiteCk_REL18",
+                "WhiteCk_REL19",
+                "WhiteCk_REL20",
+                "WhiteCk_REL21",
+                "WhiteCk_REL22",
+                "WhiteCk_REL23",
+                "WhiteCk_REL24",
+                "WhiteCk_REL25",
+                "WhiteCk_REL26",
+                "WhiteCk_REL27",
+                "WhiteCk_REL28",
+                "WhiteCk_REL29",
+                "WhiteCk_REL30",
+                "WhiteCk_REL31",
+                "WhiteCk_REL32",
+                "WhiteCk_REL33",
+                "WhiteCk_REL34",
+                "WhiteCk_REL35",
+                "WhiteCk_REL36",
+                "WhiteCk_REL37",
+                "WhiteCk_REL38",
+                "WhiteCk_REL39"]
 } %}
 
 {% set slurm_params = {
     "WhiteCk": {
-        "hf": {"nodes":1, "ntasks":144, "time":"06:00:00"},
-        "bb": {"nodes":1, "ntasks":144, "time":"06:00:00"},
-        "im": {"nodes":1, "ntasks":144, "time":"06:00:00"},
+        "hf": {"nodes":1, "ntasks":144, "time":"03:00:00"},
+        "bb": {"nodes":1, "ntasks":144, "time":"03:00:00"},
+        "im": {"nodes":1, "ntasks":144, "time":"03:00:00"},
         "upload": {"nodes":1, "ntasks":1, "time":"02:00:00"},
         "delete_realisation_run_dir": {"nodes":1, "ntasks":1, "time":"02:00:00"},
         "delete_fault_input_data": {"nodes":1, "ntasks":1, "time":"02:00:00"}
@@ -27,7 +65,7 @@ UTC mode = True
 [scheduling]
     [[queues]]
         [[[default]]]
-            limit = 1
+            limit = 10
 
 [[graph]]
 R1 = """

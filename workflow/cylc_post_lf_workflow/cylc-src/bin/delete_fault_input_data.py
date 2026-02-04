@@ -22,8 +22,8 @@ def main():
         dir_to_delete = os.path.join(dir, args.fault_name)
         print(f"Deleting directory: {dir_to_delete}")
         # TEMPORARY: Deletion disabled for testing - uncomment line below to restore
-        # shutil.rmtree(dir_to_delete)
-        print(f"(SKIPPED - deletion temporarily disabled)")
+        shutil.rmtree(dir_to_delete)
+        #print(f"(SKIPPED - deletion temporarily disabled)")
 
 if __name__ == "__main__":
     main()
