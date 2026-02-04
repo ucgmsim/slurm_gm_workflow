@@ -70,7 +70,7 @@ def create_modified_config_file(original_file_path, modified_file_path, old_base
 version = "v25p11"
 fault = "WhiteCk"
 
-realizations = ["WhiteCk"]
+# realizations = ["WhiteCk"]
 
 # Fixed value overrides for e3d.par files
 E3D_PAR_FIXED_VALUES = {
@@ -80,46 +80,46 @@ E3D_PAR_FIXED_VALUES = {
     "model_params": '""',
 }
 
-# realizations = ["WhiteCk",
-#                 "WhiteCk_REL01", 
-#                 "WhiteCk_REL02",
-#                 "WhiteCk_REL03",
-#                 "WhiteCk_REL04",
-#                 "WhiteCk_REL05",
-#                 "WhiteCk_REL06",
-#                 "WhiteCk_REL07",
-#                 "WhiteCk_REL08",
-#                 "WhiteCk_REL09",
-#                 "WhiteCk_REL10",
-#                 "WhiteCk_REL11",
-#                 "WhiteCk_REL12",
-#                 "WhiteCk_REL13",
-#                 "WhiteCk_REL14",
-#                 "WhiteCk_REL15",
-#                 "WhiteCk_REL16",
-#                 "WhiteCk_REL17",
-#                 "WhiteCk_REL18",
-#                 "WhiteCk_REL19",
-#                 "WhiteCk_REL20",
-#                 "WhiteCk_REL21",
-#                 "WhiteCk_REL22",
-#                 "WhiteCk_REL23",
-#                 "WhiteCk_REL24",
-#                 "WhiteCk_REL25",
-#                 "WhiteCk_REL26",
-#                 "WhiteCk_REL27",
-#                 "WhiteCk_REL28",
-#                 "WhiteCk_REL29",
-#                 "WhiteCk_REL30",
-#                 "WhiteCk_REL31",
-#                 "WhiteCk_REL32",
-#                 "WhiteCk_REL33",
-#                 "WhiteCk_REL34",
-#                 "WhiteCk_REL35",
-#                 "WhiteCk_REL36",
-#                 "WhiteCk_REL37",
-#                 "WhiteCk_REL38",
-#                 "WhiteCk_REL39"]
+realizations = ["WhiteCk",
+                "WhiteCk_REL01", 
+                "WhiteCk_REL02",
+                "WhiteCk_REL03",
+                "WhiteCk_REL04",
+                "WhiteCk_REL05",
+                "WhiteCk_REL06",
+                "WhiteCk_REL07",
+                "WhiteCk_REL08",
+                "WhiteCk_REL09",
+                "WhiteCk_REL10",
+                "WhiteCk_REL11",
+                "WhiteCk_REL12",
+                "WhiteCk_REL13",
+                "WhiteCk_REL14",
+                "WhiteCk_REL15",
+                "WhiteCk_REL16",
+                "WhiteCk_REL17",
+                "WhiteCk_REL18",
+                "WhiteCk_REL19",
+                "WhiteCk_REL20",
+                "WhiteCk_REL21",
+                "WhiteCk_REL22",
+                "WhiteCk_REL23",
+                "WhiteCk_REL24",
+                "WhiteCk_REL25",
+                "WhiteCk_REL26",
+                "WhiteCk_REL27",
+                "WhiteCk_REL28",
+                "WhiteCk_REL29",
+                "WhiteCk_REL30",
+                "WhiteCk_REL31",
+                "WhiteCk_REL32",
+                "WhiteCk_REL33",
+                "WhiteCk_REL34",
+                "WhiteCk_REL35",
+                "WhiteCk_REL36",
+                "WhiteCk_REL37",
+                "WhiteCk_REL38",
+                "WhiteCk_REL39"]
 
 
 # realizations = ["MS09",
@@ -133,37 +133,39 @@ rch_base_path = base_cybershake_dir
 # Operations that depend only on version (not fault or realization)
 # =============================================================================
 
-# Create modified root_params.yaml file
-original_root_params_file_path = (base_cybershake_dir / "setup_files_from_dropbox"/ version / 
-                              "extracted_original_setup_files_from_dropbox" / version / 
-                              f"{version}_configs_params"  / "root_params.yaml")
+## root_params.yaml is the same (and in the same place) for all faults and realisations
+# # Create modified root_params.yaml file
+# original_root_params_file_path = (base_cybershake_dir / "setup_files_from_dropbox"/ version / 
+#                               "extracted_original_setup_files_from_dropbox" / version / 
+#                               f"{version}_configs_params"  / "root_params.yaml")
 
-modified_root_params_file_path = base_cybershake_dir / version / "Runs" / "root_params.yaml"
+# modified_root_params_file_path = base_cybershake_dir / version / "Runs" / "root_params.yaml"
 
-create_modified_config_file(original_file_path=original_root_params_file_path, 
-                            modified_file_path=modified_root_params_file_path, 
-                            old_base_path=old_base_path_to_replace, 
-                            new_base_path=rch_base_path,
-                            fixed_value_overrides={
-                                "hf_vel_mod_1d": "/scratch/projects/rch-quakecore/Cybershake/VelocityModel/Mod-1D/Cant1D_v3-midQ_OneRay.1d",
-                                "mgmt_db_location": ""}
-                            )
+# create_modified_config_file(original_file_path=original_root_params_file_path, 
+#                             modified_file_path=modified_root_params_file_path, 
+#                             old_base_path=old_base_path_to_replace, 
+#                             new_base_path=rch_base_path,
+#                             fixed_value_overrides={
+#                                 "hf_vel_mod_1d": "/scratch/projects/rch-quakecore/Cybershake/VelocityModel/Mod-1D/Cant1D_v3-midQ_OneRay.1d",
+#                                 "mgmt_db_location": ""}
+#                             )
 
-# copy .ll and .vs30 files
-original_ll_and_vs30_source_path = (base_cybershake_dir / "setup_files_from_dropbox"/ version / 
-                                    "extracted_original_setup_files_from_dropbox" / version / 
-                                    "VMs" / f"{version}_setup_files")
+## These files are the same (and in the same place) for all faults
+# # copy .ll and .vs30 files
+# original_ll_and_vs30_source_path = (base_cybershake_dir / "setup_files_from_dropbox"/ version / 
+#                                     "extracted_original_setup_files_from_dropbox" / version / 
+#                                     "VMs" / f"{version}_setup_files")
 
-destination_ll_and_vs30_path = base_cybershake_dir / version  
+# destination_ll_and_vs30_path = base_cybershake_dir / version  
 
-shutil.copy(original_ll_and_vs30_source_path/"non_uniform_whole_nz_with_real_stations-hh400_v20p3_land.ll", destination_ll_and_vs30_path)
-shutil.copy(original_ll_and_vs30_source_path/"non_uniform_whole_nz_with_real_stations-hh400_v20p3_land.vs30", destination_ll_and_vs30_path)
+# shutil.copy(original_ll_and_vs30_source_path/"non_uniform_whole_nz_with_real_stations-hh400_v20p3_land.ll", destination_ll_and_vs30_path)
+# shutil.copy(original_ll_and_vs30_source_path/"non_uniform_whole_nz_with_real_stations-hh400_v20p3_land.vs30", destination_ll_and_vs30_path)
 
 # =============================================================================
 # Operations that depend on fault (but not realization)
 # =============================================================================
 
-# Create modified fault_params.yaml file
+# Create modified fault_params.yaml file (source path ok)
 original_fault_params_file_path = (base_cybershake_dir / "setup_files_from_dropbox"/ version / 
                               "extracted_original_setup_files_from_dropbox" / version / 
                               f"{version}_configs_params"  / fault / "fault_params.yaml")
@@ -176,7 +178,7 @@ create_modified_config_file(original_file_path=original_fault_params_file_path,
                             old_base_path=old_base_path_to_replace, 
                             new_base_path=rch_base_path)
 
-# copy ll and statscords
+# copy ll and statscords (source path ok)
 original_ll_statcords_source_path = (base_cybershake_dir / "setup_files_from_dropbox"/ version / 
                                                  "extracted_original_setup_files_from_dropbox" / 
                                                  version / "VMs" / f"{version}_setup_files" / "Runs" / fault)
@@ -184,7 +186,7 @@ original_ll_statcords_source_path = (base_cybershake_dir / "setup_files_from_dro
 shutil.copy(original_ll_statcords_source_path/"fd_rt01-h0.100.ll", destination_fault_params_base_base)
 shutil.copy(original_ll_statcords_source_path/"fd_rt01-h0.100.statcords", destination_fault_params_base_base)
 
-# Move Sources
+# Move Sources (source path ok)
 original_source_files_source_path = (base_cybershake_dir / "setup_files_from_dropbox"/ version / 
                                     "extracted_original_setup_files_from_dropbox" / version / 
                                     "Sources" / fault / fault )
@@ -192,7 +194,7 @@ original_source_files_source_path = (base_cybershake_dir / "setup_files_from_dro
 destination_source_files_path = base_cybershake_dir / version / "Data" / "Sources" / fault
 shutil.move(original_source_files_source_path, destination_source_files_path)
 
-# Move VMs
+# Move VMs (source path ok)
 original_vms_source_path = (base_cybershake_dir / "setup_files_from_dropbox"/ version / 
                                     "extracted_original_setup_files_from_dropbox" / version / 
                                     "VMs" / "VMs_meta_data" / fault )
@@ -217,7 +219,7 @@ create_modified_config_file(original_file_path=destination_vms_path / "vm_params
 # =============================================================================
 
 for realization in realizations:
-
+    # (source path ok)
     lf_output_source_path = (base_cybershake_dir / "setup_files_from_dropbox" / version / 
                             "extracted_original_setup_files_from_dropbox" / version / "LF" / 
                             fault / f"{realization}_LF_OutBin" / realization / "LF" ) 
@@ -225,10 +227,10 @@ for realization in realizations:
     lf_output_destination_path = base_cybershake_dir / version / "Runs" / fault/ realization /"LF"
     shutil.move(lf_output_source_path, lf_output_destination_path)
 
-    # Create modified e3d.par file
+    # Create modified e3d.par file (source path ok)
     original_e3d_par_file_path = (base_cybershake_dir / "setup_files_from_dropbox"/ version / 
                                   "extracted_original_setup_files_from_dropbox" / version / 
-                                  f"{version}_configs_params"  / fault/realization/"LF" / "e3d.par")
+                                  f"{version}_configs_params"  / fault / realization / "LF" / "e3d.par")
     
     modified_e3d_par_file_path = base_cybershake_dir / version / "Runs" / fault /realization / "LF" / "e3d.par"
     
@@ -238,10 +240,10 @@ for realization in realizations:
                                 new_base_path=rch_base_path, 
                                 fixed_value_overrides=E3D_PAR_FIXED_VALUES)
     
-    # Create modified sim_params.yaml file
+    # Create modified sim_params.yaml file (source path ok)
     original_sim_params_file_path = (base_cybershake_dir / "setup_files_from_dropbox"/ version / 
                                   "extracted_original_setup_files_from_dropbox" / version / 
-                                  f"{version}_configs_params"  / fault/realization/"sim_params.yaml")
+                                  f"{version}_configs_params"  / fault / realization /"sim_params.yaml")
     
     modified_sim_params_file_path = base_cybershake_dir / version / "Runs" / fault /realization / "sim_params.yaml"
 
