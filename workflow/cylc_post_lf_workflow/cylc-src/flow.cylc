@@ -10,28 +10,24 @@ description = """HF → BB → IM workflow for multiple faults and realizations"
 UTC mode = True
 
 {% set realizations = {
-    "MS09": ["MS09", "MS09_REL01", "MS09_REL02", "MS09_REL03", "MS09_REL04", "MS09_REL05",
-             "MS09_REL06", "MS09_REL07", "MS09_REL08", "MS09_REL09", "MS09_REL10",
-             "MS09_REL11", "MS09_REL12", "MS09_REL13", "MS09_REL14", "MS09_REL15",
-             "MS09_REL16", "MS09_REL17", "MS09_REL18", "MS09_REL19", "MS09_REL20",
-             "MS09_REL21", "MS09_REL22", "MS09_REL23", "MS09_REL24", "MS09_REL25",
-             "MS09_REL26", "MS09_REL27"]
+    "WhiteCk": ["WhiteCk"]
 } %}
+
 {% set slurm_params = {
-    "MS09": {
-        "hf": {"nodes":1, "ntasks":20, "time":"01:00:00"},
-        "bb": {"nodes":1, "ntasks":20, "time":"01:00:00"},
-        "im": {"nodes":1, "ntasks":20, "time":"01:00:00"},
+    "WhiteCk": {
+        "hf": {"nodes":1, "ntasks":144, "time":"06:00:00"},
+        "bb": {"nodes":1, "ntasks":144, "time":"06:00:00"},
+        "im": {"nodes":1, "ntasks":144, "time":"06:00:00"},
         "upload": {"nodes":1, "ntasks":1, "time":"02:00:00"},
-        "delete_realisation_run_dir": {"nodes":1, "ntasks":1, "time":"00:30:00"},
-        "delete_fault_input_data": {"nodes":1, "ntasks":1, "time":"00:30:00"}
+        "delete_realisation_run_dir": {"nodes":1, "ntasks":1, "time":"02:00:00"},
+        "delete_fault_input_data": {"nodes":1, "ntasks":1, "time":"02:00:00"}
     }
 } %}
 
 [scheduling]
     [[queues]]
         [[[default]]]
-            limit = 6
+            limit = 1
 
 [[graph]]
 R1 = """

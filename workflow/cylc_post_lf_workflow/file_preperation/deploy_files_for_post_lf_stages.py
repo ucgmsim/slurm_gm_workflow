@@ -207,11 +207,10 @@ create_modified_config_file(original_file_path=destination_vms_path / "vm_params
                             new_base_path=rch_base_path / version)
 
 # Copy addtional VM files that were not included in Dropbox
-original_additional_vm_files_source_dir_path = base_cybershake_dir / "VMs_from_cascade" / "VMs" / fault  
-
-shutil.copy(original_additional_vm_files_source_dir_path / "vs3dfile.s", destination_vms_path)
-shutil.copy(original_additional_vm_files_source_dir_path / "vp3dfile.p", destination_vms_path)
-shutil.copy(original_additional_vm_files_source_dir_path / "rho3dfile.d", destination_vms_path)
+# original_additional_vm_files_source_dir_path = base_cybershake_dir / "VMs_from_cascade" / "VMs" / fault  
+# shutil.copy(original_additional_vm_files_source_dir_path / "vs3dfile.s", destination_vms_path)
+# shutil.copy(original_additional_vm_files_source_dir_path / "vp3dfile.p", destination_vms_path)
+# shutil.copy(original_additional_vm_files_source_dir_path / "rho3dfile.d", destination_vms_path)
 
 
 # =============================================================================
@@ -225,7 +224,7 @@ for realization in realizations:
                             fault / f"{realization}_LF_OutBin" / realization / "LF" ) 
 
     lf_output_destination_path = base_cybershake_dir / version / "Runs" / fault/ realization /"LF"
-    shutil.copytree(lf_output_source_path, lf_output_destination_path)
+    shutil.move(lf_output_source_path, lf_output_destination_path)
 
     # Create modified e3d.par file
     original_e3d_par_file_path = (base_cybershake_dir / "setup_files_from_dropbox"/ version / 
