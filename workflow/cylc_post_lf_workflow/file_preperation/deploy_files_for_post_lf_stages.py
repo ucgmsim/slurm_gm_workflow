@@ -189,34 +189,34 @@ old_base_path_to_replace = "/uoc/project/uoc40001/scratch/baes/Cybershake"
 # shutil.move(original_source_files_source_path, destination_source_files_path)
 # print(f"    Moved to: {destination_source_files_path}")
 
-print("[4/5] Moving VMs and updating vm_params.yaml...")
+# print("[4/5] Moving VMs and updating vm_params.yaml...")
 
-original_vm_meta_data_source_path = (base_cybershake_dir / "setup_files_from_dropbox"/ version / 
-                                    "permanent_small_files" / "extracted" /
-                                    "VMs" / "VMs_meta_data" / fault )
+# original_vm_meta_data_source_path = (base_cybershake_dir / "setup_files_from_dropbox"/ version / 
+#                                     "permanent_small_files" / "extracted" /
+#                                     "VMs" / "VMs_meta_data" / fault )
 
-destination_vms_base_dir = base_cybershake_dir / version / "Data" / "VMs" / fault
+# destination_vms_base_dir = base_cybershake_dir / version / "Data" / "VMs" / fault
 
-shutil.copytree(original_vm_meta_data_source_path, destination_vms_base_dir)
-
-
+# shutil.copytree(original_vm_meta_data_source_path, destination_vms_base_dir)
 
 
-original_vm_hdf5_source_path = (base_cybershake_dir / "setup_files_from_dropbox"/ version / 
-                                    "large_temp_files" / "extracted" / version / 
-                                    "VMs" / "HDF5" / f"{fault}_velocity_model.h5")
-
-hdf5_destination_path = destination_vms_base_dir
-
-shutil.move(original_vm_hdf5_source_path, hdf5_destination_path / original_vm_hdf5_source_path.name)
-print(f"    Moved {original_vm_hdf5_source_path} to {hdf5_destination_path / original_vm_hdf5_source_path.name}")
 
 
-create_modified_config_file(original_file_path=hdf5_destination_path / "vm_params.yaml",
-                            modified_file_path=hdf5_destination_path / "vm_params.yaml", 
-                            old_base_path="/scratch/hpc91a02/UC/RunFolder/Cybershake/v23p7", 
-                            new_base_path=base_cybershake_dir / version)
-print(f"    Updated: {hdf5_destination_path / 'vm_params.yaml'}")
+# original_vm_hdf5_source_path = (base_cybershake_dir / "setup_files_from_dropbox"/ version / 
+#                                     "large_temp_files" / "extracted" / version / 
+#                                     "VMs" / "HDF5" / f"{fault}_velocity_model.h5")
+
+# hdf5_destination_path = destination_vms_base_dir
+
+# shutil.move(original_vm_hdf5_source_path, hdf5_destination_path / original_vm_hdf5_source_path.name)
+# print(f"    Moved {original_vm_hdf5_source_path} to {hdf5_destination_path / original_vm_hdf5_source_path.name}")
+
+
+# create_modified_config_file(original_file_path=hdf5_destination_path / "vm_params.yaml",
+#                             modified_file_path=hdf5_destination_path / "vm_params.yaml", 
+#                             old_base_path="/scratch/hpc91a02/UC/RunFolder/Cybershake/v23p7", 
+#                             new_base_path=base_cybershake_dir / version)
+# print(f"    Updated: {hdf5_destination_path / 'vm_params.yaml'}")
 
 
 ####  Need to generate these files from the hdf5 file
@@ -237,9 +237,9 @@ for idx, realization in enumerate(realizations, 1):
     
     lf_output_source_path = (base_cybershake_dir / "setup_files_from_dropbox" / version / 
                             "large_temp_files" / "extracted" / version / "LF" / 
-                            fault / f"{realization}_LF_OutBin" / fault / realization / realization / "LF" )
+                            fault / f"{realization}_LF_OutBin" / fault / realization / "LF" )
 
-    lf_output_destination_path = base_cybershake_dir / version / "Runs" / fault/ realization / "LF"
+    lf_output_destination_path = base_cybershake_dir / version / "Runs" / fault / realization / "LF"
     shutil.move(lf_output_source_path, lf_output_destination_path)
 
     # Create modified e3d.par file
