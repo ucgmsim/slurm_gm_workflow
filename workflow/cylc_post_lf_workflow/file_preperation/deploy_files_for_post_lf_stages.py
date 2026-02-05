@@ -68,9 +68,7 @@ def create_modified_config_file(original_file_path, modified_file_path, old_base
         f.write(modified_content)
 
 version = "v25p11"
-fault = "WhiteCk"
-
-# realizations = ["WhiteCk"]
+fault = "NMFZB0"
 
 # Fixed value overrides for e3d.par files
 E3D_PAR_FIXED_VALUES = {
@@ -80,50 +78,39 @@ E3D_PAR_FIXED_VALUES = {
     "model_params": '""',
 }
 
-realizations = ["WhiteCk",
-                "WhiteCk_REL01", 
-                "WhiteCk_REL02",
-                "WhiteCk_REL03",
-                "WhiteCk_REL04",
-                "WhiteCk_REL05",
-                "WhiteCk_REL06",
-                "WhiteCk_REL07",
-                "WhiteCk_REL08",
-                "WhiteCk_REL09",
-                "WhiteCk_REL10",
-                "WhiteCk_REL11",
-                "WhiteCk_REL12",
-                "WhiteCk_REL13",
-                "WhiteCk_REL14",
-                "WhiteCk_REL15",
-                "WhiteCk_REL16",
-                "WhiteCk_REL17",
-                "WhiteCk_REL18",
-                "WhiteCk_REL19",
-                "WhiteCk_REL20",
-                "WhiteCk_REL21",
-                "WhiteCk_REL22",
-                "WhiteCk_REL23",
-                "WhiteCk_REL24",
-                "WhiteCk_REL25",
-                "WhiteCk_REL26",
-                "WhiteCk_REL27",
-                "WhiteCk_REL28",
-                "WhiteCk_REL29",
-                "WhiteCk_REL30",
-                "WhiteCk_REL31",
-                "WhiteCk_REL32",
-                "WhiteCk_REL33",
-                "WhiteCk_REL34",
-                "WhiteCk_REL35",
-                "WhiteCk_REL36",
-                "WhiteCk_REL37",
-                "WhiteCk_REL38",
-                "WhiteCk_REL39"]
+realizations = ["NMFZB0",
+                "NMFZB0_REL01", 
+                "NMFZB0_REL02",
+                "NMFZB0_REL03",
+                "NMFZB0_REL04",
+                "NMFZB0_REL05",
+                "NMFZB0_REL06",
+                "NMFZB0_REL07",
+                "NMFZB0_REL08",
+                "NMFZB0_REL09",
+                "NMFZB0_REL10",
+                "NMFZB0_REL11",
+                "NMFZB0_REL12",
+                "NMFZB0_REL13",
+                "NMFZB0_REL14",
+                "NMFZB0_REL15",
+                "NMFZB0_REL16",
+                "NMFZB0_REL17",
+                "NMFZB0_REL18",
+                "NMFZB0_REL19",
+                "NMFZB0_REL20",
+                "NMFZB0_REL21",
+                "NMFZB0_REL22",
+                "NMFZB0_REL23",
+                "NMFZB0_REL24",
+                "NMFZB0_REL25",
+                "NMFZB0_REL26",
+                "NMFZB0_REL27",
+                "NMFZB0_REL28",
+                "NMFZB0_REL29",
+                "NMFZB0_REL30",
+                "NMFZB0_REL31"]
 
-
-# realizations = ["MS09",
-#                 "MS09_REL01"]
 
 base_cybershake_dir = Path("/scratch/projects/rch-quakecore/Cybershake")
 old_base_path_to_replace = "/uoc/project/uoc40001/scratch/baes/Cybershake"
