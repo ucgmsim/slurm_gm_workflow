@@ -206,10 +206,10 @@ original_vm_hdf5_source_path = (base_cybershake_dir / "setup_files_from_dropbox"
                                     "large_temp_files" / "extracted" / version / 
                                     "VMs" / "HDF5" / f"{fault}_velocity_model.h5")
 
-hdf5_destination_path = destination_vms_base_dir / fault
+hdf5_destination_path = destination_vms_base_dir
 
-shutil.move(original_vm_hdf5_source_path, hdf5_destination_path)
-print(f"    Moved {original_vm_hdf5_source_path} to {hdf5_destination_path}")
+shutil.move(original_vm_hdf5_source_path, hdf5_destination_path / original_vm_hdf5_source_path.name)
+print(f"    Moved {original_vm_hdf5_source_path} to {hdf5_destination_path / original_vm_hdf5_source_path.name}")
 
 
 create_modified_config_file(original_file_path=hdf5_destination_path / "vm_params.yaml",
