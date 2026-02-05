@@ -152,13 +152,14 @@ create_modified_config_file(original_file_path=original_root_params_file_path,
 ## These files are the same (and in the same place) for all faults
 # # copy .ll and .vs30 files
 original_ll_and_vs30_source_path = (base_cybershake_dir / "setup_files_from_dropbox"/ version / 
-                                    "permanent_small_files" / "extracted" / version / 
+                                    "permanent_small_files" / "extracted" / 
                                     "VMs" / f"{version}_setup_files")
 
-# destination_ll_and_vs30_path = base_cybershake_dir / version  
 
-# shutil.copy(original_ll_and_vs30_source_path/"non_uniform_whole_nz_with_real_stations-hh400_v20p3_land.ll", destination_ll_and_vs30_path)
-# shutil.copy(original_ll_and_vs30_source_path/"non_uniform_whole_nz_with_real_stations-hh400_v20p3_land.vs30", destination_ll_and_vs30_path)
+destination_ll_and_vs30_path = base_cybershake_dir / version
+
+shutil.copy(original_ll_and_vs30_source_path/"non_uniform_whole_nz_with_real_stations-hh400_v20p3_land.ll", destination_ll_and_vs30_path)
+shutil.copy(original_ll_and_vs30_source_path/"non_uniform_whole_nz_with_real_stations-hh400_v20p3_land.vs30", destination_ll_and_vs30_path)
 
 # =============================================================================
 # Operations that depend on fault (but not realization)
@@ -169,9 +170,8 @@ print(f"Total realizations to process: {len(realizations)}")
 print(f"{'='*60}\n")
 
 print("[1/5] Creating modified fault_params.yaml file...")
-# Create modified fault_params.yaml file (source path ok)
 original_fault_params_file_path = (base_cybershake_dir / "setup_files_from_dropbox"/ version / 
-                              "extracted_original_setup_files_from_dropbox" / version / 
+                              "permanent_small_files" / "extracted" / 
                               f"{version}_configs_params"  / fault / "fault_params.yaml")
 
 destination_fault_params_base_base = base_cybershake_dir / version / "Runs" / fault 
@@ -186,17 +186,16 @@ print(f"    Created: {modified_fault_params_file_path}")
 print("[2/5] Copying .ll and .statcords files...")
 # copy ll and statscords (source path ok)
 original_ll_statcords_source_path = (base_cybershake_dir / "setup_files_from_dropbox"/ version / 
-                                                 "extracted_original_setup_files_from_dropbox" / 
-                                                 version / "VMs" / f"{version}_setup_files" / "Runs" / fault)
+                                                 "permanent_small_files" / "extracted" / 
+                                                 "VMs" / f"{version}_setup_files" / "Runs" / fault)
 
 shutil.copy(original_ll_statcords_source_path/"fd_rt01-h0.100.ll", destination_fault_params_base_base)
 shutil.copy(original_ll_statcords_source_path/"fd_rt01-h0.100.statcords", destination_fault_params_base_base)
 print(f"    Copied to: {destination_fault_params_base_base}")
 
 print("[3/5] Moving Sources...")
-# Move Sources (source path ok)
 original_source_files_source_path = (base_cybershake_dir / "setup_files_from_dropbox"/ version / 
-                                    "extracted_original_setup_files_from_dropbox" / version / 
+                                    "large_temp_files" / "extracted" / version / 
                                     "Sources" / fault / fault )
 
 destination_source_files_path = base_cybershake_dir / version / "Data" / "Sources" / fault
@@ -204,27 +203,41 @@ shutil.move(original_source_files_source_path, destination_source_files_path)
 print(f"    Moved to: {destination_source_files_path}")
 
 print("[4/5] Moving VMs and updating vm_params.yaml...")
-# Move VMs (source path ok)
-original_vms_source_path = (base_cybershake_dir / "setup_files_from_dropbox"/ version / 
-                                    "extracted_original_setup_files_from_dropbox" / version / 
+
+original_vm_meta_data_source_path = (base_cybershake_dir / "setup_files_from_dropbox"/ version / 
+                                    "permanent_small_files" / "extracted" /
                                     "VMs" / "VMs_meta_data" / fault )
 
-destination_vms_path = base_cybershake_dir / version / "Data" / "VMs" / fault
-shutil.move(original_vms_source_path, destination_vms_path)
-print(f"    Moved to: {destination_vms_path}")
+destination_vms_base_dir = base_cybershake_dir / version / "Data" / "VMs"
 
-create_modified_config_file(original_file_path=destination_vms_path / "vm_params.yaml",
-                            modified_file_path=destination_vms_path / "vm_params.yaml", 
+shutil.copytree(original_vm_meta_data_source_path, destination_vms_base_dir)
+
+
+
+
+original_vm_hdf5_source_path = (base_cybershake_dir / "setup_files_from_dropbox"/ version / 
+                                    "large_temp_files" / "extracted" / version / 
+                                    "VMs" / "HDF5" / f"{fault}_velocity_model.h5")
+
+hdf5_destination_path = destination_vms_base_dir / fault
+
+shutil.move(original_vm_hdf5_source_path, hdf5_destination_path)
+print(f"    Moved {original_vm_hdf5_source_path} to {hdf5_destination_path}")
+
+
+create_modified_config_file(original_file_path=hdf5_destination_path / "vm_params.yaml",
+                            modified_file_path=hdf5_destination_path / "vm_params.yaml", 
                             old_base_path="/scratch/hpc91a02/UC/RunFolder/Cybershake/v23p7", 
                             new_base_path=base_cybershake_dir / version)
-print(f"    Updated: {destination_vms_path / 'vm_params.yaml'}")
+print(f"    Updated: {hdf5_destination_path / 'vm_params.yaml'}")
 
+
+####  Need to generate these files from the hdf5 file
 # Copy addtional VM files that were not included in Dropbox
 # original_additional_vm_files_source_dir_path = base_cybershake_dir / "VMs_from_cascade" / "VMs" / fault  
 # shutil.copy(original_additional_vm_files_source_dir_path / "vs3dfile.s", destination_vms_path)
 # shutil.copy(original_additional_vm_files_source_dir_path / "vp3dfile.p", destination_vms_path)
 # shutil.copy(original_additional_vm_files_source_dir_path / "rho3dfile.d", destination_vms_path)
-
 
 # =============================================================================
 # Operations that depend on realization
@@ -235,17 +248,16 @@ total_realizations = len(realizations)
 for idx, realization in enumerate(realizations, 1):
     print(f"  [{idx}/{total_realizations}] Processing {realization}...")
     
-    # (source path ok)
     lf_output_source_path = (base_cybershake_dir / "setup_files_from_dropbox" / version / 
-                            "extracted_original_setup_files_from_dropbox" / version / "LF" / 
-                            fault / f"{realization}_LF_OutBin" / realization / "LF" ) 
+                            "large_temp_files" / "extracted" / version / "LF" / 
+                            fault / f"{realization}_LF_OutBin" / fault / realization / realization / "LF" )
 
-    lf_output_destination_path = base_cybershake_dir / version / "Runs" / fault/ realization /"LF"
+    lf_output_destination_path = base_cybershake_dir / version / "Runs" / fault/ realization / "LF"
     shutil.move(lf_output_source_path, lf_output_destination_path)
 
-    # Create modified e3d.par file (source path ok)
+    # Create modified e3d.par file
     original_e3d_par_file_path = (base_cybershake_dir / "setup_files_from_dropbox"/ version / 
-                                  "extracted_original_setup_files_from_dropbox" / version / 
+                                  "permanent_small_files" / "extracted" / 
                                   f"{version}_configs_params"  / fault / realization / "LF" / "e3d.par")
     
     modified_e3d_par_file_path = base_cybershake_dir / version / "Runs" / fault /realization / "LF" / "e3d.par"
@@ -256,11 +268,11 @@ for idx, realization in enumerate(realizations, 1):
                                 new_base_path=base_cybershake_dir, 
                                 fixed_value_overrides=E3D_PAR_FIXED_VALUES)
     
-    # Create modified sim_params.yaml file (source path ok)
+    # Create modified sim_params.yaml file
     original_sim_params_file_path = (base_cybershake_dir / "setup_files_from_dropbox"/ version / 
-                                  "extracted_original_setup_files_from_dropbox" / version / 
-                                  f"{version}_configs_params"  / fault / realization /"sim_params.yaml")
-    
+                                  "permanent_small_files" / "extracted" / 
+                                  f"{version}_configs_params"  / fault / realization / "sim_params.yaml")
+   
     modified_sim_params_file_path = base_cybershake_dir / version / "Runs" / fault /realization / "sim_params.yaml"
 
     
@@ -270,5 +282,5 @@ for idx, realization in enumerate(realizations, 1):
                                 new_base_path=base_cybershake_dir)
 
 print(f"\n{'='*60}")
-print(f"Deployment complete!")
+print("Deployment complete!")
 print(f"{'='*60}")
