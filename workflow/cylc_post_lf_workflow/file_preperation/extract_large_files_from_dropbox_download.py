@@ -7,6 +7,7 @@ Handles nested archives (compressed files within compressed files) by recursivel
 extracting until no compressed files remain.
 """
 
+import argparse
 import shutil
 import tarfile
 import zipfile
@@ -14,16 +15,6 @@ import gzip
 import bz2
 import lzma
 from pathlib import Path
-
-
-version = "v25p11"
-fault = "WhiteCk"
-
-setup_files_base_dir = Path(f"/scratch/projects/rch-quakecore/Cybershake/setup_files_from_dropbox/{version}/large_temp_files")
-
-tar_original_setup_files_from_dropbox = setup_files_base_dir / "tar" / version
-
-extracted_original_setup_files_from_dropbox = setup_files_base_dir / "extracted" / version
 
 # File extensions that indicate compressed/archived files
 TAR_EXTENSIONS = {'.tar', '.tar.gz', '.tgz', '.tar.bz2', '.tbz2', '.tar.xz', '.txz'}
@@ -265,26 +256,41 @@ def process_directory_tree(src_path: Path, dest_dir: Path) -> None:
 
 
 def main():
-
-    print("Move and extract LF dir for fault {fault}...")    
+    parser = argparse.ArgumentParser(
+        description="Extract compressed files from Dropbox download for a specific version and fault"
+    )
+    parser.add_argument("version", help="Version string (e.g., v25p11)")
+    parser.add_argument("fault", help="Fault name (e.g., WhiteCk)")
+    args = parser.parse_args()
+    
+    # Construct paths using the provided version and fault
+    setup_files_base_dir = Path(f"/scratch/projects/rch-quakecore/Cybershake/setup_files_from_dropbox/{args.version}/large_temp_files")
+    tar_original_setup_files_from_dropbox = setup_files_base_dir / "tar" / args.version
+    extracted_original_setup_files_from_dropbox = setup_files_base_dir / "extracted" / args.version
+    
+    print(f"Processing version: {args.version}, fault: {args.fault}")
+    
+    print(f"Move and extract LF dir for fault {args.fault}...")    
     process_directory_tree(
-        tar_original_setup_files_from_dropbox / "LF" / fault,
-        extracted_original_setup_files_from_dropbox / "LF" / fault
+        tar_original_setup_files_from_dropbox / "LF" / args.fault,
+        extracted_original_setup_files_from_dropbox / "LF" / args.fault
     )
 
-    print("Move and extract Sources dir for fault {fault}...")
+    print(f"Move and extract Sources dir for fault {args.fault}...")
     process_directory_tree(
-        tar_original_setup_files_from_dropbox / "Sources" / f"{fault}.tar",
-        extracted_original_setup_files_from_dropbox / "Sources" / f"{fault}"
+        tar_original_setup_files_from_dropbox / "Sources" / f"{args.fault}.tar",
+        extracted_original_setup_files_from_dropbox / "Sources" / f"{args.fault}"
     )
 
-    print("Move VMs/HDF5 file for fault {fault}...")
+    print(f"Move VMs/HDF5 file for fault {args.fault}...")
     dest_vm_dir = extracted_original_setup_files_from_dropbox / "VMs" / "HDF5"
     dest_vm_dir.mkdir(parents=True, exist_ok=True)
     shutil.move(
-        tar_original_setup_files_from_dropbox / "VMs" / "HDF5" / f"{fault}_velocity_model.h5",
-        dest_vm_dir / f"{fault}_velocity_model.h5"
+        tar_original_setup_files_from_dropbox / "VMs" / "HDF5" / f"{args.fault}_velocity_model.h5",
+        dest_vm_dir / f"{args.fault}_velocity_model.h5"
     )
+    
+    print("Done processing all files!")
 
 if __name__ == "__main__":
     main()
