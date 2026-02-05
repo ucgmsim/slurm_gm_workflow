@@ -18,7 +18,7 @@ def main():
     local_large_temp_tar_dir_base = f"/scratch/projects/rch-quakecore/Cybershake/setup_files_from_dropbox/{version}/large_temp_files/tar/{version}"
     local_lf_tar_dir = f"{local_large_temp_tar_dir_base}/LF/{fault_name}" 
     local_sources_tar_dir = f"{local_large_temp_tar_dir_base}/Sources"
-    local_vm_h5_dir = f"{local_large_temp_tar_dir_base}/HDF5"
+    local_vm_h5_dir = f"{local_large_temp_tar_dir_base}/VMs/HDF5"
 
     # print(f"Trying to clone {dropbox_lf} to {local_lf_tar_dir}")
     # subprocess.run(["rclone", "copy", dropbox_lf, local_lf_tar_dir, "--progress"], check=True)
