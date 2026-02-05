@@ -68,7 +68,7 @@ def create_modified_config_file(original_file_path, modified_file_path, old_base
         f.write(modified_content)
 
 version = "v25p11"
-fault = "MS04"
+fault = "NMFZB1"
 
 # Fixed value overrides for e3d.par files
 E3D_PAR_FIXED_VALUES = {
@@ -78,38 +78,31 @@ E3D_PAR_FIXED_VALUES = {
     "model_params": '""',
 }
 
-realizations = ["MS04",
-                "MS04_REL01", 
-                "MS04_REL02",
-                "MS04_REL03",
-                "MS04_REL04",
-                "MS04_REL05",
-                "MS04_REL06",
-                "MS04_REL07",
-                "MS04_REL08",
-                "MS04_REL09",
-                "MS04_REL10",
-                "MS04_REL11",
-                "MS04_REL12",
-                "MS04_REL13",
-                "MS04_REL14",
-                "MS04_REL15",
-                "MS04_REL16",
-                "MS04_REL17",
-                "MS04_REL18",
-                "MS04_REL19",
-                "MS04_REL20",
-                "MS04_REL21",
-                "MS04_REL22",
-                "MS04_REL23",
-                "MS04_REL24",
-                "MS04_REL25",
-                "MS04_REL26",
-                "MS04_REL27",
-                "MS04_REL28",
-                "MS04_REL29",
-                "MS04_REL30",
-                "MS04_REL31"]
+realizations = ["NMFZB1",
+                "NMFZB1_REL01", 
+                "NMFZB1_REL02",
+                "NMFZB1_REL03",
+                "NMFZB1_REL04",
+                "NMFZB1_REL05",
+                "NMFZB1_REL06",
+                "NMFZB1_REL07",
+                "NMFZB1_REL08",
+                "NMFZB1_REL09",
+                "NMFZB1_REL10",
+                "NMFZB1_REL11",
+                "NMFZB1_REL12",
+                "NMFZB1_REL13",
+                "NMFZB1_REL14",
+                "NMFZB1_REL15",
+                "NMFZB1_REL16",
+                "NMFZB1_REL17",
+                "NMFZB1_REL18",
+                "NMFZB1_REL19",
+                "NMFZB1_REL20",
+                "NMFZB1_REL21",
+                "NMFZB1_REL22",
+                "NMFZB1_REL23",
+                "NMFZB1_REL24"]
 
 
 base_cybershake_dir = Path("/scratch/projects/rch-quakecore/Cybershake")
