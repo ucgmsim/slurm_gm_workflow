@@ -283,13 +283,13 @@ def main():
         extracted_original_setup_files_from_dropbox / "Sources" / f"{args.fault}"
     )
 
-    # print(f"Move VMs/HDF5 file for fault {args.fault}...")
-    # dest_vm_dir = extracted_original_setup_files_from_dropbox / "VMs" / "HDF5"
-    # dest_vm_dir.mkdir(parents=True, exist_ok=True)
-    # shutil.move(
-    #     tar_original_setup_files_from_dropbox / "VMs" / "HDF5" / f"{args.fault}_velocity_model.h5",
-    #     dest_vm_dir / f"{args.fault}_velocity_model.h5"
-    # )
+    print(f"Move VMs/HDF5 file for fault {args.fault}...")
+    dest_vm_dir = extracted_original_setup_files_from_dropbox / "VMs" / "HDF5"
+    dest_vm_dir.mkdir(parents=True, exist_ok=True)
+    shutil.move(
+        tar_original_setup_files_from_dropbox / "VMs" / "HDF5" / f"{args.fault}_velocity_model.h5",
+        dest_vm_dir / f"{args.fault}_velocity_model.h5"
+    )
     
     print("Done processing all files!")
 
