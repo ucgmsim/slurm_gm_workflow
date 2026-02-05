@@ -271,25 +271,25 @@ def main():
     
     print(f"Processing version: {args.version}, fault: {args.fault}")
     
-    # print(f"Move and extract LF dir for fault {args.fault}...")    
-    # process_directory_tree(
-    #     tar_original_setup_files_from_dropbox / "LF" / args.fault,
-    #     extracted_original_setup_files_from_dropbox / "LF" / args.fault
-    # )
-
-    # print(f"Move and extract Sources dir for fault {args.fault}...")
-    # process_directory_tree(
-    #     tar_original_setup_files_from_dropbox / "Sources" / f"{args.fault}.tar",
-    #     extracted_original_setup_files_from_dropbox / "Sources" / f"{args.fault}"
-    # )
-
-    print(f"Move VMs/HDF5 file for fault {args.fault}...")
-    dest_vm_dir = extracted_original_setup_files_from_dropbox / "VMs" / "HDF5"
-    dest_vm_dir.mkdir(parents=True, exist_ok=True)
-    shutil.move(
-        tar_original_setup_files_from_dropbox / "VMs" / "HDF5" / f"{args.fault}_velocity_model.h5",
-        dest_vm_dir / f"{args.fault}_velocity_model.h5"
+    print(f"Move and extract LF dir for fault {args.fault}...")    
+    process_directory_tree(
+        tar_original_setup_files_from_dropbox / "LF" / args.fault,
+        extracted_original_setup_files_from_dropbox / "LF" / args.fault
     )
+
+    print(f"Move and extract Sources dir for fault {args.fault}...")
+    process_directory_tree(
+        tar_original_setup_files_from_dropbox / "Sources" / f"{args.fault}.tar",
+        extracted_original_setup_files_from_dropbox / "Sources" / f"{args.fault}"
+    )
+
+    # print(f"Move VMs/HDF5 file for fault {args.fault}...")
+    # dest_vm_dir = extracted_original_setup_files_from_dropbox / "VMs" / "HDF5"
+    # dest_vm_dir.mkdir(parents=True, exist_ok=True)
+    # shutil.move(
+    #     tar_original_setup_files_from_dropbox / "VMs" / "HDF5" / f"{args.fault}_velocity_model.h5",
+    #     dest_vm_dir / f"{args.fault}_velocity_model.h5"
+    # )
     
     print("Done processing all files!")
 
