@@ -271,17 +271,17 @@ def main():
     
     print(f"Processing version: {args.version}, fault: {args.fault}")
     
-    print(f"Move and extract LF dir for fault {args.fault}...")    
-    process_directory_tree(
-        tar_original_setup_files_from_dropbox / "LF" / args.fault,
-        extracted_original_setup_files_from_dropbox / "LF" / args.fault
-    )
+    # print(f"Move and extract LF dir for fault {args.fault}...")    
+    # process_directory_tree(
+    #     tar_original_setup_files_from_dropbox / "LF" / args.fault,
+    #     extracted_original_setup_files_from_dropbox / "LF" / args.fault
+    # )
 
-    print(f"Move and extract Sources dir for fault {args.fault}...")
-    process_directory_tree(
-        tar_original_setup_files_from_dropbox / "Sources" / f"{args.fault}.tar",
-        extracted_original_setup_files_from_dropbox / "Sources" / f"{args.fault}"
-    )
+    # print(f"Move and extract Sources dir for fault {args.fault}...")
+    # process_directory_tree(
+    #     tar_original_setup_files_from_dropbox / "Sources" / f"{args.fault}.tar",
+    #     extracted_original_setup_files_from_dropbox / "Sources" / f"{args.fault}"
+    # )
 
     print(f"Move VMs/HDF5 file for fault {args.fault}...")
     dest_vm_dir = extracted_original_setup_files_from_dropbox / "VMs" / "HDF5"

@@ -20,11 +20,11 @@ def main():
     local_sources_tar_dir = f"{local_large_temp_tar_dir_base}/Sources"
     local_vm_h5_dir = f"{local_large_temp_tar_dir_base}/HDF5"
 
-    print(f"Trying to clone {dropbox_lf} to {local_lf_tar_dir}")
-    subprocess.run(["rclone", "copy", dropbox_lf, local_lf_tar_dir, "--progress"], check=True)
+    # print(f"Trying to clone {dropbox_lf} to {local_lf_tar_dir}")
+    # subprocess.run(["rclone", "copy", dropbox_lf, local_lf_tar_dir, "--progress"], check=True)
 
-    print(f"Trying to clone {dropbox_sources_tar} to {local_sources_tar_dir}")
-    subprocess.run(["rclone", "copy", dropbox_sources_tar, local_sources_tar_dir, "--progress"], check=True)
+    # print(f"Trying to clone {dropbox_sources_tar} to {local_sources_tar_dir}")
+    # subprocess.run(["rclone", "copy", dropbox_sources_tar, local_sources_tar_dir, "--progress"], check=True)
 
     print(f"Trying to clone {dropbox_vm_h5} to {local_vm_h5_dir}")
     subprocess.run(["rclone", "copy", dropbox_vm_h5, local_vm_h5_dir, "--progress"], check=True)
