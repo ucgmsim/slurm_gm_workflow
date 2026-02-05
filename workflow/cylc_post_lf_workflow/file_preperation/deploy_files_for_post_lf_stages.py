@@ -121,73 +121,73 @@ old_base_path_to_replace = "/uoc/project/uoc40001/scratch/baes/Cybershake"
 
 ## root_params.yaml is the same (and in the same place) for all faults and realisations
 # # Create modified root_params.yaml file
-original_root_params_file_path = (base_cybershake_dir / "setup_files_from_dropbox"/ version / 
-                              "permanent_small_files" / "extracted" / 
-                              f"{version}_configs_params"  / "root_params.yaml")
+# original_root_params_file_path = (base_cybershake_dir / "setup_files_from_dropbox"/ version / 
+#                               "permanent_small_files" / "extracted" / 
+#                               f"{version}_configs_params"  / "root_params.yaml")
 
-modified_root_params_file_path = base_cybershake_dir / version / "Runs" / "root_params.yaml"
+# modified_root_params_file_path = base_cybershake_dir / version / "Runs" / "root_params.yaml"
 
-create_modified_config_file(original_file_path=original_root_params_file_path, 
-                            modified_file_path=modified_root_params_file_path, 
-                            old_base_path=old_base_path_to_replace, 
-                            new_base_path=base_cybershake_dir,
-                            fixed_value_overrides={
-                                "hf_vel_mod_1d": "/scratch/projects/rch-quakecore/Cybershake/VelocityModel/Mod-1D/Cant1D_v3-midQ_OneRay.1d",
-                                "mgmt_db_location": ""}
-                            )
+# create_modified_config_file(original_file_path=original_root_params_file_path, 
+#                             modified_file_path=modified_root_params_file_path, 
+#                             old_base_path=old_base_path_to_replace, 
+#                             new_base_path=base_cybershake_dir,
+#                             fixed_value_overrides={
+#                                 "hf_vel_mod_1d": "/scratch/projects/rch-quakecore/Cybershake/VelocityModel/Mod-1D/Cant1D_v3-midQ_OneRay.1d",
+#                                 "mgmt_db_location": ""}
+#                             )
 
-## These files are the same (and in the same place) for all faults
-# # copy .ll and .vs30 files
-original_ll_and_vs30_source_path = (base_cybershake_dir / "setup_files_from_dropbox"/ version / 
-                                    "permanent_small_files" / "extracted" / 
-                                    "VMs" / f"{version}_setup_files")
+# ## These files are the same (and in the same place) for all faults
+# # # copy .ll and .vs30 files
+# original_ll_and_vs30_source_path = (base_cybershake_dir / "setup_files_from_dropbox"/ version / 
+#                                     "permanent_small_files" / "extracted" / 
+#                                     "VMs" / f"{version}_setup_files")
 
 
-destination_ll_and_vs30_path = base_cybershake_dir / version
+# destination_ll_and_vs30_path = base_cybershake_dir / version
 
-shutil.copy(original_ll_and_vs30_source_path/"non_uniform_whole_nz_with_real_stations-hh400_v20p3_land.ll", destination_ll_and_vs30_path)
-shutil.copy(original_ll_and_vs30_source_path/"non_uniform_whole_nz_with_real_stations-hh400_v20p3_land.vs30", destination_ll_and_vs30_path)
+# shutil.copy(original_ll_and_vs30_source_path/"non_uniform_whole_nz_with_real_stations-hh400_v20p3_land.ll", destination_ll_and_vs30_path)
+# shutil.copy(original_ll_and_vs30_source_path/"non_uniform_whole_nz_with_real_stations-hh400_v20p3_land.vs30", destination_ll_and_vs30_path)
 
 # =============================================================================
 # Operations that depend on fault (but not realization)
 # =============================================================================
-print(f"\n{'='*60}")
-print(f"Deploying files for version={version}, fault={fault}")
-print(f"Total realizations to process: {len(realizations)}")
-print(f"{'='*60}\n")
+# print(f"\n{'='*60}")
+# print(f"Deploying files for version={version}, fault={fault}")
+# print(f"Total realizations to process: {len(realizations)}")
+# print(f"{'='*60}\n")
 
-print("[1/5] Creating modified fault_params.yaml file...")
-original_fault_params_file_path = (base_cybershake_dir / "setup_files_from_dropbox"/ version / 
-                              "permanent_small_files" / "extracted" / 
-                              f"{version}_configs_params"  / fault / "fault_params.yaml")
+# print("[1/5] Creating modified fault_params.yaml file...")
+# original_fault_params_file_path = (base_cybershake_dir / "setup_files_from_dropbox"/ version / 
+#                               "permanent_small_files" / "extracted" / 
+#                               f"{version}_configs_params"  / fault / "fault_params.yaml")
 
-destination_fault_params_base_base = base_cybershake_dir / version / "Runs" / fault 
-modified_fault_params_file_path = destination_fault_params_base_base / "fault_params.yaml"
+# destination_fault_params_base_base = base_cybershake_dir / version / "Runs" / fault 
+# modified_fault_params_file_path = destination_fault_params_base_base / "fault_params.yaml"
 
-create_modified_config_file(original_file_path=original_fault_params_file_path, 
-                            modified_file_path=modified_fault_params_file_path, 
-                            old_base_path=old_base_path_to_replace, 
-                            new_base_path=base_cybershake_dir)
-print(f"    Created: {modified_fault_params_file_path}")
+# create_modified_config_file(original_file_path=original_fault_params_file_path, 
+#                             modified_file_path=modified_fault_params_file_path, 
+#                             old_base_path=old_base_path_to_replace, 
+#                             new_base_path=base_cybershake_dir)
+# print(f"    Created: {modified_fault_params_file_path}")
 
-print("[2/5] Copying .ll and .statcords files...")
-# copy ll and statscords (source path ok)
-original_ll_statcords_source_path = (base_cybershake_dir / "setup_files_from_dropbox"/ version / 
-                                                 "permanent_small_files" / "extracted" / 
-                                                 "VMs" / f"{version}_setup_files" / "Runs" / fault)
+# print("[2/5] Copying .ll and .statcords files...")
+# # copy ll and statscords (source path ok)
+# original_ll_statcords_source_path = (base_cybershake_dir / "setup_files_from_dropbox"/ version / 
+#                                                  "permanent_small_files" / "extracted" / 
+#                                                  "VMs" / f"{version}_setup_files" / "Runs" / fault)
 
-shutil.copy(original_ll_statcords_source_path/"fd_rt01-h0.100.ll", destination_fault_params_base_base)
-shutil.copy(original_ll_statcords_source_path/"fd_rt01-h0.100.statcords", destination_fault_params_base_base)
-print(f"    Copied to: {destination_fault_params_base_base}")
+# shutil.copy(original_ll_statcords_source_path/"fd_rt01-h0.100.ll", destination_fault_params_base_base)
+# shutil.copy(original_ll_statcords_source_path/"fd_rt01-h0.100.statcords", destination_fault_params_base_base)
+# print(f"    Copied to: {destination_fault_params_base_base}")
 
-print("[3/5] Moving Sources...")
-original_source_files_source_path = (base_cybershake_dir / "setup_files_from_dropbox"/ version / 
-                                    "large_temp_files" / "extracted" / version / 
-                                    "Sources" / fault / fault )
+# print("[3/5] Moving Sources...")
+# original_source_files_source_path = (base_cybershake_dir / "setup_files_from_dropbox"/ version / 
+#                                     "large_temp_files" / "extracted" / version / 
+#                                     "Sources" / fault / fault )
 
-destination_source_files_path = base_cybershake_dir / version / "Data" / "Sources" / fault
-shutil.move(original_source_files_source_path, destination_source_files_path)
-print(f"    Moved to: {destination_source_files_path}")
+# destination_source_files_path = base_cybershake_dir / version / "Data" / "Sources" / fault
+# shutil.move(original_source_files_source_path, destination_source_files_path)
+# print(f"    Moved to: {destination_source_files_path}")
 
 print("[4/5] Moving VMs and updating vm_params.yaml...")
 
@@ -195,7 +195,7 @@ original_vm_meta_data_source_path = (base_cybershake_dir / "setup_files_from_dro
                                     "permanent_small_files" / "extracted" /
                                     "VMs" / "VMs_meta_data" / fault )
 
-destination_vms_base_dir = base_cybershake_dir / version / "Data" / "VMs"
+destination_vms_base_dir = base_cybershake_dir / version / "Data" / "VMs" / fault
 
 shutil.copytree(original_vm_meta_data_source_path, destination_vms_base_dir)
 
