@@ -127,34 +127,33 @@ realizations = ["WhiteCk",
 
 base_cybershake_dir = Path("/scratch/projects/rch-quakecore/Cybershake")
 old_base_path_to_replace = "/uoc/project/uoc40001/scratch/baes/Cybershake"
-#rch_base_path = Path("/scratch/projects/rch-quakecore/Cybershake")
-rch_base_path = base_cybershake_dir
+
 # =============================================================================
 # Operations that depend only on version (not fault or realization)
 # =============================================================================
 
 ## root_params.yaml is the same (and in the same place) for all faults and realisations
 # # Create modified root_params.yaml file
-# original_root_params_file_path = (base_cybershake_dir / "setup_files_from_dropbox"/ version / 
-#                               "extracted_original_setup_files_from_dropbox" / version / 
-#                               f"{version}_configs_params"  / "root_params.yaml")
+original_root_params_file_path = (base_cybershake_dir / "setup_files_from_dropbox"/ version / 
+                              "permanent_small_files" / "extracted" / 
+                              f"{version}_configs_params"  / "root_params.yaml")
 
-# modified_root_params_file_path = base_cybershake_dir / version / "Runs" / "root_params.yaml"
+modified_root_params_file_path = base_cybershake_dir / version / "Runs" / "root_params.yaml"
 
-# create_modified_config_file(original_file_path=original_root_params_file_path, 
-#                             modified_file_path=modified_root_params_file_path, 
-#                             old_base_path=old_base_path_to_replace, 
-#                             new_base_path=rch_base_path,
-#                             fixed_value_overrides={
-#                                 "hf_vel_mod_1d": "/scratch/projects/rch-quakecore/Cybershake/VelocityModel/Mod-1D/Cant1D_v3-midQ_OneRay.1d",
-#                                 "mgmt_db_location": ""}
-#                             )
+create_modified_config_file(original_file_path=original_root_params_file_path, 
+                            modified_file_path=modified_root_params_file_path, 
+                            old_base_path=old_base_path_to_replace, 
+                            new_base_path=base_cybershake_dir,
+                            fixed_value_overrides={
+                                "hf_vel_mod_1d": "/scratch/projects/rch-quakecore/Cybershake/VelocityModel/Mod-1D/Cant1D_v3-midQ_OneRay.1d",
+                                "mgmt_db_location": ""}
+                            )
 
 ## These files are the same (and in the same place) for all faults
 # # copy .ll and .vs30 files
-# original_ll_and_vs30_source_path = (base_cybershake_dir / "setup_files_from_dropbox"/ version / 
-#                                     "extracted_original_setup_files_from_dropbox" / version / 
-#                                     "VMs" / f"{version}_setup_files")
+original_ll_and_vs30_source_path = (base_cybershake_dir / "setup_files_from_dropbox"/ version / 
+                                    "permanent_small_files" / "extracted" / version / 
+                                    "VMs" / f"{version}_setup_files")
 
 # destination_ll_and_vs30_path = base_cybershake_dir / version  
 
@@ -181,7 +180,7 @@ modified_fault_params_file_path = destination_fault_params_base_base / "fault_pa
 create_modified_config_file(original_file_path=original_fault_params_file_path, 
                             modified_file_path=modified_fault_params_file_path, 
                             old_base_path=old_base_path_to_replace, 
-                            new_base_path=rch_base_path)
+                            new_base_path=base_cybershake_dir)
 print(f"    Created: {modified_fault_params_file_path}")
 
 print("[2/5] Copying .ll and .statcords files...")
@@ -217,7 +216,7 @@ print(f"    Moved to: {destination_vms_path}")
 create_modified_config_file(original_file_path=destination_vms_path / "vm_params.yaml",
                             modified_file_path=destination_vms_path / "vm_params.yaml", 
                             old_base_path="/scratch/hpc91a02/UC/RunFolder/Cybershake/v23p7", 
-                            new_base_path=rch_base_path / version)
+                            new_base_path=base_cybershake_dir / version)
 print(f"    Updated: {destination_vms_path / 'vm_params.yaml'}")
 
 # Copy addtional VM files that were not included in Dropbox
@@ -254,7 +253,7 @@ for idx, realization in enumerate(realizations, 1):
     create_modified_config_file(original_file_path=original_e3d_par_file_path, 
                                 modified_file_path=modified_e3d_par_file_path, 
                                 old_base_path=old_base_path_to_replace, 
-                                new_base_path=rch_base_path, 
+                                new_base_path=base_cybershake_dir, 
                                 fixed_value_overrides=E3D_PAR_FIXED_VALUES)
     
     # Create modified sim_params.yaml file (source path ok)
@@ -268,7 +267,7 @@ for idx, realization in enumerate(realizations, 1):
     create_modified_config_file(original_file_path=original_sim_params_file_path, 
                                 modified_file_path=modified_sim_params_file_path, 
                                 old_base_path=old_base_path_to_replace, 
-                                new_base_path=rch_base_path)
+                                new_base_path=base_cybershake_dir)
 
 print(f"\n{'='*60}")
 print(f"Deployment complete!")
