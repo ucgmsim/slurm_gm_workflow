@@ -10,7 +10,8 @@ description = """HF → BB → IM workflow for multiple faults and realizations"
 UTC mode = True
 
 {% set realizations = {
-    "NMFZB0": ["NMFZB0_REL01", 
+    "NMFZB0": ["NMFZB0",
+                "NMFZB0_REL01", 
                 "NMFZB0_REL02",
                 "NMFZB0_REL03",
                 "NMFZB0_REL04",
