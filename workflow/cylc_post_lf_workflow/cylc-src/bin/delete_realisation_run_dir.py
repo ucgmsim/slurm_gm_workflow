@@ -23,9 +23,7 @@ def main():
 
     if os.path.exists(realisation_dir):
         print(f"Deleting directory: {realisation_dir}")
-        # TEMPORARY: Deletion disabled for testing - uncomment line below to restore
         shutil.rmtree(realisation_dir)
-        # print(f"(SKIPPED - deletion temporarily disabled)")
         print(f"Successfully deleted: {realisation_dir}")
     else:
         print(f"Warning: Directory does not exist: {realisation_dir}")
