@@ -16,11 +16,14 @@ import lzma
 from pathlib import Path
 
 
-setup_files_base_dir = Path("/scratch/projects/rch-quakecore/Cybershake/setup_files_from_dropbox/v25p11")
+version = "v25p11"
+fault = "WhiteCk"
 
-tar_original_setup_files_from_dropbox = setup_files_base_dir / "tar_original_setup_files_from_dropbox"
+setup_files_base_dir = Path(f"/scratch/projects/rch-quakecore/Cybershake/setup_files_from_dropbox/{version}/large_temp_files")
 
-extracted_original_setup_files_from_dropbox = setup_files_base_dir / "extracted_original_setup_files_from_dropbox"
+tar_original_setup_files_from_dropbox = setup_files_base_dir / "tar" / version
+
+extracted_original_setup_files_from_dropbox = setup_files_base_dir / "extracted" / version
 
 # File extensions that indicate compressed/archived files
 TAR_EXTENSIONS = {'.tar', '.tar.gz', '.tgz', '.tar.bz2', '.tbz2', '.tar.xz', '.txz'}
@@ -226,21 +229,29 @@ def remove_broken_symlinks(directory: Path) -> None:
         print("No broken symlinks found.")
 
 
-def process_directory_tree(src_dir: Path, dest_dir: Path) -> None:
+def process_directory_tree(src_path: Path, dest_dir: Path) -> None:
     """
-    Process the source directory tree, copying structure and extracting archives.
+    Process the source path (file or directory), extracting archives.
+    
+    - If src_path is a directory: moves it to dest_dir, then recursively extracts all archives
+    - If src_path is an archive file: extracts it to dest_dir, then recursively extracts nested archives
     """
-    if not src_dir.exists():
-        raise FileNotFoundError(f"Source directory does not exist: {src_dir}")
+    if not src_path.exists():
+        raise FileNotFoundError(f"Source path does not exist: {src_path}")  
     
-    # Remove destination if it exists
-    if dest_dir.exists():
-        print(f"Removing existing destination directory: {dest_dir}")
-        shutil.rmtree(dest_dir)
-    
-    # Copy the entire directory tree first
-    print(f"Copying directory tree from {src_dir} to {dest_dir}")
-    shutil.copytree(src_dir, dest_dir)
+    if src_path.is_file():
+        # Handle single archive file
+        archive_type = get_archive_type(src_path)
+        if archive_type is None:
+            raise ValueError(f"Source file is not a recognized archive: {src_path}")
+        
+        print(f"Extracting archive file {src_path} to {dest_dir}")
+        dest_dir.mkdir(parents=True, exist_ok=True)
+        extract_archive(src_path, dest_dir)
+    else:
+        # Handle directory tree
+        print(f"Moving directory tree from {src_path} to {dest_dir}")
+        shutil.move(src_path, dest_dir)
     
     # Now recursively extract all archives
     print("Recursively extracting all archives...")
@@ -254,15 +265,26 @@ def process_directory_tree(src_dir: Path, dest_dir: Path) -> None:
 
 
 def main():
-    print(f"Source: {tar_original_setup_files_from_dropbox}")
-    print(f"Destination: {extracted_original_setup_files_from_dropbox}")
-    print()
-    
+
+    print("Move and extract LF dir for fault {fault}...")    
     process_directory_tree(
-        tar_original_setup_files_from_dropbox,
-        extracted_original_setup_files_from_dropbox
+        tar_original_setup_files_from_dropbox / "LF" / fault,
+        extracted_original_setup_files_from_dropbox / "LF" / fault
     )
 
+    print("Move and extract Sources dir for fault {fault}...")
+    process_directory_tree(
+        tar_original_setup_files_from_dropbox / "Sources" / f"{fault}.tar",
+        extracted_original_setup_files_from_dropbox / "Sources" / f"{fault}"
+    )
+
+    print("Move VMs/HDF5 file for fault {fault}...")
+    dest_vm_dir = extracted_original_setup_files_from_dropbox / "VMs" / "HDF5"
+    dest_vm_dir.mkdir(parents=True, exist_ok=True)
+    shutil.move(
+        tar_original_setup_files_from_dropbox / "VMs" / "HDF5" / f"{fault}_velocity_model.h5",
+        dest_vm_dir / f"{fault}_velocity_model.h5"
+    )
 
 if __name__ == "__main__":
     main()

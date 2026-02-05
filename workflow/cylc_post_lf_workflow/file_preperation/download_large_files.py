@@ -13,7 +13,7 @@ def main():
     dropbox_source_base = f"dropbox:/QuakeCoRE/gmsim_scratch/{version}"
     dropbox_lf = f"{dropbox_source_base}/LF/{fault_name}"
     dropbox_sources_tar = f"{dropbox_source_base}/Sources/{fault_name}.tar"
-    dropbox_vm_h5 = f"{dropbox_source_base}/VMs/{fault_name}_velocity_model.h5"
+    dropbox_vm_h5 = f"{dropbox_source_base}/VMs/HDF5/{fault_name}_velocity_model.h5"
 
     local_large_temp_tar_dir_base = f"/scratch/projects/rch-quakecore/Cybershake/setup_files_from_dropbox/{version}/large_temp_files/tar/{version}"
     local_lf_tar_dir = f"{local_large_temp_tar_dir_base}/LF/{fault_name}" 
