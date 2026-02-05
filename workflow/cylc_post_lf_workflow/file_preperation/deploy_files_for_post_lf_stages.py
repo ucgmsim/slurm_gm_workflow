@@ -117,36 +117,37 @@ old_base_path_to_replace = "/uoc/project/uoc40001/scratch/baes/Cybershake"
 
 # =============================================================================
 # Operations that depend only on version (not fault or realization)
+# commented out as these do not need to be changed between runs of the same version
 # =============================================================================
 
 ## root_params.yaml is the same (and in the same place) for all faults and realisations
 # # Create modified root_params.yaml file
-original_root_params_file_path = (base_cybershake_dir / "setup_files_from_dropbox"/ version / 
-                              "permanent_small_files" / "extracted" / 
-                              f"{version}_configs_params"  / "root_params.yaml")
+# original_root_params_file_path = (base_cybershake_dir / "setup_files_from_dropbox"/ version / 
+#                               "permanent_small_files" / "extracted" / 
+#                               f"{version}_configs_params"  / "root_params.yaml")
 
-modified_root_params_file_path = base_cybershake_dir / version / "Runs" / "root_params.yaml"
+# modified_root_params_file_path = base_cybershake_dir / version / "Runs" / "root_params.yaml"
 
-create_modified_config_file(original_file_path=original_root_params_file_path, 
-                            modified_file_path=modified_root_params_file_path, 
-                            old_base_path=old_base_path_to_replace, 
-                            new_base_path=base_cybershake_dir,
-                            fixed_value_overrides={
-                                "hf_vel_mod_1d": "/scratch/projects/rch-quakecore/Cybershake/VelocityModel/Mod-1D/Cant1D_v3-midQ_OneRay.1d",
-                                "mgmt_db_location": ""}
-                            )
+# create_modified_config_file(original_file_path=original_root_params_file_path, 
+#                             modified_file_path=modified_root_params_file_path, 
+#                             old_base_path=old_base_path_to_replace, 
+#                             new_base_path=base_cybershake_dir,
+#                             fixed_value_overrides={
+#                                 "hf_vel_mod_1d": "/scratch/projects/rch-quakecore/Cybershake/VelocityModel/Mod-1D/Cant1D_v3-midQ_OneRay.1d",
+#                                 "mgmt_db_location": ""}
+#                             )
 
-## These files are the same (and in the same place) for all faults
-# # copy .ll and .vs30 files
-original_ll_and_vs30_source_path = (base_cybershake_dir / "setup_files_from_dropbox"/ version / 
-                                    "permanent_small_files" / "extracted" / 
-                                    "VMs" / f"{version}_setup_files")
+# ## These files are the same (and in the same place) for all faults
+# # # copy .ll and .vs30 files
+# original_ll_and_vs30_source_path = (base_cybershake_dir / "setup_files_from_dropbox"/ version / 
+#                                     "permanent_small_files" / "extracted" / 
+#                                     "VMs" / f"{version}_setup_files")
 
 
-destination_ll_and_vs30_path = base_cybershake_dir / version
+# destination_ll_and_vs30_path = base_cybershake_dir / version
 
-shutil.copy(original_ll_and_vs30_source_path/"non_uniform_whole_nz_with_real_stations-hh400_v20p3_land.ll", destination_ll_and_vs30_path)
-shutil.copy(original_ll_and_vs30_source_path/"non_uniform_whole_nz_with_real_stations-hh400_v20p3_land.vs30", destination_ll_and_vs30_path)
+# shutil.copy(original_ll_and_vs30_source_path/"non_uniform_whole_nz_with_real_stations-hh400_v20p3_land.ll", destination_ll_and_vs30_path)
+# shutil.copy(original_ll_and_vs30_source_path/"non_uniform_whole_nz_with_real_stations-hh400_v20p3_land.vs30", destination_ll_and_vs30_path)
 
 # =============================================================================
 # Operations that depend on fault (but not realization)
