@@ -242,6 +242,7 @@ def process_directory_tree(src_path: Path, dest_dir: Path) -> None:
     else:
         # Handle directory tree
         print(f"Moving directory tree from {src_path} to {dest_dir}")
+        dest_dir.parent.mkdir(parents=True, exist_ok=True)
         shutil.move(src_path, dest_dir)
     
     # Now recursively extract all archives
