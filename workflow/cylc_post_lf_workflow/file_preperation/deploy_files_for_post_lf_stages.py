@@ -177,8 +177,11 @@ def main():
                                         "Sources" / fault / fault )
 
     destination_source_files_path = base_cybershake_dir / version / "Data" / "Sources" / fault
-    shutil.move(original_source_files_source_path, destination_source_files_path)
-    print(f"    Moved to: {destination_source_files_path}")
+    if not destination_source_files_path.exists():
+        shutil.move(original_source_files_source_path, destination_source_files_path)
+        print(f"    Moved to: {destination_source_files_path}")
+    else:
+        print(f"    Skipping Sources move (destination already exists)")
 
     print("[4/5] Moving VMs and updating vm_params.yaml...")
 
@@ -188,7 +191,10 @@ def main():
 
     destination_vms_base_dir = base_cybershake_dir / version / "Data" / "VMs" / fault
 
-    shutil.copytree(original_vm_meta_data_source_path, destination_vms_base_dir)
+    if not destination_vms_base_dir.exists():
+        shutil.copytree(original_vm_meta_data_source_path, destination_vms_base_dir)
+    else:
+        print(f"    Skipping VM metadata copy (destination already exists)")
 
     original_vm_hdf5_source_path = (base_cybershake_dir / "setup_files_from_dropbox"/ version / 
                                         "large_temp_files" / "extracted" / version / 
@@ -196,8 +202,12 @@ def main():
 
     hdf5_destination_path = destination_vms_base_dir
 
-    shutil.move(original_vm_hdf5_source_path, hdf5_destination_path / original_vm_hdf5_source_path.name)
-    print(f"    Moved {original_vm_hdf5_source_path} to {hdf5_destination_path / original_vm_hdf5_source_path.name}")
+    hdf5_destination_file = hdf5_destination_path / original_vm_hdf5_source_path.name
+    if not hdf5_destination_file.exists():
+        shutil.move(original_vm_hdf5_source_path, hdf5_destination_file)
+        print(f"    Moved {original_vm_hdf5_source_path} to {hdf5_destination_file}")
+    else:
+        print(f"    Skipping HDF5 move (destination already exists)")
 
 
     create_modified_config_file(original_file_path=hdf5_destination_path / "vm_params.yaml",
@@ -220,7 +230,10 @@ def main():
                                 fault / f"{realization}_LF_OutBin" / fault / realization / "LF" )
 
         lf_output_destination_path = base_cybershake_dir / version / "Runs" / fault / realization / "LF"
-        shutil.move(lf_output_source_path, lf_output_destination_path)
+        if not lf_output_destination_path.exists():
+            shutil.move(lf_output_source_path, lf_output_destination_path)
+        else:
+            print(f"    Skipping LF move (destination already exists)")
 
         # Create modified e3d.par file
         original_e3d_par_file_path = (base_cybershake_dir / "setup_files_from_dropbox"/ version / 
