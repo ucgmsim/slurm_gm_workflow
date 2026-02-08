@@ -212,7 +212,7 @@ echo "Run directory: $RUN_DIR"
 # Report HF command started
 cylc message -- "${CYLC_TASK_ID}" "hf_started"
 
-if ! python /scratch/projects/rch-quakecore/Cybershake/cylc-src/wf2/bin/run_hf_command_for_realisation.py "$RUN_DIR" 2>&1; then
+if ! python /scratch/projects/rch-quakecore/Cybershake/cylc-src/wf3/bin/run_hf_command_for_realisation.py "$RUN_DIR" 2>&1; then
     echo "ERROR: HF command failed for {{ fault_name }} {{ realisation }}"
     exit 1
 fi
@@ -282,7 +282,7 @@ echo "Run directory: $RUN_DIR"
 # Report BB command started
 cylc message -- "${CYLC_TASK_ID}" "bb_started"
 
-if ! python /scratch/projects/rch-quakecore/Cybershake/cylc-src/wf2/bin/run_bb_command_for_realisation.py "$RUN_DIR" 2>&1; then
+if ! python /scratch/projects/rch-quakecore/Cybershake/cylc-src/wf3/bin/run_bb_command_for_realisation.py "$RUN_DIR" 2>&1; then
     echo "ERROR: BB command failed for {{ fault_name }} {{ realisation }}"
     exit 1
 fi
@@ -361,7 +361,7 @@ echo "BB.bin found: $BB_BIN"
 # Report IM command started
 cylc message -- "${CYLC_TASK_ID}" "im_started"
 
-if ! python /scratch/projects/rch-quakecore/Cybershake/cylc-src/wf2/bin/run_im_command_for_realisation.py "$RUN_DIR" 2>&1; then
+if ! python /scratch/projects/rch-quakecore/Cybershake/cylc-src/wf3/bin/run_im_command_for_realisation.py "$RUN_DIR" 2>&1; then
     echo "ERROR: IM command failed for {{ fault_name }} {{ realisation }}"
     exit 1
 fi
@@ -415,7 +415,7 @@ echo "Run directory: $RUN_DIR"
 # Report upload command started
 cylc message -- "${CYLC_TASK_ID}" "upload_started"
 
-if ! python /scratch/projects/rch-quakecore/Cybershake/cylc-src/wf2/bin/upload_post_lf_output_for_realisation.py "$RUN_DIR" 2>&1; then
+if ! python /scratch/projects/rch-quakecore/Cybershake/cylc-src/wf3/bin/upload_post_lf_output_for_realisation.py "$RUN_DIR" 2>&1; then
     echo "ERROR: Upload command failed for {{ fault_name }} {{ realisation }}"
     exit 1
 fi
@@ -469,7 +469,7 @@ echo "Run directory: $RUN_DIR"
 # Report delete command started
 cylc message -- "${CYLC_TASK_ID}" "delete_started"
 
-if ! python /scratch/projects/rch-quakecore/Cybershake/cylc-src/wf2/bin/delete_realisation_run_dir.py "$RUN_DIR" 2>&1; then
+if ! python /scratch/projects/rch-quakecore/Cybershake/cylc-src/wf3/bin/delete_realisation_run_dir.py "$RUN_DIR" 2>&1; then
     echo "ERROR: Delete realisation run dir failed for {{ fault_name }} {{ realisation }}"
     exit 1
 fi
@@ -523,7 +523,7 @@ echo "Deleting fault input data for {{ fault_name }}"
 # Report delete command started
 cylc message -- "${CYLC_TASK_ID}" "delete_started"
 
-if ! python /scratch/projects/rch-quakecore/Cybershake/cylc-src/wf2/bin/delete_fault_input_data.py "{{ version }}" "{{ fault_name }}" 2>&1; then
+if ! python /scratch/projects/rch-quakecore/Cybershake/cylc-src/wf3/bin/delete_fault_input_data.py "{{ version }}" "{{ fault_name }}" 2>&1; then
     echo "ERROR: Delete fault input data command failed for {{ fault_name }}"
     exit 1
 fi
