@@ -25,7 +25,7 @@ if __name__ == "__main__":
     is_master = rank == master
 
     logger = logging.getLogger("rank_%i" % comm.rank)
-    logger.setLevel(logging.DEBUG)
+    logger.setLevel(logging.DEBUG if is_master else logging.WARNING)
 
 HEAD_SIZE = 0x0200
 HEAD_STAT = 0x18
@@ -244,11 +244,17 @@ if __name__ == "__main__":
     logger.addHandler(mh)
 
     nt = int(round(args.duration / args.dt))
-    stations = np.loadtxt(
-        args.station_file,
-        ndmin=1,
-        dtype=[("lon", "f4"), ("lat", "f4"), ("name", "|S8")],
-    )
+    # Stagger file reads to avoid overwhelming the filesystem
+    # when many MPI ranks start simultaneously
+    INIT_BATCH_SIZE = 16
+    for _batch_start in range(0, size, INIT_BATCH_SIZE):
+        if _batch_start <= rank < _batch_start + INIT_BATCH_SIZE:
+            stations = np.loadtxt(
+                args.station_file,
+                ndmin=1,
+                dtype=[("lon", "f4"), ("lat", "f4"), ("name", "|S8")],
+            )
+        comm.Barrier()
     head_total = HEAD_SIZE + HEAD_STAT * stations.size
     block_size = nt * N_COMP * FLOAT_SIZE
     file_size = head_total + stations.size * block_size
