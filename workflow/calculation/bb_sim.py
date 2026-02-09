@@ -93,7 +93,7 @@ def main():
     is_master = not rank
 
     logger = logging.getLogger("rank_%i" % comm.rank)
-    logger.setLevel(logging.DEBUG)
+    logger.setLevel(logging.DEBUG if is_master else logging.WARNING)
 
     # collect required arguments
     args = None
@@ -139,8 +139,14 @@ def main():
         lf_amp_function = amp_function
 
     # load data stores
-    lf = timeseries.LFSeis(args.lf_dir)
-    hf = timeseries.HFSeis(args.hf_file)
+    # Stagger file reads to avoid overwhelming the filesystem
+    # when many MPI ranks start simultaneously
+    INIT_BATCH_SIZE = 16
+    for _batch_start in range(0, size, INIT_BATCH_SIZE):
+        if _batch_start <= rank < _batch_start + INIT_BATCH_SIZE:
+            lf = timeseries.LFSeis(args.lf_dir)
+            hf = timeseries.HFSeis(args.hf_file)
+        comm.Barrier()
 
     # compatibility validation
     # abort if behaviour is undefined
