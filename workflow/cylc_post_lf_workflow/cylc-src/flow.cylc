@@ -10,62 +10,134 @@ description = """HF → BB → IM workflow for multiple faults and realizations"
 UTC mode = True
 
 {% set realizations = {
-    "WhiteCk": ["WhiteCk_REL01", 
-                "WhiteCk_REL02",
-                "WhiteCk_REL03",
-                "WhiteCk_REL04",
-                "WhiteCk_REL05",
-                "WhiteCk_REL06",
-                "WhiteCk_REL07",
-                "WhiteCk_REL08",
-                "WhiteCk_REL09",
-                "WhiteCk_REL10",
-                "WhiteCk_REL11",
-                "WhiteCk_REL12",
-                "WhiteCk_REL13",
-                "WhiteCk_REL14",
-                "WhiteCk_REL15",
-                "WhiteCk_REL16",
-                "WhiteCk_REL17",
-                "WhiteCk_REL18",
-                "WhiteCk_REL19",
-                "WhiteCk_REL20",
-                "WhiteCk_REL21",
-                "WhiteCk_REL22",
-                "WhiteCk_REL23",
-                "WhiteCk_REL24",
-                "WhiteCk_REL25",
-                "WhiteCk_REL26",
-                "WhiteCk_REL27",
-                "WhiteCk_REL28",
-                "WhiteCk_REL29",
-                "WhiteCk_REL30",
-                "WhiteCk_REL31",
-                "WhiteCk_REL32",
-                "WhiteCk_REL33",
-                "WhiteCk_REL34",
-                "WhiteCk_REL35",
-                "WhiteCk_REL36",
-                "WhiteCk_REL37",
-                "WhiteCk_REL38",
-                "WhiteCk_REL39"]
+    "NMFZB2": ["NMFZB2",
+               "NMFZB2_REL01",
+               "NMFZB2_REL02",
+               "NMFZB2_REL03",
+               "NMFZB2_REL04",
+               "NMFZB2_REL05",
+               "NMFZB2_REL06",
+               "NMFZB2_REL07",
+               "NMFZB2_REL08",
+               "NMFZB2_REL09",
+               "NMFZB2_REL10",
+               "NMFZB2_REL11",
+               "NMFZB2_REL12",
+               "NMFZB2_REL13",
+               "NMFZB2_REL14",
+               "NMFZB2_REL15",
+               "NMFZB2_REL16",
+               "NMFZB2_REL17",
+               "NMFZB2_REL18",
+               "NMFZB2_REL19",
+               "NMFZB2_REL20",
+               "NMFZB2_REL21",
+               "NMFZB2_REL22",
+               "NMFZB2_REL23",
+               "NMFZB2_REL24",
+               "NMFZB2_REL25",
+               "NMFZB2_REL26",
+               "NMFZB2_REL27",
+               "NMFZB2_REL28",
+               "NMFZB2_REL29",
+               "NMFZB2_REL30",
+               "NMFZB2_REL31"],
+    "NMFZE1": ["NMFZE1",
+               "NMFZE1_REL01",
+               "NMFZE1_REL02",
+               "NMFZE1_REL03",
+               "NMFZE1_REL04",
+               "NMFZE1_REL05",
+               "NMFZE1_REL06",
+               "NMFZE1_REL07",
+               "NMFZE1_REL08",
+               "NMFZE1_REL09",
+               "NMFZE1_REL10",
+               "NMFZE1_REL11",
+               "NMFZE1_REL12",
+               "NMFZE1_REL13",
+               "NMFZE1_REL14",
+               "NMFZE1_REL15",
+               "NMFZE1_REL16",
+               "NMFZE1_REL17",
+               "NMFZE1_REL18",
+               "NMFZE1_REL19",
+               "NMFZE1_REL20",
+               "NMFZE1_REL21",
+               "NMFZE1_REL22",
+               "NMFZE1_REL23",
+               "NMFZE1_REL24",
+               "NMFZE1_REL25",
+               "NMFZE1_REL26",
+               "NMFZE1_REL27",
+               "NMFZE1_REL28",
+               "NMFZE1_REL29",
+               "NMFZE1_REL30"],
+    "NMFZE2": ["NMFZE2",
+               "NMFZE2_REL01",
+               "NMFZE2_REL02",
+               "NMFZE2_REL03",
+               "NMFZE2_REL04",
+               "NMFZE2_REL05",
+               "NMFZE2_REL06",
+               "NMFZE2_REL07",
+               "NMFZE2_REL08",
+               "NMFZE2_REL09",
+               "NMFZE2_REL10",
+               "NMFZE2_REL11",
+               "NMFZE2_REL12",
+               "NMFZE2_REL13",
+               "NMFZE2_REL14",
+               "NMFZE2_REL15",
+               "NMFZE2_REL16",
+               "NMFZE2_REL17",
+               "NMFZE2_REL18",
+               "NMFZE2_REL19",
+               "NMFZE2_REL20",
+               "NMFZE2_REL21",
+               "NMFZE2_REL22",
+               "NMFZE2_REL23",
+               "NMFZE2_REL24",
+               "NMFZE2_REL25",
+               "NMFZE2_REL26",
+               "NMFZE2_REL27",
+               "NMFZE2_REL28",
+               "NMFZE2_REL29",
+               "NMFZE2_REL30",
+               "NMFZE2_REL31"]
 } %}
 
 {% set slurm_params = {
-    "WhiteCk": {
-        "hf": {"nodes":1, "ntasks":144, "time":"06:00:00"},
-        "bb": {"nodes":1, "ntasks":144, "time":"06:00:00"},
-        "im": {"nodes":1, "ntasks":144, "time":"06:00:00"},
-        "upload": {"nodes":1, "ntasks":1, "time":"06:00:00"},
-        "delete_realisation_run_dir": {"nodes":1, "ntasks":1, "time":"06:00:00"},
-        "delete_fault_input_data": {"nodes":1, "ntasks":1, "time":"06:00:00"}
+    "NMFZB2": {
+        "hf": {"nodes":1, "ntasks":144, "time":"02:00:00"},
+        "bb": {"nodes":1, "ntasks":144, "time":"02:00:00"},
+        "im": {"nodes":1, "ntasks":144, "time":"02:00:00"},
+        "upload": {"nodes":1, "ntasks":1, "time":"02:00:00"},
+        "delete_realisation_run_dir": {"nodes":1, "ntasks":1, "time":"01:00:00"},
+        "delete_fault_input_data": {"nodes":1, "ntasks":1, "time":"01:00:00"}
+    },
+    "NMFZE1": {
+        "hf": {"nodes":1, "ntasks":144, "time":"02:00:00"},
+        "bb": {"nodes":1, "ntasks":144, "time":"02:00:00"},
+        "im": {"nodes":1, "ntasks":144, "time":"02:00:00"},
+        "upload": {"nodes":1, "ntasks":1, "time":"02:00:00"},
+        "delete_realisation_run_dir": {"nodes":1, "ntasks":1, "time":"01:00:00"},
+        "delete_fault_input_data": {"nodes":1, "ntasks":1, "time":"01:00:00"}
+    },
+    "NMFZE2": {
+        "hf": {"nodes":1, "ntasks":144, "time":"02:00:00"},
+        "bb": {"nodes":1, "ntasks":144, "time":"02:00:00"},
+        "im": {"nodes":1, "ntasks":144, "time":"02:00:00"},
+        "upload": {"nodes":1, "ntasks":1, "time":"02:00:00"},
+        "delete_realisation_run_dir": {"nodes":1, "ntasks":1, "time":"01:00:00"},
+        "delete_fault_input_data": {"nodes":1, "ntasks":1, "time":"01:00:00"}
     }
 } %}
 
 [scheduling]
     [[queues]]
         [[[default]]]
-            limit = 10
+            limit = 30
 
 [[graph]]
 R1 = """
@@ -81,6 +153,7 @@ delete_realisation_run_dir-{{ fault_name }}-{{ realisation }} => delete_fault_in
 [runtime]
 [[root]]
     platform = rch-slurm
+    execution retry delays = PT10M, PT30M, PT1H, PT3H
     [[[directives]]]
         --exclude=n03
 
@@ -139,7 +212,7 @@ echo "Run directory: $RUN_DIR"
 # Report HF command started
 cylc message -- "${CYLC_TASK_ID}" "hf_started"
 
-if ! python /scratch/projects/rch-quakecore/Cybershake/cylc-src/wf/bin/run_hf_command_for_realisation.py "$RUN_DIR" 2>&1; then
+if ! python /scratch/projects/rch-quakecore/Cybershake/cylc-src/wf3/bin/run_hf_command_for_realisation.py "$RUN_DIR" 2>&1; then
     echo "ERROR: HF command failed for {{ fault_name }} {{ realisation }}"
     exit 1
 fi
@@ -209,7 +282,7 @@ echo "Run directory: $RUN_DIR"
 # Report BB command started
 cylc message -- "${CYLC_TASK_ID}" "bb_started"
 
-if ! python /scratch/projects/rch-quakecore/Cybershake/cylc-src/wf/bin/run_bb_command_for_realisation.py "$RUN_DIR" 2>&1; then
+if ! python /scratch/projects/rch-quakecore/Cybershake/cylc-src/wf3/bin/run_bb_command_for_realisation.py "$RUN_DIR" 2>&1; then
     echo "ERROR: BB command failed for {{ fault_name }} {{ realisation }}"
     exit 1
 fi
@@ -288,7 +361,7 @@ echo "BB.bin found: $BB_BIN"
 # Report IM command started
 cylc message -- "${CYLC_TASK_ID}" "im_started"
 
-if ! python /scratch/projects/rch-quakecore/Cybershake/cylc-src/wf/bin/run_im_command_for_realisation.py "$RUN_DIR" 2>&1; then
+if ! python /scratch/projects/rch-quakecore/Cybershake/cylc-src/wf3/bin/run_im_command_for_realisation.py "$RUN_DIR" 2>&1; then
     echo "ERROR: IM command failed for {{ fault_name }} {{ realisation }}"
     exit 1
 fi
@@ -342,7 +415,7 @@ echo "Run directory: $RUN_DIR"
 # Report upload command started
 cylc message -- "${CYLC_TASK_ID}" "upload_started"
 
-if ! python /scratch/projects/rch-quakecore/Cybershake/cylc-src/wf/bin/upload_post_lf_output_for_realisation.py "$RUN_DIR" 2>&1; then
+if ! python /scratch/projects/rch-quakecore/Cybershake/cylc-src/wf3/bin/upload_post_lf_output_for_realisation.py "$RUN_DIR" 2>&1; then
     echo "ERROR: Upload command failed for {{ fault_name }} {{ realisation }}"
     exit 1
 fi
@@ -396,7 +469,7 @@ echo "Run directory: $RUN_DIR"
 # Report delete command started
 cylc message -- "${CYLC_TASK_ID}" "delete_started"
 
-if ! python /scratch/projects/rch-quakecore/Cybershake/cylc-src/wf/bin/delete_realisation_run_dir.py "$RUN_DIR" 2>&1; then
+if ! python /scratch/projects/rch-quakecore/Cybershake/cylc-src/wf3/bin/delete_realisation_run_dir.py "$RUN_DIR" 2>&1; then
     echo "ERROR: Delete realisation run dir failed for {{ fault_name }} {{ realisation }}"
     exit 1
 fi
@@ -450,7 +523,7 @@ echo "Deleting fault input data for {{ fault_name }}"
 # Report delete command started
 cylc message -- "${CYLC_TASK_ID}" "delete_started"
 
-if ! python /scratch/projects/rch-quakecore/Cybershake/cylc-src/wf/bin/delete_fault_input_data.py "{{ version }}" "{{ fault_name }}" 2>&1; then
+if ! python /scratch/projects/rch-quakecore/Cybershake/cylc-src/wf3/bin/delete_fault_input_data.py "{{ version }}" "{{ fault_name }}" 2>&1; then
     echo "ERROR: Delete fault input data command failed for {{ fault_name }}"
     exit 1
 fi
