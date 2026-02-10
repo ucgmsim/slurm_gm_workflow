@@ -62,19 +62,24 @@ UTC mode = True
 
 {% set slurm_params = {
     "AlpineF2K": {
-        "hf": {"nodes":1, "ntasks":144, "time":"02:00:00"},
-        "bb": {"nodes":1, "ntasks":144, "time":"02:00:00"},
-        "im": {"nodes":1, "ntasks":144, "time":"02:00:00"},
-        "upload": {"nodes":1, "ntasks":1, "time":"02:00:00"},
-        "delete_realisation_run_dir": {"nodes":1, "ntasks":1, "time":"01:00:00"},
-        "delete_fault_input_data": {"nodes":1, "ntasks":1, "time":"01:00:00"}
+        # Fewer cores for IM/BB
+        # BB - 64 cores, 32GB
+        # IM - 32 cores, 64GB
+        # HF - 40GB
+        # Remove the "nodes"
+        "im": {"ntasks":32, "mem-per-cpu": "2000M", "time":"06:00:00"},
+        "bb": {"ntasks":64, "mem-per-cpu": "500M", "time":"06:00:00"},
+        "hf": {"ntasks":144, "mem": "64G", "time":"02:00:00"},
+        "upload": {"ntasks":1, "time":"02:00:00"},
+        "delete_realisation_run_dir": {"ntasks":1, "time":"01:00:00"},
+        "delete_fault_input_data": {"ntasks":1, "time":"01:00:00"}
     }
 } %}
 
 [scheduling]
     [[queues]]
         [[[default]]]
-            limit = 30
+            limit = 2
 
 [[graph]]
 R1 = """
