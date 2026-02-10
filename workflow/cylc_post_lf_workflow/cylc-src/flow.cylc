@@ -62,14 +62,9 @@ UTC mode = True
 
 {% set slurm_params = {
     "AlpineF2K": {
-        # Fewer cores for IM/BB
-        # BB - 64 cores, 32GB
-        # IM - 32 cores, 64GB
-        # HF - 40GB
-        # Remove the "nodes"
-        "im": {"ntasks":32, "mem-per-cpu": "2000M", "time":"06:00:00"},
-        "bb": {"ntasks":64, "mem-per-cpu": "500M", "time":"06:00:00"},
         "hf": {"ntasks":144, "mem": "64G", "time":"02:00:00"},
+        "im": {"ntasks":32, "mem-per-cpu": "2000M", "time":"06:00:00"},
+        "bb": {"ntasks":64, "mem-per-cpu": "500M", "time":"06:00:00"},        
         "upload": {"ntasks":1, "time":"02:00:00"},
         "delete_realisation_run_dir": {"ntasks":1, "time":"01:00:00"},
         "delete_fault_input_data": {"ntasks":1, "time":"01:00:00"}
@@ -167,8 +162,8 @@ echo "Completed at: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
         hf_started = "hf_started"
 
     [[[directives]]]
-        --nodes={{ slurm_params[fault_name].hf.nodes }}
         --ntasks={{ slurm_params[fault_name].hf.ntasks }}
+        --mem={{ slurm_params[fault_name].hf.mem }}
         --time={{ slurm_params[fault_name].hf.time }}
 
 [[run_bb-{{ fault_name }}-{{ realisation }}]]
@@ -237,8 +232,8 @@ echo "Completed at: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
         bb_started = "bb_started"
 
     [[[directives]]]
-        --nodes={{ slurm_params[fault_name].bb.nodes }}
         --ntasks={{ slurm_params[fault_name].bb.ntasks }}
+        --mem-per-cpu={{ slurm_params[fault_name].bb["mem-per-cpu"] }}
         --time={{ slurm_params[fault_name].bb.time }}
 
 [[run_im-{{ fault_name }}-{{ realisation }}]]
@@ -316,8 +311,8 @@ echo "Completed at: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
         im_started = "im_started"
 
     [[[directives]]]
-        --nodes={{ slurm_params[fault_name].im.nodes }}
         --ntasks={{ slurm_params[fault_name].im.ntasks }}
+        --mem-per-cpu={{ slurm_params[fault_name].im["mem-per-cpu"] }}
         --time={{ slurm_params[fault_name].im.time }}
 
 [[upload_results-{{ fault_name }}-{{ realisation }}]]
@@ -370,7 +365,6 @@ echo "Completed at: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
         upload_started = "upload_started"
 
     [[[directives]]]
-        --nodes={{ slurm_params[fault_name].upload.nodes }}
         --ntasks={{ slurm_params[fault_name].upload.ntasks }}
         --time={{ slurm_params[fault_name].upload.time }}
 
@@ -424,7 +418,6 @@ echo "Completed at: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
         delete_started = "delete_started"
 
     [[[directives]]]
-        --nodes={{ slurm_params[fault_name].delete_realisation_run_dir.nodes }}
         --ntasks={{ slurm_params[fault_name].delete_realisation_run_dir.ntasks }}
         --time={{ slurm_params[fault_name].delete_realisation_run_dir.time }}
 
@@ -478,7 +471,6 @@ echo "Completed at: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
         delete_started = "delete_started"
 
     [[[directives]]]
-        --nodes={{ slurm_params[fault_name].delete_fault_input_data.nodes }}
         --ntasks={{ slurm_params[fault_name].delete_fault_input_data.ntasks }}
         --time={{ slurm_params[fault_name].delete_fault_input_data.time }}
 
