@@ -10,135 +10,77 @@ description = """HF → BB → IM workflow for multiple faults and realizations"
 UTC mode = True
 
 {% set realizations = {
-    "NMFZB2": ["NMFZB2",
-               "NMFZB2_REL01",
-               "NMFZB2_REL02",
-               "NMFZB2_REL03",
-               "NMFZB2_REL04",
-               "NMFZB2_REL05",
-               "NMFZB2_REL06",
-               "NMFZB2_REL07",
-               "NMFZB2_REL08",
-               "NMFZB2_REL09",
-               "NMFZB2_REL10",
-               "NMFZB2_REL11",
-               "NMFZB2_REL12",
-               "NMFZB2_REL13",
-               "NMFZB2_REL14",
-               "NMFZB2_REL15",
-               "NMFZB2_REL16",
-               "NMFZB2_REL17",
-               "NMFZB2_REL18",
-               "NMFZB2_REL19",
-               "NMFZB2_REL20",
-               "NMFZB2_REL21",
-               "NMFZB2_REL22",
-               "NMFZB2_REL23",
-               "NMFZB2_REL24",
-               "NMFZB2_REL25",
-               "NMFZB2_REL26",
-               "NMFZB2_REL27",
-               "NMFZB2_REL28",
-               "NMFZB2_REL29",
-               "NMFZB2_REL30",
-               "NMFZB2_REL31"],
-    "NMFZE1": ["NMFZE1",
-               "NMFZE1_REL01",
-               "NMFZE1_REL02",
-               "NMFZE1_REL03",
-               "NMFZE1_REL04",
-               "NMFZE1_REL05",
-               "NMFZE1_REL06",
-               "NMFZE1_REL07",
-               "NMFZE1_REL08",
-               "NMFZE1_REL09",
-               "NMFZE1_REL10",
-               "NMFZE1_REL11",
-               "NMFZE1_REL12",
-               "NMFZE1_REL13",
-               "NMFZE1_REL14",
-               "NMFZE1_REL15",
-               "NMFZE1_REL16",
-               "NMFZE1_REL17",
-               "NMFZE1_REL18",
-               "NMFZE1_REL19",
-               "NMFZE1_REL20",
-               "NMFZE1_REL21",
-               "NMFZE1_REL22",
-               "NMFZE1_REL23",
-               "NMFZE1_REL24",
-               "NMFZE1_REL25",
-               "NMFZE1_REL26",
-               "NMFZE1_REL27",
-               "NMFZE1_REL28",
-               "NMFZE1_REL29",
-               "NMFZE1_REL30"],
-    "NMFZE2": ["NMFZE2",
-               "NMFZE2_REL01",
-               "NMFZE2_REL02",
-               "NMFZE2_REL03",
-               "NMFZE2_REL04",
-               "NMFZE2_REL05",
-               "NMFZE2_REL06",
-               "NMFZE2_REL07",
-               "NMFZE2_REL08",
-               "NMFZE2_REL09",
-               "NMFZE2_REL10",
-               "NMFZE2_REL11",
-               "NMFZE2_REL12",
-               "NMFZE2_REL13",
-               "NMFZE2_REL14",
-               "NMFZE2_REL15",
-               "NMFZE2_REL16",
-               "NMFZE2_REL17",
-               "NMFZE2_REL18",
-               "NMFZE2_REL19",
-               "NMFZE2_REL20",
-               "NMFZE2_REL21",
-               "NMFZE2_REL22",
-               "NMFZE2_REL23",
-               "NMFZE2_REL24",
-               "NMFZE2_REL25",
-               "NMFZE2_REL26",
-               "NMFZE2_REL27",
-               "NMFZE2_REL28",
-               "NMFZE2_REL29",
-               "NMFZE2_REL30",
-               "NMFZE2_REL31"],
+    "AlpineF2K": ["AlpineF2K",
+               "AlpineF2K_REL01",
+               "AlpineF2K_REL02",
+               "AlpineF2K_REL03",
+               "AlpineF2K_REL04",
+               "AlpineF2K_REL05",
+               "AlpineF2K_REL06",
+               "AlpineF2K_REL07",
+               "AlpineF2K_REL08",
+               "AlpineF2K_REL09",
+               "AlpineF2K_REL10",
+               "AlpineF2K_REL11",
+               "AlpineF2K_REL12",
+               "AlpineF2K_REL13",
+               "AlpineF2K_REL14",
+               "AlpineF2K_REL15",
+               "AlpineF2K_REL16",
+               "AlpineF2K_REL17",
+               "AlpineF2K_REL18",
+               "AlpineF2K_REL19",
+               "AlpineF2K_REL20",
+               "AlpineF2K_REL21",
+               "AlpineF2K_REL22",
+               "AlpineF2K_REL23",
+               "AlpineF2K_REL24",
+               "AlpineF2K_REL25",
+               "AlpineF2K_REL26",
+               "AlpineF2K_REL27",
+               "AlpineF2K_REL28",
+               "AlpineF2K_REL29",
+               "AlpineF2K_REL30",
+               "AlpineF2K_REL31",
+               "AlpineF2K_REL32",
+               "AlpineF2K_REL33",
+               "AlpineF2K_REL34",
+               "AlpineF2K_REL35",
+               "AlpineF2K_REL36",
+               "AlpineF2K_REL37",
+               "AlpineF2K_REL38",
+               "AlpineF2K_REL39",
+               "AlpineF2K_REL40",
+               "AlpineF2K_REL41",
+               "AlpineF2K_REL42",
+               "AlpineF2K_REL43",
+               "AlpineF2K_REL44",
+               "AlpineF2K_REL45",
+               "AlpineF2K_REL46",
+               "AlpineF2K_REL47"],
 } %}
 
 {% set slurm_params = {
-    "NMFZB2": {
-        "hf": {"ntasks":144, "mem": "64G", "time":"00:30:00"},        
-        "bb": {"ntasks":64, "mem-per-cpu": "500M", "time":"00:30:00"},        
-        "im": {"ntasks":32, "mem-per-cpu": "2G", "time":"00:30:00"},
-        "upload": {"ntasks":1, "time":"00:30:00"}
-    },
-    "NMFZE1": {
-        "hf": {"ntasks":144, "mem": "64G", "time":"00:30:00"},        
-        "bb": {"ntasks":64, "mem-per-cpu": "500M", "time":"00:30:00"},        
-        "im": {"ntasks":32, "mem-per-cpu": "2G", "time":"00:30:00"},
-        "upload": {"ntasks":1, "time":"00:30:00"}
-    },
-    "NMFZE2": {
-        "hf": {"ntasks":144, "mem": "64G", "time":"00:30:00"},        
-        "bb": {"ntasks":64, "mem-per-cpu": "500M", "time":"00:30:00"},        
-        "im": {"ntasks":32, "mem-per-cpu": "2G", "time":"00:30:00"},
-        "upload": {"ntasks":1, "time":"00:30:00"}
+    "AlpineF2K": {
+        "hf": {"ntasks":144, "mem": "64G", "time":"02:00:00"},        
+        "bb": {"ntasks":64, "mem-per-cpu": "500M", "time":"01:00:00"},        
+        "im": {"ntasks":32, "mem": "200G", "time":"02:00:00"},
+        "upload": {"ntasks":1, "time":"02:00:00"},
+        "delete_realisation_run_dir": {"ntasks":1, "time":"01:00:00"}
     }
 } %}
 
 [scheduling]
     [[queues]]
         [[[default]]]
-            limit = 20
+            limit = 3
 
 [[graph]]
 R1 = """
 {% for fault_name, realisation_list in realizations.items() %}
     {% for realisation in realisation_list %}
 {# In Cylc, referencing the same task multiple times doesn't create duplicate tasks—it just defines multiple dependency edges for that task. #}
-run_hf-{{ fault_name }}-{{ realisation }} => run_bb-{{ fault_name }}-{{ realisation }} => run_im-{{ fault_name }}-{{ realisation }} => upload_results-{{ fault_name }}-{{ realisation }}
+run_hf-{{ fault_name }}-{{ realisation }} => run_bb-{{ fault_name }}-{{ realisation }} => run_im-{{ fault_name }}-{{ realisation }} => upload_results-{{ fault_name }}-{{ realisation }} => delete_realisation_run_dir-{{ fault_name }}-{{ realisation }}
     {% endfor %}
 {% endfor %}
 """
@@ -368,7 +310,7 @@ echo "Completed at: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
 
     [[[directives]]]
         --ntasks={{ slurm_params[fault_name].im.ntasks }}
-        --mem-per-cpu={{ slurm_params[fault_name].im["mem-per-cpu"] }}
+        --mem={{ slurm_params[fault_name].im.mem }}
         --time={{ slurm_params[fault_name].im.time }}
 
 [[upload_results-{{ fault_name }}-{{ realisation }}]]
@@ -424,5 +366,59 @@ echo "Completed at: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
         --ntasks={{ slurm_params[fault_name].upload.ntasks }}
         --time={{ slurm_params[fault_name].upload.time }}
 
+[[delete_realisation_run_dir-{{ fault_name }}-{{ realisation }}]]
+    script = """
+set -e  # Exit on error
+set -u  # Exit on undefined variable
+set -o pipefail  # Exit on pipe failure
+
+echo "=== Delete Realisation Run Dir Task Started: {{ fault_name }} {{ realisation }} ==="
+echo "Task: $CYLC_TASK_NAME"
+echo "Cycle: $CYLC_TASK_CYCLE_POINT"
+echo "Workflow: $CYLC_WORKFLOW_ID"
+echo "Job ID: $CYLC_TASK_JOB"
+echo "Started at: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+
+# Environment activation with error checking
+echo "Trying to activate Python environment at /home/arr65/venvs/ompi5_venv/bin/activate..."
+if ! source /home/arr65/venvs/ompi5_venv/bin/activate 2>&1; then
+    echo "ERROR: Failed to activate Python environment"
+    exit 1
+fi
+echo "Python environment activated successfully"
+
+# Verify Python and required modules
+echo "Environment check:"
+python --version
+which python
+
+# Report environment ready
+cylc message -- "${CYLC_TASK_ID}" "environment_ready"
+
+# Run delete command
+echo "Deleting realisation run directory for {{ fault_name }} {{ realisation }}"
+RUN_DIR="/scratch/projects/rch-quakecore/Cybershake/{{ version }}/Runs/{{ fault_name }}/{{ realisation }}"
+echo "Run directory: $RUN_DIR"
+
+# Report delete command started
+cylc message -- "${CYLC_TASK_ID}" "delete_started"
+
+if ! delete_realisation_run_dir.py "$RUN_DIR" 2>&1; then
+    echo "ERROR: Delete realisation run dir failed for {{ fault_name }} {{ realisation }}"
+    exit 1
+fi
+
+echo "Delete realisation run dir completed successfully for {{ fault_name }} {{ realisation }}"
+echo "Completed at: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+"""
+    [[[outputs]]]
+        environment_ready = "environment_ready"
+        delete_started = "delete_started"
+
+    [[[directives]]]
+        --ntasks={{ slurm_params[fault_name].delete_realisation_run_dir.ntasks }}
+        --time={{ slurm_params[fault_name].delete_realisation_run_dir.time }}
+
     {% endfor %}
+
 {% endfor %}
