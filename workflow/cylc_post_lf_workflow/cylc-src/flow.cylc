@@ -131,7 +131,7 @@ UTC mode = True
 [scheduling]
     [[queues]]
         [[[default]]]
-            limit = 10
+            limit = 20
 
 [[graph]]
 R1 = """
