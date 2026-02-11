@@ -65,9 +65,11 @@ UTC mode = True
         "hf": {"ntasks":144, "mem": "64G", "time":"02:00:00"},        
         "bb": {"ntasks":64, "mem-per-cpu": "500M", "time":"01:00:00"},        
         "im": {"ntasks":32, "mem": "200G", "time":"02:00:00"},
-        "upload": {"ntasks":1, "time":"02:00:00"},
-        "delete_realisation_run_dir": {"ntasks":1, "time":"01:00:00"},
+        "upload": {"ntasks":1, "time":"02:00:00"}
+{# COMMENTED OUT: delete task slurm params
+        ,"delete_realisation_run_dir": {"ntasks":1, "time":"01:00:00"},
         "delete_fault_input_data": {"ntasks":1, "time":"01:00:00"}
+#}
     }
 } %}
 
@@ -81,8 +83,14 @@ R1 = """
 {% for fault_name, realisation_list in realizations.items() %}
     {% for realisation in realisation_list %}
 {# In Cylc, referencing the same task multiple times doesn't create duplicate tasks—it just defines multiple dependency edges for that task. #}
+run_hf-{{ fault_name }}-{{ realisation }} => run_bb-{{ fault_name }}-{{ realisation }} => run_im-{{ fault_name }}-{{ realisation }} => upload_results-{{ fault_name }}-{{ realisation }}
+{# COMMENTED OUT: Original graph with deletion tasks, preserved for reference.
+   Delete tasks were removed to prevent premature deletion after stop/restart/reload cycle.
+   Cylc 8 can evaluate prerequisites against only the active task pool after restart, causing
+   delete_fault_input_data to run before all realisations complete. Delete files manually after workflow finishes.
 run_hf-{{ fault_name }}-{{ realisation }} => run_bb-{{ fault_name }}-{{ realisation }} => run_im-{{ fault_name }}-{{ realisation }} => upload_results-{{ fault_name }}-{{ realisation }} => delete_realisation_run_dir-{{ fault_name }}-{{ realisation }}
 delete_realisation_run_dir-{{ fault_name }}-{{ realisation }} => delete_fault_input_data-{{ fault_name }}
+#}
     {% endfor %}
 {% endfor %}
 """
@@ -368,6 +376,7 @@ echo "Completed at: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
         --ntasks={{ slurm_params[fault_name].upload.ntasks }}
         --time={{ slurm_params[fault_name].upload.time }}
 
+{# COMMENTED OUT: delete_realisation_run_dir task - see graph comment for explanation
 [[delete_realisation_run_dir-{{ fault_name }}-{{ realisation }}]]
     script = """
 set -e  # Exit on error
@@ -420,9 +429,11 @@ echo "Completed at: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
     [[[directives]]]
         --ntasks={{ slurm_params[fault_name].delete_realisation_run_dir.ntasks }}
         --time={{ slurm_params[fault_name].delete_realisation_run_dir.time }}
+#}
 
     {% endfor %}
 
+{# COMMENTED OUT: delete_fault_input_data task - see graph comment for explanation
 [[delete_fault_input_data-{{ fault_name }}]]
     script = """
 set -e  # Exit on error
@@ -473,5 +484,6 @@ echo "Completed at: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
     [[[directives]]]
         --ntasks={{ slurm_params[fault_name].delete_fault_input_data.ntasks }}
         --time={{ slurm_params[fault_name].delete_fault_input_data.time }}
+#}
 
 {% endfor %}
