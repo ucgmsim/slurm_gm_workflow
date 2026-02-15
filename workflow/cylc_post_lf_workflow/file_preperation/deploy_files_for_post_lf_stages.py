@@ -266,8 +266,6 @@ def main():
     )
     print(f"    Copied to: {destination_fault_params_base_base}")
 
-    ### To here
-
     print("[3/5] Moving Sources...")
     original_source_files_source_path = (
         base_cybershake_dir

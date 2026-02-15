@@ -243,7 +243,7 @@ def process_directory_tree(src_path: Path, dest_dir: Path) -> None:
         # Handle directory tree
         print(f"Moving directory tree from {src_path} to {dest_dir}")
         dest_dir.parent.mkdir(parents=True, exist_ok=True)
-        shutil.move(src_path, dest_dir)
+        shutil.copytree(src_path, dest_dir, copy_function=shutil.copy)
     
     # Now recursively extract all archives
     print("Recursively extracting all archives...")
@@ -283,13 +283,13 @@ def main():
         extracted_original_setup_files_from_dropbox / "Sources" / f"{args.fault}"
     )
 
-    print(f"Move VMs/HDF5 file for fault {args.fault}...")
-    dest_vm_dir = extracted_original_setup_files_from_dropbox / "VMs" / "HDF5"
-    dest_vm_dir.mkdir(parents=True, exist_ok=True)
-    shutil.move(
-        tar_original_setup_files_from_dropbox / "VMs" / "HDF5" / f"{args.fault}_velocity_model.h5",
-        dest_vm_dir / f"{args.fault}_velocity_model.h5"
-    )
+    # print(f"Move VMs/HDF5 file for fault {args.fault}...")
+    # dest_vm_dir = extracted_original_setup_files_from_dropbox / "VMs" / "HDF5"
+    # dest_vm_dir.mkdir(parents=True, exist_ok=True)
+    # shutil.copy(
+    #     tar_original_setup_files_from_dropbox / "VMs" / "HDF5" / f"{args.fault}_velocity_model.h5",
+    #     dest_vm_dir / f"{args.fault}_velocity_model.h5"
+    # )
     
     print("Done processing all files!")
 
