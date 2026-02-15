@@ -17,8 +17,8 @@ import lzma
 from pathlib import Path
 
 # File extensions that indicate compressed/archived files
-TAR_EXTENSIONS = {'.tar', '.tar.gz', '.tgz', '.tar.bz2', '.tbz2', '.tar.xz', '.txz'}
-COMPRESSED_EXTENSIONS = {'.gz', '.bz2', '.xz', '.zip'}
+TAR_EXTENSIONS = {".tar", ".tar.gz", ".tgz", ".tar.bz2", ".tbz2", ".tar.xz", ".txz"}
+COMPRESSED_EXTENSIONS = {".gz", ".bz2", ".xz", ".zip"}
 ALL_ARCHIVE_EXTENSIONS = TAR_EXTENSIONS | COMPRESSED_EXTENSIONS
 
 
@@ -28,25 +28,25 @@ def get_archive_type(filepath: Path) -> str | None:
     Returns 'tar', 'zip', 'gz', 'bz2', 'xz', or None if not an archive.
     """
     name = filepath.name.lower()
-    
+
     # Check for tar archives (including compressed tars)
-    if name.endswith('.tar.gz') or name.endswith('.tgz'):
-        return 'tar.gz'
-    elif name.endswith('.tar.bz2') or name.endswith('.tbz2'):
-        return 'tar.bz2'
-    elif name.endswith('.tar.xz') or name.endswith('.txz'):
-        return 'tar.xz'
-    elif name.endswith('.tar'):
-        return 'tar'
-    elif name.endswith('.zip'):
-        return 'zip'
-    elif name.endswith('.gz'):
-        return 'gz'
-    elif name.endswith('.bz2'):
-        return 'bz2'
-    elif name.endswith('.xz'):
-        return 'xz'
-    
+    if name.endswith(".tar.gz") or name.endswith(".tgz"):
+        return "tar.gz"
+    elif name.endswith(".tar.bz2") or name.endswith(".tbz2"):
+        return "tar.bz2"
+    elif name.endswith(".tar.xz") or name.endswith(".txz"):
+        return "tar.xz"
+    elif name.endswith(".tar"):
+        return "tar"
+    elif name.endswith(".zip"):
+        return "zip"
+    elif name.endswith(".gz"):
+        return "gz"
+    elif name.endswith(".bz2"):
+        return "bz2"
+    elif name.endswith(".xz"):
+        return "xz"
+
     return None
 
 
@@ -57,21 +57,21 @@ def get_extracted_name(filepath: Path, archive_type: str) -> str:
     For single-file compression (gz, bz2, xz), removes the compression extension.
     """
     name = filepath.name
-    
-    if archive_type in ('tar.gz', 'tar.bz2', 'tar.xz'):
+
+    if archive_type in ("tar.gz", "tar.bz2", "tar.xz"):
         # Remove both extensions (e.g., .tar.gz)
-        if name.endswith(('.tar.gz', '.tar.bz2', '.tar.xz')):
-            return name.rsplit('.tar.', 1)[0]
-        elif name.endswith(('.tgz', '.tbz2', '.txz')):
-            return name.rsplit('.', 1)[0]
-    elif archive_type == 'tar':
-        return name.rsplit('.tar', 1)[0]
-    elif archive_type == 'zip':
-        return name.rsplit('.zip', 1)[0]
-    elif archive_type in ('gz', 'bz2', 'xz'):
+        if name.endswith((".tar.gz", ".tar.bz2", ".tar.xz")):
+            return name.rsplit(".tar.", 1)[0]
+        elif name.endswith((".tgz", ".tbz2", ".txz")):
+            return name.rsplit(".", 1)[0]
+    elif archive_type == "tar":
+        return name.rsplit(".tar", 1)[0]
+    elif archive_type == "zip":
+        return name.rsplit(".zip", 1)[0]
+    elif archive_type in ("gz", "bz2", "xz"):
         # For single-file compression, just remove the extension
-        return name.rsplit('.', 1)[0]
-    
+        return name.rsplit(".", 1)[0]
+
     return name
 
 
@@ -80,7 +80,7 @@ def extract_tar(filepath: Path, dest_dir: Path) -> Path:
     Extract a tar archive (optionally compressed) to destination directory.
     Handles symlinks and other special files by extracting what we can and ignoring errors.
     """
-    with tarfile.open(filepath, 'r:*') as tar:
+    with tarfile.open(filepath, "r:*") as tar:
         for member in tar.getmembers():
             try:
                 tar.extract(member, dest_dir)
@@ -92,32 +92,34 @@ def extract_tar(filepath: Path, dest_dir: Path) -> Path:
 
 def extract_zip(filepath: Path, dest_dir: Path) -> Path:
     """Extract a zip archive to destination directory."""
-    with zipfile.ZipFile(filepath, 'r') as zf:
+    with zipfile.ZipFile(filepath, "r") as zf:
         zf.extractall(dest_dir)
     return dest_dir
 
 
-def extract_single_compressed(filepath: Path, dest_dir: Path, archive_type: str) -> Path:
+def extract_single_compressed(
+    filepath: Path, dest_dir: Path, archive_type: str
+) -> Path:
     """
     Extract a single-file compressed file (gz, bz2, xz).
     Returns the path to the extracted file.
     """
     extracted_name = get_extracted_name(filepath, archive_type)
     dest_file = dest_dir / extracted_name
-    
-    if archive_type == 'gz':
-        with gzip.open(filepath, 'rb') as f_in:
-            with open(dest_file, 'wb') as f_out:
+
+    if archive_type == "gz":
+        with gzip.open(filepath, "rb") as f_in:
+            with open(dest_file, "wb") as f_out:
                 shutil.copyfileobj(f_in, f_out)
-    elif archive_type == 'bz2':
-        with bz2.open(filepath, 'rb') as f_in:
-            with open(dest_file, 'wb') as f_out:
+    elif archive_type == "bz2":
+        with bz2.open(filepath, "rb") as f_in:
+            with open(dest_file, "wb") as f_out:
                 shutil.copyfileobj(f_in, f_out)
-    elif archive_type == 'xz':
-        with lzma.open(filepath, 'rb') as f_in:
-            with open(dest_file, 'wb') as f_out:
+    elif archive_type == "xz":
+        with lzma.open(filepath, "rb") as f_in:
+            with open(dest_file, "wb") as f_out:
                 shutil.copyfileobj(f_in, f_out)
-    
+
     return dest_file
 
 
@@ -127,26 +129,26 @@ def extract_archive(filepath: Path, dest_dir: Path) -> Path | None:
     Returns the path where contents were extracted, or None if not an archive.
     """
     archive_type = get_archive_type(filepath)
-    
+
     if archive_type is None:
         return None
-    
+
     dest_dir.mkdir(parents=True, exist_ok=True)
-    
-    if archive_type.startswith('tar') or archive_type == 'tar':
+
+    if archive_type.startswith("tar") or archive_type == "tar":
         return extract_tar(filepath, dest_dir)
-    elif archive_type == 'zip':
+    elif archive_type == "zip":
         return extract_zip(filepath, dest_dir)
-    elif archive_type in ('gz', 'bz2', 'xz'):
+    elif archive_type in ("gz", "bz2", "xz"):
         return extract_single_compressed(filepath, dest_dir, archive_type)
-    
+
     return None
 
 
 def find_archives_in_directory(directory: Path) -> list[Path]:
     """Find all archive files in a directory (recursively)."""
     archives = []
-    for filepath in directory.rglob('*'):
+    for filepath in directory.rglob("*"):
         if filepath.is_file() and get_archive_type(filepath) is not None:
             archives.append(filepath)
     return archives
@@ -163,23 +165,23 @@ def extract_recursively(directory: Path, max_depth: int = 10) -> None:
         if not archives:
             print(f"  No more archives found after {depth} extraction passes")
             break
-        
+
         print(f"  Pass {depth + 1}: Found {len(archives)} archive(s) to extract")
-        
+
         for archive_path in archives:
             archive_type = get_archive_type(archive_path)
-            
+
             # Determine extraction destination
-            if archive_type in ('gz', 'bz2', 'xz'):
+            if archive_type in ("gz", "bz2", "xz"):
                 # Single-file compression: extract to same directory
                 extract_dest = archive_path.parent
             else:
                 # Multi-file archives: extract to a subdirectory with the archive name
                 extracted_name = get_extracted_name(archive_path, archive_type)
                 extract_dest = archive_path.parent / extracted_name
-            
+
             print(f"    Extracting: {archive_path.relative_to(directory)}")
-            
+
             try:
                 extract_archive(archive_path, extract_dest)
             except Exception as e:
@@ -191,9 +193,9 @@ def extract_recursively(directory: Path, max_depth: int = 10) -> None:
                     archive_path.unlink()
                 except Exception as e:
                     print(f"    WARNING: Could not delete archive {archive_path}: {e}")
-        
+
         depth += 1
-    
+
     if depth >= max_depth:
         print(f"  WARNING: Reached maximum extraction depth ({max_depth})")
 
@@ -204,10 +206,10 @@ def remove_broken_symlinks(directory: Path) -> None:
     in the given directory tree.
     """
     broken_links = []
-    for filepath in directory.rglob('*'):
+    for filepath in directory.rglob("*"):
         if filepath.is_symlink() and not filepath.exists():
             broken_links.append(filepath)
-    
+
     if broken_links:
         print(f"Removing {len(broken_links)} broken symlink(s)...")
         for link in broken_links:
@@ -223,19 +225,19 @@ def remove_broken_symlinks(directory: Path) -> None:
 def process_directory_tree(src_path: Path, dest_dir: Path) -> None:
     """
     Process the source path (file or directory), extracting archives.
-    
+
     - If src_path is a directory: moves it to dest_dir, then recursively extracts all archives
     - If src_path is an archive file: extracts it to dest_dir, then recursively extracts nested archives
     """
     if not src_path.exists():
-        raise FileNotFoundError(f"Source path does not exist: {src_path}")  
-    
+        raise FileNotFoundError(f"Source path does not exist: {src_path}")
+
     if src_path.is_file():
         # Handle single archive file
         archive_type = get_archive_type(src_path)
         if archive_type is None:
             raise ValueError(f"Source file is not a recognized archive: {src_path}")
-        
+
         print(f"Extracting archive file {src_path} to {dest_dir}")
         dest_dir.mkdir(parents=True, exist_ok=True)
         extract_archive(src_path, dest_dir)
@@ -244,15 +246,15 @@ def process_directory_tree(src_path: Path, dest_dir: Path) -> None:
         print(f"Moving directory tree from {src_path} to {dest_dir}")
         dest_dir.parent.mkdir(parents=True, exist_ok=True)
         shutil.copytree(src_path, dest_dir, copy_function=shutil.copy)
-    
+
     # Now recursively extract all archives
     print("Recursively extracting all archives...")
     extract_recursively(dest_dir)
-    
+
     # Remove any broken symlinks
     print("Checking for broken symlinks...")
     remove_broken_symlinks(dest_dir)
-    
+
     print("Done!")
 
 
@@ -263,15 +265,19 @@ def main():
     parser.add_argument("version", help="Version string (e.g., v25p11)")
     parser.add_argument("fault", help="Fault name (e.g., WhiteCk)")
     args = parser.parse_args()
-    
+
     # Construct paths using the provided version and fault
-    setup_files_base_dir = Path(f"/scratch/projects/rch-quakecore/Cybershake/setup_files_from_dropbox/{args.version}/large_temp_files")
+    setup_files_base_dir = Path(
+        f"/scratch/projects/rch-quakecore/Cybershake/setup_files_from_dropbox/{args.version}/large_temp_files"
+    )
     tar_original_setup_files_from_dropbox = setup_files_base_dir / "tar" / args.version
-    extracted_original_setup_files_from_dropbox = setup_files_base_dir / "extracted" / args.version
-    
+    extracted_original_setup_files_from_dropbox = (
+        setup_files_base_dir / "extracted" / args.version
+    )
+
     print(f"Processing version: {args.version}, fault: {args.fault}")
-    
-    # print(f"Move and extract LF dir for fault {args.fault}...")    
+
+    # print(f"Move and extract LF dir for fault {args.fault}...")
     # process_directory_tree(
     #     tar_original_setup_files_from_dropbox / "LF" / args.fault,
     #     extracted_original_setup_files_from_dropbox / "LF" / args.fault
@@ -280,14 +286,16 @@ def main():
     print(f"Move and extract Sources dir for fault {args.fault}...")
     if args.version == "v25p10":
         process_directory_tree(
-            tar_original_setup_files_from_dropbox / "Sources" / f"{args.fault}.tar",
-            extracted_original_setup_files_from_dropbox / "Sources" / f"{args.fault}"
+            tar_original_setup_files_from_dropbox
+            / "Sources"
+            / f"{args.fault}_Sources.tar",
+            extracted_original_setup_files_from_dropbox / "Sources" / f"{args.fault}",
         )
-        
+
     elif args.version == "v25p11":
         process_directory_tree(
             tar_original_setup_files_from_dropbox / "Sources" / f"{args.fault}.tar",
-            extracted_original_setup_files_from_dropbox / "Sources" / f"{args.fault}"
+            extracted_original_setup_files_from_dropbox / "Sources" / f"{args.fault}",
         )
     else:
         raise ValueError(f"Unsupported version: {args.version}")
@@ -299,8 +307,9 @@ def main():
     #     tar_original_setup_files_from_dropbox / "VMs" / "HDF5" / f"{args.fault}_velocity_model.h5",
     #     dest_vm_dir / f"{args.fault}_velocity_model.h5"
     # )
-    
+
     print("Done processing all files!")
+
 
 if __name__ == "__main__":
     main()
