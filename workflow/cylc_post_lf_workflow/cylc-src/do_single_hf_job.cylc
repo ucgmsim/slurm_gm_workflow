@@ -4,13 +4,13 @@
 
 [meta]
 title = old_cybershake_hf_bb_im
-description = """HF task for single realization AlpineF2K_REL23"""
+description = """HF task for single realization AlpineF2K_REL46"""
 
 [scheduler]
 UTC mode = True
 
 {% set realizations = {
-    "AlpineF2K": ["AlpineF2K_REL23"],
+    "AlpineF2K": ["AlpineF2K_REL46"],
 } %}
 
 {% set slurm_params = {
