@@ -359,6 +359,17 @@ def main():
             / fault
         )
 
+        create_modified_config_file(
+            original_file_path=vm_source_path / "vm_params.yaml",
+            modified_file_path=vm_source_path / "vm_params.yaml",
+            old_base_paths=[
+                "/scratch/hpc91a02/UC/RunFolder/Cybershake/v23p7",
+                "/scratch/hpc11a02/gmsim/RunFolder/Cybershake/v21p1",
+            ],
+            new_base_path=base_cybershake_dir / version,
+        )
+        print(f"    Updated: {vm_source_path / 'vm_params.yaml'}")
+
         # Temp using copytree for easy development
         if not destination_vms_base_dir.exists():
             shutil.copytree(vm_source_path, destination_vms_base_dir)
