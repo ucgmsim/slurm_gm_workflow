@@ -364,16 +364,17 @@ def main():
             shutil.copytree(vm_source_path, destination_vms_base_dir)
             print(f"    Moved {vm_source_path} to {destination_vms_base_dir}")
 
+        # Modify the vm_params.yaml file in place in the destination directory
         create_modified_config_file(
-            original_file_path=vm_source_path / "vm_params.yaml",
-            modified_file_path=vm_source_path / "vm_params.yaml",
+            original_file_path=destination_vms_base_dir / "vm_params.yaml",
+            modified_file_path=destination_vms_base_dir / "vm_params.yaml",
             old_base_paths=[
                 "/scratch/hpc91a02/UC/RunFolder/Cybershake/v23p7",
                 "/scratch/hpc11a02/gmsim/RunFolder/Cybershake/v21p1",
             ],
             new_base_path=base_cybershake_dir / version,
         )
-        print(f"    Updated: {vm_source_path / 'vm_params.yaml'}")
+        print(f"    Updated: {destination_vms_base_dir / 'vm_params.yaml'}")
 
     else:
         raise ValueError(f"Unsupported version: {version}")
