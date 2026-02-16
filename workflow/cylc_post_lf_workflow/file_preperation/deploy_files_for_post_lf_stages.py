@@ -283,186 +283,189 @@ def main():
         base_cybershake_dir / version / "Data" / "Sources" / fault
     )
     if not destination_source_files_path.exists():
-        shutil.move(original_source_files_source_path, destination_source_files_path)
+        # Temp changing to copytree for development
+        shutil.copytree(
+            original_source_files_source_path, destination_source_files_path
+        )
         print(f"    Moved to: {destination_source_files_path}")
     else:
         print(f"    Skipping Sources move (destination already exists)")
 
-    print("[4/5] Moving VMs and updating vm_params.yaml...")
+    # print("[4/5] Moving VMs and updating vm_params.yaml...")
 
-    original_vm_meta_data_source_path = (
-        base_cybershake_dir
-        / "setup_files_from_dropbox"
-        / version
-        / "permanent_small_files"
-        / "extracted"
-        / "VMs"
-        / "VMs_meta_data"
-        / fault
-    )
+    # original_vm_meta_data_source_path = (
+    #     base_cybershake_dir
+    #     / "setup_files_from_dropbox"
+    #     / version
+    #     / "permanent_small_files"
+    #     / "extracted"
+    #     / "VMs"
+    #     / "VMs_meta_data"
+    #     / fault
+    # )
 
-    destination_vms_base_dir = base_cybershake_dir / version / "Data" / "VMs" / fault
+    # destination_vms_base_dir = base_cybershake_dir / version / "Data" / "VMs" / fault
 
-    if not destination_vms_base_dir.exists():
-        shutil.copytree(original_vm_meta_data_source_path, destination_vms_base_dir)
-    else:
-        print(f"    Skipping VM metadata copy (destination already exists)")
+    # if not destination_vms_base_dir.exists():
+    #     shutil.copytree(original_vm_meta_data_source_path, destination_vms_base_dir)
+    # else:
+    #     print(f"    Skipping VM metadata copy (destination already exists)")
 
-    original_vm_hdf5_source_path = (
-        base_cybershake_dir
-        / "setup_files_from_dropbox"
-        / version
-        / "large_temp_files"
-        / "extracted"
-        / version
-        / "VMs"
-        / "HDF5"
-        / f"{fault}_velocity_model.h5"
-    )
+    # original_vm_hdf5_source_path = (
+    #     base_cybershake_dir
+    #     / "setup_files_from_dropbox"
+    #     / version
+    #     / "large_temp_files"
+    #     / "extracted"
+    #     / version
+    #     / "VMs"
+    #     / "HDF5"
+    #     / f"{fault}_velocity_model.h5"
+    # )
 
-    hdf5_destination_path = destination_vms_base_dir
+    # hdf5_destination_path = destination_vms_base_dir
 
-    hdf5_destination_file = hdf5_destination_path / original_vm_hdf5_source_path.name
-    if not hdf5_destination_file.exists():
-        shutil.move(original_vm_hdf5_source_path, hdf5_destination_file)
-        print(f"    Moved {original_vm_hdf5_source_path} to {hdf5_destination_file}")
-    else:
-        print(f"    Skipping HDF5 move (destination already exists)")
+    # hdf5_destination_file = hdf5_destination_path / original_vm_hdf5_source_path.name
+    # if not hdf5_destination_file.exists():
+    #     shutil.move(original_vm_hdf5_source_path, hdf5_destination_file)
+    #     print(f"    Moved {original_vm_hdf5_source_path} to {hdf5_destination_file}")
+    # else:
+    #     print(f"    Skipping HDF5 move (destination already exists)")
 
-    create_modified_config_file(
-        original_file_path=hdf5_destination_path / "vm_params.yaml",
-        modified_file_path=hdf5_destination_path / "vm_params.yaml",
-        old_base_paths=["/scratch/hpc91a02/UC/RunFolder/Cybershake/v23p7"],
-        new_base_path=base_cybershake_dir / version,
-    )
-    print(f"    Updated: {hdf5_destination_path / 'vm_params.yaml'}")
+    # create_modified_config_file(
+    #     original_file_path=hdf5_destination_path / "vm_params.yaml",
+    #     modified_file_path=hdf5_destination_path / "vm_params.yaml",
+    #     old_base_paths=["/scratch/hpc91a02/UC/RunFolder/Cybershake/v23p7"],
+    #     new_base_path=base_cybershake_dir / version,
+    # )
+    # print(f"    Updated: {hdf5_destination_path / 'vm_params.yaml'}")
 
-    # =============================================================================
-    # Operations that depend on realization
-    # =============================================================================
-    print("[5/5] Processing realizations...")
+    # # =============================================================================
+    # # Operations that depend on realization
+    # # =============================================================================
+    # print("[5/5] Processing realizations...")
 
-    total_realizations = len(realizations)
-    for idx, realization in enumerate(realizations, 1):
-        print(f"  [{idx}/{total_realizations}] Processing {realization}...")
+    # total_realizations = len(realizations)
+    # for idx, realization in enumerate(realizations, 1):
+    #     print(f"  [{idx}/{total_realizations}] Processing {realization}...")
 
-        if fault == "AlpineF2K":
-            lf_output_source_path = (
-                base_cybershake_dir
-                / "setup_files_from_dropbox"
-                / version
-                / "large_temp_files"
-                / "extracted"
-                / version
-                / "LF"
-                / fault
-                / fault
-                / f"{realization}_LF_OutBin"
-            )
+    #     if fault == "AlpineF2K":
+    #         lf_output_source_path = (
+    #             base_cybershake_dir
+    #             / "setup_files_from_dropbox"
+    #             / version
+    #             / "large_temp_files"
+    #             / "extracted"
+    #             / version
+    #             / "LF"
+    #             / fault
+    #             / fault
+    #             / f"{realization}_LF_OutBin"
+    #         )
 
-        else:
-            lf_output_source_path = (
-                base_cybershake_dir
-                / "setup_files_from_dropbox"
-                / version
-                / "large_temp_files"
-                / "extracted"
-                / version
-                / "LF"
-                / fault
-                / f"{realization}_LF_OutBin"
-                / fault
-                / realization
-                / "LF"
-            )
+    #     else:
+    #         lf_output_source_path = (
+    #             base_cybershake_dir
+    #             / "setup_files_from_dropbox"
+    #             / version
+    #             / "large_temp_files"
+    #             / "extracted"
+    #             / version
+    #             / "LF"
+    #             / fault
+    #             / f"{realization}_LF_OutBin"
+    #             / fault
+    #             / realization
+    #             / "LF"
+    #         )
 
-        if fault == "AlpineF2K":
-            lf_output_destination_path = (
-                base_cybershake_dir
-                / version
-                / "Runs"
-                / fault
-                / realization
-                / "LF"
-                / "OutBin"
-            )
-        else:
-            lf_output_destination_path = (
-                base_cybershake_dir / version / "Runs" / fault / realization / "LF"
-            )
+    #     if fault == "AlpineF2K":
+    #         lf_output_destination_path = (
+    #             base_cybershake_dir
+    #             / version
+    #             / "Runs"
+    #             / fault
+    #             / realization
+    #             / "LF"
+    #             / "OutBin"
+    #         )
+    #     else:
+    #         lf_output_destination_path = (
+    #             base_cybershake_dir / version / "Runs" / fault / realization / "LF"
+    #         )
 
-        # Ensure parent directory exists before moving
-        lf_output_destination_path.parent.mkdir(parents=True, exist_ok=True)
+    #     # Ensure parent directory exists before moving
+    #     lf_output_destination_path.parent.mkdir(parents=True, exist_ok=True)
 
-        if not lf_output_destination_path.exists():
-            shutil.move(lf_output_source_path, lf_output_destination_path)
-        else:
-            print(f"    Skipping LF move (destination already exists)")
+    #     if not lf_output_destination_path.exists():
+    #         shutil.move(lf_output_source_path, lf_output_destination_path)
+    #     else:
+    #         print(f"    Skipping LF move (destination already exists)")
 
-        # Create modified e3d.par file
-        original_e3d_par_file_path = (
-            base_cybershake_dir
-            / "setup_files_from_dropbox"
-            / version
-            / "permanent_small_files"
-            / "extracted"
-            / f"{version}_configs_params"
-            / fault
-            / realization
-            / "LF"
-            / "e3d.par"
-        )
+    #     # Create modified e3d.par file
+    #     original_e3d_par_file_path = (
+    #         base_cybershake_dir
+    #         / "setup_files_from_dropbox"
+    #         / version
+    #         / "permanent_small_files"
+    #         / "extracted"
+    #         / f"{version}_configs_params"
+    #         / fault
+    #         / realization
+    #         / "LF"
+    #         / "e3d.par"
+    #     )
 
-        modified_e3d_par_file_path = (
-            base_cybershake_dir
-            / version
-            / "Runs"
-            / fault
-            / realization
-            / "LF"
-            / "e3d.par"
-        )
+    #     modified_e3d_par_file_path = (
+    #         base_cybershake_dir
+    #         / version
+    #         / "Runs"
+    #         / fault
+    #         / realization
+    #         / "LF"
+    #         / "e3d.par"
+    #     )
 
-        create_modified_config_file(
-            original_file_path=original_e3d_par_file_path,
-            modified_file_path=modified_e3d_par_file_path,
-            old_base_paths=old_base_paths_to_replace,
-            new_base_path=base_cybershake_dir,
-            fixed_value_overrides=E3D_PAR_FIXED_VALUES,
-        )
+    #     create_modified_config_file(
+    #         original_file_path=original_e3d_par_file_path,
+    #         modified_file_path=modified_e3d_par_file_path,
+    #         old_base_paths=old_base_paths_to_replace,
+    #         new_base_path=base_cybershake_dir,
+    #         fixed_value_overrides=E3D_PAR_FIXED_VALUES,
+    #     )
 
-        # Create modified sim_params.yaml file
-        original_sim_params_file_path = (
-            base_cybershake_dir
-            / "setup_files_from_dropbox"
-            / version
-            / "permanent_small_files"
-            / "extracted"
-            / f"{version}_configs_params"
-            / fault
-            / realization
-            / "sim_params.yaml"
-        )
+    #     # Create modified sim_params.yaml file
+    #     original_sim_params_file_path = (
+    #         base_cybershake_dir
+    #         / "setup_files_from_dropbox"
+    #         / version
+    #         / "permanent_small_files"
+    #         / "extracted"
+    #         / f"{version}_configs_params"
+    #         / fault
+    #         / realization
+    #         / "sim_params.yaml"
+    #     )
 
-        modified_sim_params_file_path = (
-            base_cybershake_dir
-            / version
-            / "Runs"
-            / fault
-            / realization
-            / "sim_params.yaml"
-        )
+    #     modified_sim_params_file_path = (
+    #         base_cybershake_dir
+    #         / version
+    #         / "Runs"
+    #         / fault
+    #         / realization
+    #         / "sim_params.yaml"
+    #     )
 
-        create_modified_config_file(
-            original_file_path=original_sim_params_file_path,
-            modified_file_path=modified_sim_params_file_path,
-            old_base_paths=old_base_paths_to_replace,
-            new_base_path=base_cybershake_dir,
-        )
+    #     create_modified_config_file(
+    #         original_file_path=original_sim_params_file_path,
+    #         modified_file_path=modified_sim_params_file_path,
+    #         old_base_paths=old_base_paths_to_replace,
+    #         new_base_path=base_cybershake_dir,
+    #     )
 
-    print(f"\n{'='*60}")
-    print("Deployment complete!")
-    print(f"{'='*60}")
+    # print(f"\n{'='*60}")
+    # print("Deployment complete!")
+    # print(f"{'='*60}")
 
 
 if __name__ == "__main__":
