@@ -240,7 +240,7 @@ def main():
             / "Runs"
             / fault
         )
-    elif version == "v20p10":
+    elif version == "v25p10":
         original_ll_statcords_source_path = (
             base_cybershake_dir
             / "setup_files_from_dropbox"
