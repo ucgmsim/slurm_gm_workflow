@@ -175,10 +175,12 @@ def extract_recursively(directory: Path, max_depth: int = 10) -> None:
             if archive_type in ("gz", "bz2", "xz"):
                 # Single-file compression: extract to same directory
                 extract_dest = archive_path.parent
-            else:
+            elif archive_type not in ("gz", "bz2", "xz") and archive_type is not None:
                 # Multi-file archives: extract to a subdirectory with the archive name
                 extracted_name = get_extracted_name(archive_path, archive_type)
                 extract_dest = archive_path.parent / extracted_name
+            else:
+                raise ValueError(f"Unsupported archive type for file {archive_path}")
 
             print(f"    Extracting: {archive_path.relative_to(directory)}")
 
@@ -277,28 +279,28 @@ def main():
 
     print(f"Processing version: {args.version}, fault: {args.fault}")
 
-    # print(f"Move and extract LF dir for fault {args.fault}...")
-    # process_directory_tree(
-    #     tar_original_setup_files_from_dropbox / "LF" / args.fault,
-    #     extracted_original_setup_files_from_dropbox / "LF" / args.fault
-    # )
+    print(f"Move and extract LF dir for fault {args.fault}...")
+    process_directory_tree(
+        tar_original_setup_files_from_dropbox / "LF" / args.fault,
+        extracted_original_setup_files_from_dropbox / "LF" / args.fault,
+    )
 
-    # print(f"Move and extract Sources dir for fault {args.fault}...")
-    # if args.version == "v25p10":
-    #     process_directory_tree(
-    #         tar_original_setup_files_from_dropbox
-    #         / "Sources"
-    #         / f"{args.fault}_Sources.tar",
-    #         extracted_original_setup_files_from_dropbox / "Sources" / f"{args.fault}",
-    #     )
+    print(f"Move and extract Sources dir for fault {args.fault}...")
+    if args.version == "v25p10":
+        process_directory_tree(
+            tar_original_setup_files_from_dropbox
+            / "Sources"
+            / f"{args.fault}_Sources.tar",
+            extracted_original_setup_files_from_dropbox / "Sources" / f"{args.fault}",
+        )
 
-    # elif args.version == "v25p11":
-    #     process_directory_tree(
-    #         tar_original_setup_files_from_dropbox / "Sources" / f"{args.fault}.tar",
-    #         extracted_original_setup_files_from_dropbox / "Sources" / f"{args.fault}",
-    #     )
-    # else:
-    #     raise ValueError(f"Unsupported version: {args.version}")
+    elif args.version == "v25p11":
+        process_directory_tree(
+            tar_original_setup_files_from_dropbox / "Sources" / f"{args.fault}.tar",
+            extracted_original_setup_files_from_dropbox / "Sources" / f"{args.fault}",
+        )
+    else:
+        raise ValueError(f"Unsupported version: {args.version}")
 
     if args.version == "v25p10":
         print(f"Extract VM files for fault {args.fault}...")
