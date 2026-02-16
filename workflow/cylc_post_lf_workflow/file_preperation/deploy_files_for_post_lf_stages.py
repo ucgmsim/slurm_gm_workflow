@@ -119,6 +119,7 @@ def main():
         "/uoc/project/uoc40001/scratch/baes/Cybershake",
         "/gpfs/scratch/cant1/Cybershake",
         "/nesi/nobackup/nesi00213/RunFolder/Cybershake",
+        "/scratch/hpc11a02/gmsim/RunFolder/Cybershake",
     ]
 
     ll_and_vs30_files_provided_in_this_version = "v25p11"  # for versions before this, the .ll and .vs30 files are not provided in the Dropbox download and need to be copied from an older version
@@ -143,241 +144,241 @@ def main():
 
     # root_params.yaml is the same (and in the same place) for all faults and realisations
     # Create modified root_params.yaml file
-    # original_root_params_file_path = (
-    #     base_cybershake_dir
-    #     / "setup_files_from_dropbox"
-    #     / version
-    #     / "permanent_small_files"
-    #     / "extracted"
-    #     / f"{version}_configs_params"
-    #     / "root_params.yaml"
-    # )
+    original_root_params_file_path = (
+        base_cybershake_dir
+        / "setup_files_from_dropbox"
+        / version
+        / "permanent_small_files"
+        / "extracted"
+        / f"{version}_configs_params"
+        / "root_params.yaml"
+    )
 
-    # modified_root_params_file_path = (
-    #     base_cybershake_dir / version / "Runs" / "root_params.yaml"
-    # )
+    modified_root_params_file_path = (
+        base_cybershake_dir / version / "Runs" / "root_params.yaml"
+    )
 
-    # create_modified_config_file(
-    #     original_file_path=original_root_params_file_path,
-    #     modified_file_path=modified_root_params_file_path,
-    #     old_base_paths=old_base_paths_to_replace,
-    #     new_base_path=base_cybershake_dir,
-    #     fixed_value_overrides={
-    #         "hf_vel_mod_1d": "/scratch/projects/rch-quakecore/Cybershake/VelocityModel/Mod-1D/Cant1D_v3-midQ_OneRay.1d",
-    #         "mgmt_db_location": "",
-    #     },
-    # )
+    create_modified_config_file(
+        original_file_path=original_root_params_file_path,
+        modified_file_path=modified_root_params_file_path,
+        old_base_paths=old_base_paths_to_replace,
+        new_base_path=base_cybershake_dir,
+        fixed_value_overrides={
+            "hf_vel_mod_1d": "/scratch/projects/rch-quakecore/Cybershake/VelocityModel/Mod-1D/Cant1D_v3-midQ_OneRay.1d",
+            "mgmt_db_location": "",
+        },
+    )
 
-    # ## These files are the same (and in the same place) for all faults
-    # # # copy .ll and .vs30 files
-    # original_ll_and_vs30_source_path = (
-    #     base_cybershake_dir
-    #     / "setup_files_from_dropbox"
-    #     / ll_and_vs30_files_provided_in_this_version
-    #     / "permanent_small_files"
-    #     / "extracted"
-    #     / "VMs"
-    #     / f"{ll_and_vs30_files_provided_in_this_version}_setup_files"
-    # )
+    ## These files are the same (and in the same place) for all faults
+    # # copy .ll and .vs30 files
+    original_ll_and_vs30_source_path = (
+        base_cybershake_dir
+        / "setup_files_from_dropbox"
+        / ll_and_vs30_files_provided_in_this_version
+        / "permanent_small_files"
+        / "extracted"
+        / "VMs"
+        / f"{ll_and_vs30_files_provided_in_this_version}_setup_files"
+    )
 
-    # destination_ll_and_vs30_path = base_cybershake_dir / version
+    destination_ll_and_vs30_path = base_cybershake_dir / version
 
-    # shutil.copy(
-    #     original_ll_and_vs30_source_path
-    #     / "non_uniform_whole_nz_with_real_stations-hh400_v20p3_land.ll",
-    #     destination_ll_and_vs30_path,
-    # )
-    # shutil.copy(
-    #     original_ll_and_vs30_source_path
-    #     / "non_uniform_whole_nz_with_real_stations-hh400_v20p3_land.vs30",
-    #     destination_ll_and_vs30_path,
-    # )
+    shutil.copy(
+        original_ll_and_vs30_source_path
+        / "non_uniform_whole_nz_with_real_stations-hh400_v20p3_land.ll",
+        destination_ll_and_vs30_path,
+    )
+    shutil.copy(
+        original_ll_and_vs30_source_path
+        / "non_uniform_whole_nz_with_real_stations-hh400_v20p3_land.vs30",
+        destination_ll_and_vs30_path,
+    )
 
     # =============================================================================
     # Operations that depend on fault (but not realization)
     # =============================================================================
-    # print(f"\n{'='*60}")
-    # print(f"Deploying files for version={version}, fault={fault}")
-    # print(f"Total realizations to process: {len(realizations)}")
-    # print(f"{'='*60}\n")
+    print(f"\n{'='*60}")
+    print(f"Deploying files for version={version}, fault={fault}")
+    print(f"Total realizations to process: {len(realizations)}")
+    print(f"{'='*60}\n")
 
-    # print("[1/5] Creating modified fault_params.yaml file...")
-    # original_fault_params_file_path = (
-    #     base_cybershake_dir
-    #     / "setup_files_from_dropbox"
-    #     / version
-    #     / "permanent_small_files"
-    #     / "extracted"
-    #     / f"{version}_configs_params"
-    #     / fault
-    #     / "fault_params.yaml"
-    # )
+    print("[1/5] Creating modified fault_params.yaml file...")
+    original_fault_params_file_path = (
+        base_cybershake_dir
+        / "setup_files_from_dropbox"
+        / version
+        / "permanent_small_files"
+        / "extracted"
+        / f"{version}_configs_params"
+        / fault
+        / "fault_params.yaml"
+    )
 
-    # destination_fault_params_base_base = base_cybershake_dir / version / "Runs" / fault
-    # modified_fault_params_file_path = (
-    #     destination_fault_params_base_base / "fault_params.yaml"
-    # )
+    destination_fault_params_base_base = base_cybershake_dir / version / "Runs" / fault
+    modified_fault_params_file_path = (
+        destination_fault_params_base_base / "fault_params.yaml"
+    )
 
-    # create_modified_config_file(
-    #     original_file_path=original_fault_params_file_path,
-    #     modified_file_path=modified_fault_params_file_path,
-    #     old_base_paths=old_base_paths_to_replace,
-    #     new_base_path=base_cybershake_dir,
-    # )
-    # print(f"    Created: {modified_fault_params_file_path}")
+    create_modified_config_file(
+        original_file_path=original_fault_params_file_path,
+        modified_file_path=modified_fault_params_file_path,
+        old_base_paths=old_base_paths_to_replace,
+        new_base_path=base_cybershake_dir,
+    )
+    print(f"    Created: {modified_fault_params_file_path}")
 
-    # print("[2/5] Copying .ll and .statcords files...")
-    # # copy ll and statscords
-    # if version == "v25p11":
-    #     original_ll_statcords_source_path = (
-    #         base_cybershake_dir
-    #         / "setup_files_from_dropbox"
-    #         / version
-    #         / "permanent_small_files"
-    #         / "extracted"
-    #         / "VMs"
-    #         / f"{version}_setup_files"
-    #         / "Runs"
-    #         / fault
-    #     )
-    # elif version == "v25p10":
-    #     original_ll_statcords_source_path = (
-    #         base_cybershake_dir
-    #         / "setup_files_from_dropbox"
-    #         / version
-    #         / "permanent_small_files"
-    #         / "extracted"
-    #         / "fd_coords"
-    #         / "Runs"
-    #         / fault
-    #     )
-    # else:
-    #     raise ValueError(
-    #         f"Don't know where to find .ll and .statcords files for version {version}"
-    #     )
+    print("[2/5] Copying .ll and .statcords files...")
+    # copy ll and statscords
+    if version == "v25p11":
+        original_ll_statcords_source_path = (
+            base_cybershake_dir
+            / "setup_files_from_dropbox"
+            / version
+            / "permanent_small_files"
+            / "extracted"
+            / "VMs"
+            / f"{version}_setup_files"
+            / "Runs"
+            / fault
+        )
+    elif version == "v25p10":
+        original_ll_statcords_source_path = (
+            base_cybershake_dir
+            / "setup_files_from_dropbox"
+            / version
+            / "permanent_small_files"
+            / "extracted"
+            / "fd_coords"
+            / "Runs"
+            / fault
+        )
+    else:
+        raise ValueError(
+            f"Don't know where to find .ll and .statcords files for version {version}"
+        )
 
-    # shutil.copy(
-    #     original_ll_statcords_source_path / "fd_rt01-h0.100.ll",
-    #     destination_fault_params_base_base,
-    # )
-    # shutil.copy(
-    #     original_ll_statcords_source_path / "fd_rt01-h0.100.statcords",
-    #     destination_fault_params_base_base,
-    # )
-    # print(f"    Copied to: {destination_fault_params_base_base}")
+    shutil.copy(
+        original_ll_statcords_source_path / "fd_rt01-h0.100.ll",
+        destination_fault_params_base_base,
+    )
+    shutil.copy(
+        original_ll_statcords_source_path / "fd_rt01-h0.100.statcords",
+        destination_fault_params_base_base,
+    )
+    print(f"    Copied to: {destination_fault_params_base_base}")
 
-    # print("[3/5] Moving Sources...")
-    # original_source_files_source_path = (
-    #     base_cybershake_dir
-    #     / "setup_files_from_dropbox"
-    #     / version
-    #     / "large_temp_files"
-    #     / "extracted"
-    #     / version
-    #     / "Sources"
-    #     / fault
-    #     / fault
-    # )
+    print("[3/5] Moving Sources...")
+    original_source_files_source_path = (
+        base_cybershake_dir
+        / "setup_files_from_dropbox"
+        / version
+        / "large_temp_files"
+        / "extracted"
+        / version
+        / "Sources"
+        / fault
+        / fault
+    )
 
-    # destination_source_files_path = (
-    #     base_cybershake_dir / version / "Data" / "Sources" / fault
-    # )
-    # if not destination_source_files_path.exists():
-    #     # Temp changing to copytree for development
-    #     shutil.copytree(
-    #         original_source_files_source_path, destination_source_files_path
-    #     )
-    #     print(f"    Moved to: {destination_source_files_path}")
-    # else:
-    #     print(f"    Skipping Sources move (destination already exists)")
+    destination_source_files_path = (
+        base_cybershake_dir / version / "Data" / "Sources" / fault
+    )
+    if not destination_source_files_path.exists():
+        # Temp changing to copytree for development
+        shutil.copytree(
+            original_source_files_source_path, destination_source_files_path
+        )
+        print(f"    Moved to: {destination_source_files_path}")
+    else:
+        print(f"    Skipping Sources move (destination already exists)")
 
     destination_vms_base_dir = base_cybershake_dir / version / "Data" / "VMs" / fault
 
-    # print("[4/5] Moving VMs and updating vm_params.yaml...")
+    print("[4/5] Moving VMs and updating vm_params.yaml...")
 
-    # if version == "v25p11":
+    if version == "v25p11":
 
-    #     original_vm_meta_data_source_path = (
-    #         base_cybershake_dir
-    #         / "setup_files_from_dropbox"
-    #         / version
-    #         / "permanent_small_files"
-    #         / "extracted"
-    #         / "VMs"
-    #         / "VMs_meta_data"
-    #         / fault
-    #     )
+        original_vm_meta_data_source_path = (
+            base_cybershake_dir
+            / "setup_files_from_dropbox"
+            / version
+            / "permanent_small_files"
+            / "extracted"
+            / "VMs"
+            / "VMs_meta_data"
+            / fault
+        )
 
-    #     if not destination_vms_base_dir.exists():
-    #         shutil.copytree(original_vm_meta_data_source_path, destination_vms_base_dir)
-    #     else:
-    #         print(f"    Skipping VM metadata copy (destination already exists)")
+        if not destination_vms_base_dir.exists():
+            shutil.copytree(original_vm_meta_data_source_path, destination_vms_base_dir)
+        else:
+            print(f"    Skipping VM metadata copy (destination already exists)")
 
-    #     original_vm_hdf5_source_path = (
-    #         base_cybershake_dir
-    #         / "setup_files_from_dropbox"
-    #         / version
-    #         / "large_temp_files"
-    #         / "extracted"
-    #         / version
-    #         / "VMs"
-    #         / "HDF5"
-    #         / f"{fault}_velocity_model.h5"
-    #     )
+        original_vm_hdf5_source_path = (
+            base_cybershake_dir
+            / "setup_files_from_dropbox"
+            / version
+            / "large_temp_files"
+            / "extracted"
+            / version
+            / "VMs"
+            / "HDF5"
+            / f"{fault}_velocity_model.h5"
+        )
 
-    #     hdf5_destination_path = destination_vms_base_dir
+        hdf5_destination_path = destination_vms_base_dir
 
-    #     hdf5_destination_file = (
-    #         hdf5_destination_path / original_vm_hdf5_source_path.name
-    #     )
-    #     if not hdf5_destination_file.exists():
-    #         shutil.move(original_vm_hdf5_source_path, hdf5_destination_file)
-    #         print(
-    #             f"    Moved {original_vm_hdf5_source_path} to {hdf5_destination_file}"
-    #         )
-    #     else:
-    #         print(f"    Skipping HDF5 move (destination already exists)")
+        hdf5_destination_file = (
+            hdf5_destination_path / original_vm_hdf5_source_path.name
+        )
+        if not hdf5_destination_file.exists():
+            shutil.move(original_vm_hdf5_source_path, hdf5_destination_file)
+            print(
+                f"    Moved {original_vm_hdf5_source_path} to {hdf5_destination_file}"
+            )
+        else:
+            print(f"    Skipping HDF5 move (destination already exists)")
 
-    #     create_modified_config_file(
-    #         original_file_path=hdf5_destination_path / "vm_params.yaml",
-    #         modified_file_path=hdf5_destination_path / "vm_params.yaml",
-    #         old_base_paths=["/scratch/hpc91a02/UC/RunFolder/Cybershake/v23p7"],
-    #         new_base_path=base_cybershake_dir / version,
-    #     )
-    #     print(f"    Updated: {hdf5_destination_path / 'vm_params.yaml'}")
+        create_modified_config_file(
+            original_file_path=hdf5_destination_path / "vm_params.yaml",
+            modified_file_path=hdf5_destination_path / "vm_params.yaml",
+            old_base_paths=["/scratch/hpc91a02/UC/RunFolder/Cybershake/v23p7"],
+            new_base_path=base_cybershake_dir / version,
+        )
+        print(f"    Updated: {hdf5_destination_path / 'vm_params.yaml'}")
 
-    # elif version == "v25p10":
-    #     vm_source_path = (
-    #         base_cybershake_dir
-    #         / "setup_files_from_dropbox"
-    #         / version
-    #         / "large_temp_files"
-    #         / "extracted"
-    #         / version
-    #         / "VMs"
-    #         / fault
-    #         / fault
-    #     )
+    elif version == "v25p10":
+        vm_source_path = (
+            base_cybershake_dir
+            / "setup_files_from_dropbox"
+            / version
+            / "large_temp_files"
+            / "extracted"
+            / version
+            / "VMs"
+            / fault
+            / fault
+        )
 
-    #     # Temp using copytree for easy development
-    #     if not destination_vms_base_dir.exists():
-    #         shutil.copytree(vm_source_path, destination_vms_base_dir)
-    #         print(f"    Moved {vm_source_path} to {destination_vms_base_dir}")
+        # Temp using copytree for easy development
+        if not destination_vms_base_dir.exists():
+            shutil.copytree(vm_source_path, destination_vms_base_dir)
+            print(f"    Moved {vm_source_path} to {destination_vms_base_dir}")
 
-    #     # Modify the vm_params.yaml file in place in the destination directory
-    #     create_modified_config_file(
-    #         original_file_path=destination_vms_base_dir / "vm_params.yaml",
-    #         modified_file_path=destination_vms_base_dir / "vm_params.yaml",
-    #         old_base_paths=[
-    #             "/scratch/hpc91a02/UC/RunFolder/Cybershake/v23p7",
-    #             "/scratch/hpc11a02/gmsim/RunFolder/Cybershake/v21p1",
-    #         ],
-    #         new_base_path=base_cybershake_dir / version,
-    #     )
-    #     print(f"    Updated: {destination_vms_base_dir / 'vm_params.yaml'}")
+        # Modify the vm_params.yaml file in place in the destination directory
+        create_modified_config_file(
+            original_file_path=destination_vms_base_dir / "vm_params.yaml",
+            modified_file_path=destination_vms_base_dir / "vm_params.yaml",
+            old_base_paths=[
+                "/scratch/hpc91a02/UC/RunFolder/Cybershake/v23p7",
+                "/scratch/hpc11a02/gmsim/RunFolder/Cybershake/v21p1",
+            ],
+            new_base_path=base_cybershake_dir / version,
+        )
+        print(f"    Updated: {destination_vms_base_dir / 'vm_params.yaml'}")
 
-    # else:
-    #     raise ValueError(f"Unsupported version: {version}")
+    else:
+        raise ValueError(f"Unsupported version: {version}")
 
     # =============================================================================
     # Operations that depend on realization
@@ -404,6 +405,16 @@ def main():
                     / f"{realization}_LF_OutBin"
                 )
 
+                lf_output_destination_path = (
+                    base_cybershake_dir
+                    / version
+                    / "Runs"
+                    / fault
+                    / realization
+                    / "LF"
+                    / "OutBin"
+                )
+
             else:
                 lf_output_source_path = (
                     base_cybershake_dir
@@ -420,24 +431,28 @@ def main():
                     / "LF"
                 )
 
-            if fault == "AlpineF2K":
-                lf_output_destination_path = (
-                    base_cybershake_dir
-                    / version
-                    / "Runs"
-                    / fault
-                    / realization
-                    / "LF"
-                    / "OutBin"
-                )
-            else:
                 lf_output_destination_path = (
                     base_cybershake_dir / version / "Runs" / fault / realization / "LF"
                 )
 
         elif version == "v25p10":
-            # Up to here, adding LF file deployment for v25p10
-            pass
+            lf_output_source_path = (
+                base_cybershake_dir
+                / "setup_files_from_dropbox"
+                / version
+                / "large_temp_files"
+                / "extracted"
+                / version
+                / "LF"
+                / fault
+                / f"{realization}_LF_OutBin"
+                / realization
+                / "LF"
+            )
+
+            lf_output_destination_path = (
+                base_cybershake_dir / version / "Runs" / fault / realization / "LF"
+            )
 
         else:
             raise ValueError(f"Unsupported version: {version}")
@@ -445,24 +460,31 @@ def main():
         # Ensure parent directory exists before moving
         lf_output_destination_path.parent.mkdir(parents=True, exist_ok=True)
 
+        # ! Temporary using copytree for easy development - can change to move once verified working
         if not lf_output_destination_path.exists():
-            shutil.move(lf_output_source_path, lf_output_destination_path)
+            shutil.copytree(lf_output_source_path, lf_output_destination_path)
         else:
             print(f"    Skipping LF move (destination already exists)")
 
         # Create modified e3d.par file
-        original_e3d_par_file_path = (
-            base_cybershake_dir
-            / "setup_files_from_dropbox"
-            / version
-            / "permanent_small_files"
-            / "extracted"
-            / f"{version}_configs_params"
-            / fault
-            / realization
-            / "LF"
-            / "e3d.par"
-        )
+
+        if version == "v25p11":
+            original_e3d_par_file_path = (
+                base_cybershake_dir
+                / "setup_files_from_dropbox"
+                / version
+                / "permanent_small_files"
+                / "extracted"
+                / f"{version}_configs_params"
+                / fault
+                / realization
+                / "LF"
+                / "e3d.par"
+            )
+        elif version == "v25p10":
+            original_e3d_par_file_path = lf_output_source_path / "e3d.par"
+        else:
+            raise ValueError(f"Unsupported version: {version}")
 
         modified_e3d_par_file_path = (
             base_cybershake_dir
