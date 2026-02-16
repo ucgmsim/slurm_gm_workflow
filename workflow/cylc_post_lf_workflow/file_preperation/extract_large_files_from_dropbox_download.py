@@ -283,30 +283,45 @@ def main():
     #     extracted_original_setup_files_from_dropbox / "LF" / args.fault
     # )
 
-    print(f"Move and extract Sources dir for fault {args.fault}...")
+    # print(f"Move and extract Sources dir for fault {args.fault}...")
+    # if args.version == "v25p10":
+    #     process_directory_tree(
+    #         tar_original_setup_files_from_dropbox
+    #         / "Sources"
+    #         / f"{args.fault}_Sources.tar",
+    #         extracted_original_setup_files_from_dropbox / "Sources" / f"{args.fault}",
+    #     )
+
+    # elif args.version == "v25p11":
+    #     process_directory_tree(
+    #         tar_original_setup_files_from_dropbox / "Sources" / f"{args.fault}.tar",
+    #         extracted_original_setup_files_from_dropbox / "Sources" / f"{args.fault}",
+    #     )
+    # else:
+    #     raise ValueError(f"Unsupported version: {args.version}")
+
     if args.version == "v25p10":
+        print(f"Extract VM files for fault {args.fault}...")
         process_directory_tree(
-            tar_original_setup_files_from_dropbox
-            / "Sources"
-            / f"{args.fault}_Sources.tar",
-            extracted_original_setup_files_from_dropbox / "Sources" / f"{args.fault}",
+            tar_original_setup_files_from_dropbox / "VMs" / f"{args.fault}_VM.tar",
+            extracted_original_setup_files_from_dropbox / "VMs" / f"{args.fault}",
         )
 
     elif args.version == "v25p11":
-        process_directory_tree(
-            tar_original_setup_files_from_dropbox / "Sources" / f"{args.fault}.tar",
-            extracted_original_setup_files_from_dropbox / "Sources" / f"{args.fault}",
+
+        dest_vm_dir = extracted_original_setup_files_from_dropbox / "VMs" / "HDF5"
+        dest_vm_dir.mkdir(parents=True, exist_ok=True)
+        print(f"Move VMs/HDF5 file for fault {args.fault}...")
+
+        shutil.copy(
+            tar_original_setup_files_from_dropbox
+            / "VMs"
+            / "HDF5"
+            / f"{args.fault}_velocity_model.h5",
+            dest_vm_dir / f"{args.fault}_velocity_model.h5",
         )
     else:
         raise ValueError(f"Unsupported version: {args.version}")
-
-    # print(f"Move VMs/HDF5 file for fault {args.fault}...")
-    # dest_vm_dir = extracted_original_setup_files_from_dropbox / "VMs" / "HDF5"
-    # dest_vm_dir.mkdir(parents=True, exist_ok=True)
-    # shutil.copy(
-    #     tar_original_setup_files_from_dropbox / "VMs" / "HDF5" / f"{args.fault}_velocity_model.h5",
-    #     dest_vm_dir / f"{args.fault}_velocity_model.h5"
-    # )
 
     print("Done processing all files!")
 
