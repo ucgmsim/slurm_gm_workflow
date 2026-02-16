@@ -1,6 +1,6 @@
 #!Jinja2
 
-{% set version = "v25p11" %}
+{% set version = "v25p10" %}
 
 [meta]
 title = old_cybershake_hf_bb_im
@@ -10,58 +10,38 @@ description = """HF → BB → IM workflow for multiple faults and realizations"
 UTC mode = True
 
 {% set realizations = {
-    "AlpineF2K": ["AlpineF2K",
-               "AlpineF2K_REL01",
-               "AlpineF2K_REL02",
-               "AlpineF2K_REL03",
-               "AlpineF2K_REL04",
-               "AlpineF2K_REL05",
-               "AlpineF2K_REL06",
-               "AlpineF2K_REL07",
-               "AlpineF2K_REL08",
-               "AlpineF2K_REL09",
-               "AlpineF2K_REL10",
-               "AlpineF2K_REL11",
-               "AlpineF2K_REL12",
-               "AlpineF2K_REL13",
-               "AlpineF2K_REL14",
-               "AlpineF2K_REL15",
-               "AlpineF2K_REL16",
-               "AlpineF2K_REL17",
-               "AlpineF2K_REL18",
-               "AlpineF2K_REL19",
-               "AlpineF2K_REL20",
-               "AlpineF2K_REL21",
-               "AlpineF2K_REL22",
-               "AlpineF2K_REL23",
-               "AlpineF2K_REL24",
-               "AlpineF2K_REL25",
-               "AlpineF2K_REL26",
-               "AlpineF2K_REL27",
-               "AlpineF2K_REL28",
-               "AlpineF2K_REL29",
-               "AlpineF2K_REL30",
-               "AlpineF2K_REL31",
-               "AlpineF2K_REL32",
-               "AlpineF2K_REL33",
-               "AlpineF2K_REL34",
-               "AlpineF2K_REL35",
-               "AlpineF2K_REL36",
-               "AlpineF2K_REL37",
-               "AlpineF2K_REL38",
-               "AlpineF2K_REL39",
-               "AlpineF2K_REL40",
-               "AlpineF2K_REL41",
-               "AlpineF2K_REL42",
-               "AlpineF2K_REL43",
-               "AlpineF2K_REL44",
-               "AlpineF2K_REL45",
-               "AlpineF2K_REL46",
-               "AlpineF2K_REL47"],
+    "Hope1888": ["Hope1888",
+               "Hope1888_REL01",
+               "Hope1888_REL02",
+               "Hope1888_REL03",
+               "Hope1888_REL04",
+               "Hope1888_REL05",
+               "Hope1888_REL06",
+               "Hope1888_REL07",
+               "Hope1888_REL08",
+               "Hope1888_REL09",
+               "Hope1888_REL10",
+               "Hope1888_REL11",
+               "Hope1888_REL12",
+               "Hope1888_REL13",
+               "Hope1888_REL14",
+               "Hope1888_REL15",
+               "Hope1888_REL16",
+               "Hope1888_REL17",
+               "Hope1888_REL18",
+               "Hope1888_REL19",
+               "Hope1888_REL20",
+               "Hope1888_REL21",
+               "Hope1888_REL22",
+               "Hope1888_REL23",
+               "Hope1888_REL24",
+               "Hope1888_REL25",
+               "Hope1888_REL26",
+               "Hope1888_REL27"],
 } %}
 
 {% set slurm_params = {
-    "AlpineF2K": {
+    "Hope1888": {
         "hf": {"ntasks":144, "mem-per-cpu": "500M", "time":"06:00:00"},        
         "bb": {"ntasks":12, "mem-per-cpu": "3G", "time":"06:00:00"},        
         "im": {"ntasks":24, "mem-per-cpu": "3G", "time":"02:00:00"},
@@ -73,7 +53,7 @@ UTC mode = True
 [scheduling]
     [[queues]]
         [[[default]]]
-            limit = 10
+            limit = 5
 
 [[graph]]
 R1 = """
