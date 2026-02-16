@@ -63,8 +63,8 @@ UTC mode = True
 {% set slurm_params = {
     "AlpineF2K": {
         "hf": {"ntasks":144, "mem-per-cpu": "500M", "time":"06:00:00"},        
-        "bb": {"ntasks":12, "mem-per-cpu": "5G", "time":"06:00:00"},        
-        "im": {"ntasks":24, "mem-per-cpu": "12G", "time":"06:00:00"},
+        "bb": {"ntasks":12, "mem-per-cpu": "3G", "time":"06:00:00"},        
+        "im": {"ntasks":24, "mem-per-cpu": "3G", "time":"02:00:00"},
         "upload": {"ntasks":1, "time":"02:00:00"},
         "delete_realisation_run_dir": {"ntasks":1, "time":"01:00:00"}
     }
