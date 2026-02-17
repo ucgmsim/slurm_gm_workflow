@@ -10,6 +10,7 @@ import argparse
 from pathlib import Path
 import shutil
 import os
+import sys
 from natsort import natsorted
 
 
@@ -94,16 +95,30 @@ def create_modified_config_file(
         f.write(modified_content)
 
 
+def check_path(path, description, errors):
+    """Check if a path exists and report the result. Appends to errors list on failure."""
+    if not path.exists():
+        print(f"    MISSING {description}: {path}")
+        errors.append(f"{description}: {path}")
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Deploy files for post-LF stages of the Cybershake workflow"
     )
     parser.add_argument("version", help="Version string (e.g., v25p11)")
     parser.add_argument("fault", help="Fault name (e.g., NMFZB1)")
+    parser.add_argument(
+        "--check",
+        action="store_true",
+        help="Only check that source files and destination locations exist, without deploying anything",
+    )
     args = parser.parse_args()
 
     version = args.version
     fault = args.fault
+    check_only = args.check
+    check_errors = []
 
     # Fixed value overrides for e3d.par files
     E3D_PAR_FIXED_VALUES = {
@@ -142,8 +157,8 @@ def main():
     # commented out as these do not need to be changed between runs of the same version
     # =============================================================================
 
-    # root_params.yaml is the same (and in the same place) for all faults and realisations
-    # Create modified root_params.yaml file
+    # # root_params.yaml is the same (and in the same place) for all faults and realisations
+    # # Create modified root_params.yaml file
     original_root_params_file_path = (
         base_cybershake_dir
         / "setup_files_from_dropbox"
@@ -158,19 +173,29 @@ def main():
         base_cybershake_dir / version / "Runs" / "root_params.yaml"
     )
 
-    create_modified_config_file(
-        original_file_path=original_root_params_file_path,
-        modified_file_path=modified_root_params_file_path,
-        old_base_paths=old_base_paths_to_replace,
-        new_base_path=base_cybershake_dir,
-        fixed_value_overrides={
-            "hf_vel_mod_1d": "/scratch/projects/rch-quakecore/Cybershake/VelocityModel/Mod-1D/Cant1D_v3-midQ_OneRay.1d",
-            "mgmt_db_location": "",
-        },
-    )
+    if check_only:
+        check_path(
+            original_root_params_file_path, "root_params.yaml source", check_errors
+        )
+        check_path(
+            modified_root_params_file_path.parent,
+            "root_params.yaml dest dir",
+            check_errors,
+        )
+    else:
+        create_modified_config_file(
+            original_file_path=original_root_params_file_path,
+            modified_file_path=modified_root_params_file_path,
+            old_base_paths=old_base_paths_to_replace,
+            new_base_path=base_cybershake_dir,
+            fixed_value_overrides={
+                "hf_vel_mod_1d": "/scratch/projects/rch-quakecore/Cybershake/VelocityModel/Mod-1D/Cant1D_v3-midQ_OneRay.1d",
+                "mgmt_db_location": "",
+            },
+        )
 
-    ## These files are the same (and in the same place) for all faults
-    # # copy .ll and .vs30 files
+    # ## These files are the same (and in the same place) for all faults
+    # # # copy .ll and .vs30 files
     original_ll_and_vs30_source_path = (
         base_cybershake_dir
         / "setup_files_from_dropbox"
@@ -183,22 +208,29 @@ def main():
 
     destination_ll_and_vs30_path = base_cybershake_dir / version
 
-    shutil.copy(
+    ll_file = (
         original_ll_and_vs30_source_path
-        / "non_uniform_whole_nz_with_real_stations-hh400_v20p3_land.ll",
-        destination_ll_and_vs30_path,
+        / "non_uniform_whole_nz_with_real_stations-hh400_v20p3_land.ll"
     )
-    shutil.copy(
+    vs30_file = (
         original_ll_and_vs30_source_path
-        / "non_uniform_whole_nz_with_real_stations-hh400_v20p3_land.vs30",
-        destination_ll_and_vs30_path,
+        / "non_uniform_whole_nz_with_real_stations-hh400_v20p3_land.vs30"
     )
+
+    if check_only:
+        check_path(ll_file, ".ll source", check_errors)
+        check_path(vs30_file, ".vs30 source", check_errors)
+        check_path(destination_ll_and_vs30_path, ".ll/.vs30 dest dir", check_errors)
+    else:
+        shutil.copy(ll_file, destination_ll_and_vs30_path)
+        shutil.copy(vs30_file, destination_ll_and_vs30_path)
 
     # =============================================================================
     # Operations that depend on fault (but not realization)
     # =============================================================================
+    mode_label = "Checking" if check_only else "Deploying"
     print(f"\n{'='*60}")
-    print(f"Deploying files for version={version}, fault={fault}")
+    print(f"{mode_label} files for version={version}, fault={fault}")
     print(f"Total realizations to process: {len(realizations)}")
     print(f"{'='*60}\n")
 
@@ -219,13 +251,23 @@ def main():
         destination_fault_params_base_base / "fault_params.yaml"
     )
 
-    create_modified_config_file(
-        original_file_path=original_fault_params_file_path,
-        modified_file_path=modified_fault_params_file_path,
-        old_base_paths=old_base_paths_to_replace,
-        new_base_path=base_cybershake_dir,
-    )
-    print(f"    Created: {modified_fault_params_file_path}")
+    if check_only:
+        check_path(
+            original_fault_params_file_path, "fault_params.yaml source", check_errors
+        )
+        check_path(
+            destination_fault_params_base_base,
+            "fault_params.yaml dest dir",
+            check_errors,
+        )
+    else:
+        create_modified_config_file(
+            original_file_path=original_fault_params_file_path,
+            modified_file_path=modified_fault_params_file_path,
+            old_base_paths=old_base_paths_to_replace,
+            new_base_path=base_cybershake_dir,
+        )
+        print(f"    Created: {modified_fault_params_file_path}")
 
     print("[2/5] Copying .ll and .statcords files...")
     # copy ll and statscords
@@ -257,15 +299,23 @@ def main():
             f"Don't know where to find .ll and .statcords files for version {version}"
         )
 
-    shutil.copy(
-        original_ll_statcords_source_path / "fd_rt01-h0.100.ll",
-        destination_fault_params_base_base,
+    ll_statcords_ll = original_ll_statcords_source_path / "fd_rt01-h0.100.ll"
+    ll_statcords_statcords = (
+        original_ll_statcords_source_path / "fd_rt01-h0.100.statcords"
     )
-    shutil.copy(
-        original_ll_statcords_source_path / "fd_rt01-h0.100.statcords",
-        destination_fault_params_base_base,
-    )
-    print(f"    Copied to: {destination_fault_params_base_base}")
+
+    if check_only:
+        check_path(ll_statcords_ll, "fd .ll source", check_errors)
+        check_path(ll_statcords_statcords, ".statcords source", check_errors)
+        check_path(
+            destination_fault_params_base_base,
+            "fd .ll/.statcords dest dir",
+            check_errors,
+        )
+    else:
+        shutil.copy(ll_statcords_ll, destination_fault_params_base_base)
+        shutil.copy(ll_statcords_statcords, destination_fault_params_base_base)
+        print(f"    Copied to: {destination_fault_params_base_base}")
 
     print("[3/5] Moving Sources...")
     original_source_files_source_path = (
@@ -283,14 +333,21 @@ def main():
     destination_source_files_path = (
         base_cybershake_dir / version / "Data" / "Sources" / fault
     )
-    if not destination_source_files_path.exists():
-        # Temp changing to copytree for development
-        shutil.copytree(
-            original_source_files_source_path, destination_source_files_path
+    if check_only:
+        check_path(
+            original_source_files_source_path, "Sources source dir", check_errors
         )
-        print(f"    Moved to: {destination_source_files_path}")
+        check_path(
+            destination_source_files_path.parent, "Sources dest dir", check_errors
+        )
     else:
-        print(f"    Skipping Sources move (destination already exists)")
+        if not destination_source_files_path.exists():
+            shutil.move(
+                original_source_files_source_path, destination_source_files_path
+            )
+            print(f"    Moved to: {destination_source_files_path}")
+        else:
+            print(f"    Skipping Sources move (destination already exists)")
 
     destination_vms_base_dir = base_cybershake_dir / version / "Data" / "VMs" / fault
 
@@ -309,11 +366,6 @@ def main():
             / fault
         )
 
-        if not destination_vms_base_dir.exists():
-            shutil.copytree(original_vm_meta_data_source_path, destination_vms_base_dir)
-        else:
-            print(f"    Skipping VM metadata copy (destination already exists)")
-
         original_vm_hdf5_source_path = (
             base_cybershake_dir
             / "setup_files_from_dropbox"
@@ -326,26 +378,40 @@ def main():
             / f"{fault}_velocity_model.h5"
         )
 
-        hdf5_destination_path = destination_vms_base_dir
-
-        hdf5_destination_file = (
-            hdf5_destination_path / original_vm_hdf5_source_path.name
-        )
-        if not hdf5_destination_file.exists():
-            shutil.move(original_vm_hdf5_source_path, hdf5_destination_file)
-            print(
-                f"    Moved {original_vm_hdf5_source_path} to {hdf5_destination_file}"
+        if check_only:
+            check_path(
+                original_vm_meta_data_source_path,
+                "VM metadata source dir",
+                check_errors,
             )
+            check_path(original_vm_hdf5_source_path, "VM HDF5 source", check_errors)
+            check_path(destination_vms_base_dir.parent, "VMs dest dir", check_errors)
         else:
-            print(f"    Skipping HDF5 move (destination already exists)")
+            if not destination_vms_base_dir.exists():
+                shutil.move(original_vm_meta_data_source_path, destination_vms_base_dir)
+            else:
+                print(f"    Skipping VM metadata move (destination already exists)")
 
-        create_modified_config_file(
-            original_file_path=hdf5_destination_path / "vm_params.yaml",
-            modified_file_path=hdf5_destination_path / "vm_params.yaml",
-            old_base_paths=["/scratch/hpc91a02/UC/RunFolder/Cybershake/v23p7"],
-            new_base_path=base_cybershake_dir / version,
-        )
-        print(f"    Updated: {hdf5_destination_path / 'vm_params.yaml'}")
+            hdf5_destination_path = destination_vms_base_dir
+
+            hdf5_destination_file = (
+                hdf5_destination_path / original_vm_hdf5_source_path.name
+            )
+            if not hdf5_destination_file.exists():
+                shutil.move(original_vm_hdf5_source_path, hdf5_destination_file)
+                print(
+                    f"    Moved {original_vm_hdf5_source_path} to {hdf5_destination_file}"
+                )
+            else:
+                print(f"    Skipping HDF5 move (destination already exists)")
+
+            create_modified_config_file(
+                original_file_path=hdf5_destination_path / "vm_params.yaml",
+                modified_file_path=hdf5_destination_path / "vm_params.yaml",
+                old_base_paths=["/scratch/hpc91a02/UC/RunFolder/Cybershake/v23p7"],
+                new_base_path=base_cybershake_dir / version,
+            )
+            print(f"    Updated: {hdf5_destination_path / 'vm_params.yaml'}")
 
     elif version == "v25p10":
         vm_source_path = (
@@ -360,22 +426,25 @@ def main():
             / fault
         )
 
-        # Temp using copytree for easy development
-        if not destination_vms_base_dir.exists():
-            shutil.copytree(vm_source_path, destination_vms_base_dir)
-            print(f"    Moved {vm_source_path} to {destination_vms_base_dir}")
+        if check_only:
+            check_path(vm_source_path, "VM source dir", check_errors)
+            check_path(destination_vms_base_dir.parent, "VMs dest dir", check_errors)
+        else:
+            if not destination_vms_base_dir.exists():
+                shutil.move(vm_source_path, destination_vms_base_dir)
+                print(f"    Moved {vm_source_path} to {destination_vms_base_dir}")
 
-        # Modify the vm_params.yaml file in place in the destination directory
-        create_modified_config_file(
-            original_file_path=destination_vms_base_dir / "vm_params.yaml",
-            modified_file_path=destination_vms_base_dir / "vm_params.yaml",
-            old_base_paths=[
-                "/scratch/hpc91a02/UC/RunFolder/Cybershake/v23p7",
-                "/scratch/hpc11a02/gmsim/RunFolder/Cybershake/v21p1",
-            ],
-            new_base_path=base_cybershake_dir / version,
-        )
-        print(f"    Updated: {destination_vms_base_dir / 'vm_params.yaml'}")
+            # Modify the vm_params.yaml file in place in the destination directory
+            create_modified_config_file(
+                original_file_path=destination_vms_base_dir / "vm_params.yaml",
+                modified_file_path=destination_vms_base_dir / "vm_params.yaml",
+                old_base_paths=[
+                    "/scratch/hpc91a02/UC/RunFolder/Cybershake/v23p7",
+                    "/scratch/hpc11a02/gmsim/RunFolder/Cybershake/v21p1",
+                ],
+                new_base_path=base_cybershake_dir / version,
+            )
+            print(f"    Updated: {destination_vms_base_dir / 'vm_params.yaml'}")
 
     else:
         raise ValueError(f"Unsupported version: {version}")
@@ -457,15 +526,6 @@ def main():
         else:
             raise ValueError(f"Unsupported version: {version}")
 
-        # Ensure parent directory exists before moving
-        lf_output_destination_path.parent.mkdir(parents=True, exist_ok=True)
-
-        # ! Temporary using copytree for easy development - can change to move once verified working
-        if not lf_output_destination_path.exists():
-            shutil.copytree(lf_output_source_path, lf_output_destination_path)
-        else:
-            print(f"    Skipping LF move (destination already exists)")
-
         # Create modified e3d.par file
 
         if version == "v25p11":
@@ -496,14 +556,6 @@ def main():
             / "e3d.par"
         )
 
-        create_modified_config_file(
-            original_file_path=original_e3d_par_file_path,
-            modified_file_path=modified_e3d_par_file_path,
-            old_base_paths=old_base_paths_to_replace,
-            new_base_path=base_cybershake_dir,
-            fixed_value_overrides=E3D_PAR_FIXED_VALUES,
-        )
-
         # Create modified sim_params.yaml file
         original_sim_params_file_path = (
             base_cybershake_dir
@@ -526,15 +578,60 @@ def main():
             / "sim_params.yaml"
         )
 
-        create_modified_config_file(
-            original_file_path=original_sim_params_file_path,
-            modified_file_path=modified_sim_params_file_path,
-            old_base_paths=old_base_paths_to_replace,
-            new_base_path=base_cybershake_dir,
-        )
+        if check_only:
+            check_path(
+                lf_output_source_path, f"{realization} LF source dir", check_errors
+            )
+            check_path(
+                lf_output_destination_path.parent,
+                f"{realization} LF dest dir",
+                check_errors,
+            )
+            check_path(
+                original_e3d_par_file_path,
+                f"{realization} e3d.par source",
+                check_errors,
+            )
+            check_path(
+                original_sim_params_file_path,
+                f"{realization} sim_params.yaml source",
+                check_errors,
+            )
+        else:
+            # Ensure parent directory exists before moving
+            lf_output_destination_path.parent.mkdir(parents=True, exist_ok=True)
+
+            if not lf_output_destination_path.exists():
+                shutil.move(lf_output_source_path, lf_output_destination_path)
+            else:
+                print(f"    Skipping LF move (destination already exists)")
+
+            create_modified_config_file(
+                original_file_path=original_e3d_par_file_path,
+                modified_file_path=modified_e3d_par_file_path,
+                old_base_paths=old_base_paths_to_replace,
+                new_base_path=base_cybershake_dir,
+                fixed_value_overrides=E3D_PAR_FIXED_VALUES,
+            )
+
+            create_modified_config_file(
+                original_file_path=original_sim_params_file_path,
+                modified_file_path=modified_sim_params_file_path,
+                old_base_paths=old_base_paths_to_replace,
+                new_base_path=base_cybershake_dir,
+            )
 
     print(f"\n{'='*60}")
-    print("Deployment complete!")
+    if check_only:
+        if check_errors:
+            print(f"Check FAILED: {len(check_errors)} missing path(s):")
+            for error in check_errors:
+                print(f"  - {error}")
+            sys.exit(1)
+        else:
+            print("Check PASSED: all source files and destination locations exist.")
+    else:
+        print("Deployment complete!")
     print(f"{'='*60}")
 
 
