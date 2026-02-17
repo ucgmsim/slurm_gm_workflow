@@ -43,8 +43,8 @@ UTC mode = True
 {% set slurm_params = {
     "Hope1888": {
         "hf": {"ntasks":36, "mem-per-cpu": "2G", "time":"01:00:00"},        
-        "bb": {"ntasks":12, "mem-per-cpu": "3G", "time":"01:00:00"},        
-        "im": {"ntasks":24, "mem-per-cpu": "3G", "time":"01:00:00"},
+        "bb": {"ntasks":12, "mem-per-cpu": "3G", "time":"03:00:00"},        
+        "im": {"ntasks":24, "mem-per-cpu": "3G", "time":"03:00:00"},
         "upload": {"ntasks":1, "time":"02:00:00"},
         "delete_realisation_run_dir": {"ntasks":1, "time":"01:00:00"}
     }
