@@ -111,7 +111,7 @@ def main():
     parser.add_argument(
         "--check",
         action="store_true",
-        help="Only check that source files and destination locations exist, without deploying anything",
+        help="Only check that source files exist, without deploying anything",
     )
     args = parser.parse_args()
 
@@ -177,11 +177,6 @@ def main():
         check_path(
             original_root_params_file_path, "root_params.yaml source", check_errors
         )
-        check_path(
-            modified_root_params_file_path.parent,
-            "root_params.yaml dest dir",
-            check_errors,
-        )
     else:
         create_modified_config_file(
             original_file_path=original_root_params_file_path,
@@ -220,8 +215,8 @@ def main():
     if check_only:
         check_path(ll_file, ".ll source", check_errors)
         check_path(vs30_file, ".vs30 source", check_errors)
-        check_path(destination_ll_and_vs30_path, ".ll/.vs30 dest dir", check_errors)
     else:
+        destination_ll_and_vs30_path.mkdir(parents=True, exist_ok=True)
         shutil.copy(ll_file, destination_ll_and_vs30_path)
         shutil.copy(vs30_file, destination_ll_and_vs30_path)
 
@@ -255,12 +250,8 @@ def main():
         check_path(
             original_fault_params_file_path, "fault_params.yaml source", check_errors
         )
-        check_path(
-            destination_fault_params_base_base,
-            "fault_params.yaml dest dir",
-            check_errors,
-        )
     else:
+        destination_fault_params_base_base.mkdir(parents=True, exist_ok=True)
         create_modified_config_file(
             original_file_path=original_fault_params_file_path,
             modified_file_path=modified_fault_params_file_path,
@@ -307,11 +298,6 @@ def main():
     if check_only:
         check_path(ll_statcords_ll, "fd .ll source", check_errors)
         check_path(ll_statcords_statcords, ".statcords source", check_errors)
-        check_path(
-            destination_fault_params_base_base,
-            "fd .ll/.statcords dest dir",
-            check_errors,
-        )
     else:
         shutil.copy(ll_statcords_ll, destination_fault_params_base_base)
         shutil.copy(ll_statcords_statcords, destination_fault_params_base_base)
@@ -337,10 +323,8 @@ def main():
         check_path(
             original_source_files_source_path, "Sources source dir", check_errors
         )
-        check_path(
-            destination_source_files_path.parent, "Sources dest dir", check_errors
-        )
     else:
+        destination_source_files_path.parent.mkdir(parents=True, exist_ok=True)
         if not destination_source_files_path.exists():
             shutil.move(
                 original_source_files_source_path, destination_source_files_path
@@ -385,8 +369,8 @@ def main():
                 check_errors,
             )
             check_path(original_vm_hdf5_source_path, "VM HDF5 source", check_errors)
-            check_path(destination_vms_base_dir.parent, "VMs dest dir", check_errors)
         else:
+            destination_vms_base_dir.parent.mkdir(parents=True, exist_ok=True)
             if not destination_vms_base_dir.exists():
                 shutil.move(original_vm_meta_data_source_path, destination_vms_base_dir)
             else:
@@ -428,8 +412,8 @@ def main():
 
         if check_only:
             check_path(vm_source_path, "VM source dir", check_errors)
-            check_path(destination_vms_base_dir.parent, "VMs dest dir", check_errors)
         else:
+            destination_vms_base_dir.parent.mkdir(parents=True, exist_ok=True)
             if not destination_vms_base_dir.exists():
                 shutil.move(vm_source_path, destination_vms_base_dir)
                 print(f"    Moved {vm_source_path} to {destination_vms_base_dir}")
@@ -583,11 +567,6 @@ def main():
                 lf_output_source_path, f"{realization} LF source dir", check_errors
             )
             check_path(
-                lf_output_destination_path.parent,
-                f"{realization} LF dest dir",
-                check_errors,
-            )
-            check_path(
                 original_e3d_par_file_path,
                 f"{realization} e3d.par source",
                 check_errors,
@@ -629,7 +608,7 @@ def main():
                 print(f"  - {error}")
             sys.exit(1)
         else:
-            print("Check PASSED: all source files and destination locations exist.")
+            print("Check PASSED: all source files exist.")
     else:
         print("Deployment complete!")
     print(f"{'='*60}")
