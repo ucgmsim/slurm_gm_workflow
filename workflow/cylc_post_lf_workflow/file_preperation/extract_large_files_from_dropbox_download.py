@@ -247,7 +247,7 @@ def process_directory_tree(src_path: Path, dest_dir: Path) -> None:
         # Handle directory tree
         print(f"Moving directory tree from {src_path} to {dest_dir}")
         dest_dir.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copytree(src_path, dest_dir, copy_function=shutil.copy)
+        shutil.move(src_path, dest_dir)
 
     # Now recursively extract all archives
     print("Recursively extracting all archives...")
@@ -315,7 +315,7 @@ def main():
         dest_vm_dir.mkdir(parents=True, exist_ok=True)
         print(f"Move VMs/HDF5 file for fault {args.fault}...")
 
-        shutil.copy(
+        shutil.move(
             tar_original_setup_files_from_dropbox
             / "VMs"
             / "HDF5"
