@@ -585,6 +585,10 @@ def main():
             else:
                 print(f"    Skipping LF move (destination already exists)")
 
+            # For v25p10, the e3d.par file was inside the moved directory, so update the path
+            if version == "v25p10":
+                original_e3d_par_file_path = lf_output_destination_path / "e3d.par"
+
             create_modified_config_file(
                 original_file_path=original_e3d_par_file_path,
                 modified_file_path=modified_e3d_par_file_path,
