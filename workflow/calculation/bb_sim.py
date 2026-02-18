@@ -249,6 +249,25 @@ def main():
         if is_master:
             logger.debug("fixed vs30ref.")
 
+    if is_master:
+        zero_mask = lfvs30refs <= 0
+        if zero_mask.any():
+            zero_stations = lf.stations.name[zero_mask]
+            logger.error(
+                "lfvs30refs values are <= 0 for stations: %s",
+                list(zero_stations),
+            )
+            comm.Abort()
+
+        zero_mask = hf.stations.vs <= 0
+        if zero_mask.any():
+            zero_stations = hf.stations.name[zero_mask]
+            logger.error(
+                "hf.stations.vs values are <= 0 for stations: %s",
+                list(zero_stations),
+            )
+            comm.Abort()
+
     # load vs30
     try:
         # has to be a numpy array of np.float32 as written directly to binary
@@ -278,6 +297,17 @@ def main():
     else:
         if is_master:
             logger.debug("vs30 loaded successfully.")
+
+    def abort_zero_vs_inputs(stat_name, vsite, vpga, vref):
+        if vsite <= 0 or vpga <= 0 or vref <= 0:
+            logger.error(
+                "Invalid VS inputs for station %s: vsite=%s vpga=%s vref=%s",
+                stat_name,
+                vsite,
+                vpga,
+                vref,
+            )
+            comm.Abort()
 
     # initialise output with general metadata
     def initialise(check_only=False):
@@ -468,12 +498,16 @@ def main():
             pga = np.max(np.abs(hf_acc), axis=0) / 981.0
             # ideally remove loop # Could reduce to single components?
             for c in range(N_COMPONENTS):
+                vsite = vs30s[stations_todo_idx[i]]
+                vpga = stat.vs
+                vref = lfvs30refs[stations_todo_idx[i]]
+                abort_zero_vs_inputs(stat.name, vsite, vpga, vref)
                 hf_amp_val = amp_function(
                     bb_dt,
                     n2,
-                    stat.vs,
-                    vs30s[stations_todo_idx[i]],
-                    stat.vs,
+                    vpga,
+                    vsite,
+                    vpga,
                     pga[c],
                     fmin=fmin,
                     fmidbot=fmidbot,
@@ -482,9 +516,9 @@ def main():
                 lf_amp_val = lf_amp_function(
                     bb_dt,
                     n2,
-                    lfvs30refs[stations_todo_idx[i]],
-                    vs30s[stations_todo_idx[i]],
-                    stat.vs,
+                    vref,
+                    vsite,
+                    vpga,
                     pga[c],
                     fmin=fmin,
                     fmidbot=fmidbot,
