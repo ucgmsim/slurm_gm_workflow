@@ -1,0 +1,138 @@
+#!Jinja2
+
+{% set version = "v25p10" %}
+
+[meta]
+title = old_cybershake_hf_bb_im
+description = """Only Hope1888_REL01 BB BB stage"""
+
+[scheduler]
+UTC mode = True
+
+{% set realizations = {
+    "Hope1888": ["Hope1888_REL01"],
+} %}
+
+{% set slurm_params = {
+    "Hope1888": {
+        "bb": {"ntasks":12, "mem-per-cpu": "3G", "time":"03:00:00"}, 
+    }
+} %}
+
+[scheduling]
+    [[queues]]
+        [[[default]]]
+            limit = 1
+
+[[graph]]
+R1 = """
+{% for fault_name, realisation_list in realizations.items() %}
+    {% for realisation in realisation_list %}
+run_bb-{{ fault_name }}-{{ realisation }}
+    {% endfor %}
+{% endfor %}
+"""
+
+[runtime]
+[[root]]
+    platform = rch-slurm
+    [[[directives]]]
+        --exclude=n03
+
+{% for fault_name, realisation_list in realizations.items() %}
+    {% for realisation in realisation_list %}
+
+[[run_bb-{{ fault_name }}-{{ realisation }}]]
+    script = """
+set -e  # Exit on error
+set -u  # Exit on undefined variable
+set -o pipefail  # Exit on pipe failure
+set -x  # Trace commands
+
+echo "=== BB Task Started: {{ fault_name }} {{ realisation }} ==="
+echo "Task: $CYLC_TASK_NAME"
+echo "Cycle: $CYLC_TASK_CYCLE_POINT"
+echo "Workflow: $CYLC_WORKFLOW_ID"
+echo "Job ID: $CYLC_TASK_JOB"
+echo "Started at: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+
+# Module loading with error checking
+echo "Loading modules..."
+echo "Trying to load module GCC/13.3.0..."
+module load GCC/13.3.0 2>&1 &
+pid=$!
+sleep 30
+if kill -0 $pid 2>/dev/null; then
+    kill $pid 2>/dev/null || true
+    echo "ERROR: Module load for GCC timed out"
+    exit 1
+else
+    wait $pid
+    if [ $? -ne 0 ]; then
+        echo "ERROR: Failed to load GCC module"
+        exit 1
+    fi
+fi
+echo "GCC module loaded successfully"
+
+echo "Trying to load module OpenMPI/5.0.3-GCC-13.3.0..."
+module load OpenMPI/5.0.3-GCC-13.3.0 2>&1 &
+pid=$!
+sleep 30
+if kill -0 $pid 2>/dev/null; then
+    kill $pid 2>/dev/null || true
+    echo "ERROR: Module load for OpenMPI timed out"
+    exit 1
+else
+    wait $pid
+    if [ $? -ne 0 ]; then
+        echo "ERROR: Failed to load OpenMPI module"
+        exit 1
+    fi
+fi
+echo "OpenMPI module loaded successfully"
+
+# Environment activation with error checking
+echo "Trying to activate Python environment at /home/arr65/venvs/ompi5_venv/bin/activate..."
+if ! source /home/arr65/venvs/ompi5_venv/bin/activate 2>&1; then
+    echo "ERROR: Failed to activate Python environment"
+    exit 1
+fi
+echo "Python environment activated successfully"
+
+# Verify Python and required modules
+echo "Environment check:"
+python --version
+which python
+
+# Report environment ready
+cylc message -- "${CYLC_TASK_ID}" "environment_ready"
+
+# Run BB command
+echo "Running BB simulation for {{ fault_name }} {{ realisation }}"
+RUN_DIR="/scratch/projects/rch-quakecore/Cybershake/{{ version }}/Runs/{{ fault_name }}/{{ realisation }}"
+echo "Run directory: $RUN_DIR"
+
+# Report BB command started
+cylc message -- "${CYLC_TASK_ID}" "bb_started"
+
+if ! run_bb_command_for_realisation.py "$RUN_DIR" 2>&1; then
+    echo "ERROR: BB command failed for {{ fault_name }} {{ realisation }}"
+    exit 1
+fi
+
+echo "BB simulation completed successfully for {{ fault_name }} {{ realisation }}"
+echo "Completed at: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+"""
+    [[[outputs]]]
+        environment_ready = "environment_ready"
+        bb_started = "bb_started"
+
+    [[[directives]]]
+        --ntasks={{ slurm_params[fault_name].bb.ntasks }}
+        --mem-per-cpu={{ slurm_params[fault_name].bb["mem-per-cpu"] }}
+        --time={{ slurm_params[fault_name].bb.time }}
+
+    {% endfor %}
+
+{% endfor %}
