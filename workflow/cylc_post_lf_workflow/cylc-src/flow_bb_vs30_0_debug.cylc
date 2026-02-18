@@ -49,6 +49,7 @@ run_bb-{{ fault_name }}-{{ realisation }}
 set -e  # Exit on error
 set -u  # Exit on undefined variable
 set -o pipefail  # Exit on pipe failure
+set -x  # Trace commands
 
 echo "=== BB Task Started: {{ fault_name }} {{ realisation }} ==="
 echo "Task: $CYLC_TASK_NAME"
@@ -60,16 +61,36 @@ echo "Started at: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
 # Module loading with error checking
 echo "Loading modules..."
 echo "Trying to load module GCC/13.3.0..."
-if ! module load GCC/13.3.0 2>&1; then
-    echo "ERROR: Failed to load GCC module"
+module load GCC/13.3.0 2>&1 &
+pid=$!
+sleep 30
+if kill -0 $pid 2>/dev/null; then
+    kill $pid 2>/dev/null || true
+    echo "ERROR: Module load for GCC timed out"
     exit 1
+else
+    wait $pid
+    if [ $? -ne 0 ]; then
+        echo "ERROR: Failed to load GCC module"
+        exit 1
+    fi
 fi
 echo "GCC module loaded successfully"
 
 echo "Trying to load module OpenMPI/5.0.3-GCC-13.3.0..."
-if ! module load OpenMPI/5.0.3-GCC-13.3.0 2>&1; then
-    echo "ERROR: Failed to load OpenMPI module"
+module load OpenMPI/5.0.3-GCC-13.3.0 2>&1 &
+pid=$!
+sleep 30
+if kill -0 $pid 2>/dev/null; then
+    kill $pid 2>/dev/null || true
+    echo "ERROR: Module load for OpenMPI timed out"
     exit 1
+else
+    wait $pid
+    if [ $? -ne 0 ]; then
+        echo "ERROR: Failed to load OpenMPI module"
+        exit 1
+    fi
 fi
 echo "OpenMPI module loaded successfully"
 
