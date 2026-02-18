@@ -262,9 +262,18 @@ def main():
             ).get
         )(lf.stations.name)
         assert not np.isnan(vs30s).any()
+        # Check for zero vs30 values
+        zero_mask = vs30s == 0
+        if zero_mask.any():
+            zero_stations = lf.stations.name[zero_mask]
+            raise ValueError(f"vs30 values are 0 for stations: {list(zero_stations)}")
     except AssertionError:
         if is_master:
             logger.error("vsite file is missing stations.")
+            comm.Abort()
+    except ValueError as e:
+        if is_master:
+            logger.error(str(e))
             comm.Abort()
     else:
         if is_master:
