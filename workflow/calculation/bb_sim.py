@@ -249,24 +249,25 @@ def main():
         if is_master:
             logger.debug("fixed vs30ref.")
 
-    if is_master:
-        zero_mask = lfvs30refs <= 0
-        if zero_mask.any():
-            zero_stations = lf.stations.name[zero_mask]
-            logger.error(
-                "lfvs30refs values are <= 0 for stations: %s",
-                list(zero_stations),
-            )
-            comm.Abort()
+    # Check for zero/negative VS values - must check on all ranks
+    # since different ranks may process different stations
+    zero_mask = lfvs30refs <= 0
+    if zero_mask.any():
+        zero_stations = lf.stations.name[zero_mask]
+        logger.error(
+            "lfvs30refs values are <= 0 for stations: %s",
+            list(zero_stations),
+        )
+        comm.Abort()
 
-        zero_mask = hf.stations.vs <= 0
-        if zero_mask.any():
-            zero_stations = hf.stations.name[zero_mask]
-            logger.error(
-                "hf.stations.vs values are <= 0 for stations: %s",
-                list(zero_stations),
-            )
-            comm.Abort()
+    zero_mask = hf.stations.vs <= 0
+    if zero_mask.any():
+        zero_stations = hf.stations.name[zero_mask]
+        logger.error(
+            "hf.stations.vs values are <= 0 for stations: %s",
+            list(zero_stations),
+        )
+        comm.Abort()
 
     # load vs30
     try:
