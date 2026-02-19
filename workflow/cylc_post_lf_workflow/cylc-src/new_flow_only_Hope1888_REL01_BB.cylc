@@ -10,7 +10,7 @@ description = """Only Hope1888_REL01 BB BB stage"""
 UTC mode = True
 
 {% set realizations = {
-    "Hope1888": ["Hope1888_REL01"],
+    "Hope1888": ["Hope1888", "Hope1888_REL01"],
 } %}
 
 {% set slurm_params = {
@@ -22,7 +22,7 @@ UTC mode = True
 [scheduling]
     [[queues]]
         [[[default]]]
-            limit = 1
+            limit = 2
 
 [[graph]]
 R1 = """
