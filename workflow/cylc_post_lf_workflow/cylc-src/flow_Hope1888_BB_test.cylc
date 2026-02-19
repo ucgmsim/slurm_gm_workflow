@@ -59,14 +59,39 @@ echo "Started at: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
 # Module loading with error checking
 echo "Loading modules..."
 
-# Load modules with timeout (10 seconds should be more than enough)
-echo "Loading GCC/13.3.0..."
-timeout 60 module load GCC/13.3.0 || { echo "ERROR: GCC module load timed out or failed"; exit 1; }
+echo "Trying to load module GCC/13.3.0..."
+module load GCC/13.3.0 2>&1 &
+pid=$!
+sleep 30
+if kill -0 $pid 2>/dev/null; then
+    kill $pid 2>/dev/null || true
+    echo "ERROR: Module load for GCC timed out"
+    exit 1
+else
+    wait $pid
+    if [ $? -ne 0 ]; then
+        echo "ERROR: Failed to load GCC module"
+        exit 1
+    fi
+fi
+echo "GCC module loaded successfully"
 
-echo "Loading OpenMPI/5.0.3-GCC-13.3.0..."
-timeout 60 module load OpenMPI/5.0.3-GCC-13.3.0 || { echo "ERROR: OpenMPI module load timed out or failed"; exit 1; }
-
-echo "Modules loaded successfully"
+echo "Trying to load module OpenMPI/5.0.3-GCC-13.3.0..."
+module load OpenMPI/5.0.3-GCC-13.3.0 2>&1 &
+pid=$!
+sleep 30
+if kill -0 $pid 2>/dev/null; then
+    kill $pid 2>/dev/null || true
+    echo "ERROR: Module load for OpenMPI timed out"
+    exit 1
+else
+    wait $pid
+    if [ $? -ne 0 ]; then
+        echo "ERROR: Failed to load OpenMPI module"
+        exit 1
+    fi
+fi
+echo "OpenMPI module loaded successfully"
 
 # Environment activation with error checking
 echo "Trying to activate Python environment at /home/arr65/venvs/ompi5_venv/bin/activate..."
