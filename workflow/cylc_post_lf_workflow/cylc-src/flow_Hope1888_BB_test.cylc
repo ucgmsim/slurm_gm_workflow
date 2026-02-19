@@ -61,10 +61,10 @@ echo "Loading modules..."
 
 # Load modules with timeout (10 seconds should be more than enough)
 echo "Loading GCC/13.3.0..."
-timeout 10 module load GCC/13.3.0 || { echo "ERROR: GCC module load timed out or failed"; exit 1; }
+timeout 60 module load GCC/13.3.0 || { echo "ERROR: GCC module load timed out or failed"; exit 1; }
 
 echo "Loading OpenMPI/5.0.3-GCC-13.3.0..."
-timeout 10 module load OpenMPI/5.0.3-GCC-13.3.0 || { echo "ERROR: OpenMPI module load timed out or failed"; exit 1; }
+timeout 60 module load OpenMPI/5.0.3-GCC-13.3.0 || { echo "ERROR: OpenMPI module load timed out or failed"; exit 1; }
 
 echo "Modules loaded successfully"
 
