@@ -10,7 +10,7 @@ description = """Only Hope1888_REL01 BB BB stage"""
 UTC mode = True
 
 {% set realizations = {
-    "Hope1888": ["Hope1888_REL01"],
+    "Hope1888": ["Hope1888", "Hope1888_REL01"],
 } %}
 
 {% set slurm_params = {
@@ -22,7 +22,7 @@ UTC mode = True
 [scheduling]
     [[queues]]
         [[[default]]]
-            limit = 1
+            limit = 2
 
 [[graph]]
 R1 = """
@@ -47,6 +47,7 @@ run_bb-{{ fault_name }}-{{ realisation }}
 set -e  # Exit on error
 set -u  # Exit on undefined variable
 set -o pipefail  # Exit on pipe failure
+set -x  # Trace commands
 
 echo "=== BB Task Started: {{ fault_name }} {{ realisation }} ==="
 echo "Task: $CYLC_TASK_NAME"
@@ -57,19 +58,15 @@ echo "Started at: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
 
 # Module loading with error checking
 echo "Loading modules..."
-echo "Trying to load module GCC/13.3.0..."
-if ! module load GCC/13.3.0 2>&1; then
-    echo "ERROR: Failed to load GCC module"
-    exit 1
-fi
-echo "GCC module loaded successfully"
 
-echo "Trying to load module OpenMPI/5.0.3-GCC-13.3.0..."
-if ! module load OpenMPI/5.0.3-GCC-13.3.0 2>&1; then
-    echo "ERROR: Failed to load OpenMPI module"
-    exit 1
-fi
-echo "OpenMPI module loaded successfully"
+# Load modules with timeout (10 seconds should be more than enough)
+echo "Loading GCC/13.3.0..."
+timeout 10 module load GCC/13.3.0 || { echo "ERROR: GCC module load timed out or failed"; exit 1; }
+
+echo "Loading OpenMPI/5.0.3-GCC-13.3.0..."
+timeout 10 module load OpenMPI/5.0.3-GCC-13.3.0 || { echo "ERROR: OpenMPI module load timed out or failed"; exit 1; }
+
+echo "Modules loaded successfully"
 
 # Environment activation with error checking
 echo "Trying to activate Python environment at /home/arr65/venvs/ompi5_venv/bin/activate..."
