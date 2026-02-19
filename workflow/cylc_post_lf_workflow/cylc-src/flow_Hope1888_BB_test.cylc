@@ -84,6 +84,9 @@ which python
 # Report environment ready
 cylc message -- "${CYLC_TASK_ID}" "environment_ready"
 
+# Enable siteamp diagnostics - writes to a JSON lines file
+export SITEAMP_DIAG_FILE="/scratch/projects/rch-quakecore/Cybershake/{{ version }}/Runs/{{ fault_name }}/{{ realisation }}/siteamp_diag.jsonl"
+
 # Run BB command
 echo "Running BB simulation for {{ fault_name }} {{ realisation }}"
 RUN_DIR="/scratch/projects/rch-quakecore/Cybershake/{{ version }}/Runs/{{ fault_name }}/{{ realisation }}"

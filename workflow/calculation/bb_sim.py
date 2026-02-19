@@ -4,6 +4,7 @@ Combines low frequency and high frequency seismograms.
 """
 
 from argparse import ArgumentParser
+import json
 import os
 import logging
 import numpy as np
@@ -457,6 +458,17 @@ def main():
                     f"Site specific response not being used. Running vs30 based amplification for {stat.name}"
                 )
             pga = np.max(np.abs(hf_acc), axis=0) / 981.0
+            _diag_file = os.environ.get("SITEAMP_DIAG_FILE")
+            if _diag_file:
+                try:
+                    with open(_diag_file, "a") as _f:
+                        _f.write(json.dumps({"station": stat.name, "stat_vs": float(stat.vs),
+                            "vs30": float(vs30s[stations_todo_idx[i]]),
+                            "lfvs30ref": float(lfvs30refs[stations_todo_idx[i]]),
+                            "pga": [float(pga[c]) for c in range(N_COMPONENTS)],
+                            "amp_func": amp_function.__name__}) + "\n")
+                except Exception:
+                    pass
             # ideally remove loop # Could reduce to single components?
             for c in range(N_COMPONENTS):
                 hf_amp_val = amp_function(
