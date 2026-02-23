@@ -523,6 +523,8 @@ if __name__ == "__main__":
                 out.seek(HEAD_STAT - 2 * FLOAT_SIZE, 1)
                 e_dist[i].tofile(out)
                 vs.tofile(out)
+            out.flush()
+            os.fsync(out.fileno())
 
     def validate_end(idx_n):
         """
