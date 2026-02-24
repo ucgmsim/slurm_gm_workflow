@@ -180,6 +180,7 @@ echo "Completed at: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
         bb_started = "bb_started"
 
     [[[directives]]]
+        --nodes=1
         --ntasks={{ slurm_params[fault_name].bb.ntasks }}
         --mem-per-cpu={{ slurm_params[fault_name].bb["mem-per-cpu"] }}
         --time={{ slurm_params[fault_name].bb.time }}
