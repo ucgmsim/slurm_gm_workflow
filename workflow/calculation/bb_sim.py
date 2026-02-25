@@ -399,6 +399,21 @@ def main():
     stations_todo = hf.stations[station_mask][rank::size]
     stations_todo_idx = np.arange(hf.stations.size)[station_mask][rank::size]
 
+    # Pre-read all station data in staggered batches to avoid
+    # overwhelming the network filesystem with concurrent reads
+    READ_BATCH_SIZE = 4
+    lf_acc_cache = {}
+    hf_acc_cache = {}
+    for _batch_start in range(0, size, READ_BATCH_SIZE):
+        if _batch_start <= rank < _batch_start + READ_BATCH_SIZE:
+            for stat in stations_todo:
+                lf_acc_cache[stat.name] = np.copy(lf.acc(stat.name, dt=bb_dt))
+                hf_acc_cache[stat.name] = np.copy(hf.acc(stat.name, dt=bb_dt))
+            logger.debug(
+                f"Pre-read {len(stations_todo)} stations from LF/HF files"
+            )
+        comm.Barrier()
+
     # load container to write to (use MPI I/O for coordinated parallel writes)
     bin_data = MPI.File.Open(comm, args.out_file, MPI.MODE_WRONLY)
     bin_seek = head_total + stations_todo_idx * bb_nt * N_COMP * FLOAT_SIZE
@@ -413,8 +428,8 @@ def main():
         logger.debug(
             f"Working on {stat.name}, {100*i/len(stations_todo):.2f}% complete"
         )
-        lf_acc = np.copy(lf.acc(stat.name, dt=bb_dt))
-        hf_acc = np.copy(hf.acc(stat.name, dt=bb_dt))
+        lf_acc = lf_acc_cache[stat.name]
+        hf_acc = hf_acc_cache[stat.name]
         station_yaml = os.path.join(str(args.site_response_dir), f"{stat.name}.yaml")
         if args.site_response_dir and os.path.isfile(station_yaml):
             logger.debug(
