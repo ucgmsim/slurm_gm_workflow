@@ -399,8 +399,8 @@ def main():
     stations_todo = hf.stations[station_mask][rank::size]
     stations_todo_idx = np.arange(hf.stations.size)[station_mask][rank::size]
 
-    # load container to write to
-    bin_data = open(args.out_file, "r+b")
+    # load container to write to (use MPI I/O for coordinated parallel writes)
+    bin_data = MPI.File.Open(comm, args.out_file, MPI.MODE_WRONLY)
     bin_seek = head_total + stations_todo_idx * bb_nt * N_COMP * FLOAT_SIZE
     bin_seek_vsite = HEAD_SIZE + stations_todo_idx * HEAD_STAT + 40
 
@@ -525,13 +525,11 @@ def main():
                         comm.Abort()
                 bb_acc[:, c] = (hf_c + lf_c) / 981.0
 
-        bin_data.seek(bin_seek[i])
-        bb_acc.tofile(bin_data)
+        bin_data.Write_at(bin_seek[i], bb_acc)
         # write vsite as used for checkpointing
-        bin_data.seek(bin_seek_vsite[i])
-        vs30s[stations_todo_idx[i]].tofile(bin_data)
-        bin_data.flush()
-    bin_data.close()
+        vsite_val = np.array(vs30s[stations_todo_idx[i]], dtype="f4")
+        bin_data.Write_at(bin_seek_vsite[i], vsite_val)
+    bin_data.Close()
 
     print("Process %03d of %03d finished (%.2fs)." % (rank, size, MPI.Wtime() - t0))
     logger.debug(
