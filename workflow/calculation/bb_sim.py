@@ -530,6 +530,7 @@ def main():
         # write vsite as used for checkpointing
         bin_data.seek(bin_seek_vsite[i])
         vs30s[stations_todo_idx[i]].tofile(bin_data)
+        bin_data.flush()
     bin_data.close()
 
     print("Process %03d of %03d finished (%.2fs)." % (rank, size, MPI.Wtime() - t0))

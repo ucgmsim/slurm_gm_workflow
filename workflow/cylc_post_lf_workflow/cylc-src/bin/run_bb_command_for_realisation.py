@@ -80,12 +80,15 @@ def main():
         output_dir = os.path.join(args.rel_dir, "BB", "Acc")
         os.makedirs(output_dir, exist_ok=True)
 
+        log_file = os.path.join(output_dir, "bb_run.log")
         print(f"Running command: {command}")
-        result = subprocess.run(command, shell=True, capture_output=True, text=True)
+        print(f"Output will be logged to: {log_file}")
+        with open(log_file, "w") as log:
+            result = subprocess.run(command, shell=True, stdout=log, stderr=subprocess.STDOUT)
         print(f"Subprocess completed with return code: {result.returncode}")
         if result.returncode != 0:
             print(f"Command failed with return code {result.returncode}", file=sys.stderr)
-            print(f"stderr: {result.stderr}", file=sys.stderr)
+            print(f"See log for details: {log_file}", file=sys.stderr)
             sys.exit(1)
         print("Command completed successfully")
 
