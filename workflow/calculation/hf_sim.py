@@ -502,7 +502,9 @@ if __name__ == "__main__":
         try:
             e_dist = np.fromstring(stderr, dtype="f4", sep="\n")
         except:
-            raise ValueError(f"The problematic string from stderr is as follows: {stderr}")
+            raise ValueError(
+                f"The problematic string from stderr is as follows: {stderr}"
+            )
 
         try:
             assert e_dist.size == n_stat
@@ -523,8 +525,8 @@ if __name__ == "__main__":
                 out.seek(HEAD_STAT - 2 * FLOAT_SIZE, 1)
                 e_dist[i].tofile(out)
                 vs.tofile(out)
-            out.flush()
-            os.fsync(out.fileno())
+            # out.flush()
+            # os.fsync(out.fileno())
 
     def validate_end(idx_n):
         """
