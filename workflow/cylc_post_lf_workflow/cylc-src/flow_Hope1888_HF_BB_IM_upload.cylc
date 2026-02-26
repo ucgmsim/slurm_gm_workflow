@@ -16,7 +16,7 @@ UTC mode = True
 {% set slurm_params = {
     "Hope1888": {
         "hf": {"ntasks":36, "mem-per-cpu": "2G", "time":"03:00:00"},        
-        "bb": {"ntasks":6, "mem-per-cpu": "6G", "time":"03:00:00"},        
+        "bb": {"ntasks":144, "mem-per-cpu": "6G", "time":"03:00:00"},        
         "im": {"ntasks":24, "mem-per-cpu": "3G", "time":"03:00:00"},
         "upload": {"ntasks":1, "time":"02:00:00"}
     }
@@ -182,7 +182,6 @@ echo "Completed at: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
     [[[directives]]]
         --nodes=1
         --ntasks={{ slurm_params[fault_name].bb.ntasks }}
-        --mem-per-cpu={{ slurm_params[fault_name].bb["mem-per-cpu"] }}
         --time={{ slurm_params[fault_name].bb.time }}
 
 [[run_im-{{ fault_name }}-{{ realisation }}]]
