@@ -126,14 +126,6 @@ echo "Completed at: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
     [[[directives]]]
         --ntasks={{ slurm_params[fault_name].upload.ntasks }}
         --time={{ slurm_params[fault_name].upload.time }}
-
-[[delete_realisation_run_dir-{{ fault_name }}-{{ realisation }}]]
-    script = """
-set -e  # Exit on error
-set -u  # Exit on undefined variable
-set -o pipefail  # Exit on pipe failure
-
-
     {% endfor %}
 
 {% endfor %}
