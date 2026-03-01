@@ -48,7 +48,7 @@ R1 = """
 {% for fault_name, realisation_list in realizations.items() %}
     {% for realisation in realisation_list %}
 {# In Cylc, referencing the same task multiple times doesn't create duplicate tasks—it just defines multiple dependency edges for that task. #}
-run_hf-{{ fault_name }}-{{ realisation }} => run_bb-{{ fault_name }}-{{ realisation }} => run_im-{{ fault_name }}-{{ realisation }} => upload_results-{{ fault_name }}-{{ realisation }} => delete_realisation_run_dir-{{ fault_name }}-{{ realisation }}
+run_hf-{{ fault_name }}-{{ realisation }} => run_bb-{{ fault_name }}-{{ realisation }} => run_im-{{ fault_name }}-{{ realisation }} => upload_results-{{ fault_name }}-{{ realisation }}
     {% endfor %}
 {% endfor %}
 """
