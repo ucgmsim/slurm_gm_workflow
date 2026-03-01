@@ -63,10 +63,11 @@ def rename_items_with_prefix(directory, prefix):
 
 def main():
     parser = argparse.ArgumentParser(description="Stage and upload post-HF results to Dropbox")
+    parser.add_argument("version", help="Version of the simulation (e.g. v25p10)")
     parser.add_argument("rel_dir", help="Path to REL_DIR containing sim_params.yaml")
     args = parser.parse_args()
 
-    version = "v25p11"
+    version = args.version
 
     # Construct path to sim_params.yaml
     sim_params_path = os.path.join(args.rel_dir, "sim_params.yaml")

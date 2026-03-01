@@ -330,7 +330,7 @@ echo "Run directory: $RUN_DIR"
 # Report upload command started
 cylc message -- "${CYLC_TASK_ID}" "upload_started"
 
-if ! upload_post_lf_output_for_realisation.py "$RUN_DIR" 2>&1; then
+if ! upload_post_lf_output_for_realisation.py "{{ version }}" "$RUN_DIR" 2>&1; then
     echo "ERROR: Upload command failed for {{ fault_name }} {{ realisation }}"
     exit 1
 fi
@@ -383,7 +383,7 @@ echo "Run directory: $RUN_DIR"
 # Report delete command started
 cylc message -- "${CYLC_TASK_ID}" "delete_started"
 
-if ! delete_realisation_run_dir.py "$RUN_DIR" 2>&1; then
+if ! delete_realisation_run_dir.py "{{ version }}" "$RUN_DIR" 2>&1; then
     echo "ERROR: Delete realisation run dir failed for {{ fault_name }} {{ realisation }}"
     exit 1
 fi

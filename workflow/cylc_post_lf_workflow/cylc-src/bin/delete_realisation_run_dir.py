@@ -7,6 +7,7 @@ import shutil
 
 def main():
     parser = argparse.ArgumentParser(description="Cleanup realisation-dependent data after upload")
+    parser.add_argument("version", help="Version of the simulation (e.g. v25p10)")
     parser.add_argument("rel_dir", help="Path to REL_DIR containing sim_params.yaml")
     args = parser.parse_args()
 
@@ -16,7 +17,7 @@ def main():
 
     # The realisation directory to delete
     # This is the same as args.rel_dir, but we construct it explicitly for clarity
-    realisation_dir = f"/scratch/projects/rch-quakecore/Cybershake/v25p11/Runs/{fault_name}/{rel_name}"
+    realisation_dir = f"/scratch/projects/rch-quakecore/Cybershake/{args.version}/Runs/{fault_name}/{rel_name}"
 
     print(f"Cleaning up realisation-dependent data for {fault_name}/{rel_name}")
     print(f"Directory to delete: {realisation_dir}")
