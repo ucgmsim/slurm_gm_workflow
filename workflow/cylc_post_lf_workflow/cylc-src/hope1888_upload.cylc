@@ -1,0 +1,139 @@
+#!Jinja2
+
+{% set version = "v25p10" %}
+
+[meta]
+title = old_cybershake_hf_bb_im
+description = """HF → BB → IM workflow for multiple faults and realizations"""
+
+[scheduler]
+UTC mode = True
+
+{% set realizations = {
+    "Hope1888": ["Hope1888",
+               "Hope1888_REL01",
+               "Hope1888_REL02",
+               "Hope1888_REL03",
+               "Hope1888_REL04",
+               "Hope1888_REL05",
+               "Hope1888_REL06",
+               "Hope1888_REL07",
+               "Hope1888_REL08",
+               "Hope1888_REL09",
+               "Hope1888_REL10",
+               "Hope1888_REL11",
+               "Hope1888_REL12",
+               "Hope1888_REL13",
+               "Hope1888_REL14",
+               "Hope1888_REL15",
+               "Hope1888_REL16",
+               "Hope1888_REL17",
+               "Hope1888_REL18",
+               "Hope1888_REL19",
+               "Hope1888_REL20",
+               "Hope1888_REL21",
+               "Hope1888_REL22",
+               "Hope1888_REL23",
+               "Hope1888_REL24",
+               "Hope1888_REL25",
+               "Hope1888_REL26",
+               "Hope1888_REL27"],
+} %}
+
+{% set slurm_params = {
+    "Hope1888": {
+        "hf": {"ntasks":36, "mem-per-cpu": "2G", "time":"01:00:00"},        
+        "bb": {"ntasks":12, "mem-per-cpu": "3G", "time":"03:00:00"},        
+        "im": {"ntasks":24, "mem-per-cpu": "3G", "time":"03:00:00"},
+        "upload": {"ntasks":1, "time":"02:00:00"},
+        "delete_realisation_run_dir": {"ntasks":1, "time":"01:00:00"}
+    }
+} %}
+
+[scheduling]
+    [[queues]]
+        [[[default]]]
+            limit = 5
+
+[[graph]]
+R1 = """
+{% for fault_name, realisation_list in realizations.items() %}
+    {% for realisation in realisation_list %}
+upload_results-{{ fault_name }}-{{ realisation }}
+    {% endfor %}
+{% endfor %}
+"""
+
+[runtime]
+[[root]]
+    platform = rch-slurm
+    execution retry delays = PT10M, PT30M, PT1H, PT3H
+    [[[directives]]]
+        --exclude=n03
+
+{% for fault_name, realisation_list in realizations.items() %}
+    {% for realisation in realisation_list %}
+
+[[upload_results-{{ fault_name }}-{{ realisation }}]]
+    script = """
+set -e  # Exit on error
+set -u  # Exit on undefined variable
+set -o pipefail  # Exit on pipe failure
+
+echo "=== Upload Results Task Started: {{ fault_name }} {{ realisation }} ==="
+echo "Task: $CYLC_TASK_NAME"
+echo "Cycle: $CYLC_TASK_CYCLE_POINT"
+echo "Workflow: $CYLC_WORKFLOW_ID"
+echo "Job ID: $CYLC_TASK_JOB"
+echo "Started at: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+
+# Environment activation with error checking
+echo "Trying to activate Python environment at /home/arr65/venvs/ompi5_venv/bin/activate..."
+if ! source /home/arr65/venvs/ompi5_venv/bin/activate 2>&1; then
+    echo "ERROR: Failed to activate Python environment"
+    exit 1
+fi
+echo "Python environment activated successfully"
+
+# Verify Python and required modules
+echo "Environment check:"
+python --version
+which python
+
+# Report environment ready
+cylc message -- "${CYLC_TASK_ID}" "environment_ready"
+
+# Run upload command
+echo "Running upload for {{ fault_name }} {{ realisation }}"
+RUN_DIR="/scratch/projects/rch-quakecore/Cybershake/{{ version }}/Runs/{{ fault_name }}/{{ realisation }}"
+echo "Run directory: $RUN_DIR"
+
+# Report upload command started
+cylc message -- "${CYLC_TASK_ID}" "upload_started"
+
+if ! upload_post_lf_output_for_realisation.py "{{ version }}" "$RUN_DIR" 2>&1; then
+    echo "ERROR: Upload command failed for {{ fault_name }} {{ realisation }}"
+    exit 1
+fi
+
+echo "Upload completed successfully for {{ fault_name }} {{ realisation }}"
+echo "Completed at: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+"""
+    [[[outputs]]]
+        environment_ready = "environment_ready"
+        upload_started = "upload_started"
+
+    [[[directives]]]
+        --ntasks={{ slurm_params[fault_name].upload.ntasks }}
+        --time={{ slurm_params[fault_name].upload.time }}
+
+[[delete_realisation_run_dir-{{ fault_name }}-{{ realisation }}]]
+    script = """
+set -e  # Exit on error
+set -u  # Exit on undefined variable
+set -o pipefail  # Exit on pipe failure
+
+
+    {% endfor %}
+
+{% endfor %}
