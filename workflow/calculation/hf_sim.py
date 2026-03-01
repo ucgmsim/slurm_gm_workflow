@@ -210,7 +210,7 @@ if __name__ == "__main__":
         except SystemExit as e:
             print(e, flush=True)
             # invalid arguments or -h
-            comm.Abort()
+            comm.Abort(1)
 
         if args.sim_bin is None:
             args.sim_bin = binary_version.get_hf_binmod(args.version)
@@ -381,7 +381,7 @@ if __name__ == "__main__":
                 logger.debug("Checkpoints found.")
                 initialise(check_only=True)
                 logger.error("HF Simulation already completed.")
-                comm.Abort()
+                comm.Abort(1)
             except AssertionError:
                 return
         # seems ok to continue simulation
@@ -504,7 +504,7 @@ if __name__ == "__main__":
 
             with open(f"hf_err_{idx_0}", "w") as e:
                 e.write(stderr)
-            comm.Abort()
+            comm.Abort(1)
 
         # write e_dist and vs to file
         with open(args.out_file, "r+b") as out:
