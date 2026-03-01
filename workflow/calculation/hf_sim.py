@@ -514,18 +514,6 @@ if __name__ == "__main__":
                 e_dist[i].tofile(out)
                 vs.tofile(out)
 
-    def validate_end(idx_n):
-        """
-        Verify filesize has been extended by the correct amount.
-        idx_n: position (starting at 1) of last station to be completed
-        """
-        try:
-            assert os.stat(args.out_file).st_size == head_total + idx_n * block_size
-        except AssertionError:
-            msg = f"Expected size: {head_total + idx_n * block_size} bytes (last stat idx: {idx_n}), actual {os.stat(args.out_file).st_size} bytes."
-            logger.error("Validation failed: {}".format(msg))
-            comm.Abort()
-
     # distribute work, must be sequential for optimisation,
     # and for validation function above to be thread safe
     # if size=4, rank 0 takes [0,4,8...], rank 1 takes [1,5,9...], rank 2 takes [2,6,10...],
@@ -551,19 +539,7 @@ if __name__ == "__main__":
             in_stats, 1, work_idx[s], v1d_path=v1d_path
         )  # passing in_stat with the seed adjustment work_idx[s]
 
-    if (
-        len(work_idx) > 0
-        and len(stations_todo_idx) > 0
-        and work_idx[-1] == stations_todo_idx[-1]
-    ):  # if this rank did the last station in the full list
-        validate_end(work_idx[-1] + 1)
-
     os.remove(in_stats)
-    print(
-        "Process {} of {} completed {} stations ({:.2f}).".format(
-            rank, size, work.size, MPI.Wtime() - t0
-        )
-    )
     logger.debug(
         "Process {} of {} completed {} stations ({:.2f}).".format(
             rank, size, work.size, MPI.Wtime() - t0
@@ -571,4 +547,12 @@ if __name__ == "__main__":
     )
     comm.Barrier()  # all ranks wait here until rank 0 arrives to announce all completed
     if is_master:
-        logger.debug("Simulation completed.")
+        actual_size = os.stat(args.out_file).st_size
+        if actual_size != file_size:
+            msg = f"CRITICAL: Final file size mismatch! Expected {file_size}, got {actual_size}"
+            print(msg, flush=True)
+            logger.error(msg)
+            comm.Abort(1)
+        else:
+            logger.debug("Simulation completed and size verified.")
+            print("✅ HF completed successfully", flush=True)
