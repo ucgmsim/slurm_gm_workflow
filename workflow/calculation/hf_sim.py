@@ -582,3 +582,11 @@ if __name__ == "__main__":
     comm.Barrier()  # all ranks wait here until rank 0 arrives to announce all completed
     if is_master:
         logger.debug("Simulation completed.")
+        # Validate the output file is complete by checking for zero vs values
+        from qcore.timeseries import HFSeis
+
+        hf_result = HFSeis(args.out_file)
+        if np.min(hf_result.stations.vs) == 0:
+            msg = f"Incomplete HF output file detected: {args.out_file} (some stations have vs=0)"
+            logger.error(msg)
+            raise RuntimeError(msg)
