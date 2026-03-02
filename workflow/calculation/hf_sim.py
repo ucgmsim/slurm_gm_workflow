@@ -514,8 +514,7 @@ if __name__ == "__main__":
                 e_dist[i].tofile(out)
                 vs.tofile(out)
 
-    # distribute work, must be sequential for optimisation,
-    # and for validation function above to be thread safe
+    # distribute work in a round-robin fashion across ranks for optimisation
     # if size=4, rank 0 takes [0,4,8...], rank 1 takes [1,5,9...], rank 2 takes [2,6,10...],
     # rank 3 takes [3,7,11...]
     work = stations_todo[rank::size]
