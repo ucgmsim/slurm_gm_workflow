@@ -1,0 +1,129 @@
+#!Jinja2
+
+{% set version = "v25p11" %}
+
+[meta]
+title = old_cybershake_hf
+description = """HF workflow for multiple faults and realizations"""
+
+[scheduler]
+UTC mode = True
+
+{% set realizations = {
+    "AlpineF2K":["AlpineF2K_REL03",
+               "AlpineF2K_REL07",
+               "AlpineF2K_REL08",
+               "AlpineF2K_REL16",
+               "AlpineF2K_REL18",
+               "AlpineF2K_REL19",
+               "AlpineF2K_REL23",
+               "AlpineF2K_REL28",
+               "AlpineF2K_REL29",
+               "AlpineF2K_REL30",
+               "AlpineF2K_REL45",
+               "AlpineF2K_REL46",
+               "AlpineF2K_REL47"],
+} %}
+
+{% set slurm_params = {
+    "AlpineF2K": {
+        "hf": {"ntasks":144, "mem-per-cpu": "500M", "time":"06:00:00"}
+    }
+} %}
+
+[scheduling]
+    [[queues]]
+        [[[default]]]
+            limit = 10
+
+[[graph]]
+R1 = """
+{% for fault_name, realisation_list in realizations.items() %}
+    {% for realisation in realisation_list %}
+run_hf-{{ fault_name }}-{{ realisation }}
+    {% endfor %}
+{% endfor %}
+"""
+
+[runtime]
+[[root]]
+    platform = rch-slurm
+    execution retry delays = PT10M, PT30M, PT1H, PT3H
+    [[[directives]]]
+        --exclude=n03
+
+{% for fault_name, realisation_list in realizations.items() %}
+    {% for realisation in realisation_list %}
+[[run_hf-{{ fault_name }}-{{ realisation }}]]
+    script = """
+set -e  # Exit on error
+set -u  # Exit on undefined variable
+set -o pipefail  # Exit on pipe failure
+
+echo "=== HF Task Started: {{ fault_name }} {{ realisation }} ==="
+echo "Task: $CYLC_TASK_NAME"
+echo "Cycle: $CYLC_TASK_CYCLE_POINT"
+echo "Workflow: $CYLC_WORKFLOW_ID"
+echo "Job ID: $CYLC_TASK_JOB"
+echo "Started at: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+
+# Module loading with error checking
+echo "Loading modules..."
+echo "Trying to load module GCC/13.3.0..."
+if ! module load GCC/13.3.0 2>&1; then
+    echo "ERROR: Failed to load GCC module"
+    exit 1
+fi
+echo "GCC module loaded successfully"
+
+echo "Trying to load module OpenMPI/5.0.3-GCC-13.3.0..."
+if ! module load OpenMPI/5.0.3-GCC-13.3.0 2>&1; then
+    echo "ERROR: Failed to load OpenMPI module"
+    exit 1
+fi
+echo "OpenMPI module loaded successfully"
+
+# Environment activation with error checking
+echo "Trying to activate Python environment at /home/arr65/venvs/ompi5_venv/bin/activate..."
+if ! source /home/arr65/venvs/ompi5_venv/bin/activate 2>&1; then
+    echo "ERROR: Failed to activate Python environment"
+    exit 1
+fi
+echo "Python environment activated successfully"
+
+# Verify Python and required modules
+echo "Environment check:"
+python --version
+which python
+
+# Report environment ready
+cylc message -- "${CYLC_TASK_ID}" "environment_ready"
+
+# Run HF command
+echo "Running HF simulation for {{ fault_name }} {{ realisation }}"
+RUN_DIR="/scratch/projects/rch-quakecore/Cybershake/{{ version }}/Runs/{{ fault_name }}/{{ realisation }}"
+echo "Run directory: $RUN_DIR"
+
+# Report HF command started
+cylc message -- "${CYLC_TASK_ID}" "hf_started"
+
+if ! run_hf_command_for_realisation.py "$RUN_DIR" 2>&1; then
+    echo "ERROR: HF command failed for {{ fault_name }} {{ realisation }}"
+    exit 1
+fi
+
+echo "HF simulation completed successfully for {{ fault_name }} {{ realisation }}"
+echo "Completed at: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+"""
+    [[[outputs]]]
+        environment_ready = "environment_ready"
+        hf_started = "hf_started"
+
+    [[[directives]]]
+        --ntasks={{ slurm_params[fault_name].hf.ntasks }}
+        --mem-per-cpu={{ slurm_params[fault_name].hf["mem-per-cpu"] }}
+        --time={{ slurm_params[fault_name].hf.time }}
+
+    {% endfor %}
+
+{% endfor %}
