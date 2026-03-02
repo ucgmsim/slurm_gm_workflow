@@ -65,6 +65,7 @@ def main():
     parser = argparse.ArgumentParser(description="Stage and upload post-HF results to Dropbox")
     parser.add_argument("version", help="Version of the simulation (e.g. v25p10)")
     parser.add_argument("rel_dir", help="Path to REL_DIR containing sim_params.yaml")
+    parser.add_argument("--no-rename", action="store_true", help="Skip renaming files with the realisation prefix before tarballing")
     args = parser.parse_args()
 
     version = args.version
@@ -101,7 +102,7 @@ def main():
             continue
 
         # Rename files and subdirectories if needed
-        if should_rename:
+        if should_rename and not args.no_rename:
             rename_items_with_prefix(src_dir, prefix)
 
         # Create parent directories for tarball if needed
