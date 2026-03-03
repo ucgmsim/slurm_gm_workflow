@@ -12,7 +12,7 @@ import numpy as np
 import logging
 
 from qcore import binary_version, constants, utils
-from workflow.automation.platform_config import platform_config
+#from workflow.automation.platform_config import platform_config
 
 if __name__ == "__main__":
     from qcore import MPIFileHandler
@@ -143,10 +143,10 @@ def args_parser(cmd=None):
         "-m",
         "--hf_vel_mod_1d",
         help="path to velocity model (1D). ignored if --site_specific is set",
-        default=os.path.join(
-            platform_config[constants.PLATFORM_CONFIG.VELOCITY_MODEL_DIR.name],
-            "Mod-1D/Cant1D_v2-midQ_leer.1d",
-        ),
+        default=""#os.path.join(
+            #platform_config[constants.PLATFORM_CONFIG.VELOCITY_MODEL_DIR.name],
+            #"Mod-1D/Cant1D_v2-midQ_leer.1d",
+        #),
     )
     arg(
         "--site_specific",
