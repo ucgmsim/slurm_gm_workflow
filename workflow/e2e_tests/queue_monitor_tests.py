@@ -1,5 +1,7 @@
 """For stress testing queue_monitor"""
+
 import os
+from pathlib import Path
 import json
 import shutil
 import time
@@ -255,7 +257,7 @@ class QueueMonitorStressTest(object):
 
     def check_mgmt_db_progress(self):
         """Checks auto submit progress in the management db"""
-        with connect_db_ctx(sim_struct.get_mgmt_db(self.stage_dir)) as cur:
+        with connect_db_ctx(Path(sim_struct.get_mgmt_db(self.stage_dir))) as cur:
             comp_count = [
                 cur.execute(
                     "SELECT COUNT(*) "

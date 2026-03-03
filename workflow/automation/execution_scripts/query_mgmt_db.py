@@ -5,6 +5,7 @@ A script that queries a slurm mgmt db and returns the status of a task
 """
 
 import argparse
+from pathlib import Path
 from typing import Union, List
 
 from workflow.automation.lib import MgmtDB
@@ -47,17 +48,27 @@ def state_table_query_builder(
     ordering: Union[bool, str, List[str]] = False,
 ):
     """
-    Creates queries for the state table.
-    For data sanitation reasons variables are passed in separately to the query string (No Bobby tables here)
-    :param what: The columns to be selected
-    :param state: Either true for one, or the number of states to be selected
-    :param process_type: Either true for one, or the number of states to be selected
-    :param run_name_exact: If an exact pattern match is required
-    :param run_name_similar: If a pattern match is required, to be used with '%' as the sqlite wildcard character
-    :param run_name_disimilar: If a pattern non-match is required, to be used with '%' as the sqlite wildcard character
-    :param task_id: Either true for one, or the number of states to be selected
-    :param ordering: The columns to order the results by
-    :return: The string to be used as the query
+    Creates queries for the state table. For data sanitation reasons variables are passed in separately to the query string.
+
+    Parameters
+    ----------
+    what : Union[str, List[str]]
+        The columns to be selected.
+    state : Union[bool, int], optional
+        Either true for one, or the number of states to be selected, by default False.
+    process_type : Union[bool, int], optional
+        Either true for one, or the number of states to be selected, by default False.
+    run_name_type : MgmtDB.ComparisonOperator, optional
+        If an exact pattern match is required, by default None.
+    task_id : Union[bool, int], optional
+        Either true for one, or the number of states to be selected, by default False.
+    ordering : Union[bool, str, List[str]], optional
+        The columns to order the results by, by default False.
+
+    Returns
+    -------
+    str
+        The string to be used as the query.
     """
     if isinstance(what, str):
         what = [what]
@@ -415,10 +426,9 @@ def main():
     if args.mode_help:
         print_mode_help()
         exit()
-    f = args.run_folder
+
     run_name = args.run_name
     mode = args.mode
-    db = MgmtDB.connect_db(f)
 
     query_mode = QueryModes()
     if "error" in mode:
@@ -433,7 +443,11 @@ def main():
     if "retry_max" in mode:
         query_mode.retry_max = True
 
-    print_run_status(db, run_name, query_mode, args.config)
+    with MgmtDB.connect_db_ctx(
+        Path(args.run_folder) / "slurm_mgmt.db",
+        pragmas=["synchronous = EXTRA", "integrity_check"],
+    ) as cur:
+        print_run_status(cur, run_name, query_mode, args.config)
 
 
 if __name__ == "__main__":

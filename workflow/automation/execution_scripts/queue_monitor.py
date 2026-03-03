@@ -177,9 +177,11 @@ def update_tasks(
                     SchedulerTask(
                         db_running_task.run_name,
                         db_running_task.proc_type,
-                        const.Status.killed_WCT.value
-                        if killed_wct
-                        else const.Status.failed.value,
+                        (
+                            const.Status.killed_WCT.value
+                            if killed_wct
+                            else const.Status.failed.value
+                        ),
                         db_running_task.job_id,
                         f"Disappeared from {Scheduler.get_scheduler().QUEUE_NAME}.",
                     )

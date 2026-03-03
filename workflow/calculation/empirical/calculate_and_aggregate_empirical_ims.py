@@ -2,6 +2,7 @@
 Uses the median srf, info and rrup files to calculate empirical intensity measures for all events or faults in a
 cybershake directory, and then creates all permutations of intensity measure groupings for each event or fault
 """
+
 import argparse
 import pathlib
 

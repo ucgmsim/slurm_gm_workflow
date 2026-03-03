@@ -64,6 +64,6 @@ seed is an optional integer argument to specify the seed to be used for HF calcu
 To run the installed simulations, copy the task_config.yaml configuration file to the run directory and modify it to 
 your needs. Run the cybershake with the following script:
 ```bash
-python $gmsim/workflow/workflow/automation/execution_scripts/run_cybershake.py /path/to/rootDir /path/to/rootDir/task_config.yaml <user name>
+python $gmsim/workflow/workflow/automation/execution_scripts/run_cybershake.py /path/to/rootDir /path/to/rootDir/task_config.yaml
 ```
 this will start submitting the different tasks on the HPC and will keep the database up to date.

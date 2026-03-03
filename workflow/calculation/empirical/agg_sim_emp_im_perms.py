@@ -2,6 +2,7 @@
 Creates all aggregation empirical intensity measure files for all events or faults in a simulation structure directory
 from the available intensity measure files in the verification folder of the first realisation of each fault or event
 """
+
 import argparse
 import pathlib
 from logging import Logger

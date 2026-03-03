@@ -3,6 +3,7 @@ Also checks a random (unless specified otherwise) station velocities for zeros,
 which indicates a dual access issue (occurss when two EMOD3D processes for the
 same sim run at the same time)
 """
+
 import argparse
 import numpy as np
 

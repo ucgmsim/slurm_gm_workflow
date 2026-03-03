@@ -1,15 +1,15 @@
 import datetime
-from contextlib import contextmanager
-from logging import Logger
-import os
 import sqlite3 as sql
-from typing import List, Union, Dict
+from contextlib import contextmanager
 from dataclasses import dataclass
+from logging import Logger
+from pathlib import Path
+from typing import List, Dict
 
 import qcore.constants as const
-from workflow.automation.lib.constants import ChCountType
-from qcore.qclogging import get_basic_logger
 from qcore import simulation_structure
+from qcore.qclogging import get_basic_logger
+from workflow.automation.lib.constants import ChCountType
 
 Process = const.ProcessType
 
@@ -36,26 +36,40 @@ class SchedulerTask:
     wct: int = None
 
 
-def connect_db(path):
-    db_location = os.path.abspath(os.path.join(path, "slurm_mgmt.db"))
-    conn = sql.connect(db_location)
-    db = conn.cursor()
-    db.execute("PRAGMA synchronous = EXTRA")
-    # db.execute("PRAGMA synchronous = OFF")
-    db.execute("PRAGMA integrity_check")
-
-    return db
-
-
 @contextmanager
-def connect_db_ctx(db_file, verbose=False):
-    """Returns a db cursor. Use with a context (i.e. with statement)
-
-    A commit is run at the end of the context.
+def connect_db_ctx(
+    db_file: Path, pragmas: list[str] = [], verbose: bool = False
+) -> sql.Cursor:
     """
-    conn = sql.connect(db_file)
+    Connects to the database at the specified path and yields a cursor to be used within a context manager.
+    Additionally, commit is run at the end of the context.
+
+    Parameters
+    ----------
+    db_file: Path
+        The path to the database
+    pragmas: list[str], optional
+        A list of PRAGMA statements to be run on the connection
+    verbose: bool, optional
+        If True, the connection will be set to print all queries
+
+    Yields
+    -------
+    sql.Cursor
+        The cursor to the database
+
+    """
+    # timeout parameter specifies how long the connection should wait for the lock to
+    # go away until raising an exception. Default is 5 secs
+    # https://stackoverflow.com/a/8618328/2005856
+    # https://docs.python.org/3/library/sqlite3.html#sqlite3.connect
+    conn = sql.connect(db_file, timeout=50)
     if verbose:
         conn.set_trace_callback(print)
+
+    if len(pragmas) > 0:
+        for pragma in pragmas:
+            conn.execute(f"PRAGMA {pragma}")
 
     try:
         yield conn.cursor()
@@ -66,10 +80,6 @@ def connect_db_ctx(db_file, verbose=False):
         conn.commit()
     finally:
         conn.close()
-
-
-def enum_to_list(enum):
-    return [x.name for x in enum]
 
 
 class MgmtDB:
@@ -87,7 +97,7 @@ class MgmtDB:
     col_wct = "WCT"
 
     def __init__(self, db_file: str):
-        self._db_file = db_file
+        self._db_file = Path(db_file)
 
         # This should only be used when doing actions with the intention of
         # leaving the connection open, otherwise use connect_db_ctx with a "with"
@@ -129,9 +139,7 @@ class MgmtDB:
                 realisation_name = entry.run_name
 
                 logger.debug(
-                    "The status of process {} for realisation {} is being set to {}. It has slurm id {}".format(
-                        entry.proc_type, entry.run_name, entry.status, entry.job_id
-                    )
+                    f"The status of process {entry.proc_type} for realisation {entry.run_name} is being set to {entry.status}. It has slurm id {entry.job_id}"
                 )
 
                 if entry.status == const.Status.queued.value:
@@ -183,9 +191,11 @@ class MgmtDB:
                     self.update_end_job_log(
                         cur,
                         entry.job_id,
-                        int(datetime.datetime.now().timestamp())
-                        if entry.end_time == ""
-                        else entry.end_time,
+                        (
+                            int(datetime.datetime.now().timestamp())
+                            if entry.end_time == ""
+                            else entry.end_time
+                        ),
                     )
 
                 if (
@@ -227,9 +237,7 @@ class MgmtDB:
         except sql.Error as ex:
             self._conn.rollback()
             logger.critical(
-                "Failed to update entry {}, due to the exception: \n{}".format(
-                    entry, ex
-                )
+                f"Failed to update entry {entry}, due to the exception: \n{ex}"
             )
             return False
         else:
@@ -250,6 +258,7 @@ class MgmtDB:
                     "SELECT DISTINCT proc_type from state WHERE run_name=? AND status!=?",
                     (rel_name, const.Status.created.value),
                 ).fetchall()
+
                 for proc_type in proc_types:
                     proc_type = proc_type[0]
                     failed_task_modified = cur.execute(
@@ -329,7 +338,7 @@ class MgmtDB:
         return tasks
 
     def add_retries(self, n_max_retries: int):
-        """Checks the database for failed tasks with less failures than the given n_max_retries.
+        """Checks the database for failed tasks with fewer failures than the given n_max_retries.
         If any are found then the tasks are checked for any entries that are created, queued, running or completed.
         If any are found then nothing happens, if none are found then another created entry is added to the db.
         n_max_retries: The maximum number of retries a task can have"""
@@ -344,19 +353,19 @@ class MgmtDB:
 
         failure_count = {}
         for run_name, proc_type, state in errored:
-            key = "{}__{}".format(run_name, proc_type)
+            key = f"{run_name}__{proc_type}"
             if key not in failure_count.keys():
                 failure_count.update({key: {"killed_WCT": 0, "failed": 0}})
             failure_count[key][state] += 1
 
-        with connect_db_ctx(self._db_file) as cur:
-            for key, fail_count in failure_count.items():
-                if any([x >= n_max_retries for x in fail_count.values()]):
-                    continue
-                run_name, proc_type = key.split("__")
-                # Gets the number of entries for the task with state in [created, queued, running or completed]
-                # Where completed has enum index 5, and the other 4 less than this
-                # If any are found then don't add another entry
+        for key, fail_count in failure_count.items():
+            if any([x >= n_max_retries for x in fail_count.values()]):
+                continue
+            run_name, proc_type = key.split("__")
+            # Gets the number of entries for the task with state in [created, queued, running or completed]
+            # Where completed has enum index 5, and the other 4 less than this
+            # If any are found then don't add another entry
+            with connect_db_ctx(self._db_file) as cur:
                 not_failed_count = cur.execute(
                     "SELECT COUNT(*) "
                     "FROM state "
@@ -365,7 +374,8 @@ class MgmtDB:
                     "AND status <= (SELECT id FROM status_enum WHERE state = 'completed') ",
                     (run_name, proc_type),
                 ).fetchone()[0]
-                if not_failed_count == 0:
+            if not_failed_count == 0:
+                with connect_db_ctx(self._db_file) as cur:
                     self._insert_task(cur, run_name, proc_type)
 
     def close_conn(self):
@@ -375,7 +385,7 @@ class MgmtDB:
         if self._conn is not None:
             self._conn.close()
 
-    def get_submitted_tasks(self, allowed_tasks=tuple(const.ProcessType)):
+    def get_submitted_tasks(self, allowed_tasks=list(const.ProcessType)):
         """Gets all in progress tasks i.e. (running or queued)"""
         return self.command_builder(
             allowed_tasks=allowed_tasks,
@@ -406,12 +416,13 @@ class MgmtDB:
         runnable_tasks = []
         offset = 0
 
-        # "{}__{}" is intended to be the template for a unique string for every realisation and process type pair
-        # Used to compare with database entries to prevent running a task that has already been submitted, but not
-        # recorded
-        tasks_waiting_for_updates = [
-            "{}__{}".format(*(entry.split(".")[1:3])) for entry in update_files
-        ]
+        tasks_waiting_for_updates = []
+        # To prevent running a task that has already been submitted, but yet to be posted to the db,
+        # we check the update files for any tasks that are waiting for DB updates
+        for entry in update_files:
+            run_name, proc_type = entry.split(".")[1:3]
+            tasks_waiting_for_updates.append(f"{run_name}__{proc_type}")
+        # each entry is {timestamp}.{run_name}.{proc_type} format. convert to "{run name}__{proc_type}" format
 
         with connect_db_ctx(self._db_file) as cur:
             entries = cur.execute(
@@ -426,7 +437,8 @@ class MgmtDB:
                 (*allowed_tasks, allowed_rels),
             ).fetchone()[0]
 
-            while len(runnable_tasks) < task_limit and offset < entries:
+        while len(runnable_tasks) < task_limit and offset < entries:
+            with connect_db_ctx(self._db_file) as cur:
                 db_tasks = cur.execute(
                     """SELECT proc_type, run_name 
                               FROM status_enum, state 
@@ -439,15 +451,17 @@ class MgmtDB:
                     ),
                     (*allowed_tasks, allowed_rels, offset),
                 ).fetchall()
-                runnable_tasks.extend(
-                    [
+            for task in db_tasks:
+                # task is a tuple like (11, 'TaieriR_REL21'), tasks_waiting_for_updates is a list of strings like ['TaieriR_REL21__11']
+                if (
+                    self._check_dependancy_met(task, logger)
+                    and f"{task[1]}__{task[0]}" not in tasks_waiting_for_updates
+                ):
+                    runnable_tasks.append(
                         (*task, self.get_retries(*task, get_WCT=True))
-                        for task in db_tasks
-                        if self._check_dependancy_met(task, logger)
-                        and "{}__{}".format(*task) not in tasks_waiting_for_updates
-                    ]
-                )
-                offset += 100
+                    )
+
+            offset += 100
 
         return runnable_tasks
 
@@ -481,6 +495,7 @@ class MgmtDB:
                            AND status_enum.state = 'completed'""",
                 (run_name,),
             ).fetchall()
+        with connect_db_ctx(self._db_file) as cur:
             completed_median_tasks = cur.execute(
                 """SELECT proc_type 
                           FROM status_enum, state 
@@ -490,9 +505,7 @@ class MgmtDB:
                 (median_name,),
             ).fetchall()
         logger.debug(
-            "Considering task {} for realisation {}. Completed realisation tasks as follows: {}. Completed median tasks as follows: {}".format(
-                process, run_name, completed_rel_tasks, completed_median_tasks
-            )
+            f"Considering task {process} for realisation {run_name}. Completed realisation tasks as follows: {completed_rel_tasks}. Completed median tasks as follows: {completed_median_tasks}"
         )
         completed_deps = [
             const.Dependency(x[0], dependency_target=const.DependencyTarget.REL)
@@ -502,7 +515,7 @@ class MgmtDB:
             for x in completed_median_tasks
         ]
         remaining_deps = process.get_remaining_dependencies(completed_deps)
-        logger.debug("{} has remaining deps: {}".format(task, remaining_deps))
+        logger.debug(f"{task} has remaining deps: {remaining_deps}")
         return len(remaining_deps) == 0
 
     def _update_entry(
@@ -511,9 +524,7 @@ class MgmtDB:
         """Updates all fields that have a value for the specific entry"""
         if entry.status == const.Status.queued.value:
             logger.debug(
-                "Got entry {} with status queued. Setting status and job id in the db".format(
-                    entry
-                )
+                f"Got entry {entry} with status queued. Setting status and job id in the db"
             )
             cur.execute(
                 "UPDATE state SET {} = ?, {} = ?, last_modified = strftime('%s','now') "
@@ -542,9 +553,7 @@ class MgmtDB:
             )
         else:
             logger.warning(
-                "Received entry {}, status is more than created but the job_id is not set.".format(
-                    entry
-                )
+                f"Received entry {entry}, status is more than created but the job_id is not set."
             )
             cur.execute(
                 "UPDATE state SET status = ?, last_modified = strftime('%s','now') "
@@ -553,9 +562,7 @@ class MgmtDB:
             )
         if cur.rowcount > 1:
             logger.warning(
-                "Last database update caused {} entries to be updated".format(
-                    cur.rowcount
-                )
+                f"Last database update caused {cur.rowcount} entries to be updated"
             )
         if entry.error is not None:
             cur.execute(
@@ -655,7 +662,7 @@ class MgmtDB:
 
     @classmethod
     def init_db(cls, db_file: str, init_script: str):
-        with connect_db_ctx(db_file) as cur:
+        with connect_db_ctx(Path(db_file)) as cur:
             with open(init_script, "r") as f:
                 cur.executescript(f.read())
 

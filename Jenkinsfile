@@ -29,7 +29,7 @@ pipeline {
                     git clone https://github.com/ucgmsim/qcore.git
                     cd qcore
                     pip install -r requirements.txt
-                    python setup.py install --no-data
+                    pip install -e .
                     echo "[ Installing ${env.JOB_NAME} ]"
                     cd ${env.WORKSPACE}
                     cd ..

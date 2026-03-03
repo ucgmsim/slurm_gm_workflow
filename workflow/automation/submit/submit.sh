@@ -2,7 +2,7 @@
 BINPROCESS=$gmsim/workflow/workflow/automation/submit
 #script needs one arg(emod3d,post-emod, hf, or bb)
 if [[ $# -lt 1 ]];then
-    echo "please provide the jobs you want to submit (emod3d,post_emod3d, hf, or bb)."
+    echo "please provide the jobs you want to submit (emod3d, merge_ts, hf, or bb)."
     exit
 fi
 job=$1
@@ -30,9 +30,9 @@ done
 if [[ $job = emod3d ]]; then
     echo submit_emod3d
     python $BINPROCESS/submit_emod3d.py $additional_args
-elif [[ $job = post_emod3d ]]; then
-    echo submit_post_emod3d
-    python $BINPROCESS/submit_post_emod3d.py $additional_args
+elif [[ $job = merge_ts ]]; then
+    echo submit_merge_ts
+    python $BINPROCESS/submit_merge_ts.py $additional_args
 elif [[ $job = hf ]]; then
     echo submit_hf
     python $BINPROCESS/submit_hf.py $additional_args

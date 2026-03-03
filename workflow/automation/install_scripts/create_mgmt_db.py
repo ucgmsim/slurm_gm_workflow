@@ -1,9 +1,10 @@
 """
 @author: jam335 - jason.motha@canterbury.ac.nz
 
-A script that creates a database and populates it with the status of 
+A script that creates a database and populates it with the status of
 each stage of the run
 """
+
 import argparse
 import os
 

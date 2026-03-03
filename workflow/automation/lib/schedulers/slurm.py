@@ -22,7 +22,7 @@ class Slurm(AbstractScheduler):
         )
 
         if target_machine is None:
-            target_machine = self.current_machine
+            target_machine = HPC[self.current_machine]  # self.current_machine is str
         if isinstance(self.account, dict):
             account = self.account[target_machine.name]
         else:

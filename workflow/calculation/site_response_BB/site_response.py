@@ -43,7 +43,9 @@ class SiteProp:
     dampS_base: float  # Vs damping ratio of layer to which you deconvolve
 
     numLayers: int  # number of soil layers (not counting layer 0 which is bedrock)
-    waterTable: float  # if water not present set waterTable anywhere below depth of model
+    waterTable: (
+        float  # if water not present set waterTable anywhere below depth of model
+    )
 
     # allow excess pore pressure generation? Yes or No
     # If No, permeability is automatically set very high for dynamic analysis

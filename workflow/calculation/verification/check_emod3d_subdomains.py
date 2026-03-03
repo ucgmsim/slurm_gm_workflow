@@ -1,7 +1,7 @@
 """
 Contains functions related to the calculation of emod3d subdomain boundaries.
 Functions ported from C contain a number of calls to np.int32 and np.float32 calls to emulate single precision integer and floating point behaviour.
-Code ported from emod3d v3.0.8 misc.c. This is consistent with v3.0.7. 
+Code ported from emod3d v3.0.8 misc.c. This is consistent with v3.0.7.
 While v3.0.4 uses long doubles in place of floats, this does not seem to practically increase the accuracy of calculation.
 This check is stricter than necessary as only on rows/columns with stations missing will cause issues when extracting the station waveforms.
 """

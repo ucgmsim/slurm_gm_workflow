@@ -1,17 +1,17 @@
 #!/bin/bash
 # script version: slurm
 #
-# must be run with sbatch vm_gen.sl [realisationCSV] [OUTPUT_DIR] [VM_VERSION] [VM_TOPO] [HH] [PGV_THRESHOLD] [DS_MULTIPLIER] [MGMT_DB_LOC] [REL_NAME] [MGMT_DB_LOC]
+# must be run with sbatch vm_gen.sl [REL_FILEPATH] [OUTPUT_DIR] [VM_VERSION] [VM_TOPO] [HH] [PGV_THRESHOLD] [DS_MULTIPLIER] [MGMT_DB_LOC] [REL_NAME] [MGMT_DB_LOC]
 
 #SBATCH --job-name=VM_PARAMS
 #SBATCH --time=00:15:00
 #SBATCH --cpus-per-task=1
 
 if [[ -n ${CUR_ENV} && ${CUR_HPC} != "mahuika" ]]; then
-    source $CUR_ENV/workflow/workflow/environments/helper_functions/activate_env.sh $CUR_ENV "mahuika"
+    source "$CUR_ENV/workflow/workflow/environments/helper_functions/activate_env.sh" "$CUR_ENV" "mahuika"
 fi
 
-REL_CSV=${1:?realisationCSV argument missing}
+REL_FILEPATH=${1:?REL_FILEPATH argument missing}
 OUT_DIR=${2:?OUTPUT_DIR argument missing}
 VM_VERSION=${3:?VM_VERSION argument missing}
 VM_TOPO=${4:?VM_TOPO argument missing}
@@ -26,50 +26,53 @@ if [[ $# != 9 ]]; then
     exit
 fi
 
-FAULT=$(echo $REL_NAME | cut -d"_" -f1)
+FAULT=$(echo "$REL_NAME" | cut -d"_" -f1)
 SIM_DIR=$MGMT_DB_LOC/Runs/$FAULT/$REL_NAME
 CH_LOG_FFP=$SIM_DIR/ch_log
 
 
 if [[ ! -d $OUT_DIR ]]; then
-    mkdir -p $OUT_DIR
+    mkdir -p "$OUT_DIR"
 fi
 
 #updating the stats in managementDB
 if [[ ! -d $MGMT_DB_LOC/mgmt_db_queue ]]; then
     #create the queue folder if not exist
-    mkdir $MGMT_DB_LOC/mgmt_db_queue
+    mkdir "$MGMT_DB_LOC/mgmt_db_queue"
 fi
-timestamp=`date +%Y%m%d_%H%M%S`
 runtime_fmt="%Y-%m-%d_%H:%M:%S"
-start_time=`date +$runtime_fmt`
-echo $start_time
+start_time=$(date "+$runtime_fmt")
+echo "$start_time"
 
-python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $REL_NAME VM_PARAMS running $SLURM_JOB_ID --start_time "$start_time" --nodes $SLURM_NNODES --cores $SLURM_CPUS_PER_TASK --wct 00:15:00
+python "$gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py" "$MGMT_DB_LOC/mgmt_db_queue" "$REL_NAME" VM_PARAMS running "$SLURM_JOB_ID" --start_time "$start_time" --nodes "$SLURM_NNODES" --cores "$SLURM_CPUS_PER_TASK" --wct 00:15:00
 
-echo "python $gmsim/Pre-processing/VM/rel2vm_params.py -o $OUT_DIR --hh $HH --vm-version $VM_VERSION --vm-topo  $VM_TOPO --pgv $PGV_THRESHOLD --ds-multiplier $DS_MULTIPLIER $REL_CSV"
-python $gmsim/Pre-processing/VM/rel2vm_params.py -o $OUT_DIR --hh $HH --vm-version $VM_VERSION --vm-topo  $VM_TOPO --pgv $PGV_THRESHOLD --ds-multiplier $DS_MULTIPLIER $REL_CSV
+if [ "${REL_FILEPATH##*.}" == "csv" ]; then 
+    echo "python $gmsim/Pre-processing/VM/rel2vm_params.py -o $OUT_DIR --hh $HH --vm-version $VM_VERSION --vm-topo  $VM_TOPO --pgv $PGV_THRESHOLD --ds-multiplier $DS_MULTIPLIER $REL_FILEPATH"
+    python "$gmsim/Pre-processing/VM/rel2vm_params.py" -o "$OUT_DIR" --hh "$HH" --vm-version "$VM_VERSION" --vm-topo "$VM_TOPO" --pgv "$PGV_THRESHOLD" --ds-multiplier "$DS_MULTIPLIER" "$REL_FILEPATH"
+else
+    echo "python $gmsim/Pre-processing/VM/type5_rel2vm_params.py --resolution $HH --vm-version $VM_VERSION --vm-topo  $VM_TOPO --pgv $PGV_THRESHOLD --ds-multiplier $DS_MULTIPLIER $REL_FILEPATH $OUT_DIR/${REL_NAME}_vm_parms.yaml"
+    python "$gmsim/Pre-processing/VM/type5_rel2vm_params.py" --resolution "$HH" --vm-version "$VM_VERSION" --vm-topo-type  "$VM_TOPO" --ds-multiplier "$DS_MULTIPLIER" "$REL_FILEPATH" "$OUT_DIR/vm_params.yaml"
+fi
 
-end_time=`date +$runtime_fmt`
-echo $end_time
+end_time=$(date +$runtime_fmt)
+echo "$end_time"
 
-timestamp=`date +%Y%m%d_%H%M%S`
-res=`python $gmsim/qcore/qcore/validate_vm.py params $OUT_DIR/vm_params.yaml`
+res=$(python "$gmsim/qcore/qcore/validate_vm.py" params "$OUT_DIR/vm_params.yaml")
 pass=$?
 
 if [[ $pass == 0 ]]; then
     #passed
 
-    python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $REL_NAME VM_PARAMS completed $SLURM_JOB_ID --end_time "$end_time"
+    python "$gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py" "$MGMT_DB_LOC/mgmt_db_queue" "$REL_NAME" VM_PARAMS completed "$SLURM_JOB_ID" --end_time "$end_time"
 
     if [[ ! -d $CH_LOG_FFP ]]; then
-        mkdir $CH_LOG_FFP
+        mkdir "$CH_LOG_FFP"
     fi
 
     # save meta data
-    python $gmsim/workflow/workflow/automation/metadata/log_metadata.py $SIM_DIR VM_PARAMS cores=$SLURM_CPUS_PER_TASK start_time=$start_time end_time=$end_time
+    python "$gmsim/workflow/workflow/automation/metadata/log_metadata.py" "$SIM_DIR" VM_PARAMS cores="$SLURM_CPUS_PER_TASK" start_time="$start_time" end_time="$end_time"
 else
     #reformat $res to remove '\n'
-    res=`echo $res | tr -d '\n'`
-    python $gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py $MGMT_DB_LOC/mgmt_db_queue $REL_NAME VM_PARAMS failed $SLURM_JOB_ID --error "$res" --end_time "$end_time"
+    res=$(echo "$res" | tr -d '\n')
+    python "$gmsim/workflow/workflow/automation/execution_scripts/add_to_mgmt_queue.py" "$MGMT_DB_LOC/mgmt_db_queue" "$REL_NAME" VM_PARAMS failed "$SLURM_JOB_ID" --error "$res" --end_time "$end_time"
 fi

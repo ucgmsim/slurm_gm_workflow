@@ -27,7 +27,7 @@ SUBMISSION_SL_LOGS = ["*.pbs", "*.sl", "*.err", "*.out"]
 LF_DIR_NAME = "LF_temp"
 LF_SUB_DIR_NAME = "OutBin"
 LF_TAR = "LF.tar"
-LF_FILES = ["Rlog", "Restart", "SlipOut"]
+LF_FILES = ["Rlog", "Restart", "SlipOut", "e3d.par"]
 
 
 def tar_files(directory_to_tar, archive_name):

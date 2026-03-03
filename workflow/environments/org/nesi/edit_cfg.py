@@ -5,6 +5,7 @@ Each line has the following format:
 Example use:
 python edit_cfg.py pyvenv.cfg include-system-site-packages true
 """
+
 import argparse
 from pathlib import Path
 
