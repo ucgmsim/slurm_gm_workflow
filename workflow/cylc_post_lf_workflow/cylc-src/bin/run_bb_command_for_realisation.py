@@ -65,7 +65,7 @@ def main():
             raise RuntimeError("SLURM_NTASKS environment variable not set. Are you running under SLURM?")
         print(f"Using {ntasks} MPI tasks")
         
-        command = f"srun -n {ntasks} python {gmsim}/slurm_gm_workflow/workflow/calculation/bb_sim.py " \
+        command = f"srun --quit-on-interrupt --kill-on-bad-exit=1 -n {ntasks} python {gmsim}/slurm_gm_workflow/workflow/calculation/bb_sim.py " \
                   f"{lf_outbin} " \
                   f"{vm_dir} " \
                   f"{hf_bin} " \

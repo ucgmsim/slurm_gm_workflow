@@ -53,7 +53,7 @@ def main():
         print(f"Using {ntasks} MPI tasks")
         
         command = [
-            "srun", "-n", ntasks, "python",
+            "srun", "--quit-on-interrupt", "--kill-on-bad-exit=1", "-n", ntasks, "python",
             f"{gmsim}/IM_calculation/IM_calculation/scripts/calculate_ims_mpi.py",
             bb_bin,
             "b",

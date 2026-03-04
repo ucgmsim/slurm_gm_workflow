@@ -30,7 +30,7 @@ def main():
             raise RuntimeError("SLURM_NTASKS environment variable not set. Are you running under SLURM?")
         print(f"Using {ntasks} MPI tasks")
         
-        command = f"srun -n {ntasks} python {gmsim}/slurm_gm_workflow/workflow/calculation/hf_sim.py " \
+        command = f"srun --quit-on-interrupt --kill-on-bad-exit=1 -n {ntasks} python {gmsim}/slurm_gm_workflow/workflow/calculation/hf_sim.py " \
                   f"{params['FD_STATLIST']} " \
                   f"{args.rel_dir}/HF/Acc/HF.bin " \
                   f"--hf_vel_mod_1d {hf_params['hf_vel_mod_1d']} " \
@@ -43,7 +43,7 @@ def main():
                   f"--path_dur {hf_params['path_dur']} " \
                   f"--kappa {hf_params['kappa']} " \
                   f"--seed {hf_params['seed']} " \
-                  f"--slip {hf_params['slip']} "
+                  f"--slip {hf_params['slip']}"
 
         # Create output directories if they don't exist
         output_dir = os.path.join(args.rel_dir, "HF", "Acc")
