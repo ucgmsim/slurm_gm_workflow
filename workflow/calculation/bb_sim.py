@@ -17,9 +17,7 @@ from qcore.siteamp_models import (
     amplification_uncertainty,
 )
 from qcore import timeseries, utils
-from qcore.constants import VM_PARAMS_FILE_NAME, Components, PLATFORM_CONFIG
-from workflow.calculation.site_response_BB import site_response
-from workflow.automation import platform_config
+from qcore.constants import VM_PARAMS_FILE_NAME, Components
 
 if __name__ == "__main__":
     from mpi4py import MPI
@@ -68,9 +66,6 @@ def args_parser(cmd=None):
         "--site_response_dir",
         help="The directory with site response yaml files for OpenSees amplification. Without an argument uses the default.",
         default=False,
-        const=platform_config.platform_config[
-            PLATFORM_CONFIG.DEFAULT_SITE_RESPONSE_DIR.name
-        ],
         nargs="?",
     )
     arg(
