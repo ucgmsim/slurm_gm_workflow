@@ -6,6 +6,10 @@ Generates 'e3d.par' from the default set, appending new key value pairs of param
 Replaces set_runparams.csh. Converted to python, handles params set in separate file.
 USAGE: edit params.py (not this file), execute this file from the same directory.
 ISSUES: remove default values in e3d_default.par where not needed.
+
+NOTE: This is a custom version from:
+https://github.com/ucgmsim/slurm_gm_workflow/blob/vs30_perturbation/workflow/calculation/create_e3d.py
+It properly handles emod3d parameters like pertbfile, model_style, qsfrac from sim_params.yaml
 """
 
 
@@ -118,6 +122,8 @@ def create_run_params(
         e3d_dict["grid_file"] = params["GRIDFILE"]
         e3d_dict["model_params"] = params["MODEL_PARAMS"]
 
+        # CRITICAL: This section extracts ALL emod3d parameters from sim_params.yaml
+        # including pertbfile, model_style, qsfrac, etc.
         if params["emod3d"]:
             for key, value in params["emod3d"].items():
                 if key not in e3d_dict:
@@ -137,5 +143,6 @@ def create_run_params(
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("SIM_ROOT")
-    parser.parse_args()
-    create_run_params(parser.sim_root)
+    args = parser.parse_args()  # FIX: Actually parse and use the args
+    create_run_params(args.SIM_ROOT)
+
