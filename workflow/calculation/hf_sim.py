@@ -513,6 +513,9 @@ if __name__ == "__main__":
                 out.seek(HEAD_STAT - 2 * FLOAT_SIZE, 1)
                 e_dist[i].tofile(out)
                 vs.tofile(out)
+            # Ensure vs30 values are fully written to disk before MPI terminates the process
+            out.flush()
+            os.fsync(out.fileno())
 
     # distribute work in a round-robin fashion across ranks for optimisation
     # if size=4, rank 0 takes [0,4,8...], rank 1 takes [1,5,9...], rank 2 takes [2,6,10...],
@@ -553,5 +556,27 @@ if __name__ == "__main__":
             logger.error(msg)
             comm.Abort(1)
         else:
-            logger.debug("Simulation completed and size verified.")
-            print("✅ HF completed successfully", flush=True)
+            # open r+b and fsync to invalidate any stale NFS/Lustre client cache
+            with open(args.out_file, "r+b") as hff:
+                os.fsync(hff.fileno())
+            with open(args.out_file, "rb") as hff:
+                hff.seek(HEAD_SIZE)
+                vs_values = np.fromfile(
+                    hff,
+                    count=stations.size,
+                    dtype={
+                        "names": ["vs"],
+                        "formats": ["f4"],
+                        "offsets": [HEAD_STAT - FLOAT_SIZE],
+                        "itemsize": HEAD_STAT,
+                    },
+                )["vs"]
+            zero_vs = np.where(vs_values == 0)[0]
+            if zero_vs.size > 0:
+                msg = f"CRITICAL: {zero_vs.size} station(s) have vs=0 in header (indices: {zero_vs.tolist()})"
+                print(msg, flush=True)
+                logger.error(msg)
+                comm.Abort(1)
+            else:
+                logger.debug("Simulation completed, size and vs headers verified.")
+                print("✅ HF completed successfully", flush=True)
