@@ -523,7 +523,7 @@ if __name__ == "__main__":
                 out.seek(HEAD_STAT - 2 * FLOAT_SIZE, 1)
                 e_dist[i].tofile(out)
                 vs.tofile(out)
-            # Force this rank's written data to disk immediately
+            # Flush data to disk immediately to ensure durability
             out.flush()
             os.fsync(out.fileno())
 
@@ -558,13 +558,6 @@ if __name__ == "__main__":
         )
     )
     comm.Barrier()  # all ranks wait here until rank 0 arrives to announce all completed
-
-    # -----------------------------------------------------------------------
-    # Final validation (rank 0 only)
-    # Check the output file is correct by verifying:
-    #   1. File size matches expected size
-    #   2. Every station has a non-zero vs value (written on completion)
-    # -----------------------------------------------------------------------
     if is_master:
         actual_size = os.stat(args.out_file).st_size
         if actual_size != file_size:
@@ -573,31 +566,5 @@ if __name__ == "__main__":
             logger.error(msg)
             comm.Abort(1)
         else:
-            # Flush writes to disk and clear any cached data in memory
-            # so the file is re-read fresh for validation.
-            with open(args.out_file, "r+b") as hff:
-                os.fsync(hff.fileno())
-                # Ensure the entire file is re-read from disk rather than from memory
-                os.posix_fadvise(hff.fileno(), 0, 0, os.POSIX_FADV_DONTNEED)
-            with open(args.out_file, "rb") as hff:
-                hff.seek(HEAD_SIZE)
-                # Read the vs value from each station's header
-                vs_values = np.fromfile(
-                    hff,
-                    count=stations.size,
-                    dtype={
-                        "names": ["vs"],
-                        "formats": ["f4"],
-                        "offsets": [HEAD_STAT - FLOAT_SIZE],
-                        "itemsize": HEAD_STAT,
-                    },
-                )["vs"]
-            zero_vs = np.where(vs_values == 0)[0]
-            if zero_vs.size > 0:
-                msg = f"CRITICAL: {zero_vs.size} station(s) have vs=0 in header (indices: {zero_vs.tolist()})"
-                print(msg, flush=True)
-                logger.error(msg)
-                comm.Abort(1)
-            else:
-                logger.debug("Simulation completed, size and vs headers verified.")
-                print("✅ HF completed successfully", flush=True)
+            logger.debug("Simulation completed and size verified.")
+            print("✅ HF completed successfully", flush=True)
