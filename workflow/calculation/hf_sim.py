@@ -523,6 +523,7 @@ if __name__ == "__main__":
                 out.seek(HEAD_STAT - 2 * FLOAT_SIZE, 1)
                 e_dist[i].tofile(out)
                 vs.tofile(out)
+            # Force this rank's written data to disk immediately
             out.flush()
             os.fsync(out.fileno())
 
@@ -557,6 +558,13 @@ if __name__ == "__main__":
         )
     )
     comm.Barrier()  # all ranks wait here until rank 0 arrives to announce all completed
+
+    # -----------------------------------------------------------------------
+    # Final validation (rank 0 only)
+    # Check the output file is correct by verifying:
+    #   1. File size matches expected size
+    #   2. Every station has a non-zero vs value (written on completion)
+    # -----------------------------------------------------------------------
     if is_master:
         actual_size = os.stat(args.out_file).st_size
         if actual_size != file_size:
@@ -565,11 +573,15 @@ if __name__ == "__main__":
             logger.error(msg)
             comm.Abort(1)
         else:
-            # open r+b and fsync to invalidate any stale NFS/Lustre client cache
+            # Flush writes to disk and clear any cached data in memory
+            # so the file is re-read fresh for validation.
             with open(args.out_file, "r+b") as hff:
                 os.fsync(hff.fileno())
+                # Ensure the entire file is re-read from disk rather than from memory
+                os.posix_fadvise(hff.fileno(), 0, 0, os.POSIX_FADVISE_DONTNEED)
             with open(args.out_file, "rb") as hff:
                 hff.seek(HEAD_SIZE)
+                # Read the vs value from each station's header
                 vs_values = np.fromfile(
                     hff,
                     count=stations.size,
