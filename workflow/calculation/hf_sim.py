@@ -578,7 +578,7 @@ if __name__ == "__main__":
             with open(args.out_file, "r+b") as hff:
                 os.fsync(hff.fileno())
                 # Ensure the entire file is re-read from disk rather than from memory
-                os.posix_fadvise(hff.fileno(), 0, 0, os.POSIX_FADVISE_DONTNEED)
+                os.posix_fadvise(hff.fileno(), 0, 0, os.POSIX_FADV_DONTNEED)
             with open(args.out_file, "rb") as hff:
                 hff.seek(HEAD_SIZE)
                 # Read the vs value from each station's header
