@@ -124,6 +124,35 @@ def check_path(path, description, errors):
         errors.append(f"{description}: {path}")
 
 
+def cleanup_empty_directories(root_dir: Path):
+    """
+    Remove empty directories under root_dir by walking bottom-up.
+
+    After files are moved out of the staging area, the parent directories
+    are left behind empty. This walks the tree from the leaves upward,
+    removing any directory that is empty (or becomes empty after its
+    children are removed). Stops at root_dir itself (does not remove it).
+    """
+    if not root_dir.exists():
+        return
+
+    removed_count = 0
+    # Walk bottom-up so children are processed before parents
+    for dirpath, dirnames, filenames in os.walk(str(root_dir), topdown=False):
+        dir_path = Path(dirpath)
+        if dir_path == root_dir:
+            continue
+        try:
+            if not any(dir_path.iterdir()):
+                dir_path.rmdir()
+                removed_count += 1
+        except OSError:
+            pass
+
+    if removed_count > 0:
+        print(f"  Cleaned up {removed_count} empty director{'y' if removed_count == 1 else 'ies'} under {root_dir}")
+
+
 # =============================================================================
 # Stage Deployment Functions
 # =============================================================================
@@ -1012,6 +1041,17 @@ Stage Control Examples:
             print(f"  ERROR in stage {stage_name}: {e}")
             if not check_only:
                 raise
+
+    # Clean up empty directories left behind after moves
+    if not check_only:
+        staging_root = (
+            base_cybershake_dir
+            / "setup_files_from_dropbox"
+            / version
+            / "large_temp_files"
+            / "extracted"
+        )
+        cleanup_empty_directories(staging_root)
 
     # Print summary
     print(f"\n{'='*60}")
