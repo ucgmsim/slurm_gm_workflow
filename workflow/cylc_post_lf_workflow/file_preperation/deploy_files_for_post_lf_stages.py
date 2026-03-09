@@ -11,7 +11,29 @@ from pathlib import Path
 import shutil
 import os
 import sys
+from typing import Callable, Dict, List, Set, Optional
 from natsort import natsorted
+
+
+# =============================================================================
+# Stage Configuration
+# =============================================================================
+
+
+class StageInfo:
+    """Information about a deployment stage."""
+
+    def __init__(
+        self, name: str, description: str, scope: str, func: Optional[Callable] = None
+    ):
+        self.name = name
+        self.description = description
+        self.scope = scope  # 'version', 'fault', or 'realization'
+        self.func = func
+
+
+# Stage registry - will be populated with functions after they're defined
+STAGES: Dict[str, StageInfo] = {}
 
 
 def create_modified_config_file(
@@ -102,63 +124,23 @@ def check_path(path, description, errors):
         errors.append(f"{description}: {path}")
 
 
-def main():
-    parser = argparse.ArgumentParser(
-        description="Deploy files for post-LF stages of the Cybershake workflow"
-    )
-    parser.add_argument("version", help="Version string (e.g., v25p11)")
-    parser.add_argument("fault", help="Fault name (e.g., NMFZB1)")
-    parser.add_argument(
-        "--check",
-        action="store_true",
-        help="Only check that source files exist, without deploying anything",
-    )
-    args = parser.parse_args()
+# =============================================================================
+# Stage Deployment Functions
+# =============================================================================
 
-    version = args.version
-    fault = args.fault
-    check_only = args.check
-    check_errors = []
 
-    # Fixed value overrides for e3d.par files
-    E3D_PAR_FIXED_VALUES = {
-        "wcc_prog_dir": '"/scratch/projects/rch-quakecore/EMOD3D_old_Cybershake/tools/emod3d-mpi_v3.0.8"',
-        "vel_mod_params_dir": f'"/scratch/projects/rch-quakecore/Cybershake/{version}/Data/VMs/{fault}"',
-        "grid_file": '""',
-        "model_params": '""',
-    }
+def deploy_root_params(
+    version: str,
+    fault: str,
+    check_only: bool,
+    check_errors: list,
+    base_cybershake_dir: Path,
+    old_base_paths_to_replace: list,
+    **kwargs,
+) -> bool:
+    """Deploy root_params.yaml file (version-level)."""
+    print("  [root_params] Creating modified root_params.yaml file...")
 
-    base_cybershake_dir = Path("/scratch/projects/rch-quakecore/Cybershake")
-
-    old_base_paths_to_replace = [
-        "/uoc/project/uoc40001/scratch/baes/Cybershake",
-        "/gpfs/scratch/cant1/Cybershake",
-        "/nesi/nobackup/nesi00213/RunFolder/Cybershake",
-        "/scratch/hpc11a02/gmsim/RunFolder/Cybershake",
-    ]
-
-    ll_and_vs30_files_provided_in_this_version = "v25p11"  # for versions before this, the .ll and .vs30 files are not provided in the Dropbox download and need to be copied from an older version
-
-    realizations_dir = (
-        base_cybershake_dir
-        / "setup_files_from_dropbox"
-        / version
-        / "permanent_small_files"
-        / "extracted"
-        / f"{version}_configs_params"
-        / fault
-    )
-    realizations = natsorted(
-        [d for d in os.listdir(realizations_dir) if os.path.isdir(realizations_dir / d)]
-    )
-
-    # =============================================================================
-    # Operations that depend only on version (not fault or realization)
-    # commented out as these do not need to be changed between runs of the same version
-    # =============================================================================
-
-    # # root_params.yaml is the same (and in the same place) for all faults and realisations
-    # # Create modified root_params.yaml file
     original_root_params_file_path = (
         base_cybershake_dir
         / "setup_files_from_dropbox"
@@ -188,9 +170,23 @@ def main():
                 "mgmt_db_location": "",
             },
         )
+        print(f"    Created: {modified_root_params_file_path}")
 
-    # ## These files are the same (and in the same place) for all faults
-    # # # copy .ll and .vs30 files
+    return True
+
+
+def deploy_ll_vs30(
+    version: str,
+    fault: str,
+    check_only: bool,
+    check_errors: list,
+    base_cybershake_dir: Path,
+    ll_and_vs30_files_provided_in_this_version: str,
+    **kwargs,
+) -> bool:
+    """Deploy .ll and .vs30 files (version-level)."""
+    print("  [ll_vs30] Copying .ll and .vs30 files...")
+
     original_ll_and_vs30_source_path = (
         base_cybershake_dir
         / "setup_files_from_dropbox"
@@ -219,17 +215,23 @@ def main():
         destination_ll_and_vs30_path.mkdir(parents=True, exist_ok=True)
         shutil.copy(ll_file, destination_ll_and_vs30_path)
         shutil.copy(vs30_file, destination_ll_and_vs30_path)
+        print(f"    Copied to: {destination_ll_and_vs30_path}")
 
-    # =============================================================================
-    # Operations that depend on fault (but not realization)
-    # =============================================================================
-    mode_label = "Checking" if check_only else "Deploying"
-    print(f"\n{'='*60}")
-    print(f"{mode_label} files for version={version}, fault={fault}")
-    print(f"Total realizations to process: {len(realizations)}")
-    print(f"{'='*60}\n")
+    return True
 
-    print("[1/5] Creating modified fault_params.yaml file...")
+
+def deploy_fault_params(
+    version: str,
+    fault: str,
+    check_only: bool,
+    check_errors: list,
+    base_cybershake_dir: Path,
+    old_base_paths_to_replace: list,
+    **kwargs,
+) -> bool:
+    """Deploy fault_params.yaml file (fault-level)."""
+    print("  [fault_params] Creating modified fault_params.yaml file...")
+
     original_fault_params_file_path = (
         base_cybershake_dir
         / "setup_files_from_dropbox"
@@ -260,8 +262,20 @@ def main():
         )
         print(f"    Created: {modified_fault_params_file_path}")
 
-    print("[2/5] Copying .ll and .statcords files...")
-    # copy ll and statscords
+    return True
+
+
+def deploy_ll_statcords(
+    version: str,
+    fault: str,
+    check_only: bool,
+    check_errors: list,
+    base_cybershake_dir: Path,
+    **kwargs,
+) -> bool:
+    """Deploy .ll and .statcords files (fault-level)."""
+    print("  [ll_statcords] Copying .ll and .statcords files...")
+
     if version == "v25p11":
         original_ll_statcords_source_path = (
             base_cybershake_dir
@@ -295,6 +309,8 @@ def main():
         original_ll_statcords_source_path / "fd_rt01-h0.100.statcords"
     )
 
+    destination_fault_params_base_base = base_cybershake_dir / version / "Runs" / fault
+
     if check_only:
         check_path(ll_statcords_ll, "fd .ll source", check_errors)
         check_path(ll_statcords_statcords, ".statcords source", check_errors)
@@ -303,7 +319,20 @@ def main():
         shutil.copy(ll_statcords_statcords, destination_fault_params_base_base)
         print(f"    Copied to: {destination_fault_params_base_base}")
 
-    print("[3/5] Moving Sources...")
+    return True
+
+
+def deploy_sources(
+    version: str,
+    fault: str,
+    check_only: bool,
+    check_errors: list,
+    base_cybershake_dir: Path,
+    **kwargs,
+) -> bool:
+    """Deploy Sources directory (fault-level)."""
+    print("  [sources] Moving Sources...")
+
     original_source_files_source_path = (
         base_cybershake_dir
         / "setup_files_from_dropbox"
@@ -319,6 +348,7 @@ def main():
     destination_source_files_path = (
         base_cybershake_dir / version / "Data" / "Sources" / fault
     )
+
     if check_only:
         check_path(
             original_source_files_source_path, "Sources source dir", check_errors
@@ -333,12 +363,23 @@ def main():
         else:
             print(f"    Skipping Sources move (destination already exists)")
 
+    return True
+
+
+def deploy_vms(
+    version: str,
+    fault: str,
+    check_only: bool,
+    check_errors: list,
+    base_cybershake_dir: Path,
+    **kwargs,
+) -> bool:
+    """Deploy VMs and update vm_params.yaml (fault-level)."""
+    print("  [vms] Moving VMs and updating vm_params.yaml...")
+
     destination_vms_base_dir = base_cybershake_dir / version / "Data" / "VMs" / fault
 
-    print("[4/5] Moving VMs and updating vm_params.yaml...")
-
     if version == "v25p11":
-
         original_vm_meta_data_source_path = (
             base_cybershake_dir
             / "setup_files_from_dropbox"
@@ -433,17 +474,28 @@ def main():
     else:
         raise ValueError(f"Unsupported version: {version}")
 
-    # =============================================================================
-    # Operations that depend on realization
-    # =============================================================================
-    print("[5/5] Processing realizations...")
+    return True
+
+
+def deploy_realizations_lf(
+    version: str,
+    fault: str,
+    check_only: bool,
+    check_errors: list,
+    base_cybershake_dir: Path,
+    old_base_paths_to_replace: list,
+    realizations: list,
+    E3D_PAR_FIXED_VALUES: dict,
+    **kwargs,
+) -> bool:
+    """Deploy LF realizations (realization-level)."""
+    print("  [realization_lf] Processing LF for realizations...")
 
     total_realizations = len(realizations)
     for idx, realization in enumerate(realizations, 1):
-        print(f"  [{idx}/{total_realizations}] Processing {realization}...")
+        print(f"    [{idx}/{total_realizations}] Processing LF for {realization}...")
 
         if version == "v25p11":
-
             if fault == "AlpineF2K":
                 lf_output_source_path = (
                     base_cybershake_dir
@@ -467,7 +519,6 @@ def main():
                     / "LF"
                     / "OutBin"
                 )
-
             else:
                 lf_output_source_path = (
                     base_cybershake_dir
@@ -506,12 +557,10 @@ def main():
             lf_output_destination_path = (
                 base_cybershake_dir / version / "Runs" / fault / realization / "LF"
             )
-
         else:
             raise ValueError(f"Unsupported version: {version}")
 
-        # Create modified e3d.par file
-
+        # Get e3d.par file path
         if version == "v25p11":
             original_e3d_par_file_path = (
                 base_cybershake_dir
@@ -540,7 +589,7 @@ def main():
             / "e3d.par"
         )
 
-        # Create modified sim_params.yaml file
+        # Get sim_params.yaml file path
         original_sim_params_file_path = (
             base_cybershake_dir
             / "setup_files_from_dropbox"
@@ -583,7 +632,7 @@ def main():
             if not lf_output_destination_path.exists():
                 shutil.move(lf_output_source_path, lf_output_destination_path)
             else:
-                print(f"    Skipping LF move (destination already exists)")
+                print(f"      Skipping LF move (destination already exists)")
 
             create_modified_config_file(
                 original_file_path=original_e3d_par_file_path,
@@ -600,6 +649,371 @@ def main():
                 new_base_path=base_cybershake_dir,
             )
 
+    return True
+
+
+def deploy_realizations_hf(
+    version: str,
+    fault: str,
+    check_only: bool,
+    check_errors: list,
+    base_cybershake_dir: Path,
+    realizations: list,
+    **kwargs,
+) -> bool:
+    """Deploy HF realizations (realization-level)."""
+    print("  [realization_hf] Processing HF for realizations...")
+
+    total_realizations = len(realizations)
+    for idx, realization in enumerate(realizations, 1):
+        print(f"    [{idx}/{total_realizations}] Processing HF for {realization}...")
+
+        # Construct source path
+        # Pattern: .../HF/{fault}/{realization}_HF/Runs/{fault}/{realization}/HF/Acc
+        # Note: realization names already include the fault prefix (e.g. HopeTARA_REL01)
+        hf_output_source_path = (
+            base_cybershake_dir
+            / "setup_files_from_dropbox"
+            / version
+            / "large_temp_files"
+            / "extracted"
+            / version
+            / "HF"
+            / fault
+            / f"{realization}_HF"
+            / "Runs"
+            / fault
+            / realization
+            / "HF"
+            / "Acc"
+        )
+
+        # Construct destination path
+        # Pattern: .../{version}/Runs/{fault}/{realization}/HF/Acc
+        hf_output_destination_path = (
+            base_cybershake_dir / version / "Runs" / fault / realization / "HF" / "Acc"
+        )
+
+        if check_only:
+            check_path(
+                hf_output_source_path, f"{realization} HF source dir", check_errors
+            )
+        else:
+            # Ensure parent directory exists before moving
+            hf_output_destination_path.parent.mkdir(parents=True, exist_ok=True)
+
+            if not hf_output_destination_path.exists():
+                shutil.move(hf_output_source_path, hf_output_destination_path)
+            else:
+                print(f"      Skipping HF move (destination already exists)")
+
+    return True
+
+
+# Register all stages
+STAGES = {
+    "root_params": StageInfo(
+        "root_params", "Create modified root_params.yaml", "version", deploy_root_params
+    ),
+    "ll_vs30": StageInfo(
+        "ll_vs30",
+        "Copy .ll and .vs30 files to version directory",
+        "version",
+        deploy_ll_vs30,
+    ),
+    "fault_params": StageInfo(
+        "fault_params",
+        "Create modified fault_params.yaml",
+        "fault",
+        deploy_fault_params,
+    ),
+    "ll_statcords": StageInfo(
+        "ll_statcords", "Copy fd .ll and .statcords files", "fault", deploy_ll_statcords
+    ),
+    "sources": StageInfo("sources", "Move Sources directory", "fault", deploy_sources),
+    "vms": StageInfo("vms", "Move VMs and update vm_params.yaml", "fault", deploy_vms),
+    "realization_lf": StageInfo(
+        "realization_lf",
+        "Process LF for all realizations",
+        "realization",
+        deploy_realizations_lf,
+    ),
+    "realization_hf": StageInfo(
+        "realization_hf",
+        "Process HF for all realizations",
+        "realization",
+        deploy_realizations_hf,
+    ),
+}
+
+
+# Natural execution order for stages (respects dependencies)
+STAGE_ORDER = [
+    "root_params",
+    "ll_vs30",
+    "fault_params",
+    "ll_statcords",
+    "sources",
+    "vms",
+    "realization_lf",
+    "realization_hf",
+]
+
+
+def parse_stages(stages_arg: str, skip_stages_arg: Optional[str] = None) -> Set[str]:
+    """
+    Parse stage arguments into a set of stages to run.
+
+    Parameters
+    ----------
+    stages_arg : str
+        Comma-separated list of stages, or "all"
+    skip_stages_arg : str, optional
+        Comma-separated list of stages to skip
+
+    Returns
+    -------
+    Set[str]
+        Set of stage names to execute
+    """
+    # Parse stages to include
+    if stages_arg == "all":
+        selected_stages = set(STAGES.keys())
+    else:
+        requested = {s.strip() for s in stages_arg.split(",") if s.strip()}
+
+        # Validate stage names
+        invalid = requested - STAGES.keys()
+        if invalid:
+            print(f"ERROR: Invalid stage names: {', '.join(sorted(invalid))}")
+            print(f"Valid stages: {', '.join(sorted(STAGES.keys()))}")
+            sys.exit(1)
+
+        selected_stages = requested
+
+    # Apply skip filter
+    if skip_stages_arg:
+        skip_stages = {s.strip() for s in skip_stages_arg.split(",") if s.strip()}
+
+        # Validate skip stage names
+        invalid = skip_stages - STAGES.keys()
+        if invalid:
+            print(
+                f"ERROR: Invalid stage names in --skip-stages: {', '.join(sorted(invalid))}"
+            )
+            print(f"Valid stages: {', '.join(sorted(STAGES.keys()))}")
+            sys.exit(1)
+
+        selected_stages -= skip_stages
+
+    return selected_stages
+
+
+def list_stages():
+    """Print all available stages and exit."""
+    print("\n" + "=" * 60)
+    print("Available Deployment Stages")
+    print("=" * 60 + "\n")
+
+    # Group by scope
+    version_stages = [s for s in STAGES.values() if s.scope == "version"]
+    fault_stages = [s for s in STAGES.values() if s.scope == "fault"]
+    realization_stages = [s for s in STAGES.values() if s.scope == "realization"]
+
+    if version_stages:
+        print("VERSION-LEVEL (run once per version, affects all faults):")
+        for stage in version_stages:
+            print(f"  {stage.name:20s} - {stage.description}")
+        print()
+
+    if fault_stages:
+        print("FAULT-LEVEL (run once per fault):")
+        for stage in fault_stages:
+            print(f"  {stage.name:20s} - {stage.description}")
+        print()
+
+    if realization_stages:
+        print("REALIZATION-LEVEL (run for each realization):")
+        for stage in realization_stages:
+            print(f"  {stage.name:20s} - {stage.description}")
+        print()
+
+    print("=" * 60)
+    print("Usage Examples:")
+    print("  # Run all stages (default)")
+    print("  python deploy_files_for_post_lf_stages.py v25p11 NMFZB1")
+    print()
+    print("  # Run only specific stages")
+    print(
+        "  python deploy_files_for_post_lf_stages.py v25p11 NMFZB1 --stages fault_params,sources"
+    )
+    print()
+    print("  # Skip specific stages")
+    print(
+        "  python deploy_files_for_post_lf_stages.py v25p11 NMFZB1 --skip-stages ll_statcords"
+    )
+    print()
+    print("  # Check mode (validate sources without deploying)")
+    print("  python deploy_files_for_post_lf_stages.py v25p11 NMFZB1 --check")
+    print("=" * 60 + "\n")
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="Deploy files for post-LF stages of the Cybershake workflow",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Stage Control Examples:
+  # Run all stages (default)
+  %(prog)s v25p11 NMFZB1
+  
+  # Run only specific stages
+  %(prog)s v25p11 NMFZB1 --stages fault_params,sources,vms
+  
+  # Skip specific stages
+  %(prog)s v25p11 NMFZB1 --skip-stages ll_statcords
+  
+  # Run only LF realization processing
+  %(prog)s v25p11 NMFZB1 --stages realization_lf
+  
+  # Check mode (validate sources exist)
+  %(prog)s v25p11 NMFZB1 --check
+  
+  # List all available stages
+  %(prog)s --list-stages
+        """,
+    )
+    parser.add_argument("version", nargs="?", help="Version string (e.g., v25p11)")
+    parser.add_argument("fault", nargs="?", help="Fault name (e.g., NMFZB1)")
+    parser.add_argument(
+        "--check",
+        action="store_true",
+        help="Only check that source files exist, without deploying anything",
+    )
+    parser.add_argument(
+        "--stages",
+        default="all",
+        help="Comma-separated list of stages to run (default: all). Use --list-stages to see available stages.",
+    )
+    parser.add_argument(
+        "--skip-stages",
+        default=None,
+        help="Comma-separated list of stages to skip",
+    )
+    parser.add_argument(
+        "--list-stages",
+        action="store_true",
+        help="List all available stages and exit",
+    )
+    args = parser.parse_args()
+
+    # Handle --list-stages
+    if args.list_stages:
+        list_stages()
+        sys.exit(0)
+
+    # Validate required arguments
+    if not args.version or not args.fault:
+        parser.error("version and fault are required unless using --list-stages")
+
+    version = args.version
+    fault = args.fault
+    check_only = args.check
+    check_errors = []
+
+    # Parse which stages to run
+    selected_stages = parse_stages(args.stages, args.skip_stages)
+
+    # Filter to natural execution order
+    stages_to_run = [s for s in STAGE_ORDER if s in selected_stages]
+
+    # Fixed value overrides for e3d.par files
+    E3D_PAR_FIXED_VALUES = {
+        "wcc_prog_dir": '"/scratch/projects/rch-quakecore/EMOD3D_old_Cybershake/tools/emod3d-mpi_v3.0.8"',
+        "vel_mod_params_dir": f'"/scratch/projects/rch-quakecore/Cybershake/{version}/Data/VMs/{fault}"',
+        "grid_file": '""',
+        "model_params": '""',
+    }
+
+    base_cybershake_dir = Path("/scratch/projects/rch-quakecore/Cybershake")
+
+    old_base_paths_to_replace = [
+        "/uoc/project/uoc40001/scratch/baes/Cybershake",
+        "/gpfs/scratch/cant1/Cybershake",
+        "/nesi/nobackup/nesi00213/RunFolder/Cybershake",
+        "/scratch/hpc11a02/gmsim/RunFolder/Cybershake",
+    ]
+
+    ll_and_vs30_files_provided_in_this_version = "v25p11"
+
+    # Get realizations list if needed
+    realizations = []
+    if any(STAGES[s].scope == "realization" for s in stages_to_run):
+        realizations_dir = (
+            base_cybershake_dir
+            / "setup_files_from_dropbox"
+            / version
+            / "permanent_small_files"
+            / "extracted"
+            / f"{version}_configs_params"
+            / fault
+        )
+        try:
+            realizations = natsorted(
+                [
+                    d
+                    for d in os.listdir(realizations_dir)
+                    if os.path.isdir(realizations_dir / d)
+                ]
+            )
+        except FileNotFoundError:
+            print(f"ERROR: Realizations directory not found: {realizations_dir}")
+            print(f"Cannot run realization-level stages without valid fault directory.")
+            sys.exit(1)
+
+    # Print header
+    mode_label = "Checking" if check_only else "Deploying"
+    print(f"\n{'='*60}")
+    print(f"{mode_label} files for version={version}, fault={fault}")
+    if realizations:
+        print(f"Total realizations to process: {len(realizations)}")
+    print(f"Stages to run: {', '.join(stages_to_run) if stages_to_run else 'NONE'}")
+    if args.skip_stages:
+        skipped = selected_stages ^ set(stages_to_run)
+        if skipped:
+            print(f"Stages skipped: {', '.join(sorted(skipped))}")
+    print(f"{'='*60}\n")
+
+    if not stages_to_run:
+        print("No stages selected to run. Use --list-stages to see available stages.")
+        sys.exit(0)
+
+    # Prepare kwargs for stage functions
+    stage_kwargs = {
+        "version": version,
+        "fault": fault,
+        "check_only": check_only,
+        "check_errors": check_errors,
+        "base_cybershake_dir": base_cybershake_dir,
+        "old_base_paths_to_replace": old_base_paths_to_replace,
+        "ll_and_vs30_files_provided_in_this_version": ll_and_vs30_files_provided_in_this_version,
+        "realizations": realizations,
+        "E3D_PAR_FIXED_VALUES": E3D_PAR_FIXED_VALUES,
+    }
+
+    # Execute stages
+    for stage_name in stages_to_run:
+        stage = STAGES[stage_name]
+        try:
+            success = stage.func(**stage_kwargs)
+            if not success:
+                print(f"  WARNING: Stage {stage_name} returned failure")
+        except Exception as e:
+            print(f"  ERROR in stage {stage_name}: {e}")
+            if not check_only:
+                raise
+
+    # Print summary
     print(f"\n{'='*60}")
     if check_only:
         if check_errors:
