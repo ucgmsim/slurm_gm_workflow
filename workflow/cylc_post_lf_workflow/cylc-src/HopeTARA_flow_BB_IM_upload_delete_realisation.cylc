@@ -38,7 +38,7 @@ UTC mode = True
 
 {% set slurm_params = {
     "HopeTARA": {
-        "bb": {"ntasks":8, "mem-per-cpu": "1.1G", "time":"00:05:00"},
+        "bb": {"ntasks":8, "mem-per-cpu": "1100M", "time":"00:05:00"},
         "im": {"ntasks":19, "mem-per-cpu": "2G", "time":"00:10:00"},
         "upload": {"ntasks":1, "time":"02:00:00"},
         "delete_realisation_run_dir": {"ntasks":1, "time":"01:00:00"}
