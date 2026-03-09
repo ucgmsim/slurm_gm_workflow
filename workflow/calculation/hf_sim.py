@@ -12,7 +12,7 @@ import numpy as np
 import logging
 
 from qcore import binary_version, constants, utils
-#from workflow.automation.platform_config import platform_config
+from workflow.automation.platform_config import platform_config
 
 if __name__ == "__main__":
     from qcore import MPIFileHandler
@@ -25,7 +25,7 @@ if __name__ == "__main__":
     is_master = rank == master
 
     logger = logging.getLogger("rank_%i" % comm.rank)
-    logger.setLevel(logging.DEBUG if is_master else logging.WARNING)
+    logger.setLevel(logging.DEBUG)
 
 HEAD_SIZE = 0x0200
 HEAD_STAT = 0x18
@@ -143,10 +143,10 @@ def args_parser(cmd=None):
         "-m",
         "--hf_vel_mod_1d",
         help="path to velocity model (1D). ignored if --site_specific is set",
-        default=""#os.path.join(
-            #platform_config[constants.PLATFORM_CONFIG.VELOCITY_MODEL_DIR.name],
-            #"Mod-1D/Cant1D_v2-midQ_leer.1d",
-        #),
+        default=os.path.join(
+            platform_config[constants.PLATFORM_CONFIG.VELOCITY_MODEL_DIR.name],
+            "Mod-1D/Cant1D_v2-midQ_leer.1d",
+        ),
     )
     arg(
         "--site_specific",
@@ -244,17 +244,11 @@ if __name__ == "__main__":
     logger.addHandler(mh)
 
     nt = int(round(args.duration / args.dt))
-    # Stagger file reads to avoid overwhelming the filesystem
-    # when many MPI ranks start simultaneously
-    INIT_BATCH_SIZE = 16
-    for _batch_start in range(0, size, INIT_BATCH_SIZE):
-        if _batch_start <= rank < _batch_start + INIT_BATCH_SIZE:
-            stations = np.loadtxt(
-                args.station_file,
-                ndmin=1,
-                dtype=[("lon", "f4"), ("lat", "f4"), ("name", "|S8")],
-            )
-        comm.Barrier()
+    stations = np.loadtxt(
+        args.station_file,
+        ndmin=1,
+        dtype=[("lon", "f4"), ("lat", "f4"), ("name", "|S8")],
+    )
     head_total = HEAD_SIZE + HEAD_STAT * stations.size
     block_size = nt * N_COMP * FLOAT_SIZE
     file_size = head_total + stations.size * block_size
@@ -499,11 +493,7 @@ if __name__ == "__main__":
             vs = np.float32(float(f.readline().split()[2]) * 1000.0)
 
         # e_dist is the only other variable that HF calculates
-        try:
-            e_dist = np.fromstring(stderr, dtype="f4", sep="\n")
-        except:
-            raise ValueError(f"The problematic string from stderr is as follows: {stderr}")
-
+        e_dist = np.fromstring(stderr, dtype="f4", sep="\n")
         try:
             assert e_dist.size == n_stat
         except AssertionError:
@@ -523,9 +513,6 @@ if __name__ == "__main__":
                 out.seek(HEAD_STAT - 2 * FLOAT_SIZE, 1)
                 e_dist[i].tofile(out)
                 vs.tofile(out)
-            # Flush data to disk immediately to ensure durability
-            out.flush()
-            os.fsync(out.fileno())
 
     # distribute work in a round-robin fashion across ranks for optimisation
     # if size=4, rank 0 takes [0,4,8...], rank 1 takes [1,5,9...], rank 2 takes [2,6,10...],
