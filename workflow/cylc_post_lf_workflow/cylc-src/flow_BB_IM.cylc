@@ -14,7 +14,7 @@ UTC mode = True
 } %}
 
 {% set slurm_params = {
-    "Hope1888": {
+    "HopeTARA": {
         "bb": {"ntasks":36, "mem-per-cpu": "2G", "time":"02:00:00"},
         "im": {"ntasks":24, "mem-per-cpu": "3G", "time":"02:00:00"},
         "upload": {"ntasks":1, "time":"02:00:00"},
