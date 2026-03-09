@@ -62,7 +62,7 @@ run_bb-{{ fault_name }}-{{ realisation }} => run_im-{{ fault_name }}-{{ realisat
 [runtime]
 [[root]]
     platform = rch-slurm
-    execution retry delays = PT3M, PT5M, PT10M, PT10M, PT30M, PT1H, PT3H
+    execution retry delays = PT3M, PT3M, PT3M, PT3M, PT3M, PT5M, PT5M, PT5M, PT5M, PT5M
     [[[directives]]]
         --exclude=n03
 
