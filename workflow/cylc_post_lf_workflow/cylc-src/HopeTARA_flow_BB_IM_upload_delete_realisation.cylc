@@ -10,13 +10,36 @@ description = """BB → IM workflow for multiple faults and realizations"""
 UTC mode = True
 
 {% set realizations = {
-    "HopeTARA": ["HopeTARA"],
+    "HopeTARA": ["HopeTARA",
+                 "HopeTARA_REL01",
+                 "HopeTARA_REL02",
+                 "HopeTARA_REL03",
+                 "HopeTARA_REL04",
+                 "HopeTARA_REL05",
+                 "HopeTARA_REL06",
+                 "HopeTARA_REL07",
+                 "HopeTARA_REL08",
+                 "HopeTARA_REL09",
+                 "HopeTARA_REL10",
+                 "HopeTARA_REL11",
+                 "HopeTARA_REL12",
+                 "HopeTARA_REL13",
+                 "HopeTARA_REL14",
+                 "HopeTARA_REL15",
+                 "HopeTARA_REL16",
+                 "HopeTARA_REL17",
+                 "HopeTARA_REL18",
+                 "HopeTARA_REL19",
+                 "HopeTARA_REL20",
+                 "HopeTARA_REL21",
+                 "HopeTARA_REL22",
+                 "HopeTARA_REL23"],
 } %}
 
 {% set slurm_params = {
     "HopeTARA": {
-        "bb": {"ntasks":36, "mem-per-cpu": "2G", "time":"02:00:00"},
-        "im": {"ntasks":24, "mem-per-cpu": "3G", "time":"02:00:00"},
+        "bb": {"ntasks":8, "mem-per-cpu": "1.1G", "time":"00:05:00"},
+        "im": {"ntasks":19, "mem-per-cpu": "2G", "time":"00:10:00"},
         "upload": {"ntasks":1, "time":"02:00:00"},
         "delete_realisation_run_dir": {"ntasks":1, "time":"01:00:00"}
     }
@@ -25,13 +48,13 @@ UTC mode = True
 [scheduling]
     [[queues]]
         [[[default]]]
-            limit = 3
+            limit = 5
 
 [[graph]]
 R1 = """
 {% for fault_name, realisation_list in realizations.items() %}
     {% for realisation in realisation_list %}
-run_bb-{{ fault_name }}-{{ realisation }} => run_im-{{ fault_name }}-{{ realisation }}
+run_bb-{{ fault_name }}-{{ realisation }} => run_im-{{ fault_name }}-{{ realisation }} => upload_results-{{ fault_name }}-{{ realisation }} => delete_realisation_run_dir-{{ fault_name }}-{{ realisation }}
     {% endfor %}
 {% endfor %}
 """
@@ -233,6 +256,113 @@ echo "Completed at: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
         --ntasks={{ slurm_params[fault_name].im.ntasks }}
         --mem-per-cpu={{ slurm_params[fault_name].im["mem-per-cpu"] }}
         --time={{ slurm_params[fault_name].im.time }}
+
+[[upload_results-{{ fault_name }}-{{ realisation }}]]
+    script = """
+set -e  # Exit on error
+set -u  # Exit on undefined variable
+set -o pipefail  # Exit on pipe failure
+
+echo "=== Upload Results Task Started: {{ fault_name }} {{ realisation }} ==="
+echo "Task: $CYLC_TASK_NAME"
+echo "Cycle: $CYLC_TASK_CYCLE_POINT"
+echo "Workflow: $CYLC_WORKFLOW_ID"
+echo "Job ID: $CYLC_TASK_JOB"
+echo "Started at: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+
+# Environment activation with error checking
+echo "Trying to activate Python environment at /home/arr65/venvs/ompi5_venv/bin/activate..."
+if ! source /home/arr65/venvs/ompi5_venv/bin/activate 2>&1; then
+    echo "ERROR: Failed to activate Python environment"
+    exit 1
+fi
+echo "Python environment activated successfully"
+
+# Verify Python and required modules
+echo "Environment check:"
+python --version
+which python
+
+# Report environment ready
+cylc message -- "${CYLC_TASK_ID}" "environment_ready"
+
+# Run upload command
+echo "Running upload for {{ fault_name }} {{ realisation }}"
+RUN_DIR="/scratch/projects/rch-quakecore/Cybershake/{{ version }}/Runs/{{ fault_name }}/{{ realisation }}"
+echo "Run directory: $RUN_DIR"
+
+# Report upload command started
+cylc message -- "${CYLC_TASK_ID}" "upload_started"
+
+if ! upload_post_lf_output_for_realisation.py "{{ version }}" "$RUN_DIR" 2>&1; then
+    echo "ERROR: Upload command failed for {{ fault_name }} {{ realisation }}"
+    exit 1
+fi
+
+echo "Upload completed successfully for {{ fault_name }} {{ realisation }}"
+echo "Completed at: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+"""
+    [[[outputs]]]
+        environment_ready = "environment_ready"
+        upload_started = "upload_started"
+
+    [[[directives]]]
+        --ntasks={{ slurm_params[fault_name].upload.ntasks }}
+        --time={{ slurm_params[fault_name].upload.time }}
+
+[[delete_realisation_run_dir-{{ fault_name }}-{{ realisation }}]]
+    script = """
+set -e  # Exit on error
+set -u  # Exit on undefined variable
+set -o pipefail  # Exit on pipe failure
+
+echo "=== Delete Realisation Run Dir Task Started: {{ fault_name }} {{ realisation }} ==="
+echo "Task: $CYLC_TASK_NAME"
+echo "Cycle: $CYLC_TASK_CYCLE_POINT"
+echo "Workflow: $CYLC_WORKFLOW_ID"
+echo "Job ID: $CYLC_TASK_JOB"
+echo "Started at: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+
+# Environment activation with error checking
+echo "Trying to activate Python environment at /home/arr65/venvs/ompi5_venv/bin/activate..."
+if ! source /home/arr65/venvs/ompi5_venv/bin/activate 2>&1; then
+    echo "ERROR: Failed to activate Python environment"
+    exit 1
+fi
+echo "Python environment activated successfully"
+
+# Verify Python and required modules
+echo "Environment check:"
+python --version
+which python
+
+# Report environment ready
+cylc message -- "${CYLC_TASK_ID}" "environment_ready"
+
+# Run delete command
+echo "Deleting realisation run directory for {{ fault_name }} {{ realisation }}"
+RUN_DIR="/scratch/projects/rch-quakecore/Cybershake/{{ version }}/Runs/{{ fault_name }}/{{ realisation }}"
+echo "Run directory: $RUN_DIR"
+
+# Report delete command started
+cylc message -- "${CYLC_TASK_ID}" "delete_started"
+
+if ! delete_realisation_run_dir.py "{{ version }}" "$RUN_DIR" 2>&1; then
+    echo "ERROR: Delete realisation run dir failed for {{ fault_name }} {{ realisation }}"
+    exit 1
+fi
+
+echo "Delete realisation run dir completed successfully for {{ fault_name }} {{ realisation }}"
+echo "Completed at: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+"""
+    [[[outputs]]]
+        environment_ready = "environment_ready"
+        delete_started = "delete_started"
+
+    [[[directives]]]
+        --ntasks={{ slurm_params[fault_name].delete_realisation_run_dir.ntasks }}
+        --time={{ slurm_params[fault_name].delete_realisation_run_dir.time }}
+
     {% endfor %}
 
 {% endfor %}
