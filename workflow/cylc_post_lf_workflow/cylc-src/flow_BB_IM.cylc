@@ -4,45 +4,18 @@
 
 [meta]
 title = old_cybershake_hf_bb_im
-description = """HF → BB → IM workflow for multiple faults and realizations"""
+description = """BB → IM workflow for multiple faults and realizations"""
 
 [scheduler]
 UTC mode = True
 
 {% set realizations = {
-    "Hope1888": ["Hope1888",
-               "Hope1888_REL01",
-               "Hope1888_REL02",
-               "Hope1888_REL03",
-               "Hope1888_REL04",
-               "Hope1888_REL05",
-               "Hope1888_REL06",
-               "Hope1888_REL07",
-               "Hope1888_REL08",
-               "Hope1888_REL09",
-               "Hope1888_REL10",
-               "Hope1888_REL11",
-               "Hope1888_REL12",
-               "Hope1888_REL13",
-               "Hope1888_REL14",
-               "Hope1888_REL15",
-               "Hope1888_REL16",
-               "Hope1888_REL17",
-               "Hope1888_REL18",
-               "Hope1888_REL19",
-               "Hope1888_REL20",
-               "Hope1888_REL21",
-               "Hope1888_REL22",
-               "Hope1888_REL23",
-               "Hope1888_REL24",
-               "Hope1888_REL25",
-               "Hope1888_REL26",
-               "Hope1888_REL27"],
+    "HopeTARA": ["HopeTARA"],
 } %}
 
 {% set slurm_params = {
     "Hope1888": {
-        "bb": {"ntasks":6, "mem-per-cpu": "2G", "time":"02:00:00"},
+        "bb": {"ntasks":36, "mem-per-cpu": "2G", "time":"02:00:00"},
         "im": {"ntasks":24, "mem-per-cpu": "3G", "time":"02:00:00"},
         "upload": {"ntasks":1, "time":"02:00:00"},
         "delete_realisation_run_dir": {"ntasks":1, "time":"01:00:00"}
@@ -52,7 +25,7 @@ UTC mode = True
 [scheduling]
     [[queues]]
         [[[default]]]
-            limit = 5
+            limit = 3
 
 [[graph]]
 R1 = """
