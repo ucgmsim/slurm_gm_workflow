@@ -10,13 +10,45 @@ description = """BB → IM workflow for multiple faults and realizations"""
 UTC mode = True
 
 {% set realizations = {
-    "HopeConway": ["HopeConway"],
+    "HopeConway": ["HopeConway_REL01",
+                 "HopeConway_REL02",
+                 "HopeConway_REL03",
+                 "HopeConway_REL04",
+                 "HopeConway_REL05",
+                 "HopeConway_REL06",
+                 "HopeConway_REL07",
+                 "HopeConway_REL08",
+                 "HopeConway_REL09",
+                 "HopeConway_REL10",
+                 "HopeConway_REL11",
+                 "HopeConway_REL12",
+                 "HopeConway_REL13",
+                 "HopeConway_REL14",
+                 "HopeConway_REL15",
+                 "HopeConway_REL16",
+                 "HopeConway_REL17",
+                 "HopeConway_REL18",
+                 "HopeConway_REL19",
+                 "HopeConway_REL20",
+                 "HopeConway_REL21",
+                 "HopeConway_REL22",
+                 "HopeConway_REL23",
+                 "HopeConway_REL24",
+                 "HopeConway_REL25",
+                 "HopeConway_REL26",
+                 "HopeConway_REL27",
+                 "HopeConway_REL28",
+                 "HopeConway_REL29",
+                 "HopeConway_REL30",
+                 "HopeConway_REL31",
+                 "HopeConway_REL32"],
 } %}
+ 
  
 {% set slurm_params = {
     "HopeConway": {
-        "bb": {"ntasks":30, "mem-per-cpu": "2G", "time":"00:10:00"},
-        "im": {"ntasks":30, "mem-per-cpu": "2G", "time":"00:30:00"},
+        "bb": {"ntasks":20, "mem-per-cpu": "4G", "time":"00:15:00"},
+        "im": {"ntasks":30, "mem-per-cpu": "2G", "time":"00:40:00"},
         "upload": {"ntasks":1, "time":"02:00:00"},
         "delete_realisation_run_dir": {"ntasks":1, "time":"01:00:00"}
     }
