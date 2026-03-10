@@ -10,11 +10,12 @@ CYBERSHAKE_BASE = "/scratch/projects/rch-quakecore/Cybershake"
 STAGED_BASE = f"{CYBERSHAKE_BASE}/staged_for_upload"
 DROPBOX_BASE = "dropbox:/QuakeCoRE/gmsim_scratch"
 
+
 def create_flat_tarball(source_dir, tarball_path):
     """
     Create a tarball of files in source_dir with no directory structure.
     When extracted, files will be placed directly without any path prefix.
-    
+
     Args:
         source_dir: The directory containing files to tar
         tarball_path: Where to save the tarball
@@ -32,7 +33,7 @@ def create_flat_tarball(source_dir, tarball_path):
 def upload_to_dropbox(tarball_path, remote_path):
     """
     Upload a tarball to Dropbox using rclone.
-    
+
     Args:
         tarball_path: Path to the tarball to upload
         remote_path: The rclone remote destination
@@ -51,7 +52,7 @@ def rename_items_with_prefix(directory, prefix):
     if not os.path.exists(directory):
         print(f"Warning: Directory does not exist: {directory}")
         return
-    
+
     print(f"\n=== Renaming items in {directory} ===")
     for name in os.listdir(directory):
         src = os.path.join(directory, name)
@@ -62,10 +63,16 @@ def rename_items_with_prefix(directory, prefix):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Stage and upload post-HF results to Dropbox")
+    parser = argparse.ArgumentParser(
+        description="Stage and upload post-HF results to Dropbox"
+    )
     parser.add_argument("version", help="Version of the simulation (e.g. v25p10)")
     parser.add_argument("rel_dir", help="Path to REL_DIR containing sim_params.yaml")
-    parser.add_argument("--no-rename", action="store_true", help="Skip renaming files with the realisation prefix before tarballing")
+    parser.add_argument(
+        "--no-rename",
+        action="store_true",
+        help="Skip renaming files with the realisation prefix before tarballing",
+    )
     args = parser.parse_args()
 
     version = args.version
@@ -79,13 +86,12 @@ def main():
 
     rel_name = os.path.basename(args.rel_dir)  # e.g., "MS09_REL01"
     fault_dir = os.path.dirname(args.rel_dir)
-    fault_name = os.path.basename(fault_dir)   # e.g., "MS09"
+    fault_name = os.path.basename(fault_dir)  # e.g., "MS09"
 
     prefix = f"{rel_name}_"
 
     # Types to process: (type_name, source_subdir, should_rename)
     types_to_process = [
-        ("HF", "HF/Acc", True),
         ("BB", "BB/Acc", True),
         ("IM", "IM", False),
     ]
@@ -94,7 +100,9 @@ def main():
     print("\n=== Processing directories ===")
 
     for type_name, src_subdir, should_rename in types_to_process:
-        src_dir = f"{CYBERSHAKE_BASE}/{version}/Runs/{fault_name}/{rel_name}/{src_subdir}"
+        src_dir = (
+            f"{CYBERSHAKE_BASE}/{version}/Runs/{fault_name}/{rel_name}/{src_subdir}"
+        )
         tarball_path = f"{STAGED_BASE}/{version}/{type_name}/{fault_name}/{rel_name}_{type_name}.tar"
         remote_path = f"{DROPBOX_BASE}/{version}/{type_name}/{fault_name}"
         if not os.path.exists(src_dir):
