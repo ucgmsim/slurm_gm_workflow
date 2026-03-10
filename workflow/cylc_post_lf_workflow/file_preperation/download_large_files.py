@@ -40,6 +40,10 @@ def main():
         epilog="""\
 Categories: lf, hf, sources, vm
 
+Source tar naming by version:
+    v25p11 -> {fault_name}.tar
+    v25p10 -> {fault_name}_Sources.tar
+
 Examples:
   # Download all categories (default)
   %(prog)s v25p11 WhiteCk
@@ -50,11 +54,18 @@ Examples:
   # Download LF and sources
   %(prog)s v25p11 WhiteCk --categories lf,sources
 
+    # Download sources for v25p10 (uses HopeCW_Sources.tar)
+    %(prog)s v25p10 HopeCW --categories sources
+
   # Download all except VM
   %(prog)s v25p11 WhiteCk --skip vm
         """,
     )
-    parser.add_argument("version", help="Version identifier (e.g., v25p11)")
+    parser.add_argument(
+        "version",
+        choices=["v25p10", "v25p11"],
+        help="Version identifier (must be v25p10 or v25p11)",
+    )
     parser.add_argument("fault_name", help="Fault name (e.g., WhiteCk)")
     parser.add_argument(
         "--categories",
@@ -85,16 +96,10 @@ Examples:
     if "sources" in selected:
         if version == "v25p11":
             dropbox_sources_tar = f"{dropbox_source_base}/Sources/{fault_name}.tar"
-        elif version == "v25p10":
+        else:
             dropbox_sources_tar = (
                 f"{dropbox_source_base}/Sources/{fault_name}_Sources.tar"
             )
-        else:
-            print(
-                "ERROR: Sources download is only supported for versions "
-                "v25p10 and v25p11."
-            )
-            sys.exit(1)
     dropbox_vm_h5 = f"{dropbox_source_base}/VMs/HDF5/{fault_name}_velocity_model.h5"
 
     local_large_temp_tar_dir_base = f"/scratch/projects/rch-quakecore/Cybershake/setup_files_from_dropbox/{version}/large_temp_files/tar/{version}"
