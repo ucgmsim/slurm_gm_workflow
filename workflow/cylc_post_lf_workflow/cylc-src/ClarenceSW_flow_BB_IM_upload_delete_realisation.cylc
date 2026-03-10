@@ -10,37 +10,9 @@ description = """BB → IM workflow for multiple faults and realizations"""
 UTC mode = True
 
 {% set realizations = {
-    "ClarenceSW": ["ClarenceSW_REL01",
-                 "ClarenceSW_REL02",
-                 "ClarenceSW_REL03",
-                 "ClarenceSW_REL04",
-                 "ClarenceSW_REL05",
-                 "ClarenceSW_REL06",
-                 "ClarenceSW_REL07",
-                 "ClarenceSW_REL08",
-                 "ClarenceSW_REL09",
-                 "ClarenceSW_REL10",
-                 "ClarenceSW_REL11",
-                 "ClarenceSW_REL12",
-                 "ClarenceSW_REL13",
-                 "ClarenceSW_REL14",
-                 "ClarenceSW_REL15",
-                 "ClarenceSW_REL16",
-                 "ClarenceSW_REL17",
-                 "ClarenceSW_REL18",
-                 "ClarenceSW_REL19",
-                 "ClarenceSW_REL20",
-                 "ClarenceSW_REL21",
-                 "ClarenceSW_REL22",
-                 "ClarenceSW_REL23",
-                 "ClarenceSW_REL24",
-                 "ClarenceSW_REL25",
-                 "ClarenceSW_REL26",
-                 "ClarenceSW_REL27"
-                 "ClarenceSW_REL28"
-                 "ClarenceSW_REL29",
-                 "ClarenceSW_REL30",
-                 "ClarenceSW_REL31"],
+    "ClarenceSW": ["ClarenceSW_REL27",
+                 "ClarenceSW_REL28",
+                 "ClarenceSW_REL29"],
 } %}
  
 {% set slurm_params = {
