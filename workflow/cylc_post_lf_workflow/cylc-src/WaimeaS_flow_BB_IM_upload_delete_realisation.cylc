@@ -10,13 +10,38 @@ description = """BB → IM workflow for multiple faults and realizations"""
 UTC mode = True
 
 {% set realizations = {
-    "WaimeaS": ["WaimeaS"],
+    "WaimeaS": ["WaimeaS_REL01",
+                 "WaimeaS_REL02",
+                 "WaimeaS_REL03",
+                 "WaimeaS_REL04",
+                 "WaimeaS_REL05",
+                 "WaimeaS_REL06",
+                 "WaimeaS_REL07",
+                 "WaimeaS_REL08",
+                 "WaimeaS_REL09",
+                 "WaimeaS_REL10",
+                 "WaimeaS_REL11",
+                 "WaimeaS_REL12",
+                 "WaimeaS_REL13",
+                 "WaimeaS_REL14",
+                 "WaimeaS_REL15",
+                 "WaimeaS_REL16",
+                 "WaimeaS_REL17",
+                 "WaimeaS_REL18",
+                 "WaimeaS_REL19",
+                 "WaimeaS_REL20",
+                 "WaimeaS_REL21",
+                 "WaimeaS_REL22",
+                 "WaimeaS_REL23",
+                 "WaimeaS_REL24",
+                 "WaimeaS_REL25",
+                 "WaimeaS_REL26"],
 } %}
 
 {% set slurm_params = {
     "WaimeaS": {
-        "bb": {"ntasks":30, "mem-per-cpu": "1G", "time":"00:05:00"},
-        "im": {"ntasks":30, "mem-per-cpu": "1G", "time":"00:10:00"},
+        "bb": {"ntasks":8, "mem-per-cpu": "2G", "time":"00:05:00"},
+        "im": {"ntasks":24, "mem-per-cpu": "500M", "time":"00:10:00"},
         "upload": {"ntasks":1, "time":"02:00:00"},
         "delete_realisation_run_dir": {"ntasks":1, "time":"01:00:00"}
     }
@@ -25,7 +50,7 @@ UTC mode = True
 [scheduling]
     [[queues]]
         [[[default]]]
-            limit = 5
+            limit = 10
 
 [[graph]]
 R1 = """
