@@ -10,7 +10,7 @@ description = """BB → IM workflow for multiple faults and realizations"""
 UTC mode = True
 
 {% set realizations = {
-    "HopeConway": ["HopeConway],
+    "HopeConway": ["HopeConway"],
 } %}
  
 {% set slurm_params = {
