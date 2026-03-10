@@ -10,13 +10,41 @@ description = """BB → IM workflow for multiple faults and realizations"""
 UTC mode = True
 
 {% set realizations = {
-    "WaimeaN": ["WaimeaN"],
+    "WaimeaN": ["WaimeaN_REL01",
+                 "WaimeaN_REL02",
+                 "WaimeaN_REL03",
+                 "WaimeaN_REL04",
+                 "WaimeaN_REL05",
+                 "WaimeaN_REL06",
+                 "WaimeaN_REL07",
+                 "WaimeaN_REL08",
+                 "WaimeaN_REL09",
+                 "WaimeaN_REL10",
+                 "WaimeaN_REL11",
+                 "WaimeaN_REL12",
+                 "WaimeaN_REL13",
+                 "WaimeaN_REL14",
+                 "WaimeaN_REL15",
+                 "WaimeaN_REL16",
+                 "WaimeaN_REL17",
+                 "WaimeaN_REL18",
+                 "WaimeaN_REL19",
+                 "WaimeaN_REL20",
+                 "WaimeaN_REL21",
+                 "WaimeaN_REL22",
+                 "WaimeaN_REL23",
+                 "WaimeaN_REL24",
+                 "WaimeaN_REL25",
+                 "WaimeaN_REL26",
+                 "WaimeaN_REL27",
+                 "WaimeaN_REL28",
+                 "WaimeaN_REL29",
+                 "WaimeaN_REL30"],
 } %}
-
 {% set slurm_params = {
     "WaimeaN": {
-        "bb": {"ntasks":15, "mem-per-cpu": "3G", "time":"00:15:00"},
-        "im": {"ntasks":24, "mem-per-cpu": "3G", "time":"00:40:00"},
+        "bb": {"ntasks":5, "mem-per-cpu": "4G", "time":"00:10:00"},
+        "im": {"ntasks":24, "mem-per-cpu": "2G", "time":"00:30:00"},
         "upload": {"ntasks":1, "time":"02:00:00"},
         "delete_realisation_run_dir": {"ntasks":1, "time":"01:00:00"}
     }
