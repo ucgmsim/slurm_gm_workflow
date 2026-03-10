@@ -100,13 +100,21 @@ Examples:
             dropbox_sources_tar = (
                 f"{dropbox_source_base}/Sources/{fault_name}_Sources.tar"
             )
-    dropbox_vm_h5 = f"{dropbox_source_base}/VMs/HDF5/{fault_name}_velocity_model.h5"
+    if version == "v25p11":
+        dropbox_vm_file = (
+            f"{dropbox_source_base}/VMs/HDF5/{fault_name}_velocity_model.h5"
+        )
+    else:
+        dropbox_vm_file = f"{dropbox_source_base}/VMs/{fault_name}_VM.tar"
 
     local_large_temp_tar_dir_base = f"/scratch/projects/rch-quakecore/Cybershake/setup_files_from_dropbox/{version}/large_temp_files/tar/{version}"
     local_lf_tar_dir = f"{local_large_temp_tar_dir_base}/LF/{fault_name}"
     local_hf_tar_dir = f"{local_large_temp_tar_dir_base}/HF/{fault_name}"
     local_sources_tar_dir = f"{local_large_temp_tar_dir_base}/Sources"
-    local_vm_h5_dir = f"{local_large_temp_tar_dir_base}/VMs/HDF5"
+    if version == "v25p11":
+        local_vm_dir = f"{local_large_temp_tar_dir_base}/VMs/HDF5"
+    else:
+        local_vm_dir = f"{local_large_temp_tar_dir_base}/VMs"
 
     if "lf" in selected:
         print(f"Trying to clone {dropbox_lf} to {local_lf_tar_dir}")
@@ -134,9 +142,9 @@ Examples:
         )
 
     if "vm" in selected:
-        print(f"Trying to clone {dropbox_vm_h5} to {local_vm_h5_dir}")
+        print(f"Trying to clone {dropbox_vm_file} to {local_vm_dir}")
         subprocess.run(
-            ["rclone", "copy", dropbox_vm_h5, local_vm_h5_dir, "--progress"], check=True
+            ["rclone", "copy", dropbox_vm_file, local_vm_dir, "--progress"], check=True
         )
 
 
