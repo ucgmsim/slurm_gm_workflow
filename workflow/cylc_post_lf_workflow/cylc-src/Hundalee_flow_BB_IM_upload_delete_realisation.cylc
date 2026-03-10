@@ -10,13 +10,42 @@ description = """BB → IM workflow for multiple faults and realizations"""
 UTC mode = True
 
 {% set realizations = {
-    "Hundalee": ["Hundalee"],
+    "Hundalee": ["Hundalee_REL01",
+                 "Hundalee_REL02",
+                 "Hundalee_REL03",
+                 "Hundalee_REL04",
+                 "Hundalee_REL05",
+                 "Hundalee_REL06",
+                 "Hundalee_REL07",
+                 "Hundalee_REL08",
+                 "Hundalee_REL09",
+                 "Hundalee_REL10",
+                 "Hundalee_REL11",
+                 "Hundalee_REL12",
+                 "Hundalee_REL13",
+                 "Hundalee_REL14",
+                 "Hundalee_REL15",
+                 "Hundalee_REL16",
+                 "Hundalee_REL17",
+                 "Hundalee_REL18",
+                 "Hundalee_REL19",
+                 "Hundalee_REL20",
+                 "Hundalee_REL21",
+                 "Hundalee_REL22",
+                 "Hundalee_REL23",
+                 "Hundalee_REL24",
+                 "Hundalee_REL25",
+                 "Hundalee_REL26",
+                 "Hundalee_REL27",
+                 "Hundalee_REL28",
+                 "Hundalee_REL29",
+                 "Hundalee_REL30"],
 } %}
 
 {% set slurm_params = {
     "Hundalee": {
-        "bb": {"ntasks":10, "mem-per-cpu": "2G", "time":"00:15:00"},
-        "im": {"ntasks":24, "mem-per-cpu": "3G", "time":"00:30:00"},
+        "bb": {"ntasks":15, "mem-per-cpu": "3G", "time":"00:15:00"},
+        "im": {"ntasks":24, "mem-per-cpu": "3G", "time":"00:40:00"},
         "upload": {"ntasks":1, "time":"02:00:00"},
         "delete_realisation_run_dir": {"ntasks":1, "time":"01:00:00"}
     }
