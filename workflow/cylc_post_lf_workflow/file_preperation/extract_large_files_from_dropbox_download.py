@@ -9,12 +9,41 @@ extracting until no compressed files remain.
 
 import argparse
 import shutil
+import sys
 import tarfile
 import zipfile
 import gzip
 import bz2
 import lzma
 from pathlib import Path
+from typing import Optional, Set
+
+CATEGORIES = {"lf", "hf", "sources", "vm"}
+
+
+def parse_categories(categories_arg: str, skip_arg: Optional[str] = None) -> Set[str]:
+    """Parse category arguments into a set of categories to extract."""
+    if categories_arg == "all":
+        selected = set(CATEGORIES)
+    else:
+        requested = {s.strip() for s in categories_arg.split(",") if s.strip()}
+        invalid = requested - CATEGORIES
+        if invalid:
+            print(f"ERROR: Invalid category names: {', '.join(sorted(invalid))}")
+            print(f"Valid categories: {', '.join(sorted(CATEGORIES))}")
+            sys.exit(1)
+        selected = requested
+
+    if skip_arg:
+        skip = {s.strip() for s in skip_arg.split(",") if s.strip()}
+        invalid = skip - CATEGORIES
+        if invalid:
+            print(f"ERROR: Invalid category names in --skip: {', '.join(sorted(invalid))}")
+            print(f"Valid categories: {', '.join(sorted(CATEGORIES))}")
+            sys.exit(1)
+        selected -= skip
+
+    return selected
 
 # File extensions that indicate compressed/archived files
 TAR_EXTENSIONS = {".tar", ".tar.gz", ".tgz", ".tar.bz2", ".tbz2", ".tar.xz", ".txz"}
@@ -262,11 +291,44 @@ def process_directory_tree(src_path: Path, dest_dir: Path) -> None:
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Extract compressed files from Dropbox download for a specific version and fault"
+        description="Extract compressed files from Dropbox download for a specific version and fault",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""\
+Categories: lf, hf, sources, vm
+
+Examples:
+  # Extract all categories (default)
+  %(prog)s v25p11 WhiteCk
+
+  # Extract only HF files
+  %(prog)s v25p11 WhiteCk --categories hf
+
+  # Extract LF and sources
+  %(prog)s v25p11 WhiteCk --categories lf,sources
+
+  # Extract all except VM
+  %(prog)s v25p11 WhiteCk --skip vm
+        """,
     )
     parser.add_argument("version", help="Version string (e.g., v25p11)")
     parser.add_argument("fault", help="Fault name (e.g., WhiteCk)")
+    parser.add_argument(
+        "--categories",
+        default="all",
+        help="Comma-separated list of categories to extract: lf, hf, sources, vm (default: all)",
+    )
+    parser.add_argument(
+        "--skip",
+        default=None,
+        help="Comma-separated list of categories to skip",
+    )
     args = parser.parse_args()
+
+    selected = parse_categories(args.categories, args.skip)
+
+    if not selected:
+        print("No categories selected to extract.")
+        sys.exit(0)
 
     # Construct paths using the provided version and fault
     setup_files_base_dir = Path(
@@ -278,58 +340,59 @@ def main():
     )
 
     print(f"Processing version: {args.version}, fault: {args.fault}")
+    print(f"Extracting categories: {', '.join(sorted(selected))}")
 
-    # print(f"Move and extract LF dir for fault {args.fault}...")
-    # process_directory_tree(
-    #     tar_original_setup_files_from_dropbox / "LF" / args.fault,
-    #     extracted_original_setup_files_from_dropbox / "LF" / args.fault,
-    # )
+    if "lf" in selected:
+        print(f"Move and extract LF dir for fault {args.fault}...")
+        process_directory_tree(
+            tar_original_setup_files_from_dropbox / "LF" / args.fault,
+            extracted_original_setup_files_from_dropbox / "LF" / args.fault,
+        )
 
-    print(f"Move and extract HF dir for fault {args.fault}...")
-    process_directory_tree(
-        tar_original_setup_files_from_dropbox / "HF" / args.fault,
-        extracted_original_setup_files_from_dropbox / "HF" / args.fault,
-    )
+    if "hf" in selected:
+        print(f"Move and extract HF dir for fault {args.fault}...")
+        process_directory_tree(
+            tar_original_setup_files_from_dropbox / "HF" / args.fault,
+            extracted_original_setup_files_from_dropbox / "HF" / args.fault,
+        )
 
-    # print(f"Move and extract Sources dir for fault {args.fault}...")
-    # if args.version == "v25p10":
-    #     process_directory_tree(
-    #         tar_original_setup_files_from_dropbox
-    #         / "Sources"
-    #         / f"{args.fault}_Sources.tar",
-    #         extracted_original_setup_files_from_dropbox / "Sources" / f"{args.fault}",
-    #     )
+    if "sources" in selected:
+        print(f"Move and extract Sources dir for fault {args.fault}...")
+        if args.version == "v25p10":
+            process_directory_tree(
+                tar_original_setup_files_from_dropbox
+                / "Sources"
+                / f"{args.fault}_Sources.tar",
+                extracted_original_setup_files_from_dropbox / "Sources" / f"{args.fault}",
+            )
+        elif args.version == "v25p11":
+            process_directory_tree(
+                tar_original_setup_files_from_dropbox / "Sources" / f"{args.fault}.tar",
+                extracted_original_setup_files_from_dropbox / "Sources" / f"{args.fault}",
+            )
+        else:
+            raise ValueError(f"Unsupported version: {args.version}")
 
-    # elif args.version == "v25p11":
-    #     process_directory_tree(
-    #         tar_original_setup_files_from_dropbox / "Sources" / f"{args.fault}.tar",
-    #         extracted_original_setup_files_from_dropbox / "Sources" / f"{args.fault}",
-    #     )
-    # else:
-    #     raise ValueError(f"Unsupported version: {args.version}")
-
-    # if args.version == "v25p10":
-    #     print(f"Extract VM files for fault {args.fault}...")
-    #     process_directory_tree(
-    #         tar_original_setup_files_from_dropbox / "VMs" / f"{args.fault}_VM.tar",
-    #         extracted_original_setup_files_from_dropbox / "VMs" / f"{args.fault}",
-    #     )
-
-    # elif args.version == "v25p11":
-
-    #     dest_vm_dir = extracted_original_setup_files_from_dropbox / "VMs" / "HDF5"
-    #     dest_vm_dir.mkdir(parents=True, exist_ok=True)
-    #     print(f"Move VMs/HDF5 file for fault {args.fault}...")
-
-    #     shutil.move(
-    #         tar_original_setup_files_from_dropbox
-    #         / "VMs"
-    #         / "HDF5"
-    #         / f"{args.fault}_velocity_model.h5",
-    #         dest_vm_dir / f"{args.fault}_velocity_model.h5",
-    #     )
-    # else:
-    #     raise ValueError(f"Unsupported version: {args.version}")
+    if "vm" in selected:
+        if args.version == "v25p10":
+            print(f"Extract VM files for fault {args.fault}...")
+            process_directory_tree(
+                tar_original_setup_files_from_dropbox / "VMs" / f"{args.fault}_VM.tar",
+                extracted_original_setup_files_from_dropbox / "VMs" / f"{args.fault}",
+            )
+        elif args.version == "v25p11":
+            dest_vm_dir = extracted_original_setup_files_from_dropbox / "VMs" / "HDF5"
+            dest_vm_dir.mkdir(parents=True, exist_ok=True)
+            print(f"Move VMs/HDF5 file for fault {args.fault}...")
+            shutil.move(
+                tar_original_setup_files_from_dropbox
+                / "VMs"
+                / "HDF5"
+                / f"{args.fault}_velocity_model.h5",
+                dest_vm_dir / f"{args.fault}_velocity_model.h5",
+            )
+        else:
+            raise ValueError(f"Unsupported version: {args.version}")
 
     print("Done processing all files!")
 
