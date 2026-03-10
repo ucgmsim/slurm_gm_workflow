@@ -10,13 +10,39 @@ description = """BB → IM workflow for multiple faults and realizations"""
 UTC mode = True
 
 {% set realizations = {
-    "Kakapo": ["Kakapo"],
+    "Kakapo": ["Kakapo_REL01",
+                 "Kakapo_REL02",
+                 "Kakapo_REL03",
+                 "Kakapo_REL04",
+                 "Kakapo_REL05",
+                 "Kakapo_REL06",
+                 "Kakapo_REL07",
+                 "Kakapo_REL08",
+                 "Kakapo_REL09",
+                 "Kakapo_REL10",
+                 "Kakapo_REL11",
+                 "Kakapo_REL12",
+                 "Kakapo_REL13",
+                 "Kakapo_REL14",
+                 "Kakapo_REL15",
+                 "Kakapo_REL16",
+                 "Kakapo_REL17",
+                 "Kakapo_REL18",
+                 "Kakapo_REL19",
+                 "Kakapo_REL20",
+                 "Kakapo_REL21",
+                 "Kakapo_REL22",
+                 "Kakapo_REL23",
+                 "Kakapo_REL24",
+                 "Kakapo_REL25",
+                 "Kakapo_REL26",
+                 "Kakapo_REL27"],
 } %}
 
 {% set slurm_params = {
     "Kakapo": {
-        "bb": {"ntasks":30, "mem-per-cpu": "1G", "time":"00:05:00"},
-        "im": {"ntasks":30, "mem-per-cpu": "1G", "time":"00:10:00"},
+        "bb": {"ntasks":10, "mem-per-cpu": "2G", "time":"00:15:00"},
+        "im": {"ntasks":24, "mem-per-cpu": "3G", "time":"00:30:00"},
         "upload": {"ntasks":1, "time":"02:00:00"},
         "delete_realisation_run_dir": {"ntasks":1, "time":"01:00:00"}
     }
@@ -25,7 +51,7 @@ UTC mode = True
 [scheduling]
     [[queues]]
         [[[default]]]
-            limit = 1
+            limit = 10
 
 [[graph]]
 R1 = """
