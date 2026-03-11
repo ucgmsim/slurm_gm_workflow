@@ -10,30 +10,7 @@ description = """BB → IM workflow for multiple faults and realizations"""
 UTC mode = True
 
 {% set realizations = {
-    "HopeCW": ["HopeCW_REL01",
-                 "HopeCW_REL02",
-                 "HopeCW_REL03",
-                 "HopeCW_REL04",
-                 "HopeCW_REL05",
-                 "HopeCW_REL06",
-                 "HopeCW_REL07",
-                 "HopeCW_REL08",
-                 "HopeCW_REL09",
-                 "HopeCW_REL10",
-                 "HopeCW_REL11",
-                 "HopeCW_REL12",
-                 "HopeCW_REL13",
-                 "HopeCW_REL14",
-                 "HopeCW_REL15",
-                 "HopeCW_REL16",
-                 "HopeCW_REL17",
-                 "HopeCW_REL18",
-                 "HopeCW_REL19",
-                 "HopeCW_REL20",
-                 "HopeCW_REL21",
-                 "HopeCW_REL22",
-                 "HopeCW_REL23",
-                 "HopeCW_REL24"
+    "HopeCW": ["HopeCW_REL24",
                  "HopeCW_REL25"],
 } %}
 
