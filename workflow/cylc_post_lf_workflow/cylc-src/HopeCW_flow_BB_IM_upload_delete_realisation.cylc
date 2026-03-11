@@ -10,13 +10,37 @@ description = """BB → IM workflow for multiple faults and realizations"""
 UTC mode = True
 
 {% set realizations = {
-    "HopeCW": ["HopeCW"],
+    "HopeCW": ["HopeCW_REL01",
+                 "HopeCW_REL02",
+                 "HopeCW_REL03",
+                 "HopeCW_REL04",
+                 "HopeCW_REL05",
+                 "HopeCW_REL06",
+                 "HopeCW_REL07",
+                 "HopeCW_REL08",
+                 "HopeCW_REL09",
+                 "HopeCW_REL10",
+                 "HopeCW_REL11",
+                 "HopeCW_REL12",
+                 "HopeCW_REL13",
+                 "HopeCW_REL14",
+                 "HopeCW_REL15",
+                 "HopeCW_REL16",
+                 "HopeCW_REL17",
+                 "HopeCW_REL18",
+                 "HopeCW_REL19",
+                 "HopeCW_REL20",
+                 "HopeCW_REL21",
+                 "HopeCW_REL22",
+                 "HopeCW_REL23",
+                 "HopeCW_REL24"
+                 "HopeCW_REL25"],
 } %}
 
 {% set slurm_params = {
     "HopeCW": {
-        "bb": {"ntasks":8, "mem-per-cpu": "1100M", "time":"00:05:00"},
-        "im": {"ntasks":19, "mem-per-cpu": "2G", "time":"00:60:00"},
+        "bb": {"ntasks":8, "mem-per-cpu": "2G", "time":"00:10:00"},
+        "im": {"ntasks":15, "mem-per-cpu": "2G", "time":"00:20:00"},
         "upload": {"ntasks":1, "time":"02:00:00"},
         "delete_realisation_run_dir": {"ntasks":1, "time":"01:00:00"}
     }
