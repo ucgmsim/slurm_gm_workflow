@@ -124,6 +124,25 @@ def check_path(path, description, errors):
         errors.append(f"{description}: {path}")
 
 
+def check_non_empty_directory(path, description, errors):
+    """Check that a directory exists and contains at least one entry."""
+    if not path.exists():
+        print(f"    MISSING {description}: {path}")
+        errors.append(f"{description}: {path}")
+        return
+
+    if not path.is_dir():
+        print(f"    NOT A DIRECTORY {description}: {path}")
+        errors.append(f"{description} is not a directory: {path}")
+        return
+
+    try:
+        next(path.iterdir())
+    except StopIteration:
+        print(f"    EMPTY {description}: {path}")
+        errors.append(f"{description} is empty: {path}")
+
+
 def cleanup_empty_directories(root_dir: Path):
     """
     Remove empty directories under root_dir by walking bottom-up.
@@ -379,8 +398,10 @@ def deploy_sources(
     )
 
     if check_only:
-        check_path(
-            original_source_files_source_path, "Sources source dir", check_errors
+        check_non_empty_directory(
+            original_source_files_source_path,
+            "Sources source dir",
+            check_errors,
         )
     else:
         destination_source_files_path.parent.mkdir(parents=True, exist_ok=True)
@@ -432,13 +453,16 @@ def deploy_vms(
             / f"{fault}_velocity_model.h5"
         )
 
+        original_vm_params_path = original_vm_meta_data_source_path / "vm_params.yaml"
+
         if check_only:
-            check_path(
+            check_non_empty_directory(
                 original_vm_meta_data_source_path,
                 "VM metadata source dir",
                 check_errors,
             )
             check_path(original_vm_hdf5_source_path, "VM HDF5 source", check_errors)
+            check_path(original_vm_params_path, "vm_params.yaml source", check_errors)
         else:
             destination_vms_base_dir.parent.mkdir(parents=True, exist_ok=True)
             if not destination_vms_base_dir.exists():
@@ -480,8 +504,11 @@ def deploy_vms(
             / fault
         )
 
+        vm_params_path = vm_source_path / "vm_params.yaml"
+
         if check_only:
-            check_path(vm_source_path, "VM source dir", check_errors)
+            check_non_empty_directory(vm_source_path, "VM source dir", check_errors)
+            check_path(vm_params_path, "vm_params.yaml source", check_errors)
         else:
             destination_vms_base_dir.parent.mkdir(parents=True, exist_ok=True)
             if not destination_vms_base_dir.exists():
@@ -652,8 +679,10 @@ def deploy_realizations_lf(
         )
 
         if check_only:
-            check_path(
-                lf_output_source_path, f"{realization} LF source dir", check_errors
+            check_non_empty_directory(
+                lf_output_source_path,
+                f"{realization} LF source dir",
+                check_errors,
             )
             check_path(
                 original_e3d_par_file_path,
@@ -735,8 +764,10 @@ def deploy_realizations_hf(
         )
 
         if check_only:
-            check_path(
-                hf_output_source_path, f"{realization} HF source dir", check_errors
+            check_non_empty_directory(
+                hf_output_source_path,
+                f"{realization} HF source dir",
+                check_errors,
             )
         else:
             # Ensure parent directory exists before moving
