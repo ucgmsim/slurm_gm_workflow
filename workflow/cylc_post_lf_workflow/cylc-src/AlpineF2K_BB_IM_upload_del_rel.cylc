@@ -10,19 +10,7 @@ description = """BB → IM → Upload → Delete-realisation workflow for multip
 UTC mode = True
 
 {% set realizations = {
-    "AlpineF2K":["AlpineF2K_REL03",
-               "AlpineF2K_REL04",
-               "AlpineF2K_REL07",
-               "AlpineF2K_REL16",
-               "AlpineF2K_REL18",
-               "AlpineF2K_REL19",
-               "AlpineF2K_REL23",
-               "AlpineF2K_REL25",
-               "AlpineF2K_REL28",
-               "AlpineF2K_REL29",
-               "AlpineF2K_REL45",
-               "AlpineF2K_REL46",
-               "AlpineF2K_REL47"],
+    "AlpineF2K":["AlpineF2K_REL08"],
 } %}
 
 {% set slurm_params = {
