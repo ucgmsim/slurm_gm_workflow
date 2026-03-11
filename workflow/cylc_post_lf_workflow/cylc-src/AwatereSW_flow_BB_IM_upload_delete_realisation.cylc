@@ -10,14 +10,46 @@ description = """BB → IM workflow for multiple faults and realizations"""
 UTC mode = True
 
 {% set realizations = {
-    "AwatereSW": ["AwatereSW"],
+    "AwatereSW": ["AwatereSW_REL01",
+                 "AwatereSW_REL02",
+                 "AwatereSW_REL03",
+                 "AwatereSW_REL04",
+                 "AwatereSW_REL05",
+                 "AwatereSW_REL06",
+                 "AwatereSW_REL07",
+                 "AwatereSW_REL08",
+                 "AwatereSW_REL09",
+                 "AwatereSW_REL10",
+                 "AwatereSW_REL11",
+                 "AwatereSW_REL12",
+                 "AwatereSW_REL13",
+                 "AwatereSW_REL14",
+                 "AwatereSW_REL15",
+                 "AwatereSW_REL16",
+                 "AwatereSW_REL17",
+                 "AwatereSW_REL18",
+                 "AwatereSW_REL19",
+                 "AwatereSW_REL20",
+                 "AwatereSW_REL21",
+                 "AwatereSW_REL22",
+                 "AwatereSW_REL23",
+                 "AwatereSW_REL24",
+                 "AwatereSW_REL25",
+                 "AwatereSW_REL26",
+                 "AwatereSW_REL27",
+                 "AwatereSW_REL28",
+                 "AwatereSW_REL29",
+                 "AwatereSW_REL30",
+                 "AwatereSW_REL31",
+                 "AwatereSW_REL32",
+                 "AwatereSW_REL33"],
 } %}
  
  
 {% set slurm_params = {
     "AwatereSW": {
-        "bb": {"ntasks":20, "mem-per-cpu": "4G", "time":"00:15:00"},
-        "im": {"ntasks":30, "mem-per-cpu": "2G", "time":"00:40:00"},
+        "bb": {"ntasks":10, "mem-per-cpu": "4G", "time":"00:15:00"},
+        "im": {"ntasks":30, "mem-per-cpu": "2G", "time":"00:30:00"},
         "upload": {"ntasks":1, "time":"02:00:00"},
         "delete_realisation_run_dir": {"ntasks":1, "time":"01:00:00"}
     }
