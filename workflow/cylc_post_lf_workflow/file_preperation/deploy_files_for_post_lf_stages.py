@@ -604,7 +604,18 @@ def deploy_realizations_lf(
                 / "e3d.par"
             )
         elif version == "v25p10":
-            original_e3d_par_file_path = lf_output_source_path / "e3d.par"
+            original_e3d_par_file_path = (
+                base_cybershake_dir
+                / "setup_files_from_dropbox"
+                / version
+                / "permanent_small_files"
+                / "extracted"
+                / f"{version}_configs_params"
+                / fault
+                / realization
+                / "LF"
+                / "e3d.par"
+            )
         else:
             raise ValueError(f"Unsupported version: {version}")
 
