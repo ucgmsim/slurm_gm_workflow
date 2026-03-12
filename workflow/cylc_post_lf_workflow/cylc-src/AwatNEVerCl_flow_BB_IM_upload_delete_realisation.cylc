@@ -10,14 +10,49 @@ description = """BB → IM workflow for multiple faults and realizations"""
 UTC mode = True
 
 {% set realizations = {
-    "AwatNEVerCl": ["AwatNEVerCl"],
+    "AwatNEVerCl": ["AwatNEVerCl_REL01",
+                 "AwatNEVerCl_REL02",
+                 "AwatNEVerCl_REL03",
+                 "AwatNEVerCl_REL04",
+                 "AwatNEVerCl_REL05",
+                 "AwatNEVerCl_REL06",
+                 "AwatNEVerCl_REL07",
+                 "AwatNEVerCl_REL08",
+                 "AwatNEVerCl_REL09",
+                 "AwatNEVerCl_REL10",
+                 "AwatNEVerCl_REL11",
+                 "AwatNEVerCl_REL12",
+                 "AwatNEVerCl_REL13",
+                 "AwatNEVerCl_REL14",
+                 "AwatNEVerCl_REL15",
+                 "AwatNEVerCl_REL16",
+                 "AwatNEVerCl_REL17",
+                 "AwatNEVerCl_REL18",
+                 "AwatNEVerCl_REL19",
+                 "AwatNEVerCl_REL20",
+                 "AwatNEVerCl_REL21",
+                 "AwatNEVerCl_REL22",
+                 "AwatNEVerCl_REL23",
+                 "AwatNEVerCl_REL24",
+                 "AwatNEVerCl_REL25",
+                 "AwatNEVerCl_REL26",
+                 "AwatNEVerCl_REL27",
+                 "AwatNEVerCl_REL28",
+                 "AwatNEVerCl_REL29",
+                 "AwatNEVerCl_REL30",
+                 "AwatNEVerCl_REL31",
+                 "AwatNEVerCl_REL32",
+                 "AwatNEVerCl_REL33",
+                 "AwatNEVerCl_REL34",
+                 "AwatNEVerCl_REL35",
+                 "AwatNEVerCl_REL36"],
 } %}
  
  
 {% set slurm_params = {
     "AwatNEVerCl": {
-        "bb": {"ntasks":20, "mem-per-cpu": "3G", "time":"00:30:00"},
-        "im": {"ntasks":30, "mem-per-cpu": "3G", "time":"02:00:00"},
+        "bb": {"ntasks":10, "mem-per-cpu": "2G", "time":"00:10:00"},
+        "im": {"ntasks":20, "mem-per-cpu": "3G", "time":"00:45:00"},
         "upload": {"ntasks":1, "time":"02:00:00"},
         "delete_realisation_run_dir": {"ntasks":1, "time":"01:00:00"}
     }
