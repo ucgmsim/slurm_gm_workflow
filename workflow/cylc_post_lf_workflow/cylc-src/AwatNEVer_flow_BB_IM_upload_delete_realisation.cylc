@@ -10,14 +10,46 @@ description = """BB → IM workflow for multiple faults and realizations"""
 UTC mode = True
 
 {% set realizations = {
-    "AwatNEVer": ["AwatNEVer"],
+    "AwatNEVer": ["AwatNEVer_REL01",
+                 "AwatNEVer_REL02",
+                 "AwatNEVer_REL03",
+                 "AwatNEVer_REL04",
+                 "AwatNEVer_REL05",
+                 "AwatNEVer_REL06",
+                 "AwatNEVer_REL07",
+                 "AwatNEVer_REL08",
+                 "AwatNEVer_REL09",
+                 "AwatNEVer_REL10",
+                 "AwatNEVer_REL11",
+                 "AwatNEVer_REL12",
+                 "AwatNEVer_REL13",
+                 "AwatNEVer_REL14",
+                 "AwatNEVer_REL15",
+                 "AwatNEVer_REL16",
+                 "AwatNEVer_REL17",
+                 "AwatNEVer_REL18",
+                 "AwatNEVer_REL19",
+                 "AwatNEVer_REL20",
+                 "AwatNEVer_REL21",
+                 "AwatNEVer_REL22",
+                 "AwatNEVer_REL23",
+                 "AwatNEVer_REL24",
+                 "AwatNEVer_REL25",
+                 "AwatNEVer_REL26",
+                 "AwatNEVer_REL27",
+                 "AwatNEVer_REL28",
+                 "AwatNEVer_REL29",
+                 "AwatNEVer_REL30",
+                 "AwatNEVer_REL31",
+                 "AwatNEVer_REL32",
+                 "AwatNEVer_REL33"],
 } %}
  
  
 {% set slurm_params = {
     "AwatNEVer": {
-        "bb": {"ntasks":20, "mem-per-cpu": "3G", "time":"00:30:00"},
-        "im": {"ntasks":30, "mem-per-cpu": "3G", "time":"02:00:00"},
+        "bb": {"ntasks":10, "mem-per-cpu": "3G", "time":"00:10:00"},
+        "im": {"ntasks":20, "mem-per-cpu": "3G", "time":"00:45:00"},
         "upload": {"ntasks":1, "time":"02:00:00"},
         "delete_realisation_run_dir": {"ntasks":1, "time":"01:00:00"}
     }
