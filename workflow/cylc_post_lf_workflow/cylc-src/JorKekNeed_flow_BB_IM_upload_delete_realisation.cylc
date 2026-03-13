@@ -10,14 +10,47 @@ description = """BB → IM workflow for multiple faults and realizations"""
 UTC mode = True
 
 {% set realizations = {
-    "JorKekNeed": ["JorKekNeed"],
+    "JorKekNeed": ["JorKekNeed_REL01",
+                 "JorKekNeed_REL02",
+                 "JorKekNeed_REL03",
+                 "JorKekNeed_REL04",
+                 "JorKekNeed_REL05",
+                 "JorKekNeed_REL06",
+                 "JorKekNeed_REL07",
+                 "JorKekNeed_REL08",
+                 "JorKekNeed_REL09",
+                 "JorKekNeed_REL10",
+                 "JorKekNeed_REL11",
+                 "JorKekNeed_REL12",
+                 "JorKekNeed_REL13",
+                 "JorKekNeed_REL14",
+                 "JorKekNeed_REL15",
+                 "JorKekNeed_REL16",
+                 "JorKekNeed_REL17",
+                 "JorKekNeed_REL18",
+                 "JorKekNeed_REL19",
+                 "JorKekNeed_REL20",
+                 "JorKekNeed_REL21",
+                 "JorKekNeed_REL22",
+                 "JorKekNeed_REL23",
+                 "JorKekNeed_REL24",
+                 "JorKekNeed_REL25",
+                 "JorKekNeed_REL26",
+                 "JorKekNeed_REL27",
+                 "JorKekNeed_REL28",
+                 "JorKekNeed_REL29",
+                 "JorKekNeed_REL30",
+                 "JorKekNeed_REL31",
+                 "JorKekNeed_REL32",
+                 "JorKekNeed_REL33",
+                 "JorKekNeed_REL34",
+                 "JorKekNeed_REL35"],
 } %}
- 
  
 {% set slurm_params = {
     "JorKekNeed": {
-        "bb": {"ntasks":10, "mem-per-cpu": "3G", "time":"00:10:00"},
-        "im": {"ntasks":20, "mem-per-cpu": "3G", "time":"00:45:00"},
+        "bb": {"ntasks":20, "mem-per-cpu": "4G", "time":"00:30:00"},
+        "im": {"ntasks":20, "mem-per-cpu": "3G", "time":"01:00:00"},
         "upload": {"ntasks":1, "time":"02:00:00"},
         "delete_realisation_run_dir": {"ntasks":1, "time":"01:00:00"}
     }
