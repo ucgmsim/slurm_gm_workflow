@@ -10,14 +10,46 @@ description = """BB → IM workflow for multiple faults and realizations"""
 UTC mode = True
 
 {% set realizations = {
-    "HopeTeRapa1n2": ["HopeTeRapa1n2"],
+    "HopeTeRapa1n2": ["HopeTeRapa1n2_REL01",
+                 "HopeTeRapa1n2_REL02",
+                 "HopeTeRapa1n2_REL03",
+                 "HopeTeRapa1n2_REL04",
+                 "HopeTeRapa1n2_REL05",
+                 "HopeTeRapa1n2_REL06",
+                 "HopeTeRapa1n2_REL07",
+                 "HopeTeRapa1n2_REL08",
+                 "HopeTeRapa1n2_REL09",
+                 "HopeTeRapa1n2_REL10",
+                 "HopeTeRapa1n2_REL11",
+                 "HopeTeRapa1n2_REL12",
+                 "HopeTeRapa1n2_REL13",
+                 "HopeTeRapa1n2_REL14",
+                 "HopeTeRapa1n2_REL15",
+                 "HopeTeRapa1n2_REL16",
+                 "HopeTeRapa1n2_REL17",
+                 "HopeTeRapa1n2_REL18",
+                 "HopeTeRapa1n2_REL19",
+                 "HopeTeRapa1n2_REL20",
+                 "HopeTeRapa1n2_REL21",
+                 "HopeTeRapa1n2_REL22",
+                 "HopeTeRapa1n2_REL23",
+                 "HopeTeRapa1n2_REL24",
+                 "HopeTeRapa1n2_REL25",
+                 "HopeTeRapa1n2_REL26",
+                 "HopeTeRapa1n2_REL27",
+                 "HopeTeRapa1n2_REL28",
+                 "HopeTeRapa1n2_REL29",
+                 "HopeTeRapa1n2_REL30",
+                 "HopeTeRapa1n2_REL31",
+                 "HopeTeRapa1n2_REL32",
+                 "HopeTeRapa1n2_REL33"],
 } %}
  
  
 {% set slurm_params = {
     "HopeTeRapa1n2": {
         "bb": {"ntasks":10, "mem-per-cpu": "3G", "time":"00:10:00"},
-        "im": {"ntasks":20, "mem-per-cpu": "3G", "time":"00:45:00"},
+        "im": {"ntasks":20, "mem-per-cpu": "3G", "time":"01:00:00"},
         "upload": {"ntasks":1, "time":"02:00:00"},
         "delete_realisation_run_dir": {"ntasks":1, "time":"01:00:00"}
     }
