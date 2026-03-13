@@ -10,14 +10,48 @@ description = """BB → IM workflow for multiple faults and realizations"""
 UTC mode = True
 
 {% set realizations = {
-    "ClarenceNE": ["ClarenceNE"],
+    "ClarenceNE": ["ClarenceNE_REL01",
+                 "ClarenceNE_REL02",
+                 "ClarenceNE_REL03",
+                 "ClarenceNE_REL04",
+                 "ClarenceNE_REL05",
+                 "ClarenceNE_REL06",
+                 "ClarenceNE_REL07",
+                 "ClarenceNE_REL08",
+                 "ClarenceNE_REL09",
+                 "ClarenceNE_REL10",
+                 "ClarenceNE_REL11",
+                 "ClarenceNE_REL12",
+                 "ClarenceNE_REL13",
+                 "ClarenceNE_REL14",
+                 "ClarenceNE_REL15",
+                 "ClarenceNE_REL16",
+                 "ClarenceNE_REL17",
+                 "ClarenceNE_REL18",
+                 "ClarenceNE_REL19",
+                 "ClarenceNE_REL20",
+                 "ClarenceNE_REL21",
+                 "ClarenceNE_REL22",
+                 "ClarenceNE_REL23",
+                 "ClarenceNE_REL24",
+                 "ClarenceNE_REL25",
+                 "ClarenceNE_REL26",
+                 "ClarenceNE_REL27",
+                 "ClarenceNE_REL28",
+                 "ClarenceNE_REL29",
+                 "ClarenceNE_REL30",
+                 "ClarenceNE_REL31",
+                 "ClarenceNE_REL32",
+                 "ClarenceNE_REL33",
+                 "ClarenceNE_REL34",
+                 "ClarenceNE_REL35",
+                 "ClarenceNE_REL36"],
 } %}
- 
  
 {% set slurm_params = {
     "ClarenceNE": {
-        "bb": {"ntasks":10, "mem-per-cpu": "3G", "time":"00:10:00"},
-        "im": {"ntasks":20, "mem-per-cpu": "3G", "time":"00:45:00"},
+        "bb": {"ntasks":10, "mem-per-cpu": "3G", "time":"00:15:00"},
+        "im": {"ntasks":20, "mem-per-cpu": "3G", "time":"01:00:00"},
         "upload": {"ntasks":1, "time":"02:00:00"},
         "delete_realisation_run_dir": {"ntasks":1, "time":"01:00:00"}
     }
