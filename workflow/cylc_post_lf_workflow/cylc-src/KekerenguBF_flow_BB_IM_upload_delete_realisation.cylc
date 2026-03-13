@@ -10,13 +10,48 @@ description = """BB → IM workflow for multiple faults and realizations"""
 UTC mode = True
 
 {% set realizations = {
-    "KekerenguBF": ["KekerenguBF"],
+    "KekerenguBF": ["KekerenguBF_REL01",
+                 "KekerenguBF_REL02",
+                 "KekerenguBF_REL03",
+                 "KekerenguBF_REL04",
+                 "KekerenguBF_REL05",
+                 "KekerenguBF_REL06",
+                 "KekerenguBF_REL07",
+                 "KekerenguBF_REL08",
+                 "KekerenguBF_REL09",
+                 "KekerenguBF_REL10",
+                 "KekerenguBF_REL11",
+                 "KekerenguBF_REL12",
+                 "KekerenguBF_REL13",
+                 "KekerenguBF_REL14",
+                 "KekerenguBF_REL15",
+                 "KekerenguBF_REL16",
+                 "KekerenguBF_REL17",
+                 "KekerenguBF_REL18",
+                 "KekerenguBF_REL19",
+                 "KekerenguBF_REL20",
+                 "KekerenguBF_REL21",
+                 "KekerenguBF_REL22",
+                 "KekerenguBF_REL23",
+                 "KekerenguBF_REL24",
+                 "KekerenguBF_REL25",
+                 "KekerenguBF_REL26",
+                 "KekerenguBF_REL27",
+                 "KekerenguBF_REL28",
+                 "KekerenguBF_REL29",
+                 "KekerenguBF_REL30",
+                 "KekerenguBF_REL31",
+                 "KekerenguBF_REL32",
+                 "KekerenguBF_REL33",
+                 "KekerenguBF_REL34",
+                 "KekerenguBF_REL35",
+                 "KekerenguBF_REL36"],
 } %}
  
 {% set slurm_params = {
     "KekerenguBF": {
-        "bb": {"ntasks":20, "mem-per-cpu": "4G", "time":"00:30:00"},
-        "im": {"ntasks":30, "mem-per-cpu": "4G", "time":"02:00:00"},
+        "bb": {"ntasks":20, "mem-per-cpu": "4G", "time":"00:15:00"},
+        "im": {"ntasks":30, "mem-per-cpu": "3G", "time":"01:00:00"},
         "upload": {"ntasks":1, "time":"02:00:00"},
         "delete_realisation_run_dir": {"ntasks":1, "time":"01:00:00"}
     }
