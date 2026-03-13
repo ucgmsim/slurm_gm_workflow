@@ -10,13 +10,49 @@ description = """BB → IM workflow for multiple faults and realizations"""
 UTC mode = True
 
 {% set realizations = {
-    "Wairau": ["Wairau"],
+    "Wairau": ["Wairau_REL01",
+                 "Wairau_REL02",
+                 "Wairau_REL03",
+                 "Wairau_REL04",
+                 "Wairau_REL05",
+                 "Wairau_REL06",
+                 "Wairau_REL07",
+                 "Wairau_REL08",
+                 "Wairau_REL09",
+                 "Wairau_REL10",
+                 "Wairau_REL11",
+                 "Wairau_REL12",
+                 "Wairau_REL13",
+                 "Wairau_REL14",
+                 "Wairau_REL15",
+                 "Wairau_REL16",
+                 "Wairau_REL17",
+                 "Wairau_REL18",
+                 "Wairau_REL19",
+                 "Wairau_REL20",
+                 "Wairau_REL21",
+                 "Wairau_REL22",
+                 "Wairau_REL23",
+                 "Wairau_REL24",
+                 "Wairau_REL25",
+                 "Wairau_REL26",
+                 "Wairau_REL27",
+                 "Wairau_REL28",
+                 "Wairau_REL29",
+                 "Wairau_REL30",
+                 "Wairau_REL31",
+                 "Wairau_REL32",
+                 "Wairau_REL33",
+                 "Wairau_REL34",
+                 "Wairau_REL35",
+                 "Wairau_REL36",
+                 "Wairau_REL37"],
 } %}
  
 {% set slurm_params = {
     "Wairau": {
-        "bb": {"ntasks":20, "mem-per-cpu": "4G", "time":"00:30:00"},
-        "im": {"ntasks":30, "mem-per-cpu": "4G", "time":"02:00:00"},
+        "bb": {"ntasks":20, "mem-per-cpu": "3G", "time":"00:15:00"},
+        "im": {"ntasks":30, "mem-per-cpu": "3G", "time":"01:00:00"},
         "upload": {"ntasks":1, "time":"02:00:00"},
         "delete_realisation_run_dir": {"ntasks":1, "time":"01:00:00"}
     }
