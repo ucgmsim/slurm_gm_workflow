@@ -47,7 +47,11 @@ UTC mode = True
                  "AlpineK2T_REL34",
                  "AlpineK2T_REL35",
                  "AlpineK2T_REL36",
-                 "AlpineK2T_REL37"],
+                 "AlpineK2T_REL37",
+                 "AlpineK2T_REL38"
+                 "AlpineK2T_REL39"
+                 "AlpineK2T_REL40"
+                 "AlpineK2T_REL41"],
 } %}
  
 {% set slurm_params = {
