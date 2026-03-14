@@ -1,9 +1,16 @@
 import argparse
 import subprocess
 import sys
-from typing import Optional, Set
+from typing import List, Optional, Set
 
 CATEGORIES = {"lf", "hf", "sources", "vm"}
+
+
+def parse_file_list(files_arg: Optional[str]) -> Optional[List[str]]:
+    """Parse a comma-separated file list into a list of filenames, or None if not provided."""
+    if files_arg is None:
+        return None
+    return [f.strip() for f in files_arg.split(",") if f.strip()]
 
 
 def parse_categories(categories_arg: str, skip_arg: Optional[str] = None) -> Set[str]:
@@ -59,6 +66,15 @@ Examples:
 
   # Download all except VM
   %(prog)s v25p11 WhiteCk --skip vm
+
+  # Download specific LF files only
+  %(prog)s v25p11 WhiteCk --categories lf --lf-files WhiteCk_REL01.tar
+
+  # Download specific HF files only
+  %(prog)s v25p11 WhiteCk --categories hf --hf-files WhiteCk_REL01.bin,WhiteCk_REL02.bin
+
+  # Mix: specific LF files and all HF files
+  %(prog)s v25p11 WhiteCk --categories lf,hf --lf-files WhiteCk_REL01.tar
         """,
     )
     parser.add_argument(
@@ -77,11 +93,25 @@ Examples:
         default=None,
         help="Comma-separated list of categories to skip",
     )
+    parser.add_argument(
+        "--lf-files",
+        default=None,
+        dest="lf_files",
+        help="Comma-separated list of specific filenames to download from the LF directory (default: download entire directory)",
+    )
+    parser.add_argument(
+        "--hf-files",
+        default=None,
+        dest="hf_files",
+        help="Comma-separated list of specific filenames to download from the HF directory (default: download entire directory)",
+    )
     args = parser.parse_args()
 
     version = args.version
     fault_name = args.fault_name
     selected = parse_categories(args.categories, args.skip)
+    lf_files = parse_file_list(args.lf_files)
+    hf_files = parse_file_list(args.hf_files)
 
     if not selected:
         print("No categories selected to download.")
@@ -91,7 +121,10 @@ Examples:
 
     dropbox_source_base = f"dropbox:/QuakeCoRE/gmsim_scratch/{version}"
     dropbox_lf = f"{dropbox_source_base}/LF/{fault_name}"
-    dropbox_hf = f"{dropbox_source_base}/HF/{fault_name}"
+    if version == "v25p11" and fault_name == "AlpineF2K":
+        dropbox_hf = f"dropbox:/QuakeCoRE/gmsim_scratch/v25p11/HF_nesi"
+    else:
+        dropbox_hf = f"{dropbox_source_base}/HF/{fault_name}"
     dropbox_sources_tar = None
     if "sources" in selected:
         if version == "v25p11":
@@ -117,16 +150,36 @@ Examples:
         local_vm_dir = f"{local_large_temp_tar_dir_base}/VMs"
 
     if "lf" in selected:
-        print(f"Trying to clone {dropbox_lf} to {local_lf_tar_dir}")
-        subprocess.run(
-            ["rclone", "copy", dropbox_lf, local_lf_tar_dir, "--progress"], check=True
-        )
+        if lf_files is None:
+            print(f"Trying to clone {dropbox_lf} to {local_lf_tar_dir}")
+            subprocess.run(
+                ["rclone", "copy", dropbox_lf, local_lf_tar_dir, "--progress"],
+                check=True,
+            )
+        else:
+            for filename in lf_files:
+                src = f"{dropbox_lf}/{filename}"
+                print(f"Trying to clone {src} to {local_lf_tar_dir}")
+                subprocess.run(
+                    ["rclone", "copy", src, local_lf_tar_dir, "--progress"],
+                    check=True,
+                )
 
     if "hf" in selected:
-        print(f"Trying to clone {dropbox_hf} to {local_hf_tar_dir}")
-        subprocess.run(
-            ["rclone", "copy", dropbox_hf, local_hf_tar_dir, "--progress"], check=True
-        )
+        if hf_files is None:
+            print(f"Trying to clone {dropbox_hf} to {local_hf_tar_dir}")
+            subprocess.run(
+                ["rclone", "copy", dropbox_hf, local_hf_tar_dir, "--progress"],
+                check=True,
+            )
+        else:
+            for filename in hf_files:
+                src = f"{dropbox_hf}/{filename}"
+                print(f"Trying to clone {src} to {local_hf_tar_dir}")
+                subprocess.run(
+                    ["rclone", "copy", src, local_hf_tar_dir, "--progress"],
+                    check=True,
+                )
 
     if "sources" in selected:
         print(f"Trying to clone {dropbox_sources_tar} to {local_sources_tar_dir}")

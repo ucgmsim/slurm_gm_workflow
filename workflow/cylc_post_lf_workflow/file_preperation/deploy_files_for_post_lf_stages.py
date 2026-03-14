@@ -15,6 +15,13 @@ from typing import Callable, Dict, List, Set, Optional
 from natsort import natsorted
 
 
+def parse_realization_list(realizations_arg: Optional[str]) -> Optional[List[str]]:
+    """Parse a comma-separated realization list into a list of names, or None if not provided."""
+    if realizations_arg is None:
+        return None
+    return [r.strip() for r in realizations_arg.split(",") if r.strip()]
+
+
 # =============================================================================
 # Stage Configuration
 # =============================================================================
@@ -540,15 +547,15 @@ def deploy_realizations_lf(
     check_errors: list,
     base_cybershake_dir: Path,
     old_base_paths_to_replace: list,
-    realizations: list,
+    lf_realizations: list,
     E3D_PAR_FIXED_VALUES: dict,
     **kwargs,
 ) -> bool:
     """Deploy LF realizations (realization-level)."""
     print("  [realization_lf] Processing LF for realizations...")
 
-    total_realizations = len(realizations)
-    for idx, realization in enumerate(realizations, 1):
+    total_realizations = len(lf_realizations)
+    for idx, realization in enumerate(lf_realizations, 1):
         print(f"    [{idx}/{total_realizations}] Processing LF for {realization}...")
 
         if version == "v25p11":
@@ -727,14 +734,14 @@ def deploy_realizations_hf(
     check_only: bool,
     check_errors: list,
     base_cybershake_dir: Path,
-    realizations: list,
+    hf_realizations: list,
     **kwargs,
 ) -> bool:
     """Deploy HF realizations (realization-level)."""
     print("  [realization_hf] Processing HF for realizations...")
 
-    total_realizations = len(realizations)
-    for idx, realization in enumerate(realizations, 1):
+    total_realizations = len(hf_realizations)
+    for idx, realization in enumerate(hf_realizations, 1):
         print(f"    [{idx}/{total_realizations}] Processing HF for {realization}...")
 
         # Construct source path
@@ -937,19 +944,25 @@ def main():
 Stage Control Examples:
   # Run all stages (default)
   %(prog)s v25p11 NMFZB1
-  
+
   # Run only specific stages
   %(prog)s v25p11 NMFZB1 --stages fault_params,sources,vms
-  
+
   # Skip specific stages
   %(prog)s v25p11 NMFZB1 --skip-stages ll_statcords
-  
+
   # Run only LF realization processing
   %(prog)s v25p11 NMFZB1 --stages realization_lf
-  
+
+  # Process only specific LF realizations
+  %(prog)s v25p11 NMFZB1 --stages realization_lf --lf-realizations NMFZB1_REL01
+
+  # Process specific LF and HF realizations (may differ)
+  %(prog)s v25p11 NMFZB1 --lf-realizations NMFZB1_REL01 --hf-realizations NMFZB1_REL01,NMFZB1_REL02
+
   # Check mode (validate sources exist)
   %(prog)s v25p11 NMFZB1 --check
-  
+
   # List all available stages
   %(prog)s --list-stages
         """,
@@ -975,6 +988,18 @@ Stage Control Examples:
         "--list-stages",
         action="store_true",
         help="List all available stages and exit",
+    )
+    parser.add_argument(
+        "--lf-realizations",
+        default=None,
+        dest="lf_realizations",
+        help="Comma-separated list of specific realization names to process for the LF stage (default: all discovered realizations)",
+    )
+    parser.add_argument(
+        "--hf-realizations",
+        default=None,
+        dest="hf_realizations",
+        help="Comma-separated list of specific realization names to process for the HF stage (default: all discovered realizations)",
     )
     args = parser.parse_args()
 
@@ -1017,8 +1042,10 @@ Stage Control Examples:
 
     ll_and_vs30_files_provided_in_this_version = "v25p11"
 
-    # Get realizations list if needed
+    # Get realizations list if needed, then apply per-stage filters
     realizations = []
+    lf_realizations: list = []
+    hf_realizations: list = []
     if any(STAGES[s].scope == "realization" for s in stages_to_run):
         realizations_dir = (
             base_cybershake_dir
@@ -1042,12 +1069,32 @@ Stage Control Examples:
             print(f"Cannot run realization-level stages without valid fault directory.")
             sys.exit(1)
 
+        def _filter_realizations(arg_value: Optional[str], label: str) -> list:
+            requested = parse_realization_list(arg_value)
+            if requested is None:
+                return realizations
+            invalid = [r for r in requested if r not in realizations]
+            if invalid:
+                print(
+                    f"ERROR: Unknown realization name(s) in --{label}: {', '.join(invalid)}"
+                )
+                print(f"Known realizations: {', '.join(realizations)}")
+                sys.exit(1)
+            return [r for r in realizations if r in set(requested)]
+
+        lf_realizations = _filter_realizations(args.lf_realizations, "lf-realizations")
+        hf_realizations = _filter_realizations(args.hf_realizations, "hf-realizations")
+
     # Print header
     mode_label = "Checking" if check_only else "Deploying"
     print(f"\n{'='*60}")
     print(f"{mode_label} files for version={version}, fault={fault}")
     if realizations:
-        print(f"Total realizations to process: {len(realizations)}")
+        print(f"Total realizations discovered: {len(realizations)}")
+    if "realization_lf" in stages_to_run:
+        print(f"LF realizations to process ({len(lf_realizations)}): {', '.join(lf_realizations) if lf_realizations else 'NONE'}")
+    if "realization_hf" in stages_to_run:
+        print(f"HF realizations to process ({len(hf_realizations)}): {', '.join(hf_realizations) if hf_realizations else 'NONE'}")
     print(f"Stages to run: {', '.join(stages_to_run) if stages_to_run else 'NONE'}")
     if args.skip_stages:
         skipped = selected_stages ^ set(stages_to_run)
@@ -1069,6 +1116,8 @@ Stage Control Examples:
         "old_base_paths_to_replace": old_base_paths_to_replace,
         "ll_and_vs30_files_provided_in_this_version": ll_and_vs30_files_provided_in_this_version,
         "realizations": realizations,
+        "lf_realizations": lf_realizations,
+        "hf_realizations": hf_realizations,
         "E3D_PAR_FIXED_VALUES": E3D_PAR_FIXED_VALUES,
     }
 
