@@ -8,10 +8,11 @@ import pandas as pd
 from natsort import natsorted
 from tqdm import tqdm
 
-RCLONE_BASE = "dropbox:/QuakeCoRE/gmsim_scratch/v25p11/IM"
+VERSION = "v25p10"
+RCLONE_BASE = f"dropbox:/QuakeCoRE/gmsim_scratch/{VERSION}/IM"
 DOWNLOAD_DIR = Path("/home/arr65/data/cybershake_check")
 WORK_DIR = DOWNLOAD_DIR / "work"
-OUTPUT_PATH = DOWNLOAD_DIR / "consecutive_zeros_report.csv"
+OUTPUT_PATH = DOWNLOAD_DIR / f"{VERSION}_consecutive_zeros_report.csv"
 
 
 def rclone_list(remote_path: str) -> list[str]:
