@@ -1,0 +1,382 @@
+#!Jinja2
+
+{% set version = "v25p10" %}
+
+[meta]
+title = old_cybershake_hf_bb_im
+description = """BB → IM workflow for multiple faults and realizations"""
+
+[scheduler]
+UTC mode = True
+
+{% set realizations = {
+    "AlpineK2T": ["AlpineK2T",
+                 "AlpineK2T_REL01",
+                 "AlpineK2T_REL02",
+                 "AlpineK2T_REL03",
+                 "AlpineK2T_REL04",
+                 "AlpineK2T_REL05",
+                 "AlpineK2T_REL06",
+                 "AlpineK2T_REL07",
+                 "AlpineK2T_REL08",
+                 "AlpineK2T_REL09",
+                 "AlpineK2T_REL10",
+                 "AlpineK2T_REL11",
+                 "AlpineK2T_REL12",
+                 "AlpineK2T_REL13",
+                 "AlpineK2T_REL14",
+                 "AlpineK2T_REL15",
+                 "AlpineK2T_REL16",
+                 "AlpineK2T_REL17",
+                 "AlpineK2T_REL18",
+                 "AlpineK2T_REL19",
+                 "AlpineK2T_REL20",
+                 "AlpineK2T_REL21",
+                 "AlpineK2T_REL22",
+                 "AlpineK2T_REL23",
+                 "AlpineK2T_REL24",
+                 "AlpineK2T_REL25",
+                 "AlpineK2T_REL26",
+                 "AlpineK2T_REL27",
+                 "AlpineK2T_REL28",
+                 "AlpineK2T_REL29",
+                 "AlpineK2T_REL30",
+                 "AlpineK2T_REL31",
+                 "AlpineK2T_REL32",
+                 "AlpineK2T_REL33",
+                 "AlpineK2T_REL34",
+                 "AlpineK2T_REL35",
+                 "AlpineK2T_REL36",
+                 "AlpineK2T_REL37"],
+} %}
+ 
+{% set slurm_params = {
+    "AlpineK2T": {
+        "bb": {"ntasks":20, "mem-per-cpu": "3G", "time":"00:15:00"},
+        "im": {"ntasks":30, "mem-per-cpu": "3G", "time":"01:00:00"},
+        "upload": {"ntasks":1, "time":"02:00:00"},
+        "delete_realisation_run_dir": {"ntasks":1, "time":"01:00:00"}
+    }
+} %}
+
+[scheduling]
+    [[queues]]
+        [[[default]]]
+            limit = 10
+
+[[graph]]
+R1 = """
+{% for fault_name, realisation_list in realizations.items() %}
+    {% for realisation in realisation_list %}
+run_bb-{{ fault_name }}-{{ realisation }} => run_im-{{ fault_name }}-{{ realisation }} => upload_results-{{ fault_name }}-{{ realisation }} => delete_realisation_run_dir-{{ fault_name }}-{{ realisation }}
+    {% endfor %}
+{% endfor %}
+"""
+
+[runtime]
+[[root]]
+    platform = rch-slurm
+    execution retry delays = PT3M, PT3M, PT3M, PT3M, PT3M, PT5M, PT5M, PT5M, PT5M, PT5M
+    [[[directives]]]
+        --exclude=n03
+
+{% for fault_name, realisation_list in realizations.items() %}
+    {% for realisation in realisation_list %}
+[[run_bb-{{ fault_name }}-{{ realisation }}]]
+    script = """
+set -e  # Exit on error
+set -u  # Exit on undefined variable
+set -o pipefail  # Exit on pipe failure
+
+echo "=== BB Task Started: {{ fault_name }} {{ realisation }} ==="
+echo "Task: $CYLC_TASK_NAME"
+echo "Cycle: $CYLC_TASK_CYCLE_POINT"
+echo "Workflow: $CYLC_WORKFLOW_ID"
+echo "Job ID: $CYLC_TASK_JOB"
+echo "Started at: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+
+# Module loading with error checking
+echo "Loading modules..."
+echo "Trying to load module GCC/13.3.0..."
+module load GCC/13.3.0 2>&1 &
+pid=$!
+sleep 30
+if kill -0 $pid 2>/dev/null; then
+    kill $pid 2>/dev/null || true
+    echo "ERROR: Module load for GCC timed out"
+    exit 1
+else
+    wait $pid
+    if [ $? -ne 0 ]; then
+        echo "ERROR: Failed to load GCC module"
+        exit 1
+    fi
+fi
+echo "GCC module loaded successfully"
+
+echo "Trying to load module OpenMPI/5.0.3-GCC-13.3.0..."
+module load OpenMPI/5.0.3-GCC-13.3.0 2>&1 &
+pid=$!
+sleep 30
+if kill -0 $pid 2>/dev/null; then
+    kill $pid 2>/dev/null || true
+    echo "ERROR: Module load for OpenMPI timed out"
+    exit 1
+else
+    wait $pid
+    if [ $? -ne 0 ]; then
+        echo "ERROR: Failed to load OpenMPI module"
+        exit 1
+    fi
+fi
+echo "OpenMPI module loaded successfully"
+
+# Environment activation with error checking
+echo "Trying to activate Python environment at /home/arr65/venvs/ompi5_venv/bin/activate..."
+if ! source /home/arr65/venvs/ompi5_venv/bin/activate 2>&1; then
+    echo "ERROR: Failed to activate Python environment"
+    exit 1
+fi
+echo "Python environment activated successfully"
+
+# Verify Python and required modules
+echo "Environment check:"
+python --version
+which python
+
+# Report environment ready
+cylc message -- "${CYLC_TASK_ID}" "environment_ready"
+
+# Run BB command
+echo "Running BB simulation for {{ fault_name }} {{ realisation }}"
+RUN_DIR="/scratch/projects/rch-quakecore/Cybershake/{{ version }}/Runs/{{ fault_name }}/{{ realisation }}"
+echo "Run directory: $RUN_DIR"
+
+# Report BB command started
+cylc message -- "${CYLC_TASK_ID}" "bb_started"
+
+if ! run_bb_command_for_realisation.py "$RUN_DIR" 2>&1; then
+    echo "ERROR: BB command failed for {{ fault_name }} {{ realisation }}"
+    exit 1
+fi
+
+echo "BB simulation completed successfully for {{ fault_name }} {{ realisation }}"
+echo "Completed at: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+"""
+    [[[outputs]]]
+        environment_ready = "environment_ready"
+        bb_started = "bb_started"
+
+    [[[directives]]]
+        --ntasks={{ slurm_params[fault_name].bb.ntasks }}
+        --mem-per-cpu={{ slurm_params[fault_name].bb["mem-per-cpu"] }}
+        --time={{ slurm_params[fault_name].bb.time }}
+
+[[run_im-{{ fault_name }}-{{ realisation }}]]
+    script = """
+set -e  # Exit on error
+set -u  # Exit on undefined variable
+set -o pipefail  # Exit on pipe failure
+
+echo "=== IM Task Started: {{ fault_name }} {{ realisation }} ==="
+echo "Task: $CYLC_TASK_NAME"
+echo "Cycle: $CYLC_TASK_CYCLE_POINT"
+echo "Workflow: $CYLC_WORKFLOW_ID"
+echo "Job ID: $CYLC_TASK_JOB"
+echo "Started at: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+
+# Module loading with error checking
+echo "Loading modules..."
+echo "Trying to load module GCC/13.3.0..."
+module load GCC/13.3.0 2>&1 &
+pid=$!
+sleep 30
+if kill -0 $pid 2>/dev/null; then
+    kill $pid 2>/dev/null || true
+    echo "ERROR: Module load for GCC timed out"
+    exit 1
+else
+    wait $pid
+    if [ $? -ne 0 ]; then
+        echo "ERROR: Failed to load GCC module"
+        exit 1
+    fi
+fi
+echo "GCC module loaded successfully"
+
+echo "Trying to load module OpenMPI/5.0.3-GCC-13.3.0..."
+module load OpenMPI/5.0.3-GCC-13.3.0 2>&1 &
+pid=$!
+sleep 30
+if kill -0 $pid 2>/dev/null; then
+    kill $pid 2>/dev/null || true
+    echo "ERROR: Module load for OpenMPI timed out"
+    exit 1
+else
+    wait $pid
+    if [ $? -ne 0 ]; then
+        echo "ERROR: Failed to load OpenMPI module"
+        exit 1
+    fi
+fi
+echo "OpenMPI module loaded successfully"
+
+# Environment activation with error checking
+echo "Trying to activate Python environment at /home/arr65/venvs/ompi5_venv/bin/activate..."
+if ! source /home/arr65/venvs/ompi5_venv/bin/activate 2>&1; then
+    echo "ERROR: Failed to activate Python environment"
+    exit 1
+fi
+echo "Python environment activated successfully"
+
+# Verify Python and required modules
+echo "Environment check:"
+python --version
+which python
+
+# Report environment ready
+cylc message -- "${CYLC_TASK_ID}" "environment_ready"
+
+# Run IM command
+echo "Running IM calculation for {{ fault_name }} {{ realisation }}"
+RUN_DIR="/scratch/projects/rch-quakecore/Cybershake/{{ version }}/Runs/{{ fault_name }}/{{ realisation }}"
+echo "Run directory: $RUN_DIR"
+
+# Verify BB.bin exists (prerequisite for IM calculation)
+BB_BIN="$RUN_DIR/BB/Acc/BB.bin"
+if [ ! -f "$BB_BIN" ]; then
+    echo "ERROR: BB.bin not found at $BB_BIN"
+    echo "IM calculation requires BB stage to be completed first"
+    exit 1
+fi
+echo "BB.bin found: $BB_BIN"
+
+# Report IM command started
+cylc message -- "${CYLC_TASK_ID}" "im_started"
+
+if ! run_im_command_for_realisation.py "$RUN_DIR" 2>&1; then
+    echo "ERROR: IM command failed for {{ fault_name }} {{ realisation }}"
+    exit 1
+fi
+
+echo "IM calculation completed successfully for {{ fault_name }} {{ realisation }}"
+echo "Completed at: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+"""
+    [[[outputs]]]
+        environment_ready = "environment_ready"
+        im_started = "im_started"
+
+    [[[directives]]]
+        --ntasks={{ slurm_params[fault_name].im.ntasks }}
+        --mem-per-cpu={{ slurm_params[fault_name].im["mem-per-cpu"] }}
+        --time={{ slurm_params[fault_name].im.time }}
+
+[[upload_results-{{ fault_name }}-{{ realisation }}]]
+    script = """
+set -e  # Exit on error
+set -u  # Exit on undefined variable
+set -o pipefail  # Exit on pipe failure
+
+echo "=== Upload Results Task Started: {{ fault_name }} {{ realisation }} ==="
+echo "Task: $CYLC_TASK_NAME"
+echo "Cycle: $CYLC_TASK_CYCLE_POINT"
+echo "Workflow: $CYLC_WORKFLOW_ID"
+echo "Job ID: $CYLC_TASK_JOB"
+echo "Started at: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+
+# Environment activation with error checking
+echo "Trying to activate Python environment at /home/arr65/venvs/ompi5_venv/bin/activate..."
+if ! source /home/arr65/venvs/ompi5_venv/bin/activate 2>&1; then
+    echo "ERROR: Failed to activate Python environment"
+    exit 1
+fi
+echo "Python environment activated successfully"
+
+# Verify Python and required modules
+echo "Environment check:"
+python --version
+which python
+
+# Report environment ready
+cylc message -- "${CYLC_TASK_ID}" "environment_ready"
+
+# Run upload command
+echo "Running upload for {{ fault_name }} {{ realisation }}"
+RUN_DIR="/scratch/projects/rch-quakecore/Cybershake/{{ version }}/Runs/{{ fault_name }}/{{ realisation }}"
+echo "Run directory: $RUN_DIR"
+
+# Report upload command started
+cylc message -- "${CYLC_TASK_ID}" "upload_started"
+
+if ! upload_post_lf_output_for_realisation.py "{{ version }}" "$RUN_DIR" 2>&1; then
+    echo "ERROR: Upload command failed for {{ fault_name }} {{ realisation }}"
+    exit 1
+fi
+
+echo "Upload completed successfully for {{ fault_name }} {{ realisation }}"
+echo "Completed at: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+"""
+    [[[outputs]]]
+        environment_ready = "environment_ready"
+        upload_started = "upload_started"
+
+    [[[directives]]]
+        --ntasks={{ slurm_params[fault_name].upload.ntasks }}
+        --time={{ slurm_params[fault_name].upload.time }}
+
+[[delete_realisation_run_dir-{{ fault_name }}-{{ realisation }}]]
+    script = """
+set -e  # Exit on error
+set -u  # Exit on undefined variable
+set -o pipefail  # Exit on pipe failure
+
+echo "=== Delete Realisation Run Dir Task Started: {{ fault_name }} {{ realisation }} ==="
+echo "Task: $CYLC_TASK_NAME"
+echo "Cycle: $CYLC_TASK_CYCLE_POINT"
+echo "Workflow: $CYLC_WORKFLOW_ID"
+echo "Job ID: $CYLC_TASK_JOB"
+echo "Started at: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+
+# Environment activation with error checking
+echo "Trying to activate Python environment at /home/arr65/venvs/ompi5_venv/bin/activate..."
+if ! source /home/arr65/venvs/ompi5_venv/bin/activate 2>&1; then
+    echo "ERROR: Failed to activate Python environment"
+    exit 1
+fi
+echo "Python environment activated successfully"
+
+# Verify Python and required modules
+echo "Environment check:"
+python --version
+which python
+
+# Report environment ready
+cylc message -- "${CYLC_TASK_ID}" "environment_ready"
+
+# Run delete command
+echo "Deleting realisation run directory for {{ fault_name }} {{ realisation }}"
+RUN_DIR="/scratch/projects/rch-quakecore/Cybershake/{{ version }}/Runs/{{ fault_name }}/{{ realisation }}"
+echo "Run directory: $RUN_DIR"
+
+# Report delete command started
+cylc message -- "${CYLC_TASK_ID}" "delete_started"
+
+if ! delete_realisation_run_dir.py "{{ version }}" "$RUN_DIR" 2>&1; then
+    echo "ERROR: Delete realisation run dir failed for {{ fault_name }} {{ realisation }}"
+    exit 1
+fi
+
+echo "Delete realisation run dir completed successfully for {{ fault_name }} {{ realisation }}"
+echo "Completed at: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+"""
+    [[[outputs]]]
+        environment_ready = "environment_ready"
+        delete_started = "delete_started"
+
+    [[[directives]]]
+        --ntasks={{ slurm_params[fault_name].delete_realisation_run_dir.ntasks }}
+        --time={{ slurm_params[fault_name].delete_realisation_run_dir.time }}
+
+    {% endfor %}
+
+{% endfor %}
