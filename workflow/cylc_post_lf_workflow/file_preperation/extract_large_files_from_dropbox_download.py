@@ -342,19 +342,19 @@ Examples:
     print(f"Processing version: {args.version}, fault: {args.fault}")
     print(f"Extracting categories: {', '.join(sorted(selected))}")
 
-    if "lf" in selected:
-        print(f"Move and extract LF dir for fault {args.fault}...")
-        process_directory_tree(
-            tar_original_setup_files_from_dropbox / "LF" / args.fault,
-            extracted_original_setup_files_from_dropbox / "LF" / args.fault,
-        )
+    # if "lf" in selected:
+    #     print(f"Move and extract LF dir for fault {args.fault}...")
+    #     process_directory_tree(
+    #         tar_original_setup_files_from_dropbox / "LF" / args.fault,
+    #         extracted_original_setup_files_from_dropbox / "LF" / args.fault,
+    #     )
 
-    if "hf" in selected:
-        print(f"Move and extract HF dir for fault {args.fault}...")
-        process_directory_tree(
-            tar_original_setup_files_from_dropbox / "HF" / args.fault,
-            extracted_original_setup_files_from_dropbox / "HF" / args.fault,
-        )
+    # if "hf" in selected:
+    #     print(f"Move and extract HF dir for fault {args.fault}...")
+    #     process_directory_tree(
+    #         tar_original_setup_files_from_dropbox / "HF" / args.fault,
+    #         extracted_original_setup_files_from_dropbox / "HF" / args.fault,
+    #     )
 
     if "sources" in selected:
         print(f"Move and extract Sources dir for fault {args.fault}...")
@@ -367,7 +367,7 @@ Examples:
             )
         elif args.version == "v25p11":
             process_directory_tree(
-                tar_original_setup_files_from_dropbox / "Sources" / f"{args.fault}.tar",
+                tar_original_setup_files_from_dropbox / "Sources" / f"{args.fault}_Source.tar",
                 extracted_original_setup_files_from_dropbox / "Sources" / f"{args.fault}",
             )
         else:
