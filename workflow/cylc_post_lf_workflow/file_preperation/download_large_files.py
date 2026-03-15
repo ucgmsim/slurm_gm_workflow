@@ -128,7 +128,9 @@ Examples:
     dropbox_sources_tar = None
     if "sources" in selected:
         if version == "v25p11":
-            dropbox_sources_tar = f"{dropbox_source_base}/Sources/{fault_name}.tar"
+            dropbox_sources_tar = (
+                f"{dropbox_source_base}/Sources/{fault_name}_Source.tar"
+            )
         else:
             dropbox_sources_tar = (
                 f"{dropbox_source_base}/Sources/{fault_name}_Sources.tar"
