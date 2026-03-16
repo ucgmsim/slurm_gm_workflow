@@ -1,6 +1,6 @@
 #!Jinja2
 
-{% set version = "v25p10" %}
+{% set version = "v25p11" %}
 
 [meta]
 title = old_cybershake_hf_bb_im
