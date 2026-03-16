@@ -569,7 +569,6 @@ def deploy_realizations_lf(
                     / version
                     / "LF"
                     / fault
-                    / fault
                     / f"{realization}_LF_OutBin"
                 )
 
@@ -745,7 +744,7 @@ def deploy_realizations_hf(
         print(f"    [{idx}/{total_realizations}] Processing HF for {realization}...")
 
         # Construct source path
-        # Pattern: .../HF/{fault}/{realization}_HF/Runs/{fault}/{realization}/HF/Acc
+        # Pattern: .../HF/{fault}/{realization}_HF/{realization}/HF/Acc
         # Note: realization names already include the fault prefix (e.g. HopeTARA_REL01)
         hf_output_source_path = (
             base_cybershake_dir
@@ -757,8 +756,6 @@ def deploy_realizations_hf(
             / "HF"
             / fault
             / f"{realization}_HF"
-            / "Runs"
-            / fault
             / realization
             / "HF"
             / "Acc"

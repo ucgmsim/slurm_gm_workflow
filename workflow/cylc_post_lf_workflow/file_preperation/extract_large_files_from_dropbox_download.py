@@ -367,7 +367,7 @@ Examples:
             )
         elif args.version == "v25p11":
             process_directory_tree(
-                tar_original_setup_files_from_dropbox / "Sources" / f"{args.fault}.tar",
+                tar_original_setup_files_from_dropbox / "Sources" / f"{args.fault}_Source.tar",
                 extracted_original_setup_files_from_dropbox / "Sources" / f"{args.fault}",
             )
         else:
