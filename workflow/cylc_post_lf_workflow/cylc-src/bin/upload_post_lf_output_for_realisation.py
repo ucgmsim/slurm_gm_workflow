@@ -92,6 +92,7 @@ def main():
 
     # Types to process: (type_name, source_subdir, should_rename)
     types_to_process = [
+        ("HF", "HF/Acc", True),
         ("BB", "BB/Acc", True),
         ("IM", "IM", False),
     ]
