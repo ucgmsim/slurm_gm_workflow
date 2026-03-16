@@ -8,7 +8,7 @@ import pandas as pd
 from natsort import natsorted
 from tqdm import tqdm
 
-VERSION = "v25p10"
+VERSION = "v25p11"
 RCLONE_BASE = f"dropbox:/QuakeCoRE/gmsim_scratch/{VERSION}/IM"
 DOWNLOAD_DIR = Path("/home/arr65/data/cybershake_check")
 WORK_DIR = DOWNLOAD_DIR / "work"
