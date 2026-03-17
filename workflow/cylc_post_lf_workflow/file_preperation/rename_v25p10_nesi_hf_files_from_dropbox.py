@@ -80,6 +80,15 @@ def create_restructured_tar(realization, extract_dir, output_tar_path):
     acc_dir = os.path.join(extract_dir, realization, "HF", "Acc")
     print(f"    Looking for HF.bin and HF.log in: {acc_dir}")
     if not os.path.isdir(acc_dir):
+        print(f"    ERROR: Expected Acc directory not found: {acc_dir}")
+        print(f"    Listing contents of extract_dir for diagnosis:")
+        for root, dirs, files in os.walk(extract_dir):
+            level = root.replace(extract_dir, "").count(os.sep)
+            indent = "    " + "  " * level
+            print(f"{indent}{os.path.basename(root)}/")
+            sub_indent = "    " + "  " * (level + 1)
+            for f in files:
+                print(f"{sub_indent}{f}")
         raise FileNotFoundError(
             f"Expected Acc directory not found: {acc_dir}"
         )
