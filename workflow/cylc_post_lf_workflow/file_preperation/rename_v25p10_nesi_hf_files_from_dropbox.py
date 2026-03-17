@@ -11,9 +11,17 @@ Each fault folder contains tar files named like:
     Hope1888_REL04_HF.tar
     Hope1888_REL20_HF.tar
 
-NeSI source layout inside each tar:
-    ./{realization}/HF/Acc/HF.bin
-    ./{realization}/HF/Acc/HF.log
+NeSI source layout inside each tar (v25p10 median realization):
+    Runs/{realization}/{realization}/HF/Acc/HF.bin
+    Runs/{realization}/{realization}/HF/Acc/HF.log
+
+NeSI source layout inside each tar (v25p10 REL realization):
+    Runs/{fault}/{realization}/HF/Acc/HF.bin
+    Runs/{fault}/{realization}/HF/Acc/HF.log
+
+NeSI source layout inside each tar (AlpineF2K anomaly):
+    {realization}/HF/Acc/HF.bin
+    {realization}/HF/Acc/HF.log
 
 Target layout inside the output tar:
     {realization}_HF/{realization}_HF.bin
@@ -53,6 +61,15 @@ def rclone_list_dirs(path):
     return [line.rstrip("/") for line in result.stdout.splitlines() if line.strip()]
 
 
+def rclone_file_exists(remote_dir, filename):
+    """Return True if filename already exists at remote_dir on Dropbox."""
+    cmd = ["rclone", "lsf", "--files-only", remote_dir]
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    if result.returncode != 0:
+        return False
+    return filename in result.stdout.splitlines()
+
+
 def rclone_list_files(path):
     """List filenames at a remote rclone path (non-recursive)."""
     cmd = ["rclone", "lsf", "--files-only", path]
@@ -72,15 +89,22 @@ def extract_tar(tar_path, dest_dir):
     print(f"    Extraction complete.")
 
 
-def create_restructured_tar(realization, extract_dir, output_tar_path):
+def create_restructured_tar(realization, fault, extract_dir, output_tar_path):
     """
     Find HF.bin and HF.log inside the NeSI nested structure and create a new
     tar with the target layout: {realization}_HF/{realization}_HF.{ext}
     """
-    acc_dir = os.path.join(extract_dir, realization, "HF", "Acc")
-    print(f"    Looking for HF.bin and HF.log in: {acc_dir}")
-    if not os.path.isdir(acc_dir):
-        print(f"    ERROR: Expected Acc directory not found: {acc_dir}")
+    # Try all known tar layout variants
+    candidate_dirs = [
+        os.path.join(extract_dir, "Runs", fault, realization, "HF", "Acc"),        # v25p10 REL layout
+        os.path.join(extract_dir, "Runs", realization, realization, "HF", "Acc"),  # v25p10 median layout
+        os.path.join(extract_dir, realization, "HF", "Acc"),                        # AlpineF2K layout
+    ]
+    acc_dir = next((d for d in candidate_dirs if os.path.isdir(d)), None)
+    if acc_dir is None:
+        print(f"    ERROR: Acc directory not found. Tried:")
+        for d in candidate_dirs:
+            print(f"      {d}")
         print(f"    Listing contents of extract_dir for diagnosis:")
         for root, dirs, files in os.walk(extract_dir):
             level = root.replace(extract_dir, "").count(os.sep)
@@ -90,8 +114,10 @@ def create_restructured_tar(realization, extract_dir, output_tar_path):
             for f in files:
                 print(f"{sub_indent}{f}")
         raise FileNotFoundError(
-            f"Expected Acc directory not found: {acc_dir}"
+            f"Expected Acc directory not found. Tried:\n" +
+            "\n".join(f"  {d}" for d in candidate_dirs)
         )
+    print(f"    Looking for HF.bin and HF.log in: {acc_dir}")
 
     top_dir_name = f"{realization}_HF"
     print(f"    Output tar path : {output_tar_path}")
@@ -149,6 +175,11 @@ for fault in fault_list:
         print(f"  Processing: {realization}")
         print(f"{'='*60}")
 
+        # Skip if already uploaded
+        if rclone_file_exists(upload_dir, tar_file_name):
+            print(f"  Already exists at {upload_dir}{tar_file_name}, skipping.")
+            continue
+
         try:
             # Step 1: Download tar from Dropbox
             print(f"\n[Step 1/5] Downloading NeSI tar from Dropbox")
@@ -169,7 +200,7 @@ for fault in fault_list:
 
             # Step 4: Create new tar with restructured layout
             print(f"\n[Step 4/5] Creating restructured tar with renamed files")
-            create_restructured_tar(realization, extract_dir, restructured_tar)
+            create_restructured_tar(realization, fault, extract_dir, restructured_tar)
 
             # Step 5: Upload the restructured tar to Dropbox
             print(f"\n[Step 5/5] Uploading restructured tar to Dropbox")
