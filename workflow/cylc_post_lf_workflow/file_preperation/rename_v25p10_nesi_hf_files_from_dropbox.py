@@ -19,6 +19,10 @@ NeSI source layout inside each tar (v25p10 REL realization):
     Runs/{fault}/{realization}/HF/Acc/HF.bin
     Runs/{fault}/{realization}/HF/Acc/HF.log
 
+NeSI source layout inside each tar (flat layout, files already named):
+    {realization}_HF.bin
+    {realization}_HF.log
+
 NeSI source layout inside each tar (AlpineF2K anomaly):
     {realization}/HF/Acc/HF.bin
     {realization}/HF/Acc/HF.log
@@ -94,41 +98,54 @@ def create_restructured_tar(realization, fault, extract_dir, output_tar_path):
     Find HF.bin and HF.log inside the NeSI nested structure and create a new
     tar with the target layout: {realization}_HF/{realization}_HF.{ext}
     """
-    # Try all known tar layout variants
-    candidate_dirs = [
-        os.path.join(extract_dir, "Runs", fault, realization, "HF", "Acc"),        # v25p10 REL layout
-        os.path.join(extract_dir, "Runs", realization, realization, "HF", "Acc"),  # v25p10 median layout
-        os.path.join(extract_dir, realization, "HF", "Acc"),                        # AlpineF2K layout
-    ]
-    acc_dir = next((d for d in candidate_dirs if os.path.isdir(d)), None)
-    if acc_dir is None:
-        print(f"    ERROR: Acc directory not found. Tried:")
-        for d in candidate_dirs:
-            print(f"      {d}")
-        print(f"    Listing contents of extract_dir for diagnosis:")
-        for root, dirs, files in os.walk(extract_dir):
-            level = root.replace(extract_dir, "").count(os.sep)
-            indent = "    " + "  " * level
-            print(f"{indent}{os.path.basename(root)}/")
-            sub_indent = "    " + "  " * (level + 1)
-            for f in files:
-                print(f"{sub_indent}{f}")
-        raise FileNotFoundError(
-            f"Expected Acc directory not found. Tried:\n" +
-            "\n".join(f"  {d}" for d in candidate_dirs)
-        )
-    print(f"    Looking for HF.bin and HF.log in: {acc_dir}")
-
     top_dir_name = f"{realization}_HF"
+
+    # Layout 1: flat — files already named {realization}_HF.{ext} at root of extract_dir
+    flat_files = {ext: os.path.join(extract_dir, f"{realization}_HF.{ext}") for ext in ("bin", "log")}
+    if any(os.path.isfile(f) for f in flat_files.values()):
+        print(f"    Detected flat layout (files directly in extract dir, already named)")
+        files_to_pack = [
+            (flat_files[ext], os.path.join(top_dir_name, f"{realization}_HF.{ext}"))
+            for ext in ("bin", "log")
+            if os.path.isfile(flat_files[ext])
+        ]
+    else:
+        # Layouts 2-4: files are named HF.bin/HF.log inside an Acc subdirectory
+        candidate_dirs = [
+            os.path.join(extract_dir, "Runs", fault, realization, "HF", "Acc"),        # v25p10 REL layout
+            os.path.join(extract_dir, "Runs", realization, realization, "HF", "Acc"),  # v25p10 median layout
+            os.path.join(extract_dir, realization, "HF", "Acc"),                        # AlpineF2K layout
+        ]
+        acc_dir = next((d for d in candidate_dirs if os.path.isdir(d)), None)
+        if acc_dir is None:
+            print(f"    ERROR: Acc directory not found. Tried:")
+            for d in candidate_dirs:
+                print(f"      {d}")
+            print(f"    Listing contents of extract_dir for diagnosis:")
+            for root, dirs, files in os.walk(extract_dir):
+                level = root.replace(extract_dir, "").count(os.sep)
+                indent = "    " + "  " * level
+                print(f"{indent}{os.path.basename(root)}/")
+                sub_indent = "    " + "  " * (level + 1)
+                for f in files:
+                    print(f"{sub_indent}{f}")
+            raise FileNotFoundError(
+                f"Expected Acc directory not found. Tried:\n" +
+                "\n".join(f"  {d}" for d in candidate_dirs)
+            )
+        print(f"    Looking for HF.bin and HF.log in: {acc_dir}")
+        files_to_pack = []
+        for ext in ("bin", "log"):
+            src = os.path.join(acc_dir, f"HF.{ext}")
+            if os.path.isfile(src):
+                files_to_pack.append((src, os.path.join(top_dir_name, f"{realization}_HF.{ext}")))
+            else:
+                print(f"    WARNING: {src} not found, skipping")
+
     print(f"    Output tar path : {output_tar_path}")
     print(f"    Top-level dir inside tar : {top_dir_name}/")
     with tarfile.open(output_tar_path, "w") as tar:
-        for ext in ("bin", "log"):
-            src_file = os.path.join(acc_dir, f"HF.{ext}")
-            if not os.path.isfile(src_file):
-                print(f"    WARNING: {src_file} not found, skipping")
-                continue
-            arcname = os.path.join(top_dir_name, f"{realization}_HF.{ext}")
+        for src_file, arcname in files_to_pack:
             tar.add(src_file, arcname=arcname)
             print(f"    Packed: {src_file}")
             print(f"         -> {arcname}")
