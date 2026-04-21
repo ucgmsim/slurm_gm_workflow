@@ -79,8 +79,8 @@ Examples:
     )
     parser.add_argument(
         "version",
-        choices=["v25p10", "v25p11"],
-        help="Version identifier (must be v25p10 or v25p11)",
+        choices=["v25p10", "v25p11", "v26p4"],
+        help="Version identifier (must be v25p10, v25p11, or v26p4)",
     )
     parser.add_argument("fault_name", help="Fault name (e.g., WhiteCk)")
     parser.add_argument(
@@ -112,6 +112,15 @@ Examples:
     selected = parse_categories(args.categories, args.skip)
     lf_files = parse_file_list(args.lf_files)
     hf_files = parse_file_list(args.hf_files)
+
+    if version == "v26p4":
+        unsupported = selected - {"lf"}
+        if unsupported:
+            print(
+                f"ERROR: v26p4 currently only supports the 'lf' category. "
+                f"Unsupported: {', '.join(sorted(unsupported))}"
+            )
+            sys.exit(1)
 
     if not selected:
         print("No categories selected to download.")
