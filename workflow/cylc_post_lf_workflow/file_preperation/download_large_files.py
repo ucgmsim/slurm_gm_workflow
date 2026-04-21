@@ -114,10 +114,10 @@ Examples:
     hf_files = parse_file_list(args.hf_files)
 
     if version == "v26p4":
-        unsupported = selected - {"lf"}
+        unsupported = selected - {"lf", "hf"}
         if unsupported:
             print(
-                f"ERROR: v26p4 currently only supports the 'lf' category. "
+                f"ERROR: v26p4 currently only supports the 'lf' and 'hf' categories. "
                 f"Unsupported: {', '.join(sorted(unsupported))}"
             )
             sys.exit(1)
