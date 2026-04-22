@@ -12,7 +12,7 @@ BB_from_LF_only / IM_from_LF_only Dropbox paths."""
 UTC mode = True
 
 {% set realizations = {
-    "AlpineF2K":[AlpineF2K,
+    "AlpineF2K":["AlpineF2K",
     "AlpineF2K_REL02",
     "AlpineF2K_REL03",
     "AlpineF2K_REL04",
