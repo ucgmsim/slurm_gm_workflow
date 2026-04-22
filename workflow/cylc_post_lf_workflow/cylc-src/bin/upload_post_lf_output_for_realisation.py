@@ -73,6 +73,13 @@ def main():
         action="store_true",
         help="Skip renaming files with the realisation prefix before tarballing",
     )
+    parser.add_argument(
+        "--variant",
+        choices=["none", "lf_only"],
+        default="none",
+        help="Upload variant. 'lf_only' skips HF and uploads BB/IM under "
+             "BB_from_LF_only/IM_from_LF_only to distinguish lf2bb-produced results.",
+    )
     args = parser.parse_args()
 
     version = args.version
@@ -91,21 +98,30 @@ def main():
     prefix = f"{rel_name}_"
 
     # Types to process: (type_name, source_subdir, should_rename)
-    types_to_process = [
-        ("HF", "HF/Acc", True),
-        ("BB", "BB/Acc", True),
-        ("IM", "IM", False),
-    ]
+    if args.variant == "lf_only":
+        types_to_process = [
+            ("BB", "BB/Acc", True),
+            ("IM", "IM", False),
+        ]
+        remote_type_overrides = {"BB": "BB_from_LF_only", "IM": "IM_from_LF_only"}
+    else:
+        types_to_process = [
+            ("HF", "HF/Acc", True),
+            ("BB", "BB/Acc", True),
+            ("IM", "IM", False),
+        ]
+        remote_type_overrides = {}
 
     # Process each type: rename, create tarball, and upload
     print("\n=== Processing directories ===")
 
     for type_name, src_subdir, should_rename in types_to_process:
+        remote_type_name = remote_type_overrides.get(type_name, type_name)
         src_dir = (
             f"{CYBERSHAKE_BASE}/{version}/Runs/{fault_name}/{rel_name}/{src_subdir}"
         )
         tarball_path = f"{STAGED_BASE}/{version}/{type_name}/{fault_name}/{rel_name}_{type_name}.tar"
-        remote_path = f"{DROPBOX_BASE}/{version}/{type_name}/{fault_name}"
+        remote_path = f"{DROPBOX_BASE}/{version}/{remote_type_name}/{fault_name}"
         if not os.path.exists(src_dir):
             print(f"Warning: Source directory does not exist: {src_dir}")
             continue
