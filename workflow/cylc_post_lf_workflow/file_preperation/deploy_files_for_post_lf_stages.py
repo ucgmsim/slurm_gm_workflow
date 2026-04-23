@@ -196,15 +196,27 @@ def deploy_root_params(
     """Deploy root_params.yaml file (version-level)."""
     print("  [root_params] Creating modified root_params.yaml file...")
 
-    original_root_params_file_path = (
-        base_cybershake_dir
-        / "setup_files_from_dropbox"
-        / version
-        / "permanent_small_files"
-        / "extracted"
-        / f"{version}_configs_params"
-        / "root_params.yaml"
-    )
+    if version == "v26p4":
+        original_root_params_file_path = (
+            base_cybershake_dir
+            / "setup_files_from_dropbox"
+            / version
+            / "permanent_small_files"
+            / "extracted"
+            / f"{version}_configs_params"
+            / "Runs"
+            / "root_params.yaml"
+        )
+    else:
+        original_root_params_file_path = (
+            base_cybershake_dir
+            / "setup_files_from_dropbox"
+            / version
+            / "permanent_small_files"
+            / "extracted"
+            / f"{version}_configs_params"
+            / "root_params.yaml"
+        )
 
     modified_root_params_file_path = (
         base_cybershake_dir / version / "Runs" / "root_params.yaml"
@@ -287,16 +299,29 @@ def deploy_fault_params(
     """Deploy fault_params.yaml file (fault-level)."""
     print("  [fault_params] Creating modified fault_params.yaml file...")
 
-    original_fault_params_file_path = (
-        base_cybershake_dir
-        / "setup_files_from_dropbox"
-        / version
-        / "permanent_small_files"
-        / "extracted"
-        / f"{version}_configs_params"
-        / fault
-        / "fault_params.yaml"
-    )
+    if version == "v26p4":
+        original_fault_params_file_path = (
+            base_cybershake_dir
+            / "setup_files_from_dropbox"
+            / version
+            / "permanent_small_files"
+            / "extracted"
+            / f"{version}_configs_params"
+            / "Runs"
+            / fault
+            / "fault_params.yaml"
+        )
+    else:
+        original_fault_params_file_path = (
+            base_cybershake_dir
+            / "setup_files_from_dropbox"
+            / version
+            / "permanent_small_files"
+            / "extracted"
+            / f"{version}_configs_params"
+            / fault
+            / "fault_params.yaml"
+        )
 
     destination_fault_params_base_base = base_cybershake_dir / version / "Runs" / fault
     modified_fault_params_file_path = (
@@ -351,6 +376,17 @@ def deploy_ll_statcords(
             / "permanent_small_files"
             / "extracted"
             / "fd_coords"
+            / "Runs"
+            / fault
+        )
+    elif version == "v26p4":
+        original_ll_statcords_source_path = (
+            base_cybershake_dir
+            / "setup_files_from_dropbox"
+            / version
+            / "permanent_small_files"
+            / "extracted"
+            / f"{version}_configs_params"
             / "Runs"
             / fault
         )
@@ -429,6 +465,7 @@ def deploy_vms(
     check_only: bool,
     check_errors: list,
     base_cybershake_dir: Path,
+    old_base_paths_to_replace: list,
     **kwargs,
 ) -> bool:
     """Deploy VMs and update vm_params.yaml (fault-level)."""
@@ -534,6 +571,61 @@ def deploy_vms(
             )
             print(f"    Updated: {destination_vms_base_dir / 'vm_params.yaml'}")
 
+    elif version == "v26p4":
+        original_vm_params_path = (
+            base_cybershake_dir
+            / "setup_files_from_dropbox"
+            / version
+            / "permanent_small_files"
+            / "extracted"
+            / f"{version}_configs_params"
+            / "Data"
+            / "VMs"
+            / fault
+            / "vm_params.yaml"
+        )
+
+        original_vs3dfile_source_path = (
+            base_cybershake_dir
+            / "setup_files_from_dropbox"
+            / version
+            / "large_temp_files"
+            / "extracted"
+            / version
+            / "VM_vs3dfile_s"
+            / fault
+            / "vs3dfile.s"
+        )
+
+        vm_params_destination_path = destination_vms_base_dir / "vm_params.yaml"
+        vs3dfile_destination_path = destination_vms_base_dir / "vs3dfile.s"
+
+        if check_only:
+            check_path(original_vm_params_path, "vm_params.yaml source", check_errors)
+            check_path(
+                original_vs3dfile_source_path, "vs3dfile.s source", check_errors
+            )
+        else:
+            destination_vms_base_dir.mkdir(parents=True, exist_ok=True)
+
+            create_modified_config_file(
+                original_file_path=original_vm_params_path,
+                modified_file_path=vm_params_destination_path,
+                old_base_paths=old_base_paths_to_replace,
+                new_base_path=base_cybershake_dir,
+            )
+            print(f"    Created: {vm_params_destination_path}")
+
+            if not vs3dfile_destination_path.exists():
+                shutil.move(
+                    original_vs3dfile_source_path, vs3dfile_destination_path
+                )
+                print(
+                    f"    Moved {original_vs3dfile_source_path} to {vs3dfile_destination_path}"
+                )
+            else:
+                print(f"    Skipping vs3dfile.s move (destination already exists)")
+
     else:
         raise ValueError(f"Unsupported version: {version}")
 
@@ -619,6 +711,24 @@ def deploy_realizations_lf(
             lf_output_destination_path = (
                 base_cybershake_dir / version / "Runs" / fault / realization / "LF"
             )
+        elif version == "v26p4":
+            lf_output_source_path = (
+                base_cybershake_dir
+                / "setup_files_from_dropbox"
+                / version
+                / "large_temp_files"
+                / "extracted"
+                / version
+                / "LF"
+                / fault
+                / f"{realization}_LF_Data"
+                / realization
+                / "LF"
+            )
+
+            lf_output_destination_path = (
+                base_cybershake_dir / version / "Runs" / fault / realization / "LF"
+            )
         else:
             raise ValueError(f"Unsupported version: {version}")
 
@@ -649,6 +759,14 @@ def deploy_realizations_lf(
                 / "LF"
                 / "e3d.par"
             )
+        elif version == "v26p4":
+            # v26p4 ships e3d.par inside the LF tar. In check mode we look at
+            # the pre-move source; in deploy mode the LF move has already
+            # happened, so we modify the destination file in place.
+            if check_only:
+                original_e3d_par_file_path = lf_output_source_path / "e3d.par"
+            else:
+                original_e3d_par_file_path = lf_output_destination_path / "e3d.par"
         else:
             raise ValueError(f"Unsupported version: {version}")
 
@@ -663,17 +781,31 @@ def deploy_realizations_lf(
         )
 
         # Get sim_params.yaml file path
-        original_sim_params_file_path = (
-            base_cybershake_dir
-            / "setup_files_from_dropbox"
-            / version
-            / "permanent_small_files"
-            / "extracted"
-            / f"{version}_configs_params"
-            / fault
-            / realization
-            / "sim_params.yaml"
-        )
+        if version == "v26p4":
+            original_sim_params_file_path = (
+                base_cybershake_dir
+                / "setup_files_from_dropbox"
+                / version
+                / "permanent_small_files"
+                / "extracted"
+                / f"{version}_configs_params"
+                / "Runs"
+                / fault
+                / realization
+                / "sim_params.yaml"
+            )
+        else:
+            original_sim_params_file_path = (
+                base_cybershake_dir
+                / "setup_files_from_dropbox"
+                / version
+                / "permanent_small_files"
+                / "extracted"
+                / f"{version}_configs_params"
+                / fault
+                / realization
+                / "sim_params.yaml"
+            )
 
         modified_sim_params_file_path = (
             base_cybershake_dir
@@ -1044,15 +1176,27 @@ Stage Control Examples:
     lf_realizations: list = []
     hf_realizations: list = []
     if any(STAGES[s].scope == "realization" for s in stages_to_run):
-        realizations_dir = (
-            base_cybershake_dir
-            / "setup_files_from_dropbox"
-            / version
-            / "permanent_small_files"
-            / "extracted"
-            / f"{version}_configs_params"
-            / fault
-        )
+        if version == "v26p4":
+            realizations_dir = (
+                base_cybershake_dir
+                / "setup_files_from_dropbox"
+                / version
+                / "permanent_small_files"
+                / "extracted"
+                / f"{version}_configs_params"
+                / "Runs"
+                / fault
+            )
+        else:
+            realizations_dir = (
+                base_cybershake_dir
+                / "setup_files_from_dropbox"
+                / version
+                / "permanent_small_files"
+                / "extracted"
+                / f"{version}_configs_params"
+                / fault
+            )
         try:
             realizations = natsorted(
                 [
