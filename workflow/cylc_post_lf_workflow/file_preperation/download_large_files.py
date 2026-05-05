@@ -169,7 +169,11 @@ Examples:
             )
         else:
             for filename in lf_files:
-                src = f"{dropbox_lf}/{filename}"
+                if version == "v26p4" and filename.endswith(".tar") and not filename.endswith("_LF_Data.tar"):
+                    src_filename = filename[:-4] + "_LF_Data.tar"
+                else:
+                    src_filename = filename
+                src = f"{dropbox_lf}/{src_filename}"
                 print(f"Trying to clone {src} to {local_lf_tar_dir}")
                 subprocess.run(
                     ["rclone", "copy", src, local_lf_tar_dir, "--progress"],
