@@ -16,9 +16,16 @@ import gzip
 import bz2
 import lzma
 from pathlib import Path
-from typing import Optional, Set
+from typing import List, Optional, Set
 
 CATEGORIES = {"lf", "hf", "sources", "vm"}
+
+
+def parse_realization_list(realizations_arg: Optional[str]) -> Optional[List[str]]:
+    """Parse a comma-separated realization list into a list of names, or None if not provided."""
+    if realizations_arg is None:
+        return None
+    return [r.strip() for r in realizations_arg.split(",") if r.strip()]
 
 
 def parse_categories(categories_arg: str, skip_arg: Optional[str] = None) -> Set[str]:
@@ -308,6 +315,10 @@ Examples:
 
   # Extract all except VM
   %(prog)s v25p11 WhiteCk --skip vm
+
+  # v26p4: extract only specific LF realization tarballs
+  # (expects LF/{fault}/{realization}_LF_Data.tar to exist)
+  %(prog)s v26p4 FiordSZ09 --categories lf --lf-realizations FiordSZ09_REL27,FiordSZ09_REL31
         """,
     )
     parser.add_argument("version", help="Version string (e.g., v25p11)")
@@ -321,6 +332,17 @@ Examples:
         "--skip",
         default=None,
         help="Comma-separated list of categories to skip",
+    )
+    parser.add_argument(
+        "--lf-realizations",
+        default=None,
+        dest="lf_realizations",
+        help=(
+            "Comma-separated list of specific realization names to extract for the "
+            "LF category (only supported for v26p4). Each realization is expected as "
+            "LF/{fault}/{realization}_LF_Data.tar. When omitted, the entire "
+            "LF/{fault} directory is moved and extracted."
+        ),
     )
     args = parser.parse_args()
 
@@ -343,11 +365,32 @@ Examples:
     print(f"Extracting categories: {', '.join(sorted(selected))}")
 
     if "lf" in selected:
-        print(f"Move and extract LF dir for fault {args.fault}...")
-        process_directory_tree(
-            tar_original_setup_files_from_dropbox / "LF" / args.fault,
-            extracted_original_setup_files_from_dropbox / "LF" / args.fault,
-        )
+        lf_realizations = parse_realization_list(args.lf_realizations)
+
+        if lf_realizations is not None:
+            if args.version != "v26p4":
+                raise ValueError(
+                    "--lf-realizations is currently only supported for version v26p4"
+                )
+            for realization in lf_realizations:
+                tar_name = f"{realization}_LF_Data.tar"
+                tar_src = (
+                    tar_original_setup_files_from_dropbox / "LF" / args.fault / tar_name
+                )
+                extract_dest = (
+                    extracted_original_setup_files_from_dropbox
+                    / "LF"
+                    / args.fault
+                    / f"{realization}_LF_Data"
+                )
+                print(f"Extract LF tar for {realization}...")
+                process_directory_tree(tar_src, extract_dest)
+        else:
+            print(f"Move and extract LF dir for fault {args.fault}...")
+            process_directory_tree(
+                tar_original_setup_files_from_dropbox / "LF" / args.fault,
+                extracted_original_setup_files_from_dropbox / "LF" / args.fault,
+            )
 
     if "hf" in selected:
         print(f"Move and extract HF dir for fault {args.fault}...")

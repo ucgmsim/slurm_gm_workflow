@@ -1107,6 +1107,10 @@ Stage Control Examples:
   # Process specific LF and HF realizations (may differ)
   %(prog)s v25p11 NMFZB1 --lf-realizations NMFZB1_REL01 --hf-realizations NMFZB1_REL01,NMFZB1_REL02
 
+  # v26p4: deploy only specific LF realizations after a partial LF download/extract
+  # (requires v26p4_configs_params/Runs/{fault}/{realization} to exist for each)
+  %(prog)s v26p4 FiordSZ09 --stages realization_lf --lf-realizations FiordSZ09_REL27,FiordSZ09_REL31
+
   # Check mode (validate sources exist)
   %(prog)s v25p11 NMFZB1 --check
 
