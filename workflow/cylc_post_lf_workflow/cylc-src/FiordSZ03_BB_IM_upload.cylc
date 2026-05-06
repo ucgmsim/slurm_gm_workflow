@@ -10,14 +10,39 @@ description = """HF → BB → IM workflow for multiple faults and realizations"
 UTC mode = True
 
 {% set realizations = {
-    "FiordSZ03":["FiordSZ03"],
+    "FiordSZ03":["FiordSZ03_REL01",
+                  "FiordSZ03_REL02",
+                  "FiordSZ03_REL03",
+                  "FiordSZ03_REL04",
+                  "FiordSZ03_REL05",
+                  "FiordSZ03_REL06",
+                  "FiordSZ03_REL07",
+                  "FiordSZ03_REL08",
+                  "FiordSZ03_REL09",
+                  "FiordSZ03_REL10",
+                  "FiordSZ03_REL11",
+                  "FiordSZ03_REL12",
+                  "FiordSZ03_REL13",
+                  "FiordSZ03_REL14",
+                  "FiordSZ03_REL15",
+                  "FiordSZ03_REL16",
+                  "FiordSZ03_REL17",
+                  "FiordSZ03_REL18",
+                  "FiordSZ03_REL19",
+                  "FiordSZ03_REL20",
+                  "FiordSZ03_REL21",
+                  "FiordSZ03_REL22",
+                  "FiordSZ03_REL23",
+                  "FiordSZ03_REL24",
+                  "FiordSZ03_REL25",
+                  "FiordSZ03_REL26"],
 } %}
 
 {% set slurm_params = {
     "FiordSZ03": {
-        "bb": {"ntasks":12, "mem-per-cpu": "3G", "time":"06:00:00"},        
-        "im": {"ntasks":24, "mem-per-cpu": "3G", "time":"02:00:00"},
-        "upload": {"ntasks":1, "time":"02:00:00"}
+        "bb": {"ntasks":2, "mem-per-cpu": "1G", "time":"00:10:00"},        
+        "im": {"ntasks":16, "mem-per-cpu": "3G", "time":"00:15:00"},
+        "upload": {"ntasks":1, "time":"00:15:00"}
     }
 } %}
 
