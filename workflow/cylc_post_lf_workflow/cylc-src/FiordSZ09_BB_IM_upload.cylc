@@ -10,7 +10,7 @@ description = """HF → BB → IM workflow for multiple faults and realizations"
 UTC mode = True
 
 {% set realizations = {
-    "FiordSZ09":["FiordSZ09"],
+    "FiordSZ09":["FiordSZ09_REL02"],
 } %}
 
 {% set slurm_params = {
