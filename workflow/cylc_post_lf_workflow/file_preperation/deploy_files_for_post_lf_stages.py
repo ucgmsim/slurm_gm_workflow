@@ -875,41 +875,20 @@ def deploy_realizations_hf(
     for idx, realization in enumerate(hf_realizations, 1):
         print(f"    [{idx}/{total_realizations}] Processing HF for {realization}...")
 
-        # Construct source path
-        # v25p* pattern: .../HF/{fault}/{realization}_HF/{realization}/HF/Acc
-        # v26p4 pattern: .../HF/{fault}/{realization}_HF/{fault}/{realization}/HF/Acc
-        # Note: realization names already include the fault prefix (e.g. HopeTARA_REL01)
-        if version == "v26p4":
-            hf_output_source_path = (
-                base_cybershake_dir
-                / "setup_files_from_dropbox"
-                / version
-                / "large_temp_files"
-                / "extracted"
-                / version
-                / "HF"
-                / fault
-                / f"{realization}_HF"
-                / fault
-                / realization
-                / "HF"
-                / "Acc"
-            )
-        else:
-            hf_output_source_path = (
-                base_cybershake_dir
-                / "setup_files_from_dropbox"
-                / version
-                / "large_temp_files"
-                / "extracted"
-                / version
-                / "HF"
-                / fault
-                / f"{realization}_HF"
-                / realization
-                / "HF"
-                / "Acc"
-            )
+        hf_output_source_path = (
+            base_cybershake_dir
+            / "setup_files_from_dropbox"
+            / version
+            / "large_temp_files"
+            / "extracted"
+            / version
+            / "HF"
+            / fault
+            / f"{realization}_HF"
+            / realization
+            / "HF"
+            / "Acc"
+        )
 
         # Construct destination path
         # Pattern: .../{version}/Runs/{fault}/{realization}/HF/Acc
