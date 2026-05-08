@@ -189,7 +189,16 @@ Examples:
             )
         else:
             for filename in hf_files:
-                src = f"{dropbox_hf}/{filename}"
+                if version == "v26p4":
+                    if filename.endswith(".bin"):
+                        src_filename = filename[:-4] + "_HF.tar"
+                    elif filename.endswith(".tar") and not filename.endswith("_HF.tar"):
+                        src_filename = filename[:-4] + "_HF.tar"
+                    else:
+                        src_filename = filename
+                else:
+                    src_filename = filename
+                src = f"{dropbox_hf}/{src_filename}"
                 print(f"Trying to clone {src} to {local_hf_tar_dir}")
                 subprocess.run(
                     ["rclone", "copy", src, local_hf_tar_dir, "--progress"],
