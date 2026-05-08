@@ -10,14 +10,52 @@ description = """HF → BB → IM workflow for multiple faults and realizations"
 UTC mode = True
 
 {% set realizations = {
-    "FiordSZ09":["FiordSZ09"],
+    "FiordSZ09":["FiordSZ09_REL03",
+                  "FiordSZ09_REL04",
+                  "FiordSZ09_REL05",
+                  "FiordSZ09_REL06",
+                  "FiordSZ09_REL07",
+                  "FiordSZ09_REL08",
+                  "FiordSZ09_REL09",
+                  "FiordSZ09_REL10",
+                  "FiordSZ09_REL11",
+                  "FiordSZ09_REL12",
+                  "FiordSZ09_REL13",
+                  "FiordSZ09_REL14",
+                  "FiordSZ09_REL15",
+                  "FiordSZ09_REL16",
+                  "FiordSZ09_REL17",
+                  "FiordSZ09_REL18",
+                  "FiordSZ09_REL19",
+                  "FiordSZ09_REL20",
+                  "FiordSZ09_REL21",
+                  "FiordSZ09_REL22",
+                  "FiordSZ09_REL23",
+                  "FiordSZ09_REL24",
+                  "FiordSZ09_REL25",
+                  "FiordSZ09_REL26",
+                  "FiordSZ09_REL27",
+                  "FiordSZ09_REL28",
+                  "FiordSZ09_REL29",
+                  "FiordSZ09_REL30",
+                  "FiordSZ09_REL31",
+                  "FiordSZ09_REL32",
+                  "FiordSZ09_REL33",
+                  "FiordSZ09_REL34",
+                  "FiordSZ09_REL35",
+                  "FiordSZ09_REL36",
+                  "FiordSZ09_REL37",
+                  "FiordSZ09_REL38",
+                  "FiordSZ09_REL39",
+                  "FiordSZ09_REL40",
+                  "FiordSZ09_REL41"],
 } %}
 
 {% set slurm_params = {
     "FiordSZ09": {
-        "bb": {"ntasks":12, "mem-per-cpu": "3G", "time":"06:00:00"},        
-        "im": {"ntasks":24, "mem-per-cpu": "3G", "time":"02:00:00"},
-        "upload": {"ntasks":1, "time":"02:00:00"}
+        "bb": {"ntasks":6, "mem-per-cpu": "3G", "time":"00:10:00"},        
+        "im": {"ntasks":24, "mem-per-cpu": "2G", "time":"00:40:00"},
+        "upload": {"ntasks":1, "time":"00:15:00"}
     }
 } %}
 
