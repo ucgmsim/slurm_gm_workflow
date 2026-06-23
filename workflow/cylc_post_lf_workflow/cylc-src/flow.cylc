@@ -1,52 +1,70 @@
 #!Jinja2
 
-{% set version = "v25p10" %}
+{% set version = "v25p11" %}
 
 [meta]
-title = old_cybershake_hf_bb_im
-description = """HF → BB → IM workflow for multiple faults and realizations"""
+title = cybershake_bb_im_upload
+description = """BB → IM → Upload workflow for multiple faults and realizations"""
 
 [scheduler]
 UTC mode = True
 
 {% set realizations = {
-    "Hope1888": ["Hope1888",
-               "Hope1888_REL01",
-               "Hope1888_REL02",
-               "Hope1888_REL03",
-               "Hope1888_REL04",
-               "Hope1888_REL05",
-               "Hope1888_REL06",
-               "Hope1888_REL07",
-               "Hope1888_REL08",
-               "Hope1888_REL09",
-               "Hope1888_REL10",
-               "Hope1888_REL11",
-               "Hope1888_REL12",
-               "Hope1888_REL13",
-               "Hope1888_REL14",
-               "Hope1888_REL15",
-               "Hope1888_REL16",
-               "Hope1888_REL17",
-               "Hope1888_REL18",
-               "Hope1888_REL19",
-               "Hope1888_REL20",
-               "Hope1888_REL21",
-               "Hope1888_REL22",
-               "Hope1888_REL23",
-               "Hope1888_REL24",
-               "Hope1888_REL25",
-               "Hope1888_REL26",
-               "Hope1888_REL27"],
+    "AlpineF2K":["AlpineF2K",
+    "AlpineF2K_REL01",
+    "AlpineF2K_REL02", 
+    "AlpineF2K_REL03", 
+    "AlpineF2K_REL04", 
+    "AlpineF2K_REL05", 
+    "AlpineF2K_REL06", 
+    "AlpineF2K_REL07", 
+    "AlpineF2K_REL08", 
+    "AlpineF2K_REL09", 
+    "AlpineF2K_REL10", 
+    "AlpineF2K_REL11", 
+    "AlpineF2K_REL12", 
+    "AlpineF2K_REL13", 
+    "AlpineF2K_REL14", 
+    "AlpineF2K_REL15", 
+    "AlpineF2K_REL16", 
+    "AlpineF2K_REL17", 
+    "AlpineF2K_REL18", 
+    "AlpineF2K_REL19", 
+    "AlpineF2K_REL20", 
+    "AlpineF2K_REL21", 
+    "AlpineF2K_REL22", 
+    "AlpineF2K_REL23", 
+    "AlpineF2K_REL24", 
+    "AlpineF2K_REL25", 
+    "AlpineF2K_REL26", 
+    "AlpineF2K_REL27", 
+    "AlpineF2K_REL28", 
+    "AlpineF2K_REL29", 
+    "AlpineF2K_REL30", 
+    "AlpineF2K_REL31", 
+    "AlpineF2K_REL32", 
+    "AlpineF2K_REL33", 
+    "AlpineF2K_REL34", 
+    "AlpineF2K_REL35", 
+    "AlpineF2K_REL36", 
+    "AlpineF2K_REL37", 
+    "AlpineF2K_REL38", 
+    "AlpineF2K_REL39", 
+    "AlpineF2K_REL40", 
+    "AlpineF2K_REL41", 
+    "AlpineF2K_REL42", 
+    "AlpineF2K_REL43", 
+    "AlpineF2K_REL44", 
+    "AlpineF2K_REL45", 
+    "AlpineF2K_REL46", 
+    "AlpineF2K_REL47"],
 } %}
 
 {% set slurm_params = {
-    "Hope1888": {
-        "hf": {"ntasks":36, "mem-per-cpu": "1G", "time":"01:00:00"},        
-        "bb": {"ntasks":6, "mem-per-cpu": "2G", "time":"02:00:00"},
+    "AlpineF2K": {
+        "bb": {"ntasks":12, "mem-per-cpu": "3G", "time":"06:00:00"},        
         "im": {"ntasks":24, "mem-per-cpu": "3G", "time":"02:00:00"},
-        "upload": {"ntasks":1, "time":"02:00:00"},
-        "delete_realisation_run_dir": {"ntasks":1, "time":"01:00:00"}
+        "upload": {"ntasks":1, "mem-per-cpu": "2G", "time":"02:00:00"}
     }
 } %}
 
@@ -59,7 +77,8 @@ UTC mode = True
 R1 = """
 {% for fault_name, realisation_list in realizations.items() %}
     {% for realisation in realisation_list %}
-run_hf-{{ fault_name }}-{{ realisation }} => run_bb-{{ fault_name }}-{{ realisation }} => run_im-{{ fault_name }}-{{ realisation }}
+{# In Cylc, referencing the same task multiple times doesn't create duplicate tasks—it just defines multiple dependency edges for that task. #}
+run_bb-{{ fault_name }}-{{ realisation }} => run_im-{{ fault_name }}-{{ realisation }} => upload_results-{{ fault_name }}-{{ realisation }}
     {% endfor %}
 {% endfor %}
 """
@@ -67,102 +86,12 @@ run_hf-{{ fault_name }}-{{ realisation }} => run_bb-{{ fault_name }}-{{ realisat
 [runtime]
 [[root]]
     platform = rch-slurm
-    execution retry delays = PT3M, PT5M, PT10M, PT10M, PT30M, PT1H, PT3H
+    execution retry delays = PT10M, PT30M, PT1H, PT3H
     [[[directives]]]
         --exclude=n03
 
 {% for fault_name, realisation_list in realizations.items() %}
     {% for realisation in realisation_list %}
-[[run_hf-{{ fault_name }}-{{ realisation }}]]
-    script = """
-set -e  # Exit on error
-set -u  # Exit on undefined variable
-set -o pipefail  # Exit on pipe failure
-
-echo "=== HF Task Started: {{ fault_name }} {{ realisation }} ==="
-echo "Task: $CYLC_TASK_NAME"
-echo "Cycle: $CYLC_TASK_CYCLE_POINT"
-echo "Workflow: $CYLC_WORKFLOW_ID"
-echo "Job ID: $CYLC_TASK_JOB"
-echo "Started at: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
-
-# Module loading with error checking
-echo "Loading modules..."
-echo "Trying to load module GCC/13.3.0..."
-module load GCC/13.3.0 2>&1 &
-pid=$!
-sleep 30
-if kill -0 $pid 2>/dev/null; then
-    kill $pid 2>/dev/null || true
-    echo "ERROR: Module load for GCC timed out"
-    exit 1
-else
-    wait $pid
-    if [ $? -ne 0 ]; then
-        echo "ERROR: Failed to load GCC module"
-        exit 1
-    fi
-fi
-echo "GCC module loaded successfully"
-
-echo "Trying to load module OpenMPI/5.0.3-GCC-13.3.0..."
-module load OpenMPI/5.0.3-GCC-13.3.0 2>&1 &
-pid=$!
-sleep 30
-if kill -0 $pid 2>/dev/null; then
-    kill $pid 2>/dev/null || true
-    echo "ERROR: Module load for OpenMPI timed out"
-    exit 1
-else
-    wait $pid
-    if [ $? -ne 0 ]; then
-        echo "ERROR: Failed to load OpenMPI module"
-        exit 1
-    fi
-fi
-echo "OpenMPI module loaded successfully"
-
-# Environment activation with error checking
-echo "Trying to activate Python environment at /home/arr65/venvs/ompi5_venv/bin/activate..."
-if ! source /home/arr65/venvs/ompi5_venv/bin/activate 2>&1; then
-    echo "ERROR: Failed to activate Python environment"
-    exit 1
-fi
-echo "Python environment activated successfully"
-
-# Verify Python and required modules
-echo "Environment check:"
-python --version
-which python
-
-# Report environment ready
-cylc message -- "${CYLC_TASK_ID}" "environment_ready"
-
-# Run HF command
-echo "Running HF simulation for {{ fault_name }} {{ realisation }}"
-RUN_DIR="/scratch/projects/rch-quakecore/Cybershake/{{ version }}/Runs/{{ fault_name }}/{{ realisation }}"
-echo "Run directory: $RUN_DIR"
-
-# Report HF command started
-cylc message -- "${CYLC_TASK_ID}" "hf_started"
-
-if ! run_hf_command_for_realisation.py "$RUN_DIR" 2>&1; then
-    echo "ERROR: HF command failed for {{ fault_name }} {{ realisation }}"
-    exit 1
-fi
-
-echo "HF simulation completed successfully for {{ fault_name }} {{ realisation }}"
-echo "Completed at: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
-"""
-    [[[outputs]]]
-        environment_ready = "environment_ready"
-        hf_started = "hf_started"
-
-    [[[directives]]]
-        --ntasks={{ slurm_params[fault_name].hf.ntasks }}
-        --mem-per-cpu={{ slurm_params[fault_name].hf["mem-per-cpu"] }}
-        --time={{ slurm_params[fault_name].hf.time }}
-
 [[run_bb-{{ fault_name }}-{{ realisation }}]]
     script = """
 set -e  # Exit on error
@@ -351,6 +280,61 @@ echo "Completed at: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
         --ntasks={{ slurm_params[fault_name].im.ntasks }}
         --mem-per-cpu={{ slurm_params[fault_name].im["mem-per-cpu"] }}
         --time={{ slurm_params[fault_name].im.time }}
+
+[[upload_results-{{ fault_name }}-{{ realisation }}]]
+    script = """
+set -e  # Exit on error
+set -u  # Exit on undefined variable
+set -o pipefail  # Exit on pipe failure
+
+echo "=== Upload Results Task Started: {{ fault_name }} {{ realisation }} ==="
+echo "Task: $CYLC_TASK_NAME"
+echo "Cycle: $CYLC_TASK_CYCLE_POINT"
+echo "Workflow: $CYLC_WORKFLOW_ID"
+echo "Job ID: $CYLC_TASK_JOB"
+echo "Started at: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+
+# Environment activation with error checking
+echo "Trying to activate Python environment at /home/arr65/venvs/ompi5_venv/bin/activate..."
+if ! source /home/arr65/venvs/ompi5_venv/bin/activate 2>&1; then
+    echo "ERROR: Failed to activate Python environment"
+    exit 1
+fi
+echo "Python environment activated successfully"
+
+# Verify Python and required modules
+echo "Environment check:"
+python --version
+which python
+
+# Report environment ready
+cylc message -- "${CYLC_TASK_ID}" "environment_ready"
+
+# Run upload command
+echo "Running upload for {{ fault_name }} {{ realisation }}"
+RUN_DIR="/scratch/projects/rch-quakecore/Cybershake/{{ version }}/Runs/{{ fault_name }}/{{ realisation }}"
+echo "Run directory: $RUN_DIR"
+
+# Report upload command started
+cylc message -- "${CYLC_TASK_ID}" "upload_started"
+
+if ! upload_post_lf_output_for_realisation.py "{{ version }}" "$RUN_DIR" --variant hf_from_new_workflow 2>&1; then
+    echo "ERROR: Upload command failed for {{ fault_name }} {{ realisation }}"
+    exit 1
+fi
+
+echo "Upload completed successfully for {{ fault_name }} {{ realisation }}"
+echo "Completed at: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+"""
+    [[[outputs]]]
+        environment_ready = "environment_ready"
+        upload_started = "upload_started"
+
+    [[[directives]]]
+        --ntasks={{ slurm_params[fault_name].upload.ntasks }}
+        --mem-per-cpu={{ slurm_params[fault_name].upload["mem-per-cpu"] }}
+        --time={{ slurm_params[fault_name].upload.time }}
+
     {% endfor %}
 
 {% endfor %}
