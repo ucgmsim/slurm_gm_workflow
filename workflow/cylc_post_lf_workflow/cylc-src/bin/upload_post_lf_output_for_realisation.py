@@ -75,10 +75,12 @@ def main():
     )
     parser.add_argument(
         "--variant",
-        choices=["none", "lf_only"],
+        choices=["none", "lf_only", "hf_from_new_workflow"],
         default="none",
         help="Upload variant. 'lf_only' skips HF and uploads BB/IM under "
-             "BB_from_LF_only/IM_from_LF_only to distinguish lf2bb-produced results.",
+             "BB_from_LF_only/IM_from_LF_only to distinguish lf2bb-produced results. "
+             "'hf_from_new_workflow' skips HF and uploads BB/IM under "
+             "BB_using_HF_from_new_workflow/IM_using_HF_from_new_workflow.",
     )
     args = parser.parse_args()
 
@@ -104,6 +106,15 @@ def main():
             ("IM", "IM", False),
         ]
         remote_type_overrides = {"BB": "BB_from_LF_only", "IM": "IM_from_LF_only"}
+    elif args.variant == "hf_from_new_workflow":
+        types_to_process = [
+            ("BB", "BB/Acc", True),
+            ("IM", "IM", False),
+        ]
+        remote_type_overrides = {
+            "BB": "BB_using_HF_from_new_workflow",
+            "IM": "IM_using_HF_from_new_workflow",
+        }
     else:
         types_to_process = [
             ("HF", "HF/Acc", True),

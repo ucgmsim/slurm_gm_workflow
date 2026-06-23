@@ -1,24 +1,23 @@
 #!Jinja2
 
-{% set version = "v26p4" %}
+{% set version = "v25p11" %}
 
 [meta]
-title = old_cybershake_hf_bb_im
-description = """HF → BB → IM workflow for multiple faults and realizations"""
+title = cybershake_bb_im_upload
+description = """BB → IM → Upload workflow for multiple faults and realizations"""
 
 [scheduler]
 UTC mode = True
 
 {% set realizations = {
-    "FiordSZ09":["FiordSZ09",
-                "FiordSZ09_REL01"],
+    "AlpineF2K":["AlpineF2K_REL01"],
 } %}
 
 {% set slurm_params = {
-    "FiordSZ09": {
-        "bb": {"ntasks":6, "mem-per-cpu": "3G", "time":"00:10:00"},        
-        "im": {"ntasks":24, "mem-per-cpu": "2G", "time":"00:40:00"},
-        "upload": {"ntasks":1, "time":"00:15:00"}
+    "AlpineF2K": {
+        "bb": {"ntasks":12, "mem-per-cpu": "3G", "time":"06:00:00"},        
+        "im": {"ntasks":24, "mem-per-cpu": "3G", "time":"02:00:00"},
+        "upload": {"ntasks":1, "time":"02:00:00"}
     }
 } %}
 
@@ -272,7 +271,7 @@ echo "Run directory: $RUN_DIR"
 # Report upload command started
 cylc message -- "${CYLC_TASK_ID}" "upload_started"
 
-if ! upload_post_lf_output_for_realisation.py "{{ version }}" "$RUN_DIR" 2>&1; then
+if ! upload_post_lf_output_for_realisation.py "{{ version }}" "$RUN_DIR" --variant hf_from_new_workflow 2>&1; then
     echo "ERROR: Upload command failed for {{ fault_name }} {{ realisation }}"
     exit 1
 fi
