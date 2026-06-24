@@ -8,8 +8,8 @@ import pandas as pd
 from natsort import natsorted
 from tqdm import tqdm
 
-VERSION = "v26p4"
-RCLONE_BASE = f"dropbox:/QuakeCoRE/gmsim_scratch/{VERSION}/IM"
+VERSION = "v25p11"
+RCLONE_BASE = f"dropbox:/QuakeCoRE/gmsim_scratch/{VERSION}/IM_using_HF_from_new_workflow"
 DOWNLOAD_DIR = Path("/home/arr65/data/cybershake_check")
 WORK_DIR = DOWNLOAD_DIR / "work"
 OUTPUT_PATH = DOWNLOAD_DIR / f"{VERSION}_consecutive_zeros_report.csv"
@@ -86,7 +86,7 @@ def main():
     print(f"Already completed: {len(completed)} entries")
 
     # faults = natsorted(rclone_list(RCLONE_BASE))
-    faults = ["FiordSZ03","FiordSZ09"]
+    faults = ["AlpineF2K"]
     print(f"Found {len(faults)} faults")
 
     for fault in faults:
