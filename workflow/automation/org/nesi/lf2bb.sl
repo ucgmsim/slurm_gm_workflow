@@ -4,8 +4,9 @@
 # must be run with sbatch lf2bb.sl [realisationDirectory] [managementDBLocation]
 
 #SBATCH --job-name=lf2bb
-#SBATCH --time=01:00:00
+#SBATCH --time=12:00:00
 #SBATCH --cpus-per-task=1
+#SBATCH --mem=16G  # Request 16 GB of memory
 
 if [[ ! -z ${CUR_ENV} && ${CUR_HPC} != "mahuika" ]]; then
     source $CUR_ENV/workflow/workflow/environments/helper_functions/activate_env.sh $CUR_ENV "mahuika"

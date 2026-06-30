@@ -20,6 +20,7 @@ from qcore import timeseries, utils
 from qcore.constants import VM_PARAMS_FILE_NAME, Components, PLATFORM_CONFIG
 from workflow.calculation.site_response_BB import site_response
 from workflow.automation import platform_config
+import json
 
 if __name__ == "__main__":
     from mpi4py import MPI
@@ -154,6 +155,7 @@ def main():
             comm.Abort()
         if not np.isclose(
             lf.dt * lf.nt + lf.start_sec, hf.dt * hf.nt, atol=min(lf.dt, hf.dt)
+#            lf.dt * lf.nt, hf.dt * hf.nt, atol=min(lf.dt, hf.dt)
         ):
             logger.error(
                 "LF duration != HF duration. {} vs {}".format(
@@ -237,6 +239,18 @@ def main():
         )
         if is_master:
             logger.debug("vs30ref from velocity model.")
+#    # vs30ref from velocity model
+#        with open("%s/params_vel.json" % (args.lf_vm), "r") as j:
+#            vm_conf = json.load(j)
+#        lfvs30refs = (
+#            np.memmap(
+#                "%s/vs3dfile.s" % (args.lf_vm),
+#                dtype="<f4",
+#                shape=(vm_conf["ny"], vm_conf["nz"], vm_conf["nx"]),
+#                mode="r",
+#            )[lf.stations.y, 0, lf.stations.x]
+#            * 1000.0
+#        )
     else:
         # fixed vs30ref
         lfvs30refs = np.ones(lf.stations.size, dtype=np.float32) * args.lfvsref

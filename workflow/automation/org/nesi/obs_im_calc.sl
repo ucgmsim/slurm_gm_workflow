@@ -4,7 +4,7 @@
 # must be run with sbatch obs_im_calc [observedGroundMotionsDirectory]
 
 #SBATCH --job-name=obs_im_calc
-#SBATCH --time=01:00:00
+#SBATCH --time=08:00:00
 #SBATCH --cpus-per-task=40
 
 export IMPATH=${gmsim}/IM_calculation

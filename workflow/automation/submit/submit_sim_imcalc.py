@@ -201,7 +201,7 @@ def submit_im_calc_slurm(
         logger=logger,
     )
     # set ch_safety_factor=1 as we scale it already.
-    header_options["wallclock_limit"] = estimate_wct.convert_to_wct(est_run_time)
+    header_options["wallclock_limit"] = estimate_wct.convert_to_wct(2*est_run_time)
     logger.debug("Using WCT for IM_calc: {header_options['wallclock_limit']}")
     header_options["job_name"] = "{}_{}".format(proc_type.str_value, fault_name)
     header_options["platform_specific_args"] = get_platform_node_requirements(n_cores)

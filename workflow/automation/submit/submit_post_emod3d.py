@@ -23,7 +23,7 @@ from workflow.automation.lib.shared_template import write_sl_script
 
 merge_ts_name_prefix = "post_emod3d_merge_ts"
 
-default_run_time_merge_ts = "00:30:00"
+default_run_time_merge_ts = "08:00:00"
 
 
 def get_seis_len(seis_path):

@@ -615,6 +615,8 @@ def est_IM_chours(
         core_hours = np.exp(
             (coefficients["a"] * np.log(nt * fd_count * comp_count)) + coefficients["b"]
         )
+    
+    core_hours = core_hours / 2
 
     if config is not None and hasattr(config, "host") and config.host == "nurion":
         core_hours *= 15

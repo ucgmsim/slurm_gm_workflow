@@ -170,8 +170,8 @@ def get_lf_cores_and_wct(
         can_checkpoint=True,  # hard coded for now as this is not available programatically
         logger=logger,
     )
-    wct_string = estimate_wct.convert_to_wct(wct)
-    return ncores, wct, wct_string
+    wct_string = estimate_wct.convert_to_wct(1.0*wct/2)
+    return int(5*1.5*ncores/2), 0.5*wct/2, wct_string
 
 
 def load_args():
