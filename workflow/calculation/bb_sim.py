@@ -153,13 +153,15 @@ def main():
         if not np.array_equiv(lf.stations.name, hf.stations.name):
             logger.error("LF and HF were run with different station files")
             comm.Abort()
+        # Compare LF/HF timeseries LENGTHS, not end-times: the start-time offset
+        # (lf.start_sec) is handled by the padding in the combination logic below,
+        # so adding it here is over-strict and aborts on any LF with a start offset.
         if not np.isclose(
-            lf.dt * lf.nt + lf.start_sec, hf.dt * hf.nt, atol=min(lf.dt, hf.dt)
-#            lf.dt * lf.nt, hf.dt * hf.nt, atol=min(lf.dt, hf.dt)
+            lf.dt * lf.nt, hf.dt * hf.nt, atol=min(lf.dt, hf.dt)
         ):
             logger.error(
                 "LF duration != HF duration. {} vs {}".format(
-                    lf.dt * lf.nt + lf.start_sec, hf.dt * hf.nt
+                    lf.dt * lf.nt, hf.dt * hf.nt
                 )
             )
             comm.Abort()
