@@ -14,6 +14,9 @@ seismogram files.
 
 from __future__ import annotations
 
+from collections import Counter
+from pathlib import Path
+
 import numpy as np
 
 
@@ -47,3 +50,27 @@ def first_occurrence_indices(names) -> tuple[np.ndarray, int, int]:
         keep.append(i)
     n_duplicate = len(names) - n_blank - len(keep)
     return np.asarray(keep, dtype=np.int64), n_blank, n_duplicate
+
+
+def read_station_list(path) -> list[str]:
+    """Read a canonical station list: one name per line.
+
+    Blank lines and anything after a '#' are ignored. Order is preserved
+    exactly as written, because it becomes the output row order.
+    """
+    names: list[str] = []
+    for line in Path(path).read_text().splitlines():
+        name = line.split("#", 1)[0].strip()
+        if name:
+            names.append(name)
+
+    if not names:
+        raise StationSetError(f"{path} contains no station names.")
+
+    repeated = sorted(n for n, count in Counter(names).items() if count > 1)
+    if repeated:
+        raise StationSetError(
+            f"{path} lists {len(repeated)} station name(s) more than once: "
+            f"{repeated[:10]}"
+        )
+    return names
