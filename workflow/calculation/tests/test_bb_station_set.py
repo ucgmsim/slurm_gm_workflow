@@ -80,3 +80,66 @@ def test_rejects_repeated_name(tmp_path):
     p.write_text("aaa\nbbb\naaa\n")
     with pytest.raises(StationSetError, match="aaa"):
         read_station_list(p)
+
+
+from workflow.calculation.bb_station_set import StationSet, resolve_station_set
+
+
+def test_identical_sets_resolve_unchanged_in_hf_order():
+    lf = np.array(["ccc", "aaa", "bbb"])
+    hf = np.array(["aaa", "bbb", "ccc"])
+    result = resolve_station_set(lf, hf)
+    assert isinstance(result, StationSet)
+    # HF order wins, not LF order and not sorted order.
+    assert result.names.tolist() == ["aaa", "bbb", "ccc"]
+    assert result.lf_idx.tolist() == [1, 2, 0]
+    assert result.hf_idx.tolist() == [0, 1, 2]
+
+
+def test_index_arrays_round_trip_to_the_right_names():
+    lf = np.array(["ccc", "aaa", "bbb"])
+    hf = np.array(["aaa", "bbb", "ccc"])
+    result = resolve_station_set(lf, hf)
+    assert lf[result.lf_idx].tolist() == result.names.tolist()
+    assert hf[result.hf_idx].tolist() == result.names.tolist()
+
+
+def test_duplicate_only_mismatch_resolves_to_full_hf_set():
+    # The PalliserKai REL08 shape: LF has duplicates and a blank, but once
+    # collapsed it covers exactly the HF set. Nothing is lost, so no flag.
+    lf = np.array(["aaa", "bbb", "aaa", "", "ccc", "bbb"])
+    hf = np.array(["aaa", "bbb", "ccc"])
+    result = resolve_station_set(lf, hf)
+    assert result.names.tolist() == ["aaa", "bbb", "ccc"]
+    assert lf[result.lf_idx].tolist() == ["aaa", "bbb", "ccc"]
+    assert any("de-duplicated" in line for line in result.report)
+
+
+def test_genuine_subset_aborts_by_default():
+    # The WellTeast shape: HF has a station LF genuinely lacks.
+    lf = np.array(["aaa", "bbb", ""])
+    hf = np.array(["aaa", "bbb", "320077e"])
+    with pytest.raises(StationSetError, match="320077e"):
+        resolve_station_set(lf, hf)
+
+
+def test_genuine_subset_proceeds_with_allow_subset_and_names_the_loss():
+    lf = np.array(["aaa", "bbb", ""])
+    hf = np.array(["aaa", "bbb", "320077e"])
+    result = resolve_station_set(lf, hf, allow_subset=True)
+    assert result.names.tolist() == ["aaa", "bbb"]
+    assert any("320077e" in line for line in result.report)
+
+
+def test_station_only_in_lf_also_counts_as_a_mismatch():
+    lf = np.array(["aaa", "bbb", "extra"])
+    hf = np.array(["aaa", "bbb"])
+    with pytest.raises(StationSetError, match="extra"):
+        resolve_station_set(lf, hf)
+
+
+def test_no_overlap_at_all_is_always_an_error():
+    lf = np.array(["aaa"])
+    hf = np.array(["bbb"])
+    with pytest.raises(StationSetError):
+        resolve_station_set(lf, hf, allow_subset=True)

@@ -16,6 +16,7 @@ from __future__ import annotations
 
 from collections import Counter
 from pathlib import Path
+from typing import NamedTuple
 
 import numpy as np
 
@@ -74,3 +75,98 @@ def read_station_list(path) -> list[str]:
             f"{repeated[:10]}"
         )
     return names
+
+
+class StationSet(NamedTuple):
+    """The stations a BB run will produce, and where to find each one.
+
+    names[k] is the station written to output row k. lf_idx[k] and
+    hf_idx[k] are that station's positions in the LF and HF station
+    arrays. Every quantity in bb_sim.py is keyed by k, which is what keeps
+    LF order, HF order and output row order from being conflated.
+    """
+
+    names: np.ndarray
+    lf_idx: np.ndarray
+    hf_idx: np.ndarray
+    report: list[str]
+
+
+def _positions(names, label: str, report: list[str]) -> dict[str, int]:
+    """Map each distinct name to the index of its first occurrence."""
+    keep, n_blank, n_duplicate = first_occurrence_indices(names)
+    if n_blank or n_duplicate:
+        report.append(
+            f"{label} de-duplicated: {len(names)} records -> {len(keep)} "
+            f"stations ({n_duplicate} duplicate, {n_blank} blank-named)."
+        )
+    return {str(names[i]): int(i) for i in keep}
+
+
+def resolve_station_set(
+    lf_names,
+    hf_names,
+    station_list: list[str] | None = None,
+    allow_subset: bool = False,
+) -> StationSet:
+    """Decide the station set, and how to index into LF and HF for it.
+
+    With station_list, the set is exactly those names in that order and
+    every one must be present in both inputs. Without it, the set is the
+    LF/HF intersection in HF order, and any difference between the two
+    sides is an error unless allow_subset is set: dropping a station HF
+    has is a real reduction of the output and must be an explicit choice.
+    """
+    if station_list is not None and allow_subset:
+        raise StationSetError(
+            "--station-list and --allow-station-subset are mutually "
+            "exclusive: with an explicit list, every listed station must be "
+            "present in both LF and HF."
+        )
+
+    lf_names = np.asarray(lf_names)
+    hf_names = np.asarray(hf_names)
+    report: list[str] = []
+    lf_pos = _positions(lf_names, "LF", report)
+    hf_pos = _positions(hf_names, "HF", report)
+
+    if station_list is not None:
+        names = list(station_list)
+        missing_lf = [n for n in names if n not in lf_pos]
+        missing_hf = [n for n in names if n not in hf_pos]
+        if missing_lf or missing_hf:
+            raise StationSetError(
+                f"Station list names {len(missing_lf)} station(s) absent from "
+                f"LF {missing_lf[:10]} and {len(missing_hf)} absent from HF "
+                f"{missing_hf[:10]}."
+            )
+        report.append(f"Using explicit station list: {len(names)} stations.")
+    else:
+        # hf_pos preserves HF first-occurrence order, so this is HF order.
+        names = [n for n in hf_pos if n in lf_pos]
+        only_hf = sorted(set(hf_pos) - set(lf_pos))
+        only_lf = sorted(set(lf_pos) - set(hf_pos))
+        if only_hf or only_lf:
+            detail = (
+                f"LF and HF cover different stations: {len(only_hf)} only in HF "
+                f"{only_hf[:10]}, {len(only_lf)} only in LF {only_lf[:10]}."
+            )
+            if not allow_subset:
+                raise StationSetError(
+                    detail + " Pass --allow-station-subset to drop them and "
+                    "continue on the common set, or --station-list to state "
+                    "the intended set explicitly."
+                )
+            report.append("WARNING: " + detail + " Continuing on the common set.")
+        else:
+            report.append(f"LF and HF station sets match: {len(names)} stations.")
+
+    if not names:
+        raise StationSetError("LF and HF have no stations in common.")
+
+    return StationSet(
+        names=np.asarray(names),
+        lf_idx=np.asarray([lf_pos[n] for n in names], dtype=np.int64),
+        hf_idx=np.asarray([hf_pos[n] for n in names], dtype=np.int64),
+        report=report,
+    )
