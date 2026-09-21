@@ -142,53 +142,13 @@ def main():
     lf = timeseries.LFSeis(args.lf_dir)
     hf = timeseries.HFSeis(args.hf_file)
 
-    # ---- BEGIN PATCH: handle mismatched station counts ----
-    if is_master:
-        # Get station name arrays
-        lf_names = lf.stations.name
-        hf_names = hf.stations.name
-        
-        # Find common stations (sorted for consistency)
-        common_names = np.intersect1d(lf_names, hf_names)
-        
-        if len(common_names) != lf.nstat or len(common_names) != hf.nstat:
-            logger.warning(
-                f"Station count mismatch: LF={lf.nstat}, HF={hf.nstat}. "
-                f"Using {len(common_names)} common stations."
-            )
-
-        # Ensure common_names is a numpy array of strings
-        common_names = np.array(common_names, dtype=lf_names.dtype)
-    else:
-        common_names = np.empty(0, dtype='|S8')  # placeholder, will be overwritten
-
-
-    # Broadcast common_names to all ranks
-    common_names = comm.bcast(common_names, root=master)
-
-
-    # Build a list of station indices in the HF array for the common names
-    # (we'll use these indices to access station metadata from hf.stations)
-    # We also need a mapping from common name to its index in the original HF array.
-    hf_idx_map = {name: i for i, name in enumerate(hf.stations.name)}
-    common_hf_indices = [hf_idx_map[name] for name in common_names]
-    
-    # ===== END PATCH =====
-
-
     # compatibility validation
     # abort if behaviour is undefined
     if is_master:
         logger.debug("=" * 50)
-        if len(common_names) == 0:
-            logger.error("No common stations between LF and HF.")
-            comm.Abort()
-        logger.debug(f"Using {len(common_names)} common stations.")
-
         if not lf.nstat == hf.nstat:
-            logger.warning("Station counts differ, but common stations have been selected. Proceeding.")
-            #logger.error("LF nstat != HF nstat. {} vs {}".format(lf.nstat, hf.nstat))
-            #comm.Abort()
+            logger.error("LF nstat != HF nstat. {} vs {}".format(lf.nstat, hf.nstat))
+            comm.Abort()
         if not np.array_equiv(lf.stations.name, hf.stations.name):
             logger.error("LF and HF were run with different station files")
             comm.Abort()
@@ -371,58 +331,66 @@ def main():
                 out.seek(file_size - FLOAT_SIZE)
                 np.float32().tofile(out)
 
-
-
     def unfinished():
-        # Check if output file exists and if all common stations are done
         try:
             with open(args.out_file, "rb") as bbf:
                 bbf.seek(HEAD_SIZE)
-                # Checkpoints are vsite written to file; we'll read all stations
-                # but only care about the common ones.
-                # We'll read the vsite field for all stations in the HF order,
-                # but we only care about the common ones.
-                # Since we are not filtering the station arrays, the output file
-                # still contains all HF stations. We need to check only the common ones.
-                # To simplify, we can check if the file size matches, and then
-                # for each common station, check its vsite.
-                # However, this is complex. For now, we'll assume that if the file exists
-                # and has the correct size, we'll treat it as resumable.
-                # But we must be careful: if the output file was generated with the full
-                # station list, it will have HEAD_STAT for all stations.
-                # We can read the vsite for the common stations and check if they are >0.
-                # For simplicity, we'll check a random common station.
-                # A better approach: read all vsites and check the common ones.
-                # For now, we'll just log a warning and start fresh if any station is missing.
-                # Since this is a patch, we'll keep it simple: start fresh for all common stations.
-                logger.debug("Checkpoint not implemented for common-station mode; starting fresh.")
-                return np.ones(len(common_names), dtype=bool)
+                # checkpoints are vsite written to file
+                # assume continuing machine is the same endian
+                ckpoints = (
+                    np.fromfile(
+                        bbf,
+                        count=lf.stations.size,
+                        dtype={
+                            "names": ["vsite"],
+                            "formats": ["f4"],
+                            "offsets": [40],
+                            "itemsize": HEAD_STAT,
+                        },
+                    )["vsite"]
+                    > 0
+                )
         except IOError:
-            return np.ones(len(common_names), dtype=bool)
-        # Fallback: start fresh
-        return np.ones(len(common_names), dtype=bool)
+            # file not created yet
+            return
+        if os.stat(args.out_file).st_size != file_size or len(ckpoints) == 0:
+            # file size is incorrect (probably different simulation)
+            return
+        if np.min(ckpoints):
+            try:
+                logger.debug("Checkpoints found.")
+                initialise(check_only=True)
+                logger.error("BB Simulation already completed.")
+                comm.Abort()
+            except AssertionError:
+                return
+        # seems ok to continue simulation
+        return np.invert(ckpoints)
 
     station_mask = None
     if is_master:
         station_mask = unfinished()
-        # station_mask is now of length len(common_names)
-        if station_mask is None or sum(station_mask) == len(common_names):
+        if station_mask is None or sum(station_mask) == lf.stations.size:
             logger.debug("No valid checkpoints found. Starting fresh simulation.")
-            initialise()  # You'll need to adapt initialise() as well
-            station_mask = np.ones(len(common_names), dtype=bool)
+            initialise()
+            station_mask = np.ones(lf.stations.size, dtype=bool)
         else:
-            logger.info(
-                f"Resuming simulation for {sum(station_mask)} of {len(common_names)} common stations."
-            )
+            try:
+                initialise(check_only=True)
+                logger.info(
+                    "{} of {} stations completed. Resuming simulation.".format(
+                        lf.stations.size - sum(station_mask), lf.stations.size
+                    )
+                )
+
+            except AssertionError:
+                logger.warning(
+                    "Simulation parameters mismatch. Starting fresh simulation."
+                )
+                initialise()
+                station_mask = np.ones(lf.stations.size, dtype=bool)
     station_mask = comm.bcast(station_mask, root=master)
-
-    # Now we need to iterate over the common station indices that are masked
-    # We'll create a list of (hf_index, name) pairs for the common stations
-    common_stations = [(idx, common_names[i]) for i, idx in enumerate(common_hf_indices) if station_mask[i]]
-    # Distribute among ranks
-    stations_todo = common_stations[rank::size]
-
-
+    stations_todo = hf.stations[station_mask][rank::size]
     stations_todo_idx = np.arange(hf.stations.size)[station_mask][rank::size]
 
     # load container to write to
@@ -435,15 +403,12 @@ def main():
     fmidbot = args.fmidbot
     t0 = MPI.Wtime()
     bb_acc = np.empty((bb_nt, N_COMP), dtype="f4")
-    for i, (hf_idx, stat_name) in enumerate(stations_todo):
-
-        logger.debug(f"Working on {stat_name}, {100*i/len(stations_todo):.2f}% complete")
-        # Get station record from HF (or LF, but HF has vs30 etc.)
-        stat = hf.stations[hf_idx]
-        # Use stat_name for lf.acc and hf.acc
-        lf_acc = np.copy(lf.acc(stat_name, dt=bb_dt))
-        hf_acc = np.copy(hf.acc(stat_name, dt=bb_dt))
-
+    for i, stat in enumerate(stations_todo):
+        logger.debug(
+            f"Working on {stat.name}, {100*i/len(stations_todo):.2f}% complete"
+        )
+        lf_acc = np.copy(lf.acc(stat.name, dt=bb_dt))
+        hf_acc = np.copy(hf.acc(stat.name, dt=bb_dt))
         station_yaml = os.path.join(str(args.site_response_dir), f"{stat.name}.yaml")
         if args.site_response_dir and os.path.isfile(station_yaml):
             logger.debug(
