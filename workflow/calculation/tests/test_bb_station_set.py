@@ -143,3 +143,51 @@ def test_no_overlap_at_all_is_always_an_error():
     hf = np.array(["bbb"])
     with pytest.raises(StationSetError):
         resolve_station_set(lf, hf, allow_subset=True)
+
+
+def test_station_list_selects_exactly_those_names_in_file_order():
+    lf = np.array(["aaa", "bbb", "ccc"])
+    hf = np.array(["ccc", "bbb", "aaa"])
+    result = resolve_station_set(lf, hf, station_list=["ccc", "aaa"])
+    assert result.names.tolist() == ["ccc", "aaa"]
+    assert lf[result.lf_idx].tolist() == ["ccc", "aaa"]
+    assert hf[result.hf_idx].tolist() == ["ccc", "aaa"]
+
+
+def test_station_list_drops_a_station_both_sides_have():
+    # The WellTeast case for the six already-complete realisations: both
+    # LF and HF hold 320077e, and only the explicit list removes it.
+    lf = np.array(["aaa", "320077e", "bbb"])
+    hf = np.array(["aaa", "320077e", "bbb"])
+    result = resolve_station_set(lf, hf, station_list=["aaa", "bbb"])
+    assert result.names.tolist() == ["aaa", "bbb"]
+    assert "320077e" not in result.names.tolist()
+
+
+def test_station_list_aborts_when_a_name_is_absent_from_lf():
+    lf = np.array(["aaa", "bbb"])
+    hf = np.array(["aaa", "bbb", "320077e"])
+    with pytest.raises(StationSetError, match="320077e"):
+        resolve_station_set(lf, hf, station_list=["aaa", "bbb", "320077e"])
+
+
+def test_station_list_aborts_when_a_name_is_absent_from_hf():
+    lf = np.array(["aaa", "bbb", "zzz"])
+    hf = np.array(["aaa", "bbb"])
+    with pytest.raises(StationSetError, match="zzz"):
+        resolve_station_set(lf, hf, station_list=["aaa", "bbb", "zzz"])
+
+
+def test_station_list_still_sees_through_lf_duplicates():
+    lf = np.array(["aaa", "", "bbb", "aaa"])
+    hf = np.array(["aaa", "bbb"])
+    result = resolve_station_set(lf, hf, station_list=["bbb", "aaa"])
+    assert result.names.tolist() == ["bbb", "aaa"]
+    assert lf[result.lf_idx].tolist() == ["bbb", "aaa"]
+
+
+def test_station_list_with_allow_subset_is_a_usage_error():
+    lf = np.array(["aaa"])
+    hf = np.array(["aaa"])
+    with pytest.raises(StationSetError, match="mutually exclusive"):
+        resolve_station_set(lf, hf, station_list=["aaa"], allow_subset=True)
