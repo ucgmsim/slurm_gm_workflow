@@ -1,10 +1,12 @@
 #!/usr/bin/env python
 """
 Combines low frequency and high frequency seismograms.
+(Debug Version with extra prints and flushes)
 """
 
 from argparse import ArgumentParser
 import os
+import sys
 import logging
 import numpy as np
 
@@ -139,56 +141,18 @@ def main():
         lf_amp_function = amp_function
 
     # load data stores
+    print(f"Rank {rank}: Loading LFSeis...", flush=True)
     lf = timeseries.LFSeis(args.lf_dir)
+    print(f"Rank {rank}: Loading HFSeis...", flush=True)
     hf = timeseries.HFSeis(args.hf_file)
-
-    # ---- BEGIN PATCH: handle mismatched station counts ----
-    if is_master:
-        # Get station name arrays
-        lf_names = lf.stations.name
-        hf_names = hf.stations.name
-        
-        # Find common stations (sorted for consistency)
-        common_names = np.intersect1d(lf_names, hf_names)
-        
-        if len(common_names) != lf.nstat or len(common_names) != hf.nstat:
-            logger.warning(
-                f"Station count mismatch: LF={lf.nstat}, HF={hf.nstat}. "
-                f"Using {len(common_names)} common stations."
-            )
-
-        # Ensure common_names is a numpy array of strings
-        common_names = np.array(common_names, dtype=lf_names.dtype)
-    else:
-        common_names = np.empty(0, dtype='|S8')  # placeholder, will be overwritten
-
-
-    # Broadcast common_names to all ranks
-    common_names = comm.bcast(common_names, root=master)
-
-
-    # Build a list of station indices in the HF array for the common names
-    # (we'll use these indices to access station metadata from hf.stations)
-    # We also need a mapping from common name to its index in the original HF array.
-    hf_idx_map = {name: i for i, name in enumerate(hf.stations.name)}
-    common_hf_indices = [hf_idx_map[name] for name in common_names]
-    
-    # ===== END PATCH =====
-
 
     # compatibility validation
     # abort if behaviour is undefined
     if is_master:
         logger.debug("=" * 50)
-        if len(common_names) == 0:
-            logger.error("No common stations between LF and HF.")
-            comm.Abort()
-        logger.debug(f"Using {len(common_names)} common stations.")
-
         if not lf.nstat == hf.nstat:
-            logger.warning("Station counts differ, but common stations have been selected. Proceeding.")
-            #logger.error("LF nstat != HF nstat. {} vs {}".format(lf.nstat, hf.nstat))
-            #comm.Abort()
+            logger.error("LF nstat != HF nstat. {} vs {}".format(lf.nstat, hf.nstat))
+            comm.Abort()
         if not np.array_equiv(lf.stations.name, hf.stations.name):
             logger.error("LF and HF were run with different station files")
             comm.Abort()
@@ -261,20 +225,36 @@ def main():
         for key in vars(args):
             logger.debug("{} : {}".format(key, getattr(args, key)))
 
+    print(f"Rank {rank}: Waiting at Barrier 1...", flush=True)
     comm.Barrier()  # prevent other processes from messing log file until master is done with logging above
+    print(f"Rank {rank}: Passed Barrier 1. Loading vs30ref...", flush=True)
+    
     # load vs30ref
     if args.lfvsref is None:
         # vs30ref from velocity model
-        vm_conf = utils.load_yaml(os.path.join(args.lf_vm, VM_PARAMS_FILE_NAME))
-        lfvs30refs = (
-            np.memmap(
-                "%s/vs3dfile.s" % (args.lf_vm),
-                dtype="<f4",
-                shape=(vm_conf["ny"], vm_conf["nz"], vm_conf["nx"]),
-                mode="r",
-            )[lf.stations.y, 0, lf.stations.x]
-            * 1000.0
-        )
+        vm_params_path = os.path.join(args.lf_vm, VM_PARAMS_FILE_NAME)
+        print(f"Rank {rank}: Loading VM params from {vm_params_path}", flush=True)
+        vm_conf = utils.load_yaml(vm_params_path)
+        
+        vm_file_path = "%s/vs3dfile.s" % (args.lf_vm)
+        print(f"Rank {rank}: Mapping VM file {vm_file_path}", flush=True)
+        
+        try:
+            lfvs30refs = (
+                np.memmap(
+                    vm_file_path,
+                    dtype="<f4",
+                    shape=(vm_conf["ny"], vm_conf["nz"], vm_conf["nx"]),
+                    mode="r",
+                )[lf.stations.y, 0, lf.stations.x]
+                * 1000.0
+            )
+            print(f"Rank {rank}: Successfully extracted vs30ref", flush=True)
+        except Exception as e:
+            print(f"Rank {rank}: Error extracting vs30ref: {e}", flush=True)
+            logger.error(f"Error extracting vs30ref: {e}")
+            comm.Abort()
+
         if is_master:
             logger.debug("vs30ref from velocity model.")
     else:
@@ -284,6 +264,7 @@ def main():
             logger.debug("fixed vs30ref.")
 
     # load vs30
+    print(f"Rank {rank}: Loading vsite file {args.vsite_file}", flush=True)
     try:
         # has to be a numpy array of np.float32 as written directly to binary
         vs30s = np.vectorize(
@@ -300,6 +281,9 @@ def main():
         if is_master:
             logger.error("vsite file is missing stations.")
             comm.Abort()
+    except Exception as e:
+        print(f"Rank {rank}: Error loading vsite: {e}", flush=True)
+        comm.Abort()
     else:
         if is_master:
             logger.debug("vs30 loaded successfully.")
@@ -371,58 +355,67 @@ def main():
                 out.seek(file_size - FLOAT_SIZE)
                 np.float32().tofile(out)
 
-
-
     def unfinished():
-        # Check if output file exists and if all common stations are done
         try:
             with open(args.out_file, "rb") as bbf:
                 bbf.seek(HEAD_SIZE)
-                # Checkpoints are vsite written to file; we'll read all stations
-                # but only care about the common ones.
-                # We'll read the vsite field for all stations in the HF order,
-                # but we only care about the common ones.
-                # Since we are not filtering the station arrays, the output file
-                # still contains all HF stations. We need to check only the common ones.
-                # To simplify, we can check if the file size matches, and then
-                # for each common station, check its vsite.
-                # However, this is complex. For now, we'll assume that if the file exists
-                # and has the correct size, we'll treat it as resumable.
-                # But we must be careful: if the output file was generated with the full
-                # station list, it will have HEAD_STAT for all stations.
-                # We can read the vsite for the common stations and check if they are >0.
-                # For simplicity, we'll check a random common station.
-                # A better approach: read all vsites and check the common ones.
-                # For now, we'll just log a warning and start fresh if any station is missing.
-                # Since this is a patch, we'll keep it simple: start fresh for all common stations.
-                logger.debug("Checkpoint not implemented for common-station mode; starting fresh.")
-                return np.ones(len(common_names), dtype=bool)
+                # checkpoints are vsite written to file
+                # assume continuing machine is the same endian
+                ckpoints = (
+                    np.fromfile(
+                        bbf,
+                        count=lf.stations.size,
+                        dtype={
+                            "names": ["vsite"],
+                            "formats": ["f4"],
+                            "offsets": [40],
+                            "itemsize": HEAD_STAT,
+                        },
+                    )["vsite"]
+                    > 0
+                )
         except IOError:
-            return np.ones(len(common_names), dtype=bool)
-        # Fallback: start fresh
-        return np.ones(len(common_names), dtype=bool)
+            # file not created yet
+            return
+        if os.stat(args.out_file).st_size != file_size or len(ckpoints) == 0:
+            # file size is incorrect (probably different simulation)
+            return
+        if np.min(ckpoints):
+            try:
+                logger.debug("Checkpoints found.")
+                initialise(check_only=True)
+                logger.error("BB Simulation already completed.")
+                comm.Abort()
+            except AssertionError:
+                return
+        # seems ok to continue simulation
+        return np.invert(ckpoints)
 
     station_mask = None
     if is_master:
+        print(f"Rank {rank}: Checking unfinished status...", flush=True)
         station_mask = unfinished()
-        # station_mask is now of length len(common_names)
-        if station_mask is None or sum(station_mask) == len(common_names):
+        if station_mask is None or sum(station_mask) == lf.stations.size:
             logger.debug("No valid checkpoints found. Starting fresh simulation.")
-            initialise()  # You'll need to adapt initialise() as well
-            station_mask = np.ones(len(common_names), dtype=bool)
+            initialise()
+            station_mask = np.ones(lf.stations.size, dtype=bool)
         else:
-            logger.info(
-                f"Resuming simulation for {sum(station_mask)} of {len(common_names)} common stations."
-            )
+            try:
+                initialise(check_only=True)
+                logger.info(
+                    "{} of {} stations completed. Resuming simulation.".format(
+                        lf.stations.size - sum(station_mask), lf.stations.size
+                    )
+                )
+
+            except AssertionError:
+                logger.warning(
+                    "Simulation parameters mismatch. Starting fresh simulation."
+                )
+                initialise()
+                station_mask = np.ones(lf.stations.size, dtype=bool)
     station_mask = comm.bcast(station_mask, root=master)
-
-    # Now we need to iterate over the common station indices that are masked
-    # We'll create a list of (hf_index, name) pairs for the common stations
-    common_stations = [(idx, common_names[i]) for i, idx in enumerate(common_hf_indices) if station_mask[i]]
-    # Distribute among ranks
-    stations_todo = common_stations[rank::size]
-
-
+    stations_todo = hf.stations[station_mask][rank::size]
     stations_todo_idx = np.arange(hf.stations.size)[station_mask][rank::size]
 
     # load container to write to
@@ -435,15 +428,16 @@ def main():
     fmidbot = args.fmidbot
     t0 = MPI.Wtime()
     bb_acc = np.empty((bb_nt, N_COMP), dtype="f4")
-    for i, (hf_idx, stat_name) in enumerate(stations_todo):
-
-        logger.debug(f"Working on {stat_name}, {100*i/len(stations_todo):.2f}% complete")
-        # Get station record from HF (or LF, but HF has vs30 etc.)
-        stat = hf.stations[hf_idx]
-        # Use stat_name for lf.acc and hf.acc
-        lf_acc = np.copy(lf.acc(stat_name, dt=bb_dt))
-        hf_acc = np.copy(hf.acc(stat_name, dt=bb_dt))
-
+    
+    print(f"Rank {rank}: Starting processing of {len(stations_todo)} stations.", flush=True)
+    
+    for i, stat in enumerate(stations_todo):
+        if i % 10 == 0:
+            logger.debug(
+                f"Working on {stat.name}, {100*i/len(stations_todo):.2f}% complete"
+            )
+        lf_acc = np.copy(lf.acc(stat.name, dt=bb_dt))
+        hf_acc = np.copy(hf.acc(stat.name, dt=bb_dt))
         station_yaml = os.path.join(str(args.site_response_dir), f"{stat.name}.yaml")
         if args.site_response_dir and os.path.isfile(station_yaml):
             logger.debug(
@@ -482,9 +476,12 @@ def main():
                     f"Station {stat.name} does not have a site specific file. Running vs30 based amplification"
                 )
             else:
-                logger.debug(
-                    f"Site specific response not being used. Running vs30 based amplification for {stat.name}"
-                )
+                # Reduce log spam
+                # logger.debug(
+                #    f"Site specific response not being used. Running vs30 based amplification for {stat.name}"
+                # )
+                pass
+                
             pga = np.max(np.abs(hf_acc), axis=0) / 981.0
             # ideally remove loop # Could reduce to single components?
             for c in range(N_COMPONENTS):

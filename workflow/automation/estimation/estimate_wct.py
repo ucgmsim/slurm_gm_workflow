@@ -279,6 +279,10 @@ def estimate_LF_chours(
     if config is not None and hasattr(config, "host") and config.host == "nurion":
         core_hours *= 4
 
+    #for mike's subduction calculation
+    core_hours *= 2
+
+
     # data[:, -1] represents the last column of the ndarray data, which contains the number of cores for each task
     wct = core_hours / data[:, -1]
 
@@ -392,6 +396,8 @@ def estimate_HF_chours(
 
     if config is not None and hasattr(config, "host") and config.host == "nurion":
         core_hours *= 6
+    # for mike's WCT-killed jobs
+    core_hours *= 2
 
     wct = core_hours / data[:, -1]
     if scale_ncores and np.any(

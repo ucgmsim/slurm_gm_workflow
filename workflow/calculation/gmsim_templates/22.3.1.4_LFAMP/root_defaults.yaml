@@ -12,7 +12,6 @@ hf:
 bb:
   fmin: 0.2
   fmidbot: 0.25
-  no-lf-amp: False
   dt: 0.005
 emod3d:
    emod3d_version: 3.0.8

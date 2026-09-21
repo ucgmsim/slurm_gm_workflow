@@ -6,6 +6,30 @@ from datetime import datetime, timedelta
 import qcore.constants as const
 from workflow.automation.lib.shared_automated_workflow import add_to_queue
 
+import re
+
+def parse_slurm_wct(wct_str):
+    """
+    Parses a SLURM WCT string which may be in MM:SS, HH:MM:SS, or D-HH:MM:SS format.
+    Returns total seconds as int.
+    """
+    try:
+        if re.match(r"^\d+:\d{2}$", wct_str):  # MM:SS
+            m, s = map(int, wct_str.split(":"))
+            return m * 60 + s
+        elif re.match(r"^\d+:\d{2}:\d{2}$", wct_str):  # HH:MM:SS
+            h, m, s = map(int, wct_str.split(":"))
+            return int(timedelta(hours=h, minutes=m, seconds=s).total_seconds())
+        elif re.match(r"^\d+-\d{1,2}:\d{2}:\d{2}$", wct_str):  # D-HH:MM:SS
+            d, h, m, s = map(int, re.split("[-:]", wct_str))
+            return int(timedelta(days=d, hours=h, minutes=m, seconds=s).total_seconds())
+        else:
+            print(f"⚠️ Unrecognized WCT format: '{wct_str}' — defaulting to 0")
+            return 0
+    except Exception as e:
+        print(f"⚠️ Failed to parse WCT '{wct_str}': {e} — defaulting to 0")
+        return 0
+
 
 def datestr_to_timestamp(time: str):
     """
@@ -86,17 +110,9 @@ if __name__ == "__main__":
     )
 
     args = parser.parse_args()
-    wct = (
-        int(
-            timedelta(
-                hours=int(args.wct.split(":")[0]),
-                minutes=int(args.wct.split(":")[1]),
-                seconds=int(args.wct.split(":")[2]),
-            ).total_seconds()
-        )
-        if args.wct is not None
-        else None
-    )
+    # Use this wherever WCT is processed
+    wct = parse_slurm_wct(args.wct) if args.wct else None
+
     add_to_queue(
         args.queue_folder,
         args.run_name,

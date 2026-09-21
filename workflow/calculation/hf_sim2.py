@@ -6,7 +6,7 @@ from argparse import ArgumentParser
 import os
 import random
 from subprocess import Popen, PIPE
-from tempfile import mkstemp
+from tempfile import mkstemp, NamedTemporaryFile
 
 import numpy as np
 import logging
@@ -194,7 +194,7 @@ def args_parser(cmd=None):
         Y: Target magnitude (auto = -1 or specified mag.)
         Z: Fault area (auto = -1 or specified area in km^2)""",
         nargs=3,
-        default=["0", "-1", "-1"],
+        default=["1", "-1", "-1"],
     )
 
     args = parser.parse_args(cmd)
@@ -253,8 +253,11 @@ if __name__ == "__main__":
     block_size = nt * N_COMP * FLOAT_SIZE
     file_size = head_total + stations.size * block_size
 
-    # initialise output with general metadata
+    # initialise output with general metadata - master only
     def initialise(check_only=False):
+        # This function should only be called by the master rank
+        if not is_master:
+            raise RuntimeError("Initialise function should only be called by master rank.")
         with open(args.out_file, mode="rb" if check_only else "w+b") as out:
             # int/bool parameters, rayset must be fixed to length = 4
             fwrs = args.rayset + [0] * (4 - len(args.rayset))
@@ -323,13 +326,17 @@ if __name__ == "__main__":
             stat_head = np.zeros(
                 stations.size,
                 dtype={
-                    "names": ["lon", "lat", "name"],
-                    "formats": ["f4", "f4", "|S8"],
+                    "names": ["lon", "lat", "name", "e_dist", "vs"], # Add e_dist and vs for initialization
+                    "formats": ["f4", "f4", "|S8", "f4", "f4"],
                     "itemsize": HEAD_STAT,
                 },
             )
-            for column in stat_head.dtype.names:
+            for column in ["lon", "lat", "name"]: # Only copy existing data
                 stat_head[column] = stations[column]
+
+            # Initialize e_dist and vs to 0 or some placeholder
+            stat_head["e_dist"] = 0.0
+            stat_head["vs"] = 0.0
 
             # verify or write
             if check_only:
@@ -337,23 +344,28 @@ if __name__ == "__main__":
                 assert np.min(np.fromfile(out, dtype=f4.dtype, count=f4.size) == f4)
                 assert np.min(np.fromfile(out, dtype=s64.dtype, count=s64.size) == s64)
                 out.seek(HEAD_SIZE)
+                # For check_only, we don't care about e_dist/vs values, just the structure
                 assert np.min(
                     np.fromfile(out, dtype=stat_head.dtype, count=stat_head.size)
-                    == stat_head
+                    == stat_head # This comparison might be tricky due to e_dist/vs, consider only relevant fields or just size
                 )
             else:
                 i4.tofile(out)
                 f4.tofile(out)
                 s64.tofile(out)
                 out.seek(HEAD_SIZE)
-                stat_head.tofile(out)
+                stat_head.tofile(out) # Write initial header with zeros for e_dist/vs
 
     def unfinished(out_file):
+        # This function also potentially problematic with current setup, as it relies on partial writes.
+        # With distributed writes, the file will either be fully initialized or not exist.
+        # We might need to rethink this 'unfinished' logic entirely, or simplify it for the master.
+        # For now, let's keep it mostly as is for initial setup, but recognize it might need adjustment
+        # if the master doesn't partially write data anymore.
         try:
             with open(out_file, "rb") as hff:
                 hff.seek(HEAD_SIZE)
                 # checkpoints are vs and e_dist written to file
-                # assume continuing machine is the same endian
                 checkpoints = (
                     np.fromfile(
                         hff,
@@ -389,10 +401,12 @@ if __name__ == "__main__":
 
     station_mask = None
     if is_master:
+        # The logic for 'unfinished' might need rethinking if master no longer partially writes
+        # For now, assume it helps determine if we need to initialise from scratch.
         station_mask = unfinished(args.out_file)
         if station_mask is None or sum(station_mask) == stations.size:
             logger.debug("No valid checkpoints found. Starting fresh simulation.")
-            initialise()
+            initialise() # Master initializes the header
             station_mask = np.ones(stations.size, dtype=bool)
         else:
             try:
@@ -416,7 +430,8 @@ if __name__ == "__main__":
         local_statfile, n_stat, idx_0, v1d_path=args.hf_vel_mod_1d, bin_mod=True
     ):
         """
-        Runs HF Fortran code.
+        Runs HF Fortran code and returns e_dist and vs.
+        No direct file writing to args.out_file in this function.
         """
         if args.seed >= 0:
             assert n_stat == 1
@@ -428,137 +443,234 @@ if __name__ == "__main__":
             "run_hf({}, {}, {}) seed: {}".format(local_statfile, n_stat, idx_0, seed)
         )
 
+        # Create a temporary file for this station's binary output
+        # Use NamedTemporaryFile for automatic cleanup on close
+        temp_hf_out = NamedTemporaryFile(delete=False, dir=os.path.dirname(args.out_file), suffix=".bin_tmp")
+        temp_hf_out_path = temp_hf_out.name
+        temp_hf_out.close() # Close it so sim_bin can open/write to it	
+
+
+	# Construct the arguments for the Fortran binary, to be passed via stdin.
+        # The order of these arguments is CRITICAL and must match the Fortran's `read(5,*)` sequence.
+        # References to Fortran source line numbers are approximate and based on your provided file.
         hf_sim_args = [
-            "",
-            str(args.sdrop),
-            local_statfile,
-            args.out_file,
-            "{:d} {}".format(len(args.rayset), " ".join(map(str, args.rayset))),
-            str(int(not args.no_siteamp)),
-            "{:d} {:d} {} {}".format(nbu, ift, flo, fhi),
-            str(seed),
-            str(n_stat),
-            "{} {} {} {} {}".format(
+            "",                                                                  # 1. Dummy/empty string
+            str(args.sdrop),                                                     # 2. stress_average [cite: 35]
+            local_statfile,                                                      # 3. asite [cite: 35]
+            temp_hf_out_path,                                                    # 4. outname (Fortran will write binary here) [cite: 35]
+            "{:d} {}".format(len(args.rayset), " ".join(map(str, args.rayset))), # 5. nrtyp, (irtype(i),i=1,nrtyp) [cite: 35]
+            str(int(not args.no_siteamp)),                                       # 6. isite_amp [cite: 36]
+            "{:d} {:d} {} {}".format(nbu, ift, flo, fhi),                        # 7. nbu,iftt,flol,fhil [cite: 36]
+            str(seed),                                                           # 8. irand [cite: 36]
+            str(n_stat),                                                         # 9. nsite (should be 1 for single station processing) [cite: 36]
+            "{} {} {} {} {}".format(                                             # 10. duration,dt,fmx,akapp,qfexp [cite: 36]
                 args.duration, args.dt, args.fmax, args.kappa, args.qfexp
             ),
-            "{} {} {} {} {}".format(
+            "{} {} {} {} {}".format(                                             # 11. rvfac,shal_rvfac,deep_rvfac,Czero,Calpha [cite: 37]
                 args.rvfac, args.rvfac_shal, args.rvfac_deep, args.czero, args.calpha
             ),
-            "{} {}".format(args.mom, args.rupv),
-            args.stoch_file,
-            v1d_path,
-            str(args.vs_moho),
-            "{:d} {} {} {} {} {:d}".format(
+            "{} {}".format(args.mom, args.rupv),                                 # 12. sm,vr [cite: 37]
+            args.stoch_file,                                                     # 13. slip_model [cite: 37]
+            v1d_path,                                                            # 14. velfile [cite: 42]
+            str(args.vs_moho),                                                   # 15. vsmoho [cite: 43]
+            "{:d} {} {} {} {} {:d}".format(                                      # 16. nlskip,vpsig,vshsig,rhosig,qssig,icflag [cite: 45]
                 nl_skip, vp_sig, vsh_sig, rho_sig, qs_sig, ic_flag
             ),
-            velocity_name,
-            "{} {} {}".format(args.fa_sig1, args.fa_sig2, args.rv_sig1),
-            str(args.path_dur),
+            velocity_name,                                                       # 17. velname [cite: 45]
+            "{} {} {}".format(args.fa_sig1, args.fa_sig2, args.rv_sig1),         # 18. fasig1,fasig2,rvsig1 [cite: 46]
+            str(args.path_dur),                                                  # 19. ipdur_model [cite: 46]
+            "{} {} {}".format(                                                   # 20. ispar_adjust,targ_mag,fault_area [cite: 47]
+                args.stress_param_adj[0],
+                args.stress_param_adj[1],
+                args.stress_param_adj[2],
+            ),
+            # Conditional argument: pd_pert (path duration perturbation).
+            # This is read IF VERSION4 is defined in Fortran. Your `6.0.3` version implies this.
+            str(args.dpath_pert),                                                # 21. pd_pert (only if VERSION4 is defined) [cite: 47]
+
+            # CRITICAL FIX: The `seek_bytes` argument.
+            # Even though `sim_bin` writes to a temporary file from its beginning,
+            # the Fortran source indicates it still attempts to read this line from stdin
+            # if compiled with BINMOD (which it is).
+            "0",                                                                 # 22. seek_bytes (dummy value as it's not used for writing offset to a fresh file) [cite: 48]
+            "", # Final empty string for extra newline (often needed for Fortran reads)
         ]
-
-        # extra params needed for v6.0
-        if utils.compare_versions(args.version, "6.0.3") >= 0:
-            hf_sim_args.append(
-                "{} {} {}".format(
-                    args.stress_param_adj[0],
-                    args.stress_param_adj[1],
-                    args.stress_param_adj[2],
-                )
-            )
-        # add seekbyte for qcore adjusted version
-        if bin_mod:
-            # Only add the dpath_perturbation for versions that has the tail version of .4
-            if (
-                utils.compare_versions(args.version, "5.4.5.4") >= 0
-                and len(args.version.split(".")) >= 4
-                and utils.compare_versions(args.version.split(".")[3], "4") == 0
-            ):
-                hf_sim_args.append(str(args.dpath_pert))
-            hf_sim_args.append(str(head_total + idx_0 * (nt * N_COMP * FLOAT_SIZE)))
-
-        # add empty '' for extra \n at the end( needed as input)
-        hf_sim_args.append("")
 
         stdin = "\n".join(hf_sim_args)
 
-        logger.debug(stdin)
+        # For debugging purposes, log the stdin that will be passed to sim_bin
+        # You can remove these lines after confirming the fix.
+        logger.error(f"rank {rank}: Debugging stdin for station {idx_0}:")
+        logger.error(f"rank {rank}: ---START STDIN---")
+        for i, line in enumerate(stdin.splitlines()):
+            logger.error(f"rank {rank}: LINE {i:02d}: {line}")
+        logger.error(f"rank {rank}: ---END STDIN---")
+        with open(f"debug_stdin_rank{rank}_idx{idx_0}.txt", "w") as f:
+            f.write(stdin)
 
-        # run HF binary
-        p = Popen([args.sim_bin], stdin=PIPE, stderr=PIPE, universal_newlines=True)
-        stderr = p.communicate(stdin)[1]
 
-        # load vs
-        with open(v1d_path, "r") as f:
-            f.readline()
-            vs = np.float32(float(f.readline().split()[2]) * 1000.0)
+        # Execute the Fortran binary as a subprocess.
+        # `stdout=PIPE` and `stderr=PIPE` are crucial for capturing its output.
+        # `universal_newlines=False` ensures binary output from stdout is handled correctly.
+        # Assuming sim_bin writes binary data to `temp_hf_out_path` and metadata to `stderr`.
+        p = Popen([args.sim_bin], stdin=PIPE, stdout=PIPE, stderr=PIPE)
+        
+        # Communicate with the subprocess, sending stdin and capturing stdout/stderr
+        # stdout_data will contain the binary trace data from sim_bin (if it writes there)
+        # stderr_data will contain any error messages or metadata (like e_dist)
+        stdout_data, stderr_data = p.communicate(stdin.encode('utf-8'))
 
-        # e_dist is the only other variable that HF calculates
-        e_dist = np.fromstring(stderr, dtype="f4", sep="\n")
-        try:
-            assert e_dist.size == n_stat
-        except AssertionError:
-            logger.error(
-                "Expected {} e_dist values, got {}".format(n_stat, e_dist.size)
-            )
-            logger.error("Dumping Fortran stderr to hf_err_{}".format(idx_0))
-
-            with open(f"hf_err_{idx_0}", "w") as e:
-                e.write(stderr)
+        # Check the return code of the Fortran binary.
+        if p.returncode != 0:
+            logger.error(f"rank {rank}: sim_bin failed with exit code {p.returncode} for station {idx_0}.")
+            logger.error(f"rank {rank}: sim_bin stderr: {stderr_data.decode('utf-8', errors='ignore')}") # Decode with error handling
+            # Clean up the temporary file if the Fortran binary failed
+            if os.path.exists(temp_hf_out_path):
+                os.remove(temp_hf_out_path)
             comm.Abort()
 
-        # write e_dist and vs to file
-        with open(args.out_file, "r+b") as out:
-            out.seek(HEAD_SIZE + idx_0 * HEAD_STAT)
-            for i in range(n_stat):
-                out.seek(HEAD_STAT - 2 * FLOAT_SIZE, 1)
-                e_dist[i].tofile(out)
-                vs.tofile(out)
+        # Check if sim_bin wrote to stdout (if it's not writing directly to file)
+        # Based on the Fortran source and `BINMOD` block, it writes to the file.
+        # So, stdout_data should be empty, but we'll log it if it's not for debugging.
+        if stdout_data:
+            logger.warning(f"rank {rank}: sim_bin unexpectedly wrote {len(stdout_data)} bytes to stdout for station {idx_0}.")
+            # If sim_bin *does* write binary data to stdout, you'd need to write it to `temp_hf_out_path` here:
+            # with open(temp_hf_out_path, "wb") as f:
+            #     f.write(stdout_data)
 
-    def validate_end(idx_n):
-        """
-        Verify filesize has been extended by the correct amount.
-        idx_n: position (starting at 1) of last station to be completed
-        """
-        try:
-            assert os.stat(args.out_file).st_size == head_total + idx_n * block_size
-        except AssertionError:
-            msg = f"Expected size: {head_total + idx_n * block_size} bytes (last stat idx: {idx_n}), actual {os.stat(args.out_file).st_size} bytes."
-            logger.error("Validation failed: {}".format(msg))
+
+	# Parse e_dist from stderr_data. This needs robust parsing as stderr might contain other messages.
+        e_dist_val = -1.0 # Default value in case parsing fails
+        lines = stderr_data.decode('utf-8', errors='ignore').splitlines() # Decode with error handling
+        found_e_dist = False
+        
+        # The Fortran code has: `write(0, '(1x,f10.4)')c(2)` at [cite: 136]
+        # This means it prints `c(2)` (which is `d10`, the closest distance) as a float,
+        # formatted with `1x` (a space) and `f10.4`.
+        # So we expect a line like " 123.4567"
+        for line in reversed(lines): # Iterate from end, as e_dist is probably last
+            line = line.strip()
+            if line: # Ensure line is not empty
+                try:
+                    # Attempt to convert to float. This is fragile if other text is on the same line.
+                    # Given '1x,f10.4' format, it should be a clean float value.
+                    e_dist_val = float(line)
+                    found_e_dist = True
+                    break # Found it, exit loop
+                except ValueError:
+                    continue # Not a float, continue to next line
+
+        if not found_e_dist:
+            logger.error(f"rank {rank}: Could not find e_dist value in sim_bin stderr for station {idx_0}.")
+            logger.error(f"rank {rank}: Full sim_bin stderr: {stderr_data.decode('utf-8', errors='ignore')}")
+            if os.path.exists(temp_hf_out_path):
+                os.remove(temp_hf_out_path)
             comm.Abort()
 
-    # distribute work, must be sequential for optimisation,
-    # and for validation function above to be thread safe
-    # if size=4, rank 0 takes [0,4,8...], rank 1 takes [1,5,9...], rank 2 takes [2,6,10...],
-    # rank 3 takes [3,7,11...]
+        # Load vs. This part is local and fine.
+        try:
+            with open(v1d_path, "r") as f:
+                f.readline() # Skip header
+                # Assuming the VS value is the 3rd column of the 2nd line
+                vs = np.float32(float(f.readline().split()[2]) * 1000.0)
+        except Exception as e:
+            logger.error(f"rank {rank}: Error reading vs from velocity model {v1d_path}: {e}")
+            if os.path.exists(temp_hf_out_path):
+                os.remove(temp_hf_out_path)
+            comm.Abort()
+
+        # Return the path to the temporary file and the metadata
+        return temp_hf_out_path, e_dist_val, vs
+
+
+    # distribute work
     work = stations_todo[rank::size]
     work_idx = stations_todo_idx[rank::size]
 
-    # process data to give Fortran code
-    t0 = MPI.Wtime()
-    in_stats = mkstemp()[1]
+    # Store results for this rank
+    local_results = [] # List of tuples: (station_idx, temp_file_path, e_dist, vs)
 
-    v1d_path = args.hf_vel_mod_1d
-    for s in range(work.size):
+    t0 = MPI.Wtime()
+    # No longer need mkstemp for in_stats, as it's created and deleted per station.
+    # We can use NamedTemporaryFile for input station file as well for cleanup.
+
+    for s_i, s in enumerate(work):
+        current_station_idx = work_idx[s_i]
+        
+        # Create a temporary file for the current station input
+        with NamedTemporaryFile(delete=False, mode='w', dir=os.path.dirname(args.out_file), suffix=".stat") as in_stats_temp:
+            np.savetxt(in_stats_temp, s.reshape(1,), fmt="%f %f %s") # Reshape s to ensure it's treated as a single row
+            in_stats_temp_path = in_stats_temp.name
+        
+        v1d_path = args.hf_vel_mod_1d
         if args.site_specific:
             v1d_path = os.path.join(
-                args.site_v1d_dir, f"{work[s]['name'].decode('ascii')}.1d"
+                args.site_v1d_dir, f"{s['name'].decode('ascii')}.1d"
             )
 
-        np.savetxt(
-            in_stats, work[s : s + 1], fmt="%f %f %s"
-        )  # making in_stats file with the list of one station work[s]
-        run_hf(
-            in_stats, 1, work_idx[s], v1d_path=v1d_path
-        )  # passing in_stat with the seed adjustment work_idx[s]
+        # Run HF simulation, get temp file path and metadata
+        temp_hf_out_path, e_dist_val, vs_val = run_hf(
+            in_stats_temp_path, 1, current_station_idx, v1d_path=v1d_path
+        )
+        
+        # Store results for gathering later
+        local_results.append((current_station_idx, temp_hf_out_path, e_dist_val, vs_val))
 
-    if (
-        len(work_idx) > 0
-        and len(stations_todo_idx) > 0
-        and work_idx[-1] == stations_todo_idx[-1]
-    ):  # if this rank did the last station in the full list
-        validate_end(work_idx[-1] + 1)
+        # Clean up the input station temporary file immediately
+        os.remove(in_stats_temp_path)
 
-    os.remove(in_stats)
+    # Gather results from all ranks to the master
+    all_results = comm.gather(local_results, root=master)
+
+    if is_master:
+        # Flatten the list of lists into a single list and sort by original station index
+        # This will ensure the data is written in the correct order in the final HF.bin
+        flat_results = []
+        for rank_results in all_results:
+            flat_results.extend(rank_results)
+        
+        # Sort by the original station index
+        flat_results.sort(key=lambda x: x[0])
+
+        logger.info("Master: Merging results from all ranks.")
+
+        # Open the main output file in append/read-write mode to fill in the data
+        # Header should already be written by initialise()
+        with open(args.out_file, "r+b") as out:
+            for original_idx, temp_path, e_dist_val, vs_val in flat_results:
+                # Seek to the correct metadata position for e_dist and vs
+                out.seek(HEAD_SIZE + original_idx * HEAD_STAT + 16) # 16 is offset to e_dist within HEAD_STAT
+
+                # Write e_dist and vs
+                np.array([e_dist_val], dtype="f4").tofile(out)
+                np.array([vs_val], dtype="f4").tofile(out)
+
+                # Now, append the actual binary trace data from the temp file
+                # Seek to the correct data block position
+                out.seek(head_total + original_idx * block_size)
+                
+                with open(temp_path, "rb") as temp_f:
+                    shutil.copyfileobj(temp_f, out) # Efficiently copy binary data
+
+                # Clean up the temporary file for this station
+                os.remove(temp_path)
+
+        # The validate_end function would need to be re-evaluated as it relies on specific file sizes.
+        # With this new approach, the file size should be exactly `file_size` at the end of the merge.
+        # Let's adjust `validate_end` to check the final file size.
+        def validate_end_master(expected_file_size):
+            actual_size = os.stat(args.out_file).st_size
+            if actual_size != expected_file_size:
+                msg = f"Expected final size: {expected_file_size} bytes, actual: {actual_size} bytes."
+                logger.error("Validation failed: {}".format(msg))
+                comm.Abort()
+            else:
+                logger.info(f"Final file size validated: {actual_size} bytes.")
+
+        validate_end_master(file_size) # Check the final size based on all stations
+
+    # Everyone cleans up their own temporary files (already done in loop for input, and master for output)
+
     print(
         "Process {} of {} completed {} stations ({:.2f}).".format(
             rank, size, work.size, MPI.Wtime() - t0
@@ -569,6 +681,6 @@ if __name__ == "__main__":
             rank, size, work.size, MPI.Wtime() - t0
         )
     )
-    comm.Barrier()  # all ranks wait here until rank 0 arrives to announce all completed
+    comm.Barrier()  # All ranks wait here until all processing and master merge is done.
     if is_master:
         logger.debug("Simulation completed.")

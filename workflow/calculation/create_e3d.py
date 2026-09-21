@@ -128,6 +128,15 @@ def create_run_params(
                         )
                     )
 
+        # --- ensure pertbfile is written even if it's not in defaults ---
+        try:
+            pertbfile = (params.get("emod3d") or {}).get("pertbfile")
+            if pertbfile:
+                e3d_dict["pertbfile"] = pertbfile  # string path; writer will handle quoting
+                logger.info("Set e3d.par pertbfile=%s", pertbfile)
+        except Exception as e:
+            logger.warning("Could not set pertbfile from sim_params.yaml: %s", e)
+
         shared.dict_to_e3d_par(
             os.path.join(params["sim_dir"], "LF", "e3d.par"), e3d_dict
         )
