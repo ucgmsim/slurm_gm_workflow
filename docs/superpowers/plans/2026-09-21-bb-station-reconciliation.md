@@ -796,7 +796,7 @@ cd /home/arr65/src/slurm_gm_workflow
 uv run --no-project --with numpy --with pytest pytest workflow/calculation/tests/test_bb_sim_indexing.py -v
 ```
 
-Expected: 7 failures — the forbidden attributes are all still present and the resolver is not wired in.
+Expected: 7 failed, 1 passed — the forbidden attributes are all still present and the resolver is not wired in; the checkpointing guard already holds.
 
 - [ ] **Step 3: Add the import**
 
@@ -1013,7 +1013,7 @@ cd /home/arr65/src/slurm_gm_workflow
 uv run --no-project --with numpy --with pytest pytest workflow/calculation/tests/ -v
 ```
 
-Expected: 31 passed (24 from the station-set module, 7 guards).
+Expected: 32 passed (24 from the station-set module, 8 guards).
 
 - [ ] **Step 11: Check the file is syntactically valid and has no stale references**
 
@@ -1278,7 +1278,7 @@ cd /home/arr65/src/slurm_gm_workflow
 uv run --no-project --with numpy --with pytest pytest workflow/calculation/tests/ -v
 ```
 
-Expected: 36 passed.
+Expected: 37 passed.
 
 - [ ] **Step 6: Commit**
 

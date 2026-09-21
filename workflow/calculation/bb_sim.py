@@ -20,6 +20,11 @@ from qcore import timeseries, utils
 from qcore.constants import VM_PARAMS_FILE_NAME, Components, PLATFORM_CONFIG
 from workflow.calculation.site_response_BB import site_response
 from workflow.automation import platform_config
+from workflow.calculation.bb_station_set import (
+    StationSetError,
+    read_station_list,
+    resolve_station_set,
+)
 
 if __name__ == "__main__":
     from mpi4py import MPI
@@ -79,6 +84,18 @@ def args_parser(cmd=None):
         default=False,
         nargs="?",
         type=int,
+    )
+    arg(
+        "--station-list",
+        help="File of station names, one per line, giving the exact set and "
+        "order to produce. Every name must be present in both LF and HF. "
+        "Use this to keep a station list identical across realisations.",
+    )
+    arg(
+        "--allow-station-subset",
+        help="Proceed when LF and HF cover different stations, using only "
+        "those common to both. Without this, a difference is an error.",
+        action="store_true",
     )
 
     args = parser.parse_args(cmd)
@@ -142,16 +159,34 @@ def main():
     lf = timeseries.LFSeis(args.lf_dir)
     hf = timeseries.HFSeis(args.hf_file)
 
+    # Decide which stations this run produces. LF may carry EMOD3D
+    # boundary-duplicate records and blank-named slots, and LF and HF are
+    # not guaranteed to cover the same stations.
+    try:
+        stations = resolve_station_set(
+            lf.stations.name,
+            hf.stations.name,
+            station_list=(
+                read_station_list(args.station_list) if args.station_list else None
+            ),
+            allow_subset=args.allow_station_subset,
+        )
+    except StationSetError as error:
+        if is_master:
+            logger.error(str(error))
+        comm.Abort()
+
+    bb_names = stations.names
+    lf_idx = stations.lf_idx
+    hf_idx = stations.hf_idx
+    n_bb = len(bb_names)
+
     # compatibility validation
     # abort if behaviour is undefined
     if is_master:
         logger.debug("=" * 50)
-        if not lf.nstat == hf.nstat:
-            logger.error("LF nstat != HF nstat. {} vs {}".format(lf.nstat, hf.nstat))
-            comm.Abort()
-        if not np.array_equiv(lf.stations.name, hf.stations.name):
-            logger.error("LF and HF were run with different station files")
-            comm.Abort()
+        for line in stations.report:
+            logger.info(line)
         if not np.isclose(
             lf.dt * lf.nt + lf.start_sec, hf.dt * hf.nt, atol=min(lf.dt, hf.dt)
         ):
@@ -210,8 +245,8 @@ def main():
     lf_end_padding_ts = np.zeros(lf_end_padding)
     hf_end_padding_ts = np.zeros(hf_end_padding)
 
-    head_total = HEAD_SIZE + lf.stations.size * HEAD_STAT
-    file_size = head_total + lf.stations.size * bb_nt * N_COMP * FLOAT_SIZE
+    head_total = HEAD_SIZE + n_bb * HEAD_STAT
+    file_size = head_total + n_bb * bb_nt * N_COMP * FLOAT_SIZE
     if args.flo is None:
         # min_vs / (5.0 * hh)
         args.flo = 0.5 / (5.0 * lf.hh)
@@ -232,14 +267,14 @@ def main():
                 dtype="<f4",
                 shape=(vm_conf["ny"], vm_conf["nz"], vm_conf["nx"]),
                 mode="r",
-            )[lf.stations.y, 0, lf.stations.x]
+            )[lf.stations.y[lf_idx], 0, lf.stations.x[lf_idx]]
             * 1000.0
         )
         if is_master:
             logger.debug("vs30ref from velocity model.")
     else:
         # fixed vs30ref
-        lfvs30refs = np.ones(lf.stations.size, dtype=np.float32) * args.lfvsref
+        lfvs30refs = np.ones(n_bb, dtype=np.float32) * args.lfvsref
         if is_master:
             logger.debug("fixed vs30ref.")
 
@@ -254,7 +289,7 @@ def main():
                     comments=("#", "%"),
                 )
             ).get
-        )(lf.stations.name)
+        )(bb_names)
         assert not np.isnan(vs30s).any()
     except AssertionError:
         if is_master:
@@ -269,7 +304,7 @@ def main():
         logger.debug("Initialising.")
         with open(args.out_file, mode="rb" if check_only else "w+b") as out:
             # int/bool parameters
-            i = np.array([lf.stations.size, bb_nt], dtype="i4")
+            i = np.array([n_bb, bb_nt], dtype="i4")
             # float parameters
             f = np.array([bb_nt * bb_dt, bb_dt, bb_start_sec], dtype="f4")
             # string parameters
@@ -277,7 +312,7 @@ def main():
             # station metadata
             bb_stations = np.rec.array(
                 np.zeros(
-                    lf.nstat,
+                    n_bb,
                     dtype={
                         "names": [
                             "lon",
@@ -305,13 +340,12 @@ def main():
                     },
                 )
             )
-            # copy most from LF
+            # copy most from LF, addressed through the canonical set
             for col in bb_stations.dtype.names[:-3]:
-                bb_stations[col] = lf.stations[col]
-            # add e_dist and hf_vs_ref from HF
-            # assuming same order, true if run with same station file, asserted above
-            bb_stations.e_dist = hf.stations.e_dist
-            bb_stations.hf_vs_ref = hf.stations.vs
+                bb_stations[col] = lf.stations[col][lf_idx]
+            # add e_dist and hf_vs_ref from HF, same stations, HF's own order
+            bb_stations.e_dist = hf.stations.e_dist[hf_idx]
+            bb_stations.hf_vs_ref = hf.stations.vs[hf_idx]
             # lf_vs_ref from velocity model
             bb_stations.lf_vs_ref = lfvs30refs
 
@@ -340,7 +374,7 @@ def main():
                 ckpoints = (
                     np.fromfile(
                         bbf,
-                        count=lf.stations.size,
+                        count=n_bb,
                         dtype={
                             "names": ["vsite"],
                             "formats": ["f4"],
@@ -370,16 +404,16 @@ def main():
     station_mask = None
     if is_master:
         station_mask = unfinished()
-        if station_mask is None or sum(station_mask) == lf.stations.size:
+        if station_mask is None or sum(station_mask) == n_bb:
             logger.debug("No valid checkpoints found. Starting fresh simulation.")
             initialise()
-            station_mask = np.ones(lf.stations.size, dtype=bool)
+            station_mask = np.ones(n_bb, dtype=bool)
         else:
             try:
                 initialise(check_only=True)
                 logger.info(
                     "{} of {} stations completed. Resuming simulation.".format(
-                        lf.stations.size - sum(station_mask), lf.stations.size
+                        n_bb - sum(station_mask), n_bb
                     )
                 )
 
@@ -388,10 +422,10 @@ def main():
                     "Simulation parameters mismatch. Starting fresh simulation."
                 )
                 initialise()
-                station_mask = np.ones(lf.stations.size, dtype=bool)
+                station_mask = np.ones(n_bb, dtype=bool)
     station_mask = comm.bcast(station_mask, root=master)
-    stations_todo = hf.stations[station_mask][rank::size]
-    stations_todo_idx = np.arange(hf.stations.size)[station_mask][rank::size]
+    # Output row indices this rank owns. Everything below is keyed by these.
+    stations_todo_idx = np.arange(n_bb)[station_mask][rank::size]
 
     # load container to write to
     bin_data = open(args.out_file, "r+b")
@@ -403,16 +437,18 @@ def main():
     fmidbot = args.fmidbot
     t0 = MPI.Wtime()
     bb_acc = np.empty((bb_nt, N_COMP), dtype="f4")
-    for i, stat in enumerate(stations_todo):
+    for i, k in enumerate(stations_todo_idx):
+        stat_name = str(bb_names[k])
+        stat = hf.stations[hf_idx[k]]
         logger.debug(
-            f"Working on {stat.name}, {100*i/len(stations_todo):.2f}% complete"
+            f"Working on {stat_name}, {100*i/len(stations_todo_idx):.2f}% complete"
         )
-        lf_acc = np.copy(lf.acc(stat.name, dt=bb_dt))
-        hf_acc = np.copy(hf.acc(stat.name, dt=bb_dt))
-        station_yaml = os.path.join(str(args.site_response_dir), f"{stat.name}.yaml")
+        lf_acc = np.copy(lf.acc(stat_name, dt=bb_dt))
+        hf_acc = np.copy(hf.acc(stat_name, dt=bb_dt))
+        station_yaml = os.path.join(str(args.site_response_dir), f"{stat_name}.yaml")
         if args.site_response_dir and os.path.isfile(station_yaml):
             logger.debug(
-                f"Station {stat.name} has a site specific file. Running OpenSees"
+                f"Station {stat_name} has a site specific file. Running OpenSees"
             )
             site_properties = site_response.SiteProp.from_file(station_yaml)
             for c in range(N_COMPONENTS):
@@ -444,11 +480,11 @@ def main():
         else:
             if args.site_response_dir:
                 logger.debug(
-                    f"Station {stat.name} does not have a site specific file. Running vs30 based amplification"
+                    f"Station {stat_name} does not have a site specific file. Running vs30 based amplification"
                 )
             else:
                 logger.debug(
-                    f"Site specific response not being used. Running vs30 based amplification for {stat.name}"
+                    f"Site specific response not being used. Running vs30 based amplification for {stat_name}"
                 )
             pga = np.max(np.abs(hf_acc), axis=0) / 981.0
             # ideally remove loop # Could reduce to single components?
@@ -457,7 +493,7 @@ def main():
                     bb_dt,
                     n2,
                     stat.vs,
-                    vs30s[stations_todo_idx[i]],
+                    vs30s[k],
                     stat.vs,
                     pga[c],
                     fmin=fmin,
@@ -467,8 +503,8 @@ def main():
                 lf_amp_val = lf_amp_function(
                     bb_dt,
                     n2,
-                    lfvs30refs[stations_todo_idx[i]],
-                    vs30s[stations_todo_idx[i]],
+                    lfvs30refs[k],
+                    vs30s[k],
                     stat.vs,
                     pga[c],
                     fmin=fmin,
@@ -480,8 +516,8 @@ def main():
                     if args.site_amp_uncertainty is None:
                         lf_seed = hf_seed = None
                     else:
-                        hf_seed = args.site_amp_uncertainty + stations_todo_idx[i]
-                        lf_seed = hf_seed + hf.stations.size
+                        hf_seed = args.site_amp_uncertainty + k
+                        lf_seed = hf_seed + n_bb
                     hf_amp_val = amplification_uncertainty(
                         hf_amp_val, freqs, seed=hf_seed
                     )
@@ -523,13 +559,13 @@ def main():
         bb_acc.tofile(bin_data)
         # write vsite as used for checkpointing
         bin_data.seek(bin_seek_vsite[i])
-        vs30s[stations_todo_idx[i]].tofile(bin_data)
+        vs30s[k].tofile(bin_data)
     bin_data.close()
 
     print("Process %03d of %03d finished (%.2fs)." % (rank, size, MPI.Wtime() - t0))
     logger.debug(
         "Process {} of {} completed {} stations ({:.2f}).".format(
-            rank, size, len(stations_todo), MPI.Wtime() - t0
+            rank, size, len(stations_todo_idx), MPI.Wtime() - t0
         )
     )
     comm.Barrier()  # all ranks wait here until rank 0 arrives to announce all completed
