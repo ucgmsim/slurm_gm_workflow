@@ -1393,37 +1393,101 @@ Expected: `BB.log` only, no `BB.bin`. Stop if a `BB.bin` exists.
 
 - [ ] **Step 2: Submit the run**
 
-Same settings Sung used for the 36 completed realisations — `--flo 1.0 --fmin 0.5 --fmidbot 1.0 --dt 0.005 --no-lf-amp` — and no new flags, because REL08's LF/HF sets match once duplicates collapse.
+Resources and `bb_sim` arguments are copied from the job that produced the
+36 completed siblings (Sung's `run_bb_job_array.sl`, job 7487609), not
+guessed. Two corrections to the first draft of this plan came from reading
+that job:
 
-Write the submission script on NeSI at `/home/arr65/run_bb_rel08.sl`:
+- **1 node, 4 MPI tasks, 84G, 2h** — not 80 tasks at 3G each. Completed
+  siblings took 15-52 minutes.
+- **VM directory is `v26p6/Data/VMs/PalliserKai`.** REL01's log shows three
+  failed attempts pointing at `v26p5`, which has no `vs3dfile.s`; the run
+  that completed used `v26p6`.
+
+Either `nesi00213` or `uc04357` is a valid account. This run used
+`uc04357`, as Sung's jobs did.
+
+Sung's wrapper is deliberately not reused. It `source`s `$gmsim/py311`,
+which the new environment does not have, and omits `PYTHONPATH`, so it
+would import `mrd87_4`'s code. It also runs `fix_old_nesi_path.sh` across
+the whole fault directory and writes a shared status DB — side effects left
+for the team to decide on.
+
+Written to `/home/arr65/run_bb_rel08.sl` on NeSI, and submitted as job
+**9216501** on 2026-09-21:
 
 ```bash
 #!/bin/bash
+#SBATCH --account=uc04357
 #SBATCH --job-name=bb_PalliserKai_REL08
-#SBATCH --account=nesi00213
-#SBATCH --ntasks=80
-#SBATCH --mem-per-cpu=3G
-#SBATCH --time=06:00:00
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=4
+#SBATCH --time=02:00:00
+#SBATCH --mem=84G
 #SBATCH --output=/home/arr65/bb_rel08_%j.out
 #SBATCH --error=/home/arr65/bb_rel08_%j.err
+#
+# PalliserKai_REL08 BB, run from the pinned branch nesi-cybershake-v26p6.
+#
+# Resources and bb_sim arguments match the job that produced the 36
+# completed PalliserKai siblings (Sung's run_bb_job_array.sl, job 7487609):
+# 1 node, 4 MPI tasks, 84G, same flags, same v26p6 VM directory.
+#
+# Differs from that job only in the code it runs: bb_sim.py now reconciles
+# LF and HF station sets by name, which REL08 needs because its LF carries
+# EMOD3D boundary-duplicate records. No new flags are passed: once those
+# collapse, REL08's LF and HF cover exactly the same 17760 stations.
+#
+# Deliberately omitted from Sung's wrapper: fix_old_nesi_path.sh (rewrites
+# files across the whole fault directory) and the sim_manager.py status-DB
+# update (a shared record, left for the team to update).
+
+set -euo pipefail
 
 E=/nesi/project/nesi00213/Environments/arr65_v26p6/workflow
 R=/nesi/nobackup/nesi00213/RunFolder/Cybershake/v26p6/Runs/PalliserKai/PalliserKai_REL08
 V=/nesi/nobackup/nesi00213/RunFolder/Cybershake/v26p6/Data/VMs/PalliserKai
+VS30=/nesi/project/nesi00213/StationInfo/non_uniform_whole_nz_with_real_stations-hh400_v20p3_land.vs30
 
-mkdir -p $R/BB/Acc
+source /nesi/project/nesi00213/Environments/mrd87_4/py311/bin/activate
+# Without this the venv resolves `workflow` to mrd87_4's old checkout,
+# which has no bb_station_set.
 export PYTHONPATH=$E
-srun /nesi/project/nesi00213/Environments/mrd87_4/py311/bin/python \
-  $E/workflow/calculation/bb_sim.py \
-  $R/LF/OutBin \
-  $V \
-  $R/HF/Acc/HF.bin \
-  /nesi/project/nesi00213/StationInfo/non_uniform_whole_nz_with_real_stations-hh400_v20p3_land.vs30 \
-  $R/BB/Acc/BB.bin \
-  --flo 1.0 --fmin 0.5 --fmidbot 1.0 --dt 0.005 --no-lf-amp
+
+echo "========================================="
+echo "job        : ${SLURM_JOB_ID}"
+echo "code       : $E"
+echo "commit     : $(git -C $E rev-parse HEAD)"
+echo "branch     : $(git -C $E rev-parse --abbrev-ref HEAD)"
+echo "tree clean : $([ -z "$(git -C $E status --porcelain)" ] && echo yes || echo NO)"
+echo "python     : $(which python)"
+echo "workflow   : $(python -c 'import workflow; print(workflow.__file__)')"
+echo "started    : $(date '+%Y-%m-%d %H:%M:%S')"
+echo "========================================="
+
+if [[ -e "$R/BB/Acc/BB.bin" ]]; then
+    echo "BB.bin already exists at $R/BB/Acc/BB.bin - refusing to overwrite."
+    exit 1
+fi
+mkdir -p "$R/BB/Acc"
+
+srun python "$E/workflow/calculation/bb_sim.py" \
+    "$R/LF/OutBin" \
+    "$V" \
+    "$R/HF/Acc/HF.bin" \
+    "$VS30" \
+    "$R/BB/Acc/BB.bin" \
+    --flo 1.0 --fmin 0.5 --fmidbot 1.0 --dt 0.005 --no-lf-amp
+
+echo "finished   : $(date '+%Y-%m-%d %H:%M:%S')"
+echo
+echo "=== verify against completed sibling REL01 ==="
+python "$E/workflow/calculation/verification/compare_bb_stations.py" \
+    /nesi/nobackup/nesi00213/RunFolder/Cybershake/v26p6/Runs/PalliserKai/PalliserKai_REL01/BB/Acc/BB.bin \
+    "$R/BB/Acc/BB.bin"
 ```
 
-Then: `ssh nesi 'sbatch /home/arr65/run_bb_rel08.sl'`
+Submit: `ssh nesi 'cd /home/arr65 && sbatch --parsable /home/arr65/run_bb_rel08.sl'`
 
 - [ ] **Step 3: Check the log shows the de-duplication and no abort**
 
