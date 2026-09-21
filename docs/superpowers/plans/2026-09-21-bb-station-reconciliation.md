@@ -27,6 +27,14 @@
 cd /home/arr65/src/slurm_gm_workflow && uv run --no-project --with numpy --with pytest pytest <path> -v
 ```
 
+**Import note.** The repository root carries a zero-byte `__init__.py`, so
+pytest treats the repo itself as a package and sets its import root to the
+parent directory, `/home/arr65/src` — which holds an unrelated project also
+called `workflow` that then shadows this one. `workflow/calculation/tests/
+conftest.py` (added in Task 2) puts the repository root first on `sys.path`,
+which is also how `bb_sim.py` is imported at runtime. Without it every test
+in Tasks 2-7 fails to collect.
+
 ---
 
 ### Task 1: Revert the unfinished in-place patch
@@ -105,7 +113,21 @@ The first half of the new module: collapsing EMOD3D's boundary-duplicate records
 
 - [ ] **Step 1: Write the failing test**
 
-Create `workflow/calculation/tests/__init__.py` as an empty file, then `workflow/calculation/tests/test_bb_station_set.py`:
+Create `workflow/calculation/tests/__init__.py` as an empty file, and
+`workflow/calculation/tests/conftest.py` with the `sys.path` fix described
+under Global Constraints:
+
+```python
+import sys
+from pathlib import Path
+
+REPO_ROOT = str(Path(__file__).resolve().parents[3])
+
+if sys.path and sys.path[0] != REPO_ROOT:
+    sys.path.insert(0, REPO_ROOT)
+```
+
+Then `workflow/calculation/tests/test_bb_station_set.py`:
 
 ```python
 import numpy as np
