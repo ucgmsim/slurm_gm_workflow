@@ -64,13 +64,21 @@ the first occurrence and never average. The same mechanism can also leave a
 boundary station written by *neither* domain, appearing as a blank-named
 slot.
 
+How this surfaces through `qcore`'s `LFSeis` is worth stating, because it is
+not what the record counts suggest. `LFSeis` sizes its station array by the
+sum of per-file counts but writes each station at its *global* index, so a
+duplicate overwrites its twin rather than appending. The inflation therefore
+appears as blank-named slots, not as repeated names: measured on real data,
+`REL08` has 10044 blanks and no repeated name at all. De-duplication handles
+both, since it drops blanks and keeps the first occurrence of any repeat.
+
 Measured across every realisation of both faults:
 
 | | PalliserKai `REL08` | WellTeast (25 of 26) | WellTeast `REL04` |
 |---|---|---|---|
 | LF records | 27804 | 18433 | none |
-| duplicates | 10043 | 1 | — |
-| blank-named slots | 1 | 1 | — |
+| blank-named slots | 10044 | 2 | — |
+| repeated names | 0 | 0 | — |
 | real LF stations | 17760 | 18431 | — |
 | HF stations | 17760 | 18432 | 18432 |
 | LF ∩ HF | **17760** | **18431** | — |

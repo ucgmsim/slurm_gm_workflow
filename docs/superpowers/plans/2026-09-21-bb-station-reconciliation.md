@@ -1431,7 +1431,14 @@ Then: `ssh nesi 'sbatch /home/arr65/run_bb_rel08.sl'`
 ssh nesi 'tail -30 /nesi/nobackup/nesi00213/RunFolder/Cybershake/v26p6/Runs/PalliserKai/PalliserKai_REL08/BB/Acc/BB.log'
 ```
 
-Expected: a line reading `LF de-duplicated: 27804 records -> 17760 stations (10043 duplicate, 1 blank-named).`, then `LF and HF station sets match: 17760 stations.`, and no `ERROR`.
+Expected, verified by running the resolver against the real station arrays:
+
+```
+LF de-duplicated: 27804 records -> 17760 stations (0 duplicate, 10044 blank-named).
+LF and HF station sets match: 17760 stations.
+```
+
+and no `ERROR`.
 
 - [ ] **Step 4: Verify against a completed sibling**
 
