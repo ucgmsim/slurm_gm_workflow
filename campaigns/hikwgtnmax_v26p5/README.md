@@ -6,7 +6,8 @@ the old workflow's `hf_sim.py` from NeSI's `mrd87_4` environment. This is the
 same code and binary as Sung's v26p6 HF runs. The LF was computed on Cascade;
 see the project notes for that part.
 
-On NeSI these files live in `/home/arr65/hikwgtnmax_v26p5/hf/`.
+On NeSI these files live in `/home/arr65/hikwgtnmax_v26p5/hf/`, except
+`hf_status.py`, which is piped over ssh from a checkout (see below).
 
 | File | Role |
 |---|---|
@@ -14,6 +15,7 @@ On NeSI these files live in `/home/arr65/hikwgtnmax_v26p5/hf/`.
 | `hf_commands.txt` | The 51 generated commands, md5 `6a9811d302ca58627caa2f7ab4d0525b`. |
 | `preflight_hf.py` | Read-only check of every command against its sources (details below). |
 | `run_hf_hikwgtnmax.sl` | The array job, 0–50, one realisation per task. |
+| `hf_status.py` | Read-only status of every task, with a full check of each finished `HF.bin` (details below). |
 
 `preflight_hf.py` checks:
 - station list, output path, and that no `HF.bin` exists yet;
@@ -36,7 +38,7 @@ injected error.
   `/home/arr65/hikwgtnmax_v26p5/hf/submissions.txt`, and job logs go to
   `/home/arr65/hikwgtnmax_v26p5/hf/logs/hf_<job>_<task>.out`.
 - **Still to do:**
-  - Verify all 51 `HF.bin` files.
+  - Verify all 51 `HF.bin` files with `hf_status.py`.
   - Then BB, which needs the old `bb_sim` to read the Cascade LF NetCDF.
   - Then IM.
 
@@ -96,3 +98,36 @@ cd /home/arr65/hikwgtnmax_v26p5/hf && sbatch --array=0-50 run_hf_hikwgtnmax.sl
   with the same command, so a timed-out or failed task is just resubmitted.
 - **Self-checks:** each task checks its `HF.log`, the `HF.bin` size
   (14643091208 bytes), and the 1D model named in the `HF.bin` header.
+- **Resubmissions:** log each one in `submissions.txt` as well.
+  `hf_status.py` takes each task's Slurm state from the jobs logged there.
+
+## Checking progress and outputs
+
+`hf_status.py` reads only. Run it from a checkout; nothing is copied to NeSI:
+
+```bash
+ssh nesi 'source /nesi/project/nesi00213/Environments/mrd87_4/py311/bin/activate && python - /home/arr65/hikwgtnmax_v26p5/hf/hf_commands.txt' < /home/arr65/src/slurm_gm_workflow/campaigns/hikwgtnmax_v26p5/hf_status.py
+```
+
+For each realisation it prints:
+- **Slurm state**, from the jobs logged in `submissions.txt`. A later job
+  overrides an earlier one for the same task.
+- **Stations done.** `hf_sim.py` marks a station done by writing its `e_dist`
+  into the station's header record, and resumes from these.
+- **Rate and time left** for a running task, assuming it started from
+  scratch; a resumed task looks faster.
+
+Once `HF.log` says `Simulation completed`, the `HF.bin` is checked in full:
+- the header against the command (seed, stoch file, settings), the OneRay
+  model and `rayset` 1;
+- the fields that come from `hf_sim.py`'s defaults, against Sung's v26p6
+  `PalliserKai_REL01` HF;
+- the station table against the station list, with every station done and
+  carrying the 1D model's surface Vs (500 m/s);
+- the exact size, and 64 sampled stations' data: finite, with every
+  component non-zero.
+
+It exits 1 if a task's Slurm state is anything but pending, running or
+completed, or if a finished output fails a check. A self-test on synthetic files caught every injected error: wrong
+model, ray set, seed, stoch file, a default, a station name, a station not
+done, a wrong Vs, NaN data, an all-zero component and a short file.
