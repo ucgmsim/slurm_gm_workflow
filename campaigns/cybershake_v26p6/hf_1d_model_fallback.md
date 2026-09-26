@@ -42,9 +42,16 @@ Cascade's v26p5. Only the directory part of that path differs; see step 1.
 
 **What other runs used.**
 - **v25p11 (Dropbox):** 63 of the 669 HF tarballs were checked: the median,
-  first and last realisation of all 21 faults. All used OneRay. Every other HF
-  setting matches v26p6: dt 0.005, sdrop 50, kappa 0.045, qfexp 0.6, fmax 10,
-  rvfac 0.8.
+  first and last realisation of all 21 faults. All used OneRay.
+  - Every other setting in their `HF.bin` headers matches v26p6, except the
+    ray set.
+  - 61 of them, dated 3–13 February 2026, used `rayset` [1, 2], i.e. direct
+    and Moho-reflected rays. That is `hf_sim.py`'s default. v25p11's
+    `root_params.yaml`, like every version's, configures `rayset: 1`.
+  - The other two, AlpineF2K REL01 and REL47, were re-run on 10 March with
+    `rayset` 1.
+  - Either the config said otherwise in February, or, as with the 1D model,
+    the configured value never reached `hf_sim.py`.
 - **Newer Cylc HF runs** (`RunFolder/hf_sims/cylc/cylc-run`), counted by
   realisation:
   - `adhoc_hf_alpinef2k`: all 48 (the AlpineF2K median and REL01–47) use
@@ -53,7 +60,7 @@ Cascade's v26p5. Only the directory part of that path differs; see step 1.
     realisations use OneRay exactly. The 3 `base_R*` realisations use
     OneRay with its half-space row repeated as a 35th layer. That adds no
     new interface, so physically it is the same model.
-  - None use leer.
+  - None use leer. All use `rayset` [1].
 
 **How the two models differ.** Layer thicknesses, Vp and density are the same
 in both. The differences are in attenuation, plus one placeholder value:
@@ -252,5 +259,5 @@ therefore makes the job fail rather than fall back.
 - **Configs:** correct `hf_vel_mod_1d` in the NeSI copies of
   `root_params.yaml` that name KISTI paths, or teach
   `fix_old_nesi_path.sh` the KISTI prefix.
-- **After HF runs:** compare the model recorded in each `HF.bin` header with
-  the configuration.
+- **After HF runs:** compare the model and the other settings recorded in
+  each `HF.bin` header with the configuration.
