@@ -45,10 +45,14 @@ Cascade's v26p5. Only the directory part of that path differs; see step 1.
   first and last realisation of all 21 faults. All used OneRay. Every other HF
   setting matches v26p6: dt 0.005, sdrop 50, kappa 0.045, qfexp 0.6, fmax 10,
   rvfac 0.8.
-- **Newer Cylc HF runs** (`RunFolder/hf_sims/cylc/cylc-run`):
-  - `adhoc_hf_alpinef2k`: 49 of 49 use OneRay.
-  - `alpine_vs30_update`: 28 use OneRay. The other 9 (`base_R*`) use OneRay
-    with an extra 35th half-space layer.
+- **Newer Cylc HF runs** (`RunFolder/hf_sims/cylc/cylc-run`), counted by
+  realisation:
+  - `adhoc_hf_alpinef2k`: all 48 (the AlpineF2K median and REL01–47) use
+    OneRay exactly.
+  - `alpine_vs30_update`: the 9 `clarence_R*`, `hope_R*` and `wairau_R*`
+    realisations use OneRay exactly. The 3 `base_R*` realisations use
+    OneRay with its half-space row repeated as a 35th layer. That adds no
+    new interface, so physically it is the same model.
   - None use leer.
 
 **How the two models differ.** Layer thicknesses, Vp and density are the same
