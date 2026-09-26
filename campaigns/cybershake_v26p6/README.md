@@ -25,6 +25,12 @@ original 18432-station outputs were renamed, not deleted, to
 mtimes before and after the rename are recorded in
 `/home/arr65/bb_v26p6/moved_aside_manifest.txt` on NeSI.
 
+## HF 1D velocity model
+
+All 71 v26p6 HF runs used `Cant1D_v2-midQ_leer.1d` instead of the configured
+`Cant1D_v3-midQ_OneRay.1d`. `hf_1d_model_fallback.md` explains how, with the
+evidence.
+
 ## IM (both faults)
 
 IMs are computed with Sung's wrapper
