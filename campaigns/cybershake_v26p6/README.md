@@ -6,6 +6,17 @@ are in `docs/superpowers/specs/2026-09-21-bb-station-reconciliation-design.md`.
 
 Runs directory: `/nesi/nobackup/nesi00213/RunFolder/Cybershake/v26p6/Runs`.
 
+## OneRay redo (2026-09-27)
+
+The HF, BB and IM results described below were all built on HF that used the
+leer 1D model by accident. They are being redone with
+`Cant1D_v3-midQ_OneRay.1d`; see `oneray_redo/`.
+- The leer outputs now sit in each realisation's `HF.leer`, `BB.leer` and
+  `IM_calc.leer`.
+- They include the `BB.*.with_320077e` originals mentioned below, now in
+  `BB.leer/Acc/`.
+- They are to be deleted once the redo is verified.
+
 ## WellTeast BB (canonical 18431-station set)
 
 | File | Role |
