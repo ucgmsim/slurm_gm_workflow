@@ -37,10 +37,15 @@ injected error.
 - **Record:** every submit is logged in
   `/home/arr65/hikwgtnmax_v26p5/hf/submissions.txt`, and job logs go to
   `/home/arr65/hikwgtnmax_v26p5/hf/logs/hf_<job>_<task>.out`.
-- **Still to do:**
-  - Verify all 51 `HF.bin` files with `hf_status.py`.
-  - Then BB, which needs the old `bb_sim` to read the Cascade LF NetCDF.
-  - Then IM.
+- **Done 2026-09-28:** all 51 tasks completed (8.6–9.7 h each). `hf_status.py`
+  reports 51/51 "finished and checked OK".
+- **VM:** `fetch_vm_from_dropbox.sl` (job 9350300) copied the HikWgtnmax
+  `vs3dfile.s` from Dropbox into `v26p5/Data/VMs/HikWgtnmax/` on 2026-09-28.
+  `rclone check` found 0 differences, and Dropbox was left untouched.
+- **Next: BB and IM,** prepared in `bb_im/`. BB reads the Cascade LF NetCDF
+  through bb_sim's new reader. It was validated on PalliserKai REL01 on
+  2026-09-28 (`netcdf_reader_validation/`): its BB matched the production BB to
+  1.3e-7 of each station's peak.
 
 ## Decisions
 
