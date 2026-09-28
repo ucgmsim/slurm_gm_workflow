@@ -13,7 +13,9 @@
 #
 # Refuses unless the pre-flight passes and every BB task passes its guards in a
 # dry run. Logs the submissions in ../submissions.txt.
-# Usage: submit_bb_im_hikwgtnmax.sh (on a NeSI login node)
+# ACCOUNT picks the allocation for both, default nesi00213 (uc04357 when
+# nesi00213's fairshare is low).
+# Usage: [ACCOUNT=uc04357] submit_bb_im_hikwgtnmax.sh (on a NeSI login node)
 
 set -euo pipefail
 
@@ -21,6 +23,7 @@ DIR=/home/arr65/hikwgtnmax_v26p5/bb_im
 E=/nesi/project/nesi00213/Environments/arr65_v26p6_netcdf/workflow
 IM_WRAPPER=/nesi/nobackup/nesi00213/RunFolder/submit/run_im_job_array.sl
 SARAH=/nesi/project/nesi00213/Environments/sarah2024
+ACCOUNT=${ACCOUNT:-nesi00213}
 
 cd "$DIR"
 mkdir -p im/logs
@@ -37,16 +40,16 @@ for i in $(seq 0 50); do
 done
 echo "pre-flight and BB dry runs passed"
 
-BB=$(sbatch --parsable --array=0-50 run_bb_hikwgtnmax.sl)
+BB=$(sbatch --parsable --account="$ACCOUNT" --array=0-50 run_bb_hikwgtnmax.sl)
 IMS=()
 for i in $(seq 0 50); do
-    IMS+=("$(cd im && sbatch --parsable --account=nesi00213 --partition=genoa,milan --ntasks-per-node=32 \
+    IMS+=("$(cd im && sbatch --parsable --account="$ACCOUNT" --partition=genoa,milan --ntasks-per-node=32 \
         --mem=84G --time=08:00:00 --array="$i" --dependency="afterok:${BB}_$i" --job-name=im_HikWgtnmax \
         --export=ALL,TARGET_LIST=$DIR/targets.txt,gmsim=$SARAH "$IM_WRAPPER")")
 done
 now=$(date '+%Y-%m-%d %H:%M:%S')
 {
-    echo "$now job $BB: HikWgtnmax BB array 0-50 (run_bb_hikwgtnmax.sl, LF NetCDF reader at $(git -C $E rev-parse --short HEAD), 16 tasks/84G/6h)"
-    echo "$now jobs ${IMS[0]}..${IMS[50]}: HikWgtnmax IM, one single-task job per realisation, each afterok its own BB task (Sung's run_im_job_array.sl, sarah2024, 32 tasks/84G/8h)"
+    echo "$now job $BB: HikWgtnmax BB array 0-50 (run_bb_hikwgtnmax.sl, LF NetCDF reader at $(git -C $E rev-parse --short HEAD), $ACCOUNT, 16 tasks/84G/6h)"
+    echo "$now jobs ${IMS[0]}..${IMS[50]}: HikWgtnmax IM, one single-task job per realisation, each afterok its own BB task (Sung's run_im_job_array.sl, sarah2024, $ACCOUNT, 32 tasks/84G/8h)"
 } >> ../submissions.txt
 tail -n 2 ../submissions.txt
