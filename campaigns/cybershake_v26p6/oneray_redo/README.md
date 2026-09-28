@@ -98,6 +98,40 @@ originals, which are now in `BB.leer/Acc/`. Nothing was copied or deleted.
 - **IM.** Sung's wrapper, unmodified: 32 tasks, 84G, 4 h, `gmsim=sarah2024`,
   as on 2026-09-25. It marks IM done in Sung's status DB, as before.
 
+## What went wrong overnight, and the fixes
+
+- **HF:** 71/71 finished and passed their header checks.
+- **BB:** 67 of 70 finished and passed. Tasks 0–2 (PalliserKai median, REL01,
+  REL02) ran on one node, spent over two hours in setup, and hit the 3 h limit.
+- **Slow runs:** BB took 1–2.8 h per task that night, against 5–40 min on
+  2026-09-25, probably because about 40 jobs read the filesystem at once.
+- **IM:** 25 finished and 3 hit the 4 h limit on slow Milan nodes. The other 42
+  never started.
+  - NeSI sets `DependencyParameters=kill_invalid_depend`. Once BB tasks 0–2
+    failed, Slurm cancelled the whole pending remainder of the IM array chained
+    to BB, including tasks whose BB had finished.
+  - Recovery: the 42 IM tasks whose BB was done ran with no dependency and an
+    8 h limit (job 9348737), all 42 finished. The three timed-out tasks resumed
+    after `check_station_files.py` found no damaged station files.
+- **BB resume bug.** BB tasks 0–2 were resumed (job 9348736, `RESUME=1`). All
+  three failed their header check: about 8800 stations per file had no waveform.
+  - Cause: a bug in `bb_sim`, also in the code Sung ran. `initialise()` built
+    the station records with `np.rec.array(np.zeros(...))`. The dtype leaves the
+    vsite slot (bytes 40–44) unnamed, and the copy left it uninitialised.
+    `unfinished()` takes `vsite > 0` to mean a finished station. So stations
+    whose slot held leftover memory looked finished, and the resume skipped
+    them.
+  - A fresh run overwrites every vsite, so the 67 fresh runs are sound.
+  - The corrupt files were renamed to `BB/Acc/BB.{bin,log}.corrupt_resume` and
+    logged in `moved_aside_manifest.tsv`.
+  - They were rerun from scratch (job 9350278). Each one's IM is a separate job
+    waiting for its own BB task (9350279–81), so a failure cannot cascade.
+  - The code fix, which builds the records with `np.zeros(...).view(np.recarray)`,
+    comes with the HikWgtnmax LF NetCDF reader
+    (`../../hikwgtnmax_v26p5/bb_im/README.md`).
+  - Any BB from this code that was ever resumed after a timeout may have
+    silently zero stations.
+
 ## Status
 
 - **Submitted** 2026-09-27 15:50 (`submissions.txt` on NeSI):
