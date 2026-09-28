@@ -28,8 +28,11 @@ echo "job     : ${SLURM_JOB_ID:-manual} on $(hostname); stage $STAGE; targets $T
 echo "started : $(date '+%F %T')"
 status=0
 python "$HERE/pack_stage.py" "$STAGE" "$TARGETS" "$STAGING" || status=$?
-for fault in $(ls "$STAGING/$STAGE"); do
-    python "$HERE/make_readme.py" "$STAGE" "$fault" "$STAGING" "$COMMIT"
+# only this run's faults: another pack job may be filling other folders
+for fault in $(xargs -n1 dirname < "$TARGETS" | xargs -n1 basename | sort -u); do
+    if [[ -f "$STAGING/$STAGE/$fault/MANIFEST.tsv" ]]; then
+        python "$HERE/make_readme.py" "$STAGE" "$fault" "$STAGING" "$COMMIT"
+    fi
 done
 echo "finished: $(date '+%F %T')"
 exit $status
