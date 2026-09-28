@@ -25,6 +25,7 @@ from workflow.calculation.bb_station_set import (
     read_station_list,
     resolve_station_set,
 )
+from workflow.calculation.lf_netcdf import LFNetCDF, is_lf_netcdf
 
 if __name__ == "__main__":
     from mpi4py import MPI
@@ -48,7 +49,11 @@ def args_parser(cmd=None):
     """
     parser = ArgumentParser()
     arg = parser.add_argument
-    arg("lf_dir", help="LF OutBin folder containing SEIS files")
+    arg(
+        "lf_dir",
+        help="LF OutBin folder containing SEIS files, or an LF NetCDF written by "
+        "the new workflow's lf-to-xarray (which needs --lf-e3d-par and --lf-statcords)",
+    )
     arg("lf_vm", help="LF VM folder containing velocity model")
     arg("hf_file", help="HF file path")
     arg("vsite_file", help="Vs30 station file")
@@ -96,6 +101,14 @@ def args_parser(cmd=None):
         help="Proceed when LF and HF cover different stations, using only "
         "those common to both. Without this, a difference is an error.",
         action="store_true",
+    )
+    arg(
+        "--lf-e3d-par",
+        help="The LF run's EMOD3D parameter file, when lf_dir is an LF NetCDF",
+    )
+    arg(
+        "--lf-statcords",
+        help="The station coordinates file the LF run used, when lf_dir is an LF NetCDF",
     )
 
     args = parser.parse_args(cmd)
@@ -156,7 +169,14 @@ def main():
         lf_amp_function = amp_function
 
     # load data stores
-    lf = timeseries.LFSeis(args.lf_dir)
+    if is_lf_netcdf(args.lf_dir):
+        if not (args.lf_e3d_par and args.lf_statcords):
+            if is_master:
+                logger.error("An LF NetCDF needs --lf-e3d-par and --lf-statcords.")
+            comm.Abort()
+        lf = LFNetCDF(args.lf_dir, args.lf_e3d_par, args.lf_statcords)
+    else:
+        lf = timeseries.LFSeis(args.lf_dir)
     hf = timeseries.HFSeis(args.hf_file)
 
     # Decide which stations this run produces. LF may carry EMOD3D
@@ -310,36 +330,38 @@ def main():
             # string parameters
             s = np.array([args.lf_dir, args.lf_vm, args.hf_file], dtype="|S256")
             # station metadata
-            bb_stations = np.rec.array(
-                np.zeros(
-                    n_bb,
-                    dtype={
-                        "names": [
-                            "lon",
-                            "lat",
-                            "name",
-                            "x",
-                            "y",
-                            "z",
-                            "e_dist",
-                            "hf_vs_ref",
-                            "lf_vs_ref",
-                        ],
-                        "formats": [
-                            "f4",
-                            "f4",
-                            "|S8",
-                            "i4",
-                            "i4",
-                            "i4",
-                            "f4",
-                            "f4",
-                            "f4",
-                        ],
-                        "itemsize": HEAD_STAT,
-                    },
-                )
-            )
+            # np.zeros viewed, not copied: np.rec.array copies field by field,
+            # which leaves the unnamed vsite slot (bytes 40-44) uninitialised.
+            # unfinished() reads vsite > 0 as a finished station, so that
+            # garbage made resumed runs skip stations and leave them zero.
+            bb_stations = np.zeros(
+                n_bb,
+                dtype={
+                    "names": [
+                        "lon",
+                        "lat",
+                        "name",
+                        "x",
+                        "y",
+                        "z",
+                        "e_dist",
+                        "hf_vs_ref",
+                        "lf_vs_ref",
+                    ],
+                    "formats": [
+                        "f4",
+                        "f4",
+                        "|S8",
+                        "i4",
+                        "i4",
+                        "i4",
+                        "f4",
+                        "f4",
+                        "f4",
+                    ],
+                    "itemsize": HEAD_STAT,
+                },
+            ).view(np.recarray)
             # copy most from LF, addressed through the canonical set
             for col in bb_stations.dtype.names[:-3]:
                 bb_stations[col] = lf.stations[col][lf_idx]
