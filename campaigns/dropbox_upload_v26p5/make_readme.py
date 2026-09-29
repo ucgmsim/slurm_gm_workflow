@@ -38,12 +38,37 @@ FAULTS = {
         "lf": "EMOD3D, run on Cascade and uploaded as NetCDF (the new workflow's lf-to-xarray format) "
               "to v26p5/LF/HikWgtnmax/seis",
         "notes": [],
+        "how": {
+            "BB": [
+                "bb_sim.py from the old workflow at commit e4ef5225 of " + REPO + ". It reads the "
+                "Cascade LF NetCDF through its LF NetCDF reader (workflow/calculation/lf_netcdf.py), "
+                "which gives bb_sim what qcore's LFSeis gives from an EMOD3D OutBin. On PalliserKai REL01 "
+                "this matched the OutBin-based BB to 1.3e-7 of each station's peak, with identical station "
+                "records (campaigns/hikwgtnmax_v26p5/netcdf_reader_validation/).",
+                "HF: the OneRay runs uploaded to v26p5/HF/HikWgtnmax.",
+                "flo 1.0 Hz, fmin 0.5, fmidbot 1.0, dt 0.005, no LF site amplification. Site vs30 from "
+                "non_uniform_whole_nz_with_real_stations-hh400_v20p3_land.vs30; lf_vs_ref from the "
+                "surface layer of the VM in v26p5/VMs/HikWgtnmax.",
+            ],
+        },
         "history": {
             "HF": [
                 "Computed 2026-09-26/28 (array job 9325809). The HF had not been run before. The 1D "
                 "model was named explicitly, because the v26p5 config gives a KISTI path that Sung "
                 "Bae's generator drops on NeSI "
                 "(campaigns/cybershake_v26p6/hf_1d_model_fallback.md).",
+            ],
+            "BB": [
+                "Computed 2026-09-28 (array job 9355087). Every file was checked against all its sources "
+                "(campaigns/hikwgtnmax_v26p5/bb_im/check_bb_output.py):",
+                "each station record against HF, the LF NetCDF, the station coordinates, the VM and "
+                "the vs30 file;",
+                "every waveform row finite and not all zero.",
+            ],
+            "IM": [
+                "Computed 2026-09-28/29: 51 single-task jobs, each waiting for its own BB task. "
+                "REL29 timed out on a slow node and was resumed as job 9372426. verify_ims.py passed "
+                "every realisation.",
             ],
         },
     },

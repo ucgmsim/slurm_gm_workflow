@@ -138,7 +138,23 @@ originals, which are now in `BB.leer/Acc/`. Nothing was copied or deleted.
   - HF array **9334892** (0–70);
   - BB array **9334893** (0–41,43–70, `aftercorr` on HF);
   - IM array **9334894** (0–41,43–70, `aftercorr` on BB).
-- **Still to do:**
-  - verify the outputs;
-  - compare the IMs with the leer ones;
-  - delete the `*.leer` results (user decision, after verification).
+- **Complete and verified** 2026-09-28, for all 70 realisations with LF:
+  - HF (71) and BB (70) each passed their header check against the leer
+    original;
+  - `verify_ims.py` passed 70/70;
+  - `compare_ims_leer.py`: median OneRay/leer ratios over realisations of
+    PGA 1.00026, PGV 1.00002, pSA(0.1 s) 1.00034, pSA(1 s) 1.00026 and
+    pSA(3 s) 1.00000. The 0.1st–99.9th percentiles over stations span
+    0.99993–1.00113.
+- **Leer results deleted** 2026-09-28, on the user's instruction after they
+  reviewed the verification:
+  - `inventory_leer.py` listed 288 paths, 1.93 TB: every `*.leer` path, and
+    the three corrupt resumes' `BB.{bin,log}.corrupt_resume`.
+  - It confirmed each realisation's replacement was in place.
+  - `delete_leer.py` re-checked that and deleted them, logging each path in
+    `deleted_leer.log` on NeSI.
+  - `moved_aside_manifest.tsv` still records what they were (sizes and
+    mtimes).
+- **Uploads:** HF, BB and IM are being uploaded to Dropbox
+  `v26p5/{HF,BB,IM}/{PalliserKai,WellTeast}` with
+  `../../dropbox_upload_v26p5/`.
