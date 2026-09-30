@@ -42,10 +42,22 @@ injected error.
 - **VM:** `fetch_vm_from_dropbox.sl` (job 9350300) copied the HikWgtnmax
   `vs3dfile.s` from Dropbox into `v26p5/Data/VMs/HikWgtnmax/` on 2026-09-28.
   `rclone check` found 0 differences, and Dropbox was left untouched.
-- **Next: BB and IM,** prepared in `bb_im/`. BB reads the Cascade LF NetCDF
-  through bb_sim's new reader. It was validated on PalliserKai REL01 on
-  2026-09-28 (`netcdf_reader_validation/`): its BB matched the production BB to
-  1.3e-7 of each station's peak.
+- **BB and IM (`bb_im/`):** BB reads the Cascade LF NetCDF through bb_sim's new
+  reader. It was validated on PalliserKai REL01 on 2026-09-28
+  (`netcdf_reader_validation/`): its BB matched the production BB to 1.3e-7 of
+  each station's peak.
+  - **BB,** array 9355087 on 2026-09-28: 51/51 passed `check_bb_output.py`.
+  - **IM,** 51 jobs each waiting for its own BB task: 51/51 passed
+    `verify_ims.py`. REL29 hit its 8 h limit on node mc089, which runs at a
+    fraction of the other Milan nodes' speed. It resumed on genoa as job
+    9372426 (3 h).
+- **Dropbox:** all three stages are uploaded to `v26p5/<STAGE>/HikWgtnmax`
+  with `../dropbox_upload_v26p5/`, and verified by size and hash:
+  - HF on 2026-09-29 (job 9355641);
+  - IM on 2026-09-29 (job 9376003);
+  - BB on 2026-09-30 (job 9376004).
+
+  See that folder's README for the full record.
 
 ## Decisions
 

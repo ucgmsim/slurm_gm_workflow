@@ -17,7 +17,7 @@ per realisation, holding files named after it, with the median as
 | `HF/PalliserKai`, `BB/PalliserKai`, `IM/PalliserKai` | median + REL01–37 (38) | 474 GB, 479 GB, 3 GB |
 | `HF/WellTeast` | median + REL01–32 (33, including REL04) | 432 GB |
 | `BB/WellTeast`, `IM/WellTeast` | 32 (no REL04: it has no LF) | 424 GB, 3 GB |
-| `HF/HikWgtnmax` (later `BB`, `IM`) | median + REL01–50 (51) | 747 GB (BB 753 GB) |
+| `HF/HikWgtnmax`, `BB/HikWgtnmax`, `IM/HikWgtnmax` | median + REL01–50 (51) | 747 GB, 753 GB, 4 GB |
 
 On NeSI these files live in `/home/arr65/dropbox_upload_v26p5/`. The staging area
 mirrors the Dropbox layout under
@@ -89,3 +89,38 @@ for s in HF BB IM; do for f in PalliserKai WellTeast; do
 Each verified upload is recorded in `uploads.txt`. The staged tars can be
 deleted once their upload is verified. They are copies, and `MANIFEST.tsv`
 keeps their checksums.
+
+## Record
+
+All nine folders are on Dropbox and verified. Every file passed `rclone check`
+by size and Dropbox content hash, and each folder holds its tars plus
+`MANIFEST.tsv` and `README.md`.
+
+| Folder | Tars | Size | Packed by | Uploaded by | Verified |
+|---|---|---|---|---|---|
+| `HF/PalliserKai` | 38 | 474.2 GB | 9353662 | 9355639 | 2026-09-28 18:45 |
+| `HF/WellTeast` | 33 | 432.8 GB | 9353662 | 9355640 | 2026-09-28 20:51 |
+| `HF/HikWgtnmax` | 51 | 747.3 GB | 9353663 | 9355641 | 2026-09-29 00:10 |
+| `BB/PalliserKai` | 38 | 478.8 GB | 9358341 | 9358343 | 2026-09-29 02:24 |
+| `BB/WellTeast` | 32 | 423.7 GB | 9358341 | 9358344 | 2026-09-29 04:28 |
+| `IM/PalliserKai` | 38 | 3.1 GB | 9358342 | 9358345 | 2026-09-29 04:30 |
+| `IM/WellTeast` | 32 | 2.7 GB | 9358342 | 9358346 | 2026-09-29 04:32 |
+| `IM/HikWgtnmax` | 51 | 4.0 GB | 9376001 | 9376003 | 2026-09-29 20:12 |
+| `BB/HikWgtnmax` | 51 | 753.3 GB | 9376002 | 9376004 | 2026-09-30 16:44 |
+
+- **READMEs:** the Dropbox READMEs cite commit 0280c97b. The exceptions are
+  `BB/HikWgtnmax` and `IM/HikWgtnmax`, which cite fd6a370a, the commit that
+  added their text to `make_readme.py`.
+- **Job 9353662** shows as FAILED in Slurm. It failed only in its README step,
+  after packing and verifying all 71 tars. That step is fixed in 0280c97b,
+  and the READMEs were rewritten before upload.
+- **`BB/HikWgtnmax`** took 19 h. It started two hours after a NeSI outage
+  ended, and the transfer rate varied between 1 and 65 MiB/s.
+  - Dropbox refused REL01's first commit with `too_many_write_operations`.
+  - rclone's retry uploaded it, and the check then passed on all 53 files.
+- **Staged tars:** deleted after each verified upload. Each staging folder
+  keeps its `MANIFEST.tsv` and `README.md`.
+- **Records on NeSI**, in `/home/arr65/dropbox_upload_v26p5/`:
+  - `uploads.txt`: the verified uploads;
+  - `uploads_log.txt`: every submission and deletion;
+  - `logs/`: the job and rclone logs.
